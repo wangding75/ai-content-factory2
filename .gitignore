@@ -1,0 +1,33 @@
+# Environment
+.env
+.env.*
+!.env.example
+
+# Go
+bin/
+coverage/
+*.test
+*.out
+
+# Node / Next.js
+node_modules/
+.pnpm-store/
+.next/
+out/
+dist/
+coverage/
+*.tsbuildinfo
+
+# IDE / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Runtime data
+data/
+tmp/
+logs/
+
+# Generated reports
+.ai-dev/reports/*.tmp

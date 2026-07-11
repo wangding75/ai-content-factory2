@@ -1,0 +1,49 @@
+openapi: 3.1.0
+info:
+  title: AI Content Factory 2.0 API
+  version: 0.1.0
+  description: P0 API contract baseline.
+servers:
+  - url: http://localhost:8080
+paths:
+  /healthz:
+    get:
+      operationId: getHealth
+      responses:
+        "200":
+          description: API is alive
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Envelope"
+  /readyz:
+    get:
+      operationId: getReadiness
+      responses:
+        "200":
+          description: API is ready
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Envelope"
+  /api/v1/meta:
+    get:
+      operationId: getApplicationMeta
+      responses:
+        "200":
+          description: P0 capability metadata
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Envelope"
+components:
+  schemas:
+    Envelope:
+      type: object
+      required:
+        - data
+        - request_id
+      properties:
+        data: {}
+        request_id:
+          type: string

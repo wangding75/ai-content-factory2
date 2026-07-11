@@ -1,0 +1,14 @@
+{
+  "name": "ai-content-factory",
+  "version": "0.1.0",
+  "private": true,
+  "packageManager": "pnpm@9.1.1",
+  "scripts": {
+    "dev:web": "pnpm --dir apps/web dev",
+    "build:web": "pnpm --dir apps/web build",
+    "lint:web": "pnpm --dir apps/web lint",
+    "typecheck:web": "pnpm --dir apps/web exec tsc --noEmit",
+    "test:web": "pnpm --dir apps/web test",
+    "check": "pnpm lint:web && pnpm typecheck:web"
+  }
+}

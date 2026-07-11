@@ -1,0 +1,60 @@
+﻿{
+    "project_root":  "D:\\ai\\ai-content-factory2",
+    "go_module":  "github.com/local/ai-content-factory/apps/api",
+    "started_at_utc":  "2026-07-11T06:32:08.0176660Z",
+    "finished_at_utc":  "2026-07-11T06:38:17.2156562Z",
+    "tools":  {
+                  "go":  "go version go1.26.5 windows/amd64",
+                  "git":  "git version 2.47.1.windows.1",
+                  "node":  "v24.14.0",
+                  "pnpm":  "9.1.1",
+                  "docker":  [
+                                 "failed to get console mode for stdout: The handle is invalid.",
+                                 "Docker version 25.0.3, build 4debf41"
+                             ],
+                  "compose":  [
+                                  "failed to get console mode for stdout: The handle is invalid.",
+                                  "Docker Compose version v2.24.5-desktop.1"
+                              ]
+              },
+    "created_paths":  [
+                          "apps",
+                          "apps\\api",
+                          "packages\\contracts\\openapi",
+                          "packages\\contracts\\openapi\\paths",
+                          "packages\\contracts\\openapi\\schemas\\common",
+                          "packages\\contracts\\content-packs\\novel",
+                          "packages\\contracts\\workflow-providers\\mock",
+                          "packages\\shared-types",
+                          "packages\\eslint-config",
+                          "packages\\tsconfig",
+                          "docs\\product",
+                          "docs\\architecture",
+                          "docs\\api",
+                          "docs\\testing",
+                          "docs\\decisions",
+                          "docs\\iterations",
+                          "docs\\prototypes\\p0-frames",
+                          "deployments\\docker",
+                          "deployments\\compose",
+                          "deployments\\k8s",
+                          "scripts",
+                          "tasks",
+                          "tests\\contract",
+                          "tests\\e2e\\fixtures",
+                          "tests\\e2e\\pages",
+                          "tests\\e2e\\specs",
+                          "tests\\fixtures",
+                          ".github\\workflows",
+                          ".ai-dev\\iterations",
+                          ".ai-dev\\reports",
+                          ".ai-dev\\templates"
+                      ],
+    "verification":  {
+                         "go_test":  "passed",
+                         "web_lint":  "passed",
+                         "web_typecheck":  "passed",
+                         "compose_config":  "passed"
+                     },
+    "result":  "passed"
+}

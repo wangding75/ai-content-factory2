@@ -1,0 +1,10 @@
+﻿{
+    "project":  "ai-content-factory-2.0",
+    "current_iteration":  1,
+    "status":  "completed",
+    "next_iteration":  2,
+    "contract_version":  "p0-v1",
+    "ui_baseline":  "p0-frozen",
+    "technical_skeleton":  "same-as-1.0",
+    "updated_at_utc":  "2026-07-11T06:43:03.5232102Z"
+}

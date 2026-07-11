@@ -1,0 +1,27 @@
+﻿{
+    "generated_at_utc":  "2026-07-11T05:24:18.0541544Z",
+    "computer_name":  "LAPTOP-MUCR3O1G",
+    "windows_version":  "Microsoft Windows NT 10.0.19045.0",
+    "process_architecture":  "AMD64",
+    "project_root":  "D:\\ai\\ai-content-factory2",
+    "check_only":  false,
+    "project_verification":  false,
+    "required_go_version":  null,
+    "required_version_source":  null,
+    "installed_go_version":  "1.26.5",
+    "go_executable":  "C:\\Program Files\\Go\\bin\\go.exe",
+    "go_env":  {
+                   "GOOS":  "windows",
+                   "GOARCH":  "amd64",
+                   "GOROOT":  "C:\\Program Files\\Go",
+                   "GOPATH":  "C:\\Users\\wangding\\go",
+                   "GOBIN":  "",
+                   "GOMODCACHE":  "C:\\Users\\wangding\\go\\pkg\\mod",
+                   "GOPROXY":  "https://proxy.golang.org,direct",
+                   "GOSUMDB":  "sum.golang.org",
+                   "CGO_ENABLED":  "0"
+               },
+    "module_download":  "not_requested",
+    "go_test":  "not_requested",
+    "result":  "passed"
+}

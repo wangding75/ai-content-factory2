@@ -1,0 +1,19 @@
+﻿{
+    "iteration":  1,
+    "name":  "scaffold-infrastructure",
+    "status":  "completed",
+    "acceptance":  [
+                       "Go API tests pass",
+                       "Web lint passes",
+                       "Web typecheck passes",
+                       "Docker Compose config is valid",
+                       "healthz and readyz are available after startup"
+                   ],
+    "completed_at_utc":  "2026-07-11T06:43:03.5232102Z",
+    "verification":  {
+                         "go_test":  "passed",
+                         "web_lint":  "passed",
+                         "web_typecheck":  "passed",
+                         "compose_config":  "passed"
+                     }
+}
