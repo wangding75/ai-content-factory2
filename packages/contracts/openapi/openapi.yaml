@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: AI Content Factory 2.0 API
-  version: 0.2.0
+  version: 0.3.0
   description: P0 API contract baseline.
 servers:
   - url: http://localhost:8080
@@ -117,8 +117,356 @@ paths:
                 $ref: "#/components/schemas/ProjectWorkspaceEnvelope"
         "404":
           $ref: "#/components/responses/NotFound"
+  /api/v1/projects/{projectId}/planning:
+    parameters:
+      - $ref: "#/components/parameters/ProjectId"
+    get:
+      operationId: getProjectPlanning
+      description: |
+        Retrieves a project's planning. Projects without a saved planning return 200
+        with the empty planning state: empty content fields, an empty selling_points
+        array, version 0, and null created_at and updated_at.
+      responses:
+        "200":
+          description: Project planning, including the empty planning state when no planning has been saved.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProjectPlanningEnvelope"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    put:
+      operationId: saveProjectPlanning
+      description: |
+        Completely replaces a project's planning using optimistic concurrency control.
+        expected_version is 0 for the first save and the current version thereafter.
+        A successful first save changes version from 0 to 1; a successful content change
+        increments version. A version mismatch returns 409. Repeating an identical request
+        when the server content already exactly matches returns the current result without
+        incrementing version or producing another state change. No Idempotency-Key header is used.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SaveProjectPlanningRequest"
+      responses:
+        "200":
+          description: Project planning saved, or the unchanged current result for an idempotent retry.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProjectPlanningEnvelope"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+  /api/v1/materials:
+    get:
+      operationId: listMaterials
+      description: |
+        Lists global materials. q matches name, summary, and tags_json after trimming;
+        an empty q is treated as omitted. q and type use AND semantics. Results use the
+        requested sort with id ascending as a stable secondary sort. Defaults are
+        sort=updated_at_desc, limit=20, and offset=0.
+      parameters:
+        - $ref: "#/components/parameters/MaterialQuery"
+        - $ref: "#/components/parameters/MaterialTypeQuery"
+        - $ref: "#/components/parameters/MaterialSortQuery"
+        - $ref: "#/components/parameters/LimitQuery"
+        - $ref: "#/components/parameters/OffsetQuery"
+      responses:
+        "200":
+          description: Global material list.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MaterialListEnvelope"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+    post:
+      operationId: createMaterial
+      description: |
+        Creates a global Material. Idempotency-Key is required and scoped to this operation.
+        Replaying the same key with the same request returns the first created Material with
+        status 201 without creating a duplicate. Reusing the same key with a different request
+        returns 409 with IDEMPOTENCY_KEY_REUSED. Validation failures return 400 with VALIDATION_ERROR.
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateMaterialRequest"
+      responses:
+        "201":
+          description: Global material created, or the original result returned for an idempotent replay.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MaterialEnvelope"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "409":
+          $ref: "#/components/responses/Conflict"
+  /api/v1/materials/{materialId}:
+    parameters:
+      - $ref: "#/components/parameters/MaterialId"
+    get:
+      operationId: getMaterial
+      description: Invalid material IDs return 400 with INVALID_MATERIAL_ID; missing materials return 404 with MATERIAL_NOT_FOUND.
+      responses:
+        "200":
+          description: Global material with its active project references.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MaterialDetailEnvelope"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    patch:
+      operationId: updateMaterial
+      description: |
+        Partially updates only request fields other than expected_version. A version mismatch
+        returns 409 with VERSION_CONFLICT. A successful content change increments version;
+        an update whose supplied content already exactly matches the current material returns
+        the current result without incrementing version. Material type is immutable. Invalid material IDs return 400 with INVALID_MATERIAL_ID; missing materials return 404 with MATERIAL_NOT_FOUND. Validation failures return 400 with VALIDATION_ERROR.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateMaterialRequest"
+      responses:
+        "200":
+          description: Updated global material, or the unchanged current result for an identical update.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MaterialEnvelope"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+  /api/v1/projects/{projectId}/materials:
+    parameters:
+      - $ref: "#/components/parameters/ProjectId"
+    get:
+      operationId: listProjectMaterials
+      description: |
+        Lists active material bindings for a project. q matches material.name, material.summary,
+        material.tags_json, usage.usage_type, usage.role_name, and usage.notes after trimming;
+        an empty q is treated as omitted. type and q use AND semantics. Sorting uses item.last_updated_at
+        and material.id ascending as the stable secondary sort. type_counts cover all active project
+        bindings and are unaffected by q, type, limit, or offset. An existing project without materials
+        returns 200 with an empty list and six zero counts. Invalid project IDs return INVALID_PROJECT_ID;
+        missing projects return PROJECT_NOT_FOUND; validation failures return VALIDATION_ERROR.
+      parameters:
+        - $ref: "#/components/parameters/ProjectMaterialQuery"
+        - $ref: "#/components/parameters/MaterialTypeQuery"
+        - $ref: "#/components/parameters/ProjectMaterialSortQuery"
+        - $ref: "#/components/parameters/LimitQuery"
+        - $ref: "#/components/parameters/OffsetQuery"
+      responses:
+        "200":
+          description: Active project material bindings.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProjectMaterialListEnvelope"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    post:
+      operationId: createProjectMaterial
+      description: |
+        Creates a global Material, its ProjectMaterialUsage, and the related AuditLog in one transaction.
+        Any failure rolls back all three effects, so a Material cannot be left without its requested usage.
+        Idempotency-Key is required and scoped only to createProjectMaterial: replaying the same key,
+        projectId, and request returns the first result with 201 without duplicate records, version changes,
+        or audit entries. Reusing a key with a different request returns 409 IDEMPOTENCY_KEY_REUSED.
+        Invalid project IDs return INVALID_PROJECT_ID; missing projects return PROJECT_NOT_FOUND; invalid
+        payloads return VALIDATION_ERROR.
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateProjectMaterialRequest"
+      responses:
+        "201":
+          description: Material and active project usage created, or the first result returned for an idempotent replay.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProjectMaterialItemEnvelope"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+  /api/v1/projects/{projectId}/materials/{materialId}/binding:
+    parameters:
+      - $ref: "#/components/parameters/ProjectId"
+      - $ref: "#/components/parameters/MaterialId"
+    post:
+      operationId: bindProjectMaterial
+      description: |
+        Creates only an active ProjectMaterialUsage and its AuditLog in one transaction; it never creates,
+        copies, or modifies the global Material. usage.version starts at 1. Only one active binding may
+        exist for a project-material pair; a duplicate binding with a different idempotency key returns
+        409 MATERIAL_ALREADY_BOUND. Idempotency-Key is required and scoped only to bindProjectMaterial:
+        replaying the same key, path, and request returns the first result with 201, while reusing a key
+        with a different request returns 409 IDEMPOTENCY_KEY_REUSED. Invalid IDs return INVALID_PROJECT_ID
+        or INVALID_MATERIAL_ID; missing resources return PROJECT_NOT_FOUND or MATERIAL_NOT_FOUND; invalid
+        payloads return VALIDATION_ERROR.
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProjectMaterialUsageInput"
+      responses:
+        "201":
+          description: Active project material usage created, or the first result returned for an idempotent replay.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProjectMaterialItemEnvelope"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+    delete:
+      operationId: unbindProjectMaterial
+      description: |
+        Deletes only the ProjectMaterialUsage and its AuditLog in one transaction; the global Material is
+        always retained and other project references are unaffected. expected_version applies when the
+        active binding exists and mismatches return 409 VERSION_CONFLICT. If the project and Material exist
+        but their binding is already absent, returns 200 with unbound=false. Repeated DELETE creates no
+        additional state change or AuditLog. Invalid IDs return INVALID_PROJECT_ID or INVALID_MATERIAL_ID;
+        missing resources return PROJECT_NOT_FOUND or MATERIAL_NOT_FOUND; invalid query values return VALIDATION_ERROR.
+      parameters:
+        - $ref: "#/components/parameters/ExpectedUsageVersionQuery"
+      responses:
+        "200":
+          description: Binding removal result; material_retained is always true.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UnbindProjectMaterialResultEnvelope"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+  /api/v1/projects/{projectId}/materials/{materialId}/usage:
+    parameters:
+      - $ref: "#/components/parameters/ProjectId"
+      - $ref: "#/components/parameters/MaterialId"
+    patch:
+      operationId: updateProjectMaterialUsage
+      description: |
+        Updates only fields included in the request for this project's ProjectMaterialUsage; it never
+        modifies the global Material. expected_version mismatches return 409 VERSION_CONFLICT. A real
+        content change increments usage.version; an identical request returns the current result without
+        incrementing version. The usage update and AuditLog are transactional. Invalid IDs return
+        INVALID_PROJECT_ID or INVALID_MATERIAL_ID; absent bindings return MATERIAL_BINDING_NOT_FOUND;
+        missing resources return PROJECT_NOT_FOUND or MATERIAL_NOT_FOUND; invalid payloads return VALIDATION_ERROR.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateProjectMaterialUsageRequest"
+      responses:
+        "200":
+          description: Updated project material item, or the unchanged current result for an identical update.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProjectMaterialItemEnvelope"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
 components:
   parameters:
+    MaterialId:
+      name: materialId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    MaterialQuery:
+      name: q
+      in: query
+      schema:
+        type: string
+        maxLength: 120
+    MaterialTypeQuery:
+      name: type
+      in: query
+      schema:
+        $ref: "#/components/schemas/MaterialType"
+    MaterialSortQuery:
+      name: sort
+      in: query
+      schema:
+        type: string
+        enum: [updated_at_desc, updated_at_asc, name_asc, name_desc]
+        default: updated_at_desc
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      schema:
+        type: string
+        minLength: 1
+        maxLength: 128
+    ProjectMaterialQuery:
+      name: q
+      in: query
+      required: false
+      schema:
+        type: string
+        maxLength: 120
+    ProjectMaterialSortQuery:
+      name: sort
+      in: query
+      required: false
+      schema:
+        type: string
+        enum: [updated_at_desc, updated_at_asc, name_asc, name_desc]
+        default: updated_at_desc
+    ExpectedUsageVersionQuery:
+      name: expected_version
+      in: query
+      required: true
+      schema:
+        type: integer
+        minimum: 1
     ProjectId:
       name: projectId
       in: path
@@ -154,13 +502,19 @@ components:
         default: 0
   responses:
     BadRequest:
-      description: Invalid request
+      description: "Invalid request. Error codes include INVALID_PROJECT_ID and VALIDATION_ERROR."
       content:
         application/json:
           schema:
             $ref: "#/components/schemas/ErrorEnvelope"
     NotFound:
-      description: Resource not found
+      description: "Resource not found. Error code: PROJECT_NOT_FOUND."
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorEnvelope"
+    Conflict:
+      description: "Optimistic concurrency conflict. Error code: VERSION_CONFLICT."
       content:
         application/json:
           schema:
@@ -325,5 +679,487 @@ components:
       properties:
         data:
           $ref: "#/components/schemas/ProjectWorkspace"
+        request_id:
+          type: string
+    ProjectPlanningGoals:
+      type: object
+      additionalProperties: false
+      required: [selling_points, plot_summary]
+      properties:
+        selling_points:
+          type: array
+          maxItems: 20
+          uniqueItems: true
+          items:
+            type: string
+            minLength: 1
+            maxLength: 100
+        plot_summary:
+          type: string
+          maxLength: 10000
+    ProjectPlanningConstraints:
+      type: object
+      additionalProperties: false
+      required: [emotional_tone]
+      properties:
+        emotional_tone:
+          type: string
+          maxLength: 500
+    ProjectPlanning:
+      type: object
+      additionalProperties: false
+      required: [project_id, premise, audience, style, goals_json, constraints_json, version, created_at, updated_at]
+      properties:
+        project_id:
+          type: string
+          format: uuid
+        premise:
+          type: string
+          maxLength: 500
+        audience:
+          type: string
+          maxLength: 500
+        style:
+          type: string
+          maxLength: 120
+        goals_json:
+          $ref: "#/components/schemas/ProjectPlanningGoals"
+        constraints_json:
+          $ref: "#/components/schemas/ProjectPlanningConstraints"
+        version:
+          type: integer
+          minimum: 0
+        created_at:
+          type: [string, "null"]
+          format: date-time
+        updated_at:
+          type: [string, "null"]
+          format: date-time
+    SaveProjectPlanningRequest:
+      type: object
+      additionalProperties: false
+      required: [premise, audience, style, goals_json, constraints_json, expected_version]
+      properties:
+        premise:
+          type: string
+          maxLength: 500
+        audience:
+          type: string
+          maxLength: 500
+        style:
+          type: string
+          maxLength: 120
+        goals_json:
+          $ref: "#/components/schemas/ProjectPlanningGoals"
+        constraints_json:
+          $ref: "#/components/schemas/ProjectPlanningConstraints"
+        expected_version:
+          type: integer
+          minimum: 0
+    ProjectPlanningEnvelope:
+      type: object
+      additionalProperties: false
+      required: [data, request_id]
+      properties:
+        data:
+          $ref: "#/components/schemas/ProjectPlanning"
+        request_id:
+          type: string
+    MaterialType:
+      type: string
+      enum: [character, worldview, location, organization, item, reference]
+    Material:
+      type: object
+      additionalProperties: false
+      required: [id, type, name, summary, content_json, tags_json, version, created_at, updated_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        type:
+          $ref: "#/components/schemas/MaterialType"
+        name:
+          type: string
+          minLength: 1
+          maxLength: 120
+        summary:
+          type: string
+          maxLength: 5000
+        content_json:
+          type: object
+          additionalProperties: true
+        tags_json:
+          type: array
+          maxItems: 20
+          uniqueItems: true
+          items:
+            type: string
+            minLength: 1
+            maxLength: 50
+        version:
+          type: integer
+          minimum: 1
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    MaterialReferenceReadModel:
+      type: object
+      additionalProperties: false
+      required: [usage_id, project_id, project_name, project_type, usage_type, role_name, notes, start_chapter, end_chapter, status, version, created_at, updated_at]
+      properties:
+        usage_id:
+          type: string
+          format: uuid
+        project_id:
+          type: string
+          format: uuid
+        project_name:
+          type: string
+          minLength: 1
+          maxLength: 120
+        project_type:
+          $ref: "#/components/schemas/ProjectType"
+        usage_type:
+          type: string
+          minLength: 1
+          maxLength: 120
+        role_name:
+          type: string
+          maxLength: 120
+        notes:
+          type: string
+          maxLength: 300
+        start_chapter:
+          type: [integer, "null"]
+          minimum: 1
+        end_chapter:
+          type: [integer, "null"]
+          minimum: 1
+        status:
+          type: string
+          enum: [active]
+        version:
+          type: integer
+          minimum: 1
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    MaterialDetail:
+      type: object
+      additionalProperties: false
+      required: [material, references, reference_count]
+      properties:
+        material:
+          $ref: "#/components/schemas/Material"
+        references:
+          type: array
+          items:
+            $ref: "#/components/schemas/MaterialReferenceReadModel"
+        reference_count:
+          type: integer
+          minimum: 0
+          description: Must equal the number of entries in references.
+    CreateMaterialRequest:
+      type: object
+      additionalProperties: false
+      required: [type, name, summary, content_json, tags_json]
+      properties:
+        type:
+          $ref: "#/components/schemas/MaterialType"
+        name:
+          type: string
+          minLength: 1
+          maxLength: 120
+        summary:
+          type: string
+          maxLength: 5000
+        content_json:
+          type: object
+          additionalProperties: true
+        tags_json:
+          type: array
+          maxItems: 20
+          uniqueItems: true
+          items:
+            type: string
+            minLength: 1
+            maxLength: 50
+    UpdateMaterialRequest:
+      type: object
+      additionalProperties: false
+      required: [expected_version]
+      minProperties: 2
+      properties:
+        expected_version:
+          type: integer
+          minimum: 1
+        name:
+          type: string
+          minLength: 1
+          maxLength: 120
+        summary:
+          type: string
+          maxLength: 5000
+        content_json:
+          type: object
+          additionalProperties: true
+        tags_json:
+          type: array
+          maxItems: 20
+          uniqueItems: true
+          items:
+            type: string
+            minLength: 1
+            maxLength: 50
+    MaterialEnvelope:
+      type: object
+      additionalProperties: false
+      required: [data, request_id]
+      properties:
+        data:
+          $ref: "#/components/schemas/Material"
+        request_id:
+          type: string
+    MaterialDetailEnvelope:
+      type: object
+      additionalProperties: false
+      required: [data, request_id]
+      properties:
+        data:
+          $ref: "#/components/schemas/MaterialDetail"
+        request_id:
+          type: string
+    MaterialList:
+      type: object
+      additionalProperties: false
+      required: [items, total, limit, offset]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Material"
+        total:
+          type: integer
+          minimum: 0
+        limit:
+          type: integer
+          minimum: 1
+          maximum: 100
+        offset:
+          type: integer
+          minimum: 0
+    MaterialListEnvelope:
+      type: object
+      additionalProperties: false
+      required: [data, request_id]
+      properties:
+        data:
+          $ref: "#/components/schemas/MaterialList"
+        request_id:
+          type: string
+    ProjectMaterialUsageStatus:
+      type: string
+      enum: [active]
+    ProjectMaterialUsage:
+      type: object
+      additionalProperties: false
+      required: [id, project_id, material_id, usage_type, role_name, notes, start_chapter, end_chapter, status, version, created_at, updated_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        project_id:
+          type: string
+          format: uuid
+        material_id:
+          type: string
+          format: uuid
+        usage_type:
+          type: string
+          minLength: 1
+          maxLength: 120
+        role_name:
+          type: string
+          maxLength: 120
+        notes:
+          type: string
+          maxLength: 300
+        start_chapter:
+          type: [integer, "null"]
+          minimum: 1
+        end_chapter:
+          type: [integer, "null"]
+          minimum: 1
+        status:
+          $ref: "#/components/schemas/ProjectMaterialUsageStatus"
+        version:
+          type: integer
+          minimum: 1
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    ProjectMaterialUsageInput:
+      type: object
+      additionalProperties: false
+      required: [usage_type, role_name, notes, start_chapter, end_chapter]
+      properties:
+        usage_type:
+          type: string
+          minLength: 1
+          maxLength: 120
+        role_name:
+          type: string
+          maxLength: 120
+        notes:
+          type: string
+          maxLength: 300
+        start_chapter:
+          type: [integer, "null"]
+          minimum: 1
+        end_chapter:
+          type: [integer, "null"]
+      description: start_chapter and end_chapter may independently be null; when both are integers, start_chapter must not exceed end_chapter.
+    ProjectMaterialItem:
+      type: object
+      additionalProperties: false
+      required: [material, usage, last_updated_at]
+      properties:
+        material:
+          $ref: "#/components/schemas/Material"
+        usage:
+          $ref: "#/components/schemas/ProjectMaterialUsage"
+        last_updated_at:
+          type: string
+          format: date-time
+          description: The later of material.updated_at and usage.updated_at.
+    ProjectMaterialTypeCounts:
+      type: object
+      additionalProperties: false
+      required: [character, worldview, location, organization, item, reference]
+      properties:
+        character:
+          type: integer
+          minimum: 0
+        worldview:
+          type: integer
+          minimum: 0
+        location:
+          type: integer
+          minimum: 0
+        organization:
+          type: integer
+          minimum: 0
+        item:
+          type: integer
+          minimum: 0
+        reference:
+          type: integer
+          minimum: 0
+    ProjectMaterialList:
+      type: object
+      additionalProperties: false
+      required: [items, total, limit, offset, type_counts]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/ProjectMaterialItem"
+        total:
+          type: integer
+          minimum: 0
+        limit:
+          type: integer
+          minimum: 1
+          maximum: 100
+        offset:
+          type: integer
+          minimum: 0
+        type_counts:
+          $ref: "#/components/schemas/ProjectMaterialTypeCounts"
+    CreateProjectMaterialRequest:
+      type: object
+      additionalProperties: false
+      required: [material, usage]
+      properties:
+        material:
+          $ref: "#/components/schemas/CreateMaterialRequest"
+        usage:
+          $ref: "#/components/schemas/ProjectMaterialUsageInput"
+    UpdateProjectMaterialUsageRequest:
+      type: object
+      additionalProperties: false
+      required: [expected_version]
+      minProperties: 2
+      properties:
+        expected_version:
+          type: integer
+          minimum: 1
+        usage_type:
+          type: string
+          minLength: 1
+          maxLength: 120
+        role_name:
+          type: string
+          maxLength: 120
+        notes:
+          type: string
+          maxLength: 300
+        start_chapter:
+          type: [integer, "null"]
+          minimum: 1
+        end_chapter:
+          type: [integer, "null"]
+          minimum: 1
+      description: When both chapter bounds are integers, start_chapter must not exceed end_chapter.
+    UnbindProjectMaterialResult:
+      type: object
+      additionalProperties: false
+      required: [project_id, material_id, unbound, material_retained]
+      properties:
+        project_id:
+          type: string
+          format: uuid
+        material_id:
+          type: string
+          format: uuid
+        unbound:
+          type: boolean
+        material_retained:
+          type: boolean
+          const: true
+    ProjectMaterialItemEnvelope:
+      type: object
+      additionalProperties: false
+      required: [data, request_id]
+      properties:
+        data:
+          $ref: "#/components/schemas/ProjectMaterialItem"
+        request_id:
+          type: string
+    ProjectMaterialListEnvelope:
+      type: object
+      additionalProperties: false
+      required: [data, request_id]
+      properties:
+        data:
+          $ref: "#/components/schemas/ProjectMaterialList"
+        request_id:
+          type: string
+    UnbindProjectMaterialResultEnvelope:
+      type: object
+      additionalProperties: false
+      required: [data, request_id]
+      properties:
+        data:
+          $ref: "#/components/schemas/UnbindProjectMaterialResult"
         request_id:
           type: string

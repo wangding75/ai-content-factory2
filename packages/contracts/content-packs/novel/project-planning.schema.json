@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ai-content-factory.local/schemas/content-packs/novel/project-planning.schema.json",
+  "title": "Novel Project Planning",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["premise", "audience", "style", "goals_json", "constraints_json"],
+  "properties": {
+    "premise": {"type": "string", "maxLength": 500},
+    "audience": {"type": "string", "maxLength": 500},
+    "style": {"type": "string", "maxLength": 120},
+    "goals_json": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["selling_points", "plot_summary"],
+      "properties": {
+        "selling_points": {"type": "array", "maxItems": 20, "uniqueItems": true, "items": {"type": "string", "minLength": 1, "maxLength": 100}},
+        "plot_summary": {"type": "string", "maxLength": 10000}
+      }
+    },
+    "constraints_json": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["emotional_tone"],
+      "properties": {"emotional_tone": {"type": "string", "maxLength": 500}}
+    }
+  }
+}
