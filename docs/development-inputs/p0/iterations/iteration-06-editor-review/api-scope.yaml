@@ -1,0 +1,24 @@
+iteration: '06'
+name: 正文编辑与模拟审核闭环
+endpoints:
+- method: POST
+  path: /api/v1/chapter-plans/{chapterPlanId}/content
+  description: 为已确认章节创建内容单元
+- method: GET
+  path: /api/v1/content-items/{contentItemId}
+  description: 正文与当前版本详情
+- method: PUT
+  path: /api/v1/content-items/{contentItemId}/draft
+  description: 保存草稿
+- method: POST
+  path: /api/v1/content-items/{contentItemId}/mock-generate
+  description: 模拟生成正文
+- method: POST
+  path: /api/v1/content-items/{contentItemId}/reviews/mock
+  description: 执行模拟审核
+- method: GET
+  path: /api/v1/content-items/{contentItemId}/reviews
+  description: 审核历史
+- method: GET
+  path: /api/v1/reviews/{reviewId}
+  description: 审核详情

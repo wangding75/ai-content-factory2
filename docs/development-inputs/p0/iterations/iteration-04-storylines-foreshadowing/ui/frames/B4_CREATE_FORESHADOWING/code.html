@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+
+<html class="light" lang="zh-CN"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>AI Content Factory - 故事线工作区</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 20;
+            font-size: 20px;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f7f9fb;
+        }
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(226, 232, 240, 0.8);
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-secondary": "#ffffff",
+                        "primary-fixed": "#e1e0ff",
+                        "secondary": "#516072",
+                        "tertiary-fixed-dim": "#ffb783",
+                        "inverse-on-surface": "#eff1f3",
+                        "on-secondary-container": "#556477",
+                        "background": "#f7f9fb",
+                        "surface-container": "#eceef0",
+                        "primary": "#4648d4",
+                        "on-primary-fixed": "#07006c",
+                        "inverse-primary": "#c0c1ff",
+                        "on-tertiary": "#ffffff",
+                        "on-primary-fixed-variant": "#2f2ebe",
+                        "on-surface": "#191c1e",
+                        "error-container": "#ffdad6",
+                        "surface-dim": "#d8dadc",
+                        "on-secondary-fixed": "#0d1c2d",
+                        "surface-container-low": "#f2f4f6",
+                        "tertiary-fixed": "#ffdcc5",
+                        "error": "#ba1a1a",
+                        "on-secondary-fixed-variant": "#39485a",
+                        "on-primary-container": "#fffbff",
+                        "on-error-container": "#93000a",
+                        "on-error": "#ffffff",
+                        "on-background": "#191c1e",
+                        "on-surface-variant": "#464554",
+                        "inverse-surface": "#2d3133",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-bright": "#f7f9fb",
+                        "on-tertiary-fixed": "#301400",
+                        "surface-container-highest": "#e0e3e5",
+                        "on-tertiary-fixed-variant": "#703700",
+                        "on-primary": "#ffffff",
+                        "surface-tint": "#494bd6",
+                        "tertiary": "#904900",
+                        "outline-variant": "#c7c4d7",
+                        "on-tertiary-container": "#fffbff",
+                        "tertiary-container": "#b55d00",
+                        "surface": "#f7f9fb",
+                        "surface-container-high": "#e6e8ea",
+                        "secondary-fixed-dim": "#b9c8de",
+                        "secondary-fixed": "#d4e4fa",
+                        "primary-fixed-dim": "#c0c1ff",
+                        "primary-container": "#6063ee",
+                        "surface-variant": "#e0e3e5",
+                        "secondary-container": "#d2e1f7",
+                        "outline": "#767586"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "container-margin": "32px",
+                        "gutter": "24px",
+                        "3xl": "64px",
+                        "sm": "8px",
+                        "xl": "32px",
+                        "md": "16px",
+                        "2xl": "48px",
+                        "unit": "8px",
+                        "lg": "24px",
+                        "xs": "4px"
+                    },
+                    "fontFamily": {
+                        "label-sm": ["Inter"],
+                        "headline-lg": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "headline-md": ["Inter"],
+                        "label-md": ["Inter"],
+                        "headline-sm": ["Inter"],
+                        "headline-lg-mobile": ["Inter"],
+                        "display": ["Inter"],
+                        "body-md": ["Inter"],
+                        "body-sm": ["Inter"]
+                    },
+                    "fontSize": {
+                        "label-sm": ["12px", {"lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "600"}],
+                        "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "600"}],
+                        "body-lg": ["18px", {"lineHeight": "28px", "letterSpacing": "0em", "fontWeight": "400"}],
+                        "headline-md": ["24px", {"lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                        "label-md": ["14px", {"lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "500"}],
+                        "headline-sm": ["20px", {"lineHeight": "28px", "letterSpacing": "0em", "fontWeight": "600"}],
+                        "headline-lg-mobile": ["24px", {"lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                        "display": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "body-md": ["16px", {"lineHeight": "24px", "letterSpacing": "0em", "fontWeight": "400"}],
+                        "body-sm": ["14px", {"lineHeight": "20px", "letterSpacing": "0em", "fontWeight": "400"}]
+                    }
+                }
+            }
+        }
+    </script>
+
+<link rel="stylesheet" href="../../shared/prototype-router.css">
+<script>window.__ACF_PROTOTYPE_PAGE__="B4_CREATE_FORESHADOWING";window.__ACF_PROTOTYPE_LABEL__="新增伏笔";</script>
+<script defer src="../../shared/prototype-router.js"></script>
+</head>
+<body class="bg-background text-on-background overflow-hidden">
+<!-- Side Navigation Bar -->
+<aside class="w-[280px] h-screen fixed left-0 top-0 bg-surface-container-lowest border-r border-outline-variant flex flex-col py-lg px-md z-30">
+<div class="flex items-center gap-md mb-3xl px-sm">
+<div class="w-10 h-10 rounded-lg bg-primary flex items-center justify-center text-on-primary">
+<span class="material-symbols-outlined" data-icon="account_tree" style="font-variation-settings: 'FILL' 1;">account_tree</span>
+</div>
+<div>
+<h1 class="font-headline-sm text-headline-sm font-bold text-primary">AI Content Factory</h1>
+<p class="font-label-sm text-label-sm text-outline">故事线规划模块</p>
+</div>
+</div>
+<nav class="flex-1 space-y-1">
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-secondary hover:bg-surface-container-high transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="home">home</span>
+<span class="font-body-md">首页</span>
+</a>
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-secondary hover:bg-surface-container-high transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="folder_open">folder_open</span>
+<span class="font-body-md">项目</span>
+</a>
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-secondary hover:bg-surface-container-high transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="video_library">video_library</span>
+<span class="font-body-md">素材</span>
+</a>
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-secondary hover:bg-surface-container-high transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="movie">movie</span>
+<span class="font-body-md">作品</span>
+</a>
+<a class="flex items-center gap-md px-md py-sm rounded-lg bg-secondary-fixed text-on-secondary-fixed-variant border-l-2 border-primary font-bold" href="#">
+<span class="material-symbols-outlined" data-icon="account_tree" style="font-variation-settings: 'FILL' 1;">account_tree</span>
+<span class="font-body-md text-body-md">流程</span>
+</a>
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-secondary hover:bg-surface-container-high transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+<span class="font-body-md">设置</span>
+</a>
+</nav>
+<div class="mt-auto p-md bg-surface-container-low rounded-xl flex items-center gap-md">
+<div class="w-10 h-10 rounded-full bg-outline-variant overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="A professional portrait of a digital content creator, clean aesthetic, soft studio lighting, focused expression, high-end creative professional vibe, neutral background." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBzwKrjiaRXOHkfMbt9XbNqwpNoKQV1zr-_JutOlNSg8O9I3K7eOan53NTLIWUB9BrP2NIxL4XHj3r3onT-IZ7dcUbLWATlUrGfFPyzwUILcNNhd_p9h6jSPLgohYgmSwg_DXnYGaZpbdxqmrnoe70binCErUvRkE7r_TdROaASa2Umje_tEtvbF1k2Kx_grHdgCSh-JvD2jtjwT3w8PpoEzEEkikOq6xvANGtwvcZ61oP6OvC922BTsO6pABlWwPKwxnD7g5jQ41Y"/>
+</div>
+<div class="flex-1 overflow-hidden">
+<p class="font-label-md text-on-surface truncate">Creator Pro</p>
+<p class="font-label-sm text-outline truncate text-xs">高级策划师</p>
+</div>
+<span class="material-symbols-outlined text-outline cursor-pointer" data-icon="more_vert">more_vert</span>
+</div>
+</aside>
+<!-- Top App Bar -->
+<header class="h-16 fixed top-0 right-0 left-[280px] bg-surface border-b border-outline-variant flex items-center justify-between px-xl z-20">
+<div class="flex items-center gap-md">
+<span class="font-headline-sm text-headline-sm text-on-surface">项目 / 末世求生</span>
+<div class="h-4 w-[1px] bg-outline-variant mx-xs"></div>
+<div class="flex items-center bg-surface-container-low px-md py-xs rounded-full border border-outline-variant focus-within:ring-2 focus-within:ring-primary/10 transition-all">
+<span class="material-symbols-outlined text-outline text-sm" data-icon="search">search</span>
+<input class="bg-transparent border-none focus:ring-0 text-label-md w-64 px-sm" placeholder="全局搜索故事线、伏笔或角色" type="text"/>
+</div>
+</div>
+<div class="flex items-center gap-lg">
+<div class="flex items-center gap-sm">
+<button class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-surface-container-high text-on-surface-variant transition-colors">
+<span class="material-symbols-outlined" data-icon="help">help</span>
+</button>
+<button class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-surface-container-high text-on-surface-variant transition-colors relative">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+<span class="absolute top-2 right-2 w-2 h-2 bg-error rounded-full"></span>
+</button>
+</div>
+<button class="flex items-center gap-sm px-md py-xs bg-primary text-on-primary rounded-lg font-label-md hover:opacity-90 transition-all">
+<span class="material-symbols-outlined text-sm" data-icon="add">add</span>
+<span>创建节点</span>
+</button>
+</div>
+</header>
+<!-- Main Content Canvas (Storyline Workspace) -->
+<main class="ml-[280px] mt-16 p-xl min-h-[calc(100vh-64px)] overflow-y-auto">
+<div class="grid grid-cols-12 gap-lg">
+<!-- Storyline Visualization -->
+<div class="col-span-8 space-y-lg">
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-lg h-[500px] flex flex-col relative overflow-hidden">
+<div class="flex items-center justify-between mb-xl">
+<div class="flex items-center gap-md">
+<h2 class="font-headline-sm text-headline-sm">故事流可视化</h2>
+<span class="px-sm py-1 bg-secondary-container text-on-secondary-container rounded text-[10px] font-bold uppercase">Main Thread</span>
+</div>
+<div class="flex gap-sm">
+<button class="p-xs rounded hover:bg-surface-container-high transition-colors"><span class="material-symbols-outlined" data-icon="zoom_in">zoom_in</span></button>
+<button class="p-xs rounded hover:bg-surface-container-high transition-colors"><span class="material-symbols-outlined" data-icon="zoom_out">zoom_out</span></button>
+<button class="p-xs rounded hover:bg-surface-container-high transition-colors"><span class="material-symbols-outlined" data-icon="center_focus_strong">center_focus_strong</span></button>
+</div>
+</div>
+<div class="flex-1 border border-dashed border-outline-variant rounded-lg bg-surface-container-low flex items-center justify-center relative">
+<div class="absolute inset-0 p-lg flex items-center justify-center opacity-40">
+<img class="w-full h-full object-contain" data-alt="A clean, minimalist UI design showing a node-based story graph." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBVQEqJo_1lXT2Kg5fABn7YEUpMDDU7iaBiBE98hzHLL5g9WGEIDF5Zf34L4BOmOLSmiRaO6Sqm8VwD1ZRS-Kz0V8rfiOqJWXp95iuH81lqo6XRpYQ0hlMTuq64eJDFy8Bpg10azSYul7lev3mpeP_nrvczEXuTrZCixY8CPBNFAYZYlevxB1pHa6h-sgHhvEXAxbn2FTaQzMOGe4AwfSPLlKc6wcf6jI1_Xq0LKt-1R-ljKD7TYBvPHvEB_rjcMhqrRbsd-z5sSj4"/>
+</div>
+<div class="z-10 text-center">
+<p class="font-label-md text-outline">正在加载动态故事线节点...</p>
+</div>
+</div>
+</div>
+<!-- Stats -->
+<div class="grid grid-cols-3 gap-md">
+<div class="col-span-1 bg-surface-container-lowest border border-outline-variant rounded-xl p-md">
+<div class="flex items-center gap-sm mb-sm text-primary">
+<span class="material-symbols-outlined" data-icon="warning">warning</span>
+<p class="font-label-md font-bold">待回收伏笔</p>
+</div>
+<p class="text-display font-display text-primary leading-none">12</p>
+</div>
+<div class="col-span-1 bg-surface-container-lowest border border-outline-variant rounded-xl p-md">
+<div class="flex items-center gap-sm mb-sm text-tertiary">
+<span class="material-symbols-outlined" data-icon="history_edu">history_edu</span>
+<p class="font-label-md font-bold">已埋设节点</p>
+</div>
+<p class="text-display font-display text-tertiary leading-none">45</p>
+</div>
+<div class="col-span-1 bg-surface-container-lowest border border-outline-variant rounded-xl p-md">
+<div class="flex items-center gap-sm mb-sm text-secondary">
+<span class="material-symbols-outlined" data-icon="auto_awesome">auto_awesome</span>
+<p class="font-label-md font-bold">关联故事线</p>
+</div>
+<p class="text-display font-display text-secondary leading-none">08</p>
+</div>
+</div>
+</div>
+<!-- Side Inspector -->
+<div class="col-span-4 space-y-lg">
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-lg">
+<h3 class="font-headline-sm mb-md">故事线概览</h3>
+<div class="space-y-md">
+<div class="p-md bg-surface-container-low rounded-lg border border-outline-variant">
+<p class="font-label-sm text-outline mb-1">当前主线</p>
+<p class="font-body-md font-bold">末世黎明：避难所危机</p>
+</div>
+<div class="p-md bg-surface-container-low rounded-lg border border-outline-variant">
+<p class="font-label-sm text-outline mb-1">角色活跃度</p>
+<div class="flex gap-xs mt-sm">
+<div class="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center font-bold text-primary text-xs">A</div>
+<div class="w-8 h-8 rounded-full bg-secondary/20 flex items-center justify-center font-bold text-secondary text-xs">B</div>
+<div class="w-8 h-8 rounded-full bg-tertiary/20 flex items-center justify-center font-bold text-tertiary text-xs">K</div>
+<div class="w-8 h-8 rounded-full bg-outline-variant flex items-center justify-center font-bold text-white text-xs">+3</div>
+</div>
+</div>
+</div>
+</div>
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-lg">
+<div class="flex items-center justify-between mb-md">
+<h3 class="font-headline-sm">剧情冲突点</h3>
+<button class="text-primary font-label-md hover:underline">分析</button>
+</div>
+<div class="space-y-sm">
+<div class="flex items-center gap-md p-sm hover:bg-surface-container-low rounded transition-colors cursor-pointer group">
+<div class="w-2 h-2 rounded-full bg-error"></div>
+<span class="font-body-sm flex-1">避难所食物短缺引发的动乱</span>
+<span class="material-symbols-outlined opacity-0 group-hover:opacity-100 transition-opacity" data-icon="chevron_right">chevron_right</span>
+</div>
+<div class="flex items-center gap-md p-sm hover:bg-surface-container-low rounded transition-colors cursor-pointer group">
+<div class="w-2 h-2 rounded-full bg-tertiary"></div>
+<span class="font-body-sm flex-1">内鬼身份被意外察觉</span>
+<span class="material-symbols-outlined opacity-0 group-hover:opacity-100 transition-opacity" data-icon="chevron_right">chevron_right</span>
+</div>
+<div class="flex items-center gap-md p-sm hover:bg-surface-container-low rounded transition-colors cursor-pointer group">
+<div class="w-2 h-2 rounded-full bg-primary"></div>
+<span class="font-body-sm flex-1">外部变异生物的进化威胁</span>
+<span class="material-symbols-outlined opacity-0 group-hover:opacity-100 transition-opacity" data-icon="chevron_right">chevron_right</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- Modal Overlay -->
+<div class="fixed inset-0 z-50 flex items-center justify-center bg-on-surface/20 backdrop-blur-sm px-md">
+<!-- New Foreshadowing Modal (B4 Revised) -->
+<div class="bg-surface-container-lowest w-full max-w-[640px] rounded-2xl shadow-2xl border border-outline-variant overflow-hidden flex flex-col animate-in fade-in zoom-in duration-300">
+<!-- Modal Header -->
+<div class="px-xl py-lg bg-surface-container-low border-b border-outline-variant flex items-center justify-between">
+<div>
+<h2 class="font-headline-sm text-headline-sm font-bold text-on-surface">新增伏笔</h2>
+<p class="font-body-sm text-on-surface-variant mt-xs">创建可跨故事线埋设和回收的伏笔。</p>
+</div>
+<button class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-surface-variant transition-colors" id="close-modal">
+<span class="material-symbols-outlined" data-icon="close">close</span>
+</button>
+</div>
+<!-- Modal Content Form -->
+<div class="px-xl py-xl space-y-lg max-h-[716px] overflow-y-auto">
+<!-- Notice Banner -->
+<div class="flex gap-md p-md bg-secondary-container/30 border border-secondary-container rounded-xl">
+<span class="material-symbols-outlined text-secondary" data-icon="info">info</span>
+<p class="font-body-sm text-on-secondary-container">伏笔可以在一条故事线中埋设，并在另一条故事线中回收。未回收伏笔会持续显示在故事线工作区。</p>
+</div>
+<!-- Name Field -->
+<div class="space-y-sm">
+<label class="font-label-md text-on-surface-variant">伏笔名称</label>
+<input class="w-full bg-surface-container-low border border-outline-variant rounded-lg px-md py-sm font-body-md focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all outline-none" type="text" value="被删除的实验记录"/>
+</div>
+<!-- Description Field -->
+<div class="space-y-sm">
+<label class="font-label-md text-on-surface-variant">描述</label>
+<textarea class="w-full bg-surface-container-low border border-outline-variant rounded-lg px-md py-sm font-body-md focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all outline-none resize-none" placeholder="详细描述该伏笔的物理形态或信息载体..." rows="3">主角在实验室服务器备份中偶然发现的一段被恶意涂抹的日志，暗示了病毒爆发的真实起源。</textarea>
+</div>
+<!-- Storyline Links Grid -->
+<div class="grid grid-cols-2 gap-xl">
+<!-- Planting Info -->
+<div class="space-y-lg p-md bg-primary-fixed/20 rounded-xl border border-primary/20">
+<div class="flex items-center gap-sm text-primary">
+<span class="material-symbols-outlined" data-icon="pin_drop" style="font-variation-settings: 'FILL' 1;">pin_drop</span>
+<span class="font-label-md font-bold">埋设节点</span>
+</div>
+<div class="space-y-md">
+<div class="space-y-xs">
+<label class="text-[11px] font-bold text-primary uppercase tracking-wider">埋设故事线</label>
+<select class="w-full bg-surface-container-lowest border border-outline-variant rounded-lg px-sm py-xs text-body-sm focus:ring-primary transition-all outline-none">
+<option selected="">安全区内鬼</option>
+<option>主线剧情</option>
+<option>侧翼突围</option>
+</select>
+</div>
+<div class="space-y-xs">
+<label class="text-[11px] font-bold text-primary uppercase tracking-wider">埋设章节</label>
+<input class="w-full bg-surface-container-lowest border border-outline-variant rounded-lg px-sm py-xs text-body-sm focus:ring-primary outline-none" type="number" value="68"/>
+</div>
+</div>
+</div>
+<!-- Recovery Info -->
+<div class="space-y-lg p-md bg-secondary-fixed/30 rounded-xl border border-secondary/20">
+<div class="flex items-center gap-sm text-secondary">
+<span class="material-symbols-outlined" data-icon="task_alt" style="font-variation-settings: 'FILL' 1;">task_alt</span>
+<span class="font-label-md font-bold">回收计划</span>
+</div>
+<div class="space-y-md">
+<div class="space-y-xs">
+<label class="text-[11px] font-bold text-secondary uppercase tracking-wider">预计回收故事线</label>
+<select class="w-full bg-surface-container-lowest border border-outline-variant rounded-lg px-sm py-xs text-body-sm focus:ring-secondary transition-all outline-none">
+<option selected="">安全区黑幕</option>
+<option>主线剧情</option>
+<option>最终章：裁决</option>
+</select>
+</div>
+<div class="space-y-xs">
+<label class="text-[11px] font-bold text-secondary uppercase tracking-wider">预计回收章节</label>
+<input class="w-full bg-surface-container-lowest border border-outline-variant rounded-lg px-sm py-xs text-body-sm focus:ring-secondary outline-none" type="number" value="89"/>
+</div>
+</div>
+</div>
+</div>
+<!-- Helper Text -->
+<p class="text-xs text-outline italic">“章节规划尚未确认时，系统先使用章节序号记录；章节规划确认后会自动关联对应章节。”</p>
+<!-- Priority & Status -->
+<div class="grid grid-cols-2 gap-xl">
+<div class="space-y-sm">
+<label class="font-label-md text-on-surface-variant">优先级</label>
+<div class="flex gap-sm">
+<button class="flex-1 py-sm rounded-lg border border-primary bg-primary text-on-primary font-label-md shadow-sm">高</button>
+<button class="flex-1 py-sm rounded-lg border border-outline-variant bg-surface-container-low text-on-surface-variant font-label-md hover:border-primary transition-colors">中</button>
+<button class="flex-1 py-sm rounded-lg border border-outline-variant bg-surface-container-low text-on-surface-variant font-label-md hover:border-primary transition-colors">低</button>
+</div>
+</div>
+<div class="space-y-sm">
+<label class="font-label-md text-on-surface-variant">状态</label>
+<div class="w-full bg-surface-container-low border border-outline-variant rounded-lg px-md py-sm font-body-md text-on-surface-variant flex items-center justify-between cursor-not-allowed opacity-70">
+<span>未回收</span>
+<span class="material-symbols-outlined text-sm" data-icon="lock">lock</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Modal Footer Action -->
+<div class="px-xl py-lg bg-surface border-t border-outline-variant flex items-center justify-end gap-md">
+<button class="px-xl py-sm font-label-md text-secondary hover:bg-surface-container-high rounded-lg transition-colors" id="cancel-modal">
+                    取消
+                </button>
+<button class="px-2xl py-sm bg-primary text-on-primary font-label-md rounded-lg shadow-lg shadow-primary/20 hover:opacity-90 active:scale-95 transition-all">
+                    创建伏笔
+                </button>
+</div>
+</div>
+</div>
+<!-- Micro-interaction Script -->
+<script>
+        const closeModal = () => {
+            const modal = document.querySelector('.fixed.inset-0');
+            modal.classList.add('opacity-0', 'pointer-events-none');
+            modal.querySelector('div').classList.add('scale-95');
+        };
+
+        document.getElementById('close-modal').addEventListener('click', closeModal);
+        document.getElementById('cancel-modal').addEventListener('click', closeModal);
+
+        // Search bar focus effect
+        const searchInput = document.querySelector('input[type="text"]');
+        searchInput.addEventListener('focus', () => {
+            searchInput.parentElement.classList.add('bg-surface-container-highest');
+        });
+        searchInput.addEventListener('blur', () => {
+            searchInput.parentElement.classList.remove('bg-surface-container-highest');
+        });
+    </script>
+</body></html>

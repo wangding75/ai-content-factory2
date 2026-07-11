@@ -1,0 +1,21 @@
+iteration: '02'
+name: 首页与项目创建闭环
+endpoints:
+- method: GET
+  path: /api/v1/home
+  description: 首页聚合数据
+- method: GET
+  path: /api/v1/projects
+  description: 项目列表
+- method: POST
+  path: /api/v1/projects
+  description: 创建项目
+- method: GET
+  path: /api/v1/projects/{projectId}
+  description: 项目详情
+- method: PATCH
+  path: /api/v1/projects/{projectId}
+  description: 更新项目基础信息
+- method: GET
+  path: /api/v1/projects/{projectId}/workspace
+  description: 项目工作区聚合数据

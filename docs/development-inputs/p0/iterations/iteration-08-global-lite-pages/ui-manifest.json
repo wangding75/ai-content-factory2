@@ -1,0 +1,25 @@
+{
+  "iteration": "08",
+  "frames": [
+    {
+      "id": "E1_GLOBAL_MATERIALS",
+      "label": "全局素材",
+      "relative_path": "ui/frames/E1_GLOBAL_MATERIALS"
+    },
+    {
+      "id": "E2_GLOBAL_WORKS",
+      "label": "全局作品",
+      "relative_path": "ui/frames/E2_GLOBAL_WORKS"
+    },
+    {
+      "id": "E3_WORKFLOWS",
+      "label": "流程中心",
+      "relative_path": "ui/frames/E3_WORKFLOWS"
+    },
+    {
+      "id": "E4_SETTINGS",
+      "label": "全局设置",
+      "relative_path": "ui/frames/E4_SETTINGS"
+    }
+  ]
+}

@@ -1,0 +1,25 @@
+{
+  "iteration": "05",
+  "frames": [
+    {
+      "id": "C1_CHAPTER_PLANNING",
+      "label": "章节规划",
+      "relative_path": "ui/frames/C1_CHAPTER_PLANNING"
+    },
+    {
+      "id": "C2_MOCK_PLAN",
+      "label": "模拟生成章节规划",
+      "relative_path": "ui/frames/C2_MOCK_PLAN"
+    },
+    {
+      "id": "C3_EDIT_PLAN",
+      "label": "编辑章节规划",
+      "relative_path": "ui/frames/C3_EDIT_PLAN"
+    },
+    {
+      "id": "C4_CONFIRM_PLAN",
+      "label": "确认章节规划",
+      "relative_path": "ui/frames/C4_CONFIRM_PLAN"
+    }
+  ]
+}

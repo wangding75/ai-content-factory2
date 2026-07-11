@@ -1,0 +1,50 @@
+﻿iteration,model
+00,通用 ID 值对象与审计字段
+00,ProjectStatus
+00,MaterialType
+00,PlotLineType
+00,ForeshadowingStatus
+00,ChapterPlanStatus
+00,ContentStatus
+00,ReviewStatus
+00,WorkflowRunStatus
+00,统一 API Error
+01,AuditLog
+01,IdempotencyRecord（按需）
+01,AppMeta（只读 DTO）
+02,Project
+02,ProjectType
+02,ProjectStatus
+02,ProjectWorkspaceReadModel
+03,ProjectPlanning
+03,Material
+03,MaterialType
+03,ProjectMaterialUsage
+03,MaterialReferenceReadModel
+04,PlotLine
+04,PlotLineType
+04,PlotLineRelation
+04,Foreshadowing
+04,ForeshadowingStatus
+05,ChapterPlan
+05,ChapterPlanStatus
+05,ChapterPlanSource
+05,ChapterPlanRelation
+05,MockGenerationRun
+06,ContentItem
+06,ContentVersion
+06,ReviewReport
+06,ReviewFinding
+06,ReviewRecommendation
+06,ReviewStatus
+07,RewriteRequest
+07,WorkflowRun
+07,WorkflowRunStatus
+07,ContentVersion
+07,ProjectWorkReadModel
+08,GlobalMaterialReadModel
+08,GlobalWorkReadModel
+08,BuiltinWorkflowDefinition
+08,CapabilityDescriptor
+08,IntegrationDescriptor
+09,全部 P0 领域模型、状态机、读模型与审计记录

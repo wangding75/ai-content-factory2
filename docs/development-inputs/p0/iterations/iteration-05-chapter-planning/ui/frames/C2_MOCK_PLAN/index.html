@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+
+<html lang="zh-CN"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>AI Content Factory - 模拟生成配置</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "secondary-fixed-dim": "#b9c8de",
+                        "on-secondary": "#ffffff",
+                        "on-error-container": "#93000a",
+                        "surface-container-lowest": "#ffffff",
+                        "error-container": "#ffdad6",
+                        "inverse-primary": "#c0c1ff",
+                        "tertiary-fixed-dim": "#ffb783",
+                        "on-secondary-container": "#556477",
+                        "inverse-surface": "#2d3133",
+                        "surface-container": "#eceef0",
+                        "secondary-fixed": "#d4e4fa",
+                        "outline": "#767586",
+                        "tertiary-fixed": "#ffdcc5",
+                        "inverse-on-surface": "#eff1f3",
+                        "surface-container-low": "#f2f4f6",
+                        "primary-container": "#6063ee",
+                        "on-primary-fixed-variant": "#2f2ebe",
+                        "on-surface": "#191c1e",
+                        "background": "#f7f9fb",
+                        "surface-container-highest": "#e0e3e5",
+                        "on-secondary-fixed": "#0d1c2d",
+                        "primary-fixed-dim": "#c0c1ff",
+                        "on-tertiary-fixed-variant": "#703700",
+                        "surface-dim": "#d8dadc",
+                        "on-error": "#ffffff",
+                        "tertiary": "#904900",
+                        "on-tertiary": "#ffffff",
+                        "surface-variant": "#e0e3e5",
+                        "secondary-container": "#d2e1f7",
+                        "primary-fixed": "#e1e0ff",
+                        "primary": "#4648d4",
+                        "tertiary-container": "#b55d00",
+                        "surface-bright": "#f7f9fb",
+                        "on-surface-variant": "#464554",
+                        "secondary": "#516072",
+                        "surface": "#f7f9fb",
+                        "on-background": "#191c1e",
+                        "error": "#ba1a1a",
+                        "surface-container-high": "#e6e8ea",
+                        "surface-tint": "#494bd6",
+                        "on-primary-fixed": "#07006c",
+                        "on-tertiary-container": "#fffbff",
+                        "on-primary-container": "#fffbff",
+                        "on-primary": "#ffffff",
+                        "outline-variant": "#c7c4d7",
+                        "on-tertiary-fixed": "#301400",
+                        "on-secondary-fixed-variant": "#39485a"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "lg": "24px",
+                        "3xl": "64px",
+                        "gutter": "24px",
+                        "xs": "4px",
+                        "unit": "8px",
+                        "container-margin": "32px",
+                        "md": "16px",
+                        "xl": "32px",
+                        "sm": "8px",
+                        "2xl": "48px"
+                    },
+                    "fontFamily": {
+                        "label-sm": ["Inter"],
+                        "body-md": ["Inter"],
+                        "headline-lg": ["Inter"],
+                        "body-sm": ["Inter"],
+                        "label-md": ["Inter"],
+                        "headline-md": ["Inter"],
+                        "headline-lg-mobile": ["Inter"],
+                        "display": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "headline-sm": ["Inter"]
+                    },
+                    "fontSize": {
+                        "label-sm": ["12px", {"lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "600"}],
+                        "body-md": ["16px", {"lineHeight": "24px", "letterSpacing": "0em", "fontWeight": "400"}],
+                        "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "600"}],
+                        "body-sm": ["14px", {"lineHeight": "20px", "letterSpacing": "0em", "fontWeight": "400"}],
+                        "label-md": ["14px", {"lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "500"}],
+                        "headline-md": ["24px", {"lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                        "headline-lg-mobile": ["24px", {"lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                        "display": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "body-lg": ["18px", {"lineHeight": "28px", "letterSpacing": "0em", "fontWeight": "400"}],
+                        "headline-sm": ["20px", {"lineHeight": "28px", "letterSpacing": "0em", "fontWeight": "600"}]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; background-color: #f7f9fb; }
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+        .glass-panel { background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        .modal-overlay { background: rgba(25, 28, 30, 0.4); backdrop-filter: blur(4px); }
+    </style>
+
+<link rel="stylesheet" href="../../shared/prototype-router.css">
+<script>window.__ACF_PROTOTYPE_PAGE__="C2_MOCK_PLAN";window.__ACF_PROTOTYPE_LABEL__="模拟生成章节规划";</script>
+<script defer src="../../shared/prototype-router.js"></script>
+</head>
+<body class="overflow-hidden">
+<!-- Global Navigation Shell -->
+<aside class="fixed left-0 top-0 h-full w-[280px] bg-surface border-r border-outline-variant flex flex-col py-xl z-10">
+<div class="px-lg mb-xl">
+<h1 class="font-headline-md text-headline-md font-bold text-primary">Content Factory</h1>
+<p class="text-on-surface-variant font-label-md text-label-md">Professional Creator</p>
+</div>
+<nav class="flex-1 space-y-1">
+<a class="flex items-center px-lg py-md text-on-surface-variant hover:bg-surface-container-low transition-colors duration-200" href="#">
+<span class="material-symbols-outlined mr-md">home</span>
+<span class="font-body-md text-body-md">Home</span>
+</a>
+<a class="flex items-center px-lg py-md text-on-surface-variant hover:bg-surface-container-low transition-colors duration-200" href="#">
+<span class="material-symbols-outlined mr-md">folder_open</span>
+<span class="font-body-md text-body-md">Projects</span>
+</a>
+<a class="flex items-center px-lg py-md text-on-surface-variant hover:bg-surface-container-low transition-colors duration-200" href="#">
+<span class="material-symbols-outlined mr-md">inventory_2</span>
+<span class="font-body-md text-body-md">Materials</span>
+</a>
+<a class="flex items-center px-lg py-md bg-secondary-container text-primary border-l-2 border-primary font-semibold" href="#">
+<span class="material-symbols-outlined mr-md">draw</span>
+<span class="font-body-md text-body-md">Works</span>
+</a>
+<a class="flex items-center px-lg py-md text-on-surface-variant hover:bg-surface-container-low transition-colors duration-200" href="#">
+<span class="material-symbols-outlined mr-md">account_tree</span>
+<span class="font-body-md text-body-md">Workflow</span>
+</a>
+<a class="flex items-center px-lg py-md text-on-surface-variant hover:bg-surface-container-low transition-colors duration-200" href="#">
+<span class="material-symbols-outlined mr-md">settings</span>
+<span class="font-body-md text-body-md">Settings</span>
+</a>
+</nav>
+</aside>
+<!-- Top App Bar -->
+<header class="fixed top-0 right-0 h-16 w-[calc(100%-280px)] bg-surface border-b border-outline-variant flex justify-between items-center px-lg z-10">
+<div class="flex items-center space-x-md">
+<span class="font-headline-sm text-headline-sm font-black text-primary">AI Content Factory</span>
+<span class="text-outline-variant">/</span>
+<span class="font-label-md text-label-md text-on-surface">Chapter Planning</span>
+</div>
+<div class="flex items-center space-x-md">
+<button class="p-xs text-on-surface-variant hover:text-primary transition-all">
+<span class="material-symbols-outlined">help</span>
+</button>
+<button class="p-xs text-on-surface-variant hover:text-primary transition-all">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<div class="w-8 h-8 rounded-full bg-primary-container flex items-center justify-center text-on-primary-container font-bold text-xs">
+                JD
+            </div>
+</div>
+</header>
+<!-- Background Content -->
+<main class="ml-[280px] pt-16 h-screen overflow-y-auto bg-background p-lg filter blur-sm">
+<div class="max-w-5xl mx-auto space-y-xl">
+<header class="flex justify-between items-end">
+<div>
+<h2 class="font-headline-lg text-headline-lg text-on-surface">章节规划：安全区黑幕</h2>
+<p class="text-on-surface-variant font-body-md">当前项目：末世黎明录 (Fantasy Novel)</p>
+</div>
+<button class="px-lg py-md bg-primary text-on-primary font-label-md rounded-lg shadow-sm">
+                    模拟生成章节
+                </button>
+</header>
+<div class="grid grid-cols-1 gap-md">
+<div class="bg-white p-lg rounded-xl border border-outline-variant flex items-start gap-lg opacity-80">
+<div class="text-outline font-bold text-headline-sm">65</div>
+<div class="flex-1">
+<h3 class="font-headline-sm text-on-surface mb-xs">荒野的幸存者</h3>
+<p class="text-on-surface-variant text-body-sm line-clamp-2">主角林墨在废弃的地铁站遇到了受困的佣兵团，决定施以援手，从而获得了进入安全区的入场券。</p>
+<div class="flex gap-xs mt-md">
+<span class="px-sm py-xs bg-surface-container rounded text-xs text-on-surface-variant">Main Plot</span>
+<span class="px-sm py-xs bg-surface-container rounded text-xs text-on-surface-variant">Character Intro</span>
+</div>
+</div>
+<span class="material-symbols-outlined text-outline">drag_indicator</span>
+</div>
+<div class="bg-white p-lg rounded-xl border border-outline-variant flex items-start gap-lg opacity-80">
+<div class="text-outline font-bold text-headline-sm">66</div>
+<div class="flex-1">
+<h3 class="font-headline-sm text-on-surface mb-xs">霓虹下的阴影</h3>
+<p class="text-on-surface-variant text-body-sm line-clamp-2">进入安全区后，林墨发现这里并非乐土，繁华之下隐藏着失踪人口和不为人知的实验。</p>
+<div class="flex gap-xs mt-md">
+<span class="px-sm py-xs bg-surface-container rounded text-xs text-on-surface-variant">Exploration</span>
+<span class="px-sm py-xs bg-surface-container rounded text-xs text-on-surface-variant">Tension</span>
+</div>
+</div>
+<span class="material-symbols-outlined text-outline">drag_indicator</span>
+</div>
+<div class="border-2 border-dashed border-outline-variant p-2xl rounded-xl flex flex-col items-center justify-center text-outline-variant bg-surface-container-low">
+<span class="material-symbols-outlined text-3xl mb-sm">add_circle</span>
+<p class="font-label-md">待规划章节 (67-71)</p>
+</div>
+</div>
+</div>
+</main>
+<!-- Modal Overlay -->
+<div class="fixed inset-0 modal-overlay z-50 flex items-center justify-center p-lg">
+<!-- Configuration Modal -->
+<div class="w-full max-w-[640px] bg-white rounded-xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-300">
+<!-- Modal Header -->
+<div class="px-xl py-lg border-b border-outline-variant flex justify-between items-start">
+<div class="flex flex-col gap-xs">
+<h2 class="font-headline-sm text-headline-sm text-on-surface">模拟生成章节规划</h2>
+<p class="text-body-sm text-on-surface-variant">根据故事线、素材和伏笔生成可编辑的章节规划候选</p>
+</div>
+<button class="p-xs hover:bg-surface-container rounded-full text-on-surface-variant transition-colors">
+<span class="material-symbols-outlined">close</span>
+</button>
+</div>
+<!-- Modal Body -->
+<div class="p-xl space-y-xl max-h-[720px] overflow-y-auto no-scrollbar">
+<!-- Mock Notice -->
+<div class="flex items-start gap-md p-md bg-surface-container-low rounded-lg border border-outline-variant/50">
+<span class="material-symbols-outlined text-primary text-lg mt-0.5">info</span>
+<p class="text-body-sm text-on-surface-variant leading-relaxed">当前为模拟生成，不会调用真实 AI 或工作流。生成结果会标记为“模拟生成”和“待确认”。</p>
+</div>
+<!-- Section 1: 生成范围 -->
+<div class="space-y-md">
+<h3 class="font-label-md text-primary uppercase tracking-wider">生成范围</h3>
+<div class="grid grid-cols-1 gap-lg">
+<div class="space-y-sm">
+<label class="block font-label-md text-on-surface">目标故事线</label>
+<div class="relative">
+<input class="w-full h-11 px-md bg-surface-container-low border border-outline-variant rounded-lg text-body-md text-on-surface cursor-default focus:ring-0" readonly="" type="text" value="安全区黑幕"/>
+<span class="absolute right-md top-1/2 -translate-y-1/2 text-body-sm text-outline-variant">可用范围: 第 50–100 章</span>
+</div>
+</div>
+<div class="grid grid-cols-3 gap-lg">
+<div class="space-y-sm">
+<label class="block font-label-md text-on-surface">起始章节</label>
+<input class="w-full h-11 px-md bg-surface-container-low border border-outline-variant rounded-lg text-body-md text-on-surface focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all" type="number" value="67"/>
+</div>
+<div class="space-y-sm">
+<label class="block font-label-md text-on-surface">结束章节</label>
+<input class="w-full h-11 px-md bg-surface-container-low border border-outline-variant rounded-lg text-body-md text-on-surface focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all" type="number" value="71"/>
+</div>
+<div class="space-y-sm">
+<label class="block font-label-md text-on-surface">生成数量</label>
+<select class="w-full h-11 px-md bg-surface-container-low border border-outline-variant rounded-lg text-body-md text-on-surface focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all appearance-none cursor-pointer">
+<option selected="">5 个章节候选</option>
+<option>3 个章节候选</option>
+<option>8 个章节候选</option>
+</select>
+</div>
+</div>
+</div>
+</div>
+<!-- Section 2: 上下文范围 -->
+<div class="space-y-md">
+<h3 class="font-label-md text-primary uppercase tracking-wider">上下文范围</h3>
+<div class="space-y-md">
+<div class="grid grid-cols-2 gap-x-xl gap-y-md p-md bg-surface-container-lowest border border-outline-variant rounded-lg">
+<label class="flex items-center justify-between cursor-pointer group">
+<span class="text-body-sm text-on-surface">包含主故事线</span>
+<input checked="" class="w-4 h-4 text-primary rounded border-outline-variant focus:ring-primary" type="checkbox"/>
+</label>
+<label class="flex items-center justify-between cursor-pointer group">
+<span class="text-body-sm text-on-surface">包含子故事线</span>
+<input checked="" class="w-4 h-4 text-primary rounded border-outline-variant focus:ring-primary" type="checkbox"/>
+</label>
+<label class="flex items-center justify-between cursor-pointer group">
+<span class="text-body-sm text-on-surface">包含项目素材</span>
+<input checked="" class="w-4 h-4 text-primary rounded border-outline-variant focus:ring-primary" type="checkbox"/>
+</label>
+<label class="flex items-center justify-between cursor-pointer group">
+<span class="text-body-sm text-on-surface">包含未回收伏笔</span>
+<input checked="" class="w-4 h-4 text-primary rounded border-outline-variant focus:ring-primary" type="checkbox"/>
+</label>
+<label class="flex items-center justify-between cursor-pointer group col-span-2">
+<span class="text-body-sm text-on-surface">参考前序章节摘要</span>
+<input checked="" class="w-4 h-4 text-primary rounded border-outline-variant focus:ring-primary" type="checkbox"/>
+</label>
+</div>
+<!-- Context Preview -->
+<div class="p-md bg-surface-container-low/50 rounded-lg border border-outline-variant/30 space-y-md">
+<div class="flex items-start gap-md">
+<span class="text-label-sm text-outline-variant w-16 pt-0.5 shrink-0">故事线</span>
+<div class="flex flex-wrap gap-xs">
+<span class="px-sm py-0.5 bg-secondary-container/50 text-secondary text-[11px] font-medium rounded-full border border-secondary-container">安全区黑幕</span>
+<span class="px-sm py-0.5 bg-secondary-container/50 text-secondary text-[11px] font-medium rounded-full border border-secondary-container">安全区内鬼</span>
+<span class="px-sm py-0.5 bg-secondary-container/50 text-secondary text-[11px] font-medium rounded-full border border-secondary-container">实验室线索</span>
+</div>
+</div>
+<div class="flex items-start gap-md">
+<span class="text-label-sm text-outline-variant w-16 pt-0.5 shrink-0">项目素材</span>
+<div class="flex flex-wrap gap-xs">
+<span class="px-sm py-0.5 bg-surface-container-high text-on-surface-variant text-[11px] rounded-full">林野</span>
+<span class="px-sm py-0.5 bg-surface-container-high text-on-surface-variant text-[11px] rounded-full">许晴</span>
+<span class="px-sm py-0.5 bg-surface-container-high text-on-surface-variant text-[11px] rounded-full">安全区</span>
+<span class="px-sm py-0.5 bg-surface-container-high text-on-surface-variant text-[11px] rounded-full">禁区通行证</span>
+<span class="px-sm py-0.5 bg-surface-container-high text-on-surface-variant text-[11px] rounded-full">红雾末世设定</span>
+</div>
+</div>
+<div class="flex items-start gap-md">
+<span class="text-label-sm text-outline-variant w-16 pt-0.5 shrink-0">伏笔</span>
+<div class="flex flex-wrap gap-xs">
+<span class="px-sm py-0.5 bg-tertiary-container/20 text-tertiary text-[11px] font-medium rounded-full border border-tertiary-container/30">禁区通行证</span>
+<span class="px-sm py-0.5 bg-tertiary-container/20 text-tertiary text-[11px] font-medium rounded-full border border-tertiary-container/30">失踪实验员名单</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Section 3: 生成偏好 -->
+<div class="space-y-md">
+<h3 class="font-label-md text-primary uppercase tracking-wider">生成偏好</h3>
+<div class="space-y-lg">
+<div class="grid grid-cols-2 gap-lg">
+<div class="space-y-sm">
+<label class="block font-label-md text-on-surface">摘要长度</label>
+<div class="flex p-0.5 bg-surface-container-low rounded-lg border border-outline-variant">
+<button class="flex-1 py-1.5 text-body-sm font-medium rounded-md transition-all bg-white shadow-sm text-primary">标准</button>
+<button class="flex-1 py-1.5 text-body-sm font-medium rounded-md transition-all text-on-surface-variant hover:text-on-surface">精简</button>
+<button class="flex-1 py-1.5 text-body-sm font-medium rounded-md transition-all text-on-surface-variant hover:text-on-surface">详尽</button>
+</div>
+</div>
+<div class="space-y-sm">
+<label class="block font-label-md text-on-surface">章节节奏</label>
+<div class="flex p-0.5 bg-surface-container-low rounded-lg border border-outline-variant">
+<button class="flex-1 py-1.5 text-body-sm font-medium rounded-md transition-all text-on-surface-variant hover:text-on-surface">快速</button>
+<button class="flex-1 py-1.5 text-body-sm font-medium rounded-md transition-all bg-white shadow-sm text-primary">均衡</button>
+<button class="flex-1 py-1.5 text-body-sm font-medium rounded-md transition-all text-on-surface-variant hover:text-on-surface">舒缓</button>
+</div>
+</div>
+</div>
+<div class="space-y-sm">
+<label class="block font-label-md text-on-surface">生成备注</label>
+<textarea class="w-full h-24 px-md py-sm bg-surface-container-low border border-outline-variant rounded-lg text-body-md text-on-surface focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all resize-none" placeholder="输入额外要求...">优先推进“安全区内鬼”调查，并逐步引出地下实验区。</textarea>
+</div>
+</div>
+</div>
+</div>
+<!-- Modal Footer -->
+<div class="px-xl py-lg bg-surface-container-low border-t border-outline-variant flex justify-end gap-md">
+<button class="px-xl py-md text-on-surface-variant font-label-md hover:bg-surface-container rounded-lg transition-all">
+                    取消
+                </button>
+<button class="px-xl py-md bg-primary text-on-primary font-label-md rounded-lg shadow-sm hover:opacity-95 active:scale-[0.98] transition-all flex items-center gap-sm">
+                    开始模拟生成
+                    <span class="material-symbols-outlined text-lg">play_arrow</span>
+</button>
+</div>
+</div>
+</div>
+<script>
+        document.querySelectorAll('button').forEach(btn => {
+            btn.addEventListener('mousedown', function(e) {
+                if (!this.classList.contains('active:scale-[0.98]')) {
+                    this.style.transform = 'scale(0.98)';
+                }
+            });
+            btn.addEventListener('mouseup', function(e) {
+                if (!this.classList.contains('active:scale-[0.98]')) {
+                    this.style.transform = 'scale(1)';
+                }
+            });
+            btn.addEventListener('mouseleave', function(e) {
+                if (!this.classList.contains('active:scale-[0.98]')) {
+                    this.style.transform = 'scale(1)';
+                }
+            });
+        });
+    </script>
+</body></html>

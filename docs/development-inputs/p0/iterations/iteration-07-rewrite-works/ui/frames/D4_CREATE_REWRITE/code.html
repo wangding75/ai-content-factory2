@@ -1,0 +1,386 @@
+<!DOCTYPE html><html lang="zh-CN"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>AI Content Factory - 审核页 &amp; 创建新版本</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 20;
+            user-select: none;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f7f9fb;
+            overflow: hidden;
+        }
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(226, 232, 240, 0.8);
+        }
+        .modal-overlay {
+            background: rgba(15, 23, 42, 0.4);
+            backdrop-filter: blur(4px);
+        }
+        .bento-card {
+            background: #FFFFFF;
+            border: 1px solid #E2E8F0;
+            border-radius: 12px;
+            transition: all 0.2s ease;
+        }
+        .bento-card:hover {
+            border-color: #CBD5E1;
+            box-shadow: 0px 4px 12px rgba(15, 23, 42, 0.03);
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-error-container": "#93000a",
+                        "surface-dim": "#d8dadc",
+                        "on-secondary-fixed": "#0d1c2d",
+                        "on-secondary-fixed-variant": "#39485a",
+                        "inverse-on-surface": "#eff1f3",
+                        "surface-container-high": "#e6e8ea",
+                        "inverse-surface": "#2d3133",
+                        "surface": "#f7f9fb",
+                        "secondary-container": "#d2e1f7",
+                        "on-surface": "#191c1e",
+                        "on-tertiary": "#ffffff",
+                        "outline": "#767586",
+                        "surface-container-highest": "#e0e3e5",
+                        "tertiary-container": "#b55d00",
+                        "on-secondary-container": "#556477",
+                        "primary-fixed-dim": "#c0c1ff",
+                        "on-secondary": "#ffffff",
+                        "secondary": "#516072",
+                        "on-primary-fixed": "#07006c",
+                        "on-primary-fixed-variant": "#2f2ebe",
+                        "secondary-fixed": "#d4e4fa",
+                        "inverse-primary": "#c0c1ff",
+                        "on-tertiary-fixed": "#301400",
+                        "on-tertiary-container": "#fffbff",
+                        "surface-bright": "#f7f9fb",
+                        "primary": "#4648d4",
+                        "on-tertiary-fixed-variant": "#703700",
+                        "on-primary": "#ffffff",
+                        "surface-container": "#eceef0",
+                        "secondary-fixed-dim": "#b9c8de",
+                        "primary-fixed": "#e1e0ff",
+                        "on-error": "#ffffff",
+                        "outline-variant": "#c7c4d7",
+                        "on-surface-variant": "#464554",
+                        "surface-tint": "#494bd6",
+                        "on-primary-container": "#fffbff",
+                        "error-container": "#ffdad6",
+                        "tertiary-fixed-dim": "#ffb783",
+                        "surface-container-lowest": "#ffffff",
+                        "on-background": "#191c1e",
+                        "tertiary-fixed": "#ffdcc5",
+                        "tertiary": "#904900",
+                        "surface-container-low": "#f2f4f6",
+                        "error": "#ba1a1a",
+                        "primary-container": "#6063ee",
+                        "background": "#f7f9fb",
+                        "surface-variant": "#e0e3e5"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "unit": "8px",
+                        "2xl": "48px",
+                        "xl": "32px",
+                        "md": "16px",
+                        "sm": "8px",
+                        "3xl": "64px",
+                        "container-margin": "32px",
+                        "xs": "4px",
+                        "lg": "24px",
+                        "gutter": "24px"
+                    },
+                    "fontFamily": {
+                        "label-md": ["Inter"],
+                        "label-sm": ["Inter"],
+                        "headline-sm": ["Inter"],
+                        "display": ["Inter"],
+                        "body-md": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "headline-lg": ["Inter"],
+                        "body-sm": ["Inter"],
+                        "headline-md": ["Inter"]
+                    }
+                }
+            }
+        }
+    </script>
+
+<link rel="stylesheet" href="../../shared/prototype-router.css">
+<script>window.__ACF_PROTOTYPE_PAGE__="D4_CREATE_REWRITE";window.__ACF_PROTOTYPE_LABEL__="创建重写版本";</script>
+<script defer src="../../shared/prototype-router.js"></script>
+</head>
+<body class="bg-surface text-on-surface">
+<!-- Sidebar (Shared Component) -->
+<aside class="fixed left-0 top-0 h-screen w-[280px] bg-surface border-r border-outline-variant flex flex-col py-xl z-30">
+<div class="px-lg mb-2xl flex items-center gap-md">
+<div class="w-10 h-10 bg-primary-container rounded-lg flex items-center justify-center text-on-primary">
+<span class="material-symbols-outlined" style="font-variation-settings: &quot;FILL&quot; 1;">auto_awesome</span>
+</div>
+<div>
+<h1 class="font-headline-sm text-headline-sm font-bold text-primary">AI Content Factory</h1>
+<p class="text-[12px] text-secondary">Creator SaaS</p>
+</div>
+</div>
+<nav class="flex-1 space-y-1">
+<div class="flex items-center gap-md text-secondary px-lg py-md hover:bg-surface-container-low transition-colors cursor-pointer">
+<span class="material-symbols-outlined">home</span>
+<span class="font-body-md text-body-md">首页</span>
+</div>
+<div class="flex items-center gap-md bg-secondary-container text-on-secondary-container border-l-2 border-primary px-lg py-md cursor-pointer">
+<span class="material-symbols-outlined">folder_open</span>
+<span class="font-body-md text-body-md">项目</span>
+</div>
+<div class="flex items-center gap-md text-secondary px-lg py-md hover:bg-surface-container-low transition-colors cursor-pointer">
+<span class="material-symbols-outlined">inventory_2</span>
+<span class="font-body-md text-body-md">素材</span>
+</div>
+<div class="flex items-center gap-md text-secondary px-lg py-md hover:bg-surface-container-low transition-colors cursor-pointer">
+<span class="material-symbols-outlined">auto_awesome</span>
+<span class="font-body-md text-body-md">作品</span>
+</div>
+<div class="flex items-center gap-md text-secondary px-lg py-md hover:bg-surface-container-low transition-colors cursor-pointer">
+<span class="material-symbols-outlined">account_tree</span>
+<span class="font-body-md text-body-md">流程</span>
+</div>
+<div class="mt-auto flex items-center gap-md text-secondary px-lg py-md hover:bg-surface-container-low transition-colors cursor-pointer">
+<span class="material-symbols-outlined">settings</span>
+<span class="font-body-md text-body-md">设置</span>
+</div>
+</nav>
+</aside>
+<!-- Top Bar (Shared Component) -->
+<header class="fixed top-0 right-0 left-[280px] h-16 bg-surface border-b border-outline-variant flex justify-between items-center px-xl z-40">
+<div class="flex items-center gap-md">
+<span class="font-headline-md text-headline-md text-on-surface">审核预览</span>
+<div class="flex items-center gap-sm bg-surface-container-low px-md py-xs rounded-full border border-outline-variant">
+<span class="material-symbols-outlined text-[18px]">search</span>
+<input class="bg-transparent border-none outline-none text-label-md w-64 p-0" placeholder="搜索资源..." type="text">
+</div>
+</div>
+<div class="flex items-center gap-lg">
+<div class="flex items-center gap-md">
+<span class="material-symbols-outlined text-secondary hover:text-primary cursor-pointer transition-colors">help</span>
+<span class="material-symbols-outlined text-secondary hover:text-primary cursor-pointer transition-colors">notifications</span>
+</div>
+<div class="h-8 w-px bg-outline-variant"></div>
+<div class="flex items-center gap-md">
+<div class="text-right">
+<p class="font-label-md text-label-md text-on-surface">Alex Studio</p>
+<p class="text-[10px] text-secondary">Pro Member</p>
+</div>
+<div class="w-10 h-10 rounded-full bg-surface-container-highest overflow-hidden border border-outline-variant">
+<img class="w-full h-full object-cover" data-alt="A professional profile headshot of a creative director in a minimalist studio setting, wearing a clean charcoal grey sweater, neutral lighting, cinematic depth of field, high-end photography style." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCAY1IyzRsBigFVdZwhaLeWdj_9_Yekn2Wk3CV1W-CUt6AfXPJOzf9a8ZXalPeQyVEzsboUVDwhmAfhpSz_0s8zrFigZTmz3gu-HS8yFf5HXDBq3vVbw-0NEz8rNlE77aXqb0bOBR5sF05l8A3CNmDoUxekUNdsNMJofislpTFO801knJ_1CbNO-QyOgvwP-qTELMW7KJNtwjV1szGyyAGBBanBXuUb88boRk3jrt-FYY25UsidmvTIH2sLSOdDsweCHo8MYN2brMQ">
+</div>
+</div>
+</div>
+</header>
+<!-- Content Area (D2 Review Page Background) -->
+<main class="ml-[280px] pt-16 h-screen overflow-y-auto bg-surface-container-lowest p-xl">
+<div class="max-w-6xl mx-auto space-y-xl">
+<!-- Review Header -->
+<div class="flex justify-between items-end">
+<div>
+<h2 class="font-headline-lg text-headline-lg text-on-surface mb-xs">作品审核：未来主义建筑 (V1)</h2>
+<p class="text-on-surface-variant font-body-md">最后更新于 2023年11月24日 14:30 · 待处理</p>
+</div>
+<div class="flex gap-md">
+<button class="px-lg py-md border border-outline-variant text-on-surface-variant rounded-lg font-label-md hover:bg-surface-container-low transition-colors">驳回修订</button>
+<button class="px-lg py-md bg-primary text-on-primary rounded-lg font-label-md hover:shadow-lg transition-all">通过并发布</button>
+</div>
+</div>
+<!-- Bento Grid Layout for Content -->
+<div class="grid grid-cols-12 gap-lg">
+<!-- Main Preview -->
+<div class="col-span-8 space-y-lg">
+<div class="bento-card overflow-hidden">
+<div class="aspect-video w-full relative group">
+<img class="w-full h-full object-cover" data-alt="A futuristic architectural structure with fluid, organic curves made of white bioluminescent composite materials, set against a twilight sky in a sustainable city of the future. The lighting is soft and ethereal with cool blue and warm amber tones, ultra-realistic architectural visualization style." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDBqFX30ROXguDgRfH-EmBS8tdzcNVCIO8TqlAty3NQ2puYjfrAdE3ggEhCyTXCRrUgmENKv7JLHiwKSZafRyLKrAHsxIg_dy1Awzcs0WvmTGnFj0_fjJ7qIE0TYMuWw_o1-xSlTVdUH_L7u_6lwJgVSZjIeeQTuaE_W8ycF86wkeARewZ4903xJ99WprmF870EJ2ZQ_U09KxC4POKMAff0QAlnRbv_I7qR3Do4AoUeANbL1vNNH1yyaav68euycv-25ZER0fKOwIM">
+<div class="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+<button class="p-md bg-white/20 backdrop-blur-md rounded-full text-white">
+<span class="material-symbols-outlined text-[32px]">fullscreen</span>
+</button>
+</div>
+</div>
+<div class="p-lg">
+<h3 class="font-headline-sm text-headline-sm mb-sm text-on-surface">设计说明：流动之境</h3>
+<p class="text-on-surface-variant font-body-md leading-relaxed">
+                                本作品旨在探讨参数化设计在城市公共空间中的应用。通过仿生形态的介入，创造出具有呼吸感的建筑表皮，不仅在视觉上打破了工业时代的生硬感，更通过集成光伏系统实现了能源自给。
+                            </p>
+</div>
+</div>
+</div>
+<!-- Side Panels -->
+<div class="col-span-4 space-y-lg">
+<!-- Metadata Card -->
+<div class="bento-card p-lg">
+<h4 class="font-label-sm text-label-sm text-secondary uppercase tracking-wider mb-md">资产详情</h4>
+<div class="space-y-md">
+<div class="flex justify-between items-center">
+<span class="text-on-surface-variant text-body-sm">文件格式</span>
+<span class="font-label-md text-on-surface">TIFF / 8K</span>
+</div>
+<div class="flex justify-between items-center">
+<span class="text-on-surface-variant text-body-sm">版权协议</span>
+<span class="font-label-md text-on-surface">全渠道授权</span>
+</div>
+<div class="flex justify-between items-center">
+<span class="text-on-surface-variant text-body-sm">创作者</span>
+<span class="font-label-md text-primary">Alex Chen</span>
+</div>
+</div>
+</div>
+<!-- AI Insights Card -->
+<div class="bento-card p-lg bg-primary-container/5 border-primary/20">
+<div class="flex items-center gap-sm mb-md text-primary">
+<span class="material-symbols-outlined">auto_graph</span>
+<h4 class="font-label-md text-label-md">AI 智能审核建议</h4>
+</div>
+<p class="text-on-surface-variant text-body-sm mb-lg">
+                            图像质量极高。检测到 1 处构图偏离：左侧边缘建筑阴影略显突兀，建议调整光照参数进行重写。
+                        </p>
+<button class="w-full py-md bg-primary-container text-on-primary-container rounded-lg font-label-md hover:opacity-90 transition-opacity">
+                            执行智能重写
+                        </button>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- MODAL OVERLAY: Create New Version Confirmation -->
+<div class="fixed inset-0 z-50 flex items-center justify-center p-xl modal-overlay">
+<!-- Modal Container -->
+<div class="w-full max-w-[480px] bg-surface rounded-xl shadow-2xl border border-outline-variant overflow-hidden transform transition-all scale-100 opacity-100">
+<!-- Modal Header -->
+<div class="px-xl pt-xl pb-lg flex justify-between items-start">
+<div class="flex items-center gap-md">
+<div class="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[28px]">add_circle</span>
+</div>
+<div>
+<h2 class="font-headline-sm text-headline-sm text-on-surface">创建重写版本？</h2>
+<p class="text-on-surface-variant text-body-sm">系统将基于当前审核反馈生成 V2 版本</p>
+</div>
+</div>
+<button class="p-sm hover:bg-surface-container-low rounded-full transition-colors">
+<span class="material-symbols-outlined text-secondary">close</span>
+</button>
+</div>
+<!-- Modal Content -->
+<div class="px-xl pb-xl space-y-lg">
+<div class="p-lg bg-surface-container-low rounded-lg border border-outline-variant/30"><div class="grid grid-cols-2 gap-md mb-lg text-body-sm">
+    <div class="flex flex-col">
+        <span class="text-secondary">章节</span>
+        <span class="text-on-surface font-bold">第 62 章 禁区通行证</span>
+    </div>
+    <div class="flex flex-col">
+        <span class="text-secondary">当前版本</span>
+        <span class="text-on-surface font-bold">v1</span>
+    </div>
+    <div class="flex flex-col">
+        <span class="text-secondary">当前字数</span>
+        <span class="text-on-surface font-bold">3,180 字</span>
+    </div>
+    <div class="flex flex-col">
+        <span class="text-secondary">审核结果</span>
+        <span class="text-on-surface font-bold text-error">建议重写</span>
+    </div>
+    <div class="flex flex-col col-span-2">
+        <span class="text-secondary">审核来源</span>
+        <span class="text-on-surface font-bold">模拟评审</span>
+    </div>
+</div>
+<div class="space-y-md">
+    <div>
+        <div class="flex items-center gap-sm text-primary mb-xs">
+            <span class="material-symbols-outlined text-[18px]">check_circle</span>
+            <span class="font-label-md text-label-md">将会发生：</span>
+        </div>
+        <ul class="text-body-sm text-on-surface-variant space-y-1 ml-[26px] list-disc">
+            <li class="">创建正文版本 v2</li>
+            <li class="">使用当前 v1 和审核建议生成模拟重写内容</li>
+            <li class="">保存本次重写记录</li>
+            <li class="">v1 保持不变</li>
+            <li class="">v2 创建后可以继续手动编辑</li>
+        </ul>
+    </div>
+    <div>
+        <div class="flex items-center gap-sm text-secondary mb-xs">
+            <span class="material-symbols-outlined text-[18px]">cancel</span>
+            <span class="font-label-md text-label-md">不会发生：</span>
+        </div>
+        <ul class="text-body-sm text-on-surface-variant space-y-1 ml-[26px] list-disc">
+            <li class="">不会覆盖或删除 v1</li>
+            <li class="">不会自动将 v2 设为当前版本</li>
+            <li class="">不会自动提交审核</li>
+            <li class="">不会自动发布</li>
+            <li class="">不会调用真实 AI 或工作流</li>
+        </ul>
+    </div>
+</div></div>
+<!-- Mock Notice -->
+<div class="flex items-center gap-md p-md bg-secondary-fixed/30 rounded-lg">
+<span class="material-symbols-outlined text-secondary-fixed-variant" style="font-variation-settings: &quot;FILL&quot; 1;">info</span>
+<p class="text-[13px] text-secondary-fixed-variant leading-tight"><span class="font-bold">Mock Notice:</span> 当前为模拟重写，用于验证版本创建和审核闭环。</p>
+</div>
+<!-- Action Buttons -->
+<div class="flex gap-md">
+<button class="flex-1 py-md border border-outline-variant text-on-surface-variant rounded-lg font-label-md hover:bg-surface-container-low transition-colors">
+                        取消
+                    </button>
+<button class="flex-1 py-md bg-primary text-on-primary rounded-lg font-label-md shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all" id="createBtn">
+                        创建重写版本
+                    </button>
+</div>
+</div>
+</div>
+</div>
+<!-- Decorative Micro-interactions Background -->
+<div class="fixed top-0 left-0 w-full h-full pointer-events-none -z-10 overflow-hidden">
+<div class="absolute top-[-10%] right-[-10%] w-[50%] h-[50%] rounded-full bg-primary/5 blur-[120px]"></div>
+<div class="absolute bottom-[-10%] left-[10%] w-[40%] h-[40%] rounded-full bg-secondary/5 blur-[100px]"></div>
+</div>
+<script>
+        // Simple Interaction logic
+        document.addEventListener('DOMContentLoaded', () => {
+            const createBtn = document.getElementById('createBtn');
+            const overlay = document.querySelector('.modal-overlay');
+            
+            createBtn.addEventListener('click', () => {
+                createBtn.innerHTML = '<span class="material-symbols-outlined animate-spin">sync</span> 创建中...';
+                createBtn.disabled = true;
+                setTimeout(() => {
+                    alert('正在进入 V2 模拟重写流程...');
+                    location.reload(); // Reset for demo
+                }, 1500);
+            });
+
+            // Handle ESC key to close
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') {
+                    // Logic to hide modal if needed
+                }
+            });
+        });
+    </script>
+
+
+</body></html>

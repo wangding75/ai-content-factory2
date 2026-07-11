@@ -1,0 +1,6 @@
+iteration: 09
+name: P0 全链路联调与系统验收
+endpoints:
+- method: ALL
+  path: /api/v1/**
+  description: 执行全部 P0 契约、集成与回归测试

@@ -1,0 +1,18 @@
+iteration: 08
+name: 全局 Lite 页面与能力展示
+endpoints:
+- method: GET
+  path: /api/v1/materials?scope=global
+  description: 全局素材聚合
+- method: GET
+  path: /api/v1/works?scope=global
+  description: 全局作品聚合
+- method: GET
+  path: /api/v1/workflows/builtin
+  description: 内置模拟流程
+- method: GET
+  path: /api/v1/capabilities
+  description: 能力状态
+- method: GET
+  path: /api/v1/integrations
+  description: 外部集成状态

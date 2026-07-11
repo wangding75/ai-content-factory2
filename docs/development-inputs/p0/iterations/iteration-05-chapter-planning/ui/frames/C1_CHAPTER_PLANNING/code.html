@@ -1,0 +1,497 @@
+<!DOCTYPE html><html lang="zh-CN" class="light"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=block" rel="stylesheet"><script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script><script id="tailwind-config">try{
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-dim": "#d8dadc",
+                        "surface-container": "#eceef0",
+                        "on-secondary-fixed": "#0d1c2d",
+                        "on-tertiary-fixed": "#301400",
+                        "on-surface-variant": "#464554",
+                        "inverse-on-surface": "#eff1f3",
+                        "secondary": "#516072",
+                        "on-background": "#191c1e",
+                        "tertiary": "#904900",
+                        "surface-container-low": "#f2f4f6",
+                        "surface-tint": "#494bd6",
+                        "on-primary": "#ffffff",
+                        "outline": "#767586",
+                        "background": "#f7f9fb",
+                        "primary-fixed-dim": "#c0c1ff",
+                        "primary": "#4648d4",
+                        "error": "#ba1a1a",
+                        "tertiary-fixed-dim": "#ffb783",
+                        "on-tertiary-fixed-variant": "#703700",
+                        "on-error": "#ffffff",
+                        "surface-container-highest": "#e0e3e5",
+                        "primary-container": "#6063ee",
+                        "surface-container-lowest": "#ffffff",
+                        "on-secondary-fixed-variant": "#39485a",
+                        "surface-variant": "#e0e3e5",
+                        "on-tertiary-container": "#fffbff",
+                        "error-container": "#ffdad6",
+                        "on-surface": "#191c1e",
+                        "on-secondary": "#ffffff",
+                        "on-tertiary": "#ffffff",
+                        "on-primary-fixed": "#07006c",
+                        "on-secondary-container": "#556477",
+                        "surface-container-high": "#e6e8ea",
+                        "primary-fixed": "#e1e0ff",
+                        "inverse-surface": "#2d3133",
+                        "on-error-container": "#93000a",
+                        "inverse-primary": "#c0c1ff",
+                        "surface-bright": "#f7f9fb",
+                        "surface": "#f7f9fb",
+                        "secondary-container": "#d2e1f7",
+                        "secondary-fixed-dim": "#b9c8de",
+                        "outline-variant": "#c7c4d7",
+                        "on-primary-fixed-variant": "#2f2ebe",
+                        "tertiary-container": "#b55d00",
+                        "tertiary-fixed": "#ffdcc5",
+                        "on-primary-container": "#fffbff",
+                        "secondary-fixed": "#d4e4fa"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "2xl": "48px",
+                        "gutter": "24px",
+                        "xl": "32px",
+                        "unit": "8px",
+                        "3xl": "64px",
+                        "md": "16px",
+                        "sm": "8px",
+                        "xs": "4px",
+                        "lg": "24px",
+                        "container-margin": "32px"
+                    },
+                    "fontFamily": {
+                        "label-md": ["Inter"],
+                        "display": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "headline-sm": ["Inter"],
+                        "body-sm": ["Inter"],
+                        "body-md": ["Inter"],
+                        "headline-lg-mobile": ["Inter"],
+                        "headline-lg": ["Inter"],
+                        "headline-md": ["Inter"],
+                        "label-sm": ["Inter"]
+                    },
+                    "fontSize": {
+                        "label-md": ["14px", {"lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "500"}],
+                        "display": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "body-lg": ["18px", {"lineHeight": "28px", "letterSpacing": "0em", "fontWeight": "400"}],
+                        "headline-sm": ["20px", {"lineHeight": "28px", "letterSpacing": "0em", "fontWeight": "600"}],
+                        "body-sm": ["14px", {"lineHeight": "20px", "letterSpacing": "0em", "fontWeight": "400"}],
+                        "body-md": ["16px", {"lineHeight": "24px", "letterSpacing": "0em", "fontWeight": "400"}],
+                        "headline-lg-mobile": ["24px", {"lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                        "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "600"}],
+                        "headline-md": ["24px", {"lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                        "label-sm": ["12px", {"lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "600"}]
+                    }
+                },
+            },
+        }
+    }catch(_e){}</script><meta charset="utf-8">
+<link rel="stylesheet" href="../../shared/prototype-router.css">
+<script>window.__ACF_PROTOTYPE_PAGE__="C1_CHAPTER_PLANNING";window.__ACF_PROTOTYPE_LABEL__="章节规划";</script>
+<script defer src="../../shared/prototype-router.js"></script>
+</head><body class="text-on-surface">
+<!-- Left Sidebar -->
+<aside class="fixed left-0 top-0 h-screen w-[280px] bg-surface border-r border-outline-variant flex flex-col py-xl z-50">
+<div class="px-lg mb-2xl">
+<h1 class="font-headline-sm text-headline-sm font-bold text-primary">AI Content Factory</h1>
+<p class="text-body-sm text-secondary">Creator SaaS</p>
+</div>
+<nav class="flex-1 px-md space-y-xs">
+<a href="#" class="flex items-center gap-md text-secondary px-lg py-md hover:bg-surface-container-low transition-colors rounded-lg">
+<span class="material-symbols-outlined" data-icon="home">home</span>
+<span class="font-body-md text-body-md">首页</span>
+</a>
+<a href="#" class="flex items-center gap-md bg-secondary-container text-on-secondary-container sidebar-active px-lg py-md rounded-lg">
+<span class="material-symbols-outlined" data-icon="folder_open">folder_open</span>
+<span class="font-body-md text-body-md">项目</span>
+</a>
+<a href="#" class="flex items-center gap-md text-secondary px-lg py-md hover:bg-surface-container-low transition-colors rounded-lg">
+<span class="material-symbols-outlined" data-icon="inventory_2">inventory_2</span>
+<span class="font-body-md text-body-md">素材</span>
+</a>
+<a href="#" class="flex items-center gap-md text-secondary px-lg py-md hover:bg-surface-container-low transition-colors rounded-lg">
+<span class="material-symbols-outlined" data-icon="auto_awesome">auto_awesome</span>
+<span class="font-body-md text-body-md">作品</span>
+</a>
+<a href="#" class="flex items-center gap-md text-secondary px-lg py-md hover:bg-surface-container-low transition-colors rounded-lg">
+<span class="material-symbols-outlined" data-icon="account_tree">account_tree</span>
+<span class="font-body-md text-body-md">流程</span>
+</a>
+<a href="#" class="flex items-center gap-md text-secondary px-lg py-md hover:bg-surface-container-low transition-colors rounded-lg">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+<span class="font-body-md text-body-md">设置</span>
+</a>
+</nav>
+<div class="px-lg pt-xl border-t border-outline-variant">
+<div class="flex items-center gap-md p-md bg-surface-container-low rounded-xl">
+<div class="w-10 h-10 rounded-full overflow-hidden border border-outline-variant">
+<img class="w-full h-full object-cover" data-alt="A professional user avatar for a creative SaaS application. The portrait is high-quality, showing a person with a friendly expression in a minimalist, light-mode studio setting. The lighting is soft and corporate, perfectly matching the professional and intellectual vibe of the Lumina design system." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDaWq6ekk9bWV2P5PQMrZReMwD-wtcb13HkDl5YetNySR-WuIjun0T8zJAjM-YWhhJ7_0y89YMH-M1IrUp4ob-aixJpe_H3bxi-x8x_RLIBahRkyZpAAK2EQKnurOgmI3CBbDwYwRDXfP8n1N3JxwPdVQMnsG39_OpKNRMpsgDJtAq8t-J4sciPm0Iu9oSM4SoJ5NQXZuuQYMjZkVEoOo22m9XvaRck88RbzRFrQTUgdCInQ_tPZIefzWaHkWuWqh65zK2m9GFKLnY">
+</div>
+<div class="overflow-hidden">
+<p class="font-label-md text-label-md truncate">高级创作者</p>
+<p class="text-body-sm text-secondary truncate">Pro Plan</p>
+</div>
+</div>
+</div>
+</aside>
+<!-- Header & Main Content Wrapper -->
+<div class="ml-[280px] min-h-screen flex flex-col">
+<!-- Top Bar -->
+<header class="h-16 bg-surface flex justify-between items-center px-xl border-b border-outline-variant sticky top-0 z-40">
+<div class="flex items-center gap-md">
+<nav class="flex items-center text-body-sm text-secondary">
+<span class="">项目</span>
+<span class="material-symbols-outlined mx-xs text-sm" data-icon="chevron_right">chevron_right</span>
+<span class="text-on-surface font-medium">末世求生</span>
+</nav>
+</div>
+<div class="flex items-center gap-xl">
+<div class="relative flex items-center bg-surface-container px-md py-xs rounded-full w-64 border border-outline-variant">
+<span class="material-symbols-outlined text-secondary" data-icon="search">search</span>
+<input class="bg-transparent border-none focus:ring-0 text-body-sm w-full" placeholder="搜索资源..." type="text">
+</div>
+<div class="flex items-center gap-md">
+<button class="p-xs text-secondary hover:text-primary transition-colors"><span class="material-symbols-outlined" data-icon="help">help</span></button>
+<button class="p-xs text-secondary hover:text-primary transition-colors relative">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+<span class="absolute top-1 right-1 w-2 h-2 bg-error rounded-full"></span>
+</button>
+</div>
+</div>
+</header>
+<!-- Horizontal Nav & Project Info Bar-->
+<div class="bg-surface border-b border-outline-variant px-xl pt-lg">
+<div class="flex justify-between items-end mb-lg">
+<div class="flex items-center gap-xl">
+<div class="w-16 h-16 rounded-xl overflow-hidden bg-surface-container-high flex items-center justify-center">
+<img class="w-full h-full object-cover" data-alt="A stylized digital book cover for a post-apocalyptic novel titled 'Endworld Survival'. The design is minimalist and cinematic, featuring a desolate urban landscape under a moody, red-tinted sky. The visual style is professional, high-end, and fits a professional SaaS interface with clean lines and sophisticated lighting." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAbYhOaD43frAbnQA5N0YDFuJQPljmc45DFU4lhfElgrNG7_K8fsE2pzIDkz8d_FhUmPYQUoCNqBxPzLlLMrb1fxo1P8e7pt7tBQl_7nGL5IUpnubuqUFXLxoITZrQR3Wh4Cwxw9s_Y2ipGDkUWH_zOpPGyGvz8X9ihRQhwteyL6I8VR-_9MTAuLeBWC8BJrvkWhDD2bnbLMy0cPkatGkrR2LdUvr9bnpM5WOMg28vT8vobgPQLNdWAfWuDuMms8s6SXBXEnOjKGCY">
+</div>
+<div>
+<div class="flex items-center gap-md mb-xs">
+<h2 class="font-headline-md text-headline-md">末世求生</h2>
+<span class="bg-surface-container-high text-on-surface-variant px-sm py-xs text-[10px] font-bold rounded uppercase">小说</span>
+<span class="bg-secondary-container text-on-secondary-container px-sm py-xs text-[10px] font-bold rounded uppercase">策划中</span>
+</div>
+<p class="text-body-sm text-secondary">最后编辑于：2023-10-24 14:30</p>
+</div>
+</div>
+</div>
+<div class="flex gap-xl overflow-x-auto custom-scrollbar no-scrollbar">
+<a class="pb-md px-xs text-on-surface-variant font-label-md text-label-md hover:text-primary transition-colors" href="#">概览</a>
+<a class="pb-md px-xs text-on-surface-variant font-label-md text-label-md hover:text-primary transition-colors" href="#">策划</a>
+<a class="pb-md px-xs text-on-surface-variant font-label-md text-label-md hover:text-primary transition-colors" href="#">素材</a>
+<a class="pb-md px-xs text-on-surface-variant font-label-md text-label-md hover:text-primary transition-colors" href="#">故事线</a>
+<a class="pb-md px-xs text-primary font-bold border-b-2 border-primary font-label-md text-label-md" href="#">章节</a>
+<a class="pb-md px-xs text-on-surface-variant font-label-md text-label-md hover:text-primary transition-colors" href="#">审核</a>
+<a class="pb-md px-xs text-on-surface-variant font-label-md text-label-md hover:text-primary transition-colors" href="#">作品</a>
+<a class="pb-md px-xs text-on-surface-variant font-label-md text-label-md hover:text-primary transition-colors" href="#">设置</a>
+</div>
+</div>
+<!-- Main Canvas -->
+<main class="flex-1 p-xl pb-[100px]">
+<!-- Content Header -->
+<div class="flex justify-between items-start mb-xl">
+<div>
+<h3 class="font-headline-md text-headline-md mb-xs">章节规划</h3>
+<p class="text-body-md text-secondary">规划章节目标、故事线、素材与伏笔关系</p>
+</div>
+<div class="flex items-center gap-md">
+<button class="bg-primary text-on-primary px-lg py-md rounded-lg font-label-md text-label-md hover:opacity-90 transition-opacity flex items-center gap-sm">
+<span class="material-symbols-outlined" data-icon="bolt">bolt</span>
+                        模拟生成章节规划
+                    </button>
+<button class="bg-surface border border-outline-variant text-on-surface px-lg py-md rounded-lg font-label-md text-label-md hover:bg-surface-container-low transition-colors flex items-center gap-sm">
+<span class="material-symbols-outlined" data-icon="add">add</span>
+                        新增章节
+                    </button>
+</div>
+</div>
+<!-- Info Alert -->
+<div class="bg-primary-fixed text-on-primary-fixed-variant px-lg py-md rounded-xl flex items-center gap-md mb-xl border border-primary-fixed-dim">
+<span class="material-symbols-outlined text-primary" data-icon="info">info</span>
+<span class="text-body-sm">模拟生成仅用于验证业务流程，生成结果需确认后才能进入正文生产。</span>
+</div>
+<!-- Stats Grid -->
+<div class="grid grid-cols-4 gap-lg mb-xl">
+<div class="bg-surface border border-outline-variant rounded-xl p-lg">
+<p class="text-body-sm text-secondary mb-xs">全部章节</p>
+<div class="flex items-end justify-between">
+<span class="font-headline-lg text-headline-lg">5</span>
+<span class="material-symbols-outlined text-outline" data-icon="list_alt">list_alt</span>
+</div>
+</div>
+<div class="bg-surface border border-outline-variant rounded-xl p-lg">
+<p class="text-body-sm text-secondary mb-xs">待确认</p>
+<div class="flex items-end justify-between">
+<span class="font-headline-lg text-headline-lg text-tertiary">3</span>
+<span class="material-symbols-outlined text-tertiary" data-icon="pending_actions">pending_actions</span>
+</div>
+</div>
+<div class="bg-surface border border-outline-variant rounded-xl p-lg">
+<p class="text-body-sm text-secondary mb-xs">已确认</p>
+<div class="flex items-end justify-between">
+<span class="font-headline-lg text-headline-lg text-primary">2</span>
+<span class="material-symbols-outlined text-primary" data-icon="check_circle">check_circle</span>
+</div>
+</div>
+<div class="bg-surface border border-outline-variant rounded-xl p-lg opacity-60">
+<p class="text-body-sm text-secondary mb-xs">已生成草稿</p>
+<div class="flex items-end justify-between">
+<span class="font-headline-lg text-headline-lg">0</span>
+<span class="material-symbols-outlined text-outline" data-icon="description">description</span>
+</div>
+</div>
+</div>
+<!-- Filters Section -->
+<div class="bg-surface border border-outline-variant rounded-xl mb-lg overflow-hidden">
+<div class="px-lg py-md border-b border-outline-variant flex items-center gap-xl bg-surface-container-lowest">
+<button class="font-label-md text-label-md text-primary border-b-2 border-primary pb-xs">全部</button>
+<button class="font-label-md text-label-md text-secondary hover:text-on-surface transition-colors pb-xs">待确认</button>
+<button class="font-label-md text-label-md text-secondary hover:text-on-surface transition-colors pb-xs">已确认</button>
+<button class="font-label-md text-label-md text-secondary hover:text-on-surface transition-colors pb-xs">已生成草稿</button>
+<button class="font-label-md text-label-md text-secondary hover:text-on-surface transition-colors pb-xs">已审核</button>
+</div>
+<div class="p-lg flex items-center gap-lg">
+<div class="flex-1 relative">
+<span class="absolute left-md top-1/2 -translate-y-1/2 material-symbols-outlined text-secondary" data-icon="search">search</span>
+<input class="w-full pl-xl pr-md py-md bg-surface-container-low border border-outline-variant rounded-lg focus:ring-1 focus:ring-primary focus:border-primary text-body-sm" placeholder="搜索章节标题或编号" type="text">
+</div>
+<div class="w-48 relative">
+<select class="w-full px-md py-md bg-surface-container-low border border-outline-variant rounded-lg appearance-none text-body-sm focus:ring-1 focus:ring-primary">
+<option>全部故事线</option>
+</select>
+<span class="absolute right-md top-1/2 -translate-y-1/2 material-symbols-outlined pointer-events-none text-secondary" data-icon="expand_more">expand_more</span>
+</div>
+<div class="w-48 relative">
+<select class="w-full px-md py-md bg-surface-container-low border border-outline-variant rounded-lg appearance-none text-body-sm focus:ring-1 focus:ring-primary">
+<option>全部伏笔</option>
+</select>
+<span class="absolute right-md top-1/2 -translate-y-1/2 material-symbols-outlined pointer-events-none text-secondary" data-icon="expand_more">expand_more</span>
+</div>
+</div>
+</div>
+<!-- Chapter Table -->
+<div class="bg-surface border border-outline-variant rounded-xl overflow-hidden shadow-sm">
+<table class="w-full border-collapse">
+<thead class="bg-surface-container-low border-b border-outline-variant">
+<tr>
+<th class="px-lg py-md text-left w-12"><input checked="" class="rounded text-primary focus:ring-primary" type="checkbox"></th>
+<th class="px-lg py-md text-left font-label-sm text-label-sm text-secondary uppercase tracking-wider">章节</th>
+<th class="px-lg py-md text-left font-label-sm text-label-sm text-secondary uppercase tracking-wider">标题与摘要</th>
+<th class="px-lg py-md text-left font-label-sm text-label-sm text-secondary uppercase tracking-wider">关系</th>
+<th class="px-lg py-md text-left font-label-sm text-label-sm text-secondary uppercase tracking-wider">状态</th>
+<th class="px-lg py-md text-left font-label-sm text-label-sm text-secondary uppercase tracking-wider">来源</th>
+<th class="px-lg py-md text-right font-label-sm text-label-sm text-secondary uppercase tracking-wider">操作</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-outline-variant">
+<!-- Row 1 Selected -->
+<tr class="bg-primary-fixed/20 hover:bg-primary-fixed/30 transition-colors">
+<td class="px-lg py-lg"><input checked="" class="rounded text-primary focus:ring-primary" type="checkbox"></td>
+<td class="px-lg py-lg">
+<span class="font-bold text-on-surface">第 62 章</span>
+</td>
+<td class="px-lg py-lg max-w-md">
+<p class="font-bold text-on-surface mb-xs">禁区通行证</p>
+<p class="text-body-sm text-on-surface-variant line-clamp-2">林野发现内鬼留下的旧式通行证，决定独自前往废弃的医疗研究所寻找真相...</p>
+</td>
+<td class="px-lg py-lg">
+<div class="flex flex-wrap gap-xs">
+<span class="text-[10px] px-xs py-0.5 bg-blue-100 text-blue-700 border border-blue-200 rounded">主线:安全区黑幕</span>
+<span class="text-[10px] px-xs py-0.5 bg-purple-100 text-purple-700 border border-purple-200 rounded">支线:安全区内鬼</span>
+<span class="text-[10px] px-xs py-0.5 bg-orange-100 text-orange-700 border border-orange-200 rounded">伏笔:禁区通行证</span>
+</div>
+</td>
+<td class="px-lg py-lg">
+<span class="flex items-center gap-xs text-tertiary font-medium text-body-sm">
+<span class="w-1.5 h-1.5 rounded-full bg-tertiary"></span>待确认
+                                </span>
+</td>
+<td class="px-lg py-lg">
+<span class="text-body-sm text-secondary">模拟生成</span>
+</td>
+<td class="px-lg py-lg text-right">
+<div class="flex items-center justify-end gap-md">
+<button class="text-primary text-body-sm hover:underline">编辑</button>
+<button class="text-error text-body-sm hover:underline">删除</button>
+<button class="text-secondary opacity-40 text-body-sm cursor-not-allowed" disabled="" title="确认规划后可生成正文">选择确认</button>
+</div>
+</td>
+</tr>
+<!-- Row 2 Selected -->
+<tr class="bg-primary-fixed/20 hover:bg-primary-fixed/30 transition-colors">
+<td class="px-lg py-lg"><input checked="" class="rounded text-primary focus:ring-primary" type="checkbox"></td>
+<td class="px-lg py-lg">
+<span class="font-bold text-on-surface">第 63 章</span>
+</td>
+<td class="px-lg py-lg max-w-md">
+<p class="font-bold text-on-surface mb-xs">失踪者名单</p>
+<p class="text-body-sm text-on-surface-variant line-clamp-2">许晴在医疗站发现一份被修改过的失踪人员名单，上面赫然出现了林野的名字...</p>
+</td>
+<td class="px-lg py-lg">
+<div class="flex flex-wrap gap-xs">
+<span class="text-[10px] px-xs py-0.5 bg-blue-100 text-blue-700 border border-blue-200 rounded">主线:安全区黑幕</span>
+<span class="text-[10px] px-xs py-0.5 bg-purple-100 text-purple-700 border border-purple-200 rounded">支线:安全区内鬼、实验室线索</span>
+<span class="text-[10px] px-xs py-0.5 bg-orange-100 text-orange-700 border border-orange-200 rounded">伏笔:失踪实验员名单</span>
+</div>
+</td>
+<td class="px-lg py-lg">
+<span class="flex items-center gap-xs text-tertiary font-medium text-body-sm">
+<span class="w-1.5 h-1.5 rounded-full bg-tertiary"></span>待确认
+                                </span>
+</td>
+<td class="px-lg py-lg">
+<span class="text-body-sm text-secondary">模拟生成</span>
+</td>
+<td class="px-lg py-lg text-right">
+<div class="flex items-center justify-end gap-md">
+<button class="text-primary text-body-sm hover:underline">编辑</button>
+<button class="text-error text-body-sm hover:underline">删除</button>
+<button class="text-primary font-bold text-body-sm hover:underline">选择确认</button>
+</div>
+</td>
+</tr>
+<!-- Row 3 Selected -->
+<tr class="bg-primary-fixed/20 hover:bg-primary-fixed/30 transition-colors">
+<td class="px-lg py-lg"><input checked="" class="rounded text-primary focus:ring-primary" type="checkbox"></td>
+<td class="px-lg py-lg">
+<span class="font-bold text-on-surface">第 64 章</span>
+</td>
+<td class="px-lg py-lg max-w-md">
+<p class="font-bold text-on-surface mb-xs">夜间封锁</p>
+<p class="text-body-sm text-on-surface-variant line-clamp-2">安全区突然实施夜间封锁，切断了所有内外联系。这显然是为了掩盖某种行动...</p>
+</td>
+<td class="px-lg py-lg">
+<div class="flex flex-wrap gap-xs">
+<span class="text-[10px] px-xs py-0.5 bg-blue-100 text-blue-700 border border-blue-200 rounded">主线:安全区黑幕</span>
+<span class="text-[10px] px-xs py-0.5 bg-purple-100 text-purple-700 border border-purple-200 rounded">支线:安全区内鬼</span>
+<span class="text-[10px] px-xs py-0.5 bg-surface-container text-secondary border border-outline-variant rounded">无伏笔</span>
+</div>
+</td>
+<td class="px-lg py-lg">
+<span class="flex items-center gap-xs text-tertiary font-medium text-body-sm">
+<span class="w-1.5 h-1.5 rounded-full bg-tertiary"></span>待确认
+                                </span>
+</td>
+<td class="px-lg py-lg">
+<span class="text-body-sm text-secondary">模拟生成</span>
+</td>
+<td class="px-lg py-lg text-right">
+<div class="flex items-center justify-end gap-md">
+<button class="text-primary text-body-sm hover:underline">编辑</button>
+<button class="text-error text-body-sm hover:underline">删除</button>
+<button class="text-primary font-bold text-body-sm hover:underline">选择确认</button>
+</div>
+</td>
+</tr>
+<!-- Row 4 Confirmed -->
+<tr class="hover:bg-surface-container-lowest transition-colors">
+<td class="px-lg py-lg"><input class="rounded text-primary focus:ring-primary" type="checkbox"></td>
+<td class="px-lg py-lg">
+<span class="font-bold text-on-surface">第 65 章</span>
+</td>
+<td class="px-lg py-lg max-w-md">
+<p class="font-bold text-on-surface mb-xs">地下通道</p>
+<p class="text-body-sm text-on-surface-variant line-clamp-2">秘密探索地下旧排水系统的经过，这是目前唯一绕过安检的秘密通道...</p>
+</td>
+<td class="px-lg py-lg">
+<div class="flex flex-wrap gap-xs"><span class="text-[10px] px-xs py-0.5 bg-blue-100 text-blue-700 border border-blue-200 rounded">主线:安全区黑幕</span><span class="text-[10px] px-xs py-0.5 bg-purple-100 text-purple-700 border border-purple-200 rounded">支线:实验室线索</span><span class="text-[10px] px-xs py-0.5 bg-orange-100 text-orange-700 border border-orange-200 rounded">伏笔:禁区通行证</span></div>
+</td>
+<td class="px-lg py-lg">
+<span class="flex items-center gap-xs text-primary font-medium text-body-sm">
+<span class="w-1.5 h-1.5 rounded-full bg-primary"></span>已确认
+                                </span>
+</td>
+<td class="px-lg py-lg">
+<span class="text-body-sm text-secondary">人工创建</span>
+</td>
+<td class="px-lg py-lg text-right">
+<div class="flex items-center justify-end gap-md">
+<button class="text-secondary text-body-sm hover:text-on-surface">查看详情</button>
+<button class="bg-primary text-on-primary px-md py-xs rounded text-[12px] hover:opacity-90 transition-opacity">进入正文生产</button>
+</div>
+</td>
+</tr>
+<!-- Row 5 Confirmed -->
+<tr class="hover:bg-surface-container-lowest transition-colors">
+<td class="px-lg py-lg"><input class="rounded text-primary focus:ring-primary" type="checkbox"></td>
+<td class="px-lg py-lg">
+<span class="font-bold text-on-surface">第 66 章</span>
+</td>
+<td class="px-lg py-lg max-w-md">
+<p class="font-bold text-on-surface mb-xs">红雾样本</p>
+<p class="text-body-sm text-on-surface-variant line-clamp-2">获取第一手红雾高浓度样本，研究其对人体神经系统的直接影响...</p>
+</td>
+<td class="px-lg py-lg">
+<div class="flex flex-wrap gap-xs"><span class="text-[10px] px-xs py-0.5 bg-blue-100 text-blue-700 border border-blue-200 rounded">主线:安全区黑幕</span><span class="text-[10px] px-xs py-0.5 bg-purple-100 text-purple-700 border border-purple-200 rounded">支线:实验室线索</span><span class="text-[10px] px-xs py-0.5 bg-orange-100 text-orange-700 border border-orange-200 rounded">伏笔:失踪实验员名单</span></div>
+</td>
+<td class="px-lg py-lg">
+<span class="flex items-center gap-xs text-primary font-medium text-body-sm">
+<span class="w-1.5 h-1.5 rounded-full bg-primary"></span>已确认
+                                </span>
+</td>
+<td class="px-lg py-lg">
+<span class="text-body-sm text-secondary">人工创建</span>
+</td>
+<td class="px-lg py-lg text-right">
+<div class="flex items-center justify-end gap-md">
+<button class="text-secondary text-body-sm hover:text-on-surface">查看详情</button>
+<button class="bg-primary text-on-primary px-md py-xs rounded text-[12px] hover:opacity-90 transition-opacity">进入正文生产</button>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</main>
+<!-- Batch Action Bar -->
+<footer class="fixed bottom-0 right-0 left-[280px] bg-white border-t border-outline-variant py-md px-xl flex justify-between items-center z-50 shadow-[0_-4px_24px_rgba(0,0,0,0.05)]">
+<div class="flex items-center gap-xl">
+<p class="font-label-md text-label-md">已选择 <span class="text-primary font-bold">3</span> 个候选章节</p>
+<button class="text-secondary hover:text-on-surface text-body-sm transition-colors">取消选择</button>
+</div>
+<div class="flex items-center gap-lg">
+<p class="text-body-sm text-secondary">确认后，所选候选章节将变为已确认，并允许用户手动进入正文生产。</p>
+<button class="bg-primary text-on-primary px-2xl py-md rounded-lg font-bold text-label-md hover:opacity-90 transition-all active:scale-[0.98]">
+                    确认章节规划
+                </button>
+</div>
+</footer>
+</div>
+<script>
+        // Light interactive elements
+        document.querySelectorAll('tr').forEach(row => {
+            row.addEventListener('click', (e) => {
+                if (e.target.tagName !== 'INPUT' && e.target.tagName !== 'BUTTON') {
+                    const cb = row.querySelector('input[type="checkbox"]');
+                    if (cb) cb.checked = !cb.checked;
+                    row.classList.toggle('bg-primary-fixed/20', cb.checked);
+                }
+            });
+        });
+
+        // Search bar interaction
+        const searchInputs = document.querySelectorAll('input[type="text"]');
+        searchInputs.forEach(input => {
+            input.addEventListener('focus', () => {
+                input.parentElement.classList.add('border-primary', 'ring-1', 'ring-primary/20');
+            });
+            input.addEventListener('blur', () => {
+                input.parentElement.classList.remove('border-primary', 'ring-1', 'ring-primary/20');
+            });
+        });
+    </script>
+
+</body></html>

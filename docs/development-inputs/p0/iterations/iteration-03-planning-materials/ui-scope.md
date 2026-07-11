@@ -1,0 +1,12 @@
+# UI 范围
+
+- `S02_PROJECT_PLANNING`｜项目策划
+- `S02_PROJECT_MATERIALS`｜项目素材列表
+- `S02_CREATE_MATERIAL`｜新建并绑定素材
+- `S02_MATERIAL_DETAIL`｜素材详情
+- `S02_PICK_MATERIAL`｜选择已有素材
+- `S02_EDIT_MATERIAL`｜编辑素材
+- `S02_EDIT_MATERIAL_USAGE`｜编辑项目用途
+- `S02_UNBIND_MATERIAL`｜解除素材绑定
+
+实际 UI 文件位于 `ui/frames/`。

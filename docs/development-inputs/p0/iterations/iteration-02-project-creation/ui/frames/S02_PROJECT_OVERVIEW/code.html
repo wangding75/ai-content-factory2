@@ -1,0 +1,340 @@
+<!DOCTYPE html><html class="light" lang="zh-CN"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<style>
+        body {
+            font-family: 'Inter', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+        }
+        .bento-grid {
+            display: grid;
+            grid-template-columns: repeat(12, 1fr);
+            gap: 24px;
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(8px);
+            border: 1px solid #E2E8F0;
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "outline-variant": "#c7c4d7",
+                        "outline": "#767586",
+                        "on-surface-variant": "#464554",
+                        "primary": "#4648d4",
+                        "on-primary-fixed": "#07006c",
+                        "surface-dim": "#d8dadc",
+                        "surface-tint": "#494bd6",
+                        "surface-bright": "#f7f9fb",
+                        "surface-container-highest": "#e0e3e5",
+                        "surface": "#f7f9fb",
+                        "secondary-fixed": "#d4e4fa",
+                        "surface-container": "#eceef0",
+                        "primary-fixed-dim": "#c0c1ff",
+                        "primary-container": "#6063ee",
+                        "surface-container-low": "#f2f4f6",
+                        "inverse-surface": "#2d3133",
+                        "tertiary-fixed-dim": "#ffb783",
+                        "secondary": "#516072",
+                        "on-tertiary-container": "#fffbff",
+                        "inverse-primary": "#c0c1ff",
+                        "tertiary": "#904900",
+                        "on-secondary-fixed-variant": "#39485a",
+                        "background": "#f7f9fb",
+                        "surface-container-lowest": "#ffffff",
+                        "on-tertiary": "#ffffff",
+                        "inverse-on-surface": "#eff1f3",
+                        "error": "#ba1a1a",
+                        "tertiary-container": "#b55d00",
+                        "secondary-fixed-dim": "#b9c8de",
+                        "on-primary-container": "#fffbff",
+                        "on-error-container": "#93000a",
+                        "tertiary-fixed": "#ffdcc5",
+                        "on-secondary-fixed": "#0d1c2d",
+                        "secondary-container": "#d2e1f7",
+                        "on-secondary-container": "#556477",
+                        "error-container": "#ffdad6",
+                        "surface-container-high": "#e6e8ea",
+                        "primary-fixed": "#e1e0ff",
+                        "on-surface": "#191c1e",
+                        "on-primary": "#ffffff",
+                        "on-error": "#ffffff",
+                        "on-primary-fixed-variant": "#2f2ebe",
+                        "on-tertiary-fixed": "#301400",
+                        "on-secondary": "#ffffff",
+                        "on-background": "#191c1e",
+                        "surface-variant": "#e0e3e5",
+                        "on-tertiary-fixed-variant": "#703700"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "sm": "8px",
+                        "xl": "32px",
+                        "md": "16px",
+                        "xs": "4px",
+                        "lg": "24px",
+                        "3xl": "64px",
+                        "unit": "8px",
+                        "container-margin": "32px",
+                        "gutter": "24px",
+                        "2xl": "48px"
+                    },
+                    "fontFamily": {
+                        "headline-sm": ["Inter"],
+                        "headline-md": ["Inter"],
+                        "display": ["Inter"],
+                        "label-md": ["Inter"],
+                        "headline-lg": ["Inter"],
+                        "body-md": ["Inter"],
+                        "label-sm": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "headline-lg-mobile": ["Inter"],
+                        "body-sm": ["Inter"]
+                    },
+                    "fontSize": {
+                        "headline-sm": ["20px", {"lineHeight": "28px", "letterSpacing": "0em", "fontWeight": "600"}],
+                        "headline-md": ["24px", {"lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                        "display": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "label-md": ["14px", {"lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "500"}],
+                        "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "600"}],
+                        "body-md": ["16px", {"lineHeight": "24px", "letterSpacing": "0em", "fontWeight": "400"}],
+                        "label-sm": ["12px", {"lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "600"}],
+                        "body-lg": ["18px", {"lineHeight": "28px", "letterSpacing": "0em", "fontWeight": "400"}],
+                        "headline-lg-mobile": ["24px", {"lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                        "body-sm": ["14px", {"lineHeight": "20px", "letterSpacing": "0em", "fontWeight": "400"}]
+                    }
+                }
+            }
+        }
+    </script>
+
+<link rel="stylesheet" href="../../shared/prototype-router.css">
+<script>window.__ACF_PROTOTYPE_PAGE__="S02_PROJECT_OVERVIEW";window.__ACF_PROTOTYPE_LABEL__="项目概览";</script>
+<script defer src="../../shared/prototype-router.js"></script>
+</head>
+<body class="bg-surface text-on-surface">
+<!-- SideNavBar -->
+<aside class="fixed left-0 top-0 h-full w-[280px] bg-surface-container-lowest border-r border-outline-variant flex flex-col py-lg z-50">
+<div class="px-xl mb-3xl">
+<h1 class="font-headline-md text-headline-md font-bold text-primary">AI Content Factory</h1>
+</div>
+<nav class="flex-1 space-y-1">
+<!-- Project is active -->
+<a class="flex items-center gap-md text-secondary py-3 px-xl hover:bg-surface-container-low transition-colors duration-200" href="#">
+<span class="material-symbols-outlined">home</span>
+<span class="font-body-md">首页</span>
+</a>
+<a class="flex items-center gap-md bg-secondary-fixed text-on-secondary-fixed-variant border-l-2 border-primary py-3 px-xl transition-colors duration-200" href="#">
+<span class="material-symbols-outlined">folder</span>
+<span class="font-body-md font-semibold">项目</span>
+</a>
+<a class="flex items-center gap-md text-secondary py-3 px-xl hover:bg-surface-container-low transition-colors duration-200" href="#">
+<span class="material-symbols-outlined">perm_media</span>
+<span class="font-body-md">素材</span>
+</a>
+<a class="flex items-center gap-md text-secondary py-3 px-xl hover:bg-surface-container-low transition-colors duration-200" href="#">
+<span class="material-symbols-outlined">movie</span>
+<span class="font-body-md">作品</span>
+</a>
+<a class="flex items-center gap-md text-secondary py-3 px-xl hover:bg-surface-container-low transition-colors duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="process_pd">procedure</span>
+<span class="font-body-md">流程</span>
+</a>
+<div class="pt-3xl">
+<a class="flex items-center gap-md text-secondary py-3 px-xl hover:bg-surface-container-low transition-colors duration-200" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span class="font-body-md">设置</span>
+</a>
+</div>
+</nav>
+</aside>
+<!-- TopAppBar 1 -->
+<header class="fixed top-0 right-0 w-[calc(100%-280px)] h-16 bg-surface-container-lowest border-b border-outline-variant flex items-center justify-between px-xl z-40">
+<div class="flex items-center gap-lg">
+<div class="relative">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline">search</span>
+<input class="pl-10 pr-4 py-2 rounded-lg bg-surface-container-low border-none focus:ring-2 focus:ring-primary w-64 font-label-md" placeholder="搜索资源..." type="text">
+</div>
+<div class="flex items-center gap-md">
+<span class="material-symbols-outlined text-on-surface-variant cursor-pointer hover:opacity-80">help</span>
+<span class="material-symbols-outlined text-on-surface-variant cursor-pointer hover:opacity-80">notifications</span>
+<div class="w-8 h-8 rounded-full overflow-hidden border border-outline-variant">
+<img class="w-full h-full object-cover" data-alt="A professional close-up headshot of a creative individual in a modern studio environment. The lighting is soft and natural, emphasizing a clean and minimalist look suitable for a high-end UI design. The background is a blurred artistic space with subtle hints of technology and art supplies, suggesting a creator's workspace." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCXCV2VVs51wl6DPmsjaOC0XmYablcQ-9kaZER8bdjStfb5E_KH9jsWS68UzKOGDujeySpBcATEWzuO7bTDyuFhjQNKRIHVh_1-3WGBYj8DNY1oOTmjDLFRyAi6H7hJmZuB6IzsUMH0MhdG4x76okzLD_UbY2U_59IegVOIfJuv8pw0OTDA13HrbZwheDn3-U53qDgoj5BSjYEU6yWz_At6L8K9ZOwnHdwCQn-rOAl9zgxaRWeoAYM_PWTRZmE2fBgeBDolauK3HJs">
+</div>
+</div>
+</div>
+</header>
+<!-- TopAppBar 2 (Sub-navigation) -->
+<div class="fixed top-16 right-0 w-[calc(100%-280px)] bg-surface border-b border-outline-variant z-30"><div class="px-xl pt-lg pb-md"><div class="flex items-center gap-xs text-outline font-label-sm mb-sm"><span>项目</span><span class="material-symbols-outlined text-[14px]">chevron_right</span><span>末世求生</span></div><div class="flex items-center justify-between mb-lg"><div><div class="flex items-center gap-md mb-xs"><h2 class="text-headline-md font-bold text-on-surface">末世求生</h2><span class="px-2 py-0.5 rounded bg-surface-container-high text-on-surface-variant font-label-sm">小说</span><span class="px-2 py-0.5 rounded-full bg-tertiary-fixed text-on-tertiary-fixed font-label-sm">策划中</span></div><p class="text-on-surface-variant font-body-sm">红雾爆发后的末世求生故事</p></div></div><div class="flex items-center gap-xl"><a class="text-primary border-b-2 border-primary pb-2 font-label-md font-semibold" href="#">概览</a><a class="text-secondary hover:text-primary pb-2 font-label-md transition-colors" href="#">策划</a><a class="text-secondary hover:text-primary pb-2 font-label-md transition-colors" href="#">素材</a><a class="text-secondary hover:text-primary pb-2 font-label-md transition-colors" href="#">故事线</a><a class="text-secondary hover:text-primary pb-2 font-label-md transition-colors" href="#">章节</a><a class="text-secondary hover:text-primary pb-2 font-label-md transition-colors" href="#">审核</a><a class="text-secondary hover:text-primary pb-2 font-label-md transition-colors" href="#">作品</a><a class="text-secondary hover:text-primary pb-2 font-label-md transition-colors" href="#">设置</a></div></div></div>
+<!-- Main Content Canvas -->
+<main class="pt-[200px] ml-[280px] p-xl min-h-screen">
+<div class="max-w-[1440px] mx-auto">
+<div class="bento-grid">
+<!-- Left Column (Asymmetric 8/12) -->
+<div class="col-span-8 space-y-xl">
+<!-- 项目摘要 Card -->
+<section class="glass-card rounded-xl p-lg flex flex-col gap-lg shadow-sm">
+<div class="flex justify-between items-start">
+<div>
+<h2 class="font-headline-sm text-on-surface mb-xs">项目摘要</h2>
+<p class="text-on-surface-variant font-body-md max-w-2xl leading-relaxed">
+                                    《末世求生》是一部以后启示录世界为背景的硬核科幻小说。探讨在资源极度匮乏的情况下，人类道德边界的模糊与文明火种的延续。
+                                </p>
+</div>
+<button class="px-md py-sm bg-primary text-on-primary rounded-lg font-label-md flex items-center gap-xs hover:opacity-90 transition-opacity">
+<span class="material-symbols-outlined text-[18px]">edit_note</span>
+                                完善项目策划
+                            </button>
+</div>
+<div class="grid grid-cols-3 gap-md border-t border-outline-variant pt-lg">
+<div>
+<p class="text-outline font-label-sm uppercase mb-xs tracking-wider">核心主题</p>
+<p class="text-on-surface font-label-md">生存、背叛、人性博弈</p>
+</div>
+<div>
+<p class="text-outline font-label-sm uppercase mb-xs tracking-wider">美术风格</p>
+<p class="text-on-surface font-label-md">废土工业风 / 高对比冷色调</p>
+</div>
+<div>
+<p class="text-outline font-label-sm uppercase mb-xs tracking-wider">目标受众</p>
+<p class="text-on-surface font-label-md">成年科幻文学爱好者</p>
+</div>
+</div>
+</section>
+<!-- 当前进度 Bento -->
+<section>
+<h2 class="font-headline-sm text-on-surface mb-md">当前进度</h2>
+<div class="grid grid-cols-4 gap-md">
+<!-- 素材 -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-md flex flex-col items-center text-center hover:border-primary transition-colors cursor-pointer">
+<span class="material-symbols-outlined text-primary mb-xs">perm_media</span>
+<span class="text-headline-md font-bold text-on-surface">5</span>
+<span class="text-secondary font-label-sm">素材库</span>
+</div>
+<!-- 故事线 -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-md flex flex-col items-center text-center hover:border-primary transition-colors cursor-pointer">
+<span class="material-symbols-outlined text-primary mb-xs">timeline</span>
+<span class="text-headline-md font-bold text-on-surface">3</span>
+<span class="text-secondary font-label-sm">故事线节点</span>
+</div>
+<!-- 已确认章节 -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-md flex flex-col items-center text-center opacity-60">
+<span class="material-symbols-outlined text-outline mb-xs">auto_stories</span>
+<span class="text-headline-md font-bold text-on-surface">0</span>
+<span class="text-secondary font-label-sm">已确认章节</span>
+</div>
+<!-- 作品 -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-md flex flex-col items-center text-center opacity-60">
+<span class="material-symbols-outlined text-outline mb-xs">movie</span>
+<span class="text-headline-md font-bold text-on-surface">0</span>
+<span class="text-secondary font-label-sm">发布作品</span>
+</div>
+</div>
+</section>
+<!-- Project Visual Teaser -->
+<div class="relative rounded-xl overflow-hidden group h-[180px]">
+<div class="w-full h-full bg-cover bg-center transition-transform duration-500 group-hover:scale-105" data-alt="A cinematic, panoramic concept art of a desolate post-apocalyptic wasteland at dusk. Ruined skyscrapers stand against a bruised purple and orange sky. In the foreground, a lone survivor stands next to a flickering campfire, their silhouette detailed and weary. The atmosphere is melancholic yet grand, rendered in a high-fidelity digital painting style with cinematic lighting." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuAh8p5NNTqWYHv9_vmAuvLKvRlmq7fjSVDi_7i-VOFISrM9Bh-8pS8NJIDbX-tr7Zzh5BIIVmwqPZrqxORVdGPnkX_YsTs98v4MC_snaroQOnW1HvC6F5RC7LCvglcJD_ZKde3mOIqlBeiIIV8SarS4zx0CXrxu6lkEuZcnmyO40iF1nrPUctnCWtnxstXPbuKTwd2Mf74luOvk3y42xmdoI7cF1BIc4-VYLqkLg9UhhY4py23BDVw3lMyz7SG4lHya9_HZ1xjR-VE')"></div>
+<div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+<div class="absolute bottom-md left-lg">
+<span class="text-white/80 font-label-sm uppercase tracking-widest">概念视觉</span>
+<h3 class="text-white font-headline-md mt-xs">项目世界观参考图</h3>
+</div>
+</div>
+</div>
+<!-- Right Column (Asymmetric 4/12) -->
+<div class="col-span-4 space-y-xl">
+<!-- 下一步建议 -->
+<section class="bg-primary-container text-on-primary-container rounded-xl p-lg relative overflow-hidden">
+<div class="relative z-10"><h2 class="font-headline-sm mb-sm">下一步建议</h2><p class="font-body-md opacity-90 mb-lg">项目处于初期阶段，完成详细的策划方案将解锁更多AI辅助创作功能。</p><div class="flex flex-col gap-sm"><button class="w-full py-md bg-white text-primary rounded-lg font-label-md font-bold hover:bg-opacity-90 transition-all flex items-center justify-center gap-xs">去完善策划<span class="material-symbols-outlined">arrow_forward</span></button><button class="w-full py-md border border-white/30 text-white rounded-lg font-label-md hover:bg-white/10 transition-all flex items-center justify-center gap-xs">添加项目素材</button></div></div>
+<span class="material-symbols-outlined absolute -right-4 -bottom-4 text-[120px] opacity-10 rotate-12">lightbulb</span>
+</section>
+<!-- 最近活动 -->
+<section class="bg-surface-container-low rounded-xl p-lg">
+<h2 class="font-headline-sm text-on-surface mb-lg">最近活动</h2>
+<div class="space-y-md">
+<!-- Activity Item -->
+<div class="flex gap-md">
+<div class="relative">
+<div class="w-2 h-2 rounded-full bg-primary mt-2"></div>
+<div class="absolute top-4 left-1/2 -translate-x-1/2 w-[1px] h-full bg-outline-variant"></div>
+</div>
+<div class="pb-md">
+<p class="text-on-surface font-label-md">创建了新项目 <span class="font-bold">末世求生</span></p>
+<p class="text-outline font-label-sm">2小时前</p>
+</div>
+</div>
+<!-- Activity Item -->
+<div class="flex gap-md">
+<div class="relative">
+<div class="w-2 h-2 rounded-full bg-secondary-fixed-dim mt-2"></div>
+<div class="absolute top-4 left-1/2 -translate-x-1/2 w-[1px] h-full bg-outline-variant"></div>
+</div>
+<div class="pb-md">
+<p class="text-on-surface font-label-md">更新了项目摘要与美术风格</p>
+<p class="text-outline font-label-sm">1小时前</p>
+</div>
+</div>
+<!-- Activity Item -->
+<div class="flex gap-md">
+<div class="relative">
+<div class="w-2 h-2 rounded-full border-2 border-outline-variant bg-surface mt-2"></div>
+</div>
+<div>
+<p class="text-on-surface-variant font-label-md italic">暂无章节更新</p>
+<p class="text-outline font-label-sm">待开始</p>
+</div>
+</div>
+</div>
+</section>
+<!-- Stats / Quick Info -->
+<div class="bg-surface-container-highest/30 rounded-xl p-lg border border-outline-variant/50">
+<div class="flex items-center justify-between mb-md">
+<span class="text-secondary font-label-md">最后编辑于</span>
+<span class="text-on-surface font-label-md">2023.11.24</span>
+</div>
+<div class="flex items-center justify-between">
+<span class="text-secondary font-label-md">项目成员</span>
+<div class="flex -space-x-2">
+<div class="w-6 h-6 rounded-full border border-white bg-primary text-[10px] text-white flex items-center justify-center">JD</div>
+<div class="w-6 h-6 rounded-full border border-white bg-secondary flex items-center justify-center text-[10px] text-white">AI</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+<script>
+        // Micro-interaction: Sidebar active state highlight
+        const navItems = document.querySelectorAll('aside nav a');
+        navItems.forEach(item => {
+            item.addEventListener('mouseenter', () => {
+                if (!item.classList.contains('bg-secondary-fixed')) {
+                    item.style.transform = 'translateX(4px)';
+                }
+            });
+            item.addEventListener('mouseleave', () => {
+                item.style.transform = 'translateX(0px)';
+            });
+        });
+    </script>
+</body></html>

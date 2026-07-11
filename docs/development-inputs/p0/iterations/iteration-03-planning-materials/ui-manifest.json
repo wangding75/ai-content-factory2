@@ -1,0 +1,45 @@
+{
+  "iteration": "03",
+  "frames": [
+    {
+      "id": "S02_PROJECT_PLANNING",
+      "label": "项目策划",
+      "relative_path": "ui/frames/S02_PROJECT_PLANNING"
+    },
+    {
+      "id": "S02_PROJECT_MATERIALS",
+      "label": "项目素材列表",
+      "relative_path": "ui/frames/S02_PROJECT_MATERIALS"
+    },
+    {
+      "id": "S02_CREATE_MATERIAL",
+      "label": "新建并绑定素材",
+      "relative_path": "ui/frames/S02_CREATE_MATERIAL"
+    },
+    {
+      "id": "S02_MATERIAL_DETAIL",
+      "label": "素材详情",
+      "relative_path": "ui/frames/S02_MATERIAL_DETAIL"
+    },
+    {
+      "id": "S02_PICK_MATERIAL",
+      "label": "选择已有素材",
+      "relative_path": "ui/frames/S02_PICK_MATERIAL"
+    },
+    {
+      "id": "S02_EDIT_MATERIAL",
+      "label": "编辑素材",
+      "relative_path": "ui/frames/S02_EDIT_MATERIAL"
+    },
+    {
+      "id": "S02_EDIT_MATERIAL_USAGE",
+      "label": "编辑项目用途",
+      "relative_path": "ui/frames/S02_EDIT_MATERIAL_USAGE"
+    },
+    {
+      "id": "S02_UNBIND_MATERIAL",
+      "label": "解除素材绑定",
+      "relative_path": "ui/frames/S02_UNBIND_MATERIAL"
+    }
+  ]
+}

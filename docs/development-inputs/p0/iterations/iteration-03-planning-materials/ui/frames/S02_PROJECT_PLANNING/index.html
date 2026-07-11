@@ -1,0 +1,396 @@
+<!DOCTYPE html><html class="light" lang="zh-CN"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>AI Factory - 项目策划</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #e2e8f0;
+            border-radius: 10px;
+        }
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(8px);
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "outline-variant": "#c7c4d7",
+                        "outline": "#767586",
+                        "on-surface-variant": "#464554",
+                        "primary": "#4648d4",
+                        "on-primary-fixed": "#07006c",
+                        "surface-dim": "#d8dadc",
+                        "surface-tint": "#494bd6",
+                        "surface-bright": "#f7f9fb",
+                        "surface-container-highest": "#e0e3e5",
+                        "surface": "#f7f9fb",
+                        "secondary-fixed": "#d4e4fa",
+                        "surface-container": "#eceef0",
+                        "primary-fixed-dim": "#c0c1ff",
+                        "primary-container": "#6063ee",
+                        "surface-container-low": "#f2f4f6",
+                        "inverse-surface": "#2d3133",
+                        "tertiary-fixed-dim": "#ffb783",
+                        "secondary": "#516072",
+                        "on-tertiary-container": "#fffbff",
+                        "inverse-primary": "#c0c1ff",
+                        "tertiary": "#904900",
+                        "on-secondary-fixed-variant": "#39485a",
+                        "background": "#f7f9fb",
+                        "surface-container-lowest": "#ffffff",
+                        "on-tertiary": "#ffffff",
+                        "inverse-on-surface": "#eff1f3",
+                        "error": "#ba1a1a",
+                        "tertiary-container": "#b55d00",
+                        "secondary-fixed-dim": "#b9c8de",
+                        "on-primary-container": "#fffbff",
+                        "on-error-container": "#93000a",
+                        "tertiary-fixed": "#ffdcc5",
+                        "on-secondary-fixed": "#0d1c2d",
+                        "secondary-container": "#d2e1f7",
+                        "on-secondary-container": "#556477",
+                        "error-container": "#ffdad6",
+                        "surface-container-high": "#e6e8ea",
+                        "primary-fixed": "#e1e0ff",
+                        "on-surface": "#191c1e",
+                        "on-primary": "#ffffff",
+                        "on-error": "#ffffff",
+                        "on-primary-fixed-variant": "#2f2ebe",
+                        "on-tertiary-fixed": "#301400",
+                        "on-secondary": "#ffffff",
+                        "on-background": "#191c1e",
+                        "surface-variant": "#e0e3e5",
+                        "on-tertiary-fixed-variant": "#703700"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "sm": "8px",
+                        "xl": "32px",
+                        "md": "16px",
+                        "xs": "4px",
+                        "lg": "24px",
+                        "3xl": "64px",
+                        "unit": "8px",
+                        "container-margin": "32px",
+                        "gutter": "24px",
+                        "2xl": "48px"
+                    },
+                    "fontFamily": {
+                        "headline-sm": ["Inter"],
+                        "headline-md": ["Inter"],
+                        "display": ["Inter"],
+                        "label-md": ["Inter"],
+                        "headline-lg": ["Inter"],
+                        "body-md": ["Inter"],
+                        "label-sm": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "headline-lg-mobile": ["Inter"],
+                        "body-sm": ["Inter"]
+                    },
+                    "fontSize": {
+                        "headline-sm": ["20px", {"lineHeight": "28px", "letterSpacing": "0em", "fontWeight": "600"}],
+                        "headline-md": ["24px", {"lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                        "display": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "label-md": ["14px", {"lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "500"}],
+                        "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "600"}],
+                        "body-md": ["16px", {"lineHeight": "24px", "letterSpacing": "0em", "fontWeight": "400"}],
+                        "label-sm": ["12px", {"lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "600"}],
+                        "body-lg": ["18px", {"lineHeight": "28px", "letterSpacing": "0em", "fontWeight": "400"}],
+                        "headline-lg-mobile": ["24px", {"lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                        "body-sm": ["14px", {"lineHeight": "20px", "letterSpacing": "0em", "fontWeight": "400"}]
+                    }
+                }
+            }
+        }
+    </script>
+
+<link rel="stylesheet" href="../../shared/prototype-router.css">
+<script>window.__ACF_PROTOTYPE_PAGE__="S02_PROJECT_PLANNING";window.__ACF_PROTOTYPE_LABEL__="项目策划";</script>
+<script defer src="../../shared/prototype-router.js"></script>
+</head>
+<body class="bg-surface text-on-surface flex overflow-hidden h-screen">
+<!-- SideNavBar Anchor -->
+<aside class="fixed left-0 top-0 h-full w-[280px] bg-surface-container-lowest border-r border-outline-variant flex flex-col py-lg z-50">
+<div class="px-lg mb-xl">
+<div class="flex items-center gap-md">
+<div class="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
+<span class="material-symbols-outlined text-on-primary">factory</span>
+</div>
+<div><h1 class="font-headline-md text-headline-md font-bold text-primary">AI Content Factory</h1></div>
+</div>
+</div>
+<nav class="flex-1 space-y-1">
+<a class="flex items-center gap-md text-secondary py-3 px-4 hover:bg-surface-container-low transition-colors duration-200" href="#">
+<span class="material-symbols-outlined">home</span>
+<span class="font-body-md text-body-md">首页</span>
+</a>
+<a class="flex items-center gap-md bg-secondary-fixed text-on-secondary-fixed-variant border-l-2 border-primary py-3 px-4 transition-colors duration-200" href="#">
+<span class="material-symbols-outlined">folder</span>
+<span class="font-body-md text-body-md">项目</span>
+</a>
+<a class="flex items-center gap-md text-secondary py-3 px-4 hover:bg-surface-container-low transition-colors duration-200" href="#">
+<span class="material-symbols-outlined">perm_media</span>
+<span class="font-body-md text-body-md">素材</span>
+</a>
+<a class="flex items-center gap-md text-secondary py-3 px-4 hover:bg-surface-container-low transition-colors duration-200" href="#">
+<span class="material-symbols-outlined">movie</span>
+<span class="font-body-md text-body-md">作品</span>
+</a>
+<a class="flex items-center gap-md text-secondary py-3 px-4 hover:bg-surface-container-low transition-colors duration-200" href="#">
+<span class="material-symbols-outlined">procedure</span>
+<span class="font-body-md text-body-md">流程</span>
+</a>
+<a class="flex items-center gap-md text-secondary py-3 px-4 hover:bg-surface-container-low transition-colors duration-200" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span class="font-body-md text-body-md">设置</span>
+</a>
+</nav>
+</aside>
+<!-- Content Shell -->
+<main class="flex-1 ml-[280px] flex flex-col h-screen relative">
+<!-- TopAppBar (Primary) -->
+<header class="fixed top-0 right-0 w-[calc(100%-280px)] h-16 bg-surface-container-lowest border-b border-outline-variant flex items-center justify-between px-xl z-40">
+<div class="flex items-center gap-md"><div class="flex items-center gap-sm text-secondary font-label-sm mb-1"><span class="hover:text-primary cursor-pointer">项目管理</span><span class="material-symbols-outlined text-xs">chevron_right</span><span>末世求生</span></div><div class="flex items-center gap-md"><h2 class="font-headline-sm text-headline-sm font-semibold text-on-surface">末世求生</h2><span class="px-2 py-0.5 bg-tertiary/10 text-tertiary rounded text-[10px] font-bold uppercase tracking-wider">策划中</span><span class="px-2 py-0.5 bg-surface-container-highest text-secondary rounded text-[10px] font-bold uppercase tracking-wider">S02</span></div></div>
+<div class="flex items-center gap-lg">
+<div class="flex items-center gap-xs text-secondary cursor-pointer hover:opacity-80 transition-opacity">
+<span class="material-symbols-outlined text-xl">help</span>
+</div>
+<div class="relative text-secondary cursor-pointer hover:opacity-80 transition-opacity">
+<span class="material-symbols-outlined text-xl">notifications</span>
+<span class="absolute -top-1 -right-1 w-2 h-2 bg-error rounded-full"></span>
+</div>
+<div class="h-8 w-px bg-outline-variant mx-sm"></div>
+</div>
+</header>
+<!-- TopAppBar (Secondary/Project Nav) -->
+<nav class="fixed top-16 right-0 w-[calc(100%-280px)] h-12 bg-surface border-b border-outline-variant flex items-center gap-xl px-xl z-30 overflow-x-auto"><a class="font-label-md text-label-md text-secondary pb-2 whitespace-nowrap hover:text-primary transition-all" href="#">概览</a><a class="font-label-md text-label-md text-primary border-b-2 border-primary pb-2 whitespace-nowrap" href="#">策划</a><a class="font-label-md text-label-md text-secondary pb-2 whitespace-nowrap hover:text-primary transition-all" href="#">素材</a><a class="font-label-md text-label-md text-secondary pb-2 whitespace-nowrap hover:text-primary transition-all" href="#">故事线</a><a class="font-label-md text-label-md text-secondary pb-2 whitespace-nowrap hover:text-primary transition-all" href="#">章节</a><a class="font-label-md text-label-md text-secondary pb-2 whitespace-nowrap hover:text-primary transition-all" href="#">审核</a><a class="font-label-md text-label-md text-secondary pb-2 whitespace-nowrap hover:text-primary transition-all" href="#">作品</a><a class="font-label-md text-label-md text-secondary pb-2 whitespace-nowrap hover:text-primary transition-all" href="#">设置</a></nav>
+<!-- Workspace Container -->
+<div class="mt-28 flex-1 flex p-xl gap-xl overflow-hidden">
+<!-- Left: Editable Form -->
+<div class="flex-[3] flex flex-col gap-xl overflow-y-auto custom-scrollbar pr-md">
+<!-- Status Banner -->
+<div class="hidden flex items-center justify-between bg-secondary-container text-on-secondary-container px-lg py-sm rounded-xl animate-fade-in" id="saveIndicator">
+<div class="flex items-center gap-md">
+<span class="material-symbols-outlined animate-spin text-sm">sync</span>
+<span class="font-label-sm text-label-sm">有未保存的更改</span>
+</div>
+<div class="flex items-center gap-lg">
+<button class="text-primary font-label-sm hover:underline" onclick="saveChanges()">立即保存</button>
+</div>
+</div>
+<!-- Section 1: 项目定位 -->
+<section class="bg-surface-container-lowest rounded-xl border border-outline-variant p-lg space-y-lg shadow-sm">
+<div class="flex items-center gap-md border-b border-outline-variant pb-md">
+<span class="material-symbols-outlined text-primary">ads_click</span>
+<h3 class="font-headline-sm text-headline-sm">项目定位</h3>
+</div>
+<div class="grid grid-cols-2 gap-lg">
+<div class="space-y-xs">
+<label class="font-label-sm text-label-sm text-secondary px-1">核心主题</label>
+<input class="w-full bg-surface-container-low border border-outline-variant rounded-lg px-md py-2.5 focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all font-body-md" oninput="showUnsaved()" type="text" value="红雾末世求生">
+</div>
+<div class="space-y-xs">
+<label class="font-label-sm text-label-sm text-secondary px-1">目标受众</label>
+<input class="w-full bg-surface-container-low border border-outline-variant rounded-lg px-md py-2.5 focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all font-body-md" oninput="showUnsaved()" placeholder="例如：20-35岁 硬核科幻爱好者" type="text">
+</div>
+</div>
+<div class="space-y-xs">
+<label class="font-label-sm text-label-sm text-secondary px-1">核心卖点 (Selling Points)</label>
+<div class="flex flex-wrap gap-sm">
+<div class="flex items-center gap-xs bg-primary-fixed text-on-primary-fixed-variant px-md py-1.5 rounded-full font-label-sm">
+<span>沉浸式克苏鲁元素</span>
+<span class="material-symbols-outlined text-sm cursor-pointer">close</span>
+</div>
+<div class="flex items-center gap-xs bg-primary-fixed text-on-primary-fixed-variant px-md py-1.5 rounded-full font-label-sm">
+<span>资源枯竭压力</span>
+<span class="material-symbols-outlined text-sm cursor-pointer">close</span>
+</div>
+<button class="border border-dashed border-outline text-secondary px-md py-1.5 rounded-full font-label-sm hover:border-primary hover:text-primary transition-all flex items-center gap-xs">
+<span class="material-symbols-outlined text-sm">add</span>
+<span>添加标签</span>
+</button>
+</div>
+</div>
+</section>
+<!-- Section 2: 创作方向 -->
+<section class="bg-surface-container-lowest rounded-xl border border-outline-variant p-lg space-y-lg shadow-sm">
+<div class="flex items-center gap-md border-b border-outline-variant pb-md">
+<span class="material-symbols-outlined text-primary">brush</span>
+<h3 class="font-headline-sm text-headline-sm">创作方向</h3>
+</div>
+<div class="grid grid-cols-2 gap-lg">
+<div class="space-y-xs">
+<label class="font-label-sm text-label-sm text-secondary px-1">文学风格</label>
+<select class="w-full bg-surface-container-low border border-outline-variant rounded-lg px-md py-2.5 focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all font-body-md appearance-none" onchange="showUnsaved()">
+<option>紧张、克制 (Minimalist Tension)</option>
+<option>华丽、宏大</option>
+<option>硬核、技术流</option>
+</select>
+</div>
+<div class="space-y-xs">
+<label class="font-label-sm text-label-sm text-secondary px-1">情感基调</label>
+<select class="w-full bg-surface-container-low border border-outline-variant rounded-lg px-md py-2.5 focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all font-body-md appearance-none" onchange="showUnsaved()">
+<option>压抑、绝望中寻找微光</option>
+<option>热血、抗争</option>
+<option>冷酷、理智</option>
+</select>
+</div>
+</div>
+<div class="space-y-xs">
+<label class="font-label-sm text-label-sm text-secondary px-1">核心剧情描述</label>
+<textarea class="w-full bg-surface-container-low border border-outline-variant rounded-lg px-md py-2.5 focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all font-body-md resize-none" oninput="showUnsaved()" placeholder="描述故事的起始冲突与世界观核心机制..." rows="4"></textarea>
+</div>
+</section>
+<!-- Section 3: 基础信息 (Read-Only) -->
+<section class="bg-surface-container-low/50 rounded-xl border border-outline-variant p-lg space-y-md">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-md">
+<span class="material-symbols-outlined text-secondary">info</span>
+<h3 class="font-label-md text-label-md font-bold text-secondary">基础信息</h3>
+</div>
+<span class="text-xs text-outline uppercase font-bold tracking-widest">Read Only</span>
+</div>
+<div class="grid grid-cols-3 gap-xl">
+<div class="space-y-1">
+<p class="font-label-sm text-label-sm text-secondary">项目名称</p>
+<p class="font-body-md text-body-md font-medium">末世求生</p>
+</div>
+<div class="space-y-1">
+<p class="font-label-sm text-label-sm text-secondary">创作类型</p>
+<p class="font-body-md text-body-md font-medium">长篇小说 / 科幻末日</p>
+</div>
+<div class="space-y-1">
+<p class="font-label-sm text-label-sm text-secondary">当前状态</p>
+<div class="flex items-center gap-xs">
+<span class="w-2 h-2 bg-tertiary rounded-full"></span>
+<span class="font-body-md text-body-md font-medium text-tertiary">策划中</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Bottom Actions -->
+<div class="flex items-center justify-end gap-md pb-xl">
+<button class="px-xl py-2.5 rounded-lg border border-outline-variant text-secondary font-label-md hover:bg-surface-container-highest transition-all">取消</button>
+<button class="px-xl py-2.5 rounded-lg bg-primary text-on-primary font-label-md hover:brightness-110 shadow-lg shadow-primary/20 transition-all" onclick="saveChanges()">保存策划方案</button>
+</div>
+</div>
+<!-- Right: Preview Panel -->
+<div class="flex-[2] flex flex-col gap-lg">
+<div class="sticky top-0 space-y-lg">
+<div class="flex items-center justify-between px-md">
+<h4 class="font-label-md text-label-md font-bold uppercase tracking-wider text-secondary">项目摘要预览</h4>
+<span class="material-symbols-outlined text-outline cursor-pointer hover:text-primary transition-colors">open_in_full</span>
+</div>
+<div class="bg-surface-container-lowest rounded-2xl border border-outline-variant overflow-hidden shadow-xl">
+<!-- Preview Cover -->
+<div class="h-48 relative">
+<div class="w-full h-full bg-cover bg-center" data-alt="Cinematic concept art of a desolate futuristic city engulfed in thick, eerie glowing crimson mist. Ruined skyscrapers stand as silhouettes against a hazy, dark sky. The atmosphere is oppressive, dark, and mysterious, with sharp contrast and hyper-detailed urban decay textures." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuDmDW7AJB3pVm9JRJTfWFwhkHFpT4Gz-mY7UjuiUpwql9jm76UP1OQayJWUrnXf1Gcl_EcJqpQlY25VS0MJmPpRfKNByXpFwbDgEx_DqRfwj0woy9JB0KdhjrpS9zWD5IDpGMbXMVAFI4DP1VO18TGufKI8MMArzzbCJzLE84eZ7Q1aW6WvBrRj2rPc9Q5qTlYC3c6SbZy91mHJJbaulTt9rA6AFvyopy1TF0hQut0VwSUyhTMZ-zBG9GmkQMwXh_0Mq96FeZzPkGA')"></div>
+<div class="absolute inset-0 bg-gradient-to-t from-surface-container-lowest via-transparent to-transparent"></div>
+<div class="absolute bottom-4 left-6 flex items-center gap-md">
+<div class="w-12 h-12 bg-primary rounded-xl flex items-center justify-center shadow-lg">
+<span class="material-symbols-outlined text-on-primary">menu_book</span>
+</div>
+<div class="text-white drop-shadow-md">
+<h4 class="font-headline-sm text-headline-sm">末世求生</h4>
+<p class="font-label-sm text-label-sm opacity-90">策划编号: P-2024-089</p>
+</div>
+</div>
+</div>
+<!-- Preview Content -->
+<div class="p-lg space-y-xl">
+<div class="space-y-md">
+<p class="text-label-sm font-bold text-primary uppercase tracking-widest">定位摘要</p>
+<p class="font-body-lg text-body-lg font-semibold leading-tight" id="previewTheme">红雾下的极简主义求生博弈</p>
+<p class="font-body-md text-body-md text-secondary leading-relaxed">
+                                    针对硬核科幻受众，以“红雾”为核心视觉符号，通过资源管理的极致压力构建紧张感。
+                                </p>
+</div>
+<div class="grid grid-cols-2 gap-md pt-md border-t border-outline-variant">
+<div class="space-y-xs">
+<p class="text-[10px] font-bold text-outline uppercase tracking-wider">风格调性</p>
+<div class="flex items-center gap-xs">
+<span class="material-symbols-outlined text-sm text-tertiary">mood</span>
+<span class="font-label-md text-label-md">紧张、克制</span>
+</div>
+</div>
+<div class="space-y-xs">
+<p class="text-[10px] font-bold text-outline uppercase tracking-wider">创作状态</p>
+<div class="flex items-center gap-xs">
+<span class="material-symbols-outlined text-sm text-primary">edit_square</span>
+<span class="font-label-md text-label-md">策划推进中</span>
+</div>
+</div>
+</div>
+<div class="p-md bg-surface-container-low rounded-xl border border-outline-variant/50">
+<p class="text-label-sm text-secondary italic">“在迷雾中，每一个选择都可能是最后一个。”</p>
+</div>
+<div class="flex items-center justify-between text-outline">
+<div class="flex -space-x-2">
+<div class="w-8 h-8 rounded-full border-2 border-surface-container-lowest overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="Professional profile photo of a creative director, diverse background, high-end lighting, minimal studio aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuB2i-wAInjOPAeGpqbTTXv9GdWJLevGgoWUeQ0ydciWkjURSZX0V5hwHOeU8Ay9JmfRNmMQ2mpExLD2IG78mFtOhgokr4xJjrIEVuQGpP5KXy8GHkkbzR5UfVDYzvaknj9c7kYxnxRh9vGTEq_HgZ4eYM8z0DzyrM_GPED8d0wTf-PwnMz5Ih1tno9ZJCbKQHsWCm3_SK5kn1oubN-aMuu4OntVvF5OxwgZsQzs48i5ubz5xYy04EKCpEq87H8rQvOb78nHszLV7wM">
+</div>
+<div class="w-8 h-8 rounded-full border-2 border-surface-container-lowest overflow-hidden bg-surface-container-highest flex items-center justify-center text-[10px] font-bold">
+                                        +3
+                                    </div>
+</div>
+<p class="font-label-sm text-label-sm">最后修改: 2分钟前</p>
+</div>
+</div>
+</div>
+<!-- Insight Card -->
+</div>
+</div>
+</div>
+</main>
+<script>
+        function showUnsaved() {
+            const indicator = document.getElementById('saveIndicator');
+            indicator.classList.remove('hidden');
+        }
+
+        function saveChanges() {
+            const indicator = document.getElementById('saveIndicator');
+            indicator.classList.add('hidden');
+            // Mock feedback
+            console.log('Changes saved to "末世求生" project.');
+        }
+
+        // Simple preview update mock
+        const inputs = document.querySelectorAll('input, select, textarea');
+        inputs.forEach(input => {
+            input.addEventListener('input', (e) => {
+                if(e.target.type === 'text' && e.target.value) {
+                    const previewTitle = document.getElementById('previewTheme');
+                    if (previewTitle && e.target.value.length < 20) {
+                        previewTitle.innerText = e.target.value;
+                    }
+                }
+            });
+        });
+    </script>
+</body></html>

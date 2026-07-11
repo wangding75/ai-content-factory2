@@ -1,0 +1,20 @@
+{
+  "iteration": "07",
+  "frames": [
+    {
+      "id": "D3_PROJECT_WORKS",
+      "label": "项目作品",
+      "relative_path": "ui/frames/D3_PROJECT_WORKS"
+    },
+    {
+      "id": "D4_CREATE_REWRITE",
+      "label": "创建重写版本",
+      "relative_path": "ui/frames/D4_CREATE_REWRITE"
+    },
+    {
+      "id": "D5_REWRITE_RESULT",
+      "label": "重写结果",
+      "relative_path": "ui/frames/D5_REWRITE_RESULT"
+    }
+  ]
+}

@@ -1,0 +1,25 @@
+{
+  "iteration": "02",
+  "frames": [
+    {
+      "id": "S00_HOME",
+      "label": "首页",
+      "relative_path": "ui/frames/S00_HOME"
+    },
+    {
+      "id": "S01_PROJECTS",
+      "label": "项目列表",
+      "relative_path": "ui/frames/S01_PROJECTS"
+    },
+    {
+      "id": "S01_CREATE_PROJECT",
+      "label": "新建项目",
+      "relative_path": "ui/frames/S01_CREATE_PROJECT"
+    },
+    {
+      "id": "S02_PROJECT_OVERVIEW",
+      "label": "项目概览",
+      "relative_path": "ui/frames/S02_PROJECT_OVERVIEW"
+    }
+  ]
+}

@@ -1,0 +1,512 @@
+<!DOCTYPE html><html class="light" lang="zh-CN" style=""><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            display: inline-block;
+            line-height: 1;
+            text-transform: none;
+            letter-spacing: normal;
+            word-wrap: normal;
+            white-space: nowrap;
+            direction: ltr;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f7f9fb;
+            color: #191c1e;
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 4px;
+            height: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #e0e3e5;
+            border-radius: 10px;
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(8px);
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-primary-fixed": "#07006c",
+                        "tertiary": "#904900",
+                        "primary": "#4648d4",
+                        "surface-bright": "#f7f9fb",
+                        "on-surface": "#191c1e",
+                        "primary-container": "#6063ee",
+                        "outline-variant": "#c7c4d7",
+                        "surface-dim": "#d8dadc",
+                        "inverse-primary": "#c0c1ff",
+                        "surface-container-high": "#e6e8ea",
+                        "secondary-container": "#d2e1f7",
+                        "tertiary-fixed-dim": "#ffb783",
+                        "on-error-container": "#93000a",
+                        "surface-container-lowest": "#ffffff",
+                        "on-tertiary-fixed": "#301400",
+                        "on-secondary": "#ffffff",
+                        "on-tertiary": "#ffffff",
+                        "inverse-on-surface": "#eff1f3",
+                        "surface-variant": "#e0e3e5",
+                        "on-secondary-fixed": "#0d1c2d",
+                        "surface": "#f7f9fb",
+                        "primary-fixed-dim": "#c0c1ff",
+                        "primary-fixed": "#e1e0ff",
+                        "error": "#ba1a1a",
+                        "on-primary": "#ffffff",
+                        "surface-container-highest": "#e0e3e5",
+                        "secondary": "#516072",
+                        "on-tertiary-fixed-variant": "#703700",
+                        "on-background": "#191c1e",
+                        "error-container": "#ffdad6",
+                        "surface-tint": "#494bd6",
+                        "inverse-surface": "#2d3133",
+                        "secondary-fixed-dim": "#b9c8de",
+                        "outline": "#767586",
+                        "background": "#f7f9fb",
+                        "tertiary-container": "#b55d00",
+                        "on-secondary-fixed-variant": "#39485a",
+                        "on-primary-container": "#fffbff",
+                        "on-error": "#ffffff",
+                        "on-surface-variant": "#464554",
+                        "surface-container": "#eceef0",
+                        "tertiary-fixed": "#ffdcc5",
+                        "surface-container-low": "#f2f4f6",
+                        "on-tertiary-container": "#fffbff",
+                        "on-secondary-container": "#556477",
+                        "secondary-fixed": "#d4e4fa",
+                        "on-primary-fixed-variant": "#2f2ebe"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "xs": "4px",
+                        "container-margin": "32px",
+                        "unit": "8px",
+                        "sm": "8px",
+                        "md": "16px",
+                        "lg": "24px",
+                        "3xl": "64px",
+                        "gutter": "24px",
+                        "xl": "32px",
+                        "2xl": "48px"
+                    },
+                    "fontFamily": {
+                        "headline-sm": ["Inter"],
+                        "display": ["Inter"],
+                        "label-sm": ["Inter"],
+                        "headline-lg-mobile": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "label-md": ["Inter"],
+                        "headline-lg": ["Inter"],
+                        "body-sm": ["Inter"],
+                        "body-md": ["Inter"],
+                        "headline-md": ["Inter"]
+                    },
+                    "fontSize": {
+                        "headline-sm": ["20px", {"lineHeight": "28px", "letterSpacing": "0em", "fontWeight": "600"}],
+                        "display": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "label-sm": ["12px", {"lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "600"}],
+                        "headline-lg-mobile": ["24px", {"lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                        "body-lg": ["18px", {"lineHeight": "28px", "letterSpacing": "0em", "fontWeight": "400"}],
+                        "label-md": ["14px", {"lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "500"}],
+                        "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "600"}],
+                        "body-sm": ["14px", {"lineHeight": "20px", "letterSpacing": "0em", "fontWeight": "400"}],
+                        "body-md": ["16px", {"lineHeight": "24px", "letterSpacing": "0em", "fontWeight": "400"}],
+                        "headline-md": ["24px", {"lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "600"}]
+                    }
+                }
+            }
+        }
+    </script>
+
+<link rel="stylesheet" href="../../shared/prototype-router.css">
+<script>window.__ACF_PROTOTYPE_PAGE__="S02_CREATE_MATERIAL";window.__ACF_PROTOTYPE_LABEL__="新建并绑定素材";</script>
+<script defer src="../../shared/prototype-router.js"></script>
+</head>
+<body class="bg-surface overflow-hidden">
+<!-- Side Navigation Bar -->
+<aside class="fixed left-0 top-0 h-full w-[280px] bg-surface-container-lowest border-r border-outline-variant flex flex-col py-lg z-50">
+<div class="px-xl mb-xl">
+<div class="flex items-center gap-sm">
+<div class="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
+<span class="material-symbols-outlined text-on-primary" style="font-variation-settings: &quot;FILL&quot; 1;">factory</span>
+</div>
+<div>
+<h1 class="font-headline-md text-headline-md font-bold text-primary">AI Content Factory</h1>
+</div>
+</div>
+</div>
+<nav class="flex-1 px-md space-y-xs">
+<a class="flex items-center gap-md text-secondary py-3 px-4 hover:bg-surface-container-low transition-colors duration-200 rounded-lg" href="#">
+<span class="material-symbols-outlined">home</span>
+<span class="font-body-md">首页</span>
+</a>
+<a class="flex items-center gap-md bg-secondary-fixed text-on-secondary-fixed-variant border-l-2 border-primary py-3 px-4 transition-colors duration-200 rounded-r-lg" href="#">
+<span class="material-symbols-outlined">folder</span>
+<span class="font-body-md">项目</span>
+</a>
+<a class="flex items-center gap-md text-secondary py-3 px-4 hover:bg-surface-container-low transition-colors duration-200 rounded-lg" href="#">
+<span class="material-symbols-outlined">perm_media</span>
+<span class="font-body-md">素材</span>
+</a>
+<a class="flex items-center gap-md text-secondary py-3 px-4 hover:bg-surface-container-low transition-colors duration-200 rounded-lg" href="#">
+<span class="material-symbols-outlined">movie</span>
+<span class="font-body-md">作品</span>
+</a>
+<a class="flex items-center gap-md text-secondary py-3 px-4 hover:bg-surface-container-low transition-colors duration-200 rounded-lg" href="#">
+<span class="material-symbols-outlined">procedure</span>
+<span class="font-body-md">流程</span>
+</a>
+</nav>
+<div class="mt-auto px-md">
+<a class="flex items-center gap-md text-secondary py-3 px-4 hover:bg-surface-container-low transition-colors duration-200 rounded-lg" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span class="font-body-md">设置</span>
+</a>
+</div>
+</aside>
+<!-- Main Content Shell -->
+<main class="ml-[280px] h-screen flex flex-col relative overflow-hidden">
+<!-- Top App Bar 1: Breadcrumb & Title -->
+<header class="h-16 flex items-center justify-between px-xl bg-surface-container-lowest border-b border-outline-variant shrink-0">
+<div class="flex items-center gap-md">
+<span class="font-label-md text-on-surface-variant">项目 / 末世求生</span>
+<div class="h-4 w-px bg-outline-variant mx-xs"></div>
+<div class="flex items-center gap-sm">
+<span class="bg-secondary-container text-on-secondary-container px-2 py-0.5 rounded text-[12px] font-semibold">小说</span>
+<span class="bg-tertiary-fixed text-on-tertiary-fixed-variant px-2 py-0.5 rounded text-[12px] font-semibold">策划中</span>
+</div>
+</div>
+<div class="flex items-center gap-lg">
+<div class="relative w-64 group">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline text-[20px]">search</span>
+<input class="w-full pl-10 pr-4 py-2 bg-surface-container-low border-none rounded-full text-body-sm focus:ring-2 focus:ring-primary transition-all" placeholder="全局搜索..." type="text">
+</div>
+<div class="flex items-center gap-md">
+<span class="material-symbols-outlined text-on-surface-variant cursor-pointer hover:text-primary transition-opacity">help</span>
+<span class="material-symbols-outlined text-on-surface-variant cursor-pointer hover:text-primary transition-opacity">notifications</span>
+<div class="w-8 h-8 rounded-full bg-surface-variant overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="A professional user profile portrait in a minimalist, light-mode interface. The lighting is soft and even, highlighting the clear, professional atmosphere of a modern creative workspace. The aesthetic is clean and high-end, utilizing neutral tones to maintain focus on functionality and clarity." src="https://lh3.googleusercontent.com/aida-public/AB6AXuB1J0WWCI0_fM3QKvaAsk2a_mHqs4wsJzMQ72AI1GwLgFWpd5iE2wjKw1nH6VCpVO3FcbarhLbFr_IJDTDy3vfAYZSt8Vsdbis1GZssX6PSvnuTKrT_QVUkokCzcqWTwfb_mHaEbO881RMP7UDMB9z6n3JmyySlcKuGMd8luOYLJYilPdvGjNPyJCc9W5jCre-aEbjdh8IlEcXy7IGB2pjEver38Q83Y2FZl0TXzBC5-JD6YxTsTAd3fk9batFHSPEAFPMBnqgMaOA">
+</div>
+</div>
+</div>
+</header>
+<!-- Top App Bar 2: Project Navigation -->
+<nav class="h-12 bg-surface border-b border-outline-variant px-xl flex items-center gap-xl shrink-0">
+<a class="font-label-md text-secondary pb-2 border-b-2 border-transparent hover:text-primary transition-all" href="#">概览</a>
+<a class="font-label-md text-secondary pb-2 border-b-2 border-transparent hover:text-primary transition-all" href="#">策划</a>
+<a class="font-label-md text-primary border-b-2 border-primary pb-2 font-bold transition-all" href="#">素材</a>
+<a class="font-label-md text-secondary pb-2 border-b-2 border-transparent hover:text-primary transition-all" href="#">故事线</a>
+<a class="font-label-md text-secondary pb-2 border-b-2 border-transparent hover:text-primary transition-all" href="#">章节</a>
+<a class="font-label-md text-secondary pb-2 border-b-2 border-transparent hover:text-primary transition-all" href="#">审核</a>
+<a class="font-label-md text-secondary pb-2 border-b-2 border-transparent hover:text-primary transition-all" href="#">作品</a>
+<a class="font-label-md text-secondary pb-2 border-b-2 border-transparent hover:text-primary transition-all" href="#">设置</a>
+</nav>
+<!-- Main Workspace -->
+<div class="flex-1 overflow-y-auto custom-scrollbar bg-background p-xl">
+<!-- Header Section -->
+<div class="flex items-end justify-between mb-xl">
+<div>
+<h2 class="font-headline-lg text-headline-lg text-on-surface mb-xs">素材</h2>
+<p class="font-body-md text-on-surface-variant">红雾爆发后的末世求生故事</p>
+</div>
+<div class="flex items-center gap-md">
+<button class="bg-surface border border-outline-variant px-lg py-sm rounded-lg text-secondary font-label-md hover:bg-surface-container-low transition-all">选择已有素材</button>
+<button class="bg-primary text-on-primary px-lg py-sm rounded-lg font-label-md flex items-center gap-sm hover:opacity-90 transition-all shadow-sm">
+<span class="material-symbols-outlined text-[18px]">add</span>
+                        新建素材
+                    </button>
+</div>
+</div>
+<!-- Filter & Search Row -->
+<div class="flex flex-col gap-lg mb-xl">
+<div class="flex items-center gap-md overflow-x-auto no-scrollbar border-b border-outline-variant pb-md"><button class="whitespace-nowrap px-lg py-2 bg-primary text-on-primary rounded-full font-label-md transition-all">全部 (5)</button><button class="whitespace-nowrap px-lg py-2 text-secondary hover:bg-surface-container-low rounded-full font-label-md transition-all">人物 (2)</button><button class="whitespace-nowrap px-lg py-2 text-secondary hover:bg-surface-container-low rounded-full font-label-md transition-all">世界观 (1)</button><button class="whitespace-nowrap px-lg py-2 text-secondary hover:bg-surface-container-low rounded-full font-label-md transition-all">地点 (1)</button><button class="whitespace-nowrap px-lg py-2 text-secondary hover:bg-surface-container-low rounded-full font-label-md transition-all">组织 (0)</button><button class="whitespace-nowrap px-lg py-2 text-secondary hover:bg-surface-container-low rounded-full font-label-md transition-all">道具 (1)</button><button class="whitespace-nowrap px-lg py-2 text-secondary hover:bg-surface-container-low rounded-full font-label-md transition-all">参考资料 (0)</button></div><div class="relative w-80 group mt-md"><span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline text-[18px]">search</span><input class="w-full pl-10 pr-4 py-2 bg-white border border-outline-variant rounded-lg text-body-sm focus:ring-2 focus:ring-primary focus:border-transparent transition-all" placeholder="搜索项目素材" type="text"></div>
+</div>
+<!-- Material Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-lg">
+<!-- Card 1: 林野 (Character) -->
+<div class="bg-white border border-outline-variant rounded-xl p-lg flex flex-col gap-md hover:shadow-lg transition-all group relative">
+<div class="flex justify-between items-start">
+<div class="flex gap-md items-center">
+<div class="w-14 h-14 rounded-lg bg-primary-fixed overflow-hidden flex items-center justify-center">
+<img class="w-full h-full object-cover" data-alt="A detailed digital character concept art portrait of Lin Ye, a calm and cautious male survivor in a post-apocalyptic setting. He has short dark hair, sharp intelligent eyes, and wears tactical, worn-out gear suitable for exploration. The lighting is moody and cinematic, with a cool blue and grey color palette typical of a high-end sci-fi minimalist game interface." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBqHEiqNTuT8OwOxkIDULufU9ZWAL3NzWHfYV4WZwQR5QVCalzAPt0N-bwADxkk1bKRv0UqpcB5ohfPvCVN8GtJVlgQEVQFjDOzA0-sNSeB8zbC7mm82UTE0g2PNAeJA5QYDYFYJGnK8TDNfxB-eDeA8ob6AvAPlkObwa4FMkjU3M99pYzHuzB2vl7DNvd5gCJUAYKYQ2XDucJ3cYWruHGuBtxF-GrZMPtZsZMLFsQ8mW4tDjJi2s3xlN700ItC4NqkoQcqXs3XKFA">
+</div>
+<div>
+<h3 class="font-headline-sm text-headline-sm text-on-surface">林野</h3>
+<div class="flex items-center gap-xs mt-1">
+<span class="text-[11px] font-bold uppercase tracking-wider text-primary bg-primary-fixed px-1.5 py-0.5 rounded">人物角色</span>
+<span class="text-[11px] font-bold uppercase tracking-wider text-secondary bg-secondary-fixed px-1.5 py-0.5 rounded">主角</span>
+</div>
+</div>
+</div>
+<button class="text-outline-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined">more_vert</span>
+</button>
+</div>
+<div>
+<p class="text-body-sm text-on-surface-variant mb-xs">用途：人物角色</p>
+<p class="text-body-md text-on-surface line-clamp-2">冷静谨慎，在末世爆发后带领小队寻找安全区</p>
+</div>
+<div class="mt-auto pt-md flex items-center justify-between border-t border-surface-container">
+<span class="text-label-sm text-outline">今天 14:30 更新</span>
+</div>
+</div>
+<!-- Card 2: 许晴 (Character) -->
+<div class="bg-white border border-outline-variant rounded-xl p-lg flex flex-col gap-md hover:shadow-lg transition-all group relative">
+<div class="flex justify-between items-start">
+<div class="flex gap-md items-center">
+<div class="w-14 h-14 rounded-lg bg-secondary-fixed overflow-hidden flex items-center justify-center">
+<img class="w-full h-full object-cover" data-alt="A detailed digital character concept art of Xu Qing, a compassionate female doctor in a dark post-apocalyptic hospital environment. She has tired but resolute features, wearing a stained white lab coat over rugged survival clothing. The scene is illuminated by dim, flickering warm lights against a cold, desaturated background, reflecting a high-end minimalist cinematic aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBvMYd5bfccSov6e8ojK6TT1ZCRnq6hkpMxKd0CgEb6vmp9dMebQ9tTod7Bis42aP0fjh-Bx59gVQai-Ju2ggQtdRRq2u1mLnQ3DGl_CwtCITDuqhyEm2QIbP9vnFmCYzxVhX2dSw1d1t0RUSw4eyfyX4rDpO-SFgUJ2y4vgoPgkOn6NosjxnqC0YCCmntBOf_8IpbYzMvcVc4wl1xpZCDd-bnuzAkjZ5QSNshjm2tglS0xmv-HjaQA9jXr0sBZFffqSoKCqWoSVO0">
+</div>
+<div>
+<h3 class="font-headline-sm text-headline-sm text-on-surface">许晴</h3>
+<div class="flex items-center gap-xs mt-1">
+<span class="text-[11px] font-bold uppercase tracking-wider text-primary bg-primary-fixed px-1.5 py-0.5 rounded">人物角色</span>
+<span class="text-[11px] font-bold uppercase tracking-wider text-secondary bg-secondary-fixed px-1.5 py-0.5 rounded">配角</span>
+</div>
+</div>
+</div>
+<button class="text-outline-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined">more_vert</span>
+</button>
+</div>
+<div>
+<p class="text-body-sm text-on-surface-variant mb-xs">用途：人物角色</p>
+<p class="text-body-md text-on-surface line-clamp-2">医生，在生存压力和道德选择之间不断挣扎</p>
+</div>
+<div class="mt-auto pt-md flex items-center justify-between border-t border-surface-container">
+<span class="text-label-sm text-outline">今天 13:10 更新</span>
+</div>
+</div>
+<!-- Card 3: 红雾末世设定 (Worldview) -->
+<div class="bg-white border border-outline-variant rounded-xl p-lg flex flex-col gap-md hover:shadow-lg transition-all group relative">
+<div class="flex justify-between items-start">
+<div class="flex gap-md items-center">
+<div class="w-14 h-14 rounded-lg bg-tertiary-fixed overflow-hidden flex items-center justify-center">
+<span class="material-symbols-outlined text-tertiary text-3xl">public</span>
+</div>
+<div>
+<h3 class="font-headline-sm text-headline-sm text-on-surface">红雾末世设定</h3>
+<div class="flex items-center gap-xs mt-1">
+<span class="text-[11px] font-bold uppercase tracking-wider text-tertiary bg-tertiary-fixed px-1.5 py-0.5 rounded">世界观设定</span>
+</div>
+</div>
+</div>
+<button class="text-outline-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined">more_vert</span>
+</button>
+</div>
+<div>
+<p class="text-body-sm text-on-surface-variant mb-xs">用途：规则设定</p>
+<p class="text-body-md text-on-surface line-clamp-2">红雾会造成感染和认知异常，是所有章节必须遵守的世界规则</p>
+</div>
+<div class="mt-auto pt-md flex items-center justify-between border-t border-surface-container">
+<span class="text-label-sm text-outline">昨天 更新</span>
+</div>
+</div>
+<!-- Card 4: 安全区 (Location) -->
+<div class="bg-white border border-outline-variant rounded-xl p-lg flex flex-col gap-md hover:shadow-lg transition-all group relative">
+<div class="flex justify-between items-start">
+<div class="flex gap-md items-center">
+<div class="w-14 h-14 rounded-lg bg-on-secondary-container overflow-hidden flex items-center justify-center">
+<img class="w-full h-full object-cover opacity-80" data-alt="A wide-angle landscape concept art of a fortified survival 'Safe Zone' settlement. High concrete walls with watchtowers surround a cluster of repurposed industrial buildings. The lighting is golden hour, casting long shadows and creating a sense of fleeting safety. The environment is dusty and rugged, rendered in a professional, high-fidelity digital art style." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBd_CxMApRIZXWBXpmcLr0cYjgNMX2VFJecUPVTjzrSFsHKZtE9Z7sTetuQ-4wUtZmio5bizkcpkpggyx1k_H0JBCqiTfeKzamPlCUx-t_-RwiS3P0ZWEKOhub1bv2wddBPrSGsh2mUuxCi6eScAj4rq2lZW5qPmo7DgBPCbrh4L2yWM1U2p0rLqy0Qg8OgUhhhQOnY-rodMlFQPdKR3Xax0XYD9z86H94M-7FF3aEHvH8JpwWbLkrAWO7jX4QStn86P8jUUPNHeig">
+</div>
+<div>
+<h3 class="font-headline-sm text-headline-sm text-on-surface">安全区</h3>
+<div class="flex items-center gap-xs mt-1">
+<span class="text-[11px] font-bold uppercase tracking-wider text-on-primary-fixed-variant bg-primary-fixed px-1.5 py-0.5 rounded">故事地点</span>
+</div>
+</div>
+</div>
+<button class="text-outline-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined">more_vert</span>
+</button>
+</div>
+<div>
+<p class="text-body-sm text-on-surface-variant mb-xs">用途：环境场景</p>
+<p class="text-body-md text-on-surface line-clamp-2">表面安全、内部隐藏秘密实验区的幸存者聚聚地</p>
+</div>
+<div class="mt-auto pt-md flex items-center justify-between border-t border-surface-container">
+<span class="text-label-sm text-outline">昨天 更新</span>
+</div>
+</div>
+<!-- Card 5: 禁区通行证 (Prop) -->
+<div class="bg-white border border-outline-variant rounded-xl p-lg flex flex-col gap-md hover:shadow-lg transition-all group relative">
+<div class="flex justify-between items-start">
+<div class="flex gap-md items-center">
+<div class="w-14 h-14 rounded-lg bg-surface-container-high flex items-center justify-center">
+<span class="material-symbols-outlined text-outline text-3xl">key</span>
+</div>
+<div>
+<h3 class="font-headline-sm text-headline-sm text-on-surface">禁区通行证</h3>
+<div class="flex items-center gap-xs mt-1">
+<span class="text-[11px] font-bold uppercase tracking-wider text-error bg-error-container px-1.5 py-0.5 rounded">关键道具</span>
+</div>
+</div>
+</div>
+<button class="text-outline-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined">more_vert</span>
+</button>
+</div>
+<div>
+<p class="text-body-sm text-on-surface-variant mb-xs">用途：剧情推动</p>
+<p class="text-body-md text-on-surface line-clamp-2">能够进入安全区禁区的旧式通行证</p>
+</div>
+<div class="mt-auto pt-md flex items-center justify-between border-t border-surface-container">
+<span class="text-label-sm text-outline">2 天前 更新</span>
+</div>
+</div>
+<!-- Add New Placeholder (Visual) -->
+</div>
+<!-- Footer Annotations -->
+<div class="fixed inset-0 z-[100] flex items-center justify-center bg-on-surface/20 backdrop-blur-sm">
+<div class="bg-surface-container-lowest w-[680px] max-h-[90vh] rounded-xl shadow-xl flex flex-col overflow-hidden border border-outline-variant">
+<!-- Modal Header -->
+<div class="px-xl py-lg border-b border-outline-variant flex justify-between items-start">
+<div>
+<h3 class="font-headline-md text-on-surface">新建素材</h3>
+<p class="text-body-sm text-on-surface-variant">创建素材并自动绑定到当前项目</p>
+</div>
+<button class="text-outline hover:text-on-surface transition-colors">
+<span class="material-symbols-outlined">close</span>
+</button>
+</div>
+<!-- Modal Content -->
+<div class="flex-1 overflow-y-auto p-xl space-y-lg custom-scrollbar max-h-[60vh]"><!-- Info Banner -->
+<div class="bg-secondary-container/30 border border-secondary-container p-md rounded-lg flex gap-md items-start">
+  <span class="material-symbols-outlined text-on-secondary-container">info</span>
+  <p class="text-body-sm text-on-secondary-container">在项目内创建的素材会自动保存到全局素材，并绑定当前项目。</p>
+</div>
+
+<!-- Section 1: 基础信息 -->
+<section class="space-y-md">
+  <h4 class="font-label-md text-primary uppercase tracking-wider">基础信息</h4>
+  <div class="space-y-sm">
+    <label class="block text-label-md text-on-surface-variant">素材类型</label>
+    <div class="flex flex-wrap gap-sm">
+      <button class="px-lg py-2 bg-primary text-on-primary rounded-full text-label-md">人物</button>
+      <button class="px-lg py-2 bg-surface-container-high text-secondary rounded-full text-label-md hover:bg-surface-variant">世界观</button>
+      <button class="px-lg py-2 bg-surface-container-high text-secondary rounded-full text-label-md hover:bg-surface-variant">地点</button>
+      <button class="px-lg py-2 bg-surface-container-high text-secondary rounded-full text-label-md hover:bg-surface-variant">组织</button>
+      <button class="px-lg py-2 bg-surface-container-high text-secondary rounded-full text-label-md hover:bg-surface-variant">道具</button>
+      <button class="px-lg py-2 bg-surface-container-high text-secondary rounded-full text-label-md hover:bg-surface-variant">参考资料</button>
+    </div>
+  </div>
+  <div class="space-y-sm">
+    <label class="block text-label-md text-on-surface-variant">素材名称</label>
+    <input class="w-full px-md py-2 bg-surface-container-low border border-outline-variant rounded-lg text-body-md focus:ring-2 focus:ring-primary focus:border-transparent" type="text" value="老周">
+  </div>
+  <div class="space-y-sm">
+    <label class="block text-label-md text-on-surface-variant">素材简介</label>
+    <textarea class="w-full px-md py-2 bg-surface-container-low border border-outline-variant rounded-lg text-body-md h-24 focus:ring-2 focus:ring-primary focus:border-transparent">商场幸存者小队成员，负责物资管理，对食物分配极为敏感。</textarea>
+  </div>
+</section>
+
+<!-- Section 2: 人物详细信息 -->
+<section class="space-y-md">
+  <div class="flex justify-between items-center">
+    <h4 class="font-label-md text-primary uppercase tracking-wider">人物详细信息</h4>
+    <span class="text-[12px] text-outline">详细字段会根据素材类型动态变化。</span>
+  </div>
+  <div class="grid grid-cols-2 gap-md">
+    <div class="space-y-sm">
+      <label class="block text-label-md text-on-surface-variant">年龄</label>
+      <input class="w-full px-md py-2 bg-surface-container-low border border-outline-variant rounded-lg text-body-md focus:ring-2 focus:ring-primary focus:border-transparent" type="number" value="46">
+    </div>
+    <div class="space-y-sm">
+      <label class="block text-label-md text-on-surface-variant">性格</label>
+      <input class="w-full px-md py-2 bg-surface-container-low border border-outline-variant rounded-lg text-body-md focus:ring-2 focus:ring-primary focus:border-transparent" type="text" value="谨慎、自私、缺乏安全感">
+    </div>
+  </div>
+  <div class="space-y-sm">
+    <label class="block text-label-md text-on-surface-variant">背景</label>
+    <textarea class="w-full px-md py-2 bg-surface-container-low border border-outline-variant rounded-lg text-body-md h-20 focus:ring-2 focus:ring-primary focus:border-transparent">末世爆发前曾是一名超市理货员，对库存管理有职业本能。</textarea>
+  </div>
+  <div class="space-y-sm">
+    <label class="block text-label-md text-on-surface-variant">外貌特征</label>
+    <textarea class="w-full px-md py-2 bg-surface-container-low border border-outline-variant rounded-lg text-body-md h-20 focus:ring-2 focus:ring-primary focus:border-transparent">身材微胖，常戴一副破损的黑框眼镜，眼神中透着不安。</textarea>
+  </div>
+</section>
+
+<!-- Section 3: 当前项目用途 -->
+<section class="space-y-md">
+  <h4 class="font-label-md text-primary uppercase tracking-wider">当前项目用途</h4>
+  <div class="flex gap-lg py-sm border-b border-surface-container mb-sm">
+    <div class="flex items-center gap-xs">
+      <span class="text-label-sm text-on-surface-variant">当前项目：</span>
+      <span class="text-label-sm font-bold text-on-surface">末世求生</span>
+    </div>
+    <div class="flex items-center gap-xs">
+      <span class="text-label-sm text-on-surface-variant">项目类型：</span>
+      <span class="text-label-sm font-bold text-on-surface">小说</span>
+    </div>
+  </div>
+  <div class="grid grid-cols-2 gap-md">
+    <div class="space-y-sm">
+      <label class="block text-label-md text-on-surface-variant">项目用途</label>
+      <select class="w-full px-md py-2 bg-surface-container-low border border-outline-variant rounded-lg text-body-md">
+        <option selected="">人物角色</option>
+        <option>环境场景</option>
+      </select>
+    </div>
+    <div class="space-y-sm">
+      <label class="block text-label-md text-on-surface-variant">具体角色</label>
+      <select class="w-full px-md py-2 bg-surface-container-low border border-outline-variant rounded-lg text-body-md">
+        <option>主角</option>
+        <option>配角</option>
+        <option>反派</option>
+        <option selected="">次要人物</option>
+      </select>
+    </div>
+  </div>
+  <div class="space-y-sm">
+    <label class="block text-label-md text-on-surface-variant">项目使用说明</label>
+    <textarea class="w-full px-md py-2 bg-surface-container-low border border-outline-variant rounded-lg text-body-md h-20">出现在商场求生支线中，推动第 3–5 章的食物分配冲突。</textarea>
+  </div>
+  <p class="text-[12px] text-outline mt-sm">该用途仅在项目《末世求生》中生效，不会修改素材的全局内容。</p>
+</section></div>
+<!-- Modal Footer -->
+<div class="px-xl py-lg border-t border-outline-variant bg-surface-container-low flex justify-end gap-md">
+<button class="px-xl py-2 text-secondary font-label-md hover:bg-surface-variant rounded-lg transition-all">取消</button>
+<button class="px-xl py-2 bg-primary text-on-primary font-label-md rounded-lg hover:opacity-90 shadow-sm transition-all">创建并绑定</button>
+</div>
+</div>
+</div></div>
+</main>
+<script>
+        // Simple micro-interactions for active state logic
+        document.querySelectorAll('button').forEach(btn => {
+            btn.addEventListener('click', function() {
+                if(this.parentElement.classList.contains('overflow-x-auto')) {
+                    this.parentElement.querySelectorAll('button').forEach(b => {
+                        b.className = "whitespace-nowrap px-lg py-2 text-secondary hover:bg-surface-container-low rounded-full font-label-md transition-all";
+                    });
+                    this.className = "whitespace-nowrap px-lg py-2 bg-primary text-on-primary rounded-full font-label-md transition-all";
+                }
+            });
+        });
+    </script>
+
+
+
+
+</body></html>

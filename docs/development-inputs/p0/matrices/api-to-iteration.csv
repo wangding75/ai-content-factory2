@@ -1,0 +1,56 @@
+﻿iteration,method,path,description
+00,CONTRACT,packages/contracts/openapi/openapi.yaml,冻结 P0 OpenAPI
+00,CONTRACT,packages/contracts/common/*.schema.json,冻结统一响应、错误和分页
+00,CONTRACT,packages/contracts/content-packs/novel/*,冻结 Novel Pack Schema
+01,GET,/healthz,API 存活检查
+01,GET,/readyz,PostgreSQL、Redis 依赖就绪检查
+01,GET,/api/v1/meta,版本、环境与 P0 能力元信息
+02,GET,/api/v1/home,首页聚合数据
+02,GET,/api/v1/projects,项目列表
+02,POST,/api/v1/projects,创建项目
+02,GET,/api/v1/projects/{projectId},项目详情
+02,PATCH,/api/v1/projects/{projectId},更新项目基础信息
+02,GET,/api/v1/projects/{projectId}/workspace,项目工作区聚合数据
+03,GET,/api/v1/projects/{projectId}/planning,读取项目策划
+03,PUT,/api/v1/projects/{projectId}/planning,保存项目策划
+03,GET,/api/v1/materials,全局素材查询
+03,POST,/api/v1/materials,创建全局素材
+03,GET,/api/v1/materials/{materialId},素材详情
+03,PATCH,/api/v1/materials/{materialId},编辑素材本体
+03,GET,/api/v1/projects/{projectId}/materials,项目素材列表
+03,POST,/api/v1/projects/{projectId}/materials,创建素材并绑定项目
+03,POST,/api/v1/projects/{projectId}/materials/{materialId}/binding,绑定已有素材
+03,PATCH,/api/v1/projects/{projectId}/materials/{materialId}/usage,编辑项目用途
+03,DELETE,/api/v1/projects/{projectId}/materials/{materialId}/binding,解除项目绑定
+04,GET,/api/v1/projects/{projectId}/storylines,故事线树
+04,POST,/api/v1/projects/{projectId}/storylines,创建主线
+04,POST,/api/v1/storylines/{storylineId}/children,创建子故事线
+04,PATCH,/api/v1/storylines/{storylineId},编辑故事线
+04,GET,/api/v1/projects/{projectId}/foreshadowings,伏笔列表
+04,POST,/api/v1/projects/{projectId}/foreshadowings,创建伏笔
+04,PATCH,/api/v1/foreshadowings/{foreshadowingId},编辑伏笔与状态
+05,GET,/api/v1/projects/{projectId}/chapter-plans,章节规划列表
+05,POST,/api/v1/projects/{projectId}/chapter-plans/mock-generate,模拟生成候选
+05,GET,/api/v1/chapter-plans/{chapterPlanId},章节规划详情
+05,PATCH,/api/v1/chapter-plans/{chapterPlanId},编辑候选规划
+05,DELETE,/api/v1/chapter-plans/{chapterPlanId},删除未确认候选
+05,POST,/api/v1/projects/{projectId}/chapter-plans/confirm,批量确认候选
+06,POST,/api/v1/chapter-plans/{chapterPlanId}/content,为已确认章节创建内容单元
+06,GET,/api/v1/content-items/{contentItemId},正文与当前版本详情
+06,PUT,/api/v1/content-items/{contentItemId}/draft,保存草稿
+06,POST,/api/v1/content-items/{contentItemId}/mock-generate,模拟生成正文
+06,POST,/api/v1/content-items/{contentItemId}/reviews/mock,执行模拟审核
+06,GET,/api/v1/content-items/{contentItemId}/reviews,审核历史
+06,GET,/api/v1/reviews/{reviewId},审核详情
+07,POST,/api/v1/content-items/{contentItemId}/rewrites/mock,创建模拟重写任务
+07,GET,/api/v1/workflow-runs/{workflowRunId},查询模拟任务
+07,GET,/api/v1/content-items/{contentItemId}/versions,版本列表
+07,GET,/api/v1/content-versions/{versionId},版本详情
+07,GET,/api/v1/projects/{projectId}/works,项目作品列表
+07,GET,/api/v1/works/{workId},项目作品聚合详情
+08,GET,/api/v1/materials?scope=global,全局素材聚合
+08,GET,/api/v1/works?scope=global,全局作品聚合
+08,GET,/api/v1/workflows/builtin,内置模拟流程
+08,GET,/api/v1/capabilities,能力状态
+08,GET,/api/v1/integrations,外部集成状态
+09,ALL,/api/v1/**,执行全部 P0 契约、集成与回归测试

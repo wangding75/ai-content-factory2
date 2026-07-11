@@ -1,0 +1,25 @@
+{
+  "iteration": "04",
+  "frames": [
+    {
+      "id": "B1_STORYLINES",
+      "label": "故事线工作区",
+      "relative_path": "ui/frames/B1_STORYLINES"
+    },
+    {
+      "id": "B2_CREATE_MAIN_STORYLINE",
+      "label": "新建主线",
+      "relative_path": "ui/frames/B2_CREATE_MAIN_STORYLINE"
+    },
+    {
+      "id": "B3_CREATE_CHILD_STORYLINE",
+      "label": "新建子故事线",
+      "relative_path": "ui/frames/B3_CREATE_CHILD_STORYLINE"
+    },
+    {
+      "id": "B4_CREATE_FORESHADOWING",
+      "label": "新增伏笔",
+      "relative_path": "ui/frames/B4_CREATE_FORESHADOWING"
+    }
+  ]
+}

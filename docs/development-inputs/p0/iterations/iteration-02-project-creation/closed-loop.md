@@ -1,0 +1,7 @@
+# 闭环链路
+
+1. S00_HOME → S01_PROJECTS
+2. S01_PROJECTS → S01_CREATE_PROJECT
+3. 填写项目名称、项目类型与基础信息
+4. 确认创建 → S02_PROJECT_OVERVIEW
+5. 返回 S01_PROJECTS，新项目仍可见

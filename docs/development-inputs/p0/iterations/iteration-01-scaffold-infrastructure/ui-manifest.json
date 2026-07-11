@@ -1,0 +1,10 @@
+{
+  "iteration": "01",
+  "frames": [
+    {
+      "id": "S00_HOME",
+      "label": "首页",
+      "relative_path": "ui/frames/S00_HOME"
+    }
+  ]
+}

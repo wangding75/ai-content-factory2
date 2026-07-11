@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+
+<html class="light" lang="zh-CN"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>AI Content Factory - 首页</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "secondary-fixed": "#d4e4fa",
+                        "surface-tint": "#494bd6",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-dim": "#d8dadc",
+                        "on-error-container": "#93000a",
+                        "on-secondary-fixed": "#0d1c2d",
+                        "surface-container-low": "#f2f4f6",
+                        "secondary-fixed-dim": "#b9c8de",
+                        "surface-container-highest": "#e0e3e5",
+                        "error": "#ba1a1a",
+                        "inverse-primary": "#c0c1ff",
+                        "surface": "#f7f9fb",
+                        "on-tertiary": "#ffffff",
+                        "primary": "#4648d4",
+                        "on-primary-fixed-variant": "#2f2ebe",
+                        "secondary-container": "#d2e1f7",
+                        "on-tertiary-container": "#fffbff",
+                        "on-secondary": "#ffffff",
+                        "on-primary-fixed": "#07006c",
+                        "on-background": "#191c1e",
+                        "secondary": "#516072",
+                        "on-surface-variant": "#464554",
+                        "outline-variant": "#c7c4d7",
+                        "background": "#f7f9fb",
+                        "tertiary-fixed-dim": "#ffb783",
+                        "outline": "#767586",
+                        "tertiary-container": "#b55d00",
+                        "on-secondary-fixed-variant": "#39485a",
+                        "surface-variant": "#e0e3e5",
+                        "surface-container-high": "#e6e8ea",
+                        "inverse-on-surface": "#eff1f3",
+                        "surface-container": "#eceef0",
+                        "surface-bright": "#f7f9fb",
+                        "error-container": "#ffdad6",
+                        "tertiary-fixed": "#ffdcc5",
+                        "on-surface": "#191c1e",
+                        "primary-container": "#6063ee",
+                        "on-primary": "#ffffff",
+                        "inverse-surface": "#2d3133",
+                        "on-error": "#ffffff",
+                        "on-tertiary-fixed": "#301400",
+                        "on-tertiary-fixed-variant": "#703700",
+                        "on-secondary-container": "#556477",
+                        "tertiary": "#904900",
+                        "on-primary-container": "#fffbff",
+                        "primary-fixed": "#e1e0ff",
+                        "primary-fixed-dim": "#c0c1ff"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "xs": "4px",
+                        "lg": "24px",
+                        "md": "16px",
+                        "sm": "8px",
+                        "container-margin": "32px",
+                        "xl": "32px",
+                        "3xl": "64px",
+                        "2xl": "48px",
+                        "unit": "8px",
+                        "gutter": "24px"
+                    },
+                    "fontFamily": {
+                        "display": ["Inter"],
+                        "headline-sm": ["Inter"],
+                        "label-sm": ["Inter"],
+                        "headline-md": ["Inter"],
+                        "label-md": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "body-sm": ["Inter"],
+                        "headline-lg": ["Inter"],
+                        "headline-lg-mobile": ["Inter"],
+                        "body-md": ["Inter"]
+                    },
+                    "fontSize": {
+                        "display": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "headline-sm": ["20px", {"lineHeight": "28px", "letterSpacing": "0em", "fontWeight": "600"}],
+                        "label-sm": ["12px", {"lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "600"}],
+                        "headline-md": ["24px", {"lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                        "label-md": ["14px", {"lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "500"}],
+                        "body-lg": ["18px", {"lineHeight": "28px", "letterSpacing": "0em", "fontWeight": "400"}],
+                        "body-sm": ["14px", {"lineHeight": "20px", "letterSpacing": "0em", "fontWeight": "400"}],
+                        "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "600"}],
+                        "headline-lg-mobile": ["24px", {"lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                        "body-md": ["16px", {"lineHeight": "24px", "letterSpacing": "0em", "fontWeight": "400"}]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        /* Custom scrollbar for clean UI */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #cbd5e1; }
+    </style>
+
+<link rel="stylesheet" href="../../shared/prototype-router.css">
+<script>window.__ACF_PROTOTYPE_PAGE__="S00_HOME";window.__ACF_PROTOTYPE_LABEL__="首页";</script>
+<script defer src="../../shared/prototype-router.js"></script>
+</head>
+<body class="bg-surface text-on-surface">
+<!-- SIDE NAVBAR -->
+<aside class="fixed left-0 top-0 h-screen w-[260px] bg-surface-container-lowest border-r border-outline-variant flex flex-col py-xl z-50">
+<div class="px-xl mb-3xl flex items-start gap-md">
+<div class="w-10 h-10 rounded-lg bg-primary-container flex items-center justify-center text-on-primary-container shrink-0 mt-1">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">auto_awesome</span>
+</div>
+<div class="flex flex-col">
+<h1 class="font-headline-sm text-[18px] font-bold text-primary leading-tight tracking-tight">AI Content<br/>Factory</h1>
+<p class="font-label-sm text-[11px] text-secondary mt-1 tracking-wider uppercase">Creator SaaS</p>
+</div>
+</div>
+<nav class="flex-1 space-y-xs">
+<!-- 首页 is active -->
+<a class="flex items-center gap-md bg-secondary-container/50 text-on-secondary-container border-l-4 border-primary px-lg py-md hover:bg-surface-container-low transition-colors" href="#">
+<span class="material-symbols-outlined text-[20px]">home</span>
+<span class="font-body-md text-body-md font-medium">首页</span>
+</a>
+<a class="flex items-center gap-md text-secondary border-l-4 border-transparent px-lg py-md hover:bg-surface-container-low hover:text-on-surface transition-colors" href="#">
+<span class="material-symbols-outlined text-[20px]">folder_open</span>
+<span class="font-body-md text-body-md">项目</span>
+</a>
+<a class="flex items-center gap-md text-secondary border-l-4 border-transparent px-lg py-md hover:bg-surface-container-low hover:text-on-surface transition-colors" href="#">
+<span class="material-symbols-outlined text-[20px]">inventory_2</span>
+<span class="font-body-md text-body-md">素材</span>
+</a>
+<a class="flex items-center gap-md text-secondary border-l-4 border-transparent px-lg py-md hover:bg-surface-container-low hover:text-on-surface transition-colors" href="#">
+<span class="material-symbols-outlined text-[20px]">auto_awesome</span>
+<span class="font-body-md text-body-md">作品</span>
+</a>
+<a class="flex items-center gap-md text-secondary border-l-4 border-transparent px-lg py-md hover:bg-surface-container-low hover:text-on-surface transition-colors" href="#">
+<span class="material-symbols-outlined text-[20px]">account_tree</span>
+<span class="font-body-md text-body-md">流程</span>
+</a>
+<a class="flex items-center gap-md text-secondary border-l-4 border-transparent px-lg py-md hover:bg-surface-container-low hover:text-on-surface transition-colors mt-auto" href="#">
+<span class="material-symbols-outlined text-[20px]">settings</span>
+<span class="font-body-md text-body-md">设置</span>
+</a>
+</nav>
+</aside>
+<!-- TOP NAVBAR -->
+<header class="fixed top-0 right-0 left-[260px] h-16 bg-surface-container-lowest border-b border-outline-variant flex justify-between items-center px-2xl z-40">
+<div class="flex items-center gap-xl">
+<div class="relative w-96">
+<span class="material-symbols-outlined absolute left-md top-1/2 -translate-y-1/2 text-outline text-[20px]">search</span>
+<input class="w-full bg-surface-container-low border-none rounded-full pl-11 pr-md py-[10px] text-body-sm focus:ring-2 focus:ring-primary/20 placeholder:text-outline transition-all" placeholder="搜索项目或素材..." type="text"/>
+</div>
+</div>
+<div class="flex items-center gap-md">
+<button class="w-10 h-10 rounded-full flex items-center justify-center text-on-surface-variant hover:bg-surface-container-low transition-colors">
+<span class="material-symbols-outlined text-[22px]">help</span>
+</button>
+<button class="w-10 h-10 rounded-full flex items-center justify-center text-on-surface-variant hover:bg-surface-container-low transition-colors relative">
+<span class="material-symbols-outlined text-[22px]">notifications</span>
+<span class="absolute top-[10px] right-[10px] w-[8px] h-[8px] bg-error rounded-full border-2 border-surface-container-lowest"></span>
+</button>
+<div class="h-6 w-px bg-outline-variant mx-sm"></div>
+<div class="flex items-center gap-md cursor-pointer hover:bg-surface-container-low p-xs pr-md rounded-full transition-colors">
+<img class="w-8 h-8 rounded-full object-cover" data-alt="A professional headshot of a creative director in a minimalist studio setting, high-end photography, soft cinematic lighting, neutral gray background, calm and professional expression, 8k resolution, editorial style." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBOeH-xSTrTEkGvU4sgSnyiC2vaJFlUQnDPd8HU6USxuDtLW8Xx0mSMWiwt3GthSXL6t4jHbrz9LHuExfinxbIAmt77iclpu7LF68KDNL38wtt61llYUmhXFW3MpBS0VQnWBJSugsMbDxZxL6MPdgRTUCQtWhmBtXOkB7OuiVtKuIBa8WgHFGBwBETx3iQAIB2WAUa_V3-ASalIG7rk5-RQntSoHe0wpOZoxTqhrJ90a0Idggk3m3tCBNeSDAgLRn3S5u-1J5eAFZY"/>
+<span class="font-label-md text-label-md text-on-surface-variant font-medium">Creator Admin</span>
+</div>
+</div>
+</header>
+<!-- MAIN CONTENT AREA -->
+<main class="ml-[260px] pt-16 min-h-screen bg-surface">
+<div class="p-2xl max-w-[1440px] mx-auto">
+<!-- HEADER SECTION -->
+<div class="flex justify-between items-end mb-2xl">
+<div>
+<h2 class="text-[32px] font-bold text-on-background tracking-tight">欢迎回来</h2>
+<p class="font-body-md text-body-md text-secondary mt-1">管理你的内容项目、素材与作品</p>
+</div>
+<button class="flex items-center gap-sm bg-primary text-on-primary px-xl py-2.5 rounded-lg font-label-md text-label-md hover:opacity-90 transition-all shadow-sm active:scale-95">
+<span class="material-symbols-outlined text-[20px]">add</span>
+                    新建项目
+                </button>
+</div>
+<div class="grid grid-cols-12 gap-2xl">
+<!-- QUICK ACCESS -->
+<section class="col-span-12">
+<div class="grid grid-cols-3 gap-lg">
+<div class="group flex items-center gap-md p-md bg-surface-container-lowest border border-outline-variant rounded-xl hover:shadow-sm hover:border-outline/50 transition-all cursor-pointer">
+<div class="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary group-hover:bg-primary/15 transition-colors">
+<span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'FILL' 1;">create_new_folder</span>
+</div>
+<div>
+<h4 class="font-label-md text-[14px] font-bold text-on-surface">新建项目</h4>
+<p class="text-[13px] text-outline mt-0.5">开启一段全新的创作旅程</p>
+</div>
+</div>
+<div class="group flex items-center gap-md p-md bg-surface-container-lowest border border-outline-variant rounded-xl hover:shadow-sm hover:border-outline/50 transition-all cursor-pointer">
+<div class="w-10 h-10 rounded-lg bg-secondary-container/50 flex items-center justify-center text-on-secondary-container group-hover:bg-secondary-container/70 transition-colors">
+<span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'FILL' 1;">inventory_2</span>
+</div>
+<div>
+<h4 class="font-label-md text-[14px] font-bold text-on-surface">查看素材</h4>
+<p class="text-[13px] text-outline mt-0.5">管理并检索你的创作库</p>
+</div>
+</div>
+<div class="group flex items-center gap-md p-md bg-surface-container-lowest border border-outline-variant rounded-xl hover:shadow-sm hover:border-outline/50 transition-all cursor-pointer">
+<div class="w-10 h-10 rounded-lg bg-tertiary-fixed/40 flex items-center justify-center text-tertiary group-hover:bg-tertiary-fixed/60 transition-colors">
+<span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'FILL' 1;">auto_awesome</span>
+</div>
+<div>
+<h4 class="font-label-md text-[14px] font-bold text-on-surface">查看作品</h4>
+<p class="text-[13px] text-outline mt-0.5">回顾并分发已完成的作品</p>
+</div>
+</div>
+</div>
+</section>
+<!-- RECENT PROJECTS -->
+<section class="col-span-12 lg:col-span-8">
+<div class="flex items-center justify-between mb-lg">
+<h3 class="font-headline-md text-[20px] font-bold text-on-surface">最近项目</h3>
+<a class="text-primary font-label-md hover:underline" href="#">查看全部</a>
+</div>
+<div class="grid grid-cols-2 gap-lg">
+<!-- Card 1 -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-md hover:shadow-sm hover:border-outline/50 transition-all">
+<div class="aspect-video rounded-lg overflow-hidden bg-surface-container mb-md relative">
+<div class="absolute inset-0 bg-cover bg-center" data-alt="A cinematic book cover illustration for a post-apocalyptic survival story, featuring a lone figure standing in a desolate urban wasteland at dawn, atmospheric mist, cool blue and orange morning light, detailed environment art, high contrast, professional digital painting style." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBva-8y5o2kqpqe3GmVRDKRFIma6LOrfXSOiVTRfheyJlf92ZeyyPRn3IfJXYUyxGW_dOoSG9Slx9Pkl591oiQ4p1qzNgxrKnOaYigh93nijWe1L5QOEno-FjvkfTa3x23Dkk6n5rlt5NBOewoXxXvzJw1-xMy5qSFe4an-xmrG3xGP3j__GzJDT5a0qK7MJ7qG-U1_OLKLiTkqymUqsHajZ4uSH3Olp4oRozZiHPyrLsdnQ-ywz3rNwbar86vAilUvPIaR_gVCb6k')"></div>
+<div class="absolute top-sm right-sm">
+<span class="bg-surface-container-lowest/90 backdrop-blur-sm text-on-surface text-[11px] font-medium px-2 py-1 rounded">小说</span>
+</div>
+</div>
+<div class="flex justify-between items-start mb-lg">
+<div>
+<h4 class="font-headline-sm text-[16px] font-bold text-on-surface">末世求生</h4>
+<p class="text-[13px] text-outline mt-1">更新于 今天 14:30</p>
+</div>
+<span class="bg-primary/10 text-primary text-[12px] font-medium px-2.5 py-1 rounded-full">策划中</span>
+</div>
+<button class="w-full py-2 border border-outline-variant rounded-lg font-label-md text-on-surface-variant hover:bg-surface-container-low transition-colors flex items-center justify-center gap-xs">
+                                继续创作
+                                <span class="material-symbols-outlined text-[16px]">arrow_forward</span>
+</button>
+</div>
+<!-- Card 2 (Create New) -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-md hover:shadow-sm hover:border-outline/50 transition-all flex flex-col items-center justify-center text-center">
+<div class="w-12 h-12 rounded-full bg-surface-container-low flex items-center justify-center text-on-surface-variant mb-md">
+<span class="material-symbols-outlined text-[24px]">add</span>
+</div>
+<h4 class="font-headline-sm text-[16px] font-bold text-on-surface mb-1">创建新项目</h4>
+<p class="text-[13px] text-outline mb-lg">开始一个新的内容项目</p>
+<button class="px-xl py-2 bg-primary/10 text-primary rounded-lg font-label-md hover:bg-primary/20 transition-colors">
+                                新建项目
+                            </button>
+</div>
+</div>
+</section>
+<!-- DATA DASHBOARD SIDEBAR -->
+<section class="col-span-12 lg:col-span-4">
+<div class="flex items-center justify-between mb-lg">
+<h3 class="font-headline-md text-[20px] font-bold text-on-surface">数据概览</h3>
+</div>
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-2xl flex flex-col items-center justify-center text-center h-[calc(100%-44px)] min-h-[300px]">
+<div class="w-16 h-16 rounded-full bg-surface-container-low flex items-center justify-center mb-lg">
+<span class="material-symbols-outlined text-[28px] text-outline opacity-50">bar_chart</span>
+</div>
+<h4 class="font-label-md text-[15px] text-on-surface font-medium mb-2">数据大盘将在后续版本完善</h4>
+<p class="text-[13px] text-outline leading-relaxed max-w-[200px]">当前可以通过项目页面查看创作进度</p>
+</div>
+</section>
+</div>
+</div>
+</main>
+<script>
+        // Micro-interaction for primary button
+        document.querySelector('.bg-primary').addEventListener('mousedown', function() {
+            this.style.transform = 'scale(0.95)';
+        });
+        document.querySelector('.bg-primary').addEventListener('mouseup', function() {
+            this.style.transform = 'scale(1)';
+        });
+        
+        // Console log for initialization
+        console.log("AI Content Factory App Shell initialized.");
+    </script>
+</body></html>

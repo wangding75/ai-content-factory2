@@ -1,0 +1,24 @@
+iteration: '04'
+name: 故事线与伏笔闭环
+endpoints:
+- method: GET
+  path: /api/v1/projects/{projectId}/storylines
+  description: 故事线树
+- method: POST
+  path: /api/v1/projects/{projectId}/storylines
+  description: 创建主线
+- method: POST
+  path: /api/v1/storylines/{storylineId}/children
+  description: 创建子故事线
+- method: PATCH
+  path: /api/v1/storylines/{storylineId}
+  description: 编辑故事线
+- method: GET
+  path: /api/v1/projects/{projectId}/foreshadowings
+  description: 伏笔列表
+- method: POST
+  path: /api/v1/projects/{projectId}/foreshadowings
+  description: 创建伏笔
+- method: PATCH
+  path: /api/v1/foreshadowings/{foreshadowingId}
+  description: 编辑伏笔与状态

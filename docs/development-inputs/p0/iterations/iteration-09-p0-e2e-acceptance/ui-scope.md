@@ -1,0 +1,33 @@
+# UI 范围
+
+- `S00_HOME`｜首页
+- `S01_PROJECTS`｜项目列表
+- `S01_CREATE_PROJECT`｜新建项目
+- `S02_PROJECT_OVERVIEW`｜项目概览
+- `S02_PROJECT_PLANNING`｜项目策划
+- `S02_PROJECT_MATERIALS`｜项目素材列表
+- `S02_CREATE_MATERIAL`｜新建并绑定素材
+- `S02_MATERIAL_DETAIL`｜素材详情
+- `S02_PICK_MATERIAL`｜选择已有素材
+- `S02_EDIT_MATERIAL`｜编辑素材
+- `S02_EDIT_MATERIAL_USAGE`｜编辑项目用途
+- `S02_UNBIND_MATERIAL`｜解除素材绑定
+- `B1_STORYLINES`｜故事线工作区
+- `B2_CREATE_MAIN_STORYLINE`｜新建主线
+- `B3_CREATE_CHILD_STORYLINE`｜新建子故事线
+- `B4_CREATE_FORESHADOWING`｜新增伏笔
+- `C1_CHAPTER_PLANNING`｜章节规划
+- `C2_MOCK_PLAN`｜模拟生成章节规划
+- `C3_EDIT_PLAN`｜编辑章节规划
+- `C4_CONFIRM_PLAN`｜确认章节规划
+- `D1_EDITOR`｜正文编辑器
+- `D2_REVIEW`｜审核结果
+- `D3_PROJECT_WORKS`｜项目作品
+- `D4_CREATE_REWRITE`｜创建重写版本
+- `D5_REWRITE_RESULT`｜重写结果
+- `E1_GLOBAL_MATERIALS`｜全局素材
+- `E2_GLOBAL_WORKS`｜全局作品
+- `E3_WORKFLOWS`｜流程中心
+- `E4_SETTINGS`｜全局设置
+
+实际 UI 文件位于 `ui/frames/`。

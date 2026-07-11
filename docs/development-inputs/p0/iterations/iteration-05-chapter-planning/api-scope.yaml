@@ -1,0 +1,21 @@
+iteration: '05'
+name: 章节规划与确认闭环
+endpoints:
+- method: GET
+  path: /api/v1/projects/{projectId}/chapter-plans
+  description: 章节规划列表
+- method: POST
+  path: /api/v1/projects/{projectId}/chapter-plans/mock-generate
+  description: 模拟生成候选
+- method: GET
+  path: /api/v1/chapter-plans/{chapterPlanId}
+  description: 章节规划详情
+- method: PATCH
+  path: /api/v1/chapter-plans/{chapterPlanId}
+  description: 编辑候选规划
+- method: DELETE
+  path: /api/v1/chapter-plans/{chapterPlanId}
+  description: 删除未确认候选
+- method: POST
+  path: /api/v1/projects/{projectId}/chapter-plans/confirm
+  description: 批量确认候选

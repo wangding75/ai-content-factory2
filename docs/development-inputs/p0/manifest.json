@@ -1,0 +1,183 @@
+{
+  "project": "AI Content Factory 2.0",
+  "scope": "P0",
+  "technical_skeleton": "same-as-1.0",
+  "iterations": [
+    {
+      "id": "00",
+      "slug": "contract-freeze",
+      "name": "P0 契约与基线冻结",
+      "depends_on": [],
+      "frames": [],
+      "api_count": 3,
+      "acceptance_count": 5
+    },
+    {
+      "id": "01",
+      "slug": "scaffold-infrastructure",
+      "name": "技术骨架与基础设施",
+      "depends_on": [
+        "00"
+      ],
+      "frames": [
+        "S00_HOME"
+      ],
+      "api_count": 3,
+      "acceptance_count": 5
+    },
+    {
+      "id": "02",
+      "slug": "project-creation",
+      "name": "首页与项目创建闭环",
+      "depends_on": [
+        "01"
+      ],
+      "frames": [
+        "S00_HOME",
+        "S01_PROJECTS",
+        "S01_CREATE_PROJECT",
+        "S02_PROJECT_OVERVIEW"
+      ],
+      "api_count": 6,
+      "acceptance_count": 5
+    },
+    {
+      "id": "03",
+      "slug": "planning-materials",
+      "name": "项目策划与素材闭环",
+      "depends_on": [
+        "02"
+      ],
+      "frames": [
+        "S02_PROJECT_PLANNING",
+        "S02_PROJECT_MATERIALS",
+        "S02_CREATE_MATERIAL",
+        "S02_MATERIAL_DETAIL",
+        "S02_PICK_MATERIAL",
+        "S02_EDIT_MATERIAL",
+        "S02_EDIT_MATERIAL_USAGE",
+        "S02_UNBIND_MATERIAL"
+      ],
+      "api_count": 11,
+      "acceptance_count": 6
+    },
+    {
+      "id": "04",
+      "slug": "storylines-foreshadowing",
+      "name": "故事线与伏笔闭环",
+      "depends_on": [
+        "03"
+      ],
+      "frames": [
+        "B1_STORYLINES",
+        "B2_CREATE_MAIN_STORYLINE",
+        "B3_CREATE_CHILD_STORYLINE",
+        "B4_CREATE_FORESHADOWING"
+      ],
+      "api_count": 7,
+      "acceptance_count": 5
+    },
+    {
+      "id": "05",
+      "slug": "chapter-planning",
+      "name": "章节规划与确认闭环",
+      "depends_on": [
+        "04"
+      ],
+      "frames": [
+        "C1_CHAPTER_PLANNING",
+        "C2_MOCK_PLAN",
+        "C3_EDIT_PLAN",
+        "C4_CONFIRM_PLAN"
+      ],
+      "api_count": 6,
+      "acceptance_count": 6
+    },
+    {
+      "id": "06",
+      "slug": "editor-review",
+      "name": "正文编辑与模拟审核闭环",
+      "depends_on": [
+        "05"
+      ],
+      "frames": [
+        "D1_EDITOR",
+        "D2_REVIEW"
+      ],
+      "api_count": 7,
+      "acceptance_count": 6
+    },
+    {
+      "id": "07",
+      "slug": "rewrite-works",
+      "name": "重写版本与项目作品闭环",
+      "depends_on": [
+        "06"
+      ],
+      "frames": [
+        "D3_PROJECT_WORKS",
+        "D4_CREATE_REWRITE",
+        "D5_REWRITE_RESULT"
+      ],
+      "api_count": 6,
+      "acceptance_count": 6
+    },
+    {
+      "id": "08",
+      "slug": "global-lite-pages",
+      "name": "全局 Lite 页面与能力展示",
+      "depends_on": [
+        "07"
+      ],
+      "frames": [
+        "E1_GLOBAL_MATERIALS",
+        "E2_GLOBAL_WORKS",
+        "E3_WORKFLOWS",
+        "E4_SETTINGS"
+      ],
+      "api_count": 5,
+      "acceptance_count": 5
+    },
+    {
+      "id": "09",
+      "slug": "p0-e2e-acceptance",
+      "name": "P0 全链路联调与系统验收",
+      "depends_on": [
+        "08"
+      ],
+      "frames": [
+        "S00_HOME",
+        "S01_PROJECTS",
+        "S01_CREATE_PROJECT",
+        "S02_PROJECT_OVERVIEW",
+        "S02_PROJECT_PLANNING",
+        "S02_PROJECT_MATERIALS",
+        "S02_CREATE_MATERIAL",
+        "S02_MATERIAL_DETAIL",
+        "S02_PICK_MATERIAL",
+        "S02_EDIT_MATERIAL",
+        "S02_EDIT_MATERIAL_USAGE",
+        "S02_UNBIND_MATERIAL",
+        "B1_STORYLINES",
+        "B2_CREATE_MAIN_STORYLINE",
+        "B3_CREATE_CHILD_STORYLINE",
+        "B4_CREATE_FORESHADOWING",
+        "C1_CHAPTER_PLANNING",
+        "C2_MOCK_PLAN",
+        "C3_EDIT_PLAN",
+        "C4_CONFIRM_PLAN",
+        "D1_EDITOR",
+        "D2_REVIEW",
+        "D3_PROJECT_WORKS",
+        "D4_CREATE_REWRITE",
+        "D5_REWRITE_RESULT",
+        "E1_GLOBAL_MATERIALS",
+        "E2_GLOBAL_WORKS",
+        "E3_WORKFLOWS",
+        "E4_SETTINGS"
+      ],
+      "api_count": 1,
+      "acceptance_count": 7
+    }
+  ]
+}

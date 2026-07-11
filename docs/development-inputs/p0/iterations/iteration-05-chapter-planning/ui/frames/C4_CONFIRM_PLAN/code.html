@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+
+<html lang="zh-CN"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>AI Content Factory - Chapter Planning Confirmation</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "secondary-fixed-dim": "#b9c8de",
+                    "on-secondary": "#ffffff",
+                    "on-error-container": "#93000a",
+                    "surface-container-lowest": "#ffffff",
+                    "error-container": "#ffdad6",
+                    "inverse-primary": "#c0c1ff",
+                    "tertiary-fixed-dim": "#ffb783",
+                    "on-secondary-container": "#556477",
+                    "inverse-surface": "#2d3133",
+                    "surface-container": "#eceef0",
+                    "secondary-fixed": "#d4e4fa",
+                    "outline": "#767586",
+                    "tertiary-fixed": "#ffdcc5",
+                    "inverse-on-surface": "#eff1f3",
+                    "surface-container-low": "#f2f4f6",
+                    "primary-container": "#6063ee",
+                    "on-primary-fixed-variant": "#2f2ebe",
+                    "on-surface": "#191c1e",
+                    "background": "#f7f9fb",
+                    "surface-container-highest": "#e0e3e5",
+                    "on-secondary-fixed": "#0d1c2d",
+                    "primary-fixed-dim": "#c0c1ff",
+                    "on-tertiary-fixed-variant": "#703700",
+                    "surface-dim": "#d8dadc",
+                    "on-error": "#ffffff",
+                    "tertiary": "#904900",
+                    "on-tertiary": "#ffffff",
+                    "surface-variant": "#e0e3e5",
+                    "secondary-container": "#d2e1f7",
+                    "primary-fixed": "#e1e0ff",
+                    "primary": "#4648d4",
+                    "tertiary-container": "#b55d00",
+                    "surface-bright": "#f7f9fb",
+                    "on-surface-variant": "#464554",
+                    "secondary": "#516072",
+                    "surface": "#f7f9fb",
+                    "on-background": "#191c1e",
+                    "error": "#ba1a1a",
+                    "surface-container-high": "#e6e8ea",
+                    "surface-tint": "#494bd6",
+                    "on-primary-fixed": "#07006c",
+                    "on-tertiary-container": "#fffbff",
+                    "on-primary-container": "#fffbff",
+                    "on-primary": "#ffffff",
+                    "outline-variant": "#c7c4d7",
+                    "on-tertiary-fixed": "#301400",
+                    "on-secondary-fixed-variant": "#39485a"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "lg": "24px",
+                    "3xl": "64px",
+                    "gutter": "24px",
+                    "xs": "4px",
+                    "unit": "8px",
+                    "container-margin": "32px",
+                    "md": "16px",
+                    "xl": "32px",
+                    "sm": "8px",
+                    "2xl": "48px"
+            },
+            "fontFamily": {
+                    "label-sm": ["Inter"],
+                    "body-md": ["Inter"],
+                    "headline-lg": ["Inter"],
+                    "body-sm": ["Inter"],
+                    "label-md": ["Inter"],
+                    "headline-md": ["Inter"],
+                    "headline-lg-mobile": ["Inter"],
+                    "display": ["Inter"],
+                    "body-lg": ["Inter"],
+                    "headline-sm": ["Inter"]
+            },
+            "fontSize": {
+                    "label-sm": ["12px", {"lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "600"}],
+                    "body-md": ["16px", {"lineHeight": "24px", "letterSpacing": "0em", "fontWeight": "400"}],
+                    "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "600"}],
+                    "body-sm": ["14px", {"lineHeight": "20px", "letterSpacing": "0em", "fontWeight": "400"}],
+                    "label-md": ["14px", {"lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "500"}],
+                    "headline-md": ["24px", {"lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                    "headline-lg-mobile": ["24px", {"lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                    "display": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "body-lg": ["18px", {"lineHeight": "28px", "letterSpacing": "0em", "fontWeight": "400"}],
+                    "headline-sm": ["20px", {"lineHeight": "28px", "letterSpacing": "0em", "fontWeight": "600"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            display: inline-block;
+            line-height: 1;
+            text-transform: none;
+            letter-spacing: normal;
+            word-wrap: normal;
+            white-space: nowrap;
+            direction: ltr;
+        }
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
+        body {
+            background-color: #f7f9fb;
+            font-family: 'Inter', sans-serif;
+        }
+    </style>
+
+<link rel="stylesheet" href="../../shared/prototype-router.css">
+<script>window.__ACF_PROTOTYPE_PAGE__="C4_CONFIRM_PLAN";window.__ACF_PROTOTYPE_LABEL__="确认章节规划";</script>
+<script defer src="../../shared/prototype-router.js"></script>
+</head>
+<body class="overflow-hidden">
+<!-- Sidebar (Shared Component) -->
+<aside class="fixed left-0 top-0 h-full w-[280px] bg-surface border-r border-outline-variant flex flex-col py-xl">
+<div class="px-lg mb-2xl">
+<h1 class="font-headline-md text-headline-md font-bold text-primary">Content Factory</h1>
+<p class="font-body-sm text-on-surface-variant">Professional Creator</p>
+</div>
+<nav class="flex-1 space-y-unit px-md">
+<a class="flex items-center gap-md p-md rounded-lg text-on-surface-variant hover:bg-surface-container-low transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="home">home</span>
+<span class="font-body-md text-body-md">首页</span>
+</a>
+<a class="flex items-center gap-md p-md rounded-lg bg-secondary-container text-primary border-l-2 border-primary font-semibold" href="#">
+<span class="material-symbols-outlined" data-icon="folder_open">folder_open</span>
+<span class="font-body-md text-body-md">项目</span>
+</a>
+<a class="flex items-center gap-md p-md rounded-lg text-on-surface-variant hover:bg-surface-container-low transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="inventory_2">inventory_2</span>
+<span class="font-body-md text-body-md">素材</span>
+</a>
+<a class="flex items-center gap-md p-md rounded-lg text-on-surface-variant hover:bg-surface-container-low transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="draw">draw</span>
+<span class="font-body-md text-body-md">作品</span>
+</a>
+<a class="flex items-center gap-md p-md rounded-lg text-on-surface-variant hover:bg-surface-container-low transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="account_tree">account_tree</span>
+<span class="font-body-md text-body-md">工作流</span>
+</a>
+<a class="flex items-center gap-md p-md rounded-lg text-on-surface-variant hover:bg-surface-container-low transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+<span class="font-body-md text-body-md">设置</span>
+</a>
+</nav>
+<div class="px-lg pt-xl mt-auto border-t border-outline-variant">
+<div class="flex items-center gap-md">
+<img class="w-10 h-10 rounded-full border border-outline-variant" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDXeM9zHOVJpy6kFgfjKNtCzIP9kiuRIv5C6M1hG1SavC2fe7cgUnz4exXbgign1vIrp1qK0xsaysdrNfNQrf2PknM2ZdD_G9ry7J9izs4gV-EyC_4F1pgQNDkso0KTjtDUTfs7y3oxN6-BilWa6AsRFUHht0HISijyrfNHXG2ytE5OWYnTYIzLWfdO9IJYQXTfplarcYCctJMw0AMJy-wN8VvwRtxRlYYi24TfXxpGY6sYm0Amfh39xQAu4m-pwca5iU0QMBIzXhY"/>
+<div>
+<p class="font-label-md text-label-md font-bold">Alex Chen</p>
+<p class="font-label-sm text-label-sm text-on-surface-variant">管理员</p>
+</div>
+</div>
+</div>
+</aside>
+<!-- Top App Bar (Shared Component) -->
+<header class="fixed top-0 right-0 h-16 w-[calc(100%-280px)] bg-surface border-b border-outline-variant flex justify-between items-center px-lg z-10">
+<div class="flex items-center gap-lg">
+<span class="font-headline-sm text-headline-sm font-black text-primary">AI Content Factory</span>
+<div class="relative">
+<span class="absolute inset-y-0 left-0 pl-3 flex items-center text-outline">
+<span class="material-symbols-outlined text-[20px]" data-icon="search">search</span>
+</span>
+<input class="pl-10 pr-4 py-2 bg-surface-container-low border-none rounded-lg font-label-md text-label-md focus:ring-2 focus:ring-primary/10 w-64" placeholder="搜索资源..." type="text"/>
+</div>
+</div>
+<div class="flex items-center gap-md">
+<button class="p-2 text-on-surface-variant hover:text-primary transition-all">
+<span class="material-symbols-outlined" data-icon="help">help</span>
+</button>
+<button class="p-2 text-on-surface-variant hover:text-primary transition-all relative">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+<span class="absolute top-1 right-1 w-2 h-2 bg-error rounded-full"></span>
+</button>
+</div>
+</header>
+<!-- Main Content Canvas (Background: Corrected C1) -->
+<main class="ml-[280px] pt-16 h-screen overflow-y-auto bg-background p-xl">
+<div class="max-w-5xl mx-auto opacity-40 select-none">
+<!-- Breadcrumbs -->
+<nav class="flex items-center gap-xs mb-lg text-on-surface-variant font-label-sm">
+<span>项目</span>
+<span class="material-symbols-outlined text-[16px]" data-icon="chevron_right">chevron_right</span>
+<span>深空殖民小说</span>
+<span class="material-symbols-outlined text-[16px]" data-icon="chevron_right">chevron_right</span>
+<span class="text-primary font-bold">章节规划</span>
+</nav>
+<header class="flex justify-between items-end mb-2xl">
+<div>
+<h2 class="font-headline-lg text-headline-lg text-on-surface mb-xs">章节规划</h2>
+<p class="font-body-md text-on-surface-variant">管理并生成您的作品章节逻辑与大纲</p>
+</div>
+<button class="px-xl py-md bg-primary text-on-primary rounded-lg font-label-md shadow-sm">
+                    批量同步大纲
+                </button>
+</header>
+<!-- Chapter List -->
+<div class="space-y-md">
+<!-- Ch 62 -->
+<div class="bg-surface border-2 border-primary rounded-xl p-lg shadow-sm flex items-center gap-lg">
+<div class="w-6 h-6 rounded border-2 border-primary flex items-center justify-center bg-primary">
+<span class="material-symbols-outlined text-on-primary text-[16px]" data-icon="check">check</span>
+</div>
+<div class="flex-1">
+<div class="flex items-center gap-sm mb-xs">
+<span class="font-label-sm bg-surface-container text-on-surface-variant px-sm py-[2px] rounded">第 62 章节</span>
+<h3 class="font-headline-sm text-headline-sm">星门启航：未知的跃迁</h3>
+</div>
+<p class="font-body-sm text-on-surface-variant">描述探测舰穿过不稳定的星门，面对首次空间折叠的物理与心理压力...</p>
+</div>
+</div>
+<!-- Ch 63 -->
+<div class="bg-surface border-2 border-primary rounded-xl p-lg shadow-sm flex items-center gap-lg">
+<div class="w-6 h-6 rounded border-2 border-primary flex items-center justify-center bg-primary">
+<span class="material-symbols-outlined text-on-primary text-[16px]" data-icon="check">check</span>
+</div>
+<div class="flex-1">
+<div class="flex items-center gap-sm mb-xs">
+<span class="font-label-sm bg-surface-container text-on-surface-variant px-sm py-[2px] rounded">第 63 章节</span>
+<h3 class="font-headline-sm text-headline-sm">黑暗中的低语</h3>
+</div>
+<p class="font-body-sm text-on-surface-variant">跃迁后遭遇强力电磁风暴，通讯中断，船员间开始出现诡异的幻听与猜疑...</p>
+</div>
+</div>
+<!-- Ch 64 -->
+<div class="bg-surface border-2 border-primary rounded-xl p-lg shadow-sm flex items-center gap-lg">
+<div class="w-6 h-6 rounded border-2 border-primary flex items-center justify-center bg-primary">
+<span class="material-symbols-outlined text-on-primary text-[16px]" data-icon="check">check</span>
+</div>
+<div class="flex-1">
+<div class="flex items-center gap-sm mb-xs">
+<span class="font-label-sm bg-surface-container text-on-surface-variant px-sm py-[2px] rounded">第 64 章节</span>
+<h3 class="font-headline-sm text-headline-sm">反叛者的遗产</h3>
+</div>
+<p class="font-body-sm text-on-surface-variant">在引擎室发现上任指挥官留下的秘密日志，揭露了星门技术的黑暗真相...</p>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- Modal Overlay -->
+<div class="fixed inset-0 z-50 flex items-center justify-center bg-on-surface/40 backdrop-blur-sm">
+<!-- Modal: 确认章节规划 -->
+<div class="bg-surface w-[640px] max-h-[90vh] rounded-xl shadow-2xl border border-outline-variant overflow-hidden flex flex-col animate-in fade-in zoom-in duration-300">
+<!-- Header -->
+<div class="p-xl border-b border-outline-variant flex justify-between items-start bg-surface-container-low">
+<div class="flex items-center gap-md">
+<div class="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center">
+<span class="material-symbols-outlined text-primary text-[28px]" data-icon="assignment_turned_in">assignment_turned_in</span>
+</div>
+<div>
+<h3 class="font-headline-sm text-headline-sm text-on-surface">确认章节规划</h3>
+<p class="font-body-sm text-on-surface-variant mt-1">确认后，所选候选章节将进入可生产状态</p>
+</div>
+</div>
+<button class="text-on-surface-variant hover:text-on-surface p-1">
+<span class="material-symbols-outlined" data-icon="close">close</span>
+</button>
+</div>
+<!-- Content Area -->
+<div class="p-xl overflow-y-auto space-y-xl">
+<!-- Selection Summary Header -->
+<div class="bg-surface-container-low border border-outline-variant rounded-lg p-md">
+<p class="font-label-md text-on-surface flex items-center gap-sm">
+<span class="font-bold">已选择：3 个候选章节</span>
+<span class="text-outline-variant">|</span>
+<span>章节范围：第 62–64 章</span>
+<span class="text-outline-variant">|</span>
+<span>来源：模拟生成</span>
+</p>
+</div>
+<!-- Chapter List Detail -->
+<div class="space-y-md">
+<div class="border border-outline-variant rounded-lg divide-y divide-outline-variant/30">
+<!-- Chapter 62 -->
+<div class="p-md bg-surface-bright">
+<div class="flex items-center gap-md mb-xs">
+<span class="w-7 h-7 flex items-center justify-center bg-primary/10 text-primary rounded-full font-label-md">62</span>
+<span class="font-label-md font-bold text-on-surface">星门启航：未知的跃迁</span>
+</div>
+<p class="font-body-sm text-on-surface-variant ml-10">主故事线：探测舰穿越不稳定星门，船员首次体验空间折叠带来的生理与心理冲击。</p>
+</div>
+<!-- Chapter 63 -->
+<div class="p-md bg-surface-bright">
+<div class="flex items-center gap-md mb-xs">
+<span class="w-7 h-7 flex items-center justify-center bg-primary/10 text-primary rounded-full font-label-md">63</span>
+<span class="font-label-md font-bold text-on-surface">黑暗中的低语</span>
+</div>
+<p class="font-body-sm text-on-surface-variant ml-10">主故事线：遭遇电磁风暴导致通讯中断，封闭空间内的心理压力引发幻听与内部猜疑。</p>
+</div>
+<!-- Chapter 64 -->
+<div class="p-md bg-surface-bright">
+<div class="flex items-center gap-md mb-xs">
+<span class="w-7 h-7 flex items-center justify-center bg-primary/10 text-primary rounded-full font-label-md">64</span>
+<span class="font-label-md font-bold text-on-surface">反叛者的遗产</span>
+</div>
+<p class="font-body-sm text-on-surface-variant ml-10">主故事线：在引擎室发现前任指挥官的加密日志，揭开星门计划背后的政治阴谋。</p>
+</div>
+</div>
+</div>
+<!-- Validation Panel -->
+<div class="space-y-md">
+<h4 class="font-label-md text-on-surface font-bold">系统校验</h4>
+<div class="grid grid-cols-1 gap-sm">
+<div class="flex items-center justify-between text-on-surface-variant bg-surface-container-low px-md py-sm rounded border border-outline-variant/30">
+<div class="flex items-center gap-sm">
+<span class="material-symbols-outlined text-primary text-[20px]" data-icon="check_circle">check_circle</span>
+<span class="font-body-sm">章节序号无重复</span>
+</div>
+</div>
+<div class="flex items-center justify-between text-on-surface-variant bg-surface-container-low px-md py-sm rounded border border-outline-variant/30">
+<div class="flex items-center gap-sm">
+<span class="material-symbols-outlined text-primary text-[20px]" data-icon="check_circle">check_circle</span>
+<span class="font-body-sm">章节均位于故事线范围内</span>
+</div>
+</div>
+<div class="flex items-center justify-between text-on-surface-variant bg-surface-container-low px-md py-sm rounded border border-outline-variant/30">
+<div class="flex items-center gap-sm">
+<span class="material-symbols-outlined text-primary text-[20px]" data-icon="check_circle">check_circle</span>
+<span class="font-body-sm">每章已设置主故事线</span>
+</div>
+</div>
+<div class="flex items-center justify-between text-on-surface-variant bg-surface-container-low px-md py-sm rounded border border-outline-variant/30">
+<div class="flex items-center gap-sm">
+<span class="material-symbols-outlined text-primary text-[20px]" data-icon="check_circle">check_circle</span>
+<span class="font-body-sm">关联伏笔章节范围有效</span>
+</div>
+</div>
+<div class="flex items-center justify-between text-on-surface-variant bg-surface-container-low px-md py-sm rounded border border-outline-variant/30">
+<div class="flex items-center gap-sm">
+<span class="material-symbols-outlined text-primary text-[20px]" data-icon="check_circle">check_circle</span>
+<span class="font-body-sm">未覆盖现有已确认章节</span>
+</div>
+</div>
+</div>
+<!-- Warning Ch 63 -->
+<div class="bg-tertiary-fixed-dim/20 border border-tertiary-container/30 p-md rounded-lg flex gap-md">
+<span class="material-symbols-outlined text-tertiary" data-icon="warning">warning</span>
+<div>
+<p class="font-label-md text-tertiary font-bold">校验预警</p>
+<p class="font-body-sm text-on-tertiary-fixed-variant">第 63 章同时关联“安全区内鬼”和“实验室线索”，确认前请检查章节内容是否过于复杂。</p>
+</div>
+</div>
+</div>
+<!-- Confirmation Consequences -->
+<div class="bg-surface-container p-lg rounded-xl space-y-md border border-outline-variant/50">
+<div class="grid grid-cols-2 gap-lg">
+<div class="space-y-sm">
+<p class="font-label-md text-on-surface font-bold flex items-center gap-xs">
+<span class="material-symbols-outlined text-[18px]" data-icon="info">info</span>
+                                确认后:
+                            </p>
+<ul class="font-body-sm text-on-surface-variant list-disc list-inside space-y-1">
+<li>状态转为“已确认”</li>
+<li>可进入正文生产</li>
+<li>来源记录保留</li>
+<li>不会自动生成正文</li>
+<li>不覆盖现有内容</li>
+</ul>
+</div>
+<div class="space-y-sm">
+<p class="font-label-md text-on-surface font-bold flex items-center gap-xs">
+<span class="material-symbols-outlined text-[18px]" data-icon="edit">edit</span>
+                                仍可执行:
+                            </p>
+<ul class="font-body-sm text-on-surface-variant list-disc list-inside space-y-1">
+<li>查看规划</li>
+<li>调整关系</li>
+<li>手动进入正文生产</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+<!-- Footer -->
+<div class="p-xl bg-surface-container-low border-t border-outline-variant flex gap-md">
+<button class="flex-1 px-lg py-md border border-outline text-on-surface font-label-md rounded-lg hover:bg-surface-variant transition-colors">
+                    返回检查
+                </button>
+<button class="flex-[1.5] px-lg py-md bg-primary text-on-primary font-label-md rounded-lg shadow-lg hover:opacity-90 transition-opacity" id="confirm-btn">
+                    确认章节规划
+                </button>
+</div>
+</div>
+</div>
+<!-- Micro-interaction script -->
+<script>
+        document.getElementById('confirm-btn').addEventListener('click', function() {
+            const btn = this;
+            btn.disabled = true;
+            btn.innerHTML = `
+                <div class="flex items-center justify-center gap-2">
+                    <span class="animate-spin h-5 w-5 border-2 border-on-primary border-t-transparent rounded-full"></span>
+                    处理中...
+                </div>
+            `;
+            
+            setTimeout(() => {
+                alert('章节规划已确认为 "已确认" 状态，并已解锁正文生产。');
+                location.reload();
+            }, 1200);
+        });
+    </script>
+</body></html>

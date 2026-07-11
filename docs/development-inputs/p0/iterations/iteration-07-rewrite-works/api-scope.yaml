@@ -1,0 +1,21 @@
+iteration: '07'
+name: 重写版本与项目作品闭环
+endpoints:
+- method: POST
+  path: /api/v1/content-items/{contentItemId}/rewrites/mock
+  description: 创建模拟重写任务
+- method: GET
+  path: /api/v1/workflow-runs/{workflowRunId}
+  description: 查询模拟任务
+- method: GET
+  path: /api/v1/content-items/{contentItemId}/versions
+  description: 版本列表
+- method: GET
+  path: /api/v1/content-versions/{versionId}
+  description: 版本详情
+- method: GET
+  path: /api/v1/projects/{projectId}/works
+  description: 项目作品列表
+- method: GET
+  path: /api/v1/works/{workId}
+  description: 项目作品聚合详情

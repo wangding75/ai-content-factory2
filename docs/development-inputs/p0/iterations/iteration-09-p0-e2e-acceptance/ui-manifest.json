@@ -1,0 +1,150 @@
+{
+  "iteration": "09",
+  "frames": [
+    {
+      "id": "S00_HOME",
+      "label": "首页",
+      "relative_path": "ui/frames/S00_HOME"
+    },
+    {
+      "id": "S01_PROJECTS",
+      "label": "项目列表",
+      "relative_path": "ui/frames/S01_PROJECTS"
+    },
+    {
+      "id": "S01_CREATE_PROJECT",
+      "label": "新建项目",
+      "relative_path": "ui/frames/S01_CREATE_PROJECT"
+    },
+    {
+      "id": "S02_PROJECT_OVERVIEW",
+      "label": "项目概览",
+      "relative_path": "ui/frames/S02_PROJECT_OVERVIEW"
+    },
+    {
+      "id": "S02_PROJECT_PLANNING",
+      "label": "项目策划",
+      "relative_path": "ui/frames/S02_PROJECT_PLANNING"
+    },
+    {
+      "id": "S02_PROJECT_MATERIALS",
+      "label": "项目素材列表",
+      "relative_path": "ui/frames/S02_PROJECT_MATERIALS"
+    },
+    {
+      "id": "S02_CREATE_MATERIAL",
+      "label": "新建并绑定素材",
+      "relative_path": "ui/frames/S02_CREATE_MATERIAL"
+    },
+    {
+      "id": "S02_MATERIAL_DETAIL",
+      "label": "素材详情",
+      "relative_path": "ui/frames/S02_MATERIAL_DETAIL"
+    },
+    {
+      "id": "S02_PICK_MATERIAL",
+      "label": "选择已有素材",
+      "relative_path": "ui/frames/S02_PICK_MATERIAL"
+    },
+    {
+      "id": "S02_EDIT_MATERIAL",
+      "label": "编辑素材",
+      "relative_path": "ui/frames/S02_EDIT_MATERIAL"
+    },
+    {
+      "id": "S02_EDIT_MATERIAL_USAGE",
+      "label": "编辑项目用途",
+      "relative_path": "ui/frames/S02_EDIT_MATERIAL_USAGE"
+    },
+    {
+      "id": "S02_UNBIND_MATERIAL",
+      "label": "解除素材绑定",
+      "relative_path": "ui/frames/S02_UNBIND_MATERIAL"
+    },
+    {
+      "id": "B1_STORYLINES",
+      "label": "故事线工作区",
+      "relative_path": "ui/frames/B1_STORYLINES"
+    },
+    {
+      "id": "B2_CREATE_MAIN_STORYLINE",
+      "label": "新建主线",
+      "relative_path": "ui/frames/B2_CREATE_MAIN_STORYLINE"
+    },
+    {
+      "id": "B3_CREATE_CHILD_STORYLINE",
+      "label": "新建子故事线",
+      "relative_path": "ui/frames/B3_CREATE_CHILD_STORYLINE"
+    },
+    {
+      "id": "B4_CREATE_FORESHADOWING",
+      "label": "新增伏笔",
+      "relative_path": "ui/frames/B4_CREATE_FORESHADOWING"
+    },
+    {
+      "id": "C1_CHAPTER_PLANNING",
+      "label": "章节规划",
+      "relative_path": "ui/frames/C1_CHAPTER_PLANNING"
+    },
+    {
+      "id": "C2_MOCK_PLAN",
+      "label": "模拟生成章节规划",
+      "relative_path": "ui/frames/C2_MOCK_PLAN"
+    },
+    {
+      "id": "C3_EDIT_PLAN",
+      "label": "编辑章节规划",
+      "relative_path": "ui/frames/C3_EDIT_PLAN"
+    },
+    {
+      "id": "C4_CONFIRM_PLAN",
+      "label": "确认章节规划",
+      "relative_path": "ui/frames/C4_CONFIRM_PLAN"
+    },
+    {
+      "id": "D1_EDITOR",
+      "label": "正文编辑器",
+      "relative_path": "ui/frames/D1_EDITOR"
+    },
+    {
+      "id": "D2_REVIEW",
+      "label": "审核结果",
+      "relative_path": "ui/frames/D2_REVIEW"
+    },
+    {
+      "id": "D3_PROJECT_WORKS",
+      "label": "项目作品",
+      "relative_path": "ui/frames/D3_PROJECT_WORKS"
+    },
+    {
+      "id": "D4_CREATE_REWRITE",
+      "label": "创建重写版本",
+      "relative_path": "ui/frames/D4_CREATE_REWRITE"
+    },
+    {
+      "id": "D5_REWRITE_RESULT",
+      "label": "重写结果",
+      "relative_path": "ui/frames/D5_REWRITE_RESULT"
+    },
+    {
+      "id": "E1_GLOBAL_MATERIALS",
+      "label": "全局素材",
+      "relative_path": "ui/frames/E1_GLOBAL_MATERIALS"
+    },
+    {
+      "id": "E2_GLOBAL_WORKS",
+      "label": "全局作品",
+      "relative_path": "ui/frames/E2_GLOBAL_WORKS"
+    },
+    {
+      "id": "E3_WORKFLOWS",
+      "label": "流程中心",
+      "relative_path": "ui/frames/E3_WORKFLOWS"
+    },
+    {
+      "id": "E4_SETTINGS",
+      "label": "全局设置",
+      "relative_path": "ui/frames/E4_SETTINGS"
+    }
+  ]
+}

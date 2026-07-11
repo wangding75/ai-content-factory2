@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+
+<html class="light" lang="zh-CN"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>AI Content Factory - 故事线</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "surface-dim": "#d8dadc",
+                    "primary-fixed": "#e1e0ff",
+                    "on-primary-fixed-variant": "#2f2ebe",
+                    "on-error-container": "#93000a",
+                    "surface-container": "#eceef0",
+                    "on-surface": "#191c1e",
+                    "tertiary": "#904900",
+                    "tertiary-fixed": "#ffdcc5",
+                    "secondary-container": "#d2e1f7",
+                    "on-tertiary-fixed-variant": "#703700",
+                    "on-secondary-container": "#556477",
+                    "error": "#ba1a1a",
+                    "on-error": "#ffffff",
+                    "on-primary-fixed": "#07006c",
+                    "on-tertiary-container": "#fffbff",
+                    "on-secondary-fixed": "#0d1c2d",
+                    "on-primary": "#ffffff",
+                    "surface-container-high": "#e6e8ea",
+                    "surface-variant": "#e0e3e5",
+                    "primary": "#4648d4",
+                    "secondary": "#516072",
+                    "on-secondary-fixed-variant": "#39485a",
+                    "tertiary-container": "#b55d00",
+                    "on-tertiary": "#ffffff",
+                    "primary-container": "#6063ee",
+                    "on-surface-variant": "#464554",
+                    "on-secondary": "#ffffff",
+                    "surface-tint": "#494bd6",
+                    "background": "#f7f9fb",
+                    "primary-fixed-dim": "#c0c1ff",
+                    "inverse-primary": "#c0c1ff",
+                    "outline-variant": "#c7c4d7",
+                    "inverse-on-surface": "#eff1f3",
+                    "tertiary-fixed-dim": "#ffb783",
+                    "error-container": "#ffdad6",
+                    "surface-container-low": "#f2f4f6",
+                    "secondary-fixed": "#d4e4fa",
+                    "inverse-surface": "#2d3133",
+                    "surface-container-highest": "#e0e3e5",
+                    "surface-bright": "#f7f9fb",
+                    "surface": "#f7f9fb",
+                    "on-background": "#191c1e",
+                    "surface-container-lowest": "#ffffff",
+                    "secondary-fixed-dim": "#b9c8de",
+                    "outline": "#767586",
+                    "on-primary-container": "#fffbff",
+                    "on-tertiary-fixed": "#301400"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "md": "16px",
+                    "gutter": "24px",
+                    "xs": "4px",
+                    "3xl": "64px",
+                    "container-margin": "32px",
+                    "sm": "8px",
+                    "2xl": "48px",
+                    "xl": "32px",
+                    "lg": "24px",
+                    "unit": "8px"
+            },
+            "fontFamily": {
+                    "label-sm": ["Inter"],
+                    "headline-sm": ["Inter"],
+                    "display": ["Inter"],
+                    "headline-lg": ["Inter"],
+                    "body-sm": ["Inter"],
+                    "headline-md": ["Inter"],
+                    "body-md": ["Inter"],
+                    "body-lg": ["Inter"],
+                    "label-md": ["Inter"]
+            },
+            "fontSize": {
+                    "label-sm": ["12px", {"lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "600"}],
+                    "headline-sm": ["20px", {"lineHeight": "28px", "letterSpacing": "0em", "fontWeight": "600"}],
+                    "display": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "600"}],
+                    "body-sm": ["14px", {"lineHeight": "20px", "letterSpacing": "0em", "fontWeight": "400"}],
+                    "headline-md": ["24px", {"lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                    "body-md": ["16px", {"lineHeight": "24px", "letterSpacing": "0em", "fontWeight": "400"}],
+                    "body-lg": ["18px", {"lineHeight": "28px", "letterSpacing": "0em", "fontWeight": "400"}],
+                    "label-md": ["14px", {"lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "500"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            display: inline-block;
+            vertical-align: middle;
+        }
+        .tree-line::before {
+            content: '';
+            position: absolute;
+            left: -16px;
+            top: 0;
+            bottom: 0;
+            width: 1px;
+            background: #e2e8f0;
+        }
+        .modal-overlay {
+            backdrop-filter: blur(4px);
+            background-color: rgba(15, 23, 42, 0.4);
+        }
+    </style>
+
+<link rel="stylesheet" href="../../shared/prototype-router.css">
+<script>window.__ACF_PROTOTYPE_PAGE__="B3_CREATE_CHILD_STORYLINE";window.__ACF_PROTOTYPE_LABEL__="新建子故事线";</script>
+<script defer src="../../shared/prototype-router.js"></script>
+</head>
+<body class="bg-background text-on-surface h-screen overflow-hidden flex">
+<!-- SideNavBar -->
+<aside class="fixed left-0 top-0 h-screen w-[280px] bg-surface border-r border-outline-variant flex flex-col py-xl z-50">
+<div class="px-lg mb-3xl">
+<h1 class="font-headline-sm text-headline-sm font-bold text-primary">AI Content Factory</h1>
+<p class="font-body-md text-body-md text-secondary">Creator SaaS</p>
+</div>
+<nav class="flex-1 space-y-xs">
+<a class="flex items-center gap-md text-secondary px-lg py-md hover:bg-surface-container-low transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="home">home</span>
+<span class="font-body-md text-body-md">首页</span>
+</a>
+<a class="flex items-center gap-md bg-secondary-container text-on-secondary-container border-l-2 border-primary px-lg py-md" href="#">
+<span class="material-symbols-outlined" data-icon="folder_open">folder_open</span>
+<span class="font-body-md text-body-md">项目</span>
+</a>
+<a class="flex items-center gap-md text-secondary px-lg py-md hover:bg-surface-container-low transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="inventory_2">inventory_2</span>
+<span class="font-body-md text-body-md">素材</span>
+</a>
+<a class="flex items-center gap-md text-secondary px-lg py-md hover:bg-surface-container-low transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="auto_awesome">auto_awesome</span>
+<span class="font-body-md text-body-md">作品</span>
+</a>
+<a class="flex items-center gap-md text-secondary px-lg py-md hover:bg-surface-container-low transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="account_tree">account_tree</span>
+<span class="font-body-md text-body-md">流程</span>
+</a>
+<a class="flex items-center gap-md text-secondary px-lg py-md hover:bg-surface-container-low transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+<span class="font-body-md text-body-md">设置</span>
+</a>
+</nav>
+<div class="px-lg mt-auto">
+<div class="flex items-center gap-md p-md rounded-lg border border-outline-variant bg-surface-container-lowest">
+<div class="w-10 h-10 rounded-full bg-primary-fixed flex items-center justify-center">
+<span class="text-primary font-bold">CF</span>
+</div>
+<div>
+<p class="font-label-md text-label-md">Creator Factory</p>
+<p class="text-xs text-secondary">Pro Plan</p>
+</div>
+</div>
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="ml-[280px] flex-1 flex flex-col h-screen relative">
+<!-- TopNavBar -->
+<header class="h-16 flex justify-between items-center px-xl w-full border-b border-outline-variant bg-surface z-40">
+<div class="flex items-center gap-lg">
+<h2 class="font-headline-md text-headline-md text-on-surface">末世求生</h2>
+<nav class="flex items-center text-sm text-secondary">
+<span>项目</span>
+<span class="mx-2">/</span>
+<span class="text-on-surface">末世求生</span>
+</nav>
+</div>
+<div class="flex items-center gap-xl">
+<div class="relative w-64">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline" data-icon="search">search</span>
+<input class="w-full bg-surface-container-low border-none rounded-full pl-10 py-1.5 text-sm focus:ring-2 focus:ring-primary/20" placeholder="搜索资源或故事线..." type="text"/>
+</div>
+<div class="flex items-center gap-md">
+<button class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-surface-container-low transition-colors">
+<span class="material-symbols-outlined text-secondary" data-icon="help">help</span>
+</button>
+<button class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-surface-container-low transition-colors relative">
+<span class="material-symbols-outlined text-secondary" data-icon="notifications">notifications</span>
+<span class="absolute top-2 right-2 w-2 h-2 bg-error rounded-full"></span>
+</button>
+<div class="w-8 h-8 rounded-full overflow-hidden border border-outline-variant">
+<img class="w-full h-full object-cover" data-alt="A professional studio portrait of a young creative professional with a friendly smile, clean lighting, soft background, modern aesthetic, indigo accents." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCWYxniu30bMSQgfxvyAVkad4DVvx33ocPsMpsVjruKy50qXJisMQ9DovhyOnV8lWRt8rnT8QqE3BJpUinlxgzVfTXuEZ9yJ6_nqswSD0XxOCOEajQdMD7i4Z8ZHdNcIWHklEBUUIujb9Vf_idCNmUnlkZ20AhgJvncymVCr6vRHslA91lqoZDyNB9ADF49l1yQnzH61j-FtKKLTse8mUFb_xMLabXk1_Yksj7Dq7yVcC7bQkw7fwH2N-Kne9ifB2Z2Bfuk2eYka0w"/>
+</div>
+</div>
+</div>
+</header>
+<!-- Project Navigation Tabs -->
+<div class="bg-surface px-xl border-b border-outline-variant flex gap-xl pt-4">
+<button class="pb-3 px-1 text-on-surface-variant font-label-md border-b-2 border-transparent hover:text-primary">概览</button>
+<button class="pb-3 px-1 text-on-surface-variant font-label-md border-b-2 border-transparent hover:text-primary">策划</button>
+<button class="pb-3 px-1 text-on-surface-variant font-label-md border-b-2 border-transparent hover:text-primary">素材</button>
+<button class="pb-3 px-1 text-primary font-bold font-label-md border-b-2 border-primary">故事线</button>
+<button class="pb-3 px-1 text-on-surface-variant font-label-md border-b-2 border-transparent hover:text-primary">章节</button>
+<button class="pb-3 px-1 text-on-surface-variant font-label-md border-b-2 border-transparent hover:text-primary">审核</button>
+<button class="pb-3 px-1 text-on-surface-variant font-label-md border-b-2 border-transparent hover:text-primary">作品</button>
+<button class="pb-3 px-1 text-on-surface-variant font-label-md border-b-2 border-transparent hover:text-primary">设置</button>
+</div>
+<!-- Background Content (Storyline Workspace) -->
+<div class="flex-1 flex overflow-hidden">
+<!-- Left: Storyline Tree -->
+<div class="w-[35%] border-r border-outline-variant bg-surface-container-lowest overflow-y-auto p-lg">
+<div class="flex items-center justify-between mb-xl">
+<h3 class="font-headline-sm text-headline-sm">大纲结构</h3>
+<button class="flex items-center gap-xs text-primary font-label-md hover:opacity-80">
+<span class="material-symbols-outlined text-[20px]" data-icon="add">add</span>
+                        新建主线
+                    </button>
+</div>
+<div class="space-y-md">
+<!-- Tree Item 1 -->
+<div class="space-y-sm">
+<div class="flex items-center gap-sm p-sm rounded-lg hover:bg-surface-container-low cursor-pointer group">
+<span class="material-symbols-outlined text-outline" data-icon="expand_more">expand_more</span>
+<span class="material-symbols-outlined text-primary" data-icon="folder" style="font-variation-settings: 'FILL' 1;">folder</span>
+<span class="font-body-md">寻找安全区 (1-120, 主线)</span>
+</div>
+<div class="ml-10 space-y-sm relative">
+<div class="flex items-center gap-sm p-sm rounded-lg hover:bg-surface-container-low cursor-pointer">
+<span class="material-symbols-outlined text-outline-variant" data-icon="description">description</span>
+<span class="font-body-md">红雾爆发 (1-4)</span>
+</div>
+<div class="flex items-center gap-sm p-sm rounded-lg hover:bg-surface-container-low cursor-pointer">
+<span class="material-symbols-outlined text-outline" data-icon="expand_more">expand_more</span>
+<span class="material-symbols-outlined text-outline-variant" data-icon="folder" style="font-variation-settings: 'FILL' 1;">folder</span>
+<span class="font-body-md">商场求生 (2-8)</span>
+</div>
+<!-- Nested 2 -->
+<div class="ml-8 space-y-sm">
+<div class="flex items-center gap-sm p-sm rounded-lg hover:bg-surface-container-low cursor-pointer">
+<span class="material-symbols-outlined text-outline-variant" data-icon="description">description</span>
+<span class="font-body-md">老周食物危机 (3-5)</span>
+</div>
+<div class="flex items-center gap-sm p-sm rounded-lg hover:bg-surface-container-low cursor-pointer">
+<span class="material-symbols-outlined text-outline-variant" data-icon="description">description</span>
+<span class="font-body-md">许晴道德困境 (4-8)</span>
+</div>
+</div>
+<div class="flex items-center gap-sm p-sm rounded-lg bg-primary-container/10 border border-primary/20 cursor-pointer">
+<span class="material-symbols-outlined text-primary" data-icon="expand_more">expand_more</span>
+<span class="material-symbols-outlined text-primary" data-icon="folder" style="font-variation-settings: 'FILL' 1;">folder</span>
+<span class="font-body-md text-primary font-bold">安全区黑幕 (50-100)</span>
+</div>
+<!-- Nested Active -->
+<div class="ml-8 space-y-sm">
+<div class="flex items-center gap-sm p-sm rounded-lg hover:bg-surface-container-low cursor-pointer">
+<span class="material-symbols-outlined text-outline-variant" data-icon="description">description</span>
+<span class="font-body-md">安全区内鬼 (62-78)</span>
+</div>
+<div class="flex items-center gap-sm p-sm rounded-lg hover:bg-surface-container-low cursor-pointer">
+<span class="material-symbols-outlined text-outline-variant" data-icon="description">description</span>
+<span class="font-body-md">实验室线索 (70-95)</span>
+</div>
+</div>
+<div class="flex items-center gap-sm p-sm rounded-lg hover:bg-surface-container-low cursor-pointer">
+<span class="material-symbols-outlined text-outline" data-icon="chevron_right">chevron_right</span>
+<span class="material-symbols-outlined text-outline-variant" data-icon="folder" style="font-variation-settings: 'FILL' 1;">folder</span>
+<span class="font-body-md">逃离安全区 (96-120)</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Right: Workspace (Blurred/Overlayed) -->
+<div class="w-[65%] p-2xl bg-surface relative">
+<div class="max-w-4xl mx-auto space-y-xl">
+<div class="flex items-center justify-between">
+<div>
+<h2 class="font-headline-lg text-headline-lg">安全区黑幕</h2>
+<p class="text-secondary font-body-md">主线故事线 · 第 50-100 章 · 规划中</p>
+</div>
+<button class="bg-primary text-on-primary px-lg py-md rounded-lg font-label-md">编辑故事线</button>
+</div>
+<div class="grid grid-cols-2 gap-lg">
+<div class="p-lg bg-surface-container-low rounded-xl border border-outline-variant">
+<h4 class="font-label-md text-primary mb-md">核心目标</h4>
+<p class="font-body-md leading-relaxed">揭露所谓的人类最后据点背后的活体实验阴谋，建立主角团与管理层不可调和的矛盾。</p>
+</div>
+<div class="p-lg bg-surface-container-low rounded-xl border border-outline-variant">
+<h4 class="font-label-md text-primary mb-md">关键伏笔</h4>
+<ul class="list-disc list-inside font-body-sm text-on-surface-variant space-y-xs">
+<li>医疗包中的编号芯片</li>
+<li>失踪的底层幸存者</li>
+<li>深夜运作的通风管道</li>
+</ul>
+</div>
+</div>
+<div class="p-lg bg-surface-container-low rounded-xl border border-outline-variant">
+<h4 class="font-label-md text-primary mb-md">关联素材</h4>
+<div class="flex flex-wrap gap-sm">
+<span class="px-md py-xs bg-surface-container-highest rounded-full text-xs">场景: 核心实验室</span>
+<span class="px-md py-xs bg-surface-container-highest rounded-full text-xs">人物: 林野 (林氏集团)</span>
+<span class="px-md py-xs bg-surface-container-highest rounded-full text-xs">道具: 实验记录本</span>
+</div>
+</div>
+</div>
+<!-- Light Neutral Overlay for Workspace -->
+<div class="absolute inset-0 bg-surface/40 backdrop-blur-[2px] z-10"></div>
+</div>
+</div>
+<!-- Modal Overlay -->
+<div class="fixed inset-0 z-50 flex items-center justify-center p-md modal-overlay">
+<!-- Modal Container -->
+<div class="bg-surface-container-lowest w-full max-w-[680px] rounded-xl shadow-2xl overflow-hidden border border-outline-variant">
+<!-- Header -->
+<div class="px-xl py-lg border-b border-outline-variant flex items-center justify-between bg-surface">
+<div>
+<h2 class="font-headline-sm text-headline-sm text-on-surface">新建子故事线</h2>
+<p class="font-body-sm text-secondary">在“安全区黑幕”下创建子故事线</p>
+</div>
+<button class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-surface-container-low transition-colors">
+<span class="material-symbols-outlined text-on-surface-variant" data-icon="close">close</span>
+</button>
+</div>
+<!-- Content -->
+<div class="p-xl space-y-xl max-h-[768px] overflow-y-auto">
+<!-- Parent Context Card -->
+<div class="p-lg bg-surface-container-low rounded-lg border border-outline-variant grid grid-cols-2 gap-md text-sm">
+<div class="flex items-center gap-sm">
+<span class="text-secondary">父故事线：</span>
+<span class="font-medium">安全区黑幕</span>
+</div>
+<div class="flex items-center gap-sm">
+<span class="text-secondary">类型：</span>
+<span class="font-medium text-tertiary">支线</span>
+</div>
+<div class="flex items-center gap-sm">
+<span class="text-secondary">范围：</span>
+<span class="font-medium">50-100 章</span>
+</div>
+<div class="flex items-center gap-sm">
+<span class="text-secondary">状态：</span>
+<span class="font-medium text-secondary">规划中</span>
+</div>
+</div>
+<!-- Info Alert -->
+<div class="flex items-start gap-md p-md bg-primary-fixed/30 rounded-lg text-on-primary-fixed-variant">
+<span class="material-symbols-outlined text-primary" data-icon="info">info</span>
+<p class="font-label-md leading-tight">子故事线的章节范围必须位于父故事线第 50–100 章以内。</p>
+</div>
+<!-- Form -->
+<div class="space-y-lg">
+<div class="space-y-sm">
+<label class="font-label-md text-on-surface-variant">故事线类型</label>
+<div class="flex items-center gap-md p-md bg-surface-container-low border border-outline-variant rounded-lg text-secondary cursor-not-allowed">
+<span class="material-symbols-outlined" data-icon="account_tree">account_tree</span>
+<span class="font-body-md">支线</span>
+</div>
+<p class="text-xs text-secondary px-xs">子节点默认继承支线类型，不可更改。</p>
+</div>
+<div class="space-y-sm">
+<label class="font-label-md text-on-surface-variant">故事线名称</label>
+<input class="w-full bg-surface-container-low border-outline-variant rounded-lg px-md py-md focus:ring-primary focus:border-primary font-body-md" type="text" value="管理层分裂"/>
+</div>
+<div class="space-y-sm">
+<label class="font-label-md text-on-surface-variant">故事线目标</label>
+<textarea class="w-full bg-surface-container-low border-outline-variant rounded-lg px-md py-md focus:ring-primary focus:border-primary font-body-md resize-none" rows="3">描写安全区管理层内部因实验计划产生分裂，部分成员秘密帮助主角，并推动黑幕逐步公开。</textarea>
+</div>
+<div class="grid grid-cols-2 gap-xl">
+<div class="space-y-sm">
+<label class="font-label-md text-on-surface-variant">起始章节</label>
+<div class="relative">
+<input class="w-full bg-surface-container-low border-outline-variant rounded-lg px-md py-md focus:ring-primary focus:border-primary font-body-md" type="number" value="75"/>
+<span class="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-secondary">CH</span>
+</div>
+</div>
+<div class="space-y-sm">
+<label class="font-label-md text-on-surface-variant">结束章节</label>
+<div class="relative">
+<input class="w-full bg-surface-container-low border-outline-variant rounded-lg px-md py-md focus:ring-primary focus:border-primary font-body-md" type="number" value="92"/>
+<span class="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-secondary">CH</span>
+</div>
+</div>
+<p class="col-span-2 text-xs text-primary px-xs">父级可用范围：第 50-100 章</p>
+</div>
+<div class="space-y-sm">
+<label class="font-label-md text-on-surface-variant">关联素材</label>
+<div class="flex flex-wrap gap-sm p-md bg-surface-container-low border border-outline-variant rounded-lg">
+<div class="flex items-center gap-xs px-md py-1 bg-primary text-on-primary rounded-full text-xs">
+<span>林野</span>
+<span class="material-symbols-outlined text-xs cursor-pointer" data-icon="close">close</span>
+</div>
+<div class="flex items-center gap-xs px-md py-1 bg-primary text-on-primary rounded-full text-xs">
+<span>许晴</span>
+<span class="material-symbols-outlined text-xs cursor-pointer" data-icon="close">close</span>
+</div>
+<div class="flex items-center gap-xs px-md py-1 bg-primary text-on-primary rounded-full text-xs">
+<span>安全区</span>
+<span class="material-symbols-outlined text-xs cursor-pointer" data-icon="close">close</span>
+</div>
+<button class="flex items-center gap-xs px-md py-1 border border-dashed border-primary text-primary rounded-full text-xs hover:bg-primary/5 transition-colors">
+<span class="material-symbols-outlined text-[14px]" data-icon="add">add</span>
+                                    添加素材
+                                </button>
+</div>
+</div>
+<div class="space-y-sm">
+<label class="font-label-md text-on-surface-variant">设计备注</label>
+<textarea class="w-full bg-surface-container-low border-outline-variant rounded-lg px-md py-md focus:ring-primary focus:border-primary font-body-sm text-secondary resize-none" rows="4">管理层内部一部分人希望停止实验，另一部分人试图销毁证据。该故事线应与“安全区内鬼”和“实验室线索”产生交叉。</textarea>
+</div>
+</div>
+</div>
+<!-- Footer -->
+<div class="px-xl py-lg border-t border-outline-variant bg-surface-container-low flex justify-end gap-md">
+<button class="px-xl py-md rounded-lg font-label-md text-secondary hover:bg-surface-container-high transition-colors">取消</button>
+<button class="px-xl py-md rounded-lg font-label-md bg-primary text-on-primary hover:bg-primary-container shadow-lg shadow-primary/20 transition-all active:scale-[0.98]">创建子故事线</button>
+</div>
+</div>
+</div>
+</main>
+<script>
+        // Micro-interactions for form inputs
+        document.querySelectorAll('input, textarea').forEach(el => {
+            el.addEventListener('focus', () => {
+                el.parentElement.classList.add('ring-2', 'ring-primary/10');
+            });
+            el.addEventListener('blur', () => {
+                el.parentElement.classList.remove('ring-2', 'ring-primary/10');
+            });
+        });
+    </script>
+</body></html>

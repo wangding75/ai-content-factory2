@@ -1,0 +1,1735 @@
+openapi: 3.1.0
+info:
+  title: AI Content Factory 2.0 P0 API
+  version: 0.1.0
+  description: P0 development planning draft. The repository's frozen OpenAPI remains
+    the source of truth.
+servers:
+- url: http://localhost:8080
+paths:
+  /healthz:
+    get:
+      operationId: get_healthz
+      summary: API 存活检查
+      tags:
+      - iteration-01
+      parameters: []
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - request_id
+                properties:
+                  data: {}
+                  request_id:
+                    type: string
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+  /readyz:
+    get:
+      operationId: get_readyz
+      summary: PostgreSQL、Redis 依赖就绪检查
+      tags:
+      - iteration-01
+      parameters: []
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - request_id
+                properties:
+                  data: {}
+                  request_id:
+                    type: string
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+  /api/v1/meta:
+    get:
+      operationId: get_api_v1_meta
+      summary: 版本、环境与 P0 能力元信息
+      tags:
+      - iteration-01
+      parameters: []
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - request_id
+                properties:
+                  data: {}
+                  request_id:
+                    type: string
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+  /api/v1/home:
+    get:
+      operationId: get_api_v1_home
+      summary: 首页聚合数据
+      tags:
+      - iteration-02
+      parameters: []
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - request_id
+                properties:
+                  data: {}
+                  request_id:
+                    type: string
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+  /api/v1/projects:
+    get:
+      operationId: get_api_v1_projects
+      summary: 项目列表
+      tags:
+      - iteration-02
+      parameters: []
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - request_id
+                properties:
+                  data: {}
+                  request_id:
+                    type: string
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+    post:
+      operationId: post_api_v1_projects
+      summary: 创建项目
+      tags:
+      - iteration-02
+      parameters: []
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - request_id
+                properties:
+                  data: {}
+                  request_id:
+                    type: string
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+  /api/v1/projects/{project_id}:
+    get:
+      operationId: get_api_v1_projects_project_id
+      summary: 项目详情
+      tags:
+      - iteration-02
+      parameters:
+      - name: project_id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - request_id
+                properties:
+                  data: {}
+                  request_id:
+                    type: string
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+    patch:
+      operationId: patch_api_v1_projects_project_id
+      summary: 更新项目基础信息
+      tags:
+      - iteration-02
+      parameters:
+      - name: project_id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - request_id
+                properties:
+                  data: {}
+                  request_id:
+                    type: string
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+  /api/v1/projects/{project_id}/workspace:
+    get:
+      operationId: get_api_v1_projects_project_id_workspace
+      summary: 项目工作区聚合数据
+      tags:
+      - iteration-02
+      parameters:
+      - name: project_id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - request_id
+                properties:
+                  data: {}
+                  request_id:
+                    type: string
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+  /api/v1/projects/{project_id}/planning:
+    get:
+      operationId: get_api_v1_projects_project_id_planning
+      summary: 读取项目策划
+      tags:
+      - iteration-03
+      parameters:
+      - name: project_id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - request_id
+                properties:
+                  data: {}
+                  request_id:
+                    type: string
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+    put:
+      operationId: put_api_v1_projects_project_id_planning
+      summary: 保存项目策划
+      tags:
+      - iteration-03
+      parameters:
+      - name: project_id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - request_id
+                properties:
+                  data: {}
+                  request_id:
+                    type: string
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+  /api/v1/materials:
+    get:
+      operationId: get_api_v1_materials
+      summary: 全局素材聚合
+      tags:
+      - iteration-08
+      parameters: []
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - request_id
+                properties:
+                  data: {}
+                  request_id:
+                    type: string
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+    post:
+      operationId: post_api_v1_materials
+      summary: 创建全局素材
+      tags:
+      - iteration-03
+      parameters: []
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - request_id
+                properties:
+                  data: {}
+                  request_id:
+                    type: string
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+  /api/v1/materials/{material_id}:
+    get:
+      operationId: get_api_v1_materials_material_id
+      summary: 素材详情
+      tags:
+      - iteration-03
+      parameters:
+      - name: material_id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - request_id
+                properties:
+                  data: {}
+                  request_id:
+                    type: string
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+    patch:
+      operationId: patch_api_v1_materials_material_id
+      summary: 编辑素材本体
+      tags:
+      - iteration-03
+      parameters:
+      - name: material_id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - request_id
+                properties:
+                  data: {}
+                  request_id:
+                    type: string
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+  /api/v1/projects/{project_id}/materials:
+    get:
+      operationId: get_api_v1_projects_project_id_materials
+      summary: 项目素材列表
+      tags:
+      - iteration-03
+      parameters:
+      - name: project_id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - request_id
+                properties:
+                  data: {}
+                  request_id:
+                    type: string
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+    post:
+      operationId: post_api_v1_projects_project_id_materials
+      summary: 创建素材并绑定项目
+      tags:
+      - iteration-03
+      parameters:
+      - name: project_id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - request_id
+                properties:
+                  data: {}
+                  request_id:
+                    type: string
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+  /api/v1/projects/{project_id}/materials/{material_id}/binding:
+    post:
+      operationId: post_api_v1_projects_project_id_materials_material_id_binding
+      summary: 绑定已有素材
+      tags:
+      - iteration-03
+      parameters:
+      - name: project_id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: material_id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - request_id
+                properties:
+                  data: {}
+                  request_id:
+                    type: string
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+    delete:
+      operationId: delete_api_v1_projects_project_id_materials_material_id_binding
+      summary: 解除项目绑定
+      tags:
+      - iteration-03
+      parameters:
+      - name: project_id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: material_id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - request_id
+                properties:
+                  data: {}
+                  request_id:
+                    type: string
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+  /api/v1/projects/{project_id}/materials/{material_id}/usage:
+    patch:
+      operationId: patch_api_v1_projects_project_id_materials_material_id_usage
+      summary: 编辑项目用途
+      tags:
+      - iteration-03
+      parameters:
+      - name: project_id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: material_id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - request_id
+                properties:
+                  data: {}
+                  request_id:
+                    type: string
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+  /api/v1/projects/{project_id}/storylines:
+    get:
+      operationId: get_api_v1_projects_project_id_storylines
+      summary: 故事线树
+      tags:
+      - iteration-04
+      parameters:
+      - name: project_id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - request_id
+                properties:
+                  data: {}
+                  request_id:
+                    type: string
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+    post:
+      operationId: post_api_v1_projects_project_id_storylines
+      summary: 创建主线
+      tags:
+      - iteration-04
+      parameters:
+      - name: project_id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - request_id
+                properties:
+                  data: {}
+                  request_id:
+                    type: string
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+  /api/v1/storylines/{storyline_id}/children:
+    post:
+      operationId: post_api_v1_storylines_storyline_id_children
+      summary: 创建子故事线
+      tags:
+      - iteration-04
+      parameters:
+      - name: storyline_id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - request_id
+                properties:
+                  data: {}
+                  request_id:
+                    type: string
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+  /api/v1/storylines/{storyline_id}:
+    patch:
+      operationId: patch_api_v1_storylines_storyline_id
+      summary: 编辑故事线
+      tags:
+      - iteration-04
+      parameters:
+      - name: storyline_id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - request_id
+                properties:
+                  data: {}
+                  request_id:
+                    type: string
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+  /api/v1/projects/{project_id}/foreshadowings:
+    get:
+      operationId: get_api_v1_projects_project_id_foreshadowings
+      summary: 伏笔列表
+      tags:
+      - iteration-04
+      parameters:
+      - name: project_id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - request_id
+                properties:
+                  data: {}
+                  request_id:
+                    type: string
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+    post:
+      operationId: post_api_v1_projects_project_id_foreshadowings
+      summary: 创建伏笔
+      tags:
+      - iteration-04
+      parameters:
+      - name: project_id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - request_id
+                properties:
+                  data: {}
+                  request_id:
+                    type: string
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+  /api/v1/foreshadowings/{foreshadowing_id}:
+    patch:
+      operationId: patch_api_v1_foreshadowings_foreshadowing_id
+      summary: 编辑伏笔与状态
+      tags:
+      - iteration-04
+      parameters:
+      - name: foreshadowing_id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - request_id
+                properties:
+                  data: {}
+                  request_id:
+                    type: string
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+  /api/v1/projects/{project_id}/chapter-plans:
+    get:
+      operationId: get_api_v1_projects_project_id_chapter_plans
+      summary: 章节规划列表
+      tags:
+      - iteration-05
+      parameters:
+      - name: project_id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - request_id
+                properties:
+                  data: {}
+                  request_id:
+                    type: string
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+  /api/v1/projects/{project_id}/chapter-plans/mock-generate:
+    post:
+      operationId: post_api_v1_projects_project_id_chapter_plans_mock_generate
+      summary: 模拟生成候选
+      tags:
+      - iteration-05
+      parameters:
+      - name: project_id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - request_id
+                properties:
+                  data: {}
+                  request_id:
+                    type: string
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+  /api/v1/chapter-plans/{chapter_plan_id}:
+    get:
+      operationId: get_api_v1_chapter_plans_chapter_plan_id
+      summary: 章节规划详情
+      tags:
+      - iteration-05
+      parameters:
+      - name: chapter_plan_id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - request_id
+                properties:
+                  data: {}
+                  request_id:
+                    type: string
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+    patch:
+      operationId: patch_api_v1_chapter_plans_chapter_plan_id
+      summary: 编辑候选规划
+      tags:
+      - iteration-05
+      parameters:
+      - name: chapter_plan_id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - request_id
+                properties:
+                  data: {}
+                  request_id:
+                    type: string
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+    delete:
+      operationId: delete_api_v1_chapter_plans_chapter_plan_id
+      summary: 删除未确认候选
+      tags:
+      - iteration-05
+      parameters:
+      - name: chapter_plan_id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - request_id
+                properties:
+                  data: {}
+                  request_id:
+                    type: string
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+  /api/v1/projects/{project_id}/chapter-plans/confirm:
+    post:
+      operationId: post_api_v1_projects_project_id_chapter_plans_confirm
+      summary: 批量确认候选
+      tags:
+      - iteration-05
+      parameters:
+      - name: project_id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - request_id
+                properties:
+                  data: {}
+                  request_id:
+                    type: string
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+  /api/v1/chapter-plans/{chapter_plan_id}/content:
+    post:
+      operationId: post_api_v1_chapter_plans_chapter_plan_id_content
+      summary: 为已确认章节创建内容单元
+      tags:
+      - iteration-06
+      parameters:
+      - name: chapter_plan_id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - request_id
+                properties:
+                  data: {}
+                  request_id:
+                    type: string
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+  /api/v1/content-items/{content_item_id}:
+    get:
+      operationId: get_api_v1_content_items_content_item_id
+      summary: 正文与当前版本详情
+      tags:
+      - iteration-06
+      parameters:
+      - name: content_item_id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - request_id
+                properties:
+                  data: {}
+                  request_id:
+                    type: string
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+  /api/v1/content-items/{content_item_id}/draft:
+    put:
+      operationId: put_api_v1_content_items_content_item_id_draft
+      summary: 保存草稿
+      tags:
+      - iteration-06
+      parameters:
+      - name: content_item_id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - request_id
+                properties:
+                  data: {}
+                  request_id:
+                    type: string
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+  /api/v1/content-items/{content_item_id}/mock-generate:
+    post:
+      operationId: post_api_v1_content_items_content_item_id_mock_generate
+      summary: 模拟生成正文
+      tags:
+      - iteration-06
+      parameters:
+      - name: content_item_id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - request_id
+                properties:
+                  data: {}
+                  request_id:
+                    type: string
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+  /api/v1/content-items/{content_item_id}/reviews/mock:
+    post:
+      operationId: post_api_v1_content_items_content_item_id_reviews_mock
+      summary: 执行模拟审核
+      tags:
+      - iteration-06
+      parameters:
+      - name: content_item_id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - request_id
+                properties:
+                  data: {}
+                  request_id:
+                    type: string
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+  /api/v1/content-items/{content_item_id}/reviews:
+    get:
+      operationId: get_api_v1_content_items_content_item_id_reviews
+      summary: 审核历史
+      tags:
+      - iteration-06
+      parameters:
+      - name: content_item_id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - request_id
+                properties:
+                  data: {}
+                  request_id:
+                    type: string
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+  /api/v1/reviews/{review_id}:
+    get:
+      operationId: get_api_v1_reviews_review_id
+      summary: 审核详情
+      tags:
+      - iteration-06
+      parameters:
+      - name: review_id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - request_id
+                properties:
+                  data: {}
+                  request_id:
+                    type: string
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+  /api/v1/content-items/{content_item_id}/rewrites/mock:
+    post:
+      operationId: post_api_v1_content_items_content_item_id_rewrites_mock
+      summary: 创建模拟重写任务
+      tags:
+      - iteration-07
+      parameters:
+      - name: content_item_id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - request_id
+                properties:
+                  data: {}
+                  request_id:
+                    type: string
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+  /api/v1/workflow-runs/{workflow_run_id}:
+    get:
+      operationId: get_api_v1_workflow_runs_workflow_run_id
+      summary: 查询模拟任务
+      tags:
+      - iteration-07
+      parameters:
+      - name: workflow_run_id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - request_id
+                properties:
+                  data: {}
+                  request_id:
+                    type: string
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+  /api/v1/content-items/{content_item_id}/versions:
+    get:
+      operationId: get_api_v1_content_items_content_item_id_versions
+      summary: 版本列表
+      tags:
+      - iteration-07
+      parameters:
+      - name: content_item_id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - request_id
+                properties:
+                  data: {}
+                  request_id:
+                    type: string
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+  /api/v1/content-versions/{version_id}:
+    get:
+      operationId: get_api_v1_content_versions_version_id
+      summary: 版本详情
+      tags:
+      - iteration-07
+      parameters:
+      - name: version_id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - request_id
+                properties:
+                  data: {}
+                  request_id:
+                    type: string
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+  /api/v1/projects/{project_id}/works:
+    get:
+      operationId: get_api_v1_projects_project_id_works
+      summary: 项目作品列表
+      tags:
+      - iteration-07
+      parameters:
+      - name: project_id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - request_id
+                properties:
+                  data: {}
+                  request_id:
+                    type: string
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+  /api/v1/works/{work_id}:
+    get:
+      operationId: get_api_v1_works_work_id
+      summary: 项目作品聚合详情
+      tags:
+      - iteration-07
+      parameters:
+      - name: work_id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - request_id
+                properties:
+                  data: {}
+                  request_id:
+                    type: string
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+  /api/v1/works:
+    get:
+      operationId: get_api_v1_works
+      summary: 全局作品聚合
+      tags:
+      - iteration-08
+      parameters: []
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - request_id
+                properties:
+                  data: {}
+                  request_id:
+                    type: string
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+  /api/v1/workflows/builtin:
+    get:
+      operationId: get_api_v1_workflows_builtin
+      summary: 内置模拟流程
+      tags:
+      - iteration-08
+      parameters: []
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - request_id
+                properties:
+                  data: {}
+                  request_id:
+                    type: string
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+  /api/v1/capabilities:
+    get:
+      operationId: get_api_v1_capabilities
+      summary: 能力状态
+      tags:
+      - iteration-08
+      parameters: []
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - request_id
+                properties:
+                  data: {}
+                  request_id:
+                    type: string
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+  /api/v1/integrations:
+    get:
+      operationId: get_api_v1_integrations
+      summary: 外部集成状态
+      tags:
+      - iteration-08
+      parameters: []
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - request_id
+                properties:
+                  data: {}
+                  request_id:
+                    type: string
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+components:
+  schemas:
+    Error:
+      type: object
+      required:
+      - code
+      - message
+      - request_id
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+        details: {}
+        request_id:
+          type: string
+  responses:
+    BadRequest:
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: Not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Conflict:
+      description: State conflict
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'

@@ -1,0 +1,406 @@
+<!DOCTYPE html><html class="light" lang="zh-CN"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>AI Content Factory - 项目</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-tertiary-fixed": "#301400",
+                        "on-secondary": "#ffffff",
+                        "on-tertiary-fixed-variant": "#703700",
+                        "surface-variant": "#e0e3e5",
+                        "on-background": "#191c1e",
+                        "secondary-fixed-dim": "#b9c8de",
+                        "on-primary-container": "#fffbff",
+                        "tertiary-container": "#b55d00",
+                        "inverse-on-surface": "#eff1f3",
+                        "error": "#ba1a1a",
+                        "on-tertiary": "#ffffff",
+                        "on-secondary-container": "#556477",
+                        "secondary-container": "#d2e1f7",
+                        "tertiary-fixed": "#ffdcc5",
+                        "on-secondary-fixed": "#0d1c2d",
+                        "on-error-container": "#93000a",
+                        "primary-fixed": "#e1e0ff",
+                        "on-surface": "#191c1e",
+                        "on-primary": "#ffffff",
+                        "on-error": "#ffffff",
+                        "surface-container-high": "#e6e8ea",
+                        "error-container": "#ffdad6",
+                        "on-primary-fixed-variant": "#2f2ebe",
+                        "tertiary-fixed-dim": "#ffb783",
+                        "on-tertiary-container": "#fffbff",
+                        "secondary": "#516072",
+                        "tertiary": "#904900",
+                        "inverse-primary": "#c0c1ff",
+                        "surface-container-lowest": "#ffffff",
+                        "background": "#f7f9fb",
+                        "on-secondary-fixed-variant": "#39485a",
+                        "primary": "#4648d4",
+                        "outline-variant": "#c7c4d7",
+                        "outline": "#767586",
+                        "on-surface-variant": "#464554",
+                        "surface-container-highest": "#e0e3e5",
+                        "surface": "#f7f9fb",
+                        "secondary-fixed": "#d4e4fa",
+                        "surface-tint": "#494bd6",
+                        "surface-bright": "#f7f9fb",
+                        "surface-dim": "#d8dadc",
+                        "on-primary-fixed": "#07006c",
+                        "surface-container": "#eceef0",
+                        "surface-container-low": "#f2f4f6",
+                        "inverse-surface": "#2d3133",
+                        "primary-container": "#6063ee",
+                        "primary-fixed-dim": "#c0c1ff"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "unit": "8px",
+                        "container-margin": "32px",
+                        "gutter": "24px",
+                        "2xl": "48px",
+                        "3xl": "64px",
+                        "lg": "24px",
+                        "xs": "4px",
+                        "sm": "8px",
+                        "xl": "32px",
+                        "md": "16px"
+                    },
+                    "fontFamily": {
+                        "headline-sm": ["Inter"],
+                        "display": ["Inter"],
+                        "headline-md": ["Inter"],
+                        "label-sm": ["Inter"],
+                        "headline-lg": ["Inter"],
+                        "body-md": ["Inter"],
+                        "label-md": ["Inter"],
+                        "headline-lg-mobile": ["Inter"],
+                        "body-sm": ["Inter"],
+                        "body-lg": ["Inter"]
+                    },
+                    "fontSize": {
+                        "headline-sm": ["20px", {"lineHeight": "28px", "letterSpacing": "0em", "fontWeight": "600"}],
+                        "display": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "headline-md": ["24px", {"lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                        "label-sm": ["12px", {"lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "600"}],
+                        "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "600"}],
+                        "body-md": ["16px", {"lineHeight": "24px", "letterSpacing": "0em", "fontWeight": "400"}],
+                        "label-md": ["14px", {"lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "500"}],
+                        "headline-lg-mobile": ["24px", {"lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                        "body-sm": ["14px", {"lineHeight": "20px", "letterSpacing": "0em", "fontWeight": "400"}],
+                        "body-lg": ["18px", {"lineHeight": "28px", "letterSpacing": "0em", "fontWeight": "400"}]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(226, 232, 240, 0.8);
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #E2E8F0;
+            border-radius: 10px;
+        }
+        .modal-overlay {
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(4px);
+        }
+    </style>
+
+<link rel="stylesheet" href="../../shared/prototype-router.css">
+<script>window.__ACF_PROTOTYPE_PAGE__="S01_CREATE_PROJECT";window.__ACF_PROTOTYPE_LABEL__="新建项目弹窗";</script>
+<script defer src="../../shared/prototype-router.js"></script>
+</head>
+<body class="bg-background text-on-surface min-h-screen flex overflow-hidden">
+<!-- SideNavBar -->
+<aside class="fixed left-0 top-0 h-full w-[280px] bg-surface border-r border-outline-variant flex flex-col py-xl z-30">
+<div class="px-lg mb-2xl">
+<div class="flex items-center gap-md">
+<div class="w-10 h-10 rounded-lg bg-primary flex items-center justify-center text-white">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">factory</span>
+</div>
+<div>
+<h1 class="font-headline-md text-headline-md font-bold text-primary">Content Factory</h1>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Professional Creator</p>
+</div>
+</div>
+</div>
+<nav class="flex-1 px-md space-y-xs overflow-y-auto custom-scrollbar">
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:bg-surface-container-low transition-colors duration-200" href="#">
+<span class="material-symbols-outlined">home</span>
+<span class="font-body-md text-body-md">Home</span>
+</a>
+<a class="flex items-center gap-md px-md py-sm rounded-lg bg-secondary-container text-primary border-l-2 border-primary font-semibold transition-colors duration-200" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">folder_open</span>
+<span class="font-body-md text-body-md">Projects</span>
+</a>
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:bg-surface-container-low transition-colors duration-200" href="#">
+<span class="material-symbols-outlined">inventory_2</span>
+<span class="font-body-md text-body-md">Materials</span>
+</a>
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:bg-surface-container-low transition-colors duration-200" href="#">
+<span class="material-symbols-outlined">draw</span>
+<span class="font-body-md text-body-md">Works</span>
+</a>
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:bg-surface-container-low transition-colors duration-200" href="#">
+<span class="material-symbols-outlined">account_tree</span>
+<span class="font-body-md text-body-md">Workflow</span>
+</a>
+<div class="pt-xl mt-xl border-t border-outline-variant/30">
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:bg-surface-container-low transition-colors duration-200" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span class="font-body-md text-body-md">Settings</span>
+</a>
+</div>
+</nav>
+<div class="px-lg pt-xl mt-auto">
+<div class="p-md rounded-xl bg-surface-container-low border border-outline-variant flex items-center gap-md">
+<img class="w-10 h-10 rounded-full border border-outline" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBi7b8v81_KmVvdwTPODoPdDKWMUyguk-yKa-ODpVaBO5kaiPT1z3GauvngB-GexKjuC00KNeXT0inaEWkOxsAnJKQW_edFh4aseAri4bs-TFs9q8wwsEPmnJmCAeCkG1vCwKQ-ZpF_U06jPSN6cSxfqL4yjA09_j6iZz9kFZRX04OxciGugmzAvtlmEz4gXzVnaOGgzlkMPQM0FVYBaLgChNramn3vPq32ijVOK9sy7kcQeAAHiNW15MTD0-aQ5_POiSmE8dA-9-k">
+<div class="flex-1 min-w-0">
+<p class="font-label-md text-label-md font-bold truncate">Alex Chen</p>
+<p class="font-label-sm text-label-sm text-on-surface-variant truncate">Premium Plan</p>
+</div>
+</div>
+</div>
+</aside>
+<!-- Main Content Canvas (Background) -->
+<main class="ml-[280px] flex-1 flex flex-col min-h-screen">
+<header class="h-16 px-lg bg-surface flex justify-between items-center border-b border-outline-variant sticky top-0 z-20">
+<div class="flex items-center flex-1 max-w-xl">
+<div class="relative w-full">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant">search</span>
+<input class="w-full bg-surface-container-low border border-outline-variant rounded-lg pl-10 pr-md py-sm font-body-sm text-body-sm" placeholder="搜索项目名称" type="text">
+</div>
+</div>
+<div class="flex items-center gap-md ml-lg">
+<button class="p-sm text-on-surface-variant rounded-full"><span class="material-symbols-outlined">help</span></button>
+<button class="p-sm text-on-surface-variant rounded-full relative">
+<span class="material-symbols-outlined">notifications</span>
+<span class="absolute top-1 right-1 w-2 h-2 bg-error rounded-full"></span>
+</button>
+<div class="h-6 w-px bg-outline-variant mx-xs"></div>
+<button class="bg-primary text-white px-md py-sm rounded-lg font-label-md text-label-md flex items-center gap-sm">
+<span class="material-symbols-outlined text-[20px]">add</span>新建项目
+                </button>
+</div>
+</header>
+<div class="px-xl pt-xl pb-md">
+<div class="flex flex-col gap-xs">
+<div class="flex items-center gap-sm text-on-surface-variant">
+<span class="font-label-sm text-label-sm uppercase tracking-wider">Dashboard</span>
+<span class="material-symbols-outlined text-[14px]">chevron_right</span>
+<span class="font-label-sm text-label-sm uppercase tracking-wider">Projects</span>
+</div>
+<h2 class="font-headline-lg text-headline-lg text-on-surface">项目</h2>
+<p class="font-body-md text-body-md text-on-surface-variant">管理和继续你的内容创作项目</p>
+</div>
+</div>
+<div class="px-xl pb-lg flex items-center justify-between z-10 pt-md">
+<div class="flex items-center gap-sm">
+<button class="px-md py-sm rounded-full bg-primary text-white font-label-md text-label-md">全部</button>
+<button class="px-md py-sm rounded-full bg-surface-container-high text-on-surface-variant font-label-md text-label-md">策划中</button>
+<button class="px-md py-sm rounded-full bg-surface-container-high text-on-surface-variant font-label-md text-label-md">生产中</button>
+<button class="px-md py-sm rounded-full bg-surface-container-high text-on-surface-variant font-label-md text-label-md">审核中</button>
+</div>
+<div class="flex items-center gap-sm">
+<button class="p-sm text-on-surface-variant rounded-lg"><span class="material-symbols-outlined">grid_view</span></button>
+<button class="p-sm text-on-surface-variant rounded-lg"><span class="material-symbols-outlined">list</span></button>
+</div>
+</div>
+<div class="px-xl pb-2xl grid grid-cols-1 md:grid-cols-2 gap-lg">
+<!-- Entry Card: Create New Project -->
+<div class="group border-2 border-dashed border-outline-variant rounded-xl p-xl flex flex-col items-center justify-center text-center gap-md hover:border-primary/50 hover:bg-primary/5 transition-all cursor-pointer min-h-[340px]">
+<div class="w-16 h-16 rounded-full bg-surface-container flex items-center justify-center text-on-surface-variant group-hover:bg-primary group-hover:text-white transition-all">
+<span class="material-symbols-outlined text-[32px]">add</span>
+</div>
+<div>
+<h3 class="font-headline-sm text-headline-sm text-on-surface">创建新项目</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-xs">开始一个新的内容创作项目</p>
+</div>
+<button class="mt-md px-lg py-sm rounded-lg bg-surface-container text-on-surface-variant font-label-md text-label-md">新建项目</button>
+</div>
+<!-- Project Card 1: 末世求生 -->
+<div class="group bg-surface border border-outline-variant rounded-xl overflow-hidden hover:shadow-lg transition-all flex flex-col">
+<div class="relative h-48 w-full overflow-hidden">
+<div class="w-full h-full bg-cover bg-center" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCtJtFWgw2BpYoXwgdNdcAG0E4ksHIaJ-_dLWXifWpHZwj4HuiFfW2LaH-219O0icGoDS-rviEOI6NT7fuThaThp7ThAw-WLtQ84Z1vuzJjaI8p1h4D_zFAG47ET8KT8yYPnlQF1goHQdc9wSo1P8XzTCN8z0Ijj0bbF_9EYyPRH97VYfRn9yGVvJmWth3izbjYay_Xg7gueiuo_T2ADG8CEvzjgSBRP8FZ8rta1mu2Eas5X4z8h7ZlwTJIb1QOXwkc1tMlO63f48k')"></div>
+<div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+<div class="absolute top-4 left-4">
+<span class="px-sm py-1 bg-tertiary text-on-tertiary rounded font-label-sm text-label-sm">策划中</span>
+</div>
+<div class="absolute bottom-4 left-4 right-4 flex justify-between items-end">
+<div>
+<span class="font-label-sm text-white/80 uppercase tracking-widest block mb-xs">Novel · 小说</span>
+<h3 class="font-headline-sm text-headline-sm text-white font-bold">末世求生</h3>
+</div>
+<button class="w-8 h-8 rounded-full bg-white/20 text-white flex items-center justify-center"><span class="material-symbols-outlined text-[20px]">more_vert</span></button>
+</div>
+</div>
+<div class="p-lg flex flex-col flex-1">
+<p class="font-body-sm text-body-sm text-on-surface-variant mb-lg line-clamp-2">红雾爆发后的末世求生故事，探讨人性在极端环境下的挣扎与希望。</p>
+<div class="mt-auto pt-md border-t border-outline-variant/30 flex items-center justify-between">
+<span class="font-label-sm text-label-sm text-on-surface-variant">更新于 今天 14:30</span>
+<button class="text-primary font-label-md text-label-md flex items-center gap-xs">
+                            进入项目
+                            <span class="material-symbols-outlined text-[18px]">arrow_forward</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+<section class="px-xl py-2xl border-t border-outline-variant bg-surface-container-lowest">
+<div class="flex items-center justify-between mb-xl">
+<div>
+<h4 class="font-headline-sm text-headline-sm">快捷模板</h4>
+<p class="font-body-sm text-body-sm text-on-surface-variant">从预设的框架开始创作</p>
+</div>
+<button class="font-label-md text-label-md text-primary">查看全部</button>
+</div>
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-md">
+<div class="p-lg bg-white border border-outline-variant rounded-xl flex items-center gap-md">
+<div class="w-12 h-12 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
+<span class="material-symbols-outlined">movie</span>
+</div>
+<div>
+<p class="font-label-md text-label-md font-bold">短视频脚本</p>
+<p class="font-label-sm text-label-sm text-on-surface-variant">高效生成爆款脚本</p>
+</div>
+</div>
+<div class="p-lg bg-white border border-outline-variant rounded-xl flex items-center gap-md">
+<div class="w-12 h-12 rounded-lg bg-secondary/10 text-secondary flex items-center justify-center">
+<span class="material-symbols-outlined">book</span>
+</div>
+<div>
+<p class="font-label-md text-label-md font-bold">长篇小说大纲</p>
+<p class="font-label-sm text-label-sm text-on-surface-variant">构建宏大世界观</p>
+</div>
+</div>
+<div class="p-lg bg-white border border-outline-variant rounded-xl flex items-center gap-md">
+<div class="w-12 h-12 rounded-lg bg-tertiary/10 text-tertiary flex items-center justify-center">
+<span class="material-symbols-outlined">campaign</span>
+</div>
+<div>
+<p class="font-label-md text-label-md font-bold">营销文案策划</p>
+<p class="font-label-sm text-label-sm text-on-surface-variant">多平台分发优化</p>
+</div>
+</div>
+<div class="p-lg bg-white border border-outline-variant rounded-xl flex items-center gap-md">
+<div class="w-12 h-12 rounded-lg bg-error/10 text-error flex items-center justify-center">
+<span class="material-symbols-outlined">auto_stories</span>
+</div>
+<div>
+<p class="font-label-md text-label-md font-bold">儿童绘本</p>
+<p class="font-label-sm text-label-sm text-on-surface-variant">图文并茂的叙事</p>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- Modal Overlay -->
+<div class="fixed inset-0 z-50 flex items-center justify-center modal-overlay" id="create-modal">
+<div class="bg-surface w-full max-w-[640px] rounded-xl shadow-2xl border border-outline-variant overflow-hidden flex flex-col">
+<!-- Modal Header -->
+<div class="px-xl py-lg border-b border-outline-variant flex justify-between items-start">
+<div class="flex-1">
+<h3 class="font-headline-md text-headline-md text-on-surface mb-xs">新建项目</h3>
+<p class="text-body-sm text-on-surface-variant">创建一个新的内容项目，项目类型创建后不可直接变更</p>
+</div>
+<button class="p-sm text-on-surface-variant hover:bg-surface-container-low rounded-full transition-all" onclick="document.getElementById('create-modal').classList.add('hidden'); document.body.classList.remove('overflow-hidden')">
+<span class="material-symbols-outlined">close</span>
+</button>
+</div>
+<!-- Modal Content (Scrollable) -->
+<div class="flex-1 overflow-y-auto custom-scrollbar p-xl space-y-xl">
+<!-- Project Type Grid -->
+<div class="grid grid-cols-2 sm:grid-cols-3 gap-md">
+<!-- Novel (Enabled/Selected) -->
+<label class="relative block cursor-pointer">
+<input checked="" class="sr-only peer" name="project_type" type="radio">
+<div class="p-md rounded-xl border-2 border-outline-variant peer-checked:border-primary peer-checked:bg-primary/5 hover:border-primary/40 transition-all text-center h-full flex flex-col items-center justify-center gap-xs">
+<span class="material-symbols-outlined text-primary text-[32px]" style="font-variation-settings: 'FILL' 1;">auto_stories</span>
+<span class="font-label-md text-on-surface font-bold">小说</span>
+</div>
+</label>
+<!-- Disabled Types -->
+<div class="relative p-md rounded-xl border border-outline-variant bg-surface-container-low opacity-60 grayscale flex flex-col items-center justify-center gap-xs text-center">
+<span class="absolute top-2 right-2 bg-surface-container-highest text-[10px] px-1.5 py-0.5 rounded font-bold uppercase text-on-surface-variant">暂未开放</span>
+<span class="material-symbols-outlined text-on-surface-variant text-[32px]">movie</span>
+<span class="font-label-md text-on-surface-variant font-bold">剧集</span>
+</div>
+<div class="relative p-md rounded-xl border border-outline-variant bg-surface-container-low opacity-60 grayscale flex flex-col items-center justify-center gap-xs text-center">
+<span class="absolute top-2 right-2 bg-surface-container-highest text-[10px] px-1.5 py-0.5 rounded font-bold uppercase text-on-surface-variant">暂未开放</span>
+<span class="material-symbols-outlined text-on-surface-variant text-[32px]">video_library</span>
+<span class="font-label-md text-on-surface-variant font-bold">短片</span>
+</div>
+<div class="relative p-md rounded-xl border border-outline-variant bg-surface-container-low opacity-60 grayscale flex flex-col items-center justify-center gap-xs text-center">
+<span class="absolute top-2 right-2 bg-surface-container-highest text-[10px] px-1.5 py-0.5 rounded font-bold uppercase text-on-surface-variant">暂未开放</span>
+<span class="material-symbols-outlined text-on-surface-variant text-[32px]">photo_library</span>
+<span class="font-label-md text-on-surface-variant font-bold">图文</span>
+</div>
+<div class="relative p-md rounded-xl border border-outline-variant bg-surface-container-low opacity-60 grayscale flex flex-col items-center justify-center gap-xs text-center">
+<span class="absolute top-2 right-2 bg-surface-container-highest text-[10px] px-1.5 py-0.5 rounded font-bold uppercase text-on-surface-variant">暂未开放</span>
+<span class="material-symbols-outlined text-on-surface-variant text-[32px]">image</span>
+<span class="font-label-md text-on-surface-variant font-bold">图片</span>
+</div>
+</div>
+<!-- Form Fields -->
+<div class="space-y-lg pt-md">
+<div class="space-y-xs">
+<label class="font-label-md text-on-surface font-semibold flex items-center gap-xs">
+                            项目名称 <span class="text-error font-bold">*</span>
+</label>
+<input class="w-full px-md py-2.5 rounded-xl bg-background border border-outline-variant focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all text-body-md" id="project-name" oninput="validateForm()" placeholder="例如：末世求生" type="text">
+</div>
+<div class="space-y-xs">
+<label class="font-label-md text-on-surface font-semibold">项目简介</label>
+<textarea class="w-full px-md py-2.5 rounded-xl bg-background border border-outline-variant focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all text-body-sm resize-none" placeholder="简要描述项目主题和创作方向" rows="4"></textarea>
+</div>
+</div>
+</div>
+<!-- Modal Footer -->
+<div class="px-xl py-lg bg-surface-container-low border-t border-outline-variant flex justify-between items-center">
+<div class="flex items-center gap-xs text-body-sm text-on-surface-variant italic">
+<span class="material-symbols-outlined text-[16px]">info</span>
+<span>确认后将自动进入项目工作台</span>
+</div>
+<div class="flex gap-md">
+<button class="px-lg py-2 text-on-surface-variant font-label-md hover:bg-surface-container transition-all rounded-lg" onclick="document.getElementById('create-modal').classList.add('hidden'); document.body.classList.remove('overflow-hidden')">取消</button>
+<button class="px-xl py-2 bg-primary text-on-primary rounded-xl font-label-md shadow-lg shadow-primary/20 hover:opacity-90 disabled:bg-surface-variant disabled:text-on-surface-variant disabled:shadow-none disabled:cursor-not-allowed transition-all" disabled="" id="submit-btn">
+                        创建项目
+                    </button>
+</div>
+</div>
+</div>
+</div>
+<script>
+        function validateForm() {
+            const nameInput = document.getElementById('project-name');
+            const submitBtn = document.getElementById('submit-btn');
+            if (nameInput.value.trim() !== "") {
+                submitBtn.disabled = false;
+            } else {
+                submitBtn.disabled = true;
+            }
+        }
+    </script>
+</body></html>

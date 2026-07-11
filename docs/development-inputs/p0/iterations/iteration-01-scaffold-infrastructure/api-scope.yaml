@@ -1,0 +1,12 @@
+iteration: '01'
+name: 技术骨架与基础设施
+endpoints:
+- method: GET
+  path: /healthz
+  description: API 存活检查
+- method: GET
+  path: /readyz
+  description: PostgreSQL、Redis 依赖就绪检查
+- method: GET
+  path: /api/v1/meta
+  description: 版本、环境与 P0 能力元信息

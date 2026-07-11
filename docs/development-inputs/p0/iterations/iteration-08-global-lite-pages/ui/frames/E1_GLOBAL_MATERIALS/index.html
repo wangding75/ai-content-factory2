@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+
+<html class="light" lang="zh-CN"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>素材中心 | AI Content Factory</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        body { font-family: 'Inter', sans-serif; }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(8px);
+            border: 1px border-outline-variant;
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #e2e8f0;
+            border-radius: 10px;
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "surface-container-lowest": "#ffffff",
+                      "outline-variant": "#c7c4d7",
+                      "surface-container-high": "#e6e8ea",
+                      "on-tertiary-fixed-variant": "#703700",
+                      "on-primary": "#ffffff",
+                      "on-primary-fixed-variant": "#2f2ebe",
+                      "background": "#f7f9fb",
+                      "on-secondary": "#ffffff",
+                      "on-primary-fixed": "#07006c",
+                      "on-secondary-fixed-variant": "#39485a",
+                      "on-tertiary": "#ffffff",
+                      "surface-tint": "#494bd6",
+                      "on-surface": "#191c1e",
+                      "tertiary-fixed-dim": "#ffb783",
+                      "primary-fixed-dim": "#c0c1ff",
+                      "secondary-fixed": "#d4e4fa",
+                      "primary-fixed": "#e1e0ff",
+                      "tertiary-fixed": "#ffdcc5",
+                      "error-container": "#ffdad6",
+                      "surface-container-low": "#f2f4f6",
+                      "secondary": "#516072",
+                      "primary": "#4648d4",
+                      "outline": "#767586",
+                      "on-primary-container": "#fffbff",
+                      "on-tertiary-fixed": "#301400",
+                      "on-background": "#191c1e",
+                      "surface": "#f7f9fb",
+                      "surface-container": "#eceef0",
+                      "on-tertiary-container": "#fffbff",
+                      "secondary-fixed-dim": "#b9c8de",
+                      "inverse-on-surface": "#eff1f3",
+                      "surface-bright": "#f7f9fb",
+                      "inverse-surface": "#2d3133",
+                      "on-secondary-fixed": "#0d1c2d",
+                      "tertiary-container": "#b55d00",
+                      "surface-variant": "#e0e3e5",
+                      "inverse-primary": "#c0c1ff",
+                      "error": "#ba1a1a",
+                      "secondary-container": "#d2e1f7",
+                      "on-secondary-container": "#556477",
+                      "on-error": "#ffffff",
+                      "primary-container": "#6063ee",
+                      "on-error-container": "#93000a",
+                      "tertiary": "#904900",
+                      "surface-container-highest": "#e0e3e5",
+                      "on-surface-variant": "#464554",
+                      "surface-dim": "#d8dadc"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.25rem",
+                      "lg": "0.5rem",
+                      "xl": "0.75rem",
+                      "full": "9999px"
+              },
+              "spacing": {
+                      "xs": "4px",
+                      "md": "16px",
+                      "lg": "24px",
+                      "3xl": "64px",
+                      "gutter": "24px",
+                      "container-margin": "32px",
+                      "2xl": "48px",
+                      "unit": "8px",
+                      "sm": "8px",
+                      "xl": "32px"
+              },
+              "fontFamily": {
+                      "headline-sm": ["Inter"],
+                      "display": ["Inter"],
+                      "headline-md": ["Inter"],
+                      "label-md": ["Inter"],
+                      "label-sm": ["Inter"],
+                      "headline-lg-mobile": ["Inter"],
+                      "body-sm": ["Inter"],
+                      "body-lg": ["Inter"],
+                      "body-md": ["Inter"],
+                      "headline-lg": ["Inter"]
+              },
+              "fontSize": {
+                      "headline-sm": ["20px", {"lineHeight": "28px", "letterSpacing": "0em", "fontWeight": "600"}],
+                      "display": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                      "headline-md": ["24px", {"lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                      "label-md": ["14px", {"lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "500"}],
+                      "label-sm": ["12px", {"lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "600"}],
+                      "headline-lg-mobile": ["24px", {"lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                      "body-sm": ["14px", {"lineHeight": "20px", "letterSpacing": "0em", "fontWeight": "400"}],
+                      "body-lg": ["18px", {"lineHeight": "28px", "letterSpacing": "0em", "fontWeight": "400"}],
+                      "body-md": ["16px", {"lineHeight": "24px", "letterSpacing": "0em", "fontWeight": "400"}],
+                      "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "600"}]
+              }
+            },
+          },
+        }
+    </script>
+
+<link rel="stylesheet" href="../../shared/prototype-router.css">
+<script>window.__ACF_PROTOTYPE_PAGE__="E1_GLOBAL_MATERIALS";window.__ACF_PROTOTYPE_LABEL__="全局素材";</script>
+<script defer src="../../shared/prototype-router.js"></script>
+</head>
+<body class="bg-background text-on-background selection:bg-primary-container selection:text-on-primary-container">
+<!-- Sidebar Shell -->
+<aside class="fixed left-0 top-0 h-full w-[280px] bg-surface-container-lowest border-r border-outline-variant flex flex-col py-xl z-50">
+<div class="px-lg mb-2xl">
+<h1 class="text-headline-sm font-headline-sm font-bold text-primary">AI Content Factory</h1>
+<!-- No subtext per instructions -->
+</div>
+<nav class="flex-1 space-y-xs px-md">
+<a class="text-secondary flex items-center gap-md px-md py-sm hover:bg-surface-container-low transition-colors rounded-lg" href="#">
+<span class="material-symbols-outlined" data-icon="home">home</span>
+<span class="font-label-md text-label-md">首页</span>
+</a>
+<a class="text-secondary flex items-center gap-md px-md py-sm hover:bg-surface-container-low transition-colors rounded-lg" href="#">
+<span class="material-symbols-outlined" data-icon="folder_open">folder_open</span>
+<span class="font-label-md text-label-md">项目</span>
+</a>
+<!-- Active State: 素材 -->
+<a class="bg-secondary-container text-on-secondary-container flex items-center gap-md px-md py-sm rounded-lg border-l-2 border-primary" href="#">
+<span class="material-symbols-outlined" data-icon="inventory_2" style="font-variation-settings: 'FILL' 1;">inventory_2</span>
+<span class="font-label-md text-label-md">素材</span>
+</a>
+<a class="text-secondary flex items-center gap-md px-md py-sm hover:bg-surface-container-low transition-colors rounded-lg" href="#">
+<span class="material-symbols-outlined" data-icon="video_library">video_library</span>
+<span class="font-label-md text-label-md">作品</span>
+</a>
+<a class="text-secondary flex items-center gap-md px-md py-sm hover:bg-surface-container-low transition-colors rounded-lg" href="#">
+<span class="material-symbols-outlined" data-icon="account_tree">account_tree</span>
+<span class="font-label-md text-label-md">流程</span>
+</a>
+<a class="text-secondary flex items-center gap-md px-md py-sm hover:bg-surface-container-low transition-colors rounded-lg" href="#">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+<span class="font-label-md text-label-md">设置</span>
+</a>
+</nav>
+</aside>
+<!-- Top Navigation Bar -->
+<header class="fixed top-0 right-0 w-[calc(100%-280px)] h-16 bg-surface border-b border-outline-variant flex justify-between items-center px-lg z-40">
+<div class="flex items-center w-96 bg-surface-container-low rounded-full px-md py-sm">
+<span class="material-symbols-outlined text-outline mr-sm" data-icon="search">search</span>
+<input class="bg-transparent border-none focus:ring-0 text-body-sm w-full" placeholder="搜索素材名称或描述" type="text"/>
+</div>
+<div class="flex items-center space-x-md">
+<button class="text-on-surface-variant hover:text-primary transition-colors p-sm">
+<span class="material-symbols-outlined" data-icon="help">help</span>
+</button>
+<button class="relative text-on-surface-variant hover:text-primary transition-colors p-sm">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+<span class="absolute top-2 right-2 w-2 h-2 bg-error rounded-full"></span>
+</button>
+<div class="h-8 w-8 rounded-full bg-primary-container flex items-center justify-center overflow-hidden border border-outline-variant">
+<img class="w-full h-full object-cover" data-alt="A professional headshot of a creative director in a minimalist studio setting, soft cinematic lighting, neutral background, high-end commercial aesthetic, sharp focus." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAk0WmIexZKJOKYbP4ClcFb5_WwpXpykiBAMOf5X-XmZEi_HryASgK5DDrLf-D3buVY_qYcmwGak2yMi2uTQi5aDSe74dNJRaFHLITPto1OkYAnBr_l1RfWp-doQ-oyvqBIv2M2AHzSq9h20ZxZng1UVXLGCim2DgeuEVndFM_yaPsCiFcqxyfUVCmgXehXbzWaOjdnUlwkCuY9trDs1KcxtzzVkM5wOrMrp_z-tCGlIulShHYzAR2-kGCZO5OegzkVRJtazBv7424"/>
+</div>
+</div>
+</header>
+<!-- Main Content Area -->
+<main class="ml-[280px] mt-16 p-xl min-h-screen">
+<!-- Page Header -->
+<div class="mb-xl">
+<div class="flex flex-col gap-xs mb-md">
+<h2 class="font-headline-lg text-headline-lg text-on-surface">素材</h2>
+<p class="font-body-md text-body-md text-on-surface-variant">查看和管理跨项目复用的人物、世界观、地点、组织、道具与参考资料</p>
+</div>
+<!-- Notice Banner -->
+<div class="flex items-center gap-md bg-secondary-container/30 border border-secondary-container p-md rounded-xl text-on-secondary-container">
+<span class="material-symbols-outlined text-primary" data-icon="info">info</span>
+<span class="font-label-md text-label-md">在项目内创建的素材会自动同步到全局素材，并保留各项目中的用途配置。</span>
+</div>
+</div>
+<!-- Summary Statistics Bento -->
+<div class="grid grid-cols-4 gap-lg mb-xl">
+<div class="bg-surface-container-lowest border border-outline-variant p-lg rounded-xl flex flex-col gap-xs shadow-sm">
+<span class="text-on-surface-variant font-label-md text-label-md">全部素材</span>
+<div class="flex items-baseline gap-xs">
+<span class="text-headline-md font-headline-md text-on-surface">7</span>
+<span class="text-label-sm text-outline">份</span>
+</div>
+</div>
+<div class="bg-surface-container-lowest border border-outline-variant p-lg rounded-xl flex flex-col gap-xs shadow-sm">
+<span class="text-on-surface-variant font-label-md text-label-md">已被项目引用</span>
+<div class="flex items-baseline gap-xs">
+<span class="text-headline-md font-headline-md text-primary">5</span>
+<span class="text-label-sm text-outline">份</span>
+</div>
+</div>
+<div class="bg-surface-container-lowest border border-outline-variant p-lg rounded-xl flex flex-col gap-xs shadow-sm">
+<span class="text-on-surface-variant font-label-md text-label-md">暂未使用</span>
+<div class="flex items-baseline gap-xs">
+<span class="text-headline-md font-headline-md text-secondary">2</span>
+<span class="text-label-sm text-outline">份</span>
+</div>
+</div>
+<div class="bg-surface-container-lowest border border-outline-variant p-lg rounded-xl flex flex-col gap-xs shadow-sm">
+<span class="text-on-surface-variant font-label-md text-label-md">引用项目数</span>
+<div class="flex items-baseline gap-xs">
+<span class="text-headline-md font-headline-md text-on-surface">2</span>
+<span class="text-label-sm text-outline">个</span>
+</div>
+</div>
+</div>
+<!-- Filters Row -->
+<div class="flex items-center justify-between gap-xl mb-lg bg-surface-container-low/50 p-md rounded-xl border border-outline-variant">
+<div class="flex items-center gap-sm overflow-x-auto pb-xs">
+<button class="px-md py-sm rounded-lg bg-primary text-on-primary font-label-md text-label-md whitespace-nowrap">全部 (7)</button>
+<button class="px-md py-sm rounded-lg hover:bg-surface-container-high text-on-surface-variant font-label-md text-label-md whitespace-nowrap transition-colors">人物 (2)</button>
+<button class="px-md py-sm rounded-lg hover:bg-surface-container-high text-on-surface-variant font-label-md text-label-md whitespace-nowrap transition-colors">世界观 (1)</button>
+<button class="px-md py-sm rounded-lg hover:bg-surface-container-high text-on-surface-variant font-label-md text-label-md whitespace-nowrap transition-colors">地点 (2)</button>
+<button class="px-md py-sm rounded-lg hover:bg-surface-container-high text-on-surface-variant font-label-md text-label-md whitespace-nowrap transition-colors opacity-50 cursor-not-allowed">组织 (0)</button>
+<button class="px-md py-sm rounded-lg hover:bg-surface-container-high text-on-surface-variant font-label-md text-label-md whitespace-nowrap transition-colors">道具 (1)</button>
+<button class="px-md py-sm rounded-lg hover:bg-surface-container-high text-on-surface-variant font-label-md text-label-md whitespace-nowrap transition-colors">参考资料 (1)</button>
+</div>
+<div class="flex items-center gap-md">
+<div class="relative">
+<select class="appearance-none bg-surface border border-outline-variant rounded-lg px-md pr-xl py-sm font-label-md text-label-md text-on-surface-variant focus:ring-primary focus:border-primary">
+<option>全部引用状态</option>
+<option>已被引用</option>
+<option>暂未使用</option>
+</select>
+<span class="material-symbols-outlined absolute right-2 top-2 text-outline pointer-events-none" data-icon="expand_more">expand_more</span>
+</div>
+<button class="p-sm text-outline hover:text-primary transition-colors">
+<span class="material-symbols-outlined" data-icon="filter_list">filter_list</span>
+</button>
+</div>
+</div>
+<!-- Material Cards Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-lg">
+<!-- Card 1: 林野 -->
+<div class="group bg-surface-container-lowest border border-outline-variant rounded-xl overflow-hidden hover:shadow-lg transition-all duration-300">
+<div class="h-3 w-full bg-primary/10"></div>
+<div class="p-lg">
+<div class="flex justify-between items-start mb-md">
+<div class="flex items-center gap-sm">
+<div class="w-10 h-10 rounded-lg bg-primary-container flex items-center justify-center text-on-primary-container">
+<span class="material-symbols-outlined" data-icon="person">person</span>
+</div>
+<div>
+<h3 class="font-headline-sm text-headline-sm text-on-surface">林野</h3>
+<span class="text-label-sm font-label-sm text-primary uppercase tracking-wider">人物</span>
+</div>
+</div>
+<span class="px-sm py-xs bg-success-container/10 text-success text-[10px] font-bold border border-success/20 rounded uppercase">已引用</span>
+</div>
+<p class="text-body-sm text-on-surface-variant mb-md line-clamp-2">幸存者 / 领导者 / 性格谨慎。在红雾灾变中建立起最初的秩序雏形。</p>
+<div class="flex flex-col gap-xs mb-lg p-sm bg-surface-container-low rounded-lg">
+<div class="flex items-center gap-xs text-label-sm text-on-surface-variant">
+<span class="material-symbols-outlined text-[16px]" data-icon="link">link</span>
+<span>引用项目：<strong class="text-on-surface">末世求生</strong></span>
+</div>
+<div class="flex items-center gap-xs text-label-sm text-on-surface-variant pl-5">
+<span>用途配置：<strong class="text-on-surface">主角</strong></span>
+</div>
+</div>
+<div class="flex items-center justify-between border-t border-outline-variant pt-md">
+<span class="text-[11px] text-outline">更新：今天 14:30</span>
+<div class="flex gap-xs">
+<button class="px-sm py-xs text-label-sm text-primary hover:bg-primary/5 rounded transition-colors font-semibold">查看详情</button>
+<button class="px-sm py-xs text-label-sm text-on-surface-variant hover:bg-surface-variant rounded transition-colors">打开项目</button>
+</div>
+</div>
+</div>
+</div>
+<!-- Card 2: 许晴 -->
+<div class="group bg-surface-container-lowest border border-outline-variant rounded-xl overflow-hidden hover:shadow-lg transition-all duration-300">
+<div class="h-3 w-full bg-primary/10"></div>
+<div class="p-lg">
+<div class="flex justify-between items-start mb-md">
+<div class="flex items-center gap-sm">
+<div class="w-10 h-10 rounded-lg bg-primary-container flex items-center justify-center text-on-primary-container">
+<span class="material-symbols-outlined" data-icon="person">person</span>
+</div>
+<div>
+<h3 class="font-headline-sm text-headline-sm text-on-surface">许晴</h3>
+<span class="text-label-sm font-label-sm text-primary uppercase tracking-wider">人物</span>
+</div>
+</div>
+<span class="px-sm py-xs bg-success-container/10 text-success text-[10px] font-bold border border-success/20 rounded uppercase">已引用</span>
+</div>
+<p class="text-body-sm text-on-surface-variant mb-md line-clamp-2">医生 / 理性 / 道德冲突。作为营地唯一的医疗力量，常在稀缺资源面前面临两难。</p>
+<div class="flex flex-col gap-xs mb-lg p-sm bg-surface-container-low rounded-lg">
+<div class="flex items-center gap-xs text-label-sm text-on-surface-variant">
+<span class="material-symbols-outlined text-[16px]" data-icon="link">link</span>
+<span>引用项目：<strong class="text-on-surface">末世求生</strong></span>
+</div>
+<div class="flex items-center gap-xs text-label-sm text-on-surface-variant pl-5">
+<span>用途配置：<strong class="text-on-surface">配角</strong></span>
+</div>
+</div>
+<div class="flex items-center justify-between border-t border-outline-variant pt-md">
+<span class="text-[11px] text-outline">更新：今天 13:10</span>
+<div class="flex gap-xs">
+<button class="px-sm py-xs text-label-sm text-primary hover:bg-primary/5 rounded transition-colors font-semibold">查看详情</button>
+<button class="px-sm py-xs text-label-sm text-on-surface-variant hover:bg-surface-variant rounded transition-colors">打开项目</button>
+</div>
+</div>
+</div>
+</div>
+<!-- Card 3: 红雾末世设定 -->
+<div class="group bg-surface-container-lowest border border-outline-variant rounded-xl overflow-hidden hover:shadow-lg transition-all duration-300">
+<div class="h-3 w-full bg-secondary-container/50"></div>
+<div class="p-lg">
+<div class="flex justify-between items-start mb-md">
+<div class="flex items-center gap-sm">
+<div class="w-10 h-10 rounded-lg bg-secondary-container flex items-center justify-center text-on-secondary-container">
+<span class="material-symbols-outlined" data-icon="public">public</span>
+</div>
+<div>
+<h3 class="font-headline-sm text-headline-sm text-on-surface">红雾末世设定</h3>
+<span class="text-label-sm font-label-sm text-secondary uppercase tracking-wider">世界观</span>
+</div>
+</div>
+<span class="px-sm py-xs bg-success-container/10 text-success text-[10px] font-bold border border-success/20 rounded uppercase">已引用</span>
+</div>
+<p class="text-body-sm text-on-surface-variant mb-md line-clamp-2">红雾 / 感染规则。规定了雾气浓稠度对视野及变异体活跃度的影响系数。</p>
+<div class="flex flex-col gap-xs mb-lg p-sm bg-surface-container-low rounded-lg">
+<div class="flex items-center gap-xs text-label-sm text-on-surface-variant">
+<span class="material-symbols-outlined text-[16px]" data-icon="link">link</span>
+<span>引用项目：<strong class="text-on-surface">末世求生</strong></span>
+</div>
+</div>
+<div class="flex items-center justify-between border-t border-outline-variant pt-md">
+<span class="text-[11px] text-outline">更新：昨天</span>
+<div class="flex gap-xs">
+<button class="px-sm py-xs text-label-sm text-primary hover:bg-primary/5 rounded transition-colors font-semibold">查看详情</button>
+<button class="px-sm py-xs text-label-sm text-on-surface-variant hover:bg-surface-variant rounded transition-colors">打开项目</button>
+</div>
+</div>
+</div>
+</div>
+<!-- Card 4: 安全区 -->
+<div class="group bg-surface-container-lowest border border-outline-variant rounded-xl overflow-hidden hover:shadow-lg transition-all duration-300">
+<div class="h-3 w-full bg-tertiary-fixed-dim/30"></div>
+<div class="p-lg">
+<div class="flex justify-between items-start mb-md">
+<div class="flex items-center gap-sm">
+<div class="w-10 h-10 rounded-lg bg-tertiary-fixed flex items-center justify-center text-on-tertiary-fixed">
+<span class="material-symbols-outlined" data-icon="location_on">location_on</span>
+</div>
+<div>
+<h3 class="font-headline-sm text-headline-sm text-on-surface">安全区</h3>
+<span class="text-label-sm font-label-sm text-tertiary uppercase tracking-wider">地点</span>
+</div>
+</div>
+<span class="px-sm py-xs bg-success-container/10 text-success text-[10px] font-bold border border-success/20 rounded uppercase">已引用</span>
+</div>
+<p class="text-body-sm text-on-surface-variant mb-md line-clamp-2">聚居地 / 实验区。位于城市边缘的高地，拥有独立的水循环系统。</p>
+<div class="flex flex-col gap-xs mb-lg p-sm bg-surface-container-low rounded-lg">
+<div class="flex items-center gap-xs text-label-sm text-on-surface-variant">
+<span class="material-symbols-outlined text-[16px]" data-icon="link">link</span>
+<span>引用项目：<strong class="text-on-surface">末世求生</strong></span>
+</div>
+</div>
+<div class="flex items-center justify-between border-t border-outline-variant pt-md">
+<span class="text-[11px] text-outline">更新：昨天</span>
+<div class="flex gap-xs">
+<button class="px-sm py-xs text-label-sm text-primary hover:bg-primary/5 rounded transition-colors font-semibold">查看详情</button>
+<button class="px-sm py-xs text-label-sm text-on-surface-variant hover:bg-surface-variant rounded transition-colors">打开项目</button>
+</div>
+</div>
+</div>
+</div>
+<!-- Card 5: 旧城区医院 (Unreferenced) -->
+<div class="group bg-surface-container border border-dashed border-outline-variant rounded-xl overflow-hidden hover:border-primary/50 transition-all duration-300 opacity-90">
+<div class="h-3 w-full bg-outline-variant/20"></div>
+<div class="p-lg">
+<div class="flex justify-between items-start mb-md">
+<div class="flex items-center gap-sm">
+<div class="w-10 h-10 rounded-lg bg-surface-variant flex items-center justify-center text-outline">
+<span class="material-symbols-outlined" data-icon="location_on">location_on</span>
+</div>
+<div>
+<h3 class="font-headline-sm text-headline-sm text-on-surface-variant">旧城区医院</h3>
+<span class="text-label-sm font-label-sm text-outline uppercase tracking-wider">地点</span>
+</div>
+</div>
+<span class="px-sm py-xs bg-outline-variant/20 text-outline text-[10px] font-bold rounded uppercase">暂未使用</span>
+</div>
+<p class="text-body-sm text-outline mb-md line-clamp-2">医疗物资 / 危险区域。内部结构复杂，曾是病毒爆发的第一现场。</p>
+<div class="flex flex-col gap-xs mb-lg p-sm bg-surface-variant/30 rounded-lg border border-outline-variant/20">
+<div class="flex items-center justify-center gap-xs text-label-sm text-outline py-xs">
+<span class="material-symbols-outlined text-[16px]" data-icon="link_off">link_off</span>
+<span>未被任何项目引用</span>
+</div>
+</div>
+<div class="flex items-center justify-between border-t border-outline-variant pt-md">
+<span class="text-[11px] text-outline">更新：昨天</span>
+<div class="flex gap-xs">
+<button class="px-sm py-xs text-label-sm text-primary hover:bg-primary/5 rounded transition-colors font-semibold w-full">查看详情</button>
+</div>
+</div>
+</div>
+</div>
+<!-- Card 6: 禁区通行证 -->
+<div class="group bg-surface-container-lowest border border-outline-variant rounded-xl overflow-hidden hover:shadow-lg transition-all duration-300">
+<div class="h-3 w-full bg-on-tertiary-fixed-variant/10"></div>
+<div class="p-lg">
+<div class="flex justify-between items-start mb-md">
+<div class="flex items-center gap-sm">
+<div class="w-10 h-10 rounded-lg bg-orange-100 flex items-center justify-center text-orange-700">
+<span class="material-symbols-outlined" data-icon="key">key</span>
+</div>
+<div>
+<h3 class="font-headline-sm text-headline-sm text-on-surface">禁区通行证</h3>
+<span class="text-label-sm font-label-sm text-orange-700 uppercase tracking-wider">道具</span>
+</div>
+</div>
+<span class="px-sm py-xs bg-success-container/10 text-success text-[10px] font-bold border border-success/20 rounded uppercase">已引用</span>
+</div>
+<p class="text-body-sm text-on-surface-variant mb-md line-clamp-2">关键道具。由联邦军方签发的特种通行介质，可开启城市隔离墙大门。</p>
+<div class="flex flex-col gap-xs mb-lg p-sm bg-surface-container-low rounded-lg">
+<div class="flex items-center gap-xs text-label-sm text-on-surface-variant">
+<span class="material-symbols-outlined text-[16px]" data-icon="link">link</span>
+<span>引用项目：<strong class="text-on-surface">末世求生</strong></span>
+</div>
+</div>
+<div class="flex items-center justify-between border-t border-outline-variant pt-md">
+<span class="text-[11px] text-outline">更新：2天前</span>
+<div class="flex gap-xs">
+<button class="px-sm py-xs text-label-sm text-primary hover:bg-primary/5 rounded transition-colors font-semibold">查看详情</button>
+<button class="px-sm py-xs text-label-sm text-on-surface-variant hover:bg-surface-variant rounded transition-colors">打开项目</button>
+</div>
+</div>
+</div>
+</div>
+<!-- Card 7: 城市撤离报告 (Unreferenced) -->
+<div class="group bg-surface-container border border-dashed border-outline-variant rounded-xl overflow-hidden hover:border-primary/50 transition-all duration-300 opacity-90">
+<div class="h-3 w-full bg-outline-variant/20"></div>
+<div class="p-lg">
+<div class="flex justify-between items-start mb-md">
+<div class="flex items-center gap-sm">
+<div class="w-10 h-10 rounded-lg bg-surface-variant flex items-center justify-center text-outline">
+<span class="material-symbols-outlined" data-icon="description">description</span>
+</div>
+<div>
+<h3 class="font-headline-sm text-headline-sm text-on-surface-variant">城市撤离报告</h3>
+<span class="text-label-sm font-label-sm text-outline uppercase tracking-wider">参考资料</span>
+</div>
+</div>
+<span class="px-sm py-xs bg-outline-variant/20 text-outline text-[10px] font-bold rounded uppercase">暂未使用</span>
+</div>
+<p class="text-body-sm text-outline mb-md line-clamp-2">政府报告。记录了红雾爆发初期官方组织的撤离计划与失败原因。</p>
+<div class="flex flex-col gap-xs mb-lg p-sm bg-surface-variant/30 rounded-lg border border-outline-variant/20">
+<div class="flex items-center justify-center gap-xs text-label-sm text-outline py-xs">
+<span class="material-symbols-outlined text-[16px]" data-icon="link_off">link_off</span>
+<span>未被任何项目引用</span>
+</div>
+</div>
+<div class="flex items-center justify-between border-t border-outline-variant pt-md">
+<span class="text-[11px] text-outline">更新：3天前</span>
+<div class="flex gap-xs">
+<button class="px-sm py-xs text-label-sm text-primary hover:bg-primary/5 rounded transition-colors font-semibold w-full">查看详情</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- Micro-interaction Scripts -->
+<script>
+        document.querySelectorAll('.group').forEach(card => {
+            card.addEventListener('mouseenter', () => {
+                card.style.transform = 'translateY(-4px)';
+            });
+            card.addEventListener('mouseleave', () => {
+                card.style.transform = 'translateY(0px)';
+            });
+        });
+
+        // Search Input Glow Effect
+        const searchInput = document.querySelector('input[type="text"]');
+        const searchContainer = searchInput.parentElement;
+        searchInput.addEventListener('focus', () => {
+            searchContainer.classList.add('ring-2', 'ring-primary/20', 'border-primary/50');
+        });
+        searchInput.addEventListener('blur', () => {
+            searchContainer.classList.remove('ring-2', 'ring-primary/20', 'border-primary/50');
+        });
+    </script>
+</body></html>

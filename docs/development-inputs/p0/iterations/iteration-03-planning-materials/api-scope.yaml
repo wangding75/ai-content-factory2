@@ -1,0 +1,36 @@
+iteration: '03'
+name: 项目策划与素材闭环
+endpoints:
+- method: GET
+  path: /api/v1/projects/{projectId}/planning
+  description: 读取项目策划
+- method: PUT
+  path: /api/v1/projects/{projectId}/planning
+  description: 保存项目策划
+- method: GET
+  path: /api/v1/materials
+  description: 全局素材查询
+- method: POST
+  path: /api/v1/materials
+  description: 创建全局素材
+- method: GET
+  path: /api/v1/materials/{materialId}
+  description: 素材详情
+- method: PATCH
+  path: /api/v1/materials/{materialId}
+  description: 编辑素材本体
+- method: GET
+  path: /api/v1/projects/{projectId}/materials
+  description: 项目素材列表
+- method: POST
+  path: /api/v1/projects/{projectId}/materials
+  description: 创建素材并绑定项目
+- method: POST
+  path: /api/v1/projects/{projectId}/materials/{materialId}/binding
+  description: 绑定已有素材
+- method: PATCH
+  path: /api/v1/projects/{projectId}/materials/{materialId}/usage
+  description: 编辑项目用途
+- method: DELETE
+  path: /api/v1/projects/{projectId}/materials/{materialId}/binding
+  description: 解除项目绑定

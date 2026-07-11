@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+
+<html class="light" lang="zh-CN"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Workflow Center - AI Content Factory</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "surface-variant": "#e0e3e5",
+                    "secondary-container": "#d2e1f7",
+                    "primary-fixed": "#e1e0ff",
+                    "primary": "#4648d4",
+                    "tertiary-container": "#b55d00",
+                    "surface-bright": "#f7f9fb",
+                    "on-surface-variant": "#464554",
+                    "secondary": "#516072",
+                    "surface": "#f7f9fb",
+                    "on-background": "#191c1e",
+                    "error": "#ba1a1a",
+                    "surface-container-high": "#e6e8ea",
+                    "surface-tint": "#494bd6",
+                    "on-primary-fixed": "#07006c",
+                    "on-tertiary-container": "#fffbff",
+                    "on-primary-container": "#fffbff",
+                    "on-primary": "#ffffff",
+                    "outline-variant": "#c7c4d7",
+                    "on-tertiary-fixed": "#301400",
+                    "on-secondary-fixed-variant": "#39485a",
+                    "secondary-fixed-dim": "#b9c8de",
+                    "on-secondary": "#ffffff",
+                    "on-error-container": "#93000a",
+                    "surface-container-lowest": "#ffffff",
+                    "error-container": "#ffdad6",
+                    "inverse-primary": "#c0c1ff",
+                    "tertiary-fixed-dim": "#ffb783",
+                    "on-secondary-container": "#556477",
+                    "inverse-surface": "#2d3133",
+                    "surface-container": "#eceef0",
+                    "secondary-fixed": "#d4e4fa",
+                    "outline": "#767586",
+                    "tertiary-fixed": "#ffdcc5",
+                    "inverse-on-surface": "#eff1f3",
+                    "surface-container-low": "#f2f4f6",
+                    "primary-container": "#6063ee",
+                    "on-primary-fixed-variant": "#2f2ebe",
+                    "on-surface": "#191c1e",
+                    "background": "#f7f9fb",
+                    "surface-container-highest": "#e0e3e5",
+                    "on-secondary-fixed": "#0d1c2d",
+                    "primary-fixed-dim": "#c0c1ff",
+                    "on-tertiary-fixed-variant": "#703700",
+                    "surface-dim": "#d8dadc",
+                    "on-error": "#ffffff",
+                    "tertiary": "#904900",
+                    "on-tertiary": "#ffffff"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "12px",
+                    "xl": "14px",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "md": "16px",
+                    "xl": "32px",
+                    "sm": "8px",
+                    "2xl": "48px",
+                    "lg": "24px",
+                    "3xl": "64px",
+                    "gutter": "24px",
+                    "xs": "4px",
+                    "unit": "8px",
+                    "container-margin": "32px"
+            },
+            "fontFamily": {
+                    "label-sm": ["Inter"],
+                    "body-md": ["Inter"],
+                    "headline-lg": ["Inter"],
+                    "body-sm": ["Inter"],
+                    "label-md": ["Inter"],
+                    "headline-md": ["Inter"],
+                    "display": ["Inter"],
+                    "body-lg": ["Inter"],
+                    "headline-sm": ["Inter"]
+            },
+            "fontSize": {
+                    "label-sm": ["12px", {"lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "600"}],
+                    "body-md": ["16px", {"lineHeight": "24px", "letterSpacing": "0em", "fontWeight": "400"}],
+                    "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "600"}],
+                    "body-sm": ["14px", {"lineHeight": "20px", "letterSpacing": "0em", "fontWeight": "400"}],
+                    "label-md": ["14px", {"lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "500"}],
+                    "headline-md": ["24px", {"lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                    "display": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "body-lg": ["18px", {"lineHeight": "28px", "letterSpacing": "0em", "fontWeight": "400"}],
+                    "headline-sm": ["20px", {"lineHeight": "28px", "letterSpacing": "0em", "fontWeight": "600"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; background-color: #f7f9fb; }
+        .sidebar-active-indicator { width: 2px; height: 100%; position: absolute; left: 0; background-color: #4648d4; }
+        .material-symbols-outlined { font-size: 20px; vertical-align: middle; }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #e0e3e5; border-radius: 10px; }
+        .workflow-card-selected { border-color: #4648d4; background-color: #f0f1ff; }
+    </style>
+
+<link rel="stylesheet" href="../../shared/prototype-router.css">
+<script>window.__ACF_PROTOTYPE_PAGE__="E3_WORKFLOWS";window.__ACF_PROTOTYPE_LABEL__="流程中心";</script>
+<script defer src="../../shared/prototype-router.js"></script>
+</head>
+<body class="text-on-surface">
+<!-- Sidebar Shell -->
+<aside class="fixed left-0 top-0 h-screen w-[280px] bg-surface border-r border-outline-variant flex flex-col py-xl z-50">
+<div class="px-lg mb-3xl flex items-center gap-sm">
+<div class="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-white">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">auto_awesome</span>
+</div>
+<span class="font-headline-sm text-headline-sm font-bold text-primary">AI Content Factory</span>
+</div>
+<nav class="flex-1 space-y-1">
+<a class="flex items-center gap-md text-secondary px-lg py-md hover:bg-surface-container-low transition-colors group relative" href="#">
+<span class="material-symbols-outlined">home</span>
+<span class="font-body-md text-body-md">首页</span>
+</a>
+<a class="flex items-center gap-md text-secondary px-lg py-md hover:bg-surface-container-low transition-colors group relative" href="#">
+<span class="material-symbols-outlined">folder_open</span>
+<span class="font-body-md text-body-md">项目</span>
+</a>
+<a class="flex items-center gap-md text-secondary px-lg py-md hover:bg-surface-container-low transition-colors group relative" href="#">
+<span class="material-symbols-outlined">inventory_2</span>
+<span class="font-body-md text-body-md">素材</span>
+</a>
+<a class="flex items-center gap-md text-secondary px-lg py-md hover:bg-surface-container-low transition-colors group relative" href="#">
+<span class="material-symbols-outlined">auto_awesome</span>
+<span class="font-body-md text-body-md">作品</span>
+</a>
+<!-- Active State for 流程 (Workflow) -->
+<a class="flex items-center gap-md bg-secondary-container text-on-secondary-container px-lg py-md group relative" href="#">
+<div class="sidebar-active-indicator"></div>
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">account_tree</span>
+<span class="font-body-md text-body-md font-bold">流程</span>
+</a>
+<a class="flex items-center gap-md text-secondary px-lg py-md hover:bg-surface-container-low transition-colors group relative" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span class="font-body-md text-body-md">设置</span>
+</a>
+</nav>
+</aside>
+<!-- Top Bar Shell -->
+<header class="fixed top-0 right-0 left-[280px] h-16 bg-surface border-b border-outline-variant flex justify-between items-center px-xl z-40">
+<div class="flex items-center flex-1 max-w-xl">
+<div class="relative w-full">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline">search</span>
+<input class="w-full pl-10 pr-4 py-2 bg-surface-container-low border border-outline-variant rounded-full text-body-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all" placeholder="搜索资源或流程..." type="text"/>
+</div>
+</div>
+<div class="flex items-center gap-lg ml-xl">
+<button class="text-on-surface-variant hover:text-primary transition-colors flex items-center gap-1">
+<span class="material-symbols-outlined">help</span>
+<span class="font-label-md text-label-md">帮助</span>
+</button>
+<button class="text-on-surface-variant hover:text-primary transition-colors relative">
+<span class="material-symbols-outlined">notifications</span>
+<span class="absolute -top-1 -right-1 w-2 h-2 bg-error rounded-full"></span>
+</button>
+<div class="w-8 h-8 rounded-full bg-surface-container-highest overflow-hidden cursor-pointer border border-outline-variant">
+<img class="w-full h-full object-cover" data-alt="A professional headshot of a creative software user, minimalist background, studio lighting, looking directly at camera, soft focus background, high-end commercial aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuD-CEBCS28dQbZGKxg9ZbDIclVygaVR-9g6yNBfG6cgzk29DAWzVNMORG379ZvipaYfnojSoYqaGj9mhZcEfLPIBiG43eiZ9si3Sh5kK4gqxbQABUEWtZ8rhRiajYDniNQ-VgbDELxu5pGzEtvsO-eB2Jssp-XgM340OvokuMpogQVejySlttUlnWTQkuxosD3PL0M2V7J-FqbG5ZBgEeP_Jaw7tXV1Hmmc__skxzUfHaoM9mOdyWj8w5caZC2occ9TkJnCfnsztng"/>
+</div>
+</div>
+</header>
+<!-- Main Content -->
+<main class="pl-[280px] pt-16 min-h-screen">
+<div class="p-xl max-w-[1440px] mx-auto space-y-xl">
+<!-- Page Header -->
+<div class="space-y-md">
+<div>
+<h1 class="font-headline-md text-headline-md font-bold">流程</h1>
+<p class="text-on-surface-variant font-body-md mt-1">查看内容生产过程使用的内置流程与模拟执行记录</p>
+</div>
+<div class="flex items-start gap-md bg-secondary-container/30 border border-secondary-container p-md rounded-lg text-secondary">
+<span class="material-symbols-outlined text-primary">info</span>
+<p class="font-body-sm text-body-sm leading-6">P0 当前仅支持内置模拟流程，用于验证产品闭环。暂不支持真实 AI、外部工作流或自定义编排。</p>
+</div>
+</div>
+<!-- Summary Statistics -->
+<div class="grid grid-cols-1 md:grid-cols-4 gap-lg">
+<div class="bg-surface border border-outline-variant p-lg rounded-xl flex items-center gap-md shadow-sm hover:shadow-md transition-shadow">
+<div class="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center text-primary">
+<span class="material-symbols-outlined">account_tree</span>
+</div>
+<div>
+<p class="text-on-surface-variant font-label-sm">内置流程</p>
+<p class="text-headline-sm font-bold">4</p>
+</div>
+</div>
+<div class="bg-surface border border-outline-variant p-lg rounded-xl flex items-center gap-md shadow-sm hover:shadow-md transition-shadow">
+<div class="w-12 h-12 bg-secondary/10 rounded-lg flex items-center justify-center text-secondary">
+<span class="material-symbols-outlined">play_circle</span>
+</div>
+<div>
+<p class="text-on-surface-variant font-label-sm">今日执行</p>
+<p class="text-headline-sm font-bold">4</p>
+</div>
+</div>
+<div class="bg-surface border border-outline-variant p-lg rounded-xl flex items-center gap-md shadow-sm hover:shadow-md transition-shadow">
+<div class="w-12 h-12 bg-green-500/10 rounded-lg flex items-center justify-center text-green-600">
+<span class="material-symbols-outlined">check_circle</span>
+</div>
+<div>
+<p class="text-on-surface-variant font-label-sm">执行成功</p>
+<p class="text-headline-sm font-bold">4</p>
+</div>
+</div>
+<div class="bg-surface border border-outline-variant p-lg rounded-xl flex items-center gap-md shadow-sm hover:shadow-md transition-shadow">
+<div class="w-12 h-12 bg-error/10 rounded-lg flex items-center justify-center text-error">
+<span class="material-symbols-outlined">cancel</span>
+</div>
+<div>
+<p class="text-on-surface-variant font-label-sm">执行失败</p>
+<p class="text-headline-sm font-bold">0</p>
+</div>
+</div>
+</div>
+<!-- Main Interactive Section -->
+<div class="flex gap-xl items-start">
+<!-- Left Column: Workflow List (60%) -->
+<div class="w-3/5 space-y-lg">
+<div class="grid grid-cols-1 gap-md">
+<!-- Workflow 1 -->
+<div class="bg-surface border border-outline-variant p-lg rounded-xl hover:border-primary/50 transition-all cursor-pointer group">
+<div class="flex justify-between items-start mb-md">
+<div class="flex items-center gap-md">
+<div class="w-10 h-10 bg-surface-container-highest rounded-lg flex items-center justify-center text-secondary group-hover:bg-primary-fixed group-hover:text-primary transition-colors">
+<span class="material-symbols-outlined">schema</span>
+</div>
+<div>
+<h3 class="font-body-md font-bold">章节规划模拟流程</h3>
+<div class="flex gap-2 mt-1">
+<span class="px-2 py-0.5 bg-surface-container-high rounded text-[11px] font-bold text-on-surface-variant">内置</span>
+<span class="px-2 py-0.5 bg-surface-container-high rounded text-[11px] font-bold text-on-surface-variant">模拟能力</span>
+<span class="px-2 py-0.5 bg-green-100 text-green-700 rounded text-[11px] font-bold">可用</span>
+</div>
+</div>
+</div>
+<button class="text-primary font-label-md hover:underline">模拟生成章节规划</button>
+</div>
+<div class="flex items-center gap-xs flex-wrap text-body-sm text-on-surface-variant opacity-70">
+<span>1. 读取故事线</span><span class="material-symbols-outlined text-[14px]">chevron_right</span>
+<span>2. 读取项目素材</span><span class="material-symbols-outlined text-[14px]">chevron_right</span>
+<span>3. 读取未回收伏笔</span><span class="material-symbols-outlined text-[14px]">chevron_right</span>
+<span>4. 生成章节规划候选</span><span class="material-symbols-outlined text-[14px]">chevron_right</span>
+<span>5. 保存待确认候选</span>
+</div>
+</div>
+<!-- Workflow 2 -->
+<div class="bg-surface border border-outline-variant p-lg rounded-xl hover:border-primary/50 transition-all cursor-pointer group">
+<div class="flex justify-between items-start mb-md">
+<div class="flex items-center gap-md">
+<div class="w-10 h-10 bg-surface-container-highest rounded-lg flex items-center justify-center text-secondary group-hover:bg-primary-fixed group-hover:text-primary transition-colors">
+<span class="material-symbols-outlined">edit_note</span>
+</div>
+<div>
+<h3 class="font-body-md font-bold">正文模拟生成流程</h3>
+<div class="flex gap-2 mt-1">
+<span class="px-2 py-0.5 bg-surface-container-high rounded text-[11px] font-bold text-on-surface-variant">内置</span>
+<span class="px-2 py-0.5 bg-surface-container-high rounded text-[11px] font-bold text-on-surface-variant">模拟能力</span>
+<span class="px-2 py-0.5 bg-green-100 text-green-700 rounded text-[11px] font-bold">可用</span>
+</div>
+</div>
+</div>
+<button class="text-primary font-label-md hover:underline">模拟生成正文</button>
+</div>
+<div class="flex items-center gap-xs flex-wrap text-body-sm text-on-surface-variant opacity-70">
+<span>1. 读取已确认章节规划</span><span class="material-symbols-outlined text-[14px]">chevron_right</span>
+<span>2. 读取故事线与素材</span><span class="material-symbols-outlined text-[14px]">chevron_right</span>
+<span>3. 生成正文草稿</span><span class="material-symbols-outlined text-[14px]">chevron_right</span>
+<span>4. 保存正文版本</span>
+</div>
+</div>
+<!-- Workflow 3 -->
+<div class="bg-surface border border-outline-variant p-lg rounded-xl hover:border-primary/50 transition-all cursor-pointer group">
+<div class="flex justify-between items-start mb-md">
+<div class="flex items-center gap-md">
+<div class="w-10 h-10 bg-surface-container-highest rounded-lg flex items-center justify-center text-secondary group-hover:bg-primary-fixed group-hover:text-primary transition-colors">
+<span class="material-symbols-outlined">fact_check</span>
+</div>
+<div>
+<h3 class="font-body-md font-bold">模拟评审流程</h3>
+<div class="flex gap-2 mt-1">
+<span class="px-2 py-0.5 bg-surface-container-high rounded text-[11px] font-bold text-on-surface-variant">内置</span>
+<span class="px-2 py-0.5 bg-surface-container-high rounded text-[11px] font-bold text-on-surface-variant">模拟能力</span>
+<span class="px-2 py-0.5 bg-green-100 text-green-700 rounded text-[11px] font-bold">可用</span>
+</div>
+</div>
+</div>
+<button class="text-primary font-label-md hover:underline">提交审核</button>
+</div>
+<div class="flex items-center gap-xs flex-wrap text-body-sm text-on-surface-variant opacity-70">
+<span>1. 读取正文版本</span><span class="material-symbols-outlined text-[14px]">chevron_right</span>
+<span>2. 检查节奏</span><span class="material-symbols-outlined text-[14px]">chevron_right</span>
+<span>3. 检查人物一致性</span><span class="material-symbols-outlined text-[14px]">chevron_right</span>
+<span>4. 检查伏笔与世界观</span><span class="material-symbols-outlined text-[14px]">chevron_right</span>
+<span>5. 保存审核结果</span>
+</div>
+</div>
+<!-- Workflow 4 (Selected) -->
+<div class="bg-surface border-2 workflow-card-selected p-lg rounded-xl transition-all cursor-pointer shadow-sm">
+<div class="flex justify-between items-start mb-md">
+<div class="flex items-center gap-md">
+<div class="w-10 h-10 bg-primary-fixed rounded-lg flex items-center justify-center text-primary">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">history_edu</span>
+</div>
+<div>
+<h3 class="font-body-md font-bold">模拟重写流程</h3>
+<div class="flex gap-2 mt-1">
+<span class="px-2 py-0.5 bg-white border border-primary/20 rounded text-[11px] font-bold text-primary">内置</span>
+<span class="px-2 py-0.5 bg-white border border-primary/20 rounded text-[11px] font-bold text-primary">模拟能力</span>
+<span class="px-2 py-0.5 bg-green-100 text-green-700 rounded text-[11px] font-bold">可用</span>
+</div>
+</div>
+</div>
+<button class="bg-primary text-white px-4 py-1.5 rounded-lg text-label-md font-bold shadow-sm hover:opacity-90 active:scale-95 transition-all">创建重写版本</button>
+</div>
+<div class="flex items-center gap-xs flex-wrap text-body-sm text-on-surface-variant">
+<span class="text-primary font-medium">1. 读取正文 v1</span><span class="material-symbols-outlined text-[14px]">chevron_right</span>
+<span class="text-primary font-medium">2. 读取审核建议</span><span class="material-symbols-outlined text-[14px]">chevron_right</span>
+<span class="text-primary font-medium">3. 创建模拟重写内容</span><span class="material-symbols-outlined text-[14px]">chevron_right</span>
+<span class="text-primary font-medium">4. 保存正文 v2</span><span class="material-symbols-outlined text-[14px]">chevron_right</span>
+<span class="text-primary font-medium">5. 保存重写记录</span>
+</div>
+</div>
+<!-- Future Capability -->
+<div class="bg-surface-container-low border border-dashed border-outline-variant p-md rounded-xl flex items-center justify-between opacity-70 mt-4">
+<div class="flex items-center gap-md">
+<div class="w-8 h-8 bg-surface-container-high rounded-full flex items-center justify-center text-outline">
+<span class="material-symbols-outlined">add</span>
+</div>
+<div>
+<p class="font-label-md">自定义流程编排 <span class="text-outline font-normal">(暂未开放)</span></p>
+<p class="text-[12px] text-outline">后续支持连接外部工作流平台并配置流程节点</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Right Column: Detail Panel (40%) -->
+<div class="w-2/5 sticky top-24">
+<div class="bg-surface border border-outline-variant rounded-xl overflow-hidden shadow-sm">
+<div class="bg-surface-container border-b border-outline-variant p-lg">
+<h2 class="font-headline-sm font-bold">模拟重写流程</h2>
+<p class="text-on-surface-variant text-body-sm mt-1">根据评审建议自动修正正文中的问题并创建新版本。</p>
+</div>
+<div class="p-lg space-y-xl">
+<div class="grid grid-cols-2 gap-md">
+<div>
+<p class="text-on-surface-variant font-label-sm mb-1">能力类型</p>
+<p class="font-body-sm">模拟能力</p>
+</div>
+<div>
+<p class="text-on-surface-variant font-label-sm mb-1">当前状态</p>
+<div class="flex items-center gap-1 text-green-600">
+<span class="w-1.5 h-1.5 bg-green-600 rounded-full"></span>
+<p class="font-body-sm">可用</p>
+</div>
+</div>
+<div class="col-span-2">
+<p class="text-on-surface-variant font-label-sm mb-1">触发动作</p>
+<p class="font-body-sm">创建重写版本</p>
+</div>
+</div>
+<div class="space-y-md">
+<h4 class="font-label-md border-l-4 border-primary pl-2 text-on-surface">输入输出参数</h4>
+<div class="space-y-sm">
+<div class="flex justify-between items-center bg-surface-container-low p-md rounded-lg">
+<div class="flex items-center gap-md">
+<span class="material-symbols-outlined text-secondary">input</span>
+<span class="text-body-sm">输入：正文版本, 审核结果</span>
+</div>
+</div>
+<div class="flex justify-between items-center bg-surface-container-low p-md rounded-lg">
+<div class="flex items-center gap-md">
+<span class="material-symbols-outlined text-primary">output</span>
+<span class="text-body-sm">输出：正文新版本, 重写记录</span>
+</div>
+</div>
+</div>
+</div>
+<div class="bg-primary/5 p-md rounded-lg border border-primary/10">
+<div class="flex gap-2 items-start text-primary">
+<span class="material-symbols-outlined text-[18px] mt-0.5">verified_user</span>
+<div>
+<p class="font-label-md">版本规则</p>
+<p class="text-body-sm text-secondary mt-1 leading-relaxed">创建新版本时不会覆盖原版本，也不会自动设为当前版本或自动发布。</p>
+</div>
+</div>
+</div>
+<div class="flex gap-md pt-md">
+<button class="flex-1 border border-outline-variant py-2.5 rounded-lg font-label-md hover:bg-surface-container-low transition-colors">查看相关执行</button>
+<button class="flex-1 border border-outline-variant py-2.5 rounded-lg font-label-md hover:bg-surface-container-low transition-colors">查看输出产物</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Bottom Section: Execution Records -->
+<section class="space-y-lg">
+<div class="flex items-center justify-between">
+<h2 class="font-headline-sm font-bold">最近执行记录</h2>
+<button class="text-primary font-label-md flex items-center gap-1 hover:underline">
+                        查看全部记录
+                        <span class="material-symbols-outlined text-[16px]">open_in_new</span>
+</button>
+</div>
+<div class="bg-surface border border-outline-variant rounded-xl overflow-hidden divide-y divide-outline-variant">
+<!-- Record 1 -->
+<div class="p-lg flex items-center justify-between hover:bg-surface-container-lowest transition-colors">
+<div class="flex items-center gap-xl flex-1">
+<div class="w-52">
+<p class="font-body-sm font-bold">模拟重写流程</p>
+<p class="text-[12px] text-on-surface-variant mt-0.5">今天 15:10</p>
+</div>
+<div class="w-64">
+<p class="text-on-surface-variant font-label-sm">项目 / 章节</p>
+<p class="font-body-sm mt-0.5">末世求生 / 第 62 章 禁区通行证</p>
+</div>
+<div class="w-32">
+<p class="text-on-surface-variant font-label-sm">状态</p>
+<div class="flex items-center gap-1 text-green-600 mt-0.5">
+<span class="material-symbols-outlined text-[16px]" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+<span class="font-label-md">成功</span>
+</div>
+</div>
+<div class="w-32">
+<p class="text-on-surface-variant font-label-sm">产物</p>
+<p class="font-body-sm mt-0.5">正文 v2</p>
+</div>
+</div>
+<div class="flex gap-lg">
+<button class="text-secondary hover:text-primary font-label-md transition-colors">查看执行详情</button>
+<button class="text-primary font-label-md transition-colors">打开产物</button>
+</div>
+</div>
+<!-- Record 2 -->
+<div class="p-lg flex items-center justify-between hover:bg-surface-container-lowest transition-colors">
+<div class="flex items-center gap-xl flex-1">
+<div class="w-52">
+<p class="font-body-sm font-bold">模拟评审流程</p>
+<p class="text-[12px] text-on-surface-variant mt-0.5">今天 14:50</p>
+</div>
+<div class="w-64">
+<p class="text-on-surface-variant font-label-sm">项目 / 章节</p>
+<p class="font-body-sm mt-0.5">末世求生 / 第 62 章 禁区通行证</p>
+</div>
+<div class="w-32">
+<p class="text-on-surface-variant font-label-sm">状态</p>
+<div class="flex items-center gap-1 text-green-600 mt-0.5">
+<span class="material-symbols-outlined text-[16px]" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+<span class="font-label-md">成功</span>
+</div>
+</div>
+<div class="w-32">
+<p class="text-on-surface-variant font-label-sm">产物</p>
+<p class="font-body-sm mt-0.5">审核结果</p>
+</div>
+</div>
+<div class="flex gap-lg">
+<button class="text-secondary hover:text-primary font-label-md transition-colors">查看执行详情</button>
+<button class="text-primary font-label-md transition-colors">打开产物</button>
+</div>
+</div>
+<!-- Record 3 -->
+<div class="p-lg flex items-center justify-between hover:bg-surface-container-lowest transition-colors">
+<div class="flex items-center gap-xl flex-1">
+<div class="w-52">
+<p class="font-body-sm font-bold">正文模拟生成流程</p>
+<p class="text-[12px] text-on-surface-variant mt-0.5">今天 14:20</p>
+</div>
+<div class="w-64">
+<p class="text-on-surface-variant font-label-sm">项目 / 章节</p>
+<p class="font-body-sm mt-0.5">末世求生 / 第 62 章 禁区通行证</p>
+</div>
+<div class="w-32">
+<p class="text-on-surface-variant font-label-sm">状态</p>
+<div class="flex items-center gap-1 text-green-600 mt-0.5">
+<span class="material-symbols-outlined text-[16px]" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+<span class="font-label-md">成功</span>
+</div>
+</div>
+<div class="w-32">
+<p class="text-on-surface-variant font-label-sm">产物</p>
+<p class="font-body-sm mt-0.5">正文 v1</p>
+</div>
+</div>
+<div class="flex gap-lg">
+<button class="text-secondary hover:text-primary font-label-md transition-colors">查看执行详情</button>
+<button class="text-primary font-label-md transition-colors">打开产物</button>
+</div>
+</div>
+</div>
+</section>
+</div>
+</main>
+<script>
+        // Micro-interaction: Hover effects for workflow cards
+        const cards = document.querySelectorAll('.bg-surface.border.cursor-pointer');
+        cards.forEach(card => {
+            card.addEventListener('mouseenter', () => {
+                if (!card.classList.contains('workflow-card-selected')) {
+                    card.style.transform = 'translateY(-2px)';
+                }
+            });
+            card.addEventListener('mouseleave', () => {
+                card.style.transform = 'translateY(0)';
+            });
+        });
+
+        // Search bar focus effect
+        const searchInput = document.querySelector('input[type="text"]');
+        searchInput.addEventListener('focus', () => {
+            searchInput.parentElement.style.maxWidth = '100%';
+        });
+        searchInput.addEventListener('blur', () => {
+            // Keep focused style if desired, or return to normal
+        });
+    </script>
+</body></html>

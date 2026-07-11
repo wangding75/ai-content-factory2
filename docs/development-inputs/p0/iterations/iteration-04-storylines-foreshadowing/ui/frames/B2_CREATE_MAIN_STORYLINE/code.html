@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+
+<html lang="zh-CN"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "on-secondary": "#ffffff",
+                    "primary-fixed": "#e1e0ff",
+                    "secondary": "#516072",
+                    "tertiary-fixed-dim": "#ffb783",
+                    "inverse-on-surface": "#eff1f3",
+                    "on-secondary-container": "#556477",
+                    "background": "#f7f9fb",
+                    "surface-container": "#eceef0",
+                    "primary": "#4648d4",
+                    "on-primary-fixed": "#07006c",
+                    "inverse-primary": "#c0c1ff",
+                    "on-tertiary": "#ffffff",
+                    "on-primary-fixed-variant": "#2f2ebe",
+                    "on-surface": "#191c1e",
+                    "error-container": "#ffdad6",
+                    "surface-dim": "#d8dadc",
+                    "on-secondary-fixed": "#0d1c2d",
+                    "surface-container-low": "#f2f4f6",
+                    "tertiary-fixed": "#ffdcc5",
+                    "error": "#ba1a1a",
+                    "on-secondary-fixed-variant": "#39485a",
+                    "on-primary-container": "#fffbff",
+                    "on-error-container": "#93000a",
+                    "on-error": "#ffffff",
+                    "on-background": "#191c1e",
+                    "on-surface-variant": "#464554",
+                    "inverse-surface": "#2d3133",
+                    "surface-container-lowest": "#ffffff",
+                    "surface-bright": "#f7f9fb",
+                    "on-tertiary-fixed": "#301400",
+                    "surface-container-highest": "#e0e3e5",
+                    "on-tertiary-fixed-variant": "#703700",
+                    "on-primary": "#ffffff",
+                    "surface-tint": "#494bd6",
+                    "tertiary": "#904900",
+                    "outline-variant": "#c7c4d7",
+                    "on-tertiary-container": "#fffbff",
+                    "tertiary-container": "#b55d00",
+                    "surface": "#f7f9fb",
+                    "surface-container-high": "#e6e8ea",
+                    "secondary-fixed-dim": "#b9c8de",
+                    "secondary-fixed": "#d4e4fa",
+                    "primary-fixed-dim": "#c0c1ff",
+                    "primary-container": "#6063ee",
+                    "surface-variant": "#e0e3e5",
+                    "secondary-container": "#d2e1f7",
+                    "outline": "#767586"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "container-margin": "32px",
+                    "gutter": "24px",
+                    "3xl": "64px",
+                    "sm": "8px",
+                    "xl": "32px",
+                    "md": "16px",
+                    "2xl": "48px",
+                    "unit": "8px",
+                    "lg": "24px",
+                    "xs": "4px"
+            },
+            "fontFamily": {
+                    "label-sm": ["Inter"],
+                    "headline-lg": ["Inter"],
+                    "body-lg": ["Inter"],
+                    "headline-md": ["Inter"],
+                    "label-md": ["Inter"],
+                    "headline-sm": ["Inter"],
+                    "headline-lg-mobile": ["Inter"],
+                    "display": ["Inter"],
+                    "body-md": ["Inter"],
+                    "body-sm": ["Inter"]
+            },
+            "fontSize": {
+                    "label-sm": ["12px", {"lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "600"}],
+                    "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "600"}],
+                    "body-lg": ["18px", {"lineHeight": "28px", "letterSpacing": "0em", "fontWeight": "400"}],
+                    "headline-md": ["24px", {"lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                    "label-md": ["14px", {"lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "500"}],
+                    "headline-sm": ["20px", {"lineHeight": "28px", "letterSpacing": "0em", "fontWeight": "600"}],
+                    "headline-lg-mobile": ["24px", {"lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                    "display": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "body-md": ["16px", {"lineHeight": "24px", "letterSpacing": "0em", "fontWeight": "400"}],
+                    "body-sm": ["14px", {"lineHeight": "20px", "letterSpacing": "0em", "fontWeight": "400"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; background-color: #f7f9fb; }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+        }
+        .bento-grid {
+            display: grid;
+            grid-template-columns: repeat(12, 1fr);
+            gap: 24px;
+        }
+    </style>
+
+<link rel="stylesheet" href="../../shared/prototype-router.css">
+<script>window.__ACF_PROTOTYPE_PAGE__="B2_CREATE_MAIN_STORYLINE";window.__ACF_PROTOTYPE_LABEL__="新建主线";</script>
+<script defer src="../../shared/prototype-router.js"></script>
+</head>
+<body class="text-on-background antialiased overflow-hidden">
+<!-- Sidebar Navigation -->
+<aside class="w-[280px] h-screen fixed left-0 top-0 bg-surface-container-lowest border-r border-outline-variant flex flex-col py-lg px-md z-30">
+<div class="mb-xl px-sm">
+<h1 class="text-headline-sm font-bold text-primary">AI Content Factory</h1>
+<p class="text-body-sm text-secondary">故事线规划模块</p>
+</div>
+<nav class="flex-1 space-y-1">
+<a class="flex items-center px-md py-sm rounded-lg text-secondary hover:bg-surface-container-high transition-colors" href="#">
+<span class="material-symbols-outlined mr-md">home</span>
+<span class="font-body-md">首页</span>
+</a>
+<a class="flex items-center px-md py-sm rounded-lg bg-secondary-container text-primary font-bold" href="#">
+<span class="material-symbols-outlined mr-md">account_tree</span>
+<span class="font-body-md">流程</span>
+</a>
+<a class="flex items-center px-md py-sm rounded-lg text-secondary hover:bg-surface-container-high transition-colors" href="#">
+<span class="material-symbols-outlined mr-md">folder_open</span>
+<span class="font-body-md">项目</span>
+</a>
+<a class="flex items-center px-md py-sm rounded-lg text-secondary hover:bg-surface-container-high transition-colors" href="#">
+<span class="material-symbols-outlined mr-md">video_library</span>
+<span class="font-body-md">素材</span>
+</a>
+<a class="flex items-center px-md py-sm rounded-lg text-secondary hover:bg-surface-container-high transition-colors" href="#">
+<span class="material-symbols-outlined mr-md">movie</span>
+<span class="font-body-md">作品</span>
+</a>
+</nav>
+<div class="mt-auto border-t border-outline-variant pt-md px-sm">
+<a class="flex items-center px-md py-sm rounded-lg text-secondary hover:bg-surface-container-high transition-colors" href="#">
+<span class="material-symbols-outlined mr-md">settings</span>
+<span class="font-body-md">设置</span>
+</a>
+</div>
+</aside>
+<!-- Top App Bar -->
+<header class="h-16 fixed top-0 right-0 left-[280px] bg-surface-container-lowest border-b border-outline-variant flex items-center justify-between px-xl z-20">
+<div class="flex items-center gap-md">
+<span class="font-headline-sm text-on-surface">项目 / 末世求生</span>
+<span class="bg-primary-fixed text-on-primary-fixed-variant text-label-sm px-2 py-0.5 rounded-full">主线激活</span>
+</div>
+<div class="flex items-center gap-xl">
+<div class="relative hidden lg:block">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline">search</span>
+<input class="pl-10 pr-4 py-2 bg-surface-container-low border-none rounded-full w-64 text-label-md focus:ring-2 focus:ring-primary/20" placeholder="搜索故事节点..." type="text"/>
+</div>
+<div class="flex items-center gap-md text-on-surface-variant">
+<span class="material-symbols-outlined cursor-pointer hover:text-primary transition-colors">help</span>
+<span class="material-symbols-outlined cursor-pointer hover:text-primary transition-colors">notifications</span>
+<div class="w-8 h-8 rounded-full bg-primary-container flex items-center justify-center text-on-primary-container overflow-hidden">
+<img alt="avatar" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA9lU9MsyNjNGrQvl0iPd_nfYlq9iXDWGsRO7lCSmhcv57jKkGpTIk-ODGOG2292ngfMD5JfgwJmkB89NrJNtFCrI5KhsXvIr2Y5mCFoTdZHS9azOlvRjYlcKCuB83Fo_hXj4_Pmjzd8TiqKAD4WzBmEe0VXea9wA5utaiL-KIjOF7rVJ3E4zFVNayqa9TCvvU3GXyseknghKPitJECfjdlwqlkNvtHSfa_RmF969Vjky6cXPbITAD37Uv_k2peuDSQA8S3h2WS0zU"/>
+</div>
+</div>
+</div>
+</header>
+<!-- Main Content -->
+<main class="ml-[280px] pt-16 p-xl bg-background min-h-screen">
+<div class="bento-grid">
+<div class="col-span-12 flex justify-between items-end mb-md">
+<div>
+<h2 class="font-headline-lg text-on-surface">故事线工作区</h2>
+<p class="text-body-md text-on-surface-variant mt-1">管理并可视化您的项目核心叙事结构</p>
+</div>
+<button class="bg-primary text-on-primary px-lg py-sm rounded-lg font-label-md flex items-center gap-xs hover:bg-primary-container transition-all shadow-md">
+<span class="material-symbols-outlined text-[20px]">add</span>
+                新建主线
+            </button>
+</div>
+<div class="col-span-8 bg-surface-container-lowest border border-outline-variant rounded-xl p-lg min-h-[400px] flex flex-col">
+<div class="flex justify-between items-center mb-xl">
+<div class="flex gap-md">
+<span class="text-label-md font-bold text-primary border-b-2 border-primary pb-1 cursor-pointer">时间轴视图</span>
+<span class="text-label-md text-outline hover:text-primary transition-colors cursor-pointer">列表视图</span>
+</div>
+<span class="material-symbols-outlined text-outline cursor-pointer">more_horiz</span>
+</div>
+<div class="flex-1 flex items-center justify-center relative overflow-hidden rounded-lg">
+<div class="z-10 text-center">
+<span class="material-symbols-outlined text-outline-variant text-[48px] mb-md">schema</span>
+<p class="text-body-md text-outline">正在加载叙事引擎...</p>
+</div>
+</div>
+</div>
+<div class="col-span-4 space-y-md">
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-lg">
+<h3 class="text-label-md font-bold mb-md">项目状态</h3>
+<div class="space-y-md">
+<div>
+<div class="flex justify-between text-body-sm mb-1">
+<span>叙事完成度</span>
+<span class="font-bold text-primary">64%</span>
+</div>
+<div class="h-2 bg-surface-container-high rounded-full overflow-hidden">
+<div class="w-[64%] h-full bg-primary rounded-full"></div>
+</div>
+</div>
+<div class="grid grid-cols-2 gap-md">
+<div class="bg-surface-container-low p-md rounded-lg">
+<p class="text-label-sm text-outline">活跃章节</p>
+<p class="text-headline-sm font-bold">12</p>
+</div>
+<div class="bg-surface-container-low p-md rounded-lg">
+<p class="text-label-sm text-outline">分支路径</p>
+<p class="text-headline-sm font-bold">5</p>
+</div>
+</div>
+</div>
+</div>
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-lg">
+<h3 class="text-label-md font-bold mb-md">最近编辑</h3>
+<div class="space-y-md">
+<div class="flex items-center gap-md">
+<div class="w-10 h-10 rounded bg-secondary-container flex items-center justify-center text-primary">
+<span class="material-symbols-outlined">description</span>
+</div>
+<div>
+<p class="text-label-md font-semibold text-on-surface">序章：荒芜黎明</p>
+<p class="text-label-sm text-outline">2小时前 · 张策划</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- Modal Overlay -->
+<div class="fixed inset-0 bg-on-surface/40 backdrop-blur-sm z-50 flex items-center justify-center p-md">
+<!-- Dialog -->
+<div class="bg-surface-container-lowest w-full max-w-[640px] rounded-xl shadow-2xl overflow-hidden flex flex-col animate-in fade-in zoom-in duration-200">
+<!-- Modal Header -->
+<div class="px-xl py-lg border-b border-outline-variant flex justify-between items-center">
+<div>
+<h2 class="text-headline-sm font-bold text-on-surface">新建主线</h2>
+<p class="text-body-sm text-on-surface-variant">创建项目顶层故事线，确立叙事核心方向。</p>
+</div>
+<button class="text-outline hover:text-on-surface p-1 rounded-full transition-colors">
+<span class="material-symbols-outlined">close</span>
+</button>
+</div>
+<!-- Modal Content -->
+<div class="p-xl space-y-xl overflow-y-auto max-h-[70vh]">
+<div class="grid grid-cols-2 gap-xl">
+<!-- Storyline Type (Read Only) -->
+<div class="col-span-1">
+<label class="block text-label-md font-bold mb-xs text-on-surface">故事线类型</label>
+<div class="px-md py-sm bg-surface-container-low border border-outline-variant rounded-lg text-on-surface-variant text-body-md flex items-center justify-between cursor-not-allowed">
+                        主线
+                        <span class="material-symbols-outlined text-[18px]">lock</span>
+</div>
+<p class="mt-xs text-body-sm text-outline italic">主线没有父故事线</p>
+</div>
+<!-- Status -->
+<div class="col-span-1">
+<label class="block text-label-md font-bold mb-xs text-on-surface">当前状态</label>
+<select class="w-full px-md py-sm bg-surface-container-lowest border border-outline-variant rounded-lg text-body-md focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all">
+<option selected="">规划中</option>
+<option>进行中</option>
+<option>已完成</option>
+</select>
+</div>
+<!-- Storyline Name -->
+<div class="col-span-2">
+<label class="block text-label-md font-bold mb-xs text-on-surface">主线名称</label>
+<input class="w-full px-md py-sm bg-surface-container-lowest border border-outline-variant rounded-lg text-body-md focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all" placeholder="请输入故事线名称" type="text" value="寻找新家园"/>
+</div>
+<!-- Goal -->
+<div class="col-span-2">
+<label class="block text-label-md font-bold mb-xs text-on-surface">故事线目标</label>
+<textarea class="w-full px-md py-sm bg-surface-container-lowest border border-outline-variant rounded-lg text-body-md focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all resize-none" placeholder="描述该主线需要达成的最终叙事目标..." rows="3"></textarea>
+</div>
+<!-- Range -->
+<div class="col-span-1">
+<label class="block text-label-md font-bold mb-xs text-on-surface">起始章节</label>
+<input class="w-full px-md py-sm bg-surface-container-lowest border border-outline-variant rounded-lg text-body-md focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all" type="number" value="121"/>
+</div>
+<div class="col-span-1">
+<label class="block text-label-md font-bold mb-xs text-on-surface">结束章节</label>
+<input class="w-full px-md py-sm bg-surface-container-lowest border border-outline-variant rounded-lg text-body-md focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all" type="number" value="200"/>
+</div>
+<!-- Remarks -->
+<div class="col-span-2">
+<label class="block text-label-md font-bold mb-xs text-on-surface">设计备注</label>
+<textarea class="w-full px-md py-sm bg-surface-container-lowest border border-outline-variant rounded-lg text-body-md focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all resize-none" placeholder="补充设计思路或特殊说明..." rows="2"></textarea>
+</div>
+</div>
+</div>
+<!-- Modal Footer -->
+<div class="px-xl py-lg bg-surface-container-low border-t border-outline-variant flex justify-end gap-md">
+<button class="px-lg py-sm text-secondary font-label-md hover:bg-surface-container-high rounded-lg transition-colors">
+                取消
+            </button>
+<button class="px-lg py-sm bg-primary text-on-primary font-label-md rounded-lg shadow-md hover:bg-primary-container transition-all active:scale-[0.98]">
+                创建主线
+            </button>
+</div>
+</div>
+</div>
+</body></html>

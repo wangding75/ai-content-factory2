@@ -1,0 +1,38 @@
+{
+  "version": "p0-v1",
+  "project": "AI Content Factory 2.0",
+  "technical_skeleton": "same-as-1.0",
+  "documents": [
+    {
+      "file": "00-architecture-index.md",
+      "type": "index"
+    },
+    {
+      "file": "01-business-architecture.md",
+      "type": "business"
+    },
+    {
+      "file": "02-product-architecture.md",
+      "type": "product"
+    },
+    {
+      "file": "03-technical-architecture.md",
+      "type": "technical"
+    },
+    {
+      "file": "04-scaffold-directory-standard.md",
+      "type": "engineering-standard"
+    }
+  ],
+  "p0_constraints": {
+    "content_packs": [
+      "novel"
+    ],
+    "workflow_providers": [
+      "mock"
+    ],
+    "real_ai": "disabled",
+    "external_workflows": "disabled",
+    "publishing": "disabled"
+  }
+}

@@ -1,0 +1,12 @@
+iteration: '00'
+name: P0 契约与基线冻结
+endpoints:
+- method: CONTRACT
+  path: packages/contracts/openapi/openapi.yaml
+  description: 冻结 P0 OpenAPI
+- method: CONTRACT
+  path: packages/contracts/common/*.schema.json
+  description: 冻结统一响应、错误和分页
+- method: CONTRACT
+  path: packages/contracts/content-packs/novel/*
+  description: 冻结 Novel Pack Schema

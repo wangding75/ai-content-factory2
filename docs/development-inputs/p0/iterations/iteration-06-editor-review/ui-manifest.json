@@ -1,0 +1,15 @@
+{
+  "iteration": "06",
+  "frames": [
+    {
+      "id": "D1_EDITOR",
+      "label": "正文编辑器",
+      "relative_path": "ui/frames/D1_EDITOR"
+    },
+    {
+      "id": "D2_REVIEW",
+      "label": "审核结果",
+      "relative_path": "ui/frames/D2_REVIEW"
+    }
+  ]
+}

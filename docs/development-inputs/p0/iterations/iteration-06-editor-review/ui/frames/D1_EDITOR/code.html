@@ -1,0 +1,423 @@
+<!DOCTYPE html><html lang="zh-CN"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            display: inline-block;
+            line-height: 1;
+            text-transform: none;
+            letter-spacing: normal;
+            word-wrap: normal;
+            white-space: nowrap;
+            direction: ltr;
+        }
+        body { font-family: 'Inter', sans-serif; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        .editor-container { height: calc(100vh - 192px); }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "primary-fixed-dim": "#c0c1ff",
+                        "on-surface-variant": "#464554",
+                        "on-primary-container": "#fffbff",
+                        "on-tertiary": "#ffffff",
+                        "on-background": "#191c1e",
+                        "surface-tint": "#494bd6",
+                        "on-error-container": "#93000a",
+                        "surface-container-high": "#e6e8ea",
+                        "surface-container": "#eceef0",
+                        "secondary": "#516072",
+                        "on-tertiary-fixed-variant": "#703700",
+                        "error-container": "#ffdad6",
+                        "inverse-primary": "#c0c1ff",
+                        "on-secondary-fixed": "#0d1c2d",
+                        "surface-bright": "#f7f9fb",
+                        "primary-container": "#6063ee",
+                        "secondary-container": "#d2e1f7",
+                        "primary-fixed": "#e1e0ff",
+                        "on-tertiary-container": "#fffbff",
+                        "surface-dim": "#d8dadc",
+                        "secondary-fixed": "#d4e4fa",
+                        "on-secondary-container": "#556477",
+                        "on-primary-fixed": "#07006c",
+                        "background": "#f7f9fb",
+                        "error": "#ba1a1a",
+                        "secondary-fixed-dim": "#b9c8de",
+                        "tertiary": "#904900",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-container-low": "#f2f4f6",
+                        "on-surface": "#191c1e",
+                        "tertiary-container": "#b55d00",
+                        "on-primary-fixed-variant": "#2f2ebe",
+                        "on-secondary-fixed-variant": "#39485a",
+                        "on-primary": "#ffffff",
+                        "on-secondary": "#ffffff",
+                        "surface": "#f7f9fb",
+                        "tertiary-fixed": "#ffdcc5",
+                        "surface-variant": "#e0e3e5",
+                        "primary": "#4648d4",
+                        "on-error": "#ffffff",
+                        "inverse-on-surface": "#eff1f3",
+                        "inverse-surface": "#2d3133",
+                        "surface-container-highest": "#e0e3e5",
+                        "outline-variant": "#c7c4d7",
+                        "outline": "#767586",
+                        "tertiary-fixed-dim": "#ffb783",
+                        "on-tertiary-fixed": "#301400"
+                    },
+                    "borderRadius": { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" },
+                    "spacing": { "sm": "8px", "md": "16px", "unit": "8px", "lg": "24px", "xl": "32px", "3xl": "64px", "xs": "4px", "container-margin": "32px", "gutter": "24px", "2xl": "48px" },
+                    "fontFamily": { "headline-sm": ["Inter"], "body-md": ["Inter"], "headline-md": ["Inter"], "label-sm": ["Inter"], "body-lg": ["Inter"], "display": ["Inter"], "body-sm": ["Inter"], "label-md": ["Inter"], "headline-lg": ["Inter"] },
+                    "fontSize": {
+                        "headline-sm": ["20px", { "lineHeight": "28px", "fontWeight": "600" }],
+                        "body-md": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "headline-md": ["24px", { "lineHeight": "32px", "fontWeight": "600" }],
+                        "label-sm": ["12px", { "lineHeight": "16px", "fontWeight": "600" }],
+                        "body-lg": ["18px", { "lineHeight": "28px", "fontWeight": "400" }],
+                        "display": ["48px", { "lineHeight": "56px", "fontWeight": "700" }],
+                        "body-sm": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "label-md": ["14px", { "lineHeight": "20px", "fontWeight": "500" }],
+                        "headline-lg": ["32px", { "lineHeight": "40px", "fontWeight": "600" }]
+                    }
+                }
+            }
+        }
+    </script>
+
+<link rel="stylesheet" href="../../shared/prototype-router.css">
+<script>window.__ACF_PROTOTYPE_PAGE__="D1_EDITOR";window.__ACF_PROTOTYPE_LABEL__="正文编辑器";</script>
+<script defer src="../../shared/prototype-router.js"></script>
+</head>
+<body class="bg-background text-on-surface selection:bg-primary-fixed selection:text-on-primary-fixed">
+<div class="flex min-h-screen">
+<!-- SideNavBar -->
+<aside class="w-[280px] h-screen sticky left-0 top-0 bg-surface-container-lowest border-r border-outline-variant flex flex-col py-xl shrink-0">
+<div class="px-xl mb-xl">
+<div class="flex items-center gap-sm">
+<div class="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
+<span class="material-symbols-outlined text-on-primary">factory</span>
+</div>
+<div><h1 class="font-headline-sm text-headline-sm font-bold text-primary">AI Content Factory</h1></div>
+</div>
+</div>
+<nav class="flex-1 space-y-1">
+<a class="flex items-center gap-md text-on-surface-variant px-md py-sm hover:bg-surface-container-low transition-colors" href="#">
+<span class="material-symbols-outlined">home</span>
+<span class="font-label-md text-label-md">首页</span>
+</a>
+<a class="flex items-center gap-md bg-secondary-container/30 text-primary border-l-2 border-primary px-md py-sm" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">folder_open</span>
+<span class="font-label-md text-label-md">项目</span>
+</a>
+<a class="flex items-center gap-md text-on-surface-variant px-md py-sm hover:bg-surface-container-low transition-colors" href="#">
+<span class="material-symbols-outlined">inventory_2</span>
+<span class="font-label-md text-label-md">素材</span>
+</a>
+<a class="flex items-center gap-md text-on-surface-variant px-md py-sm hover:bg-surface-container-low transition-colors" href="#">
+<span class="material-symbols-outlined">video_library</span>
+<span class="font-label-md text-label-md">作品</span>
+</a>
+<a class="flex items-center gap-md text-on-surface-variant px-md py-sm hover:bg-surface-container-low transition-colors" href="#">
+<span class="material-symbols-outlined">account_tree</span>
+<span class="font-label-md text-label-md">流程</span>
+</a>
+<a class="flex items-center gap-md text-on-surface-variant px-md py-sm hover:bg-surface-container-low transition-colors" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span class="font-label-md text-label-md">设置</span>
+</a>
+</nav>
+<div class="px-md mt-auto pt-xl">
+<div class="flex items-center gap-sm p-sm rounded-xl bg-surface-container">
+<div class="w-10 h-10 rounded-full overflow-hidden bg-outline-variant">
+<img class="w-full h-full object-cover" data-alt="A professional high-definition portrait of a creative writer in a minimalist light-filled workspace. The lighting is soft and cinematic, highlighting their focused and calm expression. The background is a clean white studio with subtle architectural details, reflecting a modern SaaS aesthetic with a neutral color palette." src="https://lh3.googleusercontent.com/aida-public/AB6AXuA9cUffntdXTZlakko7dCMRZWuRq60NGsfX--9ROGy1ZwWUBmkOkG473-egoGc4pNZYhpxFmpfzNNil00Y9vfRDen2mHG92uangLeRVb7BXngqoMBSfUjpmcGFYJuSLMKf8R4fKI85ux0kxdzf-77wmQKT7nEECwc6OjJynSSIDybGCoONLLMlSWE-nACESgJKoecFnjf4EQYzRZoSZf4a5NPmL2pTsDtyqPFsBuKwdAaVSylUDhNHxdVtW1nMfqsotrG2CMFkbW-M">
+</div>
+<div class="overflow-hidden">
+<p class="font-label-md text-label-md font-bold truncate text-on-surface">Lin Ye</p>
+<p class="font-label-sm text-label-sm text-on-surface-variant truncate">Editor-in-Chief</p>
+</div>
+<span class="material-symbols-outlined ml-auto text-on-surface-variant">unfold_more</span>
+</div>
+</div>
+</aside>
+<!-- Main Workspace -->
+<main class="flex-1 flex flex-col min-w-0">
+<!-- TopNavBar -->
+<header class="flex items-center justify-between w-full h-16 px-xl sticky top-0 z-50 bg-surface/80 backdrop-blur-md border-b border-outline-variant">
+<div class="flex items-center gap-xl">
+<div class="flex items-center gap-sm">
+<span class="material-symbols-outlined text-on-surface-variant">auto_stories</span>
+<div class="flex items-center gap-xs">
+<span class="font-label-md text-label-md text-on-surface-variant">项目</span>
+<span class="material-symbols-outlined text-[16px] text-on-surface-variant">chevron_right</span>
+<span class="font-headline-sm text-headline-sm font-semibold text-on-surface">末世求生</span>
+</div>
+</div>
+<nav class="flex gap-lg h-full items-center pt-2">
+<a class="text-on-surface-variant pb-1 hover:text-primary font-label-md text-label-md" href="#">概览</a>
+<a class="text-on-surface-variant pb-1 hover:text-primary font-label-md text-label-md" href="#">策划</a>
+<a class="text-on-surface-variant pb-1 hover:text-primary font-label-md text-label-md" href="#">素材</a>
+<a class="text-on-surface-variant pb-1 hover:text-primary font-label-md text-label-md" href="#">故事线</a>
+<a class="text-primary border-b-2 border-primary pb-1 font-bold font-label-md text-label-md" href="#">章节</a>
+<a class="text-on-surface-variant pb-1 hover:text-primary font-label-md text-label-md" href="#">审核</a>
+<a class="text-on-surface-variant pb-1 hover:text-primary font-label-md text-label-md" href="#">作品</a>
+<a class="text-on-surface-variant pb-1 hover:text-primary font-label-md text-label-md" href="#">设置</a>
+</nav>
+</div>
+<div class="flex items-center gap-md">
+<button class="w-10 h-10 flex items-center justify-center hover:bg-surface-container rounded-full text-on-surface-variant transition-colors">
+<span class="material-symbols-outlined">help</span>
+</button>
+<button class="w-10 h-10 flex items-center justify-center hover:bg-surface-container rounded-full text-on-surface-variant transition-colors">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<div class="w-8 h-8 rounded-full bg-primary-container flex items-center justify-center text-[12px] font-bold text-on-primary-container">LY</div>
+</div>
+</header>
+<!-- Three Column Layout -->
+<div class="flex-1 flex overflow-hidden">
+<!-- Left Column: Chapter Nav -->
+<aside class="w-[20%] border-r border-outline-variant bg-surface-container-lowest flex flex-col shrink-0">
+<div class="p-md space-y-md">
+<button class="flex items-center gap-xs text-primary font-label-md text-label-md hover:opacity-80 transition-opacity">
+<span class="material-symbols-outlined text-[18px]">arrow_back</span>
+                            返回章节规划
+                        </button>
+<div class="relative group">
+<span class="material-symbols-outlined absolute left-sm top-1/2 -translate-y-1/2 text-on-surface-variant text-[20px]">search</span>
+<input class="w-full pl-xl pr-md py-sm bg-surface-container-low border border-outline-variant rounded-lg font-body-sm text-body-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all" placeholder="搜索章节..." type="text">
+</div>
+</div>
+<div class="flex-1 overflow-y-auto no-scrollbar px-sm pb-md">
+<div class="space-y-xs">
+<div class="p-md rounded-xl bg-primary-container text-on-primary-container shadow-sm ring-1 ring-primary/20">
+<p class="font-label-md text-label-md font-bold mb-1">第 62 章《禁区通行证》</p>
+<div class="flex items-center gap-xs">
+<span class="font-label-sm text-label-sm opacity-80">3,180字</span>
+<span class="w-1 h-1 rounded-full bg-on-primary-container opacity-40"></span>
+<span class="font-label-sm text-label-sm opacity-80">当前</span>
+</div>
+</div>
+<div class="p-md rounded-xl hover:bg-surface-container transition-colors group cursor-pointer">
+<p class="font-label-md text-label-md text-on-surface font-medium group-hover:text-primary transition-colors">第 63 章</p>
+<p class="font-label-sm text-label-sm text-on-surface-variant">尚未生产</p>
+</div>
+<div class="p-md rounded-xl hover:bg-surface-container transition-colors group cursor-pointer">
+<p class="font-label-md text-label-md text-on-surface font-medium group-hover:text-primary transition-colors">第 64 章</p>
+<p class="font-label-sm text-label-sm text-on-surface-variant">尚未生产</p>
+</div>
+<div class="p-md rounded-xl hover:bg-surface-container transition-colors group cursor-pointer">
+<div class="flex items-center justify-between">
+<p class="font-label-md text-label-md text-on-surface font-medium group-hover:text-primary transition-colors">第 65 章</p>
+<span class="material-symbols-outlined text-[16px] text-primary">check_circle</span>
+</div>
+<p class="font-label-sm text-label-sm text-on-surface-variant">已有正文</p>
+</div>
+<div class="p-md rounded-xl hover:bg-surface-container transition-colors group cursor-pointer">
+<div class="flex items-center justify-between">
+<p class="font-label-md text-label-md text-on-surface font-medium group-hover:text-primary transition-colors">第 66 章</p>
+<span class="material-symbols-outlined text-[16px] text-primary">check_circle</span>
+</div>
+<p class="font-label-sm text-label-sm text-on-surface-variant">已有正文</p>
+</div>
+</div>
+</div>
+</aside>
+<!-- Center Column: Writing Workspace -->
+<section class="flex-1 bg-surface-container-low flex flex-col">
+<!-- Editor Header -->
+<div class="px-xl py-md bg-surface-container-lowest border-b border-outline-variant flex items-center justify-between shrink-0">
+<div class="flex items-center gap-md">
+<h2 class="font-headline-sm text-headline-sm text-on-surface">第 62 章《禁区通行证》</h2>
+<div class="flex items-center gap-xs">
+<span class="px-xs py-[2px] rounded bg-secondary-container text-on-secondary-container font-label-sm text-label-sm">v1</span>
+<span class="px-xs py-[2px] rounded bg-tertiary-container/10 text-tertiary-container font-label-sm text-label-sm">模拟生成</span>
+<span class="px-xs py-[2px] rounded bg-outline-variant/30 text-on-surface-variant font-label-sm text-label-sm">待审核</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant ml-xs">3,180字</span>
+</div>
+</div>
+<div class="flex items-center gap-md">
+<button class="px-md py-sm border border-outline text-on-surface rounded-lg font-label-md text-label-md hover:bg-surface-container transition-colors">保存草稿</button>
+<button class="px-md py-sm border border-primary text-primary rounded-lg font-label-md text-label-md hover:bg-primary/5 transition-colors">模拟生成正文</button>
+<button class="px-md py-sm bg-primary text-on-primary rounded-lg font-label-md text-label-md hover:bg-primary/90 shadow-md transition-all">提交审核</button>
+</div>
+</div>
+<!-- Toolbar -->
+<div class="flex items-center gap-xs px-xl py-sm bg-surface-container-lowest border-b border-outline-variant shrink-0 overflow-x-auto no-scrollbar">
+<button class="w-10 h-10 flex items-center justify-center hover:bg-surface-container rounded-lg text-on-surface-variant"><span class="material-symbols-outlined">format_paragraph</span></button>
+<button class="w-10 h-10 flex items-center justify-center hover:bg-surface-container rounded-lg text-on-surface-variant"><span class="material-symbols-outlined">format_bold</span></button>
+<button class="w-10 h-10 flex items-center justify-center hover:bg-surface-container rounded-lg text-on-surface-variant"><span class="material-symbols-outlined">format_quote</span></button>
+<button class="w-10 h-10 flex items-center justify-center hover:bg-surface-container rounded-lg text-on-surface-variant"><span class="material-symbols-outlined">horizontal_rule</span></button>
+<div class="w-[1px] h-6 bg-outline-variant mx-xs"></div>
+<button class="w-10 h-10 flex items-center justify-center hover:bg-surface-container rounded-lg text-on-surface-variant"><span class="material-symbols-outlined">undo</span></button>
+<button class="w-10 h-10 flex items-center justify-center hover:bg-surface-container rounded-lg text-on-surface-variant"><span class="material-symbols-outlined">redo</span></button>
+</div>
+<!-- Editor Body -->
+<div class="flex-1 overflow-y-auto p-xl no-scrollbar">
+<div class="max-w-3xl mx-auto space-y-lg">
+<!-- Notice -->
+<div class="flex items-start gap-sm p-md bg-secondary-container/20 rounded-xl border border-secondary-container/30">
+<span class="material-symbols-outlined text-primary text-[20px]">info</span>
+<p class="font-body-sm text-body-sm text-on-secondary-container leading-relaxed">
+                                    当前正文由模拟生成产生，旨在匹配您的故事线及创作风格。您可以直接修改或通过左侧章节规划重新生成。
+                                </p>
+</div>
+<article class="font-body-lg text-body-lg text-on-surface leading-[2] space-y-md focus:outline-none">
+<p class="">林野的手指微微颤抖，触碰到了那个冰冷的金属物件。在那堆废弃的机械零件下方，一张边缘磨损严重的暗金色卡片正静静地躺着。那是“禁区通行证”，传说中通往核心安全区的唯一凭证。</p>
+<p class="">外面的风沙愈发狂暴，撞击着避难所沉重的铁门，发出令人牙酸的摩擦声。林野深吸一口气，避难所内浑浊的空气中带着铁锈和腐臭的味道。他知道，拿到这张通行证，只是第一步。</p>
+<p class="">“林野，天黑了。”</p>
+<p class="">徐清的声音从阴影中传来，带着一种习惯性的冷漠。她靠在斑驳的墙边，手里把玩着一枚已经变形的弹壳。在那层厚厚的遮光板后，夜锁已经降下，这意味着任何试图在此时离开的行为都是自杀。</p>
+<p class="">“我找到了。”林野没有回头，将通行证紧紧攥在掌心，金属的棱角刺痛了皮肤。</p>
+<p class="">徐清站直了身体，阴影覆盖了她大半个脸庞。她走到林野身边，压低声音警告道：“把它藏好。如果让那些‘巡弋者’知道通行证就在你手里，他们会把这里彻底夷为平地。这个避难所，活不过今晚。”</p>
+<p class="">林野看向窗外，血色的雾气开始在荒原上弥漫，像是有生命的怪兽在缓缓苏醒。他能感受到通行证上残留的微弱温度，那不仅是希望，更是诅咒。</p>
+<p class="">“我们还有多长时间？”他低声问道。</p>
+<p class="">“直到第一道红光亮起。”徐清看向门口，眼神中透出一丝决绝，“或者直到那个背叛者敲响大门。”</p>
+</article>
+</div>
+</div>
+<!-- Editor Footer -->
+<footer class="h-10 px-xl bg-surface-container-lowest border-t border-outline-variant flex items-center justify-between shrink-0">
+<div class="flex items-center gap-md">
+<div class="flex items-center gap-xs text-on-surface-variant">
+<span class="material-symbols-outlined text-[16px]">cloud_done</span>
+<span class="font-label-sm text-label-sm">已保存</span>
+</div>
+<div class="w-[1px] h-4 bg-outline-variant"></div>
+<span class="font-label-sm text-label-sm text-on-surface-variant">3,180字</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">v1</span>
+</div>
+<div class="flex items-center gap-xs text-on-surface-variant">
+<span class="font-label-sm text-label-sm">最后修改: 2分钟前</span>
+</div>
+</footer>
+</section>
+<!-- Right Column: Context -->
+<aside class="w-[25%] border-l border-outline-variant bg-surface-container-lowest flex flex-col shrink-0 overflow-y-auto no-scrollbar">
+<div class="p-xl space-y-xl">
+<!-- 章节目标 -->
+<section>
+<h3 class="font-label-md text-label-md font-bold text-on-surface uppercase tracking-wider mb-md flex items-center gap-xs">
+<span class="material-symbols-outlined text-[18px] text-primary">target</span>
+                                章节目标
+                            </h3>
+<div class="p-md rounded-xl bg-surface-container-low border border-outline-variant space-y-sm">
+<div class="flex items-center gap-sm">
+<span class="w-1.5 h-1.5 rounded-full bg-primary"></span>
+<p class="font-body-sm text-body-sm text-on-surface">林野获取通行证</p>
+</div>
+<div class="flex items-center gap-sm">
+<span class="w-1.5 h-1.5 rounded-full bg-primary"></span>
+<p class="font-body-sm text-body-sm text-on-surface">建立夜间的紧张悬疑氛围</p>
+</div>
+</div>
+</section>
+<!-- 故事线 -->
+<section>
+<h3 class="font-label-md text-label-md font-bold text-on-surface uppercase tracking-wider mb-md flex items-center gap-xs">
+<span class="material-symbols-outlined text-[18px] text-primary">timeline</span>
+                                故事线
+                            </h3>
+<div class="space-y-sm">
+<div class="p-sm px-md rounded-lg border border-outline-variant bg-surface hover:bg-surface-container transition-colors cursor-default">
+<p class="font-label-md text-label-md font-medium text-on-surface">核心区秘密</p>
+<p class="font-label-sm text-label-sm text-on-surface-variant">关于安全区真实的生态现状</p>
+</div>
+<div class="p-sm px-md rounded-lg border border-outline-variant bg-surface hover:bg-surface-container transition-colors cursor-default">
+<p class="font-label-md text-label-md font-medium text-on-surface">内部叛徒</p>
+<p class="font-label-sm text-label-sm text-on-surface-variant">避难所高层的利益交换</p>
+</div>
+</div>
+</section>
+<!-- 关联素材 -->
+<section>
+<h3 class="font-label-md text-label-md font-bold text-on-surface uppercase tracking-wider mb-md flex items-center gap-xs">
+<span class="material-symbols-outlined text-[18px] text-primary">link</span>
+                                关联素材
+                            </h3>
+<div class="flex flex-wrap gap-sm">
+<span class="px-md py-sm bg-primary/5 text-primary rounded-full font-label-sm text-label-sm border border-primary/20">林野</span>
+<span class="px-md py-sm bg-primary/5 text-primary rounded-full font-label-sm text-label-sm border border-primary/20">徐清</span>
+<span class="px-md py-sm bg-primary/5 text-primary rounded-full font-label-sm text-label-sm border border-primary/20">安全区</span>
+<span class="px-md py-sm bg-primary/5 text-primary rounded-full font-label-sm text-label-sm border border-primary/20">通行证</span>
+<span class="px-md py-sm bg-primary/5 text-primary rounded-full font-label-sm text-label-sm border border-primary/20">红雾</span>
+</div>
+</section>
+<!-- 关联伏笔 -->
+<section>
+<h3 class="font-label-md text-label-md font-bold text-on-surface uppercase tracking-wider mb-md flex items-center gap-xs">
+<span class="material-symbols-outlined text-[18px] text-primary">new_releases</span>
+                                关联伏笔
+                            </h3>
+<div class="space-y-sm">
+<div class="flex items-start gap-sm">
+<span class="material-symbols-outlined text-on-surface-variant text-[18px]">history</span>
+<div>
+<p class="font-label-md text-label-md font-medium text-on-surface">通行证来源</p>
+<p class="font-label-sm text-label-sm text-on-surface-variant">此前遗落在外未被回收的原因</p>
+</div>
+</div>
+</div>
+</section>
+<!-- 创作提醒 -->
+<section>
+<div class="p-md rounded-xl bg-tertiary/5 border border-tertiary/10">
+<h3 class="font-label-md text-label-md font-bold text-tertiary mb-sm flex items-center gap-xs">
+<span class="material-symbols-outlined text-[18px]">lightbulb</span>
+                                    创作提醒
+                                </h3>
+<p class="font-body-sm text-body-sm text-tertiary leading-relaxed">
+                                    保持林野的内心情感细腻度，避免过早暴露徐清的真实动机。环境描写需加强压迫感。
+                                </p>
+</div>
+</section>
+<!-- 版本记录 -->
+<section>
+<h3 class="font-label-md text-label-md font-bold text-on-surface uppercase tracking-wider mb-md">版本记录</h3>
+<div class="space-y-md relative before:absolute before:left-2 before:top-2 before:bottom-2 before:w-[1px] before:bg-outline-variant">
+<div class="relative pl-lg">
+<div class="absolute left-0 top-1 w-4 h-4 bg-primary border-4 border-surface rounded-full shadow-sm z-10"></div>
+<div class="flex items-center justify-between">
+<p class="font-label-md text-label-md font-bold text-on-surface">v1 (当前)</p>
+<span class="font-label-sm text-label-sm text-on-surface-variant">14:20</span>
+</div>
+<p class="font-label-sm text-label-sm text-on-surface-variant">初始生成版本</p>
+</div>
+</div>
+</section>
+</div>
+</aside>
+</div>
+</main>
+</div>
+<!-- Micro-interactions Script -->
+<script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const editor = document.querySelector('article');
+            const saveIndicator = document.querySelector('footer .text-on-surface-variant span:last-child');
+            
+            // Simple auto-save visual feedback
+            let saveTimeout;
+            editor.addEventListener('input', () => {
+                clearTimeout(saveTimeout);
+                document.querySelector('footer .material-symbols-outlined').innerText = 'sync';
+                document.querySelector('footer .font-label-sm').innerText = '正在保存...';
+                
+                saveTimeout = setTimeout(() => {
+                    document.querySelector('footer .material-symbols-outlined').innerText = 'cloud_done';
+                    document.querySelector('footer .font-label-sm').innerText = '已保存';
+                }, 2000);
+            });
+        });
+    </script>
+
+
+
+</body></html>

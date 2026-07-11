@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+
+<html class="light" lang="zh-CN"><head>
+<meta charset="utf-8"/>
+<meta content="width=1280, initial-scale=1.0" name="viewport"/>
+<title>AI Content Factory - 全局设置</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "primary-fixed-dim": "#c0c1ff",
+                    "on-tertiary-fixed-variant": "#703700",
+                    "error": "#ba1a1a",
+                    "outline-variant": "#c7c4d7",
+                    "on-tertiary": "#ffffff",
+                    "inverse-surface": "#2d3133",
+                    "inverse-on-surface": "#eff1f3",
+                    "on-error-container": "#93000a",
+                    "surface-container-low": "#f2f4f6",
+                    "surface-container-high": "#e6e8ea",
+                    "surface-container": "#eceef0",
+                    "outline": "#767586",
+                    "surface-container-lowest": "#ffffff",
+                    "surface": "#f7f9fb",
+                    "tertiary": "#904900",
+                    "on-primary-container": "#fffbff",
+                    "tertiary-container": "#b55d00",
+                    "on-background": "#191c1e",
+                    "tertiary-fixed-dim": "#ffb783",
+                    "inverse-primary": "#c0c1ff",
+                    "background": "#f7f9fb",
+                    "on-secondary-container": "#556477",
+                    "surface-tint": "#494bd6",
+                    "secondary-fixed-dim": "#b9c8de",
+                    "secondary": "#516072",
+                    "tertiary-fixed": "#ffdcc5",
+                    "secondary-fixed": "#d4e4fa",
+                    "on-primary-fixed": "#07006c",
+                    "secondary-container": "#d2e1f7",
+                    "on-surface-variant": "#464554",
+                    "on-error": "#ffffff",
+                    "on-tertiary-fixed": "#301400",
+                    "on-primary-fixed-variant": "#2f2ebe",
+                    "surface-variant": "#e0e3e5",
+                    "primary-container": "#6063ee",
+                    "surface-bright": "#f7f9fb",
+                    "primary": "#4648d4",
+                    "on-surface": "#191c1e",
+                    "primary-fixed": "#e1e0ff",
+                    "on-secondary": "#ffffff",
+                    "on-primary": "#ffffff",
+                    "error-container": "#ffdad6",
+                    "on-secondary-fixed": "#0d1c2d",
+                    "on-tertiary-container": "#fffbff",
+                    "surface-container-highest": "#e0e3e5",
+                    "surface-dim": "#d8dadc",
+                    "on-secondary-fixed-variant": "#39485a"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "lg": "24px",
+                    "gutter": "24px",
+                    "2xl": "48px",
+                    "unit": "8px",
+                    "sm": "8px",
+                    "container-margin": "32px",
+                    "md": "16px",
+                    "3xl": "64px",
+                    "xs": "4px",
+                    "xl": "32px"
+            },
+            "fontFamily": {
+                    "headline-sm": ["Inter"],
+                    "body-md": ["Inter"],
+                    "headline-lg": ["Inter"],
+                    "label-md": ["Inter"],
+                    "label-sm": ["Inter"],
+                    "body-sm": ["Inter"],
+                    "headline-lg-mobile": ["Inter"],
+                    "headline-md": ["Inter"],
+                    "display": ["Inter"],
+                    "body-lg": ["Inter"]
+            },
+            "fontSize": {
+                    "headline-sm": ["20px", {"lineHeight": "28px", "letterSpacing": "0em", "fontWeight": "600"}],
+                    "body-md": ["16px", {"lineHeight": "24px", "letterSpacing": "0em", "fontWeight": "400"}],
+                    "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "600"}],
+                    "label-md": ["14px", {"lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "500"}],
+                    "label-sm": ["12px", {"lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "600"}],
+                    "body-sm": ["14px", {"lineHeight": "20px", "letterSpacing": "0em", "fontWeight": "400"}],
+                    "headline-lg-mobile": ["24px", {"lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                    "headline-md": ["24px", {"lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                    "display": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "body-lg": ["18px", {"lineHeight": "28px", "letterSpacing": "0em", "fontWeight": "400"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; background-color: #f7f9fb; width: 1280px; height: 1024px; margin: 0 auto; overflow: hidden; }
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 20; }
+        .active-tab-indicator { position: absolute; bottom: 0; left: 0; right: 0; height: 2px; background-color: #4648d4; }
+        .card-hover-effect { transition: all 0.2s ease-in-out; }
+        .card-hover-effect:hover { border-color: #cbd5e1; box-shadow: 0px 4px 12px rgba(15, 23, 42, 0.03); }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #e0e3e5; border-radius: 10px; }
+        .custom-shadow { box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px 0 rgba(0, 0, 0, 0.03); }
+    </style>
+
+<link rel="stylesheet" href="../../shared/prototype-router.css">
+<script>window.__ACF_PROTOTYPE_PAGE__="E4_SETTINGS";window.__ACF_PROTOTYPE_LABEL__="全局设置";</script>
+<script defer src="../../shared/prototype-router.js"></script>
+</head>
+<body class="text-on-surface">
+<!-- Global SideBar -->
+<aside class="w-[280px] h-screen fixed left-0 top-0 bg-surface-container-lowest border-r border-outline-variant flex flex-col py-lg px-md z-50">
+<div class="mb-xl px-sm flex items-center gap-sm">
+<div class="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
+<span class="material-symbols-outlined text-white text-[20px]" style="font-variation-settings: 'FILL' 1;">factory</span>
+</div>
+<div>
+<h1 class="text-headline-sm font-bold text-primary">AI Content Factory</h1>
+</div>
+</div>
+<nav class="flex-1 space-y-1">
+<a class="flex items-center gap-md px-md py-sm text-secondary hover:bg-surface-container-high transition-colors rounded-xl group" href="#">
+<span class="material-symbols-outlined text-[20px]">home</span>
+<span class="font-body-md text-body-md">首页</span>
+</a>
+<a class="flex items-center gap-md px-md py-sm text-secondary hover:bg-surface-container-high transition-colors rounded-xl group" href="#">
+<span class="material-symbols-outlined text-[20px]">folder_open</span>
+<span class="font-body-md text-body-md">项目</span>
+</a>
+<a class="flex items-center gap-md px-md py-sm text-secondary hover:bg-surface-container-high transition-colors rounded-xl group" href="#">
+<span class="material-symbols-outlined text-[20px]">video_library</span>
+<span class="font-body-md text-body-md">素材</span>
+</a>
+<a class="flex items-center gap-md px-md py-sm text-secondary hover:bg-surface-container-high transition-colors rounded-xl group" href="#">
+<span class="material-symbols-outlined text-[20px]">movie</span>
+<span class="font-body-md text-body-md">作品</span>
+</a>
+<a class="flex items-center gap-md px-md py-sm text-secondary hover:bg-surface-container-high transition-colors rounded-xl group" href="#">
+<span class="material-symbols-outlined text-[20px]">account_tree</span>
+<span class="font-body-md text-body-md">流程</span>
+</a>
+<a class="flex items-center gap-md px-md py-sm bg-primary-fixed text-on-primary-fixed-variant font-bold rounded-xl group" href="#">
+<span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'FILL' 1;">settings</span>
+<span class="font-body-md text-body-md">设置</span>
+</a>
+</nav>
+<div class="mt-auto pt-lg border-t border-outline-variant px-sm flex items-center gap-md">
+<div class="w-8 h-8 rounded-full bg-primary-fixed overflow-hidden flex items-center justify-center">
+<img alt="User" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB9dowa6zdCTOW-1rK31W-jzwjRjSyYJMoaIWoA_vaU_jsPmwPev1k2khT-noLIHxDrMaZugj5oUFNQqsWaG185fP9O5DKrbg4Om8l29rMfdEpZ_YoUqX0AflU0_Ewil54idN0uAX53--we3_E2gmdpoEUr24CJunynOKFMctNpVOtV0R2jRGJggQOArOJHkBglDaTieFF5KH1LA6AX623wWCE8qmv_QpmFUspxhnl9LeWacHAIABA-QctlDm5gTkb6W7ZiNw42xEQ"/>
+</div>
+<div class="flex-1 min-w-0">
+<p class="text-label-md font-bold truncate">Admin User</p>
+</div>
+<button class="text-outline hover:text-primary transition-colors">
+<span class="material-symbols-outlined">logout</span>
+</button>
+</div>
+</aside>
+<!-- Top AppBar -->
+<header class="h-16 fixed top-0 left-[280px] w-[1000px] bg-surface/80 backdrop-blur-md border-b border-outline-variant flex items-center justify-between px-xl z-40">
+<div class="flex items-center gap-lg flex-1">
+<div class="relative w-72">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline text-[20px]">search</span>
+<input class="w-full pl-10 pr-4 py-1.5 bg-surface-container-low border border-outline-variant rounded-xl text-label-md focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all" placeholder="全局搜索..." type="text"/>
+</div>
+</div>
+<div class="flex items-center gap-md">
+<button class="w-10 h-10 flex items-center justify-center text-on-surface-variant hover:bg-surface-container-high rounded-full transition-colors">
+<span class="material-symbols-outlined">help</span>
+</button>
+<button class="w-10 h-10 flex items-center justify-center text-on-surface-variant hover:bg-surface-container-high rounded-full transition-colors relative">
+<span class="material-symbols-outlined">notifications</span>
+<span class="absolute top-2.5 right-2.5 w-2 h-2 bg-error rounded-full"></span>
+</button>
+<div class="w-px h-6 bg-outline-variant mx-sm"></div>
+<div class="w-8 h-8 rounded-full bg-primary-fixed overflow-hidden flex items-center justify-center">
+<img alt="Avatar" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB9dowa6zdCTOW-1rK31W-jzwjRjSyYJMoaIWoA_vaU_jsPmwPev1k2khT-noLIHxDrMaZugj5oUFNQqsWaG185fP9O5DKrbg4Om8l29rMfdEpZ_YoUqX0AflU0_Ewil54idN0uAX53--we3_E2gmdpoEUr24CJunynOKFMctNpVOtV0R2jRGJggQOArOJHkBglDaTieFF5KH1LA6AX623wWCE8qmv_QpmFUspxhnl9LeWacHAIABA-QctlDm5gTkb6W7ZiNw42xEQ"/>
+</div>
+</div>
+</header>
+<!-- Main Content -->
+<main class="ml-[280px] pt-24 pb-xl px-xl h-screen overflow-y-auto">
+<!-- Page Header -->
+<div class="mb-xl">
+<h2 class="text-headline-lg font-headline-lg mb-xs">设置</h2>
+<p class="text-body-md text-on-surface-variant">配置全局偏好、内容能力和外部平台集成</p>
+</div>
+<!-- Secondary Navigation Tabs -->
+<div class="flex items-center gap-xl border-b border-outline-variant mb-xl">
+<button class="px-sm py-md text-label-md font-medium text-on-surface-variant hover:text-primary transition-colors">通用</button>
+<button class="px-sm py-md text-label-md font-medium text-on-surface-variant hover:text-primary transition-colors">内容能力</button>
+<button class="px-sm py-md text-label-md text-primary font-bold relative">
+                外部集成
+                <div class="active-tab-indicator"></div>
+</button>
+<button class="px-sm py-md text-label-md font-medium text-on-surface-variant hover:text-primary transition-colors">通知</button>
+<button class="px-sm py-md text-label-md font-medium text-on-surface-variant hover:text-primary transition-colors">安全</button>
+</div>
+<!-- Section 1: 内容能力状态 -->
+<section class="mb-3xl">
+<h3 class="text-headline-sm font-headline-sm mb-lg flex items-center gap-sm">
+<span class="material-symbols-outlined text-primary">auto_awesome</span>
+                内容能力状态
+            </h3>
+<div class="grid grid-cols-2 gap-lg">
+<!-- Card 1: 模拟能力 -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-lg custom-shadow flex flex-col">
+<div class="flex justify-between items-start mb-md">
+<div class="flex items-center gap-md">
+<div class="w-12 h-12 bg-primary-fixed rounded-xl flex items-center justify-center">
+<span class="material-symbols-outlined text-primary text-[24px]">model_training</span>
+</div>
+<div>
+<h4 class="font-headline-sm text-[18px]">模拟能力</h4>
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[12px] font-bold bg-[#e6f4ea] text-[#1e7e34] mt-1">
+<span class="w-1.5 h-1.5 rounded-full bg-[#28a745] mr-1.5"></span>
+                                    已启用
+                                </span>
+</div>
+</div>
+<button class="text-primary font-bold text-label-md hover:underline">查看内置流程</button>
+</div>
+<p class="text-body-md text-on-surface-variant mb-lg">支持章节规划、正文生成、评审和重写的模拟闭环</p>
+<div class="bg-surface-container-low rounded-xl p-md mb-lg grid grid-cols-2 gap-sm">
+<div class="flex items-center gap-2 text-label-md text-on-surface">
+<span class="material-symbols-outlined text-[18px] text-primary">check_circle</span>
+                            模拟章节规划
+                        </div>
+<div class="flex items-center gap-2 text-label-md text-on-surface">
+<span class="material-symbols-outlined text-[18px] text-primary">check_circle</span>
+                            模拟正文生成
+                        </div>
+<div class="flex items-center gap-2 text-label-md text-on-surface">
+<span class="material-symbols-outlined text-[18px] text-primary">check_circle</span>
+                            模拟评审
+                        </div>
+<div class="flex items-center gap-2 text-label-md text-on-surface">
+<span class="material-symbols-outlined text-[18px] text-primary">check_circle</span>
+                            模拟重写
+                        </div>
+</div>
+<div class="mt-auto flex items-start gap-2 bg-secondary-container/30 rounded-lg p-sm">
+<span class="material-symbols-outlined text-[16px] text-secondary mt-0.5">info</span>
+<p class="text-[12px] text-on-secondary-fixed-variant leading-relaxed">
+                            模拟能力用于验证产品业务闭环，不调用真实 AI 或外部工作流。
+                        </p>
+</div>
+</div>
+<!-- Card 2: 真实 AI 能力 -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-lg flex flex-col grayscale opacity-60">
+<div class="flex justify-between items-start mb-md">
+<div class="flex items-center gap-md">
+<div class="w-12 h-12 bg-surface-container-high rounded-xl flex items-center justify-center">
+<span class="material-symbols-outlined text-outline text-[24px]">psychology</span>
+</div>
+<div>
+<h4 class="font-headline-sm text-[18px]">真实 AI 能力</h4>
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[12px] font-bold bg-surface-container-high text-outline mt-1">
+                                    暂未配置
+                                </span>
+</div>
+</div>
+<button class="text-outline font-bold text-label-md cursor-not-allowed">暂未开放</button>
+</div>
+<p class="text-body-md text-on-surface-variant mb-lg">后续可配置模型提供方，用于真实内容生成和审核</p>
+<div class="mt-auto flex items-start gap-2 bg-surface-container-low rounded-lg p-sm border border-outline-variant/30">
+<span class="material-symbols-outlined text-[16px] text-outline mt-0.5">help_outline</span>
+<p class="text-[12px] text-outline leading-relaxed">
+                            P0 暂不提供真实模型配置。
+                        </p>
+</div>
+</div>
+</div>
+</section>
+<!-- Section 2: 外部发布平台 -->
+<section class="mb-3xl">
+<div class="mb-lg">
+<h3 class="text-headline-sm font-headline-sm flex items-center gap-sm">
+<span class="material-symbols-outlined text-primary">publish</span>
+                    外部发布平台
+                </h3>
+<p class="text-body-sm text-on-surface-variant mt-1">平台连接在全局设置中维护；具体作品的发布配置和发布记录将在项目内管理。</p>
+</div>
+<div class="grid grid-cols-4 gap-lg">
+<!-- Platform Cards -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-lg flex flex-col items-center text-center grayscale opacity-60">
+<div class="w-14 h-14 bg-[#07c160]/10 rounded-full flex items-center justify-center mb-md">
+<span class="material-symbols-outlined text-[#07c160] text-[32px]">chat</span>
+</div>
+<h5 class="font-bold text-[16px] mb-xs">微信公众号</h5>
+<p class="text-label-sm text-outline mb-lg">状态：暂未开放</p>
+<button class="w-full py-2 bg-surface-container-high text-outline font-bold text-label-sm rounded-xl cursor-not-allowed" disabled="">连接</button>
+</div>
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-lg flex flex-col items-center text-center grayscale opacity-60">
+<div class="w-14 h-14 bg-on-background/10 rounded-full flex items-center justify-center mb-md">
+<span class="material-symbols-outlined text-on-background text-[32px]">movie</span>
+</div>
+<h5 class="font-bold text-[16px] mb-xs">抖音</h5>
+<p class="text-label-sm text-outline mb-lg">状态：暂未开放</p>
+<button class="w-full py-2 bg-surface-container-high text-outline font-bold text-label-sm rounded-xl cursor-not-allowed" disabled="">连接</button>
+</div>
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-lg flex flex-col items-center text-center grayscale opacity-60">
+<div class="w-14 h-14 bg-[#ff0000]/10 rounded-full flex items-center justify-center mb-md">
+<span class="material-symbols-outlined text-[#ff0000] text-[32px]">video_library</span>
+</div>
+<h5 class="font-bold text-[16px] mb-xs">YouTube</h5>
+<p class="text-label-sm text-outline mb-lg">状态：暂未开放</p>
+<button class="w-full py-2 bg-surface-container-high text-outline font-bold text-label-sm rounded-xl cursor-not-allowed" disabled="">连接</button>
+</div>
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-lg flex flex-col items-center text-center grayscale opacity-60">
+<div class="w-14 h-14 bg-primary/10 rounded-full flex items-center justify-center mb-md">
+<span class="material-symbols-outlined text-primary text-[32px]">webhook</span>
+</div>
+<h5 class="font-bold text-[16px] mb-xs">自定义 Webhook</h5>
+<p class="text-label-sm text-outline mb-lg">状态：暂未开放</p>
+<button class="w-full py-2 bg-surface-container-high text-outline font-bold text-label-sm rounded-xl cursor-not-allowed" disabled="">连接</button>
+</div>
+</div>
+</section>
+<!-- Section 3: 外部工作流平台 -->
+<section>
+<div class="mb-lg">
+<h3 class="text-headline-sm font-headline-sm flex items-center gap-sm">
+<span class="material-symbols-outlined text-primary">account_tree</span>
+                    外部工作流平台
+                </h3>
+<p class="text-body-sm text-on-surface-variant mt-1">P0 不执行外部工作流，当前流程中心仅展示内置模拟流程。</p>
+</div>
+<div class="grid grid-cols-3 gap-lg">
+<!-- Workflow Cards -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-lg flex gap-lg items-center grayscale opacity-60">
+<div class="w-16 h-16 bg-[#ff6d5b]/10 rounded-xl flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-[#ff6d5b] text-[36px]">hub</span>
+</div>
+<div class="flex-1">
+<h5 class="font-bold text-[18px]">n8n</h5>
+<p class="text-label-sm text-on-surface-variant">外部工作流编排</p>
+<p class="text-[12px] text-outline mt-1">状态：暂未开放</p>
+</div>
+<button class="px-md py-2 bg-surface-container-high text-outline font-bold text-label-sm rounded-xl cursor-not-allowed" disabled="">连接</button>
+</div>
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-lg flex gap-lg items-center grayscale opacity-60">
+<div class="w-16 h-16 bg-primary/10 rounded-xl flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-primary text-[36px]">smart_toy</span>
+</div>
+<div class="flex-1">
+<h5 class="font-bold text-[18px]">Coze</h5>
+<p class="text-label-sm text-on-surface-variant">Agent 与工作流平台</p>
+<p class="text-[12px] text-outline mt-1">状态：暂未开放</p>
+</div>
+<button class="px-md py-2 bg-surface-container-high text-outline font-bold text-label-sm rounded-xl cursor-not-allowed" disabled="">连接</button>
+</div>
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-lg flex gap-lg items-center grayscale opacity-60">
+<div class="w-16 h-16 bg-secondary/10 rounded-xl flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-secondary text-[36px]">brush</span>
+</div>
+<div class="flex-1">
+<h5 class="font-bold text-[18px]">ComfyUI</h5>
+<p class="text-label-sm text-on-surface-variant">图像生成工作流</p>
+<p class="text-[12px] text-outline mt-1">状态：暂未开放</p>
+</div>
+<button class="px-md py-2 bg-surface-container-high text-outline font-bold text-label-sm rounded-xl cursor-not-allowed" disabled="">连接</button>
+</div>
+</div>
+</section>
+</main>
+<script>
+        // Micro-interactions for interactive elements
+        document.querySelectorAll('.card-hover-effect').forEach(card => {
+            card.addEventListener('mouseenter', () => {
+                card.style.transform = 'translateY(-2px)';
+            });
+            card.addEventListener('mouseleave', () => {
+                card.style.transform = 'translateY(0)';
+            });
+        });
+
+        // Search bar focus effect
+        const searchInput = document.querySelector('input[placeholder="全局搜索..."]');
+        searchInput.addEventListener('focus', () => {
+            searchInput.parentElement.classList.replace('w-72', 'w-80');
+        });
+        searchInput.addEventListener('blur', () => {
+            searchInput.parentElement.classList.replace('w-80', 'w-72');
+        });
+    </script>
+</body></html>
