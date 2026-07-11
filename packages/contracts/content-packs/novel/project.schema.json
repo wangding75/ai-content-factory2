@@ -12,7 +12,11 @@
     },
     "type": {
       "const": "novel"
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 5000
     }
   },
-  "additionalProperties": true
+  "additionalProperties": false
 }

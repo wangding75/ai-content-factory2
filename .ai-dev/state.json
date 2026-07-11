@@ -1,8 +1,8 @@
 {
     "project":  "ai-content-factory-2.0",
-    "current_iteration":  1,
+    "current_iteration":  2,
     "status":  "completed",
-    "next_iteration":  2,
+    "next_iteration":  3,
     "contract_version":  "p0-v1",
     "ui_baseline":  "p0-frozen",
     "technical_skeleton":  "same-as-1.0",
