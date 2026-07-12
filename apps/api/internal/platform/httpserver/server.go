@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/local/ai-content-factory/apps/api/internal/planning"
 	"github.com/local/ai-content-factory/apps/api/internal/project"
 )
 
@@ -28,7 +29,7 @@ type apiError struct {
 	Details map[string]any `json:"details"`
 }
 
-func New(address string, projects *project.Service) *Server {
+func New(address string, projects *project.Service, planningServices ...*planning.Service) *Server {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /healthz", healthHandler)
 	mux.HandleFunc("GET /readyz", readyHandler)
@@ -38,6 +39,10 @@ func New(address string, projects *project.Service) *Server {
 	mux.HandleFunc("GET /api/v1/projects/{projectId}", getProjectHandler(projects))
 	mux.HandleFunc("PATCH /api/v1/projects/{projectId}", updateProjectHandler(projects))
 	mux.HandleFunc("GET /api/v1/projects/{projectId}/workspace", workspaceHandler(projects))
+	if len(planningServices) == 1 && planningServices[0] != nil {
+		mux.HandleFunc("GET /api/v1/projects/{projectId}/planning", getProjectPlanningHandler(planningServices[0]))
+		mux.HandleFunc("PUT /api/v1/projects/{projectId}/planning", putProjectPlanningHandler(planningServices[0]))
+	}
 	return &Server{httpServer: &http.Server{Addr: address, Handler: withRequestID(mux), ReadHeaderTimeout: 5 * time.Second, ReadTimeout: 15 * time.Second, WriteTimeout: 30 * time.Second, IdleTimeout: 60 * time.Second}}
 }
 func (s *Server) ListenAndServe() error { return s.httpServer.ListenAndServe() }

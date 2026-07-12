@@ -13,6 +13,7 @@ var (
 	ErrNotFound        = errors.New("project planning not found")
 	ErrVersionConflict = errors.New("project planning version conflict")
 	ErrInvalidJSON     = errors.New("project planning contains invalid json")
+	ErrValidation      = errors.New("project planning validation failed")
 )
 
 type ProjectPlanning struct {
@@ -26,6 +27,27 @@ type ProjectPlanning struct {
 	Version         int             `json:"version"`
 	CreatedAt       time.Time       `json:"created_at"`
 	UpdatedAt       time.Time       `json:"updated_at"`
+}
+
+type SaveRequest struct {
+	Premise         *string         `json:"premise"`
+	Audience        *string         `json:"audience"`
+	Style           *string         `json:"style"`
+	GoalsJSON       json.RawMessage `json:"goals_json"`
+	ConstraintsJSON json.RawMessage `json:"constraints_json"`
+	ExpectedVersion *int            `json:"expected_version"`
+}
+
+type Response struct {
+	ProjectID       uuid.UUID       `json:"project_id"`
+	Premise         string          `json:"premise"`
+	Audience        string          `json:"audience"`
+	Style           string          `json:"style"`
+	GoalsJSON       json.RawMessage `json:"goals_json"`
+	ConstraintsJSON json.RawMessage `json:"constraints_json"`
+	Version         int             `json:"version"`
+	CreatedAt       *time.Time      `json:"created_at"`
+	UpdatedAt       *time.Time      `json:"updated_at"`
 }
 
 type Repository interface {
