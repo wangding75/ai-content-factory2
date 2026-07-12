@@ -16,6 +16,8 @@ type projectMaterialService interface {
 	List(context.Context, uuid.UUID, material.ListOptions) (material.ProjectMaterialList, error)
 	CreateAndBindMaterial(context.Context, uuid.UUID, material.CreateProjectMaterialRequest, string, string) (material.ProjectMaterialItem, error)
 	BindExistingMaterial(context.Context, uuid.UUID, uuid.UUID, material.ProjectMaterialUsageRequest, string, string) (material.ProjectMaterialItem, error)
+	UpdateProjectMaterialUsage(context.Context, uuid.UUID, uuid.UUID, material.UpdateProjectMaterialUsageRequest, string) (material.ProjectMaterialItem, error)
+	UnbindProjectMaterial(context.Context, uuid.UUID, uuid.UUID, int, string) (material.UnbindProjectMaterialResult, error)
 }
 
 func listProjectMaterialsHandler(s projectMaterialService) http.HandlerFunc {
@@ -137,6 +139,79 @@ func bindProjectMaterialHandler(s projectMaterialService) http.HandlerFunc {
 			writeError(w, r, http.StatusInternalServerError, "INTERNAL_ERROR", "internal server error", map[string]any{})
 		default:
 			writeJSON(w, r, http.StatusCreated, item)
+		}
+	}
+}
+
+func updateProjectMaterialUsageHandler(s projectMaterialService) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		projectID, err := uuid.Parse(r.PathValue("projectId"))
+		if err != nil {
+			writeError(w, r, http.StatusBadRequest, "INVALID_PROJECT_ID", "projectId must be a UUID", map[string]any{})
+			return
+		}
+		materialID, err := uuid.Parse(r.PathValue("materialId"))
+		if err != nil {
+			writeError(w, r, http.StatusBadRequest, "INVALID_MATERIAL_ID", "materialId must be a UUID", map[string]any{})
+			return
+		}
+		var request material.UpdateProjectMaterialUsageRequest
+		if err := decodeBody(r, &request); err != nil {
+			writeError(w, r, http.StatusBadRequest, "VALIDATION_ERROR", "invalid request body", map[string]any{})
+			return
+		}
+		item, err := s.UpdateProjectMaterialUsage(r.Context(), projectID, materialID, request, "system")
+		switch {
+		case errors.Is(err, project.ErrNotFound):
+			writeError(w, r, http.StatusNotFound, "PROJECT_NOT_FOUND", "project not found", map[string]any{})
+		case errors.Is(err, material.ErrNotFound):
+			writeError(w, r, http.StatusNotFound, "MATERIAL_NOT_FOUND", "material not found", map[string]any{})
+		case errors.Is(err, material.ErrUsageNotFound):
+			writeError(w, r, http.StatusNotFound, "MATERIAL_BINDING_NOT_FOUND", "material binding not found", map[string]any{})
+		case errors.Is(err, material.ErrVersionConflict):
+			writeError(w, r, http.StatusConflict, "VERSION_CONFLICT", "usage version conflict", map[string]any{})
+		case errors.Is(err, material.ErrValidation):
+			writeError(w, r, http.StatusBadRequest, "VALIDATION_ERROR", "invalid project material usage", map[string]any{})
+		case err != nil:
+			writeError(w, r, http.StatusInternalServerError, "INTERNAL_ERROR", "internal server error", map[string]any{})
+		default:
+			writeJSON(w, r, http.StatusOK, item)
+		}
+	}
+}
+
+func unbindProjectMaterialHandler(s projectMaterialService) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		projectID, err := uuid.Parse(r.PathValue("projectId"))
+		if err != nil {
+			writeError(w, r, http.StatusBadRequest, "INVALID_PROJECT_ID", "projectId must be a UUID", map[string]any{})
+			return
+		}
+		materialID, err := uuid.Parse(r.PathValue("materialId"))
+		if err != nil {
+			writeError(w, r, http.StatusBadRequest, "INVALID_MATERIAL_ID", "materialId must be a UUID", map[string]any{})
+			return
+		}
+		value := r.URL.Query().Get("expected_version")
+		expectedVersion, err := strconv.Atoi(value)
+		if value == "" || err != nil || expectedVersion < 1 {
+			writeError(w, r, http.StatusBadRequest, "VALIDATION_ERROR", "invalid expected_version", map[string]any{})
+			return
+		}
+		result, err := s.UnbindProjectMaterial(r.Context(), projectID, materialID, expectedVersion, "system")
+		switch {
+		case errors.Is(err, project.ErrNotFound):
+			writeError(w, r, http.StatusNotFound, "PROJECT_NOT_FOUND", "project not found", map[string]any{})
+		case errors.Is(err, material.ErrNotFound):
+			writeError(w, r, http.StatusNotFound, "MATERIAL_NOT_FOUND", "material not found", map[string]any{})
+		case errors.Is(err, material.ErrVersionConflict):
+			writeError(w, r, http.StatusConflict, "VERSION_CONFLICT", "usage version conflict", map[string]any{})
+		case errors.Is(err, material.ErrValidation):
+			writeError(w, r, http.StatusBadRequest, "VALIDATION_ERROR", "invalid expected_version", map[string]any{})
+		case err != nil:
+			writeError(w, r, http.StatusInternalServerError, "INTERNAL_ERROR", "internal server error", map[string]any{})
+		default:
+			writeJSON(w, r, http.StatusOK, result)
 		}
 	}
 }

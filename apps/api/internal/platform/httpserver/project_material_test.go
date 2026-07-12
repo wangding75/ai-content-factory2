@@ -19,6 +19,14 @@ type fakeProjectMaterials struct {
 	options material.ListOptions
 }
 
+func (f *fakeProjectMaterials) UnbindProjectMaterial(_ context.Context, projectID, materialID uuid.UUID, _ int, _ string) (material.UnbindProjectMaterialResult, error) {
+	return material.UnbindProjectMaterialResult{ProjectID: projectID, MaterialID: materialID, MaterialRetained: true}, f.err
+}
+
+func (f *fakeProjectMaterials) UpdateProjectMaterialUsage(_ context.Context, _ uuid.UUID, _ uuid.UUID, _ material.UpdateProjectMaterialUsageRequest, _ string) (material.ProjectMaterialItem, error) {
+	return material.ProjectMaterialItem{}, f.err
+}
+
 func (f *fakeProjectMaterials) BindExistingMaterial(_ context.Context, _ uuid.UUID, _ uuid.UUID, _ material.ProjectMaterialUsageRequest, _ string, _ string) (material.ProjectMaterialItem, error) {
 	return material.ProjectMaterialItem{}, f.err
 }
