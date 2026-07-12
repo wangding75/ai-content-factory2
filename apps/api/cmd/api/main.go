@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/local/ai-content-factory/apps/api/internal/material"
 	"github.com/local/ai-content-factory/apps/api/internal/planning"
 	"github.com/local/ai-content-factory/apps/api/internal/platform/config"
 	"github.com/local/ai-content-factory/apps/api/internal/platform/httpserver"
@@ -29,7 +30,8 @@ func main() {
 	projectRepository := project.NewPostgresRepository(pool)
 	projects := project.NewService(projectRepository)
 	plannings := planning.NewPostgresService(projectRepository, pool)
-	server := httpserver.New(cfg.APIAddress, projects, plannings)
+	materials := material.NewService(pool)
+	server := httpserver.New(cfg.APIAddress, projects, plannings, materials)
 	log.Printf("api listening on %s", cfg.APIAddress)
 	if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 		log.Fatal(err)
