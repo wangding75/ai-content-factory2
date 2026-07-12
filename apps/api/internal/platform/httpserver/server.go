@@ -54,6 +54,12 @@ func New(address string, projects *project.Service, services ...any) *Server {
 				mux.HandleFunc("GET /api/v1/materials/{materialId}", getMaterialHandler(value))
 				mux.HandleFunc("PATCH /api/v1/materials/{materialId}", updateMaterialHandler(value))
 			}
+		case *material.ProjectMaterialService:
+			if value != nil {
+				mux.HandleFunc("GET /api/v1/projects/{projectId}/materials", listProjectMaterialsHandler(value))
+				mux.HandleFunc("POST /api/v1/projects/{projectId}/materials", createProjectMaterialHandler(value))
+				mux.HandleFunc("POST /api/v1/projects/{projectId}/materials/{materialId}/binding", bindProjectMaterialHandler(value))
+			}
 		}
 	}
 	return &Server{httpServer: &http.Server{Addr: address, Handler: withRequestID(mux), ReadHeaderTimeout: 5 * time.Second, ReadTimeout: 15 * time.Second, WriteTimeout: 30 * time.Second, IdleTimeout: 60 * time.Second}}

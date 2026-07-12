@@ -31,7 +31,8 @@ func main() {
 	projects := project.NewService(projectRepository)
 	plannings := planning.NewPostgresService(projectRepository, pool)
 	materials := material.NewService(pool)
-	server := httpserver.New(cfg.APIAddress, projects, plannings, materials)
+	projectMaterials := material.NewPostgresProjectMaterialService(projectRepository, pool)
+	server := httpserver.New(cfg.APIAddress, projects, plannings, materials, projectMaterials)
 	log.Printf("api listening on %s", cfg.APIAddress)
 	if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 		log.Fatal(err)
