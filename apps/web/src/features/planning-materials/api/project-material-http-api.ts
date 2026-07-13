@@ -1,6 +1,17 @@
 import { apiRequest, type ApiRequestInit } from "../../../lib/api.ts";
 import type { CreateProjectMaterialRequest, ListProjectMaterialsQuery, ProjectMaterialItem, ProjectMaterialList, ProjectMaterialTypeCounts, ProjectMaterialUsageInput } from "../contracts/materials.ts";
 
+export interface UpdateProjectMaterialUsageRequest extends ProjectMaterialUsageInput {
+  expected_version: number;
+}
+
+export interface UnbindProjectMaterialResult {
+  project_id: string;
+  material_id: string;
+  unbound: boolean;
+  material_retained: true;
+}
+
 interface ProjectMaterialListResponse {
   items: ProjectMaterialItem[];
   total: number;
@@ -31,20 +42,28 @@ export async function listProjectMaterialsFromApi(projectId: string, query: List
 
 export async function createProjectMaterialFromApi(projectId: string, request: CreateProjectMaterialRequest, idempotencyKey: string, init?: ApiRequestInit): Promise<ProjectMaterialItem> {
   const response = await apiRequest<ProjectMaterialItem>(`/projects/${encodeURIComponent(projectId)}/materials`, {
-    ...init,
-    method: "POST",
-    headers: { ...init?.headers, "Content-Type": "application/json", "Idempotency-Key": idempotencyKey },
-    body: JSON.stringify(request),
+    ...init, method: "POST", headers: { ...init?.headers, "Content-Type": "application/json", "Idempotency-Key": idempotencyKey }, body: JSON.stringify(request),
   });
   return projectMaterialItem(response);
 }
 
 export async function bindProjectMaterialFromApi(projectId: string, materialId: string, usage: ProjectMaterialUsageInput, idempotencyKey: string, init?: ApiRequestInit): Promise<ProjectMaterialItem> {
   const response = await apiRequest<ProjectMaterialItem>(`/projects/${encodeURIComponent(projectId)}/materials/${encodeURIComponent(materialId)}/binding`, {
-    ...init,
-    method: "POST",
-    headers: { ...init?.headers, "Content-Type": "application/json", "Idempotency-Key": idempotencyKey },
-    body: JSON.stringify(usage),
+    ...init, method: "POST", headers: { ...init?.headers, "Content-Type": "application/json", "Idempotency-Key": idempotencyKey }, body: JSON.stringify(usage),
   });
   return projectMaterialItem(response);
+}
+
+export async function updateProjectMaterialUsageFromApi(projectId: string, materialId: string, request: UpdateProjectMaterialUsageRequest, init?: ApiRequestInit): Promise<ProjectMaterialItem> {
+  const response = await apiRequest<ProjectMaterialItem>(`/projects/${encodeURIComponent(projectId)}/materials/${encodeURIComponent(materialId)}/usage`, {
+    ...init, method: "PATCH", headers: { ...init?.headers, "Content-Type": "application/json" }, body: JSON.stringify(request),
+  });
+  return projectMaterialItem(response);
+}
+
+export async function unbindProjectMaterialFromApi(projectId: string, materialId: string, expectedVersion: number, init?: ApiRequestInit): Promise<UnbindProjectMaterialResult> {
+  const params = new URLSearchParams({ expected_version: String(expectedVersion) });
+  return apiRequest<UnbindProjectMaterialResult>(`/projects/${encodeURIComponent(projectId)}/materials/${encodeURIComponent(materialId)}/binding?${params}`, {
+    ...init, method: "DELETE",
+  });
 }

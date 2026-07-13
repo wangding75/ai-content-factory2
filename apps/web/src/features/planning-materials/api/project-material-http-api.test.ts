@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { ApiError } from "../../../lib/api.ts";
-import { bindProjectMaterialFromApi, createProjectMaterialFromApi, listProjectMaterialsFromApi, projectMaterialQuery } from "./project-material-http-api.ts";
+import { bindProjectMaterialFromApi, createProjectMaterialFromApi, listProjectMaterialsFromApi, projectMaterialQuery, unbindProjectMaterialFromApi, updateProjectMaterialUsageFromApi } from "./project-material-http-api.ts";
 
 const originalFetch = global.fetch;
 const projectId = "00000000-0000-4000-8000-000000000001";
@@ -36,4 +36,21 @@ test("binds an existing material with the required idempotency key and maps conf
   assert.deepEqual(await bindProjectMaterialFromApi(projectId, materialId, usage, "bind-key"), item);
   global.fetch = async () => new Response(JSON.stringify({ error: { code: "MATERIAL_ALREADY_BOUND", message: "bound", details: {} }, request_id: "req_bound" }), { status: 409 });
   await assert.rejects(bindProjectMaterialFromApi(projectId, materialId, usage, "other-key"), (error: unknown) => error instanceof ApiError && error.code === "MATERIAL_ALREADY_BOUND");
+});
+test("updates current project usage with expected_version and maps the returned item", async () => {
+  const update = { expected_version: 2, ...usage, role_name: "Updated Hero" };
+  global.fetch = async (input, init) => { assert.match(String(input), new RegExp(`/projects/${projectId}/materials/${materialId}/usage$`)); assert.equal(init?.method, "PATCH"); assert.equal(new Headers(init?.headers).get("Content-Type"), "application/json"); assert.equal(new Headers(init?.headers).get("If-Match"), null); assert.deepEqual(JSON.parse(String(init?.body)), update); return new Response(JSON.stringify({ data: { ...item, usage: { ...item.usage, role_name: "Updated Hero", version: 3 }, last_updated_at: "2026-01-04T00:00:00Z" }, request_id: "req_patch" }), { status: 200 }); };
+  const updated = await updateProjectMaterialUsageFromApi(projectId, materialId, update);
+  assert.equal(updated.usage.role_name, "Updated Hero");
+  assert.equal(updated.usage.version, 3);
+  assert.equal(updated.last_updated_at, "2026-01-04T00:00:00Z");
+  global.fetch = async () => new Response(JSON.stringify({ error: { code: "VERSION_CONFLICT", message: "stale", details: {} }, request_id: "req_conflict" }), { status: 409 });
+  await assert.rejects(updateProjectMaterialUsageFromApi(projectId, materialId, update), (error: unknown) => error instanceof ApiError && error.code === "VERSION_CONFLICT");
+});
+
+test("unbinds only the project binding with expected_version and preserves API errors", async () => {
+  global.fetch = async (input, init) => { assert.match(String(input), new RegExp(`/projects/${projectId}/materials/${materialId}/binding\\?expected_version=2$`)); assert.equal(init?.method, "DELETE"); return new Response(JSON.stringify({ data: { project_id: projectId, material_id: materialId, unbound: true, material_retained: true }, request_id: "req_delete" }), { status: 200 }); };
+  assert.deepEqual(await unbindProjectMaterialFromApi(projectId, materialId, 2), { project_id: projectId, material_id: materialId, unbound: true, material_retained: true });
+  global.fetch = async () => new Response(JSON.stringify({ error: { code: "BINDING_NOT_FOUND", message: "missing", details: {} }, request_id: "req_missing_binding" }), { status: 404 });
+  await assert.rejects(unbindProjectMaterialFromApi(projectId, materialId, 2), (error: unknown) => error instanceof ApiError && error.code === "BINDING_NOT_FOUND");
 });
