@@ -3,10 +3,10 @@
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Icon } from "@/components/ui/icons";
-import { ApiError, type Project } from "@/lib/api";
-import { getPlanningProject, getProjectPlanning, saveProjectPlanning } from "../api/planning-api";
+import { ApiError, getProjectWorkspace, type Project } from "@/lib/api";
+import { getProjectPlanningFromApi, saveProjectPlanningToApi } from "../api/planning-http-api";
 import { ProjectWorkspaceNav } from "../components/project-workspace-nav";
-import type { PlanningMockScenario, ProjectPlanning, SaveProjectPlanningRequest } from "../contracts/planning";
+import type { ProjectPlanning, SaveProjectPlanningRequest } from "../contracts/planning";
 
 type FormState = Omit<SaveProjectPlanningRequest, "expected_version">;
 const blankForm = (): FormState => ({ premise: "", audience: "", style: "", goals_json: { selling_points: [], plot_summary: "" }, constraints_json: { emotional_tone: "" } });
@@ -25,7 +25,7 @@ function validate(form: FormState) {
   return errors;
 }
 
-export function PlanningPage({ projectId, scenario }: { projectId: string; scenario: PlanningMockScenario }) {
+export function PlanningPage({ projectId }: { projectId: string }) {
   const [project, setProject] = useState<Project | null>(null);
   const [saved, setSaved] = useState<ProjectPlanning | null>(null);
   const [form, setForm] = useState<FormState>(blankForm);
@@ -37,18 +37,18 @@ export function PlanningPage({ projectId, scenario }: { projectId: string; scena
   const [tagText, setTagText] = useState("");
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (signal?: AbortSignal) => {
     setLoading(true); setLoadError(null); setSaveError(null); setTagText("");
-    try { const [nextProject, planning] = await Promise.all([getPlanningProject(projectId, scenario), getProjectPlanning(projectId, scenario)]); setProject(nextProject); setSaved(planning); setForm(toForm(planning)); }
+    try { const [nextProject, planning] = await Promise.all([getProjectWorkspace(projectId).then(({ project }) => project), getProjectPlanningFromApi(projectId, { signal })]); setProject(nextProject); setSaved(planning); setForm(toForm(planning)); }
     catch (error) { setLoadError(error instanceof ApiError ? error : new ApiError("暂时无法加载项目策划。", 500)); }
     finally { setLoading(false); }
-  }, [projectId, scenario]);
-  useEffect(() => { const timer = window.setTimeout(() => { void load(); }, 0); return () => window.clearTimeout(timer); }, [load]);
+  }, [projectId]);
+  useEffect(() => { const controller = new AbortController(); const timer = window.setTimeout(() => { void load(controller.signal); }, 0); return () => { window.clearTimeout(timer); controller.abort(); }; }, [load]);
 
   const dirty = useMemo(() => saved !== null && !same(form, toForm(saved)), [form, saved]);
   const update = (key: "premise" | "audience" | "style", value: string) => setForm((current) => ({ ...current, [key]: value }));
   const addTag = () => { const tag = tagText.trim(); if (!tag) return; if (form.goals_json.selling_points.includes(tag)) { setErrors((current) => ({ ...current, selling_points: "核心卖点不能重复。" })); return; } if (tag.length > 100 || form.goals_json.selling_points.length >= 20) { setErrors((current) => ({ ...current, selling_points: tag.length > 100 ? "每个核心卖点最多 100 个字符。" : "核心卖点最多添加 20 项。" })); return; } setForm((current) => ({ ...current, goals_json: { ...current.goals_json, selling_points: [...current.goals_json.selling_points, tag] } })); setTagText(""); setErrors((current) => ({ ...current, selling_points: "" })); };
-  const save = async () => { if (!saved || saving) return; if (tagText.trim()) { addTag(); } const nextErrors = validate(form); setErrors(nextErrors); if (Object.values(nextErrors).some(Boolean)) return; setSaving(true); setSaveError(null); setNotice(null); try { const result = await saveProjectPlanning(projectId, { ...form, expected_version: saved.version }, scenario); setSaved(result); setForm(toForm(result)); setTagText(""); setNotice("策划方案已保存。"); } catch (error) { const apiError = error instanceof ApiError ? error : null; setSaveError(apiError?.code === "VERSION_CONFLICT" ? "当前数据已被更新，未覆盖你的输入。请重新加载后再保存。" : "保存失败，已保留当前输入。请稍后重试。"); } finally { setSaving(false); } };
+  const save = async () => { if (!saved || saving) return; if (tagText.trim()) { addTag(); } const nextErrors = validate(form); setErrors(nextErrors); if (Object.values(nextErrors).some(Boolean)) return; setSaving(true); setSaveError(null); setNotice(null); try { const result = await saveProjectPlanningToApi(projectId, { ...form, expected_version: saved.version }); setSaved(result); setForm(toForm(result)); setTagText(""); setNotice("策划方案已保存。"); } catch (error) { const apiError = error instanceof ApiError ? error : null; setSaveError(apiError?.code === "VERSION_CONFLICT" ? "当前数据已被更新，未覆盖你的输入。请重新加载后再保存。" : "保存失败，已保留当前输入。请稍后重试。"); } finally { setSaving(false); } };
   const cancel = () => { if (saved) { setForm(toForm(saved)); setErrors({}); setSaveError(null); setNotice(null); } };
 
   if (loading) return <PlanningSkeleton />;

@@ -1,4 +1,4 @@
-﻿export type ProjectType = "novel";
+export type ProjectType = "novel";
 export type ProjectStatus = "planning" | "producing" | "archived";
 export type ProjectStage =
   | "project_setup"
@@ -64,21 +64,39 @@ export class ApiError extends Error {
   }
 }
 
-function apiBaseUrl() {
+export function apiBaseUrl() {
   if (typeof window !== "undefined") return "/api/v1";
-  return process.env.API_BASE_URL ?? process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8080/api/v1";
+  return process.env.API_BASE_URL ?? process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:18080/api/v1";
 }
 
-async function request<T>(path: string, init?: RequestInit): Promise<T> {
+export interface ApiRequestInit extends RequestInit {
+  timeoutMs?: number;
+}
+
+export async function apiRequest<T>(path: string, init?: ApiRequestInit): Promise<T> {
+  const controller = new AbortController();
+  const timeoutMs = init?.timeoutMs ?? 10_000;
+  const timeout = setTimeout(() => controller.abort("timeout"), timeoutMs);
+  const cancel = () => controller.abort("cancelled");
+  init?.signal?.addEventListener("abort", cancel, { once: true });
+
   let response: Response;
   try {
     response = await fetch(`${apiBaseUrl()}${path}`, {
       ...init,
       headers: { Accept: "application/json", ...init?.headers },
       cache: "no-store",
+      signal: controller.signal,
     });
   } catch {
+    if (controller.signal.aborted) {
+      const timedOut = controller.signal.reason === "timeout";
+      throw new ApiError(timedOut ? "The API request timed out." : "The API request was cancelled.", 0, timedOut ? "timeout" : "cancelled");
+    }
     throw new ApiError("Unable to reach the API. Please try again.", 0, "network_error");
+  } finally {
+    clearTimeout(timeout);
+    init?.signal?.removeEventListener("abort", cancel);
   }
 
   let body: unknown;
@@ -106,15 +124,15 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 export function listProjects(options: { status?: ProjectStatus; limit?: number; offset?: number } = {}) {
   const params = new URLSearchParams({ limit: String(options.limit ?? 20), offset: String(options.offset ?? 0) });
   if (options.status) params.set("status", options.status);
-  return request<ProjectList>(`/projects?${params}`);
+  return apiRequest<ProjectList>(`/projects?${params}`);
 }
 
 export function getProjectWorkspace(projectId: string) {
-  return request<ProjectWorkspace>(`/projects/${encodeURIComponent(projectId)}/workspace`);
+  return apiRequest<ProjectWorkspace>(`/projects/${encodeURIComponent(projectId)}/workspace`);
 }
 
 export function createProject(input: { name: string; description?: string; type: ProjectType }) {
-  return request<Project>("/projects", {
+  return apiRequest<Project>("/projects", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(input),
@@ -128,4 +146,3 @@ export function validateProjectInput(name: string, description: string) {
   if (description.length > 5000) return "Description must be 5,000 characters or fewer.";
   return undefined;
 }
-
