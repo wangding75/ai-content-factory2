@@ -12,8 +12,17 @@ test("global material list delegates loading, filters, pagination, and retry to 
   assert.doesNotMatch(source, /material-repository|mockScenario/);
 });
 
-test("global material list keeps empty and error states without fabricating totals", () => {
-  assert.match(source, /setTotal\(result.total\)/);
+test("Chinese global materials copy uses mapped types, filter defaults, and the project empty-state route", () => {
+  for (const text of ["全部类型", "最近更新", "暂无素材", "在项目中创建或绑定素材后，会同步显示在这里。", "前往项目", "人物", "世界观", "地点", "组织", "道具", "参考资料"]) assert.match(source, new RegExp(text));
+  assert.match(source, /document\.documentElement\.lang/);
+  assert.match(source, /<Link href="\/projects">\{t\.goProjects\}<\/Link>/);
+  assert.doesNotMatch(source, /\/materials\/new/);
+});
+
+test("global material list keeps real error, retry, and filtered-empty states without fabricating totals", () => {
+  assert.match(source, /setTotal\(result\.total\)/);
   assert.match(source, /items\.length/);
   assert.match(source, /setError\(/);
+  assert.match(source, /loadErrorTitle/);
+  assert.match(source, /filteredEmptyTitle/);
 });
