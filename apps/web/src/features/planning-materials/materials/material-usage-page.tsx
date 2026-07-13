@@ -9,7 +9,6 @@ import { ProjectWorkspaceNav } from "../components/project-workspace-nav";
 import { useLayerInteractions } from "../components/layer-interactions";
 import { closeMaterialLayer } from "../components/material-layer-routes";
 import type { ProjectMaterialItem } from "../contracts/materials";
-import type { PlanningMockScenario } from "../contracts/planning";
 
 const labels = { character: "人物", worldview: "世界观", location: "地点", organization: "组织", item: "道具", reference: "参考资料" };
 
@@ -17,8 +16,7 @@ function messageFor(error: unknown, fallback: string): string {
   return error instanceof Error ? error.message : fallback;
 }
 
-export function MaterialUsagePage({ projectId, materialId, scenario }: { projectId: string; materialId: string; scenario: PlanningMockScenario }) {
-  void scenario;
+export function MaterialUsagePage({ projectId, materialId }: { projectId: string; materialId: string }) {
   const router = useRouter();
   const close = useCallback(() => router.push(closeMaterialLayer("usage", projectId, materialId)), [router, projectId, materialId]);
   const layerRef = useLayerInteractions<HTMLDivElement>(close);

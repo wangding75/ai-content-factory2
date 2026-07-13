@@ -29,3 +29,25 @@ test("detail views combine real global detail with current usage from the projec
     assert.doesNotMatch(source, /scenario\s*===\s*["']no-current-usage["']/);
   }
 });
+test("all project material routes and pages stay on real APIs without mock switching", () => {
+  const sources = [
+    "./materials-page.tsx",
+    "./create-material-page.tsx",
+    "./pick-material-page.tsx",
+    "./material-detail-page.tsx",
+    "./material-detail-drawer.tsx",
+    "./edit-material-page.tsx",
+    "./material-usage-page.tsx",
+    "./unbind-material-page.tsx",
+    "../../../app/projects/[projectId]/materials/page.tsx",
+    "../../../app/projects/[projectId]/materials/new/page.tsx",
+    "../../../app/projects/[projectId]/materials/pick/page.tsx",
+    "../../../app/projects/[projectId]/materials/[materialId]/page.tsx",
+    "../../../app/projects/[projectId]/materials/[materialId]/edit/page.tsx",
+    "../../../app/projects/[projectId]/materials/[materialId]/usage/page.tsx",
+    "../../../app/projects/[projectId]/materials/[materialId]/unbind/page.tsx",
+  ].map((path) => readFileSync(new URL(path, import.meta.url), "utf8"));
+  for (const source of sources) {
+    assert.doesNotMatch(source, /mockScenario|parsePlanningMockScenario|planning-api|materials-api|material-usage-api|unbind-material-api|update-material-usage-api/);
+  }
+});

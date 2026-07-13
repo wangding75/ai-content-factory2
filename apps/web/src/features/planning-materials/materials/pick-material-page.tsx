@@ -9,12 +9,11 @@ import {bindProjectMaterialFromApi, listProjectMaterialsFromApi} from "../api/pr
 import {useLayerInteractions} from "../components/layer-interactions";
 import {closeMaterialLayer} from "../components/material-layer-routes";
 import type {Material, MaterialType, ProjectMaterialUsageInput} from "../contracts/materials";
-import type {PlanningMockScenario} from "../contracts/planning";
 
 const labels: Record<MaterialType, string> = {character: "人物", worldview: "世界观", location: "地点", organization: "组织", item: "道具", reference: "参考资料"};
 export const pickMaterialModalRegions = ["pick-material-modal__header", "pick-material-modal__notice", "pick-material-modal__body", "pick-material-modal__footer"] as const;
 
-export function PickMaterialPage({projectId}: {projectId: string; scenario: PlanningMockScenario}) {
+export function PickMaterialPage({projectId}: {projectId: string}) {
   const router = useRouter();
   const close = useCallback(() => router.push(closeMaterialLayer("pick", projectId)), [router, projectId]);
   const layerRef = useLayerInteractions<HTMLDivElement>(close);

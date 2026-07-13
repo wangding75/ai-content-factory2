@@ -3,13 +3,11 @@
 import {useCallback, useEffect, useRef, useState} from "react";
 import {useRouter} from "next/navigation";
 import {Icon} from "@/components/ui/icons";
-import {ApiError} from "@/lib/api";
+import {ApiError, getProjectWorkspace} from "@/lib/api";
 import {createProjectMaterialFromApi} from "../api/project-material-http-api";
-import {getPlanningProject} from "../api/planning-api";
 import {useLayerInteractions} from "../components/layer-interactions";
 import {closeMaterialLayer} from "../components/material-layer-routes";
 import type {CreateProjectMaterialRequest, MaterialType} from "../contracts/materials";
-import type {PlanningMockScenario} from "../contracts/planning";
 
 const labels: Record<MaterialType, string> = {character: "人物", worldview: "世界观", location: "地点", organization: "组织", item: "道具", reference: "参考资料"};
 const types = Object.keys(labels) as MaterialType[];
@@ -18,7 +16,7 @@ const roles = ["", "主角", "配角", "反派", "次要人物"];
 const empty = (): CreateProjectMaterialRequest => ({material: {type: "character", name: "", summary: "", content_json: {}, tags_json: []}, usage: {usage_type: "人物角色", role_name: "", notes: "", start_chapter: null, end_chapter: null}});
 export const createMaterialModalRegions = ["create-material-modal__header", "create-material-modal__body", "create-material-modal__footer"] as const;
 
-export function CreateMaterialPage({projectId, scenario}: {projectId: string; scenario: PlanningMockScenario}) {
+export function CreateMaterialPage({projectId}: {projectId: string}) {
   const router = useRouter();
   const close = useCallback(() => router.push(closeMaterialLayer("create", projectId)), [router, projectId]);
   const layerRef = useLayerInteractions<HTMLDivElement>(close);
@@ -34,7 +32,7 @@ export function CreateMaterialPage({projectId, scenario}: {projectId: string; sc
 
   useEffect(() => { if (bodyRef.current) bodyRef.current.scrollTop = 0; }, []);
   useEffect(() => () => { requestController.current?.abort(); }, []);
-  useEffect(() => { void getPlanningProject(projectId, scenario).then((project) => setProjectName(project.name)).catch(() => {}); }, [projectId, scenario]);
+  useEffect(() => { void getProjectWorkspace(projectId).then(({project}) => setProjectName(project.name)).catch(() => {}); }, [projectId]);
   const set = (path: string, value: string) => {
     setForm((current) => {const next = structuredClone(current); const [group, field] = path.split(".") as ["material" | "usage", string]; Object.assign(next[group], {[field]: value}); return next;});
     setKey(crypto.randomUUID());

@@ -9,7 +9,6 @@ import { useLayerInteractions } from "../components/layer-interactions";
 import { closeMaterialLayer } from "../components/material-layer-routes";
 import { ProjectWorkspaceNav } from "../components/project-workspace-nav";
 import type { Material } from "../contracts/materials";
-import type { PlanningMockScenario } from "../contracts/planning";
 
 const labels = { character: "Material", worldview: "Material", location: "Material", organization: "Material", item: "Material", reference: "Material" };
 
@@ -20,8 +19,7 @@ function errorMessage(error: unknown) {
   return "Material";
 }
 
-export function EditMaterialPage({ projectId, materialId, scenario: _scenario }: { projectId: string; materialId: string; scenario: PlanningMockScenario }) {
-  void _scenario;
+export function EditMaterialPage({ projectId, materialId }: { projectId: string; materialId: string }) {
   const router = useRouter();
   const close = useCallback(() => router.push(closeMaterialLayer("edit", projectId, materialId)), [router, projectId, materialId]);
   const layerRef = useLayerInteractions<HTMLDivElement>(close);

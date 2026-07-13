@@ -11,7 +11,7 @@ test("create material renders a dedicated modal with fixed header, body, and foo
   assert.match(source, /aria-label="关闭"/);
   assert.match(source, /当前项目：/);
   assert.match(source, /项目类型：/);
-  assert.match(source, /getPlanningProject\(projectId, scenario\)/);
+  assert.match(source, /getProjectWorkspace\(projectId\)/);
 });
 
 test("create material maps prototype usage controls without chapter inputs", () => {

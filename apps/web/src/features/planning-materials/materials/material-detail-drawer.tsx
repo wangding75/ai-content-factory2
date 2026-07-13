@@ -8,11 +8,10 @@ import { closeMaterialLayer } from "../components/material-layer-routes";
 import { getMaterialFromApi, type GlobalMaterialDetail } from "../api/material-http-api";
 import { listProjectMaterialsFromApi } from "../api/project-material-http-api";
 import type { ProjectMaterialUsage } from "../contracts/materials";
-import type { PlanningMockScenario } from "../contracts/planning";
 
 const labels = { character: "Material", worldview: "Material", location: "Material", organization: "Material", item: "Material", reference: "Material" };
 
-export function MaterialDetailDrawer({ projectId, materialId, scenario }: { projectId: string; materialId: string; scenario: PlanningMockScenario }) {
+export function MaterialDetailDrawer({ projectId, materialId }: { projectId: string; materialId: string }) {
   const router = useRouter();
   const [detail, setDetail] = useState<GlobalMaterialDetail | null>(null);
   const [usage, setUsage] = useState<ProjectMaterialUsage | null>(null);
@@ -33,7 +32,7 @@ export function MaterialDetailDrawer({ projectId, materialId, scenario }: { proj
       if (signal?.aborted) return;
       setError(reason instanceof Error ? reason.message : "Material");
     }
-  }, [materialId, projectId, scenario]);
+  }, [materialId, projectId]);
 
   useEffect(() => {
     const controller = new AbortController();
