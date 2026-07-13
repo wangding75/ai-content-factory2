@@ -33,3 +33,7 @@ test("create material submits once through the real project material API", () =>
   assert.doesNotMatch(source, /createProjectMaterial\(projectId/);
   assert.doesNotMatch(source, /materials-api/);
 });
+test("create material uses the shared role rule for visibility and request cleanup", () => {
+  assert.match(source, /roleNameForUsage\(form\.usage\.usage_type, form\.usage\.role_name\)/);
+  assert.match(source, /usageShowsRole\(form\.usage\.usage_type\) && <Field label="具体角色">/);
+});

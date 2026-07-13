@@ -19,3 +19,9 @@ test("usage editor blocks duplicate saves and keeps the server state on version 
   assert.match(source, /重新加载后再保存/);
   assert.match(source, /controller\.abort\(\)/);
 });
+test("usage editor hides historical non-character roles and cleans PATCH data through the shared rule", async () => {
+  const source = await readFile(sourcePath, "utf8");
+  assert.match(source, /roleNameForUsage\(form\.usage_type, form\.role_name\)/);
+  assert.match(source, /usageShowsRole\(usage_type\) \? form\.role_name : ""/);
+  assert.match(source, /usageShowsRole\(form\.usage_type\) && <label className="create-field"><span>具体角色/);
+});

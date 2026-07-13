@@ -31,3 +31,8 @@ test("pick material uses real global list, project list, and binding APIs", () =
   assert.doesNotMatch(source, /listMaterials\(\{/);
   assert.doesNotMatch(source, /materials-api/);
 });
+test("pick material delegates role visibility and non-character request cleanup to the shared rule", () => {
+  assert.match(source, /roleNameForUsage\(usage\.usage_type, usage\.role_name\)/);
+  assert.match(source, /usageShowsRole\(usage_type\) \? current\.role_name : ""/);
+  assert.match(source, /usageShowsRole\(usage\.usage_type\) && <label>具体角色/);
+});

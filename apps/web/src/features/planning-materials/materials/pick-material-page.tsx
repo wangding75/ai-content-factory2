@@ -9,8 +9,11 @@ import {bindProjectMaterialFromApi, listProjectMaterialsFromApi} from "../api/pr
 import {useLayerInteractions} from "../components/layer-interactions";
 import {closeMaterialLayer} from "../components/material-layer-routes";
 import type {Material, MaterialType, ProjectMaterialUsageInput} from "../contracts/materials";
+import {roleNameForUsage, usageShowsRole} from "./material-presentation";
 
 const labels: Record<MaterialType, string> = {character: "人物", worldview: "世界观", location: "地点", organization: "组织", item: "道具", reference: "参考资料"};
+const usageTypes = ["人物角色", "环境场景", "背景设定", "关键线索", "剧情推动"];
+const roles = ["", "主角", "配角", "反派", "次要人物"];
 export const pickMaterialModalRegions = ["pick-material-modal__header", "pick-material-modal__notice", "pick-material-modal__body", "pick-material-modal__footer"] as const;
 
 export function PickMaterialPage({projectId}: {projectId: string}) {
@@ -61,7 +64,7 @@ export function PickMaterialPage({projectId}: {projectId: string}) {
     requestController.current = controller;
     setSubmitting(true); setError("");
     try {
-      await bindProjectMaterialFromApi(projectId, selected.id, {...usage, usage_type: usage.usage_type.trim(), role_name: usage.role_name.trim(), notes: usage.notes.trim()}, key, {signal: controller.signal});
+      await bindProjectMaterialFromApi(projectId, selected.id, {...usage, usage_type: usage.usage_type.trim(), role_name: roleNameForUsage(usage.usage_type, usage.role_name), notes: usage.notes.trim()}, key, {signal: controller.signal});
       if (!controller.signal.aborted) router.push(closeMaterialLayer("pick", projectId));
     } catch (cause) {
       if (controller.signal.aborted) return;
@@ -105,7 +108,7 @@ export function PickMaterialPage({projectId}: {projectId: string}) {
         <aside className="pick-material-modal__usage" aria-label="当前项目用途设置">
           {selected ? <>
             <section className="pick-material-modal__preview"><div><h2>{selected.name}</h2><span>{labels[selected.type]}</span></div><p>{selected.summary || "暂无简介"}</p><div className="pick-material-modal__tags">{selected.tags_json.map((tag) => <i key={tag}>{tag}</i>)}</div></section>
-            <section className="pick-material-modal__usage-form"><div className="pick-material-modal__usage-title"><h2>当前项目用途设置</h2><small>项目：{projectId}</small></div><label>项目内用途<input value={usage.usage_type} maxLength={120} onChange={(event) => {setUsage((current) => ({...current, usage_type: event.target.value})); setKey(crypto.randomUUID());}}/></label><label>角色名称<input value={usage.role_name} maxLength={120} onChange={(event) => setUsage((current) => ({...current, role_name: event.target.value}))}/></label><label>使用说明<textarea value={usage.notes} maxLength={300} onChange={(event) => setUsage((current) => ({...current, notes: event.target.value}))}/></label><div className="pick-material-modal__chapters"><label>起始章节<input type="number" min="1" value={usage.start_chapter ?? ""} onChange={(event) => setUsage((current) => ({...current, start_chapter: event.target.value ? Number(event.target.value) : null}))}/></label><label>结束章节<input type="number" min="1" value={usage.end_chapter ?? ""} onChange={(event) => setUsage((current) => ({...current, end_chapter: event.target.value ? Number(event.target.value) : null}))}/></label></div><p>该用途只在当前项目中生效，不会影响素材的全局定义。</p></section>
+            <section className="pick-material-modal__usage-form"><div className="pick-material-modal__usage-title"><h2>当前项目用途设置</h2><small>项目：{projectId}</small></div><label>项目内用途<select value={usage.usage_type} onChange={(event) => {const usage_type = event.target.value; setUsage((current) => ({...current, usage_type, role_name: usageShowsRole(usage_type) ? current.role_name : ""})); setKey(crypto.randomUUID());}}>{usageTypes.map((value) => <option key={value} value={value}>{value}</option>)}</select></label>{usageShowsRole(usage.usage_type) && <label>具体角色<select value={usage.role_name} onChange={(event) => setUsage((current) => ({...current, role_name: event.target.value}))}>{roles.map((value) => <option key={value} value={value}>{value || "未选择"}</option>)}</select></label>}<label>使用说明<textarea value={usage.notes} maxLength={300} onChange={(event) => setUsage((current) => ({...current, notes: event.target.value}))}/></label><div className="pick-material-modal__chapters"><label>起始章节<input type="number" min="1" value={usage.start_chapter ?? ""} onChange={(event) => setUsage((current) => ({...current, start_chapter: event.target.value ? Number(event.target.value) : null}))}/></label><label>结束章节<input type="number" min="1" value={usage.end_chapter ?? ""} onChange={(event) => setUsage((current) => ({...current, end_chapter: event.target.value ? Number(event.target.value) : null}))}/></label></div><p>该用途只在当前项目中生效，不会影响素材的全局定义。</p></section>
           </> : <div className="pick-material-modal__empty"><Icon name="archive" size={28}/><h2>添加到项目</h2><p>从左侧选择一条尚未添加的素材后，填写当前项目用途。</p></div>}
         </aside>
       </div>

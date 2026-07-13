@@ -9,8 +9,11 @@ import { ProjectWorkspaceNav } from "../components/project-workspace-nav";
 import { useLayerInteractions } from "../components/layer-interactions";
 import { closeMaterialLayer } from "../components/material-layer-routes";
 import type { ProjectMaterialItem } from "../contracts/materials";
+import {roleNameForUsage, usageShowsRole} from "./material-presentation";
 
 const labels = { character: "人物", worldview: "世界观", location: "地点", organization: "组织", item: "道具", reference: "参考资料" };
+const usageTypes = ["人物角色", "环境场景", "背景设定", "关键线索", "剧情推动"];
+const roles = ["", "主角", "配角", "反派", "次要人物"];
 
 function messageFor(error: unknown, fallback: string): string {
   return error instanceof Error ? error.message : fallback;
@@ -69,7 +72,7 @@ export function MaterialUsagePage({ projectId, materialId }: { projectId: string
     const controller = new AbortController();
     try {
       const updated = await updateProjectMaterialUsageFromApi(projectId, materialId, {
-        expected_version: usage.version, usage_type: form.usage_type, role_name: form.role_name, notes: form.notes, start_chapter: form.start_chapter, end_chapter: form.end_chapter,
+        expected_version: usage.version, usage_type: form.usage_type, role_name: roleNameForUsage(form.usage_type, form.role_name), notes: form.notes, start_chapter: form.start_chapter, end_chapter: form.end_chapter,
       }, { signal: controller.signal });
       if (!alive.current) return;
       setItem(updated);
@@ -84,5 +87,5 @@ export function MaterialUsagePage({ projectId, materialId }: { projectId: string
     }
   };
 
-  return <div ref={layerRef} className="create-material" role="dialog" aria-modal="true" aria-label="编辑项目素材用途" tabIndex={-1}><header><p>项目 / 编辑素材用途</p><h1>编辑项目素材用途</h1></header><ProjectWorkspaceNav projectId={projectId} active="materials"/><main><div className="create-modal"><section className="create-head"><div><h2>{material.name}</h2><p>{labels[material.type]} · {material.summary || "暂无简介"}</p></div></section><div className="create-body"><p className="create-tip">当前页面只影响本项目用途，不会修改全局素材，也不会影响其他项目。</p><label className="create-field"><span>项目用途</span><input value={form.usage_type} onChange={event => setForm({ ...form, usage_type: event.target.value })}/></label><label className="create-field"><span>角色名称</span><input value={form.role_name} onChange={event => setForm({ ...form, role_name: event.target.value })}/></label><label className="create-field"><span>使用说明</span><textarea value={form.notes} onChange={event => setForm({ ...form, notes: event.target.value })}/></label><div className="create-grid"><label className="create-field"><span>起始章节</span><input type="number" value={form.start_chapter ?? ""} onChange={event => setForm({ ...form, start_chapter: event.target.value ? Number(event.target.value) : null })}/></label><label className="create-field"><span>结束章节</span><input type="number" value={form.end_chapter ?? ""} onChange={event => setForm({ ...form, end_chapter: event.target.value ? Number(event.target.value) : null })}/></label></div><p className="detail-label">当前 Usage 版本：v{usage.version}</p>{error && <p className="unbind-error">{error} <button onClick={retry}>重新加载</button></p>}</div><footer><Link href={`/projects/${projectId}/materials/${materialId}`}>取消</Link><button disabled={!dirty || saving} onClick={save}>{saving ? "保存中…" : "保存用途"}</button></footer></div></main></div>;
+  return <div ref={layerRef} className="create-material" role="dialog" aria-modal="true" aria-label="编辑项目素材用途" tabIndex={-1}><header><p>项目 / 编辑素材用途</p><h1>编辑项目素材用途</h1></header><ProjectWorkspaceNav projectId={projectId} active="materials"/><main><div className="create-modal"><section className="create-head"><div><h2>{material.name}</h2><p>{labels[material.type]} · {material.summary || "暂无简介"}</p></div></section><div className="create-body"><p className="create-tip">当前页面只影响本项目用途，不会修改全局素材，也不会影响其他项目。</p><label className="create-field"><span>项目用途</span><select value={form.usage_type} onChange={event => {const usage_type = event.target.value; setForm({ ...form, usage_type, role_name: usageShowsRole(usage_type) ? form.role_name : "" });}}>{usageTypes.map((value) => <option key={value} value={value}>{value}</option>)}</select></label>{usageShowsRole(form.usage_type) && <label className="create-field"><span>具体角色</span><select value={form.role_name} onChange={event => setForm({ ...form, role_name: event.target.value })}>{roles.map((value) => <option key={value} value={value}>{value || "未选择"}</option>)}</select></label>}<label className="create-field"><span>使用说明</span><textarea value={form.notes} onChange={event => setForm({ ...form, notes: event.target.value })}/></label><div className="create-grid"><label className="create-field"><span>起始章节</span><input type="number" value={form.start_chapter ?? ""} onChange={event => setForm({ ...form, start_chapter: event.target.value ? Number(event.target.value) : null })}/></label><label className="create-field"><span>结束章节</span><input type="number" value={form.end_chapter ?? ""} onChange={event => setForm({ ...form, end_chapter: event.target.value ? Number(event.target.value) : null })}/></label></div><p className="detail-label">当前 Usage 版本：v{usage.version}</p>{error && <p className="unbind-error">{error} <button onClick={retry}>重新加载</button></p>}</div><footer><Link href={`/projects/${projectId}/materials/${materialId}`}>取消</Link><button disabled={!dirty || saving} onClick={save}>{saving ? "保存中…" : "保存用途"}</button></footer></div></main></div>;
 }
