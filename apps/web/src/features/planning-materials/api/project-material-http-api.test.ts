@@ -1,0 +1,31 @@
+import assert from "node:assert/strict";
+import test from "node:test";
+import { ApiError } from "../../../lib/api.ts";
+import { listProjectMaterialsFromApi, projectMaterialQuery } from "./project-material-http-api.ts";
+
+const originalFetch = global.fetch;
+const projectId = "00000000-0000-4000-8000-000000000001";
+const item = {
+  material: { id: "30000000-0000-4000-8000-000000000001", type: "character" as const, name: "Hero", summary: "", content_json: {}, tags_json: ["lead"], version: 3, created_at: "2026-01-01T00:00:00Z", updated_at: "2026-01-02T00:00:00Z" },
+  usage: { id: "40000000-0000-4000-8000-000000000001", project_id: projectId, material_id: "30000000-0000-4000-8000-000000000001", usage_type: "lead", role_name: "Hero", notes: "Use in opening", start_chapter: 1, end_chapter: null, status: "active" as const, version: 2, created_at: "2026-01-01T00:00:00Z", updated_at: "2026-01-03T00:00:00Z" },
+  last_updated_at: "2026-01-03T00:00:00Z",
+};
+const typeCounts = { character: 1, worldview: 0, location: 0, organization: 0, item: 0, reference: 0 };
+
+test.after(() => { global.fetch = originalFetch; });
+
+test("maps project material path, query, item usage, and type counts", async () => {
+  assert.equal(projectMaterialQuery({ q: " hero ", type: "character", sort: "name_asc", limit: 6, offset: 12 }), "?q=hero&type=character&sort=name_asc&limit=6&offset=12");
+  global.fetch = async (input) => {
+    assert.match(String(input), new RegExp(`/projects/${projectId}/materials\\?q=hero&type=character&sort=name_asc&limit=6&offset=12$`));
+    return new Response(JSON.stringify({ data: { items: [item], total: 13, limit: 6, offset: 12, type_counts: typeCounts }, request_id: "req_list" }), { status: 200 });
+  };
+  assert.deepEqual(await listProjectMaterialsFromApi(projectId, { q: " hero ", type: "character", sort: "name_asc", limit: 6, offset: 12 }), { items: [item], total: 13, limit: 6, offset: 12, type_counts: typeCounts });
+});
+
+test("maps empty project material lists and PROJECT_NOT_FOUND", async () => {
+  global.fetch = async () => new Response(JSON.stringify({ data: { items: [], total: 0, limit: 6, offset: 0, type_counts: { character: 0, worldview: 0, location: 0, organization: 0, item: 0, reference: 0 } }, request_id: "req_empty" }), { status: 200 });
+  assert.deepEqual((await listProjectMaterialsFromApi(projectId)).items, []);
+  global.fetch = async () => new Response(JSON.stringify({ error: { code: "PROJECT_NOT_FOUND", message: "missing", details: {} }, request_id: "req_missing" }), { status: 404 });
+  await assert.rejects(listProjectMaterialsFromApi(projectId), (error: unknown) => error instanceof ApiError && error.code === "PROJECT_NOT_FOUND");
+});

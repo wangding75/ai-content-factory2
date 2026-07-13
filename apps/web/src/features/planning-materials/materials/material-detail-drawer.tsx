@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { useLayerInteractions } from "../components/layer-interactions";
 import { closeMaterialLayer } from "../components/material-layer-routes";
 import { getMaterialFromApi, type GlobalMaterialDetail } from "../api/material-http-api";
-import { listProjectMaterials } from "../api/materials-api";
+import { listProjectMaterialsFromApi } from "../api/project-material-http-api";
 import type { ProjectMaterialUsage } from "../contracts/materials";
 import type { PlanningMockScenario } from "../contracts/planning";
 
@@ -23,11 +23,11 @@ export function MaterialDetailDrawer({ projectId, materialId, scenario }: { proj
     try {
       const [nextDetail, projectMaterials] = await Promise.all([
         getMaterialFromApi(materialId, { signal }),
-        listProjectMaterials(projectId, {}),
+        listProjectMaterialsFromApi(projectId, {}, { signal }),
       ]);
       if (signal?.aborted) return;
       setDetail(nextDetail);
-      setUsage(scenario === "no-current-usage" ? null : projectMaterials.items.find((item) => item.material.id === materialId)?.usage ?? null);
+      setUsage(projectMaterials.items.find((item) => item.material.id === materialId)?.usage ?? null);
       setError("");
     } catch (reason) {
       if (signal?.aborted) return;
