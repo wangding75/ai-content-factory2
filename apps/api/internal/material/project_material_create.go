@@ -111,6 +111,17 @@ func (s *ProjectMaterialService) CreateAndBindMaterial(ctx context.Context, proj
 	}
 	if _, err := txIdem.Create(ctx, idempotency.Record{ID: uuid.New(), Scope: createProjectMaterialScope, Key: key, RequestHash: hash, ResponseStatus: 201, ResponseBody: body}); err != nil {
 		if errors.Is(err, idempotency.ErrConflict) {
+			_ = tx.Rollback(ctx)
+			record, getErr := idem.Get(ctx, createProjectMaterialScope, key)
+			if getErr == nil && record.RequestHash == hash {
+				var replay ProjectMaterialItem
+				if getErr = json.Unmarshal(record.ResponseBody, &replay); getErr == nil {
+					return replay, nil
+				}
+			}
+			if getErr != nil {
+				return ProjectMaterialItem{}, getErr
+			}
 			return ProjectMaterialItem{}, ErrIdempotencyReused
 		}
 		return ProjectMaterialItem{}, err

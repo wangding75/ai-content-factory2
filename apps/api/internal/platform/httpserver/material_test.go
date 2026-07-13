@@ -5,6 +5,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/local/ai-content-factory/apps/api/internal/material"
 	"net/http"
+	"net/http/httptest"
 	"strings"
 	"testing"
 	"time"
@@ -60,4 +61,47 @@ func TestMaterialDetailHandlerInvalidID(t *testing.T) {
 	if w.Code != 400 || !strings.Contains(w.Body.String(), "INVALID_MATERIAL_ID") {
 		t.Fatal(w.Body.String())
 	}
+}
+
+func TestMaterialHandlersNormalRequests(t *testing.T) {
+	materialID := uuid.New()
+	newMux := func(fake *fakeMaterials) *http.ServeMux {
+		mux := http.NewServeMux()
+		mux.HandleFunc("GET /api/v1/materials", listMaterialsHandler(fake))
+		mux.HandleFunc("POST /api/v1/materials", createMaterialHandler(fake))
+		mux.HandleFunc("GET /api/v1/materials/{materialId}", getMaterialHandler(fake))
+		mux.HandleFunc("PATCH /api/v1/materials/{materialId}", updateMaterialHandler(fake))
+		return mux
+	}
+	t.Run("list", func(t *testing.T) {
+		fake := &fakeMaterials{}
+		w := doRequest(newMux(fake), http.MethodGet, "/api/v1/materials?q=%20one%20&type=item&sort=name_asc&limit=2&offset=1", "")
+		if w.Code != http.StatusOK || !strings.Contains(w.Header().Get("Content-Type"), "application/json") || fake.list != (material.ListOptions{Query: "one", Type: "item", Sort: "name_asc", Limit: 2, Offset: 1}) || !strings.Contains(w.Body.String(), "\"total\":2") {
+			t.Fatalf("options=%#v response=%s", fake.list, w.Body.String())
+		}
+	})
+	t.Run("create", func(t *testing.T) {
+		fake := &fakeMaterials{}
+		r := httptest.NewRequest(http.MethodPost, "/api/v1/materials", strings.NewReader("{\"type\":\"item\",\"name\":\"n\",\"summary\":\"s\",\"content_json\":{},\"tags_json\":[]}"))
+		r.Header.Set("Idempotency-Key", "normal-create")
+		w := httptest.NewRecorder()
+		newMux(fake).ServeHTTP(w, r)
+		if w.Code != http.StatusCreated || !strings.Contains(w.Header().Get("Content-Type"), "application/json") || fake.key != "normal-create" || fake.create.Name == nil || *fake.create.Name != "n" || !strings.Contains(w.Body.String(), "\"name\":\"n\"") {
+			t.Fatalf("request=%#v response=%s", fake.create, w.Body.String())
+		}
+	})
+	t.Run("detail", func(t *testing.T) {
+		fake := &fakeMaterials{}
+		w := doRequest(newMux(fake), http.MethodGet, "/api/v1/materials/"+materialID.String(), "")
+		if w.Code != http.StatusOK || !strings.Contains(w.Header().Get("Content-Type"), "application/json") || fake.id != materialID || strings.Contains(w.Body.String(), "project_id") || strings.Contains(w.Body.String(), "usage_type") || strings.Contains(w.Body.String(), "role_name") || strings.Contains(w.Body.String(), "notes") {
+			t.Fatalf("response=%s", w.Body.String())
+		}
+	})
+	t.Run("patch", func(t *testing.T) {
+		fake := &fakeMaterials{}
+		w := doRequest(newMux(fake), http.MethodPatch, "/api/v1/materials/"+materialID.String(), "{\"expected_version\":1,\"name\":\"changed\"}")
+		if w.Code != http.StatusOK || !strings.Contains(w.Header().Get("Content-Type"), "application/json") || fake.id != materialID || fake.patch.ExpectedVersion == nil || *fake.patch.ExpectedVersion != 1 || fake.patch.Name == nil || *fake.patch.Name != "changed" || !strings.Contains(w.Body.String(), "\"version\":2") || strings.Contains(w.Body.String(), "project_id") || strings.Contains(w.Body.String(), "usage_type") || strings.Contains(w.Body.String(), "role_name") || strings.Contains(w.Body.String(), "notes") {
+			t.Fatalf("patch=%#v response=%s", fake.patch, w.Body.String())
+		}
+	})
 }

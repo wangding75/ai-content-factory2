@@ -37,15 +37,15 @@ type Reference struct {
 	ProjectID    uuid.UUID `json:"project_id"`
 	ProjectName  string    `json:"project_name"`
 	ProjectType  string    `json:"project_type"`
-	UsageType    string    `json:"usage_type"`
-	RoleName     string    `json:"role_name"`
-	Notes        string    `json:"notes"`
-	StartChapter *int      `json:"start_chapter"`
-	EndChapter   *int      `json:"end_chapter"`
-	Status       string    `json:"status"`
-	Version      int       `json:"version"`
-	CreatedAt    time.Time `json:"created_at"`
-	UpdatedAt    time.Time `json:"updated_at"`
+	UsageType    string    `json:"-"`
+	RoleName     string    `json:"-"`
+	Notes        string    `json:"-"`
+	StartChapter *int      `json:"-"`
+	EndChapter   *int      `json:"-"`
+	Status       string    `json:"-"`
+	Version      int       `json:"-"`
+	CreatedAt    time.Time `json:"-"`
+	UpdatedAt    time.Time `json:"-"`
 }
 type Detail struct {
 	Material       Material    `json:"material"`
