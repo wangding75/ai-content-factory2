@@ -37,5 +37,3 @@ export interface ErrorEnvelope {
   error: { code: string; message: string; details: Record<string, unknown> };
   request_id: string;
 }
-
-export type PlanningMockScenario = "default" | "empty" | "slow" | "load-error" | "save-error" | "conflict" | "no-results" | "no-references" | "no-current-usage" | "bind-error" | "idempotency-conflict" | "already-bound" | "already-unbound" | "unbind-error" | "binding-not-found" | "create-error" | "not-found";
