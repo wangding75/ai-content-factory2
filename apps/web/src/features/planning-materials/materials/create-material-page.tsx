@@ -3,7 +3,8 @@
 import {useCallback, useEffect, useRef, useState} from "react";
 import {useRouter} from "next/navigation";
 import {Icon} from "@/components/ui/icons";
-import {createProjectMaterial} from "../api/materials-api";
+import {ApiError} from "@/lib/api";
+import {createProjectMaterialFromApi} from "../api/project-material-http-api";
 import {getPlanningProject} from "../api/planning-api";
 import {useLayerInteractions} from "../components/layer-interactions";
 import {closeMaterialLayer} from "../components/material-layer-routes";
@@ -22,6 +23,7 @@ export function CreateMaterialPage({projectId, scenario}: {projectId: string; sc
   const close = useCallback(() => router.push(closeMaterialLayer("create", projectId)), [router, projectId]);
   const layerRef = useLayerInteractions<HTMLDivElement>(close);
   const bodyRef = useRef<HTMLDivElement>(null);
+  const requestController = useRef<AbortController | null>(null);
   const [form, setForm] = useState(empty);
   const [tag, setTag] = useState("");
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -31,6 +33,7 @@ export function CreateMaterialPage({projectId, scenario}: {projectId: string; sc
   const [projectName, setProjectName] = useState("当前项目");
 
   useEffect(() => { if (bodyRef.current) bodyRef.current.scrollTop = 0; }, []);
+  useEffect(() => () => { requestController.current?.abort(); }, []);
   useEffect(() => { void getPlanningProject(projectId, scenario).then((project) => setProjectName(project.name)).catch(() => {}); }, [projectId, scenario]);
   const set = (path: string, value: string) => {
     setForm((current) => {const next = structuredClone(current); const [group, field] = path.split(".") as ["material" | "usage", string]; Object.assign(next[group], {[field]: value}); return next;});
@@ -44,18 +47,23 @@ export function CreateMaterialPage({projectId, scenario}: {projectId: string; sc
     setTag("");
   };
   const submit = async () => {
+    if (saving) return;
     const nextErrors: Record<string, string> = {};
     if (!form.material.name.trim()) nextErrors.name = "请填写素材名称。";
     if (!form.usage.usage_type.trim()) nextErrors.usage = "请选择项目用途。";
     setErrors(nextErrors);
     if (Object.keys(nextErrors).length) return;
+    const controller = new AbortController();
+    requestController.current = controller;
     setSaving(true); setError("");
     try {
-      await createProjectMaterial(projectId, {...form, material: {...form.material, name: form.material.name.trim(), summary: form.material.summary.trim()}, usage: {...form.usage, usage_type: form.usage.usage_type.trim(), role_name: form.usage.role_name.trim(), notes: form.usage.notes.trim(), start_chapter: null, end_chapter: null}}, key, scenario);
-      router.push(closeMaterialLayer("create", projectId));
+      await createProjectMaterialFromApi(projectId, {...form, material: {...form.material, name: form.material.name.trim(), summary: form.material.summary.trim()}, usage: {...form.usage, usage_type: form.usage.usage_type.trim(), role_name: form.usage.role_name.trim(), notes: form.usage.notes.trim(), start_chapter: null, end_chapter: null}}, key, {signal: controller.signal});
+      if (!controller.signal.aborted) router.push(closeMaterialLayer("create", projectId));
     } catch (cause) {
-      setError(cause instanceof Error && "code" in cause && (cause as {code: string}).code === "IDEMPOTENCY_KEY_REUSED" ? "本次提交与先前请求冲突，请修改内容后重试。" : "创建失败，已保留当前输入。请重试。");
-    } finally {setSaving(false);}
+      if (controller.signal.aborted) return;
+      const code = cause instanceof ApiError ? cause.code : "";
+      setError(code === "PROJECT_NOT_FOUND" ? "项目不存在。" : code === "VALIDATION_ERROR" ? "请检查填写内容。" : code === "IDEMPOTENCY_KEY_REUSED" ? "本次提交与先前请求冲突，请修改内容后重试。" : "创建失败，已保留当前输入。请重试。");
+    } finally { if (!controller.signal.aborted) setSaving(false); }
   };
   const content = form.material.content_json as Record<string, string>;
 

@@ -24,3 +24,12 @@ test("create material maps prototype usage controls without chapter inputs", () 
   assert.match(source, /create-material-modal__submit/);
   assert.doesNotMatch(source, /danger/);
 });
+
+test("create material submits once through the real project material API", () => {
+  assert.match(source, /createProjectMaterialFromApi\(projectId,/);
+  assert.match(source, /\}, key, \{signal: controller\.signal\}\)/);
+  assert.match(source, /if \(saving\) return/);
+  assert.match(source, /new AbortController\(\)/);
+  assert.doesNotMatch(source, /createProjectMaterial\(projectId/);
+  assert.doesNotMatch(source, /materials-api/);
+});

@@ -1,9 +1,11 @@
-﻿"use client";
+"use client";
 
-import {useCallback, useEffect, useState} from "react";
+import {useCallback, useEffect, useRef, useState} from "react";
 import {useRouter} from "next/navigation";
 import {Icon} from "@/components/ui/icons";
-import {bindProjectMaterial, listMaterials, listProjectMaterials} from "../api/materials-api";
+import {ApiError} from "@/lib/api";
+import {listMaterialsFromApi} from "../api/material-http-api";
+import {bindProjectMaterialFromApi, listProjectMaterialsFromApi} from "../api/project-material-http-api";
 import {useLayerInteractions} from "../components/layer-interactions";
 import {closeMaterialLayer} from "../components/material-layer-routes";
 import type {Material, MaterialType, ProjectMaterialUsageInput} from "../contracts/materials";
@@ -12,7 +14,7 @@ import type {PlanningMockScenario} from "../contracts/planning";
 const labels: Record<MaterialType, string> = {character: "人物", worldview: "世界观", location: "地点", organization: "组织", item: "道具", reference: "参考资料"};
 export const pickMaterialModalRegions = ["pick-material-modal__header", "pick-material-modal__notice", "pick-material-modal__body", "pick-material-modal__footer"] as const;
 
-export function PickMaterialPage({projectId, scenario}: {projectId: string; scenario: PlanningMockScenario}) {
+export function PickMaterialPage({projectId}: {projectId: string; scenario: PlanningMockScenario}) {
   const router = useRouter();
   const close = useCallback(() => router.push(closeMaterialLayer("pick", projectId)), [router, projectId]);
   const layerRef = useLayerInteractions<HTMLDivElement>(close);
@@ -26,37 +28,48 @@ export function PickMaterialPage({projectId, scenario}: {projectId: string; scen
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
   const [key, setKey] = useState(crypto.randomUUID());
+  const [submitting, setSubmitting] = useState(false);
+  const requestController = useRef<AbortController | null>(null);
 
   const load = useCallback(async () => {
+    requestController.current?.abort();
+    const controller = new AbortController();
+    requestController.current = controller;
     setLoading(true);
     try {
-      const [materials, projectMaterials] = await Promise.all([listMaterials({q, type, mockScenario: scenario}), listProjectMaterials(projectId, {mockScenario: scenario})]);
+      const [materials, projectMaterials] = await Promise.all([listMaterialsFromApi({q, type}, {signal: controller.signal}), listProjectMaterialsFromApi(projectId, {}, {signal: controller.signal})]);
+      if (controller.signal.aborted) return;
       setItems(materials.items);
       setBound(new Set(projectMaterials.items.map((item) => item.material.id)));
       setError("");
     } catch (cause) {
+      if (controller.signal.aborted) return;
       setError(cause instanceof Error ? cause.message : "读取失败");
-    } finally {
-      setLoading(false);
-    }
-  }, [projectId, q, scenario, type]);
+    } finally { if (!controller.signal.aborted) setLoading(false); }
+  }, [projectId, q, type]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => void load(), 0);
-    return () => window.clearTimeout(timer);
+    return () => { window.clearTimeout(timer); requestController.current?.abort(); };
   }, [load]);
 
   const submit = async () => {
-    if (!selected || !usage.usage_type.trim()) {
-      setError("请选择素材并填写项目用途。");
+    if (submitting || !selected || bound.has(selected.id) || !usage.usage_type.trim()) {
+      if (!selected || !usage.usage_type.trim()) setError("请选择素材并填写项目用途。");
       return;
     }
+    const controller = new AbortController();
+    requestController.current = controller;
+    setSubmitting(true); setError("");
     try {
-      await bindProjectMaterial(projectId, selected.id, usage, key, scenario);
-      router.push(closeMaterialLayer("pick", projectId));
+      await bindProjectMaterialFromApi(projectId, selected.id, {...usage, usage_type: usage.usage_type.trim(), role_name: usage.role_name.trim(), notes: usage.notes.trim()}, key, {signal: controller.signal});
+      if (!controller.signal.aborted) router.push(closeMaterialLayer("pick", projectId));
     } catch (cause) {
-      setError(cause instanceof Error && "code" in cause && (cause as {code: string}).code === "MATERIAL_ALREADY_BOUND" ? "该素材已添加到当前项目。" : "绑定失败，已保留当前选择和输入。");
-    }
+      if (controller.signal.aborted) return;
+      const code = cause instanceof ApiError ? cause.code : "";
+      if (code === "MATERIAL_ALREADY_BOUND") { setBound((current) => new Set(current).add(selected.id)); setSelected(null); }
+      setError(code === "MATERIAL_ALREADY_BOUND" ? "该素材已添加到当前项目。" : code === "PROJECT_NOT_FOUND" ? "项目不存在。" : code === "MATERIAL_NOT_FOUND" ? "素材不存在。" : code === "VALIDATION_ERROR" ? "请检查项目用途。" : code === "IDEMPOTENCY_KEY_REUSED" ? "本次绑定与先前请求冲突，请修改用途后重试。" : "绑定失败，已保留当前选择和输入。");
+    } finally { if (!controller.signal.aborted) setSubmitting(false); }
   };
 
   return <div ref={layerRef} className="pick-material" role="dialog" aria-modal="true" aria-labelledby="pick-material-modal-title" tabIndex={-1}>
@@ -100,7 +113,7 @@ export function PickMaterialPage({projectId, scenario}: {projectId: string; scen
       <footer className="pick-material-modal__footer">
         {error && <p role="alert">{error}</p>}
         <button type="button" className="pick-material-modal__cancel" onClick={close}>取消</button>
-        <button type="button" className="pick-material-modal__submit" disabled={!selected} onClick={submit}>绑定到项目</button>
+        <button type="button" className="pick-material-modal__submit" disabled={!selected || loading || submitting || (selected !== null && bound.has(selected.id))} onClick={submit}>绑定到项目</button>
       </footer>
     </section>
   </div>;

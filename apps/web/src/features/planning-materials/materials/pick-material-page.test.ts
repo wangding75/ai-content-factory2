@@ -1,4 +1,4 @@
-﻿import assert from "node:assert/strict";
+import assert from "node:assert/strict";
 import {readFileSync} from "node:fs";
 import test from "node:test";
 
@@ -17,6 +17,17 @@ test("pick material renders the dedicated four-region modal shell", () => {
 test("pick material keeps a single-column selectable list and a disabled unselected submit", () => {
   assert.match(source, /pick-material-modal__item/);
   assert.doesNotMatch(source, /pick-cards/);
-  assert.match(source, /disabled=\{!selected\}/);
+  assert.match(source, /disabled=\{!selected \|\| loading \|\| submitting/);
   assert.match(source, /closeMaterialLayer\("pick", projectId\)/);
+});
+
+test("pick material uses real global list, project list, and binding APIs", () => {
+  assert.match(source, /listMaterialsFromApi\(\{q, type\}, \{signal: controller\.signal\}\)/);
+  assert.match(source, /listProjectMaterialsFromApi\(projectId, \{\}, \{signal: controller\.signal\}\)/);
+  assert.match(source, /bindProjectMaterialFromApi\(projectId, selected\.id,/);
+  assert.match(source, /if \(submitting \|\| !selected \|\| bound\.has\(selected\.id\)/);
+  assert.match(source, /MATERIAL_ALREADY_BOUND/);
+  assert.doesNotMatch(source, /bindProjectMaterial\(projectId/);
+  assert.doesNotMatch(source, /listMaterials\(\{/);
+  assert.doesNotMatch(source, /materials-api/);
 });
