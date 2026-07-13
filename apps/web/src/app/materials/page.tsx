@@ -1,1 +1,6 @@
-import {AppShell} from "@/components/ui/app-shell";import {GlobalMaterialsPage} from "@/features/planning-materials/materials/global-materials-page";import {parsePlanningMockScenario} from "@/features/planning-materials/api/planning-api";export default async function Page({searchParams}:{searchParams:Promise<{mockScenario?:string}>}){const {mockScenario}=await searchParams;return <AppShell active="materials"><GlobalMaterialsPage scenario={parsePlanningMockScenario(mockScenario)}/></AppShell>}
+import { AppShell } from "@/components/ui/app-shell";
+import { GlobalMaterialsPage } from "@/features/planning-materials/materials/global-materials-page";
+
+export default function Page() {
+  return <AppShell active="materials"><GlobalMaterialsPage /></AppShell>;
+}
