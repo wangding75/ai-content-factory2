@@ -1,0 +1,45 @@
+# Root .dockerignore
+
+# Exclude git and dev tool directories
+.git
+.agents
+.ai-dev
+.idea
+.vscode
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Exclude node modules and next builds
+node_modules
+**/node_modules
+.next
+**/.next
+.pnpm-store
+
+# Exclude test and coverage files
+coverage
+playwright-report
+test-results
+*.test.ts
+*_test.go
+
+# Exclude local environment configs and logs
+*.log
+.env
+.env.local
+.env.*.local
+.env.development
+.env.production
+
+# Exclude database files and local caches
+*.db
+*.sqlite
+acf_postgres_data
+acf_redis_data
+postgres_data
+redis_data
+tmp
+temp
