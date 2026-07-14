@@ -1,0 +1,18 @@
+{
+    "iteration":  3,
+    "name":  "planning-materials",
+    "status":  "completed",
+    "acceptance":  [
+                       "Iteration 03 经人工全链路验收通过；本轮按用户决定不执行自动 E2E 和 gstack。"
+                   ],
+    "completed_at_utc":  "2026-07-14T02:43:00.0000000Z",
+    "verification":  {
+                         "openapi_validation":  "passed",
+                         "go_test":  "passed",
+                         "web_lint":  "passed",
+                         "web_typecheck":  "passed",
+                         "web_test":  "passed",
+                         "compose_config":  "passed",
+                         "manual_verification":  "passed"
+                     }
+}
