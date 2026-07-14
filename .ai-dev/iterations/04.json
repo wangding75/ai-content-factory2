@@ -1,0 +1,21 @@
+{
+  "iteration": 4,
+  "name": "storylines-foreshadowing",
+  "status": "completed",
+  "manual_ui_acceptance": "skipped_by_user",
+  "acceptance": [
+    "Iteration 04 code implementation, API connectivity, and automated gates completed.",
+    "Manual UI acceptance was explicitly skipped by the user; no visual acceptance, browser screenshot evidence, or manual UI PASS is claimed."
+  ],
+  "completed_at_utc": "2026-07-14T23:51:09.929876Z",
+  "verification": {
+    "openapi_validation": "passed",
+    "web_typecheck": "passed",
+    "web_build": "passed",
+    "go_test_without_database_url": "passed_with_integration_skips",
+    "storyline_foreshadowing_repository_postgres_integration": "passed",
+    "iteration_04_http_postgres_integration": "passed",
+    "git_diff_check": "passed",
+    "manual_ui_acceptance": "skipped_by_user"
+  }
+}

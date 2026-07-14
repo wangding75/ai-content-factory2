@@ -54,6 +54,14 @@ func New(address string, projects *project.Service, services ...any) *Server {
 				mux.HandleFunc("GET /api/v1/materials/{materialId}", getMaterialHandler(value))
 				mux.HandleFunc("PATCH /api/v1/materials/{materialId}", updateMaterialHandler(value))
 			}
+		case storylineApplication:
+			if value != nil {
+				registerStorylineRoutes(mux, value)
+			}
+		case foreshadowingApplication:
+			if value != nil {
+				registerForeshadowingRoutes(mux, value)
+			}
 		case *material.ProjectMaterialService:
 			if value != nil {
 				mux.HandleFunc("GET /api/v1/projects/{projectId}/materials", listProjectMaterialsHandler(value))

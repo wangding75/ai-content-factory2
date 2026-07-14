@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: AI Content Factory 2.0 API
-  version: 0.3.0
+  version: 0.4.0
   description: P0 API contract baseline.
 servers:
   - url: http://localhost:8080
@@ -410,8 +410,92 @@ paths:
           $ref: "#/components/responses/NotFound"
         "409":
           $ref: "#/components/responses/Conflict"
+  /api/v1/projects/{projectId}/storylines:
+    parameters:
+      - $ref: "#/components/parameters/ProjectId"
+    get:
+      operationId: listProjectStorylines
+      description: Project storyline forest. Nodes have recursively ordered children; roots are main storylines. Siblings sort by sort_order ascending, then id ascending. Invalid IDs return 400; missing projects return 404.
+      responses:
+        "200": {description: Project storyline forest., content: {application/json: {schema: {$ref: "#/components/schemas/PlotLineTreeEnvelope"}}}}
+        "400": {$ref: "#/components/responses/BadRequest"}
+        "404": {$ref: "#/components/responses/NotFound"}
+    post:
+      operationId: createProjectStoryline
+      description: Creates a root main storyline. Its parent_id is null, relation is root, and type is main. Invalid IDs or validation failures return 400; missing projects return 404.
+      requestBody: {required: true, content: {application/json: {schema: {$ref: "#/components/schemas/CreateMainPlotLineRequest"}}}}
+      responses:
+        "201": {description: Root main storyline created., content: {application/json: {schema: {$ref: "#/components/schemas/PlotLineEnvelope"}}}}
+        "400": {$ref: "#/components/responses/BadRequest"}
+        "404": {$ref: "#/components/responses/NotFound"}
+  /api/v1/storylines/{storylineId}/children:
+    parameters:
+      - $ref: "#/components/parameters/StorylineId"
+    post:
+      operationId: createStorylineChild
+      description: Creates a child storyline under the path parent. It inherits the parent's project_id, has relation child and type child. Invalid IDs or payloads return 400; a missing parent returns 404. The parent is not a request field, preventing cross-project parenting.
+      requestBody: {required: true, content: {application/json: {schema: {$ref: "#/components/schemas/CreateChildPlotLineRequest"}}}}
+      responses:
+        "201": {description: Child storyline created., content: {application/json: {schema: {$ref: "#/components/schemas/PlotLineEnvelope"}}}}
+        "400": {$ref: "#/components/responses/BadRequest"}
+        "404": {$ref: "#/components/responses/NotFound"}
+  /api/v1/storylines/{storylineId}:
+    parameters:
+      - $ref: "#/components/parameters/StorylineId"
+    patch:
+      operationId: updateStoryline
+      description: Updates only mutable fields. parent_id, relation, project_id, and type are immutable. expected_version is required; a mismatch returns 409 VERSION_CONFLICT. A real change increments version; an identical update returns the current storyline without another increment. Invalid IDs or payloads return 400; missing storylines return 404.
+      requestBody: {required: true, content: {application/json: {schema: {$ref: "#/components/schemas/UpdatePlotLineRequest"}}}}
+      responses:
+        "200": {description: Updated storyline., content: {application/json: {schema: {$ref: "#/components/schemas/PlotLineEnvelope"}}}}
+        "400": {$ref: "#/components/responses/BadRequest"}
+        "404": {$ref: "#/components/responses/NotFound"}
+        "409": {$ref: "#/components/responses/Conflict"}
+  /api/v1/projects/{projectId}/foreshadowings:
+    parameters:
+      - $ref: "#/components/parameters/ProjectId"
+    get:
+      operationId: listProjectForeshadowings
+      description: Lists a project's foreshadowings, ordered by priority descending, planned_plant_chapter ascending with nulls last, then id ascending. Invalid IDs or pagination values return 400; missing projects return 404.
+      parameters:
+        - $ref: "#/components/parameters/LimitQuery"
+        - $ref: "#/components/parameters/OffsetQuery"
+      responses:
+        "200": {description: Project foreshadowing list., content: {application/json: {schema: {$ref: "#/components/schemas/ForeshadowingListEnvelope"}}}}
+        "400": {$ref: "#/components/responses/BadRequest"}
+        "404": {$ref: "#/components/responses/NotFound"}
+    post:
+      operationId: createProjectForeshadowing
+      description: Creates a foreshadowing. planted_plot_line_id and payoff_plot_line_id are independently optional and may each be null or reference different storylines. Each non-null reference must exist and belong to the path project; a project mismatch is 400 PLOT_LINE_PROJECT_MISMATCH. Invalid IDs or payloads return 400; missing project or referenced storyline returns 404.
+      requestBody: {required: true, content: {application/json: {schema: {$ref: "#/components/schemas/CreateForeshadowingRequest"}}}}
+      responses:
+        "201": {description: Foreshadowing created., content: {application/json: {schema: {$ref: "#/components/schemas/ForeshadowingEnvelope"}}}}
+        "400": {$ref: "#/components/responses/BadRequest"}
+        "404": {$ref: "#/components/responses/NotFound"}
+  /api/v1/foreshadowings/{foreshadowingId}:
+    parameters:
+      - $ref: "#/components/parameters/ForeshadowingId"
+    patch:
+      operationId: updateForeshadowing
+      description: Updates supplied mutable fields and status. expected_version is required; a mismatch returns 409 VERSION_CONFLICT. planted_plot_line_id and payoff_plot_line_id are independently optional; each non-null supplied reference must exist and remain in the foreshadowing project or return 400 PLOT_LINE_PROJECT_MISMATCH. Status transitions are planned to planted and planted to paid_off only; an identical update, including an unchanged status, succeeds without incrementing version. Invalid IDs or payloads return 400; missing foreshadowings or references return 404.
+      requestBody: {required: true, content: {application/json: {schema: {$ref: "#/components/schemas/UpdateForeshadowingRequest"}}}}
+      responses:
+        "200": {description: Updated foreshadowing., content: {application/json: {schema: {$ref: "#/components/schemas/ForeshadowingEnvelope"}}}}
+        "400": {$ref: "#/components/responses/BadRequest"}
+        "404": {$ref: "#/components/responses/NotFound"}
+        "409": {$ref: "#/components/responses/Conflict"}
 components:
   parameters:
+    StorylineId:
+      name: storylineId
+      in: path
+      required: true
+      schema: {type: string, format: uuid}
+    ForeshadowingId:
+      name: foreshadowingId
+      in: path
+      required: true
+      schema: {type: string, format: uuid}
     MaterialId:
       name: materialId
       in: path
@@ -1163,3 +1247,189 @@ components:
           $ref: "#/components/schemas/UnbindProjectMaterialResult"
         request_id:
           type: string
+
+    PlotLineType:
+      type: string
+      enum: [main, child]
+    PlotLineRelation:
+      type: string
+      enum: [root, child]
+    PlotLineStatus:
+      type: string
+      enum: [active, completed, archived]
+    PlotLine:
+      type: object
+      additionalProperties: false
+      required: [id, project_id, parent_id, type, relation, name, summary, start_chapter, end_chapter, status, sort_order, version, created_at, updated_at]
+      properties:
+        id: {type: string, format: uuid}
+        project_id: {type: string, format: uuid}
+        parent_id: {type: [string, "null"], format: uuid, description: "Null for a root main storyline; otherwise the immediate parent storyline ID."}
+        type: {$ref: "#/components/schemas/PlotLineType"}
+        relation: {$ref: "#/components/schemas/PlotLineRelation"}
+        name: {type: string, minLength: 1, maxLength: 120}
+        summary: {type: string, maxLength: 5000}
+        start_chapter: {type: [integer, "null"], minimum: 1}
+        end_chapter: {type: [integer, "null"], minimum: 1}
+        status: {$ref: "#/components/schemas/PlotLineStatus"}
+        sort_order: {type: integer, minimum: 0}
+        version: {type: integer, minimum: 1}
+        created_at: {type: string, format: date-time}
+        updated_at: {type: string, format: date-time}
+      description: Main storylines have type main, relation root, and null parent_id. Child storylines have type child, relation child, and a parent_id in the same project. When both chapter bounds are integers, start_chapter must not exceed end_chapter.
+    PlotLineTreeNode:
+      type: object
+      additionalProperties: false
+      required: [id, project_id, parent_id, type, relation, name, summary, start_chapter, end_chapter, status, sort_order, version, created_at, updated_at, children]
+      properties:
+        id: {type: string, format: uuid}
+        project_id: {type: string, format: uuid}
+        parent_id: {type: [string, "null"], format: uuid}
+        type: {$ref: "#/components/schemas/PlotLineType"}
+        relation: {$ref: "#/components/schemas/PlotLineRelation"}
+        name: {type: string, minLength: 1, maxLength: 120}
+        summary: {type: string, maxLength: 5000}
+        start_chapter: {type: [integer, "null"], minimum: 1}
+        end_chapter: {type: [integer, "null"], minimum: 1}
+        status: {$ref: "#/components/schemas/PlotLineStatus"}
+        sort_order: {type: integer, minimum: 0}
+        version: {type: integer, minimum: 1}
+        created_at: {type: string, format: date-time}
+        updated_at: {type: string, format: date-time}
+        children: {type: array, items: {$ref: "#/components/schemas/PlotLineTreeNode"}}
+    CreateMainPlotLineRequest:
+      type: object
+      additionalProperties: false
+      required: [name, summary, start_chapter, end_chapter, status, sort_order]
+      properties:
+        name: {type: string, minLength: 1, maxLength: 120}
+        summary: {type: string, maxLength: 5000}
+        start_chapter: {type: [integer, "null"], minimum: 1}
+        end_chapter: {type: [integer, "null"], minimum: 1}
+        status: {$ref: "#/components/schemas/PlotLineStatus"}
+        sort_order: {type: integer, minimum: 0}
+      description: Creates a main/root storyline. When both chapter bounds are integers, start_chapter must not exceed end_chapter.
+    CreateChildPlotLineRequest:
+      type: object
+      additionalProperties: false
+      required: [name, summary, start_chapter, end_chapter, status, sort_order]
+      properties:
+        name: {type: string, minLength: 1, maxLength: 120}
+        summary: {type: string, maxLength: 5000}
+        start_chapter: {type: [integer, "null"], minimum: 1}
+        end_chapter: {type: [integer, "null"], minimum: 1}
+        status: {$ref: "#/components/schemas/PlotLineStatus"}
+        sort_order: {type: integer, minimum: 0}
+      description: Creates a child storyline under the path storylineId. When both chapter bounds are integers, start_chapter must not exceed end_chapter.
+    UpdatePlotLineRequest:
+      type: object
+      additionalProperties: false
+      required: [expected_version]
+      minProperties: 2
+      properties:
+        expected_version: {type: integer, minimum: 1}
+        name: {type: string, minLength: 1, maxLength: 120}
+        summary: {type: string, maxLength: 5000}
+        start_chapter: {type: [integer, "null"], minimum: 1}
+        end_chapter: {type: [integer, "null"], minimum: 1}
+        status: {$ref: "#/components/schemas/PlotLineStatus"}
+        sort_order: {type: integer, minimum: 0}
+      description: parent_id, relation, project_id, and type cannot be changed. When both chapter bounds are integers, start_chapter must not exceed end_chapter.
+    PlotLineEnvelope:
+      type: object
+      additionalProperties: false
+      required: [data, request_id]
+      properties:
+        data: {$ref: "#/components/schemas/PlotLine"}
+        request_id: {type: string}
+    PlotLineTree:
+      type: object
+      additionalProperties: false
+      required: [items]
+      properties:
+        items: {type: array, items: {$ref: "#/components/schemas/PlotLineTreeNode"}}
+    PlotLineTreeEnvelope:
+      type: object
+      additionalProperties: false
+      required: [data, request_id]
+      properties:
+        data: {$ref: "#/components/schemas/PlotLineTree"}
+        request_id: {type: string}
+    ForeshadowingStatus:
+      type: string
+      enum: [planned, planted, paid_off]
+    ForeshadowingPriority:
+      type: string
+      enum: [low, medium, high]
+    Foreshadowing:
+      type: object
+      additionalProperties: false
+      required: [id, project_id, title, description, priority, planted_plot_line_id, payoff_plot_line_id, planned_plant_chapter, planned_payoff_chapter, status, version, created_at, updated_at]
+      properties:
+        id: {type: string, format: uuid}
+        project_id: {type: string, format: uuid}
+        title: {type: string, minLength: 1, maxLength: 120}
+        description: {type: string, maxLength: 5000}
+        priority: {$ref: "#/components/schemas/ForeshadowingPriority"}
+        planted_plot_line_id: {type: [string, "null"], format: uuid, description: "Storyline where the foreshadowing is planted."}
+        payoff_plot_line_id: {type: [string, "null"], format: uuid, description: "Storyline planned to pay off the foreshadowing."}
+        planned_plant_chapter: {type: [integer, "null"], minimum: 1}
+        planned_payoff_chapter: {type: [integer, "null"], minimum: 1}
+        status: {$ref: "#/components/schemas/ForeshadowingStatus"}
+        version: {type: integer, minimum: 1}
+        created_at: {type: string, format: date-time}
+        updated_at: {type: string, format: date-time}
+      description: planted_plot_line_id and payoff_plot_line_id are independently optional and may each be null or reference different storylines. Each non-null reference must exist and belong to project_id. When both chapter values are integers, planned_plant_chapter must not exceed planned_payoff_chapter.
+    CreateForeshadowingRequest:
+      type: object
+      additionalProperties: false
+      required: [title, description, priority, planted_plot_line_id, payoff_plot_line_id, planned_plant_chapter, planned_payoff_chapter, status]
+      properties:
+        title: {type: string, minLength: 1, maxLength: 120}
+        description: {type: string, maxLength: 5000}
+        priority: {$ref: "#/components/schemas/ForeshadowingPriority"}
+        planted_plot_line_id: {type: [string, "null"], format: uuid}
+        payoff_plot_line_id: {type: [string, "null"], format: uuid}
+        planned_plant_chapter: {type: [integer, "null"], minimum: 1}
+        planned_payoff_chapter: {type: [integer, "null"], minimum: 1}
+        status: {$ref: "#/components/schemas/ForeshadowingStatus"}
+      description: planted_plot_line_id and payoff_plot_line_id are independently optional. Each non-null ID must exist and belong to the path project; the two IDs may reference different storylines. When both chapter values are integers, planned_plant_chapter must not exceed planned_payoff_chapter.
+    UpdateForeshadowingRequest:
+      type: object
+      additionalProperties: false
+      required: [expected_version]
+      minProperties: 2
+      properties:
+        expected_version: {type: integer, minimum: 1}
+        title: {type: string, minLength: 1, maxLength: 120}
+        description: {type: string, maxLength: 5000}
+        priority: {$ref: "#/components/schemas/ForeshadowingPriority"}
+        planted_plot_line_id: {type: [string, "null"], format: uuid}
+        payoff_plot_line_id: {type: [string, "null"], format: uuid}
+        planned_plant_chapter: {type: [integer, "null"], minimum: 1}
+        planned_payoff_chapter: {type: [integer, "null"], minimum: 1}
+        status: {$ref: "#/components/schemas/ForeshadowingStatus"}
+      description: planted_plot_line_id and payoff_plot_line_id are independently optional. Each non-null ID must exist and remain in the foreshadowing project; the two IDs may reference different storylines. Status transitions are planned to planted and planted to paid_off only; an unchanged status is an idempotent update. When both chapter values are integers, planned_plant_chapter must not exceed planned_payoff_chapter.
+    ForeshadowingList:
+      type: object
+      additionalProperties: false
+      required: [items, total, limit, offset]
+      properties:
+        items: {type: array, items: {$ref: "#/components/schemas/Foreshadowing"}}
+        total: {type: integer, minimum: 0}
+        limit: {type: integer, minimum: 1, maximum: 100}
+        offset: {type: integer, minimum: 0}
+    ForeshadowingEnvelope:
+      type: object
+      additionalProperties: false
+      required: [data, request_id]
+      properties:
+        data: {$ref: "#/components/schemas/Foreshadowing"}
+        request_id: {type: string}
+    ForeshadowingListEnvelope:
+      type: object
+      additionalProperties: false
+      required: [data, request_id]
+      properties:
+        data: {$ref: "#/components/schemas/ForeshadowingList"}
+        request_id: {type: string}

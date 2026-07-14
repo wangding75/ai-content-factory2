@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ai-content-factory.local/schemas/content-packs/novel/plot-line.schema.json",
+  "title": "Novel Plot Line",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["name", "summary", "start_chapter", "end_chapter", "status", "sort_order"],
+  "properties": {
+    "name": {"type": "string", "minLength": 1, "maxLength": 120},
+    "summary": {"type": "string", "maxLength": 5000},
+    "start_chapter": {"type": ["integer", "null"], "minimum": 1},
+    "end_chapter": {"type": ["integer", "null"], "minimum": 1},
+    "status": {"type": "string", "enum": ["active", "completed", "archived"]},
+    "sort_order": {"type": "integer", "minimum": 0}
+  },
+  "description": "Root versus child relationship, project ownership, IDs, version, and audit timestamps are API-managed. When both chapter bounds are integers, start_chapter must not exceed end_chapter."
+}

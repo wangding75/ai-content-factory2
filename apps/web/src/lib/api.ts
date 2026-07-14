@@ -146,3 +146,22 @@ export function validateProjectInput(name: string, description: string) {
   if (description.length > 5000) return "Description must be 5,000 characters or fewer.";
   return undefined;
 }
+
+export interface StorylineNode { id:string; project_id:string; parent_id:string|null; type:"main"|"child"; relation:"root"|"child"; name:string; summary:string; start_chapter:number|null; end_chapter:number|null; status:"active"|"completed"|"archived"; sort_order:number; version:number; created_at:string; updated_at:string; children:StorylineNode[]; }
+export interface Foreshadowing { id:string; project_id:string; title:string; description:string; priority:"low"|"medium"|"high"; status:"planned"|"planted"|"paid_off"; planted_plot_line_id:string|null; payoff_plot_line_id:string|null; planned_plant_chapter:number|null; planned_payoff_chapter:number|null; version:number; created_at:string; updated_at:string; }
+export function getStorylines(projectId:string, signal?:AbortSignal){return apiRequest<{items:StorylineNode[]}>(`/projects/${encodeURIComponent(projectId)}/storylines`,{signal});}
+export function getForeshadowings(projectId:string, signal?:AbortSignal){return apiRequest<{items:Foreshadowing[]}>(`/projects/${encodeURIComponent(projectId)}/foreshadowings`,{signal});}
+export type CreateRootStorylineInput={name:string;summary:string;start_chapter:number|null;end_chapter:number|null;status:"active"|"completed"|"archived";sort_order:number};
+export function createRootStoryline(projectId:string,payload:CreateRootStorylineInput,signal?:AbortSignal){return apiRequest<StorylineNode>("/projects/"+encodeURIComponent(projectId)+"/storylines",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload),signal});}
+
+export function createChildStoryline(parentStorylineId:string,payload:CreateRootStorylineInput,signal?:AbortSignal){return apiRequest<StorylineNode>("/storylines/"+encodeURIComponent(parentStorylineId)+"/children",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload),signal});}
+
+
+export type CreateForeshadowingInput={title:string;description:string;priority:"low"|"medium"|"high";planted_plot_line_id:string|null;payoff_plot_line_id:string|null;planned_plant_chapter:number|null;planned_payoff_chapter:number|null;status:"planned"|"planted"|"paid_off"};
+export function createForeshadowing(projectId:string,payload:CreateForeshadowingInput,signal?:AbortSignal){return apiRequest<Foreshadowing>("/projects/"+encodeURIComponent(projectId)+"/foreshadowings",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload),signal});}
+
+
+export type UpdateStorylineInput={expected_version:number;name?:string;summary?:string;start_chapter?:number|null;end_chapter?:number|null;status?:"active"|"completed"|"archived";sort_order?:number};
+export function updateStoryline(storylineId:string,payload:UpdateStorylineInput,signal?:AbortSignal){return apiRequest<StorylineNode>("/storylines/"+encodeURIComponent(storylineId),{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload),signal});}
+export type UpdateForeshadowingInput={expected_version:number;title?:string;description?:string;priority?:"low"|"medium"|"high";planted_plot_line_id?:string|null;payoff_plot_line_id?:string|null;planned_plant_chapter?:number|null;planned_payoff_chapter?:number|null;status?:"planned"|"planted"|"paid_off"};
+export function updateForeshadowing(foreshadowingId:string,payload:UpdateForeshadowingInput,signal?:AbortSignal){return apiRequest<Foreshadowing>("/foreshadowings/"+encodeURIComponent(foreshadowingId),{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload),signal});}

@@ -8,10 +8,32 @@ npx.cmd --yes @redocly/cli@1.34.5 lint --skip-rule operation-summary --skip-rule
 if ($LASTEXITCODE -ne 0) {
     throw "OpenAPI validation failed."
 }
+$openApiText = Get-Content -Raw "packages/contracts/openapi/openapi.yaml"
+$iteration04Operations = @(
+    "listProjectStorylines",
+    "createProjectStoryline",
+    "createStorylineChild",
+    "updateStoryline",
+    "listProjectForeshadowings",
+    "createProjectForeshadowing",
+    "updateForeshadowing"
+)
+foreach ($operationId in $iteration04Operations) {
+    if ($openApiText -notmatch ("(?m)^\s*operationId:\s*" + [regex]::Escape($operationId) + "\s*$")) {
+        throw "Iteration 04 OpenAPI operation is missing: $operationId"
+    }
+}
+foreach ($forbiddenName in @("/content-items", "ContentItem", "ContentDraft", "ContentVersion")) {
+    if ($openApiText -match [regex]::Escape($forbiddenName)) {
+        throw "OpenAPI contains out-of-scope name: $forbiddenName"
+    }
+}
 
 $schemaPaths = @(
     "packages/contracts/content-packs/novel/project-planning.schema.json",
-    "packages/contracts/content-packs/novel/material.schema.json"
+    "packages/contracts/content-packs/novel/material.schema.json",
+    "packages/contracts/content-packs/novel/plot-line.schema.json",
+    "packages/contracts/content-packs/novel/foreshadowing.schema.json"
 )
 
 foreach ($schemaPath in $schemaPaths) {
