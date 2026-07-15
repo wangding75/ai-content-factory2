@@ -62,6 +62,10 @@ func New(address string, projects *project.Service, services ...any) *Server {
 			if value != nil {
 				registerForeshadowingRoutes(mux, value)
 			}
+		case chapterPlanApplication:
+			if value != nil {
+				registerChapterPlanRoutes(mux, value)
+			}
 		case *material.ProjectMaterialService:
 			if value != nil {
 				mux.HandleFunc("GET /api/v1/projects/{projectId}/materials", listProjectMaterialsHandler(value))

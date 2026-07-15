@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ai-content-factory.local/schemas/content-packs/novel/chapter-plan.schema.json",
+  "title": "Novel Chapter Plan",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["chapter_no", "title", "summary", "storyline_refs_json", "material_refs_json", "foreshadowing_refs_json", "chapter_goal", "creation_notes"],
+  "properties": {
+    "chapter_no": {"type": "integer", "minimum": 1},
+    "title": {"type": "string", "minLength": 1, "maxLength": 120},
+    "summary": {"type": "string", "maxLength": 5000},
+    "storyline_refs_json": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["storyline_id", "relation"],
+        "properties": {
+          "storyline_id": {"type": "string", "format": "uuid"},
+          "relation": {"type": "string", "enum": ["primary", "secondary"]}
+        }
+      }
+    },
+    "material_refs_json": {"type": "array", "uniqueItems": true, "items": {"type": "string", "format": "uuid"}},
+    "foreshadowing_refs_json": {"type": "array", "uniqueItems": true, "items": {"type": "string", "format": "uuid"}},
+    "chapter_goal": {"type": ["string", "null"], "maxLength": 2000},
+    "creation_notes": {"type": ["string", "null"], "maxLength": 2000}
+  },
+  "description": "The API manages IDs, project ownership, source, status, confirmation timestamp, version, and audit timestamps. storyline_refs_json must contain exactly one primary relation and no duplicate storyline_id. Every reference belongs to the chapter plan project; each referenced foreshadowing must be applicable to chapter_no. For nullable fields, null clears the value and an empty string is a retained value."
+}

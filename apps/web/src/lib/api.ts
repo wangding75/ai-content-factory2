@@ -99,9 +99,18 @@ export async function apiRequest<T>(path: string, init?: ApiRequestInit): Promis
     init?.signal?.removeEventListener("abort", cancel);
   }
 
+  if (response.status === 204) return undefined as T;
+
+  const text = await response.text();
   let body: unknown;
+  if (!text) {
+    if (!response.ok) {
+      throw new ApiError("The API returned an unexpected error.", response.status, "invalid_error_response");
+    }
+    throw new ApiError("The API returned an invalid response.", response.status, "invalid_envelope");
+  }
   try {
-    body = await response.json();
+    body = JSON.parse(text);
   } catch {
     throw new ApiError("The API returned an invalid response.", response.status, "invalid_json");
   }

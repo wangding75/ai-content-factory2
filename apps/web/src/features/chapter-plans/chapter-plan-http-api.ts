@@ -1,0 +1,19 @@
+import { apiRequest, type ApiRequestInit } from "@/lib/api";
+export type ChapterPlanStatus="pending_confirmation"|"confirmed";
+export interface ChapterPlanStorylineRef{storyline_id:string;relation:"primary"|"secondary"}
+export interface ChapterPlan{id:string;project_id:string;chapter_no:number;title:string;summary:string;status:ChapterPlanStatus;source:"mock_generated";storyline_refs_json:ChapterPlanStorylineRef[];material_refs_json:string[];foreshadowing_refs_json:string[];chapter_goal:string|null;creation_notes:string|null;confirmed_at:string|null;version:number;created_at:string;updated_at:string}
+export interface ChapterPlanList{items:ChapterPlan[];total:number;limit:number;offset:number}
+export interface ConfirmChapterPlanSelection{chapter_plan_id:string;expected_version:number}
+export interface ConfirmChapterPlansRequest{selections:ConfirmChapterPlanSelection[]}
+export interface UpdateChapterPlanRequest{expected_version:number;chapter_no?:number;title?:string;summary?:string;storyline_refs_json?:ChapterPlanStorylineRef[];material_refs_json?:string[];foreshadowing_refs_json?:string[];chapter_goal?:string|null;creation_notes?:string|null}
+export type SummaryLength="short"|"medium"|"long";export type ChapterPace="slow"|"balanced"|"fast";export interface MockGenerateChapterPlansRequest{target_storyline_id:string;start_chapter_no:number;end_chapter_no:number;chapter_count:number;include_main_storyline:boolean;include_child_storylines:boolean;include_project_materials:boolean;include_unpaid_foreshadowings:boolean;include_prior_chapter_summaries:boolean;summary_length:SummaryLength;chapter_pace:ChapterPace;generation_notes:string|null}
+export interface MockGenerationRun{id:string;project_id:string;provider_key:"mock";workflow_key:"chapter_plan_mock_generate";status:"succeeded";created_at:string;updated_at:string}
+export interface MockGenerateChapterPlansResult{run:MockGenerationRun;items:ChapterPlan[]}
+export interface ListChapterPlansQuery{status?:ChapterPlanStatus;limit?:number;offset?:number}
+export function chapterPlanQuery(query:ListChapterPlansQuery={}){const params=new URLSearchParams();if(query.status)params.set("status",query.status);if(query.limit!==undefined)params.set("limit",String(query.limit));if(query.offset!==undefined)params.set("offset",String(query.offset));const value=params.toString();return value?`?${value}`:""}
+export function listChapterPlans(projectId:string,query:ListChapterPlansQuery={},init?:ApiRequestInit){return apiRequest<ChapterPlanList>(`/projects/${encodeURIComponent(projectId)}/chapter-plans${chapterPlanQuery(query)}`,init)}
+
+export function updateChapterPlan(chapterPlanId:string,payload:UpdateChapterPlanRequest,init?:ApiRequestInit){return apiRequest<ChapterPlan>(`/chapter-plans/${encodeURIComponent(chapterPlanId)}`,{...init,method:"PATCH",headers:{...init?.headers,"Content-Type":"application/json"},body:JSON.stringify(payload)})}
+export function deleteChapterPlan(chapterPlanId:string,expectedVersion:number,init?:ApiRequestInit):Promise<void>{const query=new URLSearchParams({expected_version:String(expectedVersion)});return apiRequest<void>(`/chapter-plans/${encodeURIComponent(chapterPlanId)}?${query}`,{...init,method:"DELETE"})}
+export function mockGenerateChapterPlans(projectId:string,payload:MockGenerateChapterPlansRequest,init?:ApiRequestInit){return apiRequest<MockGenerateChapterPlansResult>(`/projects/${encodeURIComponent(projectId)}/chapter-plans/mock-generate`,{...init,method:"POST",headers:{...init?.headers,"Content-Type":"application/json"},body:JSON.stringify(payload)})}
+export function confirmChapterPlans(projectId:string,payload:ConfirmChapterPlansRequest,init?:ApiRequestInit){return apiRequest<ChapterPlanList>(`/projects/${encodeURIComponent(projectId)}/chapter-plans/confirm`,{...init,method:"POST",headers:{...init?.headers,"Content-Type":"application/json"},body:JSON.stringify(payload)})}

@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: AI Content Factory 2.0 API
-  version: 0.4.0
+  version: 0.5.0
   description: P0 API contract baseline.
 servers:
   - url: http://localhost:8080
@@ -484,8 +484,96 @@ paths:
         "400": {$ref: "#/components/responses/BadRequest"}
         "404": {$ref: "#/components/responses/NotFound"}
         "409": {$ref: "#/components/responses/Conflict"}
+  /api/v1/projects/{projectId}/chapter-plans:
+    parameters:
+      - $ref: "#/components/parameters/ProjectId"
+    get:
+      operationId: listProjectChapterPlans
+      description: Lists a project's chapter plans ordered by chapter_no ascending, then id ascending. Invalid IDs or pagination values return 400; missing projects return 404.
+      parameters:
+        - $ref: "#/components/parameters/ChapterPlanStatusQuery"
+        - $ref: "#/components/parameters/LimitQuery"
+        - $ref: "#/components/parameters/OffsetQuery"
+      responses:
+        "200": {description: Chapter plan list., content: {application/json: {schema: {$ref: "#/components/schemas/ChapterPlanListEnvelope"}}}}
+        "400": {$ref: "#/components/responses/BadRequest"}
+        "404": {$ref: "#/components/responses/NotFound"}
+  /api/v1/projects/{projectId}/chapter-plans/mock-generate:
+    parameters:
+      - $ref: "#/components/parameters/ProjectId"
+    post:
+      operationId: mockGenerateProjectChapterPlans
+      description: Persists deterministic mock-generated pending_confirmation candidates and a MockGenerationRun. It never calls a real LLM or workflow. Existing candidates and confirmed plans are retained; a candidate whose chapter_no already exists returns 409 CHAPTER_NO_CONFLICT without partial persistence. On success, the C1 list includes the returned candidates.
+      requestBody: {required: true, content: {application/json: {schema: {$ref: "#/components/schemas/MockGenerateChapterPlansRequest"}}}}
+      responses:
+        "201": {description: Mock-generated chapter-plan candidates persisted., content: {application/json: {schema: {$ref: "#/components/schemas/MockGenerateChapterPlansEnvelope"}}}}
+        "400": {$ref: "#/components/responses/BadRequest"}
+        "404": {$ref: "#/components/responses/NotFound"}
+        "409": {$ref: "#/components/responses/Conflict"}
+  /api/v1/chapter-plans/{chapterPlanId}:
+    parameters:
+      - $ref: "#/components/parameters/ChapterPlanId"
+    get:
+      operationId: getChapterPlan
+      description: Gets one chapter plan. Invalid IDs return 400; a missing plan returns 404.
+      responses:
+        "200": {description: Chapter plan detail., content: {application/json: {schema: {$ref: "#/components/schemas/ChapterPlanEnvelope"}}}}
+        "400": {$ref: "#/components/responses/BadRequest"}
+        "404": {$ref: "#/components/responses/NotFound"}
+    patch:
+      operationId: updateChapterPlan
+      description: Updates supplied editable fields only while status is pending_confirmation. expected_version is required. A real change increments version; an identical update returns the current result without incrementing version. project_id, status, source, confirmed_at, and audit fields are immutable. Invalid IDs, references, or payloads return 400; missing plans or references return 404; a version mismatch or confirmed plan returns 409.
+      requestBody: {required: true, content: {application/json: {schema: {$ref: "#/components/schemas/UpdateChapterPlanRequest"}}}}
+      responses:
+        "200": {description: Updated chapter plan., content: {application/json: {schema: {$ref: "#/components/schemas/ChapterPlanEnvelope"}}}}
+        "400": {$ref: "#/components/responses/BadRequest"}
+        "404": {$ref: "#/components/responses/NotFound"}
+        "409": {$ref: "#/components/responses/Conflict"}
+    delete:
+      operationId: deleteChapterPlan
+      description: Deletes one pending_confirmation candidate. expected_version is required as a query parameter. Confirmed plans cannot be deleted. Invalid IDs return 400; missing plans return 404; a version mismatch or confirmed plan returns 409.
+      parameters:
+        - $ref: "#/components/parameters/ExpectedChapterPlanVersionQuery"
+      responses:
+        "204": {description: Pending candidate deleted.}
+        "400": {$ref: "#/components/responses/BadRequest"}
+        "404": {$ref: "#/components/responses/NotFound"}
+        "409": {$ref: "#/components/responses/Conflict"}
+  /api/v1/projects/{projectId}/chapter-plans/confirm:
+    parameters:
+      - $ref: "#/components/parameters/ProjectId"
+    post:
+      operationId: confirmProjectChapterPlans
+      description: >
+        Atomically confirms the selected pending candidates. Each selected plan must belong to
+        projectId, have a unique chapter_no, have a primary storyline reference, have valid
+        foreshadowing chapter ranges, and not overlap an already confirmed chapter number.
+        expected_version is required per selection. A retry of the same confirmation is idempotent:
+        a now-confirmed immutable plan accepts the pre-confirmation expected_version or its current
+        version and is returned unchanged. Confirmation is irreversible and never creates content
+        or Iteration 06 data.
+      requestBody: {required: true, content: {application/json: {schema: {$ref: "#/components/schemas/ConfirmChapterPlansRequest"}}}}
+      responses:
+        "200": {description: "Selected chapter plans confirmed, or unchanged result for an idempotent retry.", content: {application/json: {schema: {$ref: "#/components/schemas/ChapterPlanListEnvelope"}}}}
+        "400": {$ref: "#/components/responses/BadRequest"}
+        "404": {$ref: "#/components/responses/NotFound"}
+        "409": {$ref: "#/components/responses/Conflict"}
 components:
   parameters:
+    ChapterPlanId:
+      name: chapterPlanId
+      in: path
+      required: true
+      schema: {type: string, format: uuid}
+    ChapterPlanStatusQuery:
+      name: status
+      in: query
+      schema: {$ref: "#/components/schemas/ChapterPlanStatus"}
+    ExpectedChapterPlanVersionQuery:
+      name: expected_version
+      in: query
+      required: true
+      schema: {type: integer, minimum: 1}
     StorylineId:
       name: storylineId
       in: path
@@ -1432,4 +1520,164 @@ components:
       required: [data, request_id]
       properties:
         data: {$ref: "#/components/schemas/ForeshadowingList"}
+        request_id: {type: string}
+    ChapterPlanStatus:
+      type: string
+      enum: [pending_confirmation, confirmed]
+    ChapterPlanSource:
+      type: string
+      enum: [mock_generated]
+    ChapterPlanRelation:
+      type: string
+      enum: [primary, secondary]
+    ChapterPlanStorylineRef:
+      type: object
+      additionalProperties: false
+      required: [storyline_id, relation]
+      properties:
+        storyline_id: {type: string, format: uuid}
+        relation: {$ref: "#/components/schemas/ChapterPlanRelation"}
+    ChapterPlan:
+      type: object
+      additionalProperties: false
+      required: [id, project_id, chapter_no, title, summary, status, source, storyline_refs_json, material_refs_json, foreshadowing_refs_json, chapter_goal, creation_notes, confirmed_at, version, created_at, updated_at]
+      properties:
+        id: {type: string, format: uuid}
+        project_id: {type: string, format: uuid}
+        chapter_no: {type: integer, minimum: 1}
+        title: {type: string, minLength: 1, maxLength: 120}
+        summary: {type: string, maxLength: 5000}
+        status: {$ref: "#/components/schemas/ChapterPlanStatus"}
+        source: {$ref: "#/components/schemas/ChapterPlanSource"}
+        storyline_refs_json:
+          type: array
+          minItems: 1
+          items: {$ref: "#/components/schemas/ChapterPlanStorylineRef"}
+        material_refs_json:
+          type: array
+          uniqueItems: true
+          items: {type: string, format: uuid}
+        foreshadowing_refs_json:
+          type: array
+          uniqueItems: true
+          items: {type: string, format: uuid}
+        chapter_goal: {type: [string, "null"], maxLength: 2000}
+        creation_notes: {type: [string, "null"], maxLength: 2000}
+        confirmed_at: {type: [string, "null"], format: date-time}
+        version: {type: integer, minimum: 1}
+        created_at: {type: string, format: date-time}
+        updated_at: {type: string, format: date-time}
+      description: confirmed_at is null exactly when status is pending_confirmation, and is a timestamp exactly when status is confirmed. chapter_no is unique per project across pending and confirmed plans.
+    UpdateChapterPlanRequest:
+      type: object
+      additionalProperties: false
+      required: [expected_version]
+      minProperties: 2
+      properties:
+        expected_version: {type: integer, minimum: 1}
+        chapter_no: {type: integer, minimum: 1}
+        title: {type: string, minLength: 1, maxLength: 120}
+        summary: {type: string, maxLength: 5000}
+        storyline_refs_json:
+          type: array
+          minItems: 1
+          items: {$ref: "#/components/schemas/ChapterPlanStorylineRef"}
+        material_refs_json:
+          type: array
+          uniqueItems: true
+          items: {type: string, format: uuid}
+        foreshadowing_refs_json:
+          type: array
+          uniqueItems: true
+          items: {type: string, format: uuid}
+        chapter_goal: {type: [string, "null"], maxLength: 2000}
+        creation_notes: {type: [string, "null"], maxLength: 2000}
+      description: Omitting an editable field leaves it unchanged; supplying null for chapter_goal or creation_notes clears it, while supplying an empty string stores an empty value. Arrays replace the corresponding complete relation set; individual relation mutation and reordering APIs do not exist.
+    MockGenerateChapterPlansRequest:
+      type: object
+      additionalProperties: false
+      required: [target_storyline_id, start_chapter_no, end_chapter_no, chapter_count, include_main_storyline, include_child_storylines, include_project_materials, include_unpaid_foreshadowings, include_prior_chapter_summaries, summary_length, chapter_pace, generation_notes]
+      properties:
+        target_storyline_id: {type: string, format: uuid}
+        start_chapter_no: {type: integer, minimum: 1}
+        end_chapter_no: {type: integer, minimum: 1}
+        chapter_count: {type: integer, minimum: 1, maximum: 20}
+        include_main_storyline: {type: boolean}
+        include_child_storylines: {type: boolean}
+        include_project_materials: {type: boolean}
+        include_unpaid_foreshadowings: {type: boolean}
+        include_prior_chapter_summaries: {type: boolean}
+        summary_length: {type: string, enum: [short, medium, long]}
+        chapter_pace: {type: string, enum: [slow, balanced, fast]}
+        generation_notes: {type: [string, "null"], maxLength: 2000}
+      description: "target_storyline_id must belong to projectId. end_chapter_no must not precede start_chapter_no, and chapter_count must equal the inclusive chapter range size. generation_notes is nullable: omitted is invalid, null means no note, and an empty string is retained."
+    MockGenerationRun:
+      type: object
+      additionalProperties: false
+      required: [id, project_id, provider_key, workflow_key, status, created_at, updated_at]
+      properties:
+        id: {type: string, format: uuid}
+        project_id: {type: string, format: uuid}
+        provider_key: {type: string, const: mock}
+        workflow_key: {type: string, const: chapter_plan_mock_generate}
+        status: {type: string, const: succeeded}
+        created_at: {type: string, format: date-time}
+        updated_at: {type: string, format: date-time}
+    MockGenerateChapterPlansResult:
+      type: object
+      additionalProperties: false
+      required: [run, items]
+      properties:
+        run: {$ref: "#/components/schemas/MockGenerationRun"}
+        items:
+          type: array
+          minItems: 1
+          items: {$ref: "#/components/schemas/ChapterPlan"}
+    ConfirmChapterPlanSelection:
+      type: object
+      additionalProperties: false
+      required: [chapter_plan_id, expected_version]
+      properties:
+        chapter_plan_id: {type: string, format: uuid}
+        expected_version: {type: integer, minimum: 1}
+    ConfirmChapterPlansRequest:
+      type: object
+      additionalProperties: false
+      required: [selections]
+      properties:
+        selections:
+          type: array
+          minItems: 1
+          uniqueItems: true
+          items: {$ref: "#/components/schemas/ConfirmChapterPlanSelection"}
+      description: Each chapter_plan_id must be unique, belong to projectId, and be pending_confirmation unless this is an idempotent retry. The operation is all-or-nothing.
+    ChapterPlanEnvelope:
+      type: object
+      additionalProperties: false
+      required: [data, request_id]
+      properties:
+        data: {$ref: "#/components/schemas/ChapterPlan"}
+        request_id: {type: string}
+    ChapterPlanList:
+      type: object
+      additionalProperties: false
+      required: [items, total, limit, offset]
+      properties:
+        items: {type: array, items: {$ref: "#/components/schemas/ChapterPlan"}}
+        total: {type: integer, minimum: 0}
+        limit: {type: integer, minimum: 1, maximum: 100}
+        offset: {type: integer, minimum: 0}
+    ChapterPlanListEnvelope:
+      type: object
+      additionalProperties: false
+      required: [data, request_id]
+      properties:
+        data: {$ref: "#/components/schemas/ChapterPlanList"}
+        request_id: {type: string}
+    MockGenerateChapterPlansEnvelope:
+      type: object
+      additionalProperties: false
+      required: [data, request_id]
+      properties:
+        data: {$ref: "#/components/schemas/MockGenerateChapterPlansResult"}
         request_id: {type: string}
