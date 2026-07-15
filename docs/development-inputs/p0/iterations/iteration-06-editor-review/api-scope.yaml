@@ -1,24 +1,12 @@
-iteration: '06'
-name: 正文编辑与模拟审核闭环
+iteration: '06.1'
+name: 正文编辑与模拟审核契约冻结
+envelope: {data: object, request_id: string}
 endpoints:
-- method: POST
-  path: /api/v1/chapter-plans/{chapterPlanId}/content
-  description: 为已确认章节创建内容单元
-- method: GET
-  path: /api/v1/content-items/{contentItemId}
-  description: 正文与当前版本详情
-- method: PUT
-  path: /api/v1/content-items/{contentItemId}/draft
-  description: 保存草稿
-- method: POST
-  path: /api/v1/content-items/{contentItemId}/mock-generate
-  description: 模拟生成正文
-- method: POST
-  path: /api/v1/content-items/{contentItemId}/reviews/mock
-  description: 执行模拟审核
-- method: GET
-  path: /api/v1/content-items/{contentItemId}/reviews
-  description: 审核历史
-- method: GET
-  path: /api/v1/reviews/{reviewId}
-  description: 审核详情
+  - {method: POST, path: /api/v1/chapter-plans/{chapterPlanId}/content, success: '201; existing=200'}
+  - {method: GET, path: /api/v1/content-items/{contentItemId}, success: '200'}
+  - {method: PUT, path: /api/v1/content-items/{contentItemId}/draft, success: '200', required_body: [expected_version]}
+  - {method: POST, path: /api/v1/content-items/{contentItemId}/mock-generate, success: '200', required_header: [Idempotency-Key], required_body: [expected_version, parameters]}
+  - {method: POST, path: /api/v1/content-items/{contentItemId}/reviews/mock, success: '200', required_header: [Idempotency-Key], required_body: [content_version_id, expected_version]}
+  - {method: GET, path: /api/v1/content-items/{contentItemId}/reviews, success: '200', sort: 'created_at DESC, id DESC'}
+  - {method: GET, path: /api/v1/reviews/{reviewId}, success: '200'}
+errors: [chapter_plan_not_confirmed, content_item_not_found, content_version_not_found, content_version_locked, content_version_already_reviewed, version_conflict, idempotency_key_required, idempotency_key_reused_with_different_payload, mock_generation_failed, mock_review_failed, invalid_generation_parameters, invalid_pagination]

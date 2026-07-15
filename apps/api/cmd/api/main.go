@@ -9,6 +9,7 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/local/ai-content-factory/apps/api/internal/chapterplan"
+	"github.com/local/ai-content-factory/apps/api/internal/contentitem"
 	"github.com/local/ai-content-factory/apps/api/internal/foreshadowing"
 	"github.com/local/ai-content-factory/apps/api/internal/material"
 	"github.com/local/ai-content-factory/apps/api/internal/planning"
@@ -38,7 +39,8 @@ func main() {
 	storylines := storyline.NewPostgresService(projectRepository, pool)
 	foreshadowings := foreshadowing.NewPostgresService(projectRepository, pool)
 	chapterPlans := chapterplan.NewPostgresService(projectRepository, pool)
-	server := httpserver.New(cfg.APIAddress, projects, plannings, materials, projectMaterials, storylines, foreshadowings, chapterPlans)
+	contentItems := contentitem.NewApplication(contentitem.NewPostgresRepository(pool), nil)
+	server := httpserver.New(cfg.APIAddress, projects, plannings, materials, projectMaterials, storylines, foreshadowings, chapterPlans, contentItems)
 	log.Printf("api listening on %s", cfg.APIAddress)
 	if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 		log.Fatal(err)

@@ -23,6 +23,15 @@
 - BR-NARRATIVE-003：不能形成父子循环。
 - BR-NARRATIVE-004：伏笔必须属于项目，可选关联种下和回收故事线。
 
+## BR-CONTENT
+
+- BR-CONTENT-001：只有 confirmed ChapterPlan 可创建 ContentItem，且每个 ChapterPlan 最多一个。
+- BR-CONTENT-002：创建时原子创建空白 ContentVersion v1（manual_created/editable_draft）；本轮不创建 v2。
+- BR-CONTENT-003：`version_no` 是历史编号，`version` 是乐观锁，`expected_version` 是写入条件；不得混用。
+- BR-CONTENT-004：可编辑草稿支持重复保存；省略字段不变、null 清空可空字段、空字符串保留为空值；冻结/已审核版本不可编辑。
+- BR-CONTENT-005：Mock Generate 和 Mock Review 必须确定性、同步且使用 Idempotency-Key；同键同 payload 重放同一结果，不得重复创建版本、审核或 WorkflowRun。
+- BR-CONTENT-006：Mock Review 成功原子冻结版本并创建审核数据；失败恢复 draft 且不保留部分审核数据。已审核版本以新键重审返回 content_version_already_reviewed。
+
 ## BR-CHAPTER
 
 - BR-CHAPTER-001：Mock 生成只产生 pending_confirmation 候选。

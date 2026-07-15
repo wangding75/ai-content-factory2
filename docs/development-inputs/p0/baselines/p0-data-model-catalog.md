@@ -1,110 +1,27 @@
 # P0 数据模型目录
 
-## 通用字段
+所有持久化实体至少含 `id, created_at, updated_at`；有并发写入的实体还含 `version`。所有状态变化写入 audit_logs。
 
-所有持久化实体至少包含：
+## 已有核心实体
 
-```text
-id
-created_at
-updated_at
-created_by（P0 可使用固定系统用户）
-version / optimistic_lock（写冲突对象按需）
-```
+`Project(id, name, type, status, description, current_stage)`；`ProjectPlanning(project_id, premise, audience, style, goals_json, constraints_json)`；`Material(id, type, name, summary, content_json, tags_json)`；`ProjectMaterialUsage(id, project_id, material_id, usage_type, role_name, notes, status, UNIQUE(project_id, material_id))`；`PlotLine(id, project_id, parent_id, type, name, summary, status, sort_order)`；`Foreshadowing(id, project_id, title, description, planted_plot_line_id, payoff_plot_line_id, planned_plant_chapter, planned_payoff_chapter, status)`；`ChapterPlan(id, project_id, chapter_no, title, summary, status, source, storyline_refs_json, material_refs_json, foreshadowing_refs_json, confirmed_at, version)`。
 
-所有状态变化写 `audit_logs`。
-
-## 核心实体
-
-### Project
-
-```text
-id, name, type, status, description, current_stage, created_at, updated_at
-```
-
-### ProjectPlanning
-
-```text
-project_id, premise, audience, style, goals_json, constraints_json, updated_at
-```
-
-### Material
-
-```text
-id, type, name, summary, content_json, tags_json, created_at, updated_at
-```
-
-Material 是唯一全局素材本体。
-
-### ProjectMaterialUsage
-
-```text
-id, project_id, material_id, usage_type, role_name, notes, status, created_at, updated_at
-UNIQUE(project_id, material_id)
-```
-
-项目用途不写入 Material 本体。
-
-### PlotLine
-
-```text
-id, project_id, parent_id, type, name, summary, status, sort_order
-```
-
-统一承载主线、子线和更深层级。
-
-### Foreshadowing
-
-```text
-id, project_id, title, description, planted_plot_line_id,
-payoff_plot_line_id, planned_plant_chapter, planned_payoff_chapter, status
-```
-
-### ChapterPlan
-
-```text
-id, project_id, chapter_no, title, summary, status, source,
-storyline_refs_json, material_refs_json, foreshadowing_refs_json, confirmed_at
-```
+## Iteration 06 内容与审核实体
 
 ### ContentItem
 
-```text
-id, project_id, chapter_plan_id, pack_key, title, status,
-current_version_id, review_status, publish_status
-```
+`id, project_id, chapter_plan_id UNIQUE, pack_key, title, status, current_version_id, reviewed_at, created_at, updated_at`。一个 confirmed ChapterPlan 至多一个 ContentItem。
 
 ### ContentVersion
 
-```text
-id, content_item_id, version_no, parent_version_id, source,
-body, word_count, is_current, created_at
-```
+`id, content_item_id, version_no, version, status, source, title, content, summary, word_count, frozen_at, created_at, updated_at`。Iteration 06 仅 v1：`version_no=1`，初始 manual_created/editable_draft。
 
-### ReviewReport
+### ReviewReport / ReviewFinding / ReviewRecommendation
 
-```text
-id, content_item_id, version_id, provider_key, status,
-score_json, summary, created_at
-```
-
-### ReviewFinding / ReviewRecommendation
-
-```text
-review_id, type/category, severity/priority, title, description, location_json
-```
+`ReviewReport(id, content_item_id, content_version_id, provider_key, status, conclusion, score_json, summary, created_at)` 固定指向一个已冻结版本；`ReviewFinding(id, review_id, category, severity, title, description, location_json)`；`ReviewRecommendation(id, review_id, priority, title, description, created_at)`。
 
 ### WorkflowRun
 
-```text
-id, provider_key, workflow_key, subject_type, subject_id, status,
-input_json, output_json, error_json, started_at, finished_at
-```
+`id, provider_key, workflow_key, subject_type, subject_id, status, idempotency_key, input_json, output_json, error_code, started_at, finished_at`。相同操作作用域、Idempotency-Key 与 payload 仅产生一个业务结果。
 
-### ProjectWorkReadModel / GlobalWorkReadModel
-
-由 ContentItem、ContentVersion、ReviewReport 聚合，不建议 P0 重复落独立业务真值表。
-
-### CapabilityDescriptor / IntegrationDescriptor
-
-P0 可由配置与静态种子提供；不得伪造连接成功状态。
+Project/global work read model 从以上实体聚合，不复制业务真值。

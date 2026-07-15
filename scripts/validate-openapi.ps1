@@ -23,18 +23,19 @@ foreach ($operationId in $iteration04Operations) {
         throw "Iteration 04 OpenAPI operation is missing: $operationId"
     }
 }
-foreach ($forbiddenName in @("/content-items", "ContentItem", "ContentDraft", "ContentVersion")) {
-    if ($openApiText -match [regex]::Escape($forbiddenName)) {
-        throw "OpenAPI contains out-of-scope name: $forbiddenName"
-    }
-}
-
 $schemaPaths = @(
     "packages/contracts/content-packs/novel/project-planning.schema.json",
     "packages/contracts/content-packs/novel/material.schema.json",
     "packages/contracts/content-packs/novel/plot-line.schema.json",
     "packages/contracts/content-packs/novel/foreshadowing.schema.json",
-    "packages/contracts/content-packs/novel/chapter-plan.schema.json"
+    "packages/contracts/content-packs/novel/chapter-plan.schema.json",
+    "packages/contracts/content-packs/novel/content-item.schema.json",
+    "packages/contracts/content-packs/novel/content-version.schema.json",
+    "packages/contracts/content-packs/novel/mock-generation-parameters.schema.json",
+    "packages/contracts/content-packs/novel/review-report.schema.json",
+    "packages/contracts/content-packs/novel/review-finding.schema.json",
+    "packages/contracts/content-packs/novel/review-recommendation.schema.json",
+    "packages/contracts/content-packs/novel/workflow-run-summary.schema.json"
 )
 
 foreach ($schemaPath in $schemaPaths) {
@@ -157,8 +158,20 @@ if ($openApiText -notmatch 'enum: \[pending_confirmation, confirmed\]' -or
     $openApiText -notmatch 'enum: \[mock_generated\]') {
     throw "Chapter-plan OpenAPI status/source enum mismatch."
 }
-if ($openApiText -match '(?i)/content-items|ContentItem|ContentDraft|ContentVersion') {
-    throw "Iteration 05 contract contains a forbidden Iteration 06 surface."
+
+$iteration06Operations = @("createContentItemForChapterPlan", "getContentItem", "saveContentItemDraft", "mockGenerateContentItem", "mockReviewContentItem", "listContentItemReviews", "getReview")
+foreach ($operationId in $iteration06Operations) {
+    if ($openApiText -notmatch ("(?m)^\s*operationId:\s*" + [regex]::Escape($operationId) + "\s*$")) { throw "Iteration 06 OpenAPI operation is missing: $operationId" }
+}
+foreach ($path in @("/api/v1/chapter-plans/{chapterPlanId}/content", "/api/v1/content-items/{contentItemId}", "/api/v1/content-items/{contentItemId}/draft", "/api/v1/content-items/{contentItemId}/mock-generate", "/api/v1/content-items/{contentItemId}/reviews/mock", "/api/v1/content-items/{contentItemId}/reviews", "/api/v1/reviews/{reviewId}")) {
+    if ($openApiText -notmatch ("(?m)^  " + [regex]::Escape($path) + ":\s*$")) { throw "Iteration 06 OpenAPI path is missing: $path" }
+}
+foreach ($fragment in @("ContentItem", "ContentVersion", "ReviewReport", "WorkflowRunSummary", "expected_version", "Idempotency-Key", "content_version_already_reviewed", "created_at DESC, id DESC")) {
+    if ($openApiText -notmatch [regex]::Escape($fragment)) { throw "Iteration 06 required contract fragment is missing: $fragment" }
+}
+foreach ($schemaPath in $schemaPaths | Where-Object { $_ -match "(content-item|content-version|mock-generation|review-|workflow-run)" }) {
+    $schema = Get-Content -Raw $schemaPath | ConvertFrom-Json
+    if ($schema.additionalProperties -ne $false) { throw "Iteration 06 schema must set additionalProperties=false: $schemaPath" }
 }
 
 Write-Host "[PASS] OpenAPI and Novel JSON Schema validation completed." -ForegroundColor Green

@@ -558,8 +558,105 @@ paths:
         "400": {$ref: "#/components/responses/BadRequest"}
         "404": {$ref: "#/components/responses/NotFound"}
         "409": {$ref: "#/components/responses/Conflict"}
+  /api/v1/chapter-plans/{chapterPlanId}/content:
+    parameters: [{$ref: "#/components/parameters/ChapterPlanId"}]
+    post:
+      operationId: createContentItemForChapterPlan
+      description: Creates the sole ContentItem and blank manual_created editable v1 for a confirmed ChapterPlan. A repeated call returns the existing item (200), never a duplicate.
+      responses:
+        "201": {description: Content item and v1 created., content: {application/json: {schema: {$ref: "#/components/schemas/ContentItemDetailEnvelope"}, example: {data: {content_item: {id: "11111111-1111-4111-8111-111111111111", chapter_plan_id: "22222222-2222-4222-8222-222222222222", title: "Chapter", status: draft, current_version_id: "33333333-3333-4333-8333-333333333333", reviewed_at: null, created_at: "2026-07-15T12:00:00Z", updated_at: "2026-07-15T12:00:00Z"}, current_version: {id: "33333333-3333-4333-8333-333333333333", content_item_id: "11111111-1111-4111-8111-111111111111", version_no: 1, version: 1, status: editable_draft, source: manual_created, title: "Chapter", content: "", summary: null, word_count: 0, frozen_at: null, created_at: "2026-07-15T12:00:00Z", updated_at: "2026-07-15T12:00:00Z"}}, request_id: req_01}}}}
+        "200": {description: Existing ContentItem returned., content: {application/json: {schema: {$ref: "#/components/schemas/ContentItemDetailEnvelope"}}}}
+        "400": {$ref: "#/components/responses/BadRequest"}
+        "404": {$ref: "#/components/responses/NotFound"}
+        "409": {$ref: "#/components/responses/Conflict"}
+        "422": {$ref: "#/components/responses/UnprocessableEntity"}
+        "500": {$ref: "#/components/responses/InternalServerError"}
+  /api/v1/content-items/{contentItemId}:
+    parameters: [{$ref: "#/components/parameters/ContentItemId"}]
+    get:
+      operationId: getContentItem
+      responses:
+        "200": {description: ContentItem and current version., content: {application/json: {schema: {$ref: "#/components/schemas/ContentItemDetailEnvelope"}, example: {data: {content_item: {id: "11111111-1111-4111-8111-111111111111", chapter_plan_id: "22222222-2222-4222-8222-222222222222", title: "Chapter", status: draft, current_version_id: "33333333-3333-4333-8333-333333333333", reviewed_at: null, created_at: "2026-07-15T12:00:00Z", updated_at: "2026-07-15T12:00:00Z"}, current_version: {id: "33333333-3333-4333-8333-333333333333", content_item_id: "11111111-1111-4111-8111-111111111111", version_no: 1, version: 2, status: editable_draft, source: manual_created, title: "Chapter", content: "Text", summary: null, word_count: 1, frozen_at: null, created_at: "2026-07-15T12:00:00Z", updated_at: "2026-07-15T12:01:00Z"}}, request_id: req_02}}}}
+        "400": {$ref: "#/components/responses/BadRequest"}
+        "404": {$ref: "#/components/responses/NotFound"}
+        "409": {$ref: "#/components/responses/Conflict"}
+        "422": {$ref: "#/components/responses/UnprocessableEntity"}
+        "500": {$ref: "#/components/responses/InternalServerError"}
+  /api/v1/content-items/{contentItemId}/draft:
+    parameters: [{$ref: "#/components/parameters/ContentItemId"}]
+    put:
+      operationId: saveContentItemDraft
+      description: Updates supplied draft fields only. expected_version is required. Omitted fields remain unchanged; summary null clears and an empty string is retained. A successful write increments version.
+      requestBody: {required: true, content: {application/json: {schema: {$ref: "#/components/schemas/SaveContentDraftRequest"}, example: {expected_version: 1, title: "Chapter", content: "Draft text", summary: null}}}}
+      responses:
+        "200": {description: Draft saved., content: {application/json: {schema: {$ref: "#/components/schemas/ContentItemDetailEnvelope"}, example: {data: {content_item: {id: "11111111-1111-4111-8111-111111111111", chapter_plan_id: "22222222-2222-4222-8222-222222222222", title: "Chapter", status: draft, current_version_id: "33333333-3333-4333-8333-333333333333", reviewed_at: null, created_at: "2026-07-15T12:00:00Z", updated_at: "2026-07-15T12:01:00Z"}, current_version: {id: "33333333-3333-4333-8333-333333333333", content_item_id: "11111111-1111-4111-8111-111111111111", version_no: 1, version: 2, status: editable_draft, source: manual_created, title: "Chapter", content: "Draft text", summary: null, word_count: 2, frozen_at: null, created_at: "2026-07-15T12:00:00Z", updated_at: "2026-07-15T12:01:00Z"}}, request_id: req_03}}}}
+        "400": {$ref: "#/components/responses/BadRequest"}
+        "404": {$ref: "#/components/responses/NotFound"}
+        "409": {$ref: "#/components/responses/Conflict"}
+        "422": {$ref: "#/components/responses/UnprocessableEntity"}
+        "500": {$ref: "#/components/responses/InternalServerError"}
+  /api/v1/content-items/{contentItemId}/mock-generate:
+    parameters: [{$ref: "#/components/parameters/ContentItemId"}, {$ref: "#/components/parameters/IdempotencyKey"}]
+    post:
+      operationId: mockGenerateContentItem
+      description: Synchronous deterministic mock generation. It updates only the editable current v1. First valid execution creates one WorkflowRun; an identical idempotent retry returns exactly the prior result without another version increment or run. The complete operation is atomic.
+      requestBody: {required: true, content: {application/json: {schema: {$ref: "#/components/schemas/MockGenerateContentRequest"}, example: {expected_version: 2, parameters: {chapter_goal: "Obtain the pass", storyline_refs_json: ["66666666-6666-4666-8666-666666666666"], material_refs_json: [], foreshadowing_refs_json: [], creation_notes: null}}}}}
+      responses:
+        "200": {description: Generated draft and succeeded WorkflowRun., content: {application/json: {schema: {$ref: "#/components/schemas/MockGenerateContentResultEnvelope"}, example: {data: {content_item: {id: "11111111-1111-4111-8111-111111111111", chapter_plan_id: "22222222-2222-4222-8222-222222222222", title: "Chapter", status: draft, current_version_id: "33333333-3333-4333-8333-333333333333", reviewed_at: null, created_at: "2026-07-15T12:00:00Z", updated_at: "2026-07-15T12:02:00Z"}, current_version: {id: "33333333-3333-4333-8333-333333333333", content_item_id: "11111111-1111-4111-8111-111111111111", version_no: 1, version: 3, status: editable_draft, source: mock_generated, title: "Chapter", content: "Deterministic text", summary: null, word_count: 2, frozen_at: null, created_at: "2026-07-15T12:00:00Z", updated_at: "2026-07-15T12:02:00Z"}, workflow_run: {id: "44444444-4444-4444-8444-444444444444", provider_key: mock, workflow_key: content_mock_generate, status: succeeded, started_at: "2026-07-15T12:02:00Z", finished_at: "2026-07-15T12:02:00Z"}}, request_id: req_04}}}}
+        "400": {$ref: "#/components/responses/BadRequest"}
+        "404": {$ref: "#/components/responses/NotFound"}
+        "409": {$ref: "#/components/responses/Conflict"}
+        "422": {$ref: "#/components/responses/UnprocessableEntity"}
+        "500": {$ref: "#/components/responses/InternalServerError"}
+  /api/v1/content-items/{contentItemId}/reviews/mock:
+    parameters: [{$ref: "#/components/parameters/ContentItemId"}, {$ref: "#/components/parameters/IdempotencyKey"}]
+    post:
+      operationId: mockReviewContentItem
+      description: Synchronous deterministic review of the specified current ContentVersion. Success atomically freezes the version, creates the report tree and a succeeded run, writes reviewed_at and returns reviewed; failure restores draft, creates no partial review tree and records a failed run. A new key for an already reviewed version returns content_version_already_reviewed.
+      requestBody: {required: true, content: {application/json: {schema: {$ref: "#/components/schemas/MockReviewRequest"}, example: {content_version_id: "33333333-3333-4333-8333-333333333333", expected_version: 3}}}}
+      responses:
+        "200": {description: Reviewed result; no returned business object remains running or in_review., content: {application/json: {schema: {$ref: "#/components/schemas/MockReviewResultEnvelope"}, example: {data: {content_item: {id: "11111111-1111-4111-8111-111111111111", chapter_plan_id: "22222222-2222-4222-8222-222222222222", title: "Chapter", status: reviewed, current_version_id: "33333333-3333-4333-8333-333333333333", reviewed_at: "2026-07-15T12:03:00Z", created_at: "2026-07-15T12:00:00Z", updated_at: "2026-07-15T12:03:00Z"}, review: {id: "55555555-5555-4555-8555-555555555555", content_item_id: "11111111-1111-4111-8111-111111111111", content_version_id: "33333333-3333-4333-8333-333333333333", provider_key: mock, status: completed, conclusion: revise, score: 70, summary: "Review", created_at: "2026-07-15T12:03:00Z"}, findings: [], recommendations: [], workflow_run: {id: "44444444-4444-4444-8444-444444444444", provider_key: mock, workflow_key: content_mock_review, status: succeeded, started_at: "2026-07-15T12:03:00Z", finished_at: "2026-07-15T12:03:00Z"}}, request_id: req_05}}}}
+        "400": {$ref: "#/components/responses/BadRequest"}
+        "404": {$ref: "#/components/responses/NotFound"}
+        "409": {$ref: "#/components/responses/Conflict"}
+        "422": {$ref: "#/components/responses/UnprocessableEntity"}
+        "500": {$ref: "#/components/responses/InternalServerError"}
+  /api/v1/content-items/{contentItemId}/reviews:
+    parameters: [{$ref: "#/components/parameters/ContentItemId"}, {$ref: "#/components/parameters/LimitQuery"}, {$ref: "#/components/parameters/OffsetQuery"}]
+    get:
+      operationId: listContentItemReviews
+      description: Paginated review list in fixed stable order created_at DESC, id DESC. Invalid pagination returns invalid_pagination.
+      responses:
+        "200": {description: Review list., content: {application/json: {schema: {$ref: "#/components/schemas/ReviewListEnvelope"}, example: {data: {items: [], total: 0, limit: 20, offset: 0}, request_id: req_06}}}}
+        "400": {$ref: "#/components/responses/BadRequest"}
+        "404": {$ref: "#/components/responses/NotFound"}
+        "409": {$ref: "#/components/responses/Conflict"}
+        "422": {$ref: "#/components/responses/UnprocessableEntity"}
+        "500": {$ref: "#/components/responses/InternalServerError"}
+  /api/v1/reviews/{reviewId}:
+    parameters: [{$ref: "#/components/parameters/ReviewId"}]
+    get:
+      operationId: getReview
+      description: Returns the completed ReviewReport, its immutable ContentVersion summary, Findings, Recommendations and WorkflowRun summary.
+      responses:
+        "200": {description: Review detail., content: {application/json: {schema: {$ref: "#/components/schemas/ReviewDetailEnvelope"}, example: {data: {review: {id: "55555555-5555-4555-8555-555555555555", content_item_id: "11111111-1111-4111-8111-111111111111", content_version_id: "33333333-3333-4333-8333-333333333333", provider_key: mock, status: completed, conclusion: revise, score: 70, summary: "Review", created_at: "2026-07-15T12:03:00Z"}, content_version: {id: "33333333-3333-4333-8333-333333333333", version_no: 1, version: 3, title: "Chapter", word_count: 2, source: mock_generated, frozen_at: "2026-07-15T12:03:00Z"}, findings: [], recommendations: [], workflow_run: {id: "44444444-4444-4444-8444-444444444444", provider_key: mock, workflow_key: content_mock_review, status: succeeded, started_at: "2026-07-15T12:03:00Z", finished_at: "2026-07-15T12:03:00Z"}}, request_id: req_07}}}}
+        "400": {$ref: "#/components/responses/BadRequest"}
+        "404": {$ref: "#/components/responses/NotFound"}
+        "409": {$ref: "#/components/responses/Conflict"}
+        "422": {$ref: "#/components/responses/UnprocessableEntity"}
+        "500": {$ref: "#/components/responses/InternalServerError"}
 components:
   parameters:
+    ContentItemId:
+      name: contentItemId
+      in: path
+      required: true
+      schema: {type: string, format: uuid}
+    ReviewId:
+      name: reviewId
+      in: path
+      required: true
+      schema: {type: string, format: uuid}
     ChapterPlanId:
       name: chapterPlanId
       in: path
@@ -691,6 +788,12 @@ components:
         application/json:
           schema:
             $ref: "#/components/schemas/ErrorEnvelope"
+    UnprocessableEntity:
+      description: "Semantically invalid request. Error codes include invalid_generation_parameters and invalid_pagination."
+      content: {application/json: {schema: {$ref: "#/components/schemas/ErrorEnvelope"}}}
+    InternalServerError:
+      description: "Unexpected safe server failure. Error bodies never include SQL, stack traces or implementation details."
+      content: {application/json: {schema: {$ref: "#/components/schemas/ErrorEnvelope"}}}
   schemas:
     Envelope:
       type: object
@@ -715,11 +818,201 @@ components:
       properties:
         code:
           type: string
+          description: "Stable business code. Iteration 06 codes: chapter_plan_not_confirmed, content_item_not_found, content_item_already_exists (only if an implementation elects 409 rather than the frozen 200-existing behavior), content_version_not_found, content_version_locked, content_version_already_reviewed, version_conflict, idempotency_key_required, idempotency_key_reused_with_different_payload, mock_generation_failed, mock_review_failed, invalid_generation_parameters, invalid_pagination."
         message:
           type: string
         details:
           type: object
           additionalProperties: true
+    ContentItemStatus:
+      type: string
+      enum: [draft, in_review, reviewed]
+    ContentVersionStatus:
+      type: string
+      enum: [editable_draft, frozen]
+    ContentVersionSource:
+      type: string
+      enum: [manual_created, mock_generated]
+    WorkflowRunStatus:
+      type: string
+      enum: [running, succeeded, failed]
+    ContentItem:
+      type: object
+      additionalProperties: false
+      required: [id, chapter_plan_id, title, status, current_version_id, reviewed_at, created_at, updated_at]
+      properties:
+        id: {type: string, format: uuid}
+        chapter_plan_id: {type: string, format: uuid}
+        title: {type: string, minLength: 1, maxLength: 120}
+        status: {$ref: "#/components/schemas/ContentItemStatus"}
+        current_version_id: {type: string, format: uuid}
+        reviewed_at: {type: [string, "null"], format: date-time}
+        created_at: {type: string, format: date-time}
+        updated_at: {type: string, format: date-time}
+    ContentVersion:
+      type: object
+      additionalProperties: false
+      required: [id, content_item_id, version_no, version, status, source, title, content, summary, word_count, frozen_at, created_at, updated_at]
+      properties:
+        id: {type: string, format: uuid}
+        content_item_id: {type: string, format: uuid}
+        version_no: {type: integer, minimum: 1, description: Historical body version number; fixed at 1 in Iteration 06.}
+        version: {type: integer, minimum: 1, description: Optimistic-lock version.}
+        status: {$ref: "#/components/schemas/ContentVersionStatus"}
+        source: {$ref: "#/components/schemas/ContentVersionSource"}
+        title: {type: string, minLength: 1, maxLength: 120}
+        content: {type: string, maxLength: 200000}
+        summary: {type: [string, "null"], maxLength: 5000}
+        word_count: {type: integer, minimum: 0}
+        frozen_at: {type: [string, "null"], format: date-time}
+        created_at: {type: string, format: date-time}
+        updated_at: {type: string, format: date-time}
+    SaveContentDraftRequest:
+      type: object
+      additionalProperties: false
+      required: [expected_version]
+      minProperties: 2
+      properties:
+        expected_version: {type: integer, minimum: 1}
+        title: {type: string, minLength: 1, maxLength: 120}
+        content: {type: string, maxLength: 200000}
+        summary: {type: [string, "null"], maxLength: 5000}
+    MockGenerationParameters:
+      type: object
+      additionalProperties: false
+      required: [chapter_goal, storyline_refs_json, material_refs_json, foreshadowing_refs_json, creation_notes]
+      properties:
+        chapter_goal: {type: [string, "null"], maxLength: 2000}
+        storyline_refs_json: {type: array, minItems: 1, uniqueItems: true, items: {type: string, format: uuid}}
+        material_refs_json: {type: array, uniqueItems: true, items: {type: string, format: uuid}}
+        foreshadowing_refs_json: {type: array, uniqueItems: true, items: {type: string, format: uuid}}
+        creation_notes: {type: [string, "null"], maxLength: 2000}
+    MockGenerateContentRequest:
+      type: object
+      additionalProperties: false
+      required: [expected_version, parameters]
+      properties:
+        expected_version: {type: integer, minimum: 1}
+        parameters: {$ref: "#/components/schemas/MockGenerationParameters"}
+    MockReviewRequest:
+      type: object
+      additionalProperties: false
+      required: [content_version_id, expected_version]
+      properties:
+        content_version_id: {type: string, format: uuid}
+        expected_version: {type: integer, minimum: 1}
+    WorkflowRunSummary:
+      type: object
+      additionalProperties: false
+      required: [id, provider_key, workflow_key, status, started_at, finished_at]
+      properties:
+        id: {type: string, format: uuid}
+        provider_key: {type: string, const: mock}
+        workflow_key: {type: string, enum: [content_mock_generate, content_mock_review]}
+        status: {$ref: "#/components/schemas/WorkflowRunStatus"}
+        started_at: {type: string, format: date-time}
+        finished_at: {type: [string, "null"], format: date-time}
+    ReviewReport:
+      type: object
+      additionalProperties: false
+      required: [id, content_item_id, content_version_id, provider_key, status, conclusion, score, summary, created_at]
+      properties:
+        id: {type: string, format: uuid}
+        content_item_id: {type: string, format: uuid}
+        content_version_id: {type: string, format: uuid}
+        provider_key: {type: string, const: mock}
+        status: {type: string, const: completed}
+        conclusion: {type: string, enum: [pass, revise]}
+        score: {type: integer, minimum: 0, maximum: 100}
+        summary: {type: string, maxLength: 5000}
+        created_at: {type: string, format: date-time}
+    ReviewFinding:
+      type: object
+      additionalProperties: false
+      required: [id, review_id, category, severity, title, description, location]
+      properties:
+        id: {type: string, format: uuid}
+        review_id: {type: string, format: uuid}
+        category: {type: string, enum: [pacing, foreshadowing, character_consistency, world_consistency]}
+        severity: {type: string, enum: [low, medium, high]}
+        title: {type: string, minLength: 1, maxLength: 200}
+        description: {type: string, maxLength: 5000}
+        location: {type: [object, "null"], additionalProperties: false, properties: {start_offset: {type: integer, minimum: 0}, end_offset: {type: integer, minimum: 0}}}
+    ReviewRecommendation:
+      type: object
+      additionalProperties: false
+      required: [id, review_id, priority, title, description, created_at]
+      properties:
+        id: {type: string, format: uuid}
+        review_id: {type: string, format: uuid}
+        priority: {type: string, enum: [low, medium, high]}
+        title: {type: string, minLength: 1, maxLength: 200}
+        description: {type: string, maxLength: 5000}
+        created_at: {type: string, format: date-time}
+    ContentVersionSummary:
+      type: object
+      additionalProperties: false
+      required: [id, version_no, version, title, word_count, source, frozen_at]
+      properties:
+        id: {type: string, format: uuid}
+        version_no: {type: integer, minimum: 1}
+        version: {type: integer, minimum: 1}
+        title: {type: string}
+        word_count: {type: integer, minimum: 0}
+        source: {$ref: "#/components/schemas/ContentVersionSource"}
+        frozen_at: {type: string, format: date-time}
+    ContentItemDetail:
+      type: object
+      additionalProperties: false
+      required: [content_item, current_version]
+      properties:
+        content_item: {$ref: "#/components/schemas/ContentItem"}
+        current_version: {$ref: "#/components/schemas/ContentVersion"}
+    ContentItemDetailEnvelope:
+      type: object
+      additionalProperties: false
+      required: [data, request_id]
+      properties: {data: {$ref: "#/components/schemas/ContentItemDetail"}, request_id: {type: string}}
+    MockGenerateContentResult:
+      type: object
+      additionalProperties: false
+      required: [content_item, current_version, workflow_run]
+      properties: {content_item: {$ref: "#/components/schemas/ContentItem"}, current_version: {$ref: "#/components/schemas/ContentVersion"}, workflow_run: {$ref: "#/components/schemas/WorkflowRunSummary"}}
+    MockGenerateContentResultEnvelope:
+      type: object
+      additionalProperties: false
+      required: [data, request_id]
+      properties: {data: {$ref: "#/components/schemas/MockGenerateContentResult"}, request_id: {type: string}}
+    MockReviewResult:
+      type: object
+      additionalProperties: false
+      required: [content_item, review, findings, recommendations, workflow_run]
+      properties: {content_item: {$ref: "#/components/schemas/ContentItem"}, review: {$ref: "#/components/schemas/ReviewReport"}, findings: {type: array, items: {$ref: "#/components/schemas/ReviewFinding"}}, recommendations: {type: array, items: {$ref: "#/components/schemas/ReviewRecommendation"}}, workflow_run: {$ref: "#/components/schemas/WorkflowRunSummary"}}
+    MockReviewResultEnvelope:
+      type: object
+      additionalProperties: false
+      required: [data, request_id]
+      properties: {data: {$ref: "#/components/schemas/MockReviewResult"}, request_id: {type: string}}
+    ReviewList:
+      type: object
+      additionalProperties: false
+      required: [items, total, limit, offset]
+      properties: {items: {type: array, items: {$ref: "#/components/schemas/ReviewReport"}}, total: {type: integer, minimum: 0}, limit: {type: integer, minimum: 1, maximum: 100}, offset: {type: integer, minimum: 0}}
+    ReviewListEnvelope:
+      type: object
+      additionalProperties: false
+      required: [data, request_id]
+      properties: {data: {$ref: "#/components/schemas/ReviewList"}, request_id: {type: string}}
+    ReviewDetail:
+      type: object
+      additionalProperties: false
+      required: [review, content_version, findings, recommendations, workflow_run]
+      properties: {review: {$ref: "#/components/schemas/ReviewReport"}, content_version: {$ref: "#/components/schemas/ContentVersionSummary"}, findings: {type: array, items: {$ref: "#/components/schemas/ReviewFinding"}}, recommendations: {type: array, items: {$ref: "#/components/schemas/ReviewRecommendation"}}, workflow_run: {$ref: "#/components/schemas/WorkflowRunSummary"}}
+    ReviewDetailEnvelope:
+      type: object
+      additionalProperties: false
+      required: [data, request_id]
+      properties: {data: {$ref: "#/components/schemas/ReviewDetail"}, request_id: {type: string}}
     ProjectType:
       type: string
       enum: [novel]
