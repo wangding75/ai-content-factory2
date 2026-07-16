@@ -25,6 +25,8 @@ var (
 	ErrCrossProjectRelation    = errors.New("cross-project relation conflict")
 	ErrReviewNotFound          = errors.New("review not found")
 	ErrInvalidReviewResult     = errors.New("invalid review result")
+	ErrInvalidContentVersion   = errors.New("invalid content version")
+	ErrInvalidMockRewriteRun   = errors.New("invalid mock rewrite workflow run")
 )
 
 type ContentItem struct {
@@ -45,6 +47,7 @@ type ContentVersion struct {
 }
 type WorkflowRun struct {
 	ID, ProjectID, ContentItemID, ContentVersionID uuid.UUID
+	TargetContentVersionID, SourceReviewReportID   *uuid.UUID
 	ProviderKey, WorkflowKey, SubjectType          string
 	SubjectID                                      uuid.UUID
 	Status, IdempotencyKey, RequestFingerprint     string
