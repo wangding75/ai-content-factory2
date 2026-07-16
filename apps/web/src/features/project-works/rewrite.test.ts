@@ -1,0 +1,5 @@
+import assert from "node:assert/strict";import test from "node:test";import {readFileSync} from "node:fs";
+const api=readFileSync(new URL("./rewrite-api.ts",import.meta.url),"utf8"),page=readFileSync(new URL("./rewrite-workspace.tsx",import.meta.url),"utf8");
+test("D4 keeps frozen rewrite parameters and all mock failures",()=>{for(const x of ["rewrite_focus","instructions","preserve_ending","expected_version","invalid-parameters","stale","idempotency-conflict","already-exists","source-not-frozen","review-not-completed","relation-mismatch","provider-failure","internal-error"])assert.match(api,new RegExp(x));});
+test("D4 validates URL and preserves an idempotency key outside render",()=>{assert.match(page,/Object\.values\(x\)\.every/);assert.match(page,/useRef<string\|null>/);assert.match(page,/key\.current\?\?crypto\.randomUUID/);assert.match(page,/key\.current=null/);assert.doesNotMatch(page,/href="#"/);});
+test("D4 success uses the frozen D5 identifiers",()=>{for(const x of ["targetVersionId","workflowRunId","sourceVersionId","contentItemId"])assert.match(api,new RegExp(x));assert.match(api,/rewrite-result/);});

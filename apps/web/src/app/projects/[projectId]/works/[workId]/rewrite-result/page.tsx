@@ -1,0 +1,2 @@
+import {AppShell} from "@/components/ui/app-shell";import {RewriteResultWorkspace} from "@/features/project-works/rewrite-result-workspace";
+export default async function Page({params,searchParams}:{params:Promise<{projectId:string;workId:string}>;searchParams:Promise<Record<string,string|undefined>>}){const p=await params;return <AppShell active="projects"><RewriteResultWorkspace {...p} search={await searchParams}/></AppShell>}
