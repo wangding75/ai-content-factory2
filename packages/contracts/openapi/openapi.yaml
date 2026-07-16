@@ -633,6 +633,86 @@ paths:
         "409": {$ref: "#/components/responses/Conflict"}
         "422": {$ref: "#/components/responses/UnprocessableEntity"}
         "500": {$ref: "#/components/responses/InternalServerError"}
+  /api/v1/content-items/{contentItemId}/versions:
+    parameters: [{$ref: "#/components/parameters/ContentItemId"}, {$ref: "#/components/parameters/LimitQuery"}, {$ref: "#/components/parameters/OffsetQuery"}]
+    get:
+      operationId: listContentItemVersions
+      description: >
+        Lists only versions belonging to the specified project-isolated ContentItem, including v1 and any 07.1A v2. Fixed order is version_no DESC, id DESC; id is the stable secondary key. is_current is true only when item.id equals ContentItem.current_version_id, never inferred from version_no or created_at. A v2 remains non-current unless current_version_id explicitly equals it. An existing item without versions returns 200 with an empty items array. limit and offset use the shared pagination semantics. Errors: 400 invalid_uuid or invalid_pagination; 404 content_item_not_found; 500 internal_error.
+      responses:
+        "200":
+          description: Version list.
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/ContentVersionListEnvelope"}
+              example: {data: {items: [], total: 0, limit: 20, offset: 0}, request_id: req_10}
+        "400": {$ref: "#/components/responses/BadRequest"}
+        "404": {$ref: "#/components/responses/NotFound"}
+        "500": {$ref: "#/components/responses/InternalServerError"}
+  /api/v1/projects/{projectId}/works:
+    parameters: [{$ref: "#/components/parameters/ProjectId"}, {$ref: "#/components/parameters/LimitQuery"}, {$ref: "#/components/parameters/OffsetQuery"}]
+    get:
+      operationId: listProjectWorks
+      description: >
+        Read-only ProjectWorkReadModel aggregation over existing Project, ChapterPlan, ContentItem, ContentVersion, ReviewReport, and WorkflowRun records. work_id is exactly the stable ContentItem.id; no Work entity, table, repository, or lifecycle exists. Fixed order is chapter_plan.chapter_no ASC, content_item.id ASC. current_version is selected only by ContentItem.current_version_id; version_count is the total versions for that ContentItem. latest_review uses created_at DESC, id DESC; latest_workflow_run uses started_at DESC, id DESC. An existing project with no works returns an empty list. Errors: 400 invalid_uuid or invalid_pagination; 404 project_not_found; 500 internal_error.
+      responses:
+        "200":
+          description: Project works list.
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/ProjectWorkListEnvelope"}
+              example: {data: {items: [], total: 0, limit: 20, offset: 0}, request_id: req_11}
+        "400": {$ref: "#/components/responses/BadRequest"}
+        "404": {$ref: "#/components/responses/NotFound"}
+        "500": {$ref: "#/components/responses/InternalServerError"}
+  /api/v1/works/{workId}:
+    parameters: [{$ref: "#/components/parameters/WorkId"}]
+    get:
+      operationId: getProjectWork
+      description: >
+        Read-only ProjectWorkReadModel detail where workId is exactly ContentItem.id. It returns the aggregate for that ContentItem and never replaces current_version with a newer version. current_version is selected only by ContentItem.current_version_id; version history uses the frozen 07.1B summary semantics and order version_no DESC, id DESC. It includes navigation identifiers for D1, D2, D4, and D5 but no write behavior or ProjectWork persistence. Errors: 400 invalid_uuid; 404 work_not_found; 500 internal_error.
+      responses:
+        "200":
+          description: Project work detail.
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/ProjectWorkDetailEnvelope"}
+        "400": {$ref: "#/components/responses/BadRequest"}
+        "404": {$ref: "#/components/responses/NotFound"}
+        "500": {$ref: "#/components/responses/InternalServerError"}
+  /api/v1/content-versions/{versionId}:
+    parameters: [{$ref: "#/components/parameters/ContentVersionId"}]
+    get:
+      operationId: getContentVersion
+      description: >
+        Returns the requested project-isolated ContentVersion immutable snapshot, not a replacement selected through ContentItem.current_version_id. v1 returns v1 and v2 returns v2. is_current is derived only by comparing the returned version id with its ContentItem.current_version_id. Nullable source fields are null when no source exists; 07.1A v2 source relations match its rewrite WorkflowRun. No ProjectWork aggregate is returned. Errors: 400 invalid_uuid; 404 content_version_not_found; 500 internal_error.
+      responses:
+        "200":
+          description: ContentVersion detail.
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/ContentVersionDetailEnvelope"}
+        "400": {$ref: "#/components/responses/BadRequest"}
+        "404": {$ref: "#/components/responses/NotFound"}
+        "500": {$ref: "#/components/responses/InternalServerError"}
+  /api/v1/content-items/{contentItemId}/rewrites/mock:
+    parameters: [{$ref: "#/components/parameters/ContentItemId"}, {$ref: "#/components/parameters/IdempotencyKey"}]
+    post:
+      operationId: mockRewriteContentItem
+      description: >
+        Synchronous deterministic mock rewrite. The request must name the ContentItem's frozen v1 and its completed ReviewReport; expected_version must equal v1.version. Success atomically creates only editable v2 with source mock_rewrite and a succeeded content_mock_rewrite WorkflowRun. v1 remains frozen, ContentItem.current_version_id and item status do not change, and v2 has no ReviewReport or publication record. v3 and additional rewrites are rejected. The same operation-scoped Idempotency-Key and payload returns the original result; a changed payload returns idempotency_key_reused_with_different_payload. Failed execution retains only a failed WorkflowRun with safe error information and leaves no partial v2 or relation. Error codes: 400 invalid_uuid or idempotency_key_required; 404 content_item_not_found, content_version_not_found, or review_report_not_found; 409 content_version_not_frozen, review_not_completed, source_version_mismatch, version_conflict, idempotency_key_reused_with_different_payload, rewrite_already_exists, or cross_project_relation_conflict; 422 invalid_rewrite_parameters; 500 mock_rewrite_failed or internal_error.
+      requestBody: {required: true, content: {application/json: {schema: {$ref: "#/components/schemas/MockRewriteRequest"}, example: {source_content_version_id: "33333333-3333-4333-8333-333333333333", review_report_id: "55555555-5555-4555-8555-555555555555", expected_version: 3, parameters: {rewrite_focus: [pacing, foreshadowing], preserve_ending: true, instructions: null}}}}}
+      responses:
+        "201":
+          description: Created v2 and succeeded WorkflowRun; v2 is not current.
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/MockRewriteResultEnvelope"}
+        "400": {$ref: "#/components/responses/BadRequest"}
+        "404": {$ref: "#/components/responses/NotFound"}
+        "409": {$ref: "#/components/responses/Conflict"}
+        "422": {$ref: "#/components/responses/UnprocessableEntity"}
+        "500": {$ref: "#/components/responses/InternalServerError"}
   /api/v1/reviews/{reviewId}:
     parameters: [{$ref: "#/components/parameters/ReviewId"}]
     get:
@@ -645,6 +725,21 @@ paths:
         "409": {$ref: "#/components/responses/Conflict"}
         "422": {$ref: "#/components/responses/UnprocessableEntity"}
         "500": {$ref: "#/components/responses/InternalServerError"}
+  /api/v1/workflow-runs/{workflowRunId}:
+    parameters: [{$ref: "#/components/parameters/WorkflowRunId"}]
+    get:
+      operationId: getWorkflowRun
+      description: >
+        Returns one project-isolated WorkflowRun. A rewrite run includes provider mock, workflow key content_mock_rewrite, source ContentItem/v1/ReviewReport, nullable target v2, summaries, safe error information, idempotency key, fingerprint, and lifecycle timestamps. A run is created for each new-key attempt and transitions running to succeeded or failed. Failed runs are retained with null target v2 and never expose SQL, connection strings, stacks, service paths, or repository details. Error codes: 400 invalid_uuid; 404 workflow_run_not_found; 500 internal_error.
+      responses:
+        "200":
+          description: WorkflowRun detail.
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/WorkflowRunDetailEnvelope"}
+        "400": {$ref: "#/components/responses/BadRequest"}
+        "404": {$ref: "#/components/responses/NotFound"}
+        "500": {$ref: "#/components/responses/InternalServerError"}
 components:
   parameters:
     ContentItemId:
@@ -652,8 +747,23 @@ components:
       in: path
       required: true
       schema: {type: string, format: uuid}
+    ContentVersionId:
+      name: versionId
+      in: path
+      required: true
+      schema: {type: string, format: uuid}
+    WorkId:
+      name: workId
+      in: path
+      required: true
+      schema: {type: string, format: uuid}
     ReviewId:
       name: reviewId
+      in: path
+      required: true
+      schema: {type: string, format: uuid}
+    WorkflowRunId:
+      name: workflowRunId
       in: path
       required: true
       schema: {type: string, format: uuid}
@@ -811,6 +921,7 @@ components:
           $ref: "#/components/schemas/Error"
         request_id:
           type: string
+      example: {error: {code: invalid_rewrite_parameters, message: "rewrite parameters are invalid", details: {}}, request_id: req_error_01}
     Error:
       type: object
       additionalProperties: false
@@ -818,7 +929,7 @@ components:
       properties:
         code:
           type: string
-          description: "Stable business code. Iteration 06 codes: chapter_plan_not_confirmed, content_item_not_found, content_item_already_exists (only if an implementation elects 409 rather than the frozen 200-existing behavior), content_version_not_found, content_version_locked, content_version_already_reviewed, version_conflict, idempotency_key_required, idempotency_key_reused_with_different_payload, mock_generation_failed, mock_review_failed, invalid_generation_parameters, invalid_pagination."
+          description: "Stable business code. Iteration 06 codes: chapter_plan_not_confirmed, content_item_not_found, content_item_already_exists (only if an implementation elects 409 rather than the frozen 200-existing behavior), content_version_not_found, content_version_locked, content_version_already_reviewed, version_conflict, idempotency_key_required, idempotency_key_reused_with_different_payload, mock_generation_failed, mock_review_failed, invalid_generation_parameters, invalid_pagination. Iteration 07.1A codes: invalid_uuid, review_report_not_found, workflow_run_not_found, content_version_not_frozen, review_not_completed, source_version_mismatch, rewrite_already_exists, invalid_rewrite_parameters, cross_project_relation_conflict, mock_rewrite_failed, internal_error."
         message:
           type: string
         details:
@@ -832,7 +943,7 @@ components:
       enum: [editable_draft, frozen]
     ContentVersionSource:
       type: string
-      enum: [manual_created, mock_generated]
+      enum: [manual_created, mock_generated, mock_rewrite]
     WorkflowRunStatus:
       type: string
       enum: [running, succeeded, failed]
@@ -901,6 +1012,23 @@ components:
       properties:
         content_version_id: {type: string, format: uuid}
         expected_version: {type: integer, minimum: 1}
+    MockRewriteParameters:
+      type: object
+      additionalProperties: false
+      required: [rewrite_focus, preserve_ending, instructions]
+      properties:
+        rewrite_focus: {type: array, minItems: 1, uniqueItems: true, items: {type: string, enum: [pacing, foreshadowing, character_consistency, world_consistency]}}
+        preserve_ending: {type: boolean}
+        instructions: {type: [string, "null"], maxLength: 2000}
+    MockRewriteRequest:
+      type: object
+      additionalProperties: false
+      required: [source_content_version_id, review_report_id, expected_version, parameters]
+      properties:
+        source_content_version_id: {type: string, format: uuid}
+        review_report_id: {type: string, format: uuid}
+        expected_version: {type: integer, minimum: 1}
+        parameters: {$ref: "#/components/schemas/MockRewriteParameters"}
     WorkflowRunSummary:
       type: object
       additionalProperties: false
@@ -908,7 +1036,7 @@ components:
       properties:
         id: {type: string, format: uuid}
         provider_key: {type: string, const: mock}
-        workflow_key: {type: string, enum: [content_mock_generate, content_mock_review]}
+        workflow_key: {type: string, enum: [content_mock_generate, content_mock_review, content_mock_rewrite]}
         status: {$ref: "#/components/schemas/WorkflowRunStatus"}
         started_at: {type: string, format: date-time}
         finished_at: {type: [string, "null"], format: date-time}
@@ -961,6 +1089,173 @@ components:
         word_count: {type: integer, minimum: 0}
         source: {$ref: "#/components/schemas/ContentVersionSource"}
         frozen_at: {type: string, format: date-time}
+    ContentVersionSourceSummary:
+      type: object
+      additionalProperties: false
+      required: [id, version_no, title, source, frozen_at]
+      properties:
+        id: {type: string, format: uuid}
+        version_no: {type: integer, minimum: 1}
+        title: {type: string, minLength: 1, maxLength: 120}
+        source: {$ref: "#/components/schemas/ContentVersionSource"}
+        frozen_at: {type: string, format: date-time}
+    ContentVersionReviewSummary:
+      type: object
+      additionalProperties: false
+      required: [id, status, conclusion, score, summary, created_at]
+      properties:
+        id: {type: string, format: uuid}
+        status: {type: string, const: completed}
+        conclusion: {type: string, enum: [pass, revise]}
+        score: {type: integer, minimum: 0, maximum: 100}
+        summary: {type: string, maxLength: 5000}
+        created_at: {type: string, format: date-time}
+    ContentVersionWorkflowRunSummary:
+      type: object
+      additionalProperties: false
+      required: [id, provider_key, workflow_key, status, started_at, finished_at]
+      properties:
+        id: {type: string, format: uuid}
+        provider_key: {type: string, const: mock}
+        workflow_key: {type: string, const: content_mock_rewrite}
+        status: {type: string, const: succeeded}
+        started_at: {type: string, format: date-time}
+        finished_at: {type: string, format: date-time}
+    ContentVersionListItem:
+      type: object
+      additionalProperties: false
+      required: [id, content_item_id, version_no, status, source, title, word_count, created_at, frozen_at, is_current, source_content_version, source_review_report, source_workflow_run]
+      properties:
+        id: {type: string, format: uuid}
+        content_item_id: {type: string, format: uuid}
+        version_no: {type: integer, minimum: 1}
+        status: {$ref: "#/components/schemas/ContentVersionStatus"}
+        source: {$ref: "#/components/schemas/ContentVersionSource"}
+        title: {type: string, minLength: 1, maxLength: 120}
+        word_count: {type: integer, minimum: 0}
+        created_at: {type: string, format: date-time}
+        frozen_at: {type: [string, "null"], format: date-time}
+        is_current: {type: boolean, description: True only when this id equals ContentItem.current_version_id.}
+        source_content_version: {anyOf: [{$ref: "#/components/schemas/ContentVersionSourceSummary"}, {type: "null"}]}
+        source_review_report: {anyOf: [{$ref: "#/components/schemas/ContentVersionReviewSummary"}, {type: "null"}]}
+        source_workflow_run: {anyOf: [{$ref: "#/components/schemas/ContentVersionWorkflowRunSummary"}, {type: "null"}]}
+      description: Fixed list order is version_no DESC, id DESC. v1 has null source relation summaries; 07.1A v2 has all three source summaries.
+    ContentVersionList:
+      type: object
+      additionalProperties: false
+      required: [items, total, limit, offset]
+      properties:
+        items: {type: array, items: {$ref: "#/components/schemas/ContentVersionListItem"}}
+        total: {type: integer, minimum: 0}
+        limit: {type: integer, minimum: 1, maximum: 100}
+        offset: {type: integer, minimum: 0}
+      description: Page of versions in fixed order version_no DESC, id DESC.
+    ContentVersionListEnvelope:
+      type: object
+      additionalProperties: false
+      required: [data, request_id]
+      properties: {data: {$ref: "#/components/schemas/ContentVersionList"}, request_id: {type: string}}
+    ContentVersionContentItemSummary:
+      type: object
+      additionalProperties: false
+      required: [id, title, status, current_version_id]
+      properties:
+        id: {type: string, format: uuid}
+        title: {type: string, minLength: 1, maxLength: 120}
+        status: {$ref: "#/components/schemas/ContentItemStatus"}
+        current_version_id: {type: string, format: uuid}
+    ContentVersionDetail:
+      type: object
+      additionalProperties: false
+      required: [content_version, content_item, source_content_version, source_review_report, rewrite_workflow_run, is_current]
+      properties:
+        content_version: {$ref: "#/components/schemas/ContentVersion"}
+        content_item: {$ref: "#/components/schemas/ContentVersionContentItemSummary"}
+        source_content_version: {anyOf: [{$ref: "#/components/schemas/ContentVersionSourceSummary"}, {type: "null"}]}
+        source_review_report: {anyOf: [{$ref: "#/components/schemas/ContentVersionReviewSummary"}, {type: "null"}]}
+        rewrite_workflow_run: {anyOf: [{$ref: "#/components/schemas/ContentVersionWorkflowRunSummary"}, {type: "null"}]}
+        is_current: {type: boolean, description: True only when content_version.id equals content_item.current_version_id.}
+      description: content_version is the requested immutable snapshot; null source fields mean no rewrite source relation.
+    ContentVersionDetailEnvelope:
+      type: object
+      additionalProperties: false
+      required: [data, request_id]
+      properties: {data: {$ref: "#/components/schemas/ContentVersionDetail"}, request_id: {type: string}}
+    ProjectWorkChapterPlanSummary:
+      type: object
+      additionalProperties: false
+      required: [id, chapter_no, title, status]
+      properties: {id: {type: string, format: uuid}, chapter_no: {type: integer, minimum: 1}, title: {type: string, minLength: 1, maxLength: 120}, status: {$ref: "#/components/schemas/ChapterPlanStatus"}}
+    ProjectWorkProjectSummary:
+      type: object
+      additionalProperties: false
+      required: [id, name, status]
+      properties: {id: {type: string, format: uuid}, name: {type: string, minLength: 1, maxLength: 120}, status: {$ref: "#/components/schemas/ProjectStatus"}}
+    ProjectWorkNavigation:
+      type: object
+      additionalProperties: false
+      required: [content_item_id, current_version_id, latest_review_report_id, latest_workflow_run_id, rewrite_source_version_id, rewrite_review_report_id, rewrite_target_version_id]
+      properties:
+        content_item_id: {type: string, format: uuid}
+        current_version_id: {type: string, format: uuid}
+        latest_review_report_id: {type: [string, "null"], format: uuid}
+        latest_workflow_run_id: {type: [string, "null"], format: uuid}
+        rewrite_source_version_id: {type: [string, "null"], format: uuid}
+        rewrite_review_report_id: {type: [string, "null"], format: uuid}
+        rewrite_target_version_id: {type: [string, "null"], format: uuid}
+    ProjectWorkReadModel:
+      type: object
+      additionalProperties: false
+      required: [work_id, project_id, chapter_plan, content_item, current_version, version_count, latest_review, latest_workflow_run, navigation]
+      properties:
+        work_id: {type: string, format: uuid, description: Stable read-only alias of content_item.id.}
+        project_id: {type: string, format: uuid}
+        chapter_plan: {$ref: "#/components/schemas/ProjectWorkChapterPlanSummary"}
+        content_item: {$ref: "#/components/schemas/ContentVersionContentItemSummary"}
+        current_version: {$ref: "#/components/schemas/ContentVersionListItem"}
+        version_count: {type: integer, minimum: 1}
+        latest_review: {anyOf: [{$ref: "#/components/schemas/ContentVersionReviewSummary"}, {type: "null"}]}
+        latest_workflow_run: {anyOf: [{$ref: "#/components/schemas/WorkflowRunSummary"}, {type: "null"}]}
+        navigation: {$ref: "#/components/schemas/ProjectWorkNavigation"}
+      description: current_version is chosen only by ContentItem.current_version_id; latest_review is created_at DESC,id DESC and latest_workflow_run is started_at DESC,id DESC.
+    ProjectWorkSummary:
+      type: object
+      additionalProperties: false
+      required: [work_id, project_id, chapter_plan, content_item, current_version, version_count, latest_review, latest_workflow_run, navigation]
+      properties:
+        work_id: {type: string, format: uuid}
+        project_id: {type: string, format: uuid}
+        chapter_plan: {$ref: "#/components/schemas/ProjectWorkChapterPlanSummary"}
+        content_item: {$ref: "#/components/schemas/ContentVersionContentItemSummary"}
+        current_version: {$ref: "#/components/schemas/ContentVersionListItem"}
+        version_count: {type: integer, minimum: 1}
+        latest_review: {anyOf: [{$ref: "#/components/schemas/ContentVersionReviewSummary"}, {type: "null"}]}
+        latest_workflow_run: {anyOf: [{$ref: "#/components/schemas/WorkflowRunSummary"}, {type: "null"}]}
+        navigation: {$ref: "#/components/schemas/ProjectWorkNavigation"}
+      description: List order is chapter_plan.chapter_no ASC, content_item.id ASC.
+    ProjectWorkList:
+      type: object
+      additionalProperties: false
+      required: [items, total, limit, offset]
+      properties: {items: {type: array, items: {$ref: "#/components/schemas/ProjectWorkSummary"}}, total: {type: integer, minimum: 0}, limit: {type: integer, minimum: 1, maximum: 100}, offset: {type: integer, minimum: 0}}
+    ProjectWorkListEnvelope:
+      type: object
+      additionalProperties: false
+      required: [data, request_id]
+      properties: {data: {$ref: "#/components/schemas/ProjectWorkList"}, request_id: {type: string}}
+    ProjectWorkDetail:
+      type: object
+      additionalProperties: false
+      required: [work, project, version_history]
+      properties:
+        work: {$ref: "#/components/schemas/ProjectWorkReadModel"}
+        project: {$ref: "#/components/schemas/ProjectWorkProjectSummary"}
+        version_history: {type: array, items: {$ref: "#/components/schemas/ContentVersionListItem"}, description: "Fixed order version_no DESC, id DESC."}
+    ProjectWorkDetailEnvelope:
+      type: object
+      additionalProperties: false
+      required: [data, request_id]
+      properties: {data: {$ref: "#/components/schemas/ProjectWorkDetail"}, request_id: {type: string}}
     ContentItemDetail:
       type: object
       additionalProperties: false
@@ -1013,6 +1308,56 @@ components:
       additionalProperties: false
       required: [data, request_id]
       properties: {data: {$ref: "#/components/schemas/ReviewDetail"}, request_id: {type: string}}
+    RewriteInputSummary:
+      type: object
+      additionalProperties: false
+      required: [source_version_no, review_report_id, parameters]
+      properties:
+        source_version_no: {type: integer, const: 1}
+        review_report_id: {type: string, format: uuid}
+        parameters: {$ref: "#/components/schemas/MockRewriteParameters"}
+    WorkflowRunDetail:
+      type: object
+      additionalProperties: false
+      required: [id, project_id, provider_key, workflow_key, status, source_content_item_id, source_content_version_id, target_content_version_id, source_review_report_id, input_summary, output_summary, error, idempotency_key, request_fingerprint, started_at, finished_at]
+      properties:
+        id: {type: string, format: uuid}
+        project_id: {type: string, format: uuid}
+        provider_key: {type: string, const: mock}
+        workflow_key: {type: string, const: content_mock_rewrite}
+        status: {$ref: "#/components/schemas/WorkflowRunStatus"}
+        source_content_item_id: {type: string, format: uuid}
+        source_content_version_id: {type: string, format: uuid}
+        target_content_version_id: {type: [string, "null"], format: uuid}
+        source_review_report_id: {type: string, format: uuid}
+        input_summary: {$ref: "#/components/schemas/RewriteInputSummary"}
+        output_summary: {type: [object, "null"], additionalProperties: false, properties: {target_version_no: {type: integer, const: 2}, target_content_version_id: {type: string, format: uuid}, word_count: {type: integer, minimum: 0}}, required: [target_version_no, target_content_version_id, word_count]}
+        error: {type: [object, "null"], additionalProperties: false, properties: {code: {type: string}, message: {type: string, maxLength: 5000, description: Safe user-facing message only.}}, required: [code, message]}
+        idempotency_key: {type: string, minLength: 1, maxLength: 128}
+        request_fingerprint: {type: string, pattern: "^[0-9a-f]{64}$"}
+        started_at: {type: string, format: date-time}
+        finished_at: {type: [string, "null"], format: date-time}
+      description: running has null finished_at; succeeded has non-null target_content_version_id and output_summary with null error; failed has non-null finished_at and error with null target_content_version_id and output_summary.
+    MockRewriteResult:
+      type: object
+      additionalProperties: false
+      required: [content_item, source_content_version, source_review_report, target_content_version, workflow_run]
+      properties:
+        content_item: {$ref: "#/components/schemas/ContentItem"}
+        source_content_version: {$ref: "#/components/schemas/ContentVersionSummary"}
+        source_review_report: {$ref: "#/components/schemas/ReviewReport"}
+        target_content_version: {$ref: "#/components/schemas/ContentVersion"}
+        workflow_run: {$ref: "#/components/schemas/WorkflowRunDetail"}
+    MockRewriteResultEnvelope:
+      type: object
+      additionalProperties: false
+      required: [data, request_id]
+      properties: {data: {$ref: "#/components/schemas/MockRewriteResult"}, request_id: {type: string}}
+    WorkflowRunDetailEnvelope:
+      type: object
+      additionalProperties: false
+      required: [data, request_id]
+      properties: {data: {$ref: "#/components/schemas/WorkflowRunDetail"}, request_id: {type: string}}
     ProjectType:
       type: string
       enum: [novel]

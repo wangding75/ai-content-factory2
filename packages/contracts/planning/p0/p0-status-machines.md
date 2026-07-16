@@ -44,6 +44,10 @@ not_submitted → completed
 
 P0 仅实现模拟审核完成结果，不实现多人协作、审批与发布。
 
+## Iteration 07.1A Mock Rewrite
+
+`frozen v1 + completed ReviewReport -> editable_draft v2` is the only rewrite transition. v2 has `version_no=2` and `source=mock_rewrite`; v1 remains frozen, `ContentItem.current_version_id` does not change, and v2 has no ReviewReport or publication record. No v3, repeated rewrite, automatic review, or automatic publication transition exists.
+
 ## WorkflowRun
 
 ```text
@@ -52,6 +56,8 @@ queued → running → succeeded
 ```
 
 P0 只允许 `provider_key=mock`。
+
+For `content_mock_rewrite`, a new valid attempt starts `running`; it ends `succeeded` with target v2 or `failed` with safe error data and no target v2. Same-key same-payload retry returns the original run result; a new key is a new run.
 
 ## Foreshadowing
 

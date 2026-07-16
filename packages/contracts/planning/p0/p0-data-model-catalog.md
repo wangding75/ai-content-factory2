@@ -101,6 +101,14 @@ id, provider_key, workflow_key, subject_type, subject_id, status,
 input_json, output_json, error_json, started_at, finished_at
 ```
 
+Iteration 07.1A `content_mock_rewrite` additionally fixes the source ContentItem, frozen v1, completed ReviewReport, and nullable target v2 in the run relation. It retains `idempotency_key` and request fingerprint under the existing operation scope. A succeeded run references its v2; a failed run retains safe error information but no partial target version.
+
+`ContentVersion.source` additionally permits `mock_rewrite` only for v2. v2 is `editable_draft`; review and publication remain absent relations rather than creating a second ContentVersion model.
+
+Iteration 07.1B query projections are `ContentVersionListItem` and `ContentVersionDetail`. They use `ContentItem.current_version_id` as the sole current-version predicate, include nullable source v1/ReviewReport/WorkflowRun summaries, and keep the requested ContentVersion immutable. Lists are ordered `version_no DESC, id DESC`.
+
+Iteration 07.1C `ProjectWorkReadModel` is a non-persistent read projection. Its `work_id` is exactly `ContentItem.id`; it aggregates only existing Project, ChapterPlan, ContentItem, ContentVersion, ReviewReport, and WorkflowRun data. List order is `chapter_plan.chapter_no ASC, content_item.id ASC`.
+
 ### ProjectWorkReadModel / GlobalWorkReadModel
 
 由 ContentItem、ContentVersion、ReviewReport 聚合，不建议 P0 重复落独立业务真值表。

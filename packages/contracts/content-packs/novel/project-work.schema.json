@@ -1,0 +1,144 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ai-content-factory.local/schemas/content-packs/novel/project-work.schema.json",
+  "title": "Novel Project Work Read Model",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "work_id",
+    "project_id",
+    "chapter_plan",
+    "content_item",
+    "current_version",
+    "version_count",
+    "latest_review",
+    "latest_workflow_run",
+    "navigation"
+  ],
+  "properties": {
+    "work_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Stable read-only alias of ContentItem.id; it is not a persistent Work entity."
+    },
+    "project_id": { "type": "string", "format": "uuid" },
+    "chapter_plan": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "chapter_no", "title", "status"],
+      "properties": {
+        "id": { "type": "string", "format": "uuid" },
+        "chapter_no": { "type": "integer", "minimum": 1 },
+        "title": { "type": "string", "minLength": 1, "maxLength": 120 },
+        "status": {
+          "type": "string",
+          "enum": ["pending_confirmation", "confirmed"]
+        }
+      }
+    },
+    "content_item": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "title", "status", "current_version_id"],
+      "properties": {
+        "id": { "type": "string", "format": "uuid" },
+        "title": { "type": "string", "minLength": 1, "maxLength": 120 },
+        "status": {
+          "type": "string",
+          "enum": ["draft", "in_review", "reviewed"]
+        },
+        "current_version_id": { "type": "string", "format": "uuid" }
+      }
+    },
+    "current_version": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "content_item_id",
+        "version_no",
+        "status",
+        "source",
+        "title",
+        "word_count",
+        "created_at",
+        "frozen_at",
+        "is_current",
+        "source_content_version",
+        "source_review_report",
+        "source_workflow_run"
+      ],
+      "properties": {
+        "id": { "type": "string", "format": "uuid" },
+        "content_item_id": { "type": "string", "format": "uuid" },
+        "version_no": { "type": "integer", "minimum": 1 },
+        "status": { "type": "string", "enum": ["editable_draft", "frozen"] },
+        "source": {
+          "type": "string",
+          "enum": ["manual_created", "mock_generated", "mock_rewrite"]
+        },
+        "title": { "type": "string", "minLength": 1, "maxLength": 120 },
+        "word_count": { "type": "integer", "minimum": 0 },
+        "created_at": { "type": "string", "format": "date-time" },
+        "frozen_at": { "type": ["string", "null"], "format": "date-time" },
+        "is_current": { "type": "boolean" },
+        "source_content_version": { "$ref": "https://ai-content-factory.local/schemas/content-packs/novel/content-version-query.schema.json#/properties/list_item/properties/source_content_version" },
+        "source_review_report": { "$ref": "https://ai-content-factory.local/schemas/content-packs/novel/content-version-query.schema.json#/properties/list_item/properties/source_review_report" },
+        "source_workflow_run": { "$ref": "https://ai-content-factory.local/schemas/content-packs/novel/content-version-query.schema.json#/properties/list_item/properties/source_workflow_run" }
+      }
+    },
+    "version_count": { "type": "integer", "minimum": 1 },
+    "latest_review": { "$ref": "https://ai-content-factory.local/schemas/content-packs/novel/content-version-query.schema.json#/properties/list_item/properties/source_review_report" },
+    "latest_workflow_run": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string", "format": "uuid" },
+        "provider_key": { "type": "string", "const": "mock" },
+        "workflow_key": { "type": "string", "enum": ["content_mock_generate", "content_mock_review", "content_mock_rewrite"] },
+        "status": { "type": "string", "enum": ["running", "succeeded", "failed"] },
+        "started_at": { "type": "string", "format": "date-time" },
+        "finished_at": { "type": ["string", "null"], "format": "date-time" }
+      },
+      "required": ["id", "provider_key", "workflow_key", "status", "started_at", "finished_at"]
+    },
+    "navigation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "content_item_id",
+        "current_version_id",
+        "latest_review_report_id",
+        "latest_workflow_run_id",
+        "rewrite_source_version_id",
+        "rewrite_review_report_id",
+        "rewrite_target_version_id"
+      ],
+      "properties": {
+        "content_item_id": { "type": "string", "format": "uuid" },
+        "current_version_id": { "type": "string", "format": "uuid" },
+        "latest_review_report_id": {
+          "type": ["string", "null"],
+          "format": "uuid"
+        },
+        "latest_workflow_run_id": {
+          "type": ["string", "null"],
+          "format": "uuid"
+        },
+        "rewrite_source_version_id": {
+          "type": ["string", "null"],
+          "format": "uuid"
+        },
+        "rewrite_review_report_id": {
+          "type": ["string", "null"],
+          "format": "uuid"
+        },
+        "rewrite_target_version_id": {
+          "type": ["string", "null"],
+          "format": "uuid"
+        }
+      }
+    }
+  },
+  "description": "Frozen Iteration 07.1C read-only aggregate over existing Project, ChapterPlan, ContentItem, ContentVersion, ReviewReport, and WorkflowRun records. Current version comes only from current_version_id; list order is chapter_plan.chapter_no ASC, content_item.id ASC; latest review/run are created_at DESC,id DESC and started_at DESC,id DESC."
+}

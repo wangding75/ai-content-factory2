@@ -19,3 +19,35 @@ endpoints:
 - method: GET
   path: /api/v1/works/{workId}
   description: 项目作品聚合详情
+rewrite_contract:
+  operation_id: mockRewriteContentItem
+  required_header: [Idempotency-Key]
+  required_body: [source_content_version_id, review_report_id, expected_version, parameters]
+  success: '201'
+  errors: [invalid_uuid, content_item_not_found, content_version_not_found, review_report_not_found, content_version_not_frozen, review_not_completed, source_version_mismatch, version_conflict, idempotency_key_required, idempotency_key_reused_with_different_payload, rewrite_already_exists, invalid_rewrite_parameters, cross_project_relation_conflict, mock_rewrite_failed, internal_error]
+workflow_run_contract:
+  operation_id: getWorkflowRun
+  success: '200'
+  errors: [invalid_uuid, workflow_run_not_found, internal_error]
+content_version_list_contract:
+  operation_id: listContentItemVersions
+  query: {limit: '1..100; default=20', offset: '>=0; default=0'}
+  success: '200'
+  sort: 'version_no DESC, id DESC'
+  errors: [invalid_uuid, content_item_not_found, invalid_pagination, internal_error]
+content_version_detail_contract:
+  operation_id: getContentVersion
+  success: '200'
+  errors: [invalid_uuid, content_version_not_found, internal_error]
+project_work_list_contract:
+  operation_id: listProjectWorks
+  work_id: 'stable ContentItem.id read-only alias'
+  query: {limit: '1..100; default=20', offset: '>=0; default=0'}
+  sort: 'chapter_plan.chapter_no ASC, content_item.id ASC'
+  success: '200'
+  errors: [invalid_uuid, project_not_found, invalid_pagination, internal_error]
+project_work_detail_contract:
+  operation_id: getProjectWork
+  work_id: 'stable ContentItem.id read-only alias'
+  success: '200'
+  errors: [invalid_uuid, work_not_found, internal_error]

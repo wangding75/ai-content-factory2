@@ -1,0 +1,210 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ai-content-factory.local/schemas/content-packs/novel/content-version-query.schema.json",
+  "title": "Novel Content Version Query Contract",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["list_item", "detail"],
+  "properties": {
+    "list_item": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "content_item_id",
+        "version_no",
+        "status",
+        "source",
+        "title",
+        "word_count",
+        "created_at",
+        "frozen_at",
+        "is_current",
+        "source_content_version",
+        "source_review_report",
+        "source_workflow_run"
+      ],
+      "properties": {
+        "id": { "type": "string", "format": "uuid" },
+        "content_item_id": { "type": "string", "format": "uuid" },
+        "version_no": { "type": "integer", "minimum": 1 },
+        "status": { "type": "string", "enum": ["editable_draft", "frozen"] },
+        "source": {
+          "type": "string",
+          "enum": ["manual_created", "mock_generated", "mock_rewrite"]
+        },
+        "title": { "type": "string", "minLength": 1, "maxLength": 120 },
+        "word_count": { "type": "integer", "minimum": 0 },
+        "created_at": { "type": "string", "format": "date-time" },
+        "frozen_at": { "type": ["string", "null"], "format": "date-time" },
+        "is_current": { "type": "boolean" },
+        "source_content_version": {
+          "type": ["object", "null"],
+          "additionalProperties": false,
+          "properties": {
+            "id": { "type": "string", "format": "uuid" },
+            "version_no": { "type": "integer", "minimum": 1 },
+            "title": { "type": "string", "minLength": 1, "maxLength": 120 },
+            "source": {
+              "type": "string",
+              "enum": ["manual_created", "mock_generated", "mock_rewrite"]
+            },
+            "frozen_at": { "type": "string", "format": "date-time" }
+          },
+          "required": ["id", "version_no", "title", "source", "frozen_at"]
+        },
+        "source_review_report": {
+          "type": ["object", "null"],
+          "additionalProperties": false,
+          "properties": {
+            "id": { "type": "string", "format": "uuid" },
+            "status": { "type": "string", "const": "completed" },
+            "conclusion": { "type": "string", "enum": ["pass", "revise"] },
+            "score": { "type": "integer", "minimum": 0, "maximum": 100 },
+            "summary": { "type": "string", "maxLength": 5000 },
+            "created_at": { "type": "string", "format": "date-time" }
+          },
+          "required": [
+            "id",
+            "status",
+            "conclusion",
+            "score",
+            "summary",
+            "created_at"
+          ]
+        },
+        "source_workflow_run": {
+          "type": ["object", "null"],
+          "additionalProperties": false,
+          "properties": {
+            "id": { "type": "string", "format": "uuid" },
+            "provider_key": { "type": "string", "const": "mock" },
+            "workflow_key": {
+              "type": "string",
+              "const": "content_mock_rewrite"
+            },
+            "status": { "type": "string", "const": "succeeded" },
+            "started_at": { "type": "string", "format": "date-time" },
+            "finished_at": { "type": "string", "format": "date-time" }
+          },
+          "required": [
+            "id",
+            "provider_key",
+            "workflow_key",
+            "status",
+            "started_at",
+            "finished_at"
+          ]
+        }
+      }
+    },
+    "detail": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "content_version",
+        "content_item",
+        "source_content_version",
+        "source_review_report",
+        "rewrite_workflow_run",
+        "is_current"
+      ],
+      "properties": {
+        "content_version": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "id",
+            "content_item_id",
+            "title",
+            "content",
+            "summary",
+            "word_count",
+            "source",
+            "version_no",
+            "version",
+            "status",
+            "created_at",
+            "updated_at",
+            "frozen_at"
+          ],
+          "properties": {
+            "id": { "type": "string", "format": "uuid" },
+            "content_item_id": { "type": "string", "format": "uuid" },
+            "title": { "type": "string", "minLength": 1, "maxLength": 120 },
+            "content": { "type": "string", "maxLength": 200000 },
+            "summary": { "type": ["string", "null"], "maxLength": 5000 },
+            "word_count": { "type": "integer", "minimum": 0 },
+            "source": {
+              "type": "string",
+              "enum": ["manual_created", "mock_generated", "mock_rewrite"]
+            },
+            "version_no": { "type": "integer", "minimum": 1 },
+            "version": { "type": "integer", "minimum": 1 },
+            "status": {
+              "type": "string",
+              "enum": ["editable_draft", "frozen"]
+            },
+            "created_at": { "type": "string", "format": "date-time" },
+            "updated_at": { "type": "string", "format": "date-time" },
+            "frozen_at": { "type": ["string", "null"], "format": "date-time" }
+          }
+        },
+        "content_item": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["id", "title", "status", "current_version_id"],
+          "properties": {
+            "id": { "type": "string", "format": "uuid" },
+            "title": { "type": "string", "minLength": 1, "maxLength": 120 },
+            "status": {
+              "type": "string",
+              "enum": ["draft", "in_review", "reviewed"]
+            },
+            "current_version_id": { "type": "string", "format": "uuid" }
+          }
+        },
+        "source_content_version": {
+          "type": ["object", "null"],
+          "additionalProperties": false,
+          "properties": {
+            "id": { "type": "string", "format": "uuid" },
+            "version_no": { "type": "integer", "minimum": 1 },
+            "title": { "type": "string", "minLength": 1, "maxLength": 120 },
+            "source": { "type": "string", "enum": ["manual_created", "mock_generated", "mock_rewrite"] },
+            "frozen_at": { "type": "string", "format": "date-time" }
+          },
+          "required": ["id", "version_no", "title", "source", "frozen_at"]
+        },
+        "source_review_report": {
+          "type": ["object", "null"],
+          "additionalProperties": false,
+          "properties": {
+            "id": { "type": "string", "format": "uuid" },
+            "status": { "type": "string", "const": "completed" },
+            "conclusion": { "type": "string", "enum": ["pass", "revise"] },
+            "score": { "type": "integer", "minimum": 0, "maximum": 100 },
+            "summary": { "type": "string", "maxLength": 5000 },
+            "created_at": { "type": "string", "format": "date-time" }
+          },
+          "required": ["id", "status", "conclusion", "score", "summary", "created_at"]
+        },
+        "rewrite_workflow_run": {
+          "type": ["object", "null"],
+          "additionalProperties": false,
+          "properties": {
+            "id": { "type": "string", "format": "uuid" },
+            "provider_key": { "type": "string", "const": "mock" },
+            "workflow_key": { "type": "string", "const": "content_mock_rewrite" },
+            "status": { "type": "string", "const": "succeeded" },
+            "started_at": { "type": "string", "format": "date-time" },
+            "finished_at": { "type": "string", "format": "date-time" }
+          },
+          "required": ["id", "provider_key", "workflow_key", "status", "started_at", "finished_at"]
+        },
+        "is_current": { "type": "boolean" }
+      }
+    }
+  },
+  "description": "Frozen Iteration 07.1B read contract. Lists are ordered version_no DESC, id DESC. is_current is derived only from ContentItem.current_version_id. v1 source relations are null; 07.1A v2 supplies source v1, ReviewReport, and succeeded content_mock_rewrite WorkflowRun summaries."
+}

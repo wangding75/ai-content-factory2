@@ -35,7 +35,10 @@ $schemaPaths = @(
     "packages/contracts/content-packs/novel/review-report.schema.json",
     "packages/contracts/content-packs/novel/review-finding.schema.json",
     "packages/contracts/content-packs/novel/review-recommendation.schema.json",
-    "packages/contracts/content-packs/novel/workflow-run-summary.schema.json"
+    "packages/contracts/content-packs/novel/workflow-run-summary.schema.json",
+    "packages/contracts/content-packs/novel/mock-rewrite.schema.json",
+    "packages/contracts/content-packs/novel/content-version-query.schema.json",
+    "packages/contracts/content-packs/novel/project-work.schema.json"
 )
 
 foreach ($schemaPath in $schemaPaths) {
@@ -173,6 +176,33 @@ foreach ($schemaPath in $schemaPaths | Where-Object { $_ -match "(content-item|c
     $schema = Get-Content -Raw $schemaPath | ConvertFrom-Json
     if ($schema.additionalProperties -ne $false) { throw "Iteration 06 schema must set additionalProperties=false: $schemaPath" }
 }
+
+$iteration071AOperations = @("mockRewriteContentItem", "getWorkflowRun")
+foreach ($operationId in $iteration071AOperations) {
+    if ($openApiText -notmatch ("(?m)^\s*operationId:\s*" + [regex]::Escape($operationId) + "\s*$")) { throw "Iteration 07.1A OpenAPI operation is missing: $operationId" }
+}
+foreach ($path in @("/api/v1/content-items/{contentItemId}/rewrites/mock", "/api/v1/workflow-runs/{workflowRunId}")) {
+    if ($openApiText -notmatch ("(?m)^  " + [regex]::Escape($path) + ":\s*$")) { throw "Iteration 07.1A OpenAPI path is missing: $path" }
+}
+foreach ($fragment in @("MockRewriteRequest", "MockRewriteParameters", "MockRewriteResult", "WorkflowRunDetail", "content_mock_rewrite", "mock_rewrite", "idempotency_key_reused_with_different_payload")) {
+    if ($openApiText -notmatch [regex]::Escape($fragment)) { throw "Iteration 07.1A required contract fragment is missing: $fragment" }
+}
+
+$iteration071BOperations = @("listContentItemVersions", "getContentVersion")
+foreach ($operationId in $iteration071BOperations) {
+    if ($openApiText -notmatch ("(?m)^\s*operationId:\s*" + [regex]::Escape($operationId) + "\s*$")) { throw "Iteration 07.1B OpenAPI operation is missing: $operationId" }
+}
+foreach ($path in @("/api/v1/content-items/{contentItemId}/versions", "/api/v1/content-versions/{versionId}")) {
+    if ($openApiText -notmatch ("(?m)^  " + [regex]::Escape($path) + ":\s*$")) { throw "Iteration 07.1B OpenAPI path is missing: $path" }
+}
+foreach ($fragment in @("ContentVersionListEnvelope", "ContentVersionDetailEnvelope", "version_no DESC, id DESC", "ContentItem.current_version_id", "ContentVersionSourceSummary", "ContentVersionReviewSummary", "ContentVersionWorkflowRunSummary")) {
+    if ($openApiText -notmatch [regex]::Escape($fragment)) { throw "Iteration 07.1B required contract fragment is missing: $fragment" }
+}
+
+$iteration071COperations = @("listProjectWorks", "getProjectWork")
+foreach ($operationId in $iteration071COperations) { if ($openApiText -notmatch ("(?m)^\s*operationId:\s*" + [regex]::Escape($operationId) + "\s*$")) { throw "Iteration 07.1C OpenAPI operation is missing: $operationId" } }
+foreach ($path in @("/api/v1/projects/{projectId}/works", "/api/v1/works/{workId}")) { if ($openApiText -notmatch ("(?m)^  " + [regex]::Escape($path) + ":\s*$")) { throw "Iteration 07.1C OpenAPI path is missing: $path" } }
+foreach ($fragment in @("ProjectWorkReadModel", "ProjectWorkListEnvelope", "ProjectWorkDetailEnvelope", "Stable read-only alias of content_item.id", "chapter_plan.chapter_no ASC, content_item.id ASC")) { if ($openApiText -notmatch [regex]::Escape($fragment)) { throw "Iteration 07.1C required contract fragment is missing: $fragment" } }
 
 Write-Host "[PASS] OpenAPI and Novel JSON Schema validation completed." -ForegroundColor Green
 
