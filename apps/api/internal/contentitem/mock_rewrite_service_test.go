@@ -240,6 +240,15 @@ func TestMockRewriteServiceWriteAndCommitFailuresRollBack(t *testing.T) {
 	}
 }
 
+func TestMockRewriteServiceExistingV2RollsBackRunningRun(t *testing.T) {
+	store, provider, tx, command := rewriteFixture()
+	store.err["create-v2"] = ErrRewriteAlreadyExists
+	_, err := NewMockRewriteService(store, provider, tx).Rewrite(context.Background(), command)
+	if !errors.Is(err, ErrRewriteAlreadyExists) || !reflect.DeepEqual(tx.calls, []string{"begin", "rollback"}) || !contains(store.calls, "running") || provider.calls != 1 {
+		t.Fatalf("err=%v tx=%v calls=%v provider=%d", err, tx.calls, store.calls, provider.calls)
+	}
+}
+
 func TestMockRewriteServiceCancellationAndFingerprint(t *testing.T) {
 	store, provider, tx, command := rewriteFixture()
 	ctx, cancel := context.WithCancel(context.Background())

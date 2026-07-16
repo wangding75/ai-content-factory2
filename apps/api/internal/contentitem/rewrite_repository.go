@@ -11,6 +11,7 @@ import (
 )
 
 const rewriteRunColumns = "id,project_id,content_item_id,content_version_id,target_content_version_id,source_review_report_id,provider_key,workflow_key,subject_type,subject_id,status,idempotency_key,request_fingerprint,input_json,output_json,error_code,error_summary,started_at,finished_at,created_at,updated_at"
+const contentVersionItemVersionNoUniqueConstraint = "content_versions_item_version_no_unique"
 
 var (
 	ErrWorkflowRunNotFound = errors.New("workflow run not found")
@@ -40,6 +41,14 @@ func (r *PostgresRepository) GetContentVersion(ctx context.Context, versionID uu
 		return ContentVersion{}, rewriteDatabaseError(err)
 	}
 	return value, nil
+}
+
+func rewriteContentVersionCreateError(err error, value ContentVersion) error {
+	var pgErr *pgconn.PgError
+	if errors.As(err, &pgErr) && pgErr.Code == "23505" && pgErr.ConstraintName == contentVersionItemVersionNoUniqueConstraint && value.Source == ContentVersionSourceMockRewrite && value.VersionNo == 2 {
+		return ErrRewriteAlreadyExists
+	}
+	return rewriteDatabaseError(err)
 }
 
 func (r *PostgresRepository) ListContentVersions(ctx context.Context, itemID uuid.UUID, options ContentVersionPageOptions) (out ContentVersionPage, err error) {
@@ -82,7 +91,7 @@ func (r *PostgresRepository) CreateContentVersion(ctx context.Context, tx pgx.Tx
 	}
 	created, err := scanVersion(tx.QueryRow(ctx, "INSERT INTO content_versions(id,content_item_id,version_no,title,content,summary,word_count,source,status,generation_parameters,version,frozen_at,created_at,updated_at) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,COALESCE($10,'{}'::jsonb),$11,$12,COALESCE($13,NOW()),COALESCE($14,NOW())) RETURNING "+versionColumns, value.ID, value.ContentItemID, value.VersionNo, value.Title, value.Content, value.Summary, value.WordCount, value.Source, value.Status, value.GenerationParameters, value.Version, value.FrozenAt, nullableTime(value.CreatedAt), nullableTime(value.UpdatedAt)))
 	if err != nil {
-		return ContentVersion{}, rewriteDatabaseError(err)
+		return ContentVersion{}, rewriteContentVersionCreateError(err, value)
 	}
 	return created, nil
 }

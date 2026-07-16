@@ -21,12 +21,14 @@ var (
 	ErrContentVersionLocked    = errors.New("content version locked")
 	ErrContentVersionReviewed  = errors.New("content version already reviewed")
 	ErrVersionConflict         = errors.New("content version conflict")
-	ErrIdempotencyConflict     = errors.New("idempotency key reused with different payload")
-	ErrCrossProjectRelation    = errors.New("cross-project relation conflict")
-	ErrReviewNotFound          = errors.New("review not found")
-	ErrInvalidReviewResult     = errors.New("invalid review result")
-	ErrInvalidContentVersion   = errors.New("invalid content version")
-	ErrInvalidMockRewriteRun   = errors.New("invalid mock rewrite workflow run")
+	// ErrRewriteAlreadyExists is limited to the frozen mock-rewrite v2 slot.
+	ErrRewriteAlreadyExists  = errors.New("mock rewrite already exists")
+	ErrIdempotencyConflict   = errors.New("idempotency key reused with different payload")
+	ErrCrossProjectRelation  = errors.New("cross-project relation conflict")
+	ErrReviewNotFound        = errors.New("review not found")
+	ErrInvalidReviewResult   = errors.New("invalid review result")
+	ErrInvalidContentVersion = errors.New("invalid content version")
+	ErrInvalidMockRewriteRun = errors.New("invalid mock rewrite workflow run")
 )
 
 type ContentItem struct {

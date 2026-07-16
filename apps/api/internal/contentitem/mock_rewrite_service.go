@@ -207,7 +207,7 @@ func mapRewriteServiceError(err error) error {
 	if err == nil || errors.Is(err, context.Canceled) {
 		return err
 	}
-	for _, known := range []error{ErrContentItemNotFound, ErrContentVersionNotFound, ErrReviewNotFound, ErrContentVersionNotFrozen, ErrReviewNotCompleted, ErrSourceVersionMismatch, ErrVersionConflict, ErrInvalidRewriteParameters, ErrIdempotencyConflict, ErrCrossProjectRelation, ErrMockRewriteFailed} {
+	for _, known := range []error{ErrContentItemNotFound, ErrContentVersionNotFound, ErrReviewNotFound, ErrContentVersionNotFrozen, ErrReviewNotCompleted, ErrSourceVersionMismatch, ErrVersionConflict, ErrRewriteAlreadyExists, ErrInvalidRewriteParameters, ErrIdempotencyConflict, ErrCrossProjectRelation, ErrMockRewriteFailed} {
 		if errors.Is(err, known) {
 			return err
 		}

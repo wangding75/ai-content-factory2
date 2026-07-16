@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/local/ai-content-factory/apps/api/internal/contentitem"
 	"github.com/local/ai-content-factory/apps/api/internal/material"
 	"github.com/local/ai-content-factory/apps/api/internal/planning"
 	"github.com/local/ai-content-factory/apps/api/internal/project"
@@ -69,6 +70,10 @@ func New(address string, projects *project.Service, services ...any) *Server {
 		case contentItemApplication:
 			if value != nil {
 				registerContentItemRoutes(mux, value)
+			}
+		case *contentitem.Iteration07Application:
+			if value != nil {
+				registerIteration07Routes(mux, value)
 			}
 		case *material.ProjectMaterialService:
 			if value != nil {

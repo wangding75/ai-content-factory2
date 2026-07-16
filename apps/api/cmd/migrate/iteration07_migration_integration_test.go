@@ -2,8 +2,10 @@ package main
 
 import (
 	"context"
-	"os"
+	"fmt"
+	"net/url"
 	"path/filepath"
+	"regexp"
 	"testing"
 	"time"
 
@@ -12,24 +14,55 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-const iteration07MigrationTestDatabase = "ai_content_factory_i07_migration_test"
+var iteration07MigrationDatabaseName = regexp.MustCompile(`^ai_content_factory_i07_migration_[a-z0-9_]+$`)
 
-func openIteration07MigrationDB(t *testing.T) (*pgxpool.Pool, context.Context) {
+func openIteration07MigrationDB(t *testing.T) (*pgxpool.Pool, context.Context, string) {
 	t.Helper()
-	url := os.Getenv("TEST_DATABASE_URL")
-	if url == "" {
-		t.Skip("TEST_DATABASE_URL is not set; Iteration 07 migration PostgreSQL integration test skipped")
-	}
-	config, err := pgxpool.ParseConfig(url)
+	// This is the local Compose PostgreSQL admin endpoint used exclusively for
+	// ephemeral migration integration databases.
+	raw := "postgres://postgres:postgres@127.0.0.1:15432/postgres?sslmode=disable"
+	parsed, err := url.Parse(raw)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if config.ConnConfig.Database != iteration07MigrationTestDatabase {
-		t.Skipf("TEST_DATABASE_URL targets %q, not %q", config.ConnConfig.Database, iteration07MigrationTestDatabase)
+	database := fmt.Sprintf("ai_content_factory_i07_migration_%d", time.Now().UTC().UnixNano())
+	if !iteration07MigrationDatabaseName.MatchString(database) {
+		t.Fatal("unsafe generated database name")
 	}
+	adminURL := *parsed
+	adminURL.Path = "/postgres"
+	targetURL := *parsed
+	targetURL.Path = "/" + database
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	t.Cleanup(cancel)
-	db, err := pgxpool.NewWithConfig(ctx, config)
+	admin, err := pgx.Connect(ctx, adminURL.String())
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer admin.Close(ctx)
+	if _, err = admin.Exec(ctx, "CREATE DATABASE "+database); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		c, e := pgx.Connect(context.Background(), adminURL.String())
+		if e == nil {
+			_, _ = c.Exec(context.Background(), "DROP DATABASE IF EXISTS "+database+" WITH (FORCE)")
+			_ = c.Close(context.Background())
+		}
+	})
+	conn, err := pgx.Connect(ctx, targetURL.String())
+	if err != nil {
+		t.Fatal(err)
+	}
+	migrations := iteration07Migrations(t)
+	if err = ensureSchemaMigrations(ctx, conn); err != nil {
+		t.Fatal(err)
+	}
+	if err = migrateUp(ctx, conn, migrations[:6]); err != nil {
+		t.Fatalf("migrate fresh database to 000006: %v", err)
+	}
+	_ = conn.Close(ctx)
+	db, err := pgxpool.New(ctx, targetURL.String())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -38,7 +71,8 @@ func openIteration07MigrationDB(t *testing.T) (*pgxpool.Pool, context.Context) {
 	if err = db.QueryRow(ctx, "SELECT COALESCE(MAX(version), 0) FROM schema_migrations").Scan(&version); err != nil || version != 6 {
 		t.Fatalf("migration version=%d err=%v, want 6 before Migration 000007", version, err)
 	}
-	return db, ctx
+	t.Logf("Iteration 07 migration test database: %s", database)
+	return db, ctx, targetURL.String()
 }
 
 func iteration07Migrations(t *testing.T) []migration {
@@ -112,10 +146,10 @@ func mustFail(t *testing.T, err error) {
 }
 
 func TestIteration07Migration000007UpgradeConstraintsAndRollback(t *testing.T) {
-	db, ctx := openIteration07MigrationDB(t)
+	db, ctx, targetURL := openIteration07MigrationDB(t)
 	f := insertIteration07Fixture(t, ctx, db)
 	migrations := iteration07Migrations(t)
-	conn, err := pgx.Connect(ctx, os.Getenv("TEST_DATABASE_URL"))
+	conn, err := pgx.Connect(ctx, targetURL)
 	if err != nil {
 		t.Fatal(err)
 	}

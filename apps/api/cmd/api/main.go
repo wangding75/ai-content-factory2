@@ -39,8 +39,11 @@ func main() {
 	storylines := storyline.NewPostgresService(projectRepository, pool)
 	foreshadowings := foreshadowing.NewPostgresService(projectRepository, pool)
 	chapterPlans := chapterplan.NewPostgresService(projectRepository, pool)
-	contentItems := contentitem.NewApplication(contentitem.NewPostgresRepository(pool), nil)
-	server := httpserver.New(cfg.APIAddress, projects, plannings, materials, projectMaterials, storylines, foreshadowings, chapterPlans, contentItems)
+	contentRepository := contentitem.NewPostgresRepository(pool)
+	contentItems := contentitem.NewApplication(contentRepository, nil)
+	rewriteService := contentitem.NewMockRewriteService(contentRepository, contentitem.DeterministicMockRewriteProvider{}, contentitem.NewPgxRewriteTransactionRunner(pool))
+	iteration07 := contentitem.NewIteration07Application(rewriteService, contentitem.NewQueryService(contentRepository))
+	server := httpserver.New(cfg.APIAddress, projects, plannings, materials, projectMaterials, storylines, foreshadowings, chapterPlans, contentItems, iteration07)
 	log.Printf("api listening on %s", cfg.APIAddress)
 	if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 		log.Fatal(err)

@@ -3,15 +3,17 @@ package contentitem
 import (
 	"context"
 	"errors"
+	"fmt"
 	"os"
+	"os/exec"
+	"regexp"
 	"testing"
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
-
-const rewriteRepositoryTestDatabase = "ai_content_factory_i07_migration_test"
 
 func openRewriteRepositoryDB(t *testing.T) (*pgxpool.Pool, context.Context) {
 	t.Helper()
@@ -23,9 +25,14 @@ func openRewriteRepositoryDB(t *testing.T) (*pgxpool.Pool, context.Context) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if config.ConnConfig.Database != rewriteRepositoryTestDatabase {
-		t.Fatalf("TEST_DATABASE_URL database=%q, want %q", config.ConnConfig.Database, rewriteRepositoryTestDatabase)
+	expected := os.Getenv("ITERATION07_REWRITE_TEST_DATABASE")
+	if expected == "" {
+		t.Skip("ITERATION07_REWRITE_TEST_DATABASE is not set; fresh rewrite repository integration test skipped")
 	}
+	if config.ConnConfig.Database != expected || expected == "ai_content_factory_i07_migration_test" {
+		t.Fatalf("TEST_DATABASE_URL database=%q does not name the required fresh Iteration 07 rewrite database", config.ConnConfig.Database)
+	}
+	prepareFreshRewriteRepositoryDB(t, expected, url)
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	t.Cleanup(cancel)
 	db, err := pgxpool.NewWithConfig(ctx, config)
@@ -38,6 +45,49 @@ func openRewriteRepositoryDB(t *testing.T) (*pgxpool.Pool, context.Context) {
 		t.Fatalf("migration version=%d err=%v, want 7", version, err)
 	}
 	return db, ctx
+}
+
+var rewriteTestDatabaseName = regexp.MustCompile(`^ai_content_factory_i07_rewrite_[a-z0-9_]+$`)
+
+func prepareFreshRewriteRepositoryDB(t *testing.T, database, targetURL string) {
+	t.Helper()
+	if !rewriteTestDatabaseName.MatchString(database) {
+		t.Fatalf("unsafe fresh test database name %q", database)
+	}
+	adminURL := os.Getenv("ITERATION07_REWRITE_TEST_ADMIN_URL")
+	if adminURL == "" {
+		t.Fatal("ITERATION07_REWRITE_TEST_ADMIN_URL is required for a fresh isolated database")
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+	admin, err := pgx.Connect(ctx, adminURL)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer admin.Close(ctx)
+	var exists bool
+	if err = admin.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM pg_database WHERE datname=$1)", database).Scan(&exists); err != nil {
+		t.Fatal(err)
+	}
+	if exists {
+		t.Fatalf("fresh test database %q already exists", database)
+	}
+	if _, err = admin.Exec(ctx, "CREATE DATABASE "+database); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		cleanup, e := pgx.Connect(context.Background(), adminURL)
+		if e == nil {
+			_, _ = cleanup.Exec(context.Background(), "DROP DATABASE IF EXISTS "+database+" WITH (FORCE)")
+			cleanup.Close(context.Background())
+		}
+	})
+	command := exec.Command("go", "run", "./cmd/migrate", "up")
+	command.Dir = "../.."
+	command.Env = append(os.Environ(), "DATABASE_URL="+targetURL)
+	if output, err := command.CombinedOutput(); err != nil {
+		t.Fatalf("migrate fresh test database: %v: %s", err, fmt.Sprint(string(output)))
+	}
 }
 
 type rewriteRepositoryFixture struct {
@@ -140,7 +190,7 @@ func TestRewriteRepositoriesPostgres(t *testing.T) {
 	}
 	_, err = r.CreateContentVersion(ctx, tx, ContentVersion{ID: uuid.New(), ContentItemID: f.itemID, VersionNo: 2, Version: 1, Title: "duplicate", Source: ContentVersionSourceMockRewrite, Status: ContentVersionStatusEditableDraft})
 	_ = tx.Rollback(ctx)
-	if !errors.Is(err, ErrVersionConflict) {
+	if !errors.Is(err, ErrRewriteAlreadyExists) {
 		t.Fatalf("duplicate=%v", err)
 	}
 
