@@ -1,15 +1,18 @@
 import Link from "next/link";
 
-const futureItems = ["Review", "Settings"];
+export type ProjectWorkspaceTab = "overview" | "planning" | "materials" | "storylines" | "chapter-plans" | "review" | "works" | "settings";
 
-export function ProjectWorkspaceNav({ projectId, active }: { projectId: string; active: "overview" | "planning" | "materials" | "storylines" | "chapter-plans" | "works" }) {
-  return <nav className="workspace-tabs" aria-label="Project workspace navigation">
-    <Link className={active === "overview" ? "is-active" : ""} href={`/projects/${projectId}`}>Overview</Link>
-    <Link className={active === "planning" ? "is-active" : ""} href={`/projects/${projectId}/planning`}>Planning</Link>
-    <Link className={active === "materials" ? "is-active" : ""} href={`/projects/${projectId}/materials`}>Materials</Link>
-    <Link className={active === "storylines" ? "is-active" : ""} href={`/projects/${projectId}/storylines`}>Storylines</Link>
-    <Link className={active === "chapter-plans" ? "is-active" : ""} href={`/projects/${projectId}/chapter-plans`}>章节规划</Link>
-    <Link className={active === "works" ? "is-active" : ""} href={`/projects/${projectId}/works`}>作品</Link>
-    {futureItems.map((item) => <span className="is-disabled" aria-disabled="true" key={item}>{item}</span>)}
-  </nav>;
+const items: Array<{ key: ProjectWorkspaceTab; label: string; href: (id: string) => string }> = [
+  { key: "overview", label: "概览", href: (id) => `/projects/${id}` },
+  { key: "planning", label: "策划", href: (id) => `/projects/${id}/planning` },
+  { key: "materials", label: "素材", href: (id) => `/projects/${id}/materials` },
+  { key: "storylines", label: "故事线", href: (id) => `/projects/${id}/storylines` },
+  { key: "chapter-plans", label: "章节规划", href: (id) => `/projects/${id}/chapter-plans` },
+  { key: "review", label: "审核", href: (id) => `/projects/${id}/works?view=review` },
+  { key: "works", label: "作品", href: (id) => `/projects/${id}/works` },
+  { key: "settings", label: "设置", href: (id) => `/projects/${id}/settings` },
+];
+
+export function ProjectWorkspaceNav({ projectId, active }: { projectId: string; active: ProjectWorkspaceTab }) {
+  return <nav className="workspace-tabs" aria-label="项目工作区导航">{items.map((item) => <Link className={active === item.key ? "is-active" : ""} href={item.href(projectId)} key={item.key}>{item.label}</Link>)}</nav>;
 }
