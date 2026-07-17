@@ -177,6 +177,7 @@ paths:
         - $ref: "#/components/parameters/MaterialQuery"
         - $ref: "#/components/parameters/MaterialTypeQuery"
         - $ref: "#/components/parameters/MaterialSortQuery"
+        - $ref: "#/components/parameters/GlobalScopeQuery"
         - $ref: "#/components/parameters/LimitQuery"
         - $ref: "#/components/parameters/OffsetQuery"
       responses:
@@ -665,6 +666,21 @@ paths:
         "400": {$ref: "#/components/responses/BadRequest"}
         "404": {$ref: "#/components/responses/NotFound"}
         "500": {$ref: "#/components/responses/InternalServerError"}
+  /api/v1/works:
+    get:
+      operationId: listGlobalWorks
+      description: >
+        Read-only cross-project GlobalWorkReadModel aggregation over the existing ProjectWorkReadModel.
+        scope is fixed to global when supplied. work_id is exactly ContentItem.id; no Work entity,
+        table, repository, or lifecycle exists. current_version is selected only by
+        ContentItem.current_version_id. Fixed stable order is project.updated_at DESC,
+        chapter_plan.chapter_no ASC, content_item.id ASC. Errors: 400 invalid_pagination or
+        invalid_scope; 500 internal_error.
+      parameters: [{$ref: "#/components/parameters/GlobalScopeQuery"}, {$ref: "#/components/parameters/LimitQuery"}, {$ref: "#/components/parameters/OffsetQuery"}]
+      responses:
+        "200": {description: Global works list., content: {application/json: {schema: {$ref: "#/components/schemas/GlobalWorkListEnvelope"}, example: {data: {items: [], total: 0, limit: 20, offset: 0}, request_id: req_08_works}}}}
+        "400": {$ref: "#/components/responses/BadRequest"}
+        "500": {$ref: "#/components/responses/InternalServerError"}
   /api/v1/works/{workId}:
     parameters: [{$ref: "#/components/parameters/WorkId"}]
     get:
@@ -724,6 +740,42 @@ paths:
         "404": {$ref: "#/components/responses/NotFound"}
         "409": {$ref: "#/components/responses/Conflict"}
         "422": {$ref: "#/components/responses/UnprocessableEntity"}
+        "500": {$ref: "#/components/responses/InternalServerError"}
+  /api/v1/workflow-runs:
+    get:
+      operationId: listGlobalWorkflowRuns
+      description: >
+        Read-only global WorkflowRun projection for E3. It lists existing runs only and never starts,
+        retries, edits, or orchestrates a run. Fixed stable order is started_at DESC, id DESC. project
+        is null only when the historical subject cannot be resolved to a project; a result navigation is
+        enabled only when project.id is present. error is a safe nullable user-facing summary and excludes
+        SQL, credentials, stacks, infrastructure paths, and provider configuration. Errors: 400
+        invalid_pagination; 500 internal_error.
+      parameters: [{$ref: "#/components/parameters/LimitQuery"}, {$ref: "#/components/parameters/OffsetQuery"}]
+      responses:
+        "200": {description: Global workflow run list., content: {application/json: {schema: {$ref: "#/components/schemas/GlobalWorkflowRunListEnvelope"}, example: {data: {items: [], total: 0, limit: 20, offset: 0}, request_id: req_08_runs}}}}
+        "400": {$ref: "#/components/responses/BadRequest"}
+        "500": {$ref: "#/components/responses/InternalServerError"}
+  /api/v1/workflows/builtin:
+    get:
+      operationId: listBuiltinWorkflows
+      description: Frozen read-only descriptors for enabled built-in mock workflows. This endpoint neither exposes nor executes an editor, node graph, provider configuration, or external workflow.
+      responses:
+        "200": {description: Built-in workflow descriptors., content: {application/json: {schema: {$ref: "#/components/schemas/BuiltinWorkflowListEnvelope"}, example: {data: {items: []}, request_id: req_08_builtin}}}}
+        "500": {$ref: "#/components/responses/InternalServerError"}
+  /api/v1/capabilities:
+    get:
+      operationId: listCapabilities
+      description: Frozen read-only capability status. mock_content is enabled; real_ai is not_configured. No key, provider, account, or configuration data is exposed.
+      responses:
+        "200": {description: Capability descriptors., content: {application/json: {schema: {$ref: "#/components/schemas/CapabilityListEnvelope"}, example: {data: {items: []}, request_id: req_08_capabilities}}}}
+        "500": {$ref: "#/components/responses/InternalServerError"}
+  /api/v1/integrations:
+    get:
+      operationId: listIntegrations
+      description: Frozen read-only external integration status. All P0 integration descriptors are not_available and have no connect or configuration action.
+      responses:
+        "200": {description: Integration descriptors., content: {application/json: {schema: {$ref: "#/components/schemas/IntegrationListEnvelope"}, example: {data: {items: []}, request_id: req_08_integrations}}}}
         "500": {$ref: "#/components/responses/InternalServerError"}
   /api/v1/workflow-runs/{workflowRunId}:
     parameters: [{$ref: "#/components/parameters/WorkflowRunId"}]
@@ -816,6 +868,12 @@ components:
         type: string
         enum: [updated_at_desc, updated_at_asc, name_asc, name_desc]
         default: updated_at_desc
+    GlobalScopeQuery:
+      name: scope
+      in: query
+      required: false
+      description: Explicit alias for the global collection; the only accepted value is global.
+      schema: {type: string, const: global}
     IdempotencyKey:
       name: Idempotency-Key
       in: header
@@ -1358,6 +1416,115 @@ components:
       additionalProperties: false
       required: [data, request_id]
       properties: {data: {$ref: "#/components/schemas/WorkflowRunDetail"}, request_id: {type: string}}
+    GlobalWorkReadModel:
+      type: object
+      additionalProperties: false
+      required: [project, work]
+      properties:
+        project: {$ref: "#/components/schemas/ProjectWorkProjectSummary"}
+        work: {$ref: "#/components/schemas/ProjectWorkSummary"}
+      description: Read-only cross-project projection; work.work_id remains ContentItem.id and current version follows current_version_id only.
+    GlobalWorkList:
+      type: object
+      additionalProperties: false
+      required: [items, total, limit, offset]
+      properties: {items: {type: array, items: {$ref: "#/components/schemas/GlobalWorkReadModel"}}, total: {type: integer, minimum: 0}, limit: {type: integer, minimum: 1, maximum: 100}, offset: {type: integer, minimum: 0}}
+    GlobalWorkListEnvelope:
+      type: object
+      additionalProperties: false
+      required: [data, request_id]
+      properties: {data: {$ref: "#/components/schemas/GlobalWorkList"}, request_id: {type: string}}
+    BuiltinWorkflowDefinition:
+      type: object
+      additionalProperties: false
+      required: [workflow_key, provider_key, label, description, status, result_kind]
+      properties:
+        workflow_key: {type: string, enum: [chapter_plan_mock_generate, content_mock_generate, content_mock_review, content_mock_rewrite]}
+        provider_key: {type: string, const: mock}
+        label: {type: string, minLength: 1, maxLength: 120}
+        description: {type: string, maxLength: 1000}
+        status: {type: string, const: enabled}
+        result_kind: {type: string, enum: [chapter_plan, content, review, rewrite]}
+    BuiltinWorkflowList:
+      type: object
+      additionalProperties: false
+      required: [items]
+      properties: {items: {type: array, items: {$ref: "#/components/schemas/BuiltinWorkflowDefinition"}}}
+    BuiltinWorkflowListEnvelope:
+      type: object
+      additionalProperties: false
+      required: [data, request_id]
+      properties: {data: {$ref: "#/components/schemas/BuiltinWorkflowList"}, request_id: {type: string}}
+    GlobalWorkflowSubject:
+      type: object
+      additionalProperties: false
+      required: [type, id]
+      properties: {type: {type: string, enum: [chapter_plan, content_item, review_report, content_version]}, id: {type: string, format: uuid}}
+    GlobalWorkflowRunSummary:
+      type: object
+      additionalProperties: false
+      required: [id, provider_key, workflow_key, status, project, subject, error, started_at, finished_at]
+      properties:
+        id: {type: string, format: uuid}
+        provider_key: {type: string, const: mock}
+        workflow_key: {type: string, enum: [chapter_plan_mock_generate, content_mock_generate, content_mock_review, content_mock_rewrite]}
+        status: {$ref: "#/components/schemas/WorkflowRunStatus"}
+        project: {anyOf: [{$ref: "#/components/schemas/ProjectWorkProjectSummary"}, {type: "null"}]}
+        subject: {$ref: "#/components/schemas/GlobalWorkflowSubject"}
+        error: {type: [object, "null"], additionalProperties: false, required: [code, message], properties: {code: {type: string, maxLength: 120}, message: {type: string, maxLength: 5000, description: Safe user-facing summary only.}}}
+        started_at: {type: string, format: date-time}
+        finished_at: {type: [string, "null"], format: date-time}
+      description: Fixed order started_at DESC, id DESC. No credentials, stacks, SQL, paths, or provider configuration are included.
+    GlobalWorkflowRunList:
+      type: object
+      additionalProperties: false
+      required: [items, total, limit, offset]
+      properties: {items: {type: array, items: {$ref: "#/components/schemas/GlobalWorkflowRunSummary"}}, total: {type: integer, minimum: 0}, limit: {type: integer, minimum: 1, maximum: 100}, offset: {type: integer, minimum: 0}}
+    GlobalWorkflowRunListEnvelope:
+      type: object
+      additionalProperties: false
+      required: [data, request_id]
+      properties: {data: {$ref: "#/components/schemas/GlobalWorkflowRunList"}, request_id: {type: string}}
+    CapabilityDescriptor:
+      type: object
+      additionalProperties: false
+      required: [key, label, status, description, workflow_keys]
+      properties:
+        key: {type: string, enum: [mock_content, real_ai]}
+        label: {type: string, minLength: 1, maxLength: 120}
+        status: {type: string, enum: [enabled, not_configured]}
+        description: {type: string, maxLength: 1000}
+        workflow_keys: {type: array, uniqueItems: true, items: {type: string}}
+    CapabilityList:
+      type: object
+      additionalProperties: false
+      required: [items]
+      properties: {items: {type: array, items: {$ref: "#/components/schemas/CapabilityDescriptor"}}}
+    CapabilityListEnvelope:
+      type: object
+      additionalProperties: false
+      required: [data, request_id]
+      properties: {data: {$ref: "#/components/schemas/CapabilityList"}, request_id: {type: string}}
+    IntegrationDescriptor:
+      type: object
+      additionalProperties: false
+      required: [key, label, category, status, description]
+      properties:
+        key: {type: string, enum: [wechat, douyin, youtube, n8n, coze, comfyui]}
+        label: {type: string, minLength: 1, maxLength: 120}
+        category: {type: string, enum: [publish, workflow]}
+        status: {type: string, const: not_available}
+        description: {type: string, maxLength: 1000}
+    IntegrationList:
+      type: object
+      additionalProperties: false
+      required: [items]
+      properties: {items: {type: array, items: {$ref: "#/components/schemas/IntegrationDescriptor"}}}
+    IntegrationListEnvelope:
+      type: object
+      additionalProperties: false
+      required: [data, request_id]
+      properties: {data: {$ref: "#/components/schemas/IntegrationList"}, request_id: {type: string}}
     ProjectType:
       type: string
       enum: [novel]

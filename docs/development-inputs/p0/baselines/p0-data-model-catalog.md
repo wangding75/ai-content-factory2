@@ -25,3 +25,7 @@
 `id, provider_key, workflow_key, subject_type, subject_id, status, idempotency_key, input_json, output_json, error_code, started_at, finished_at`。相同操作作用域、Idempotency-Key 与 payload 仅产生一个业务结果。
 
 Project/global work read model 从以上实体聚合，不复制业务真值。
+
+## Iteration 08 global Lite projections
+
+`GlobalWorkReadModel` is the cross-project list projection of Iteration 07 `ProjectWorkReadModel` plus a project summary. `GlobalWorkflowRunSummary` projects an existing WorkflowRun, its subject, its owning project when resolvable, lifecycle timestamps, and a safe nullable error summary. `BuiltinWorkflowDefinition`, `CapabilityDescriptor`, and `IntegrationDescriptor` are immutable display descriptors only; no configuration, credential, provider, Work, or settings persistence entity is added.

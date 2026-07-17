@@ -39,6 +39,7 @@ $schemaPaths = @(
     "packages/contracts/content-packs/novel/mock-rewrite.schema.json",
     "packages/contracts/content-packs/novel/content-version-query.schema.json",
     "packages/contracts/content-packs/novel/project-work.schema.json"
+    ,"packages/contracts/content-packs/novel/global-lite.schema.json"
 )
 
 foreach ($schemaPath in $schemaPaths) {
@@ -203,6 +204,19 @@ $iteration071COperations = @("listProjectWorks", "getProjectWork")
 foreach ($operationId in $iteration071COperations) { if ($openApiText -notmatch ("(?m)^\s*operationId:\s*" + [regex]::Escape($operationId) + "\s*$")) { throw "Iteration 07.1C OpenAPI operation is missing: $operationId" } }
 foreach ($path in @("/api/v1/projects/{projectId}/works", "/api/v1/works/{workId}")) { if ($openApiText -notmatch ("(?m)^  " + [regex]::Escape($path) + ":\s*$")) { throw "Iteration 07.1C OpenAPI path is missing: $path" } }
 foreach ($fragment in @("ProjectWorkReadModel", "ProjectWorkListEnvelope", "ProjectWorkDetailEnvelope", "Stable read-only alias of content_item.id", "chapter_plan.chapter_no ASC, content_item.id ASC")) { if ($openApiText -notmatch [regex]::Escape($fragment)) { throw "Iteration 07.1C required contract fragment is missing: $fragment" } }
+
+$iteration08Operations = @("listMaterials", "listGlobalWorks", "listBuiltinWorkflows", "listGlobalWorkflowRuns", "listCapabilities", "listIntegrations")
+foreach ($operationId in $iteration08Operations) {
+    if ([regex]::Matches($openApiText, "(?m)^\s*operationId:\s*" + [regex]::Escape($operationId) + "\s*$").Count -ne 1) { throw "Iteration 08 OpenAPI operation must exist exactly once: $operationId" }
+}
+foreach ($path in @("/api/v1/materials", "/api/v1/works", "/api/v1/workflows/builtin", "/api/v1/workflow-runs", "/api/v1/capabilities", "/api/v1/integrations")) {
+    if ($openApiText -notmatch ("(?m)^  " + [regex]::Escape($path) + ":\s*$")) { throw "Iteration 08 OpenAPI path is missing: $path" }
+}
+foreach ($fragment in @("GlobalWorkListEnvelope", "BuiltinWorkflowListEnvelope", "GlobalWorkflowRunListEnvelope", "CapabilityListEnvelope", "IntegrationListEnvelope", "GlobalScopeQuery", "current_version_id", "started_at DESC, id DESC", "not_available")) {
+    if ($openApiText -notmatch [regex]::Escape($fragment)) { throw "Iteration 08 required contract fragment is missing: $fragment" }
+}
+$globalLiteSchema = Get-Content -Raw "packages/contracts/content-packs/novel/global-lite.schema.json" | ConvertFrom-Json
+if ($globalLiteSchema.additionalProperties -ne $false -or $globalLiteSchema.'$defs'.builtin_workflow.properties.provider_key.const -ne "mock") { throw "Iteration 08 Global Lite JSON Schema drift." }
 
 Write-Host "[PASS] OpenAPI and Novel JSON Schema validation completed." -ForegroundColor Green
 

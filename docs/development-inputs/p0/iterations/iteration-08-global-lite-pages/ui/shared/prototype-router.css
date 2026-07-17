@@ -1,0 +1,2 @@
+/* Frozen prototype helper: navigation only; it intentionally adds no visual design. */
+[aria-disabled="true"] { pointer-events: none; }

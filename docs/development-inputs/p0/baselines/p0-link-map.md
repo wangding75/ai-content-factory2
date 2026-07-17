@@ -107,6 +107,8 @@ D5_REWRITE_RESULT
 
 ## 全局 Lite 页面
 
+Formal top-level routes: `E1_GLOBAL_MATERIALS=/materials`, `E2_GLOBAL_WORKS=/works`, `E3_WORKFLOWS=/workflows`, `E4_SETTINGS=/settings`. Placeholder links in an earlier web shell are not route authority.
+
 ```text
 E1_GLOBAL_MATERIALS → 引用项目 / 素材详情
 E2_GLOBAL_WORKS → 源项目 / 正文 / 审核

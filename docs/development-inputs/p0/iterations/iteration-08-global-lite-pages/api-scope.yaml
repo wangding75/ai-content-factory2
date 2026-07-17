@@ -3,16 +3,25 @@ name: 全局 Lite 页面与能力展示
 endpoints:
 - method: GET
   path: /api/v1/materials?scope=global
-  description: 全局素材聚合
+  operation_id: listMaterials
+  description: Existing global Material list; scope=global is an explicit read-only alias of the already-global collection, not a second resource.
 - method: GET
   path: /api/v1/works?scope=global
-  description: 全局作品聚合
+  operation_id: listGlobalWorks
+  description: Read-only cross-project ProjectWork aggregation; no Work entity or lifecycle.
 - method: GET
   path: /api/v1/workflows/builtin
-  description: 内置模拟流程
+  operation_id: listBuiltinWorkflows
+  description: Read-only built-in mock workflow descriptors.
+- method: GET
+  path: /api/v1/workflow-runs
+  operation_id: listGlobalWorkflowRuns
+  description: Read-only global WorkflowRun summaries for the E3 execution-record list.
 - method: GET
   path: /api/v1/capabilities
-  description: 能力状态
+  operation_id: listCapabilities
+  description: Read-only frozen capability descriptors.
 - method: GET
   path: /api/v1/integrations
-  description: 外部集成状态
+  operation_id: listIntegrations
+  description: Read-only frozen integration descriptors.

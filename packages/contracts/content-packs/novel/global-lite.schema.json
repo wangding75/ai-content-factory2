@@ -1,0 +1,50 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ai-content-factory.local/schemas/content-packs/novel/global-lite.schema.json",
+  "title": "Iteration 08 Global Lite Read Models",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["builtin_workflow", "capability", "integration"],
+  "properties": {
+    "builtin_workflow": {"$ref": "#/$defs/builtin_workflow"},
+    "capability": {"$ref": "#/$defs/capability"},
+    "integration": {"$ref": "#/$defs/integration"}
+  },
+  "$defs": {
+    "builtin_workflow": {
+      "type": "object", "additionalProperties": false,
+      "required": ["workflow_key", "provider_key", "label", "description", "status", "result_kind"],
+      "properties": {
+        "workflow_key": {"type": "string", "enum": ["chapter_plan_mock_generate", "content_mock_generate", "content_mock_review", "content_mock_rewrite"]},
+        "provider_key": {"type": "string", "const": "mock"},
+        "label": {"type": "string", "minLength": 1, "maxLength": 120},
+        "description": {"type": "string", "maxLength": 1000},
+        "status": {"type": "string", "const": "enabled"},
+        "result_kind": {"type": "string", "enum": ["chapter_plan", "content", "review", "rewrite"]}
+      }
+    },
+    "capability": {
+      "type": "object", "additionalProperties": false,
+      "required": ["key", "label", "status", "description", "workflow_keys"],
+      "properties": {
+        "key": {"type": "string", "enum": ["mock_content", "real_ai"]},
+        "label": {"type": "string", "minLength": 1, "maxLength": 120},
+        "status": {"type": "string", "enum": ["enabled", "not_configured"]},
+        "description": {"type": "string", "maxLength": 1000},
+        "workflow_keys": {"type": "array", "uniqueItems": true, "items": {"type": "string"}}
+      }
+    },
+    "integration": {
+      "type": "object", "additionalProperties": false,
+      "required": ["key", "label", "category", "status", "description"],
+      "properties": {
+        "key": {"type": "string", "enum": ["wechat", "douyin", "youtube", "n8n", "coze", "comfyui"]},
+        "label": {"type": "string", "minLength": 1, "maxLength": 120},
+        "category": {"type": "string", "enum": ["publish", "workflow"]},
+        "status": {"type": "string", "const": "not_available"},
+        "description": {"type": "string", "maxLength": 1000}
+      }
+    }
+  },
+  "description": "Frozen Iteration 08 read-only descriptors. No credentials, provider configuration, connection state, or write action is represented."
+}

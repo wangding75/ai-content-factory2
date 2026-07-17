@@ -206,6 +206,10 @@ endpoints:
   description: 内置模拟流程
 - iteration: 08
   method: GET
+  path: /api/v1/workflow-runs
+  description: 全局流程执行摘要（只读）
+- iteration: 08
+  method: GET
   path: /api/v1/capabilities
   description: 能力状态
 - iteration: 08

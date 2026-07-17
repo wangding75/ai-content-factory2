@@ -17,6 +17,8 @@ Iteration 07
 
 ## 4. UI 范围
 
+Formal routes are `/materials` (E1), `/works` (E2), `/workflows` (E3), and `/settings` (E4). They are top-level Lite routes only; this iteration does not add a project-workspace navigation level or a global detail route.
+
 - `E1_GLOBAL_MATERIALS`｜全局素材
 - `E2_GLOBAL_WORKS`｜全局作品
 - `E3_WORKFLOWS`｜流程中心
