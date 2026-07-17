@@ -25,7 +25,26 @@ export function chapterPlanSourceLabel(source: string): string {
 }
 
 export function chapterPlanSummary(value: string | null | undefined): string {
-  return value?.trim() || "暂无章节规划摘要";
+  const summary = value?.trim();
+  if (!summary || summary.includes("???")) return "暂无章节规划摘要";
+  if (/\b(main|children|materials|unpaid_foreshadowings|prior_summaries)=/.test(summary)) {
+    const pace = summary.match(/\b(slow|medium|fast) pace/)?.[1];
+    const paceLabel = pace === "slow" ? "慢节奏" : pace === "fast" ? "快节奏" : "中等节奏";
+    const includes = [
+      summary.includes("main=true") ? "主线" : "",
+      summary.includes("children=true") ? "支线" : "",
+      summary.includes("materials=true") ? "项目素材" : "",
+      summary.includes("unpaid_foreshadowings=true") ? "未回收伏笔" : "",
+      summary.includes("prior_summaries=true") ? "前文摘要" : "",
+    ].filter(Boolean);
+    return includes.length ? `${paceLabel}推进，并参考${includes.join("、")}。` : `${paceLabel}推进章节内容。`;
+  }
+  return summary;
+}
+
+export function chapterPlanDetail(value: string | null | undefined, fallback: string): string {
+  const detail = value?.trim();
+  return detail && !detail.includes("???") ? detail : fallback;
 }
 
 export function chapterPlanGenerationSummary(plan: ChapterPlan): string {

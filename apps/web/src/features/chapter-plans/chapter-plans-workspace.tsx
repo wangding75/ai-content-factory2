@@ -16,7 +16,7 @@ import {
 import { MockGenerateDialog } from "./mock-generate-dialog";
 import { EditChapterPlanDrawer } from "./edit-chapter-plan-drawer";
 import { ConfirmChapterPlansDialog } from "./confirm-chapter-plans-dialog";
-import { chapterPlanGenerationSummary, chapterPlanStatusLabel, createRelationNames, relationValues } from "./chapter-plan-presentation";
+import { chapterPlanDetail, chapterPlanGenerationSummary, chapterPlanStatusLabel, chapterPlanSummary, createRelationNames, relationValues } from "./chapter-plan-presentation";
 
 type RelationContext = { storylines: StorylineNode[]; materials: ProjectMaterialItem[]; foreshadowings: Foreshadowing[] };
 const limit = 10;
@@ -416,15 +416,15 @@ function Card({
           <small>{chapterPlanGenerationSummary(plan)}</small>
         </div>
       </header>
-      <p className="chapter-plan-summary">{plan.summary || "暂无章节摘要"}</p>
+      <p className="chapter-plan-summary">{chapterPlanSummary(plan.summary)}</p>
       <dl className="chapter-plan-details">
         <div>
           <dt>章节目标</dt>
-          <dd>{plan.chapter_goal || "未设置"}</dd>
+          <dd>{chapterPlanDetail(plan.chapter_goal, "暂未设置章节目标")}</dd>
         </div>
         <div>
           <dt>创作备注</dt>
-          <dd>{plan.creation_notes || "未设置"}</dd>
+          <dd>{chapterPlanDetail(plan.creation_notes, "暂未设置创作备注")}</dd>
         </div>
       </dl>
       <section
