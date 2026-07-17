@@ -41,7 +41,8 @@ func listMaterialsHandler(s materialService) http.HandlerFunc {
 		q := strings.TrimSpace(r.URL.Query().Get("q"))
 		typ := r.URL.Query().Get("type")
 		sort := r.URL.Query().Get("sort")
-		if q != "" && len(q) > 120 || typ != "" && !validMaterialType(typ) || sort != "" && !validMaterialSort(sort) {
+		scope := r.URL.Query().Get("scope")
+		if scope != "" && scope != "global" || q != "" && len(q) > 120 || typ != "" && !validMaterialType(typ) || sort != "" && !validMaterialSort(sort) {
 			writeError(w, r, 400, "VALIDATION_ERROR", "invalid material query", map[string]any{})
 			return
 		}

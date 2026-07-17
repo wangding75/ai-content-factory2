@@ -75,6 +75,10 @@ func New(address string, projects *project.Service, services ...any) *Server {
 			if value != nil {
 				registerIteration07Routes(mux, value)
 			}
+		case *contentitem.GlobalLiteService:
+			if value != nil {
+				registerIteration08Routes(mux, value)
+			}
 		case *material.ProjectMaterialService:
 			if value != nil {
 				mux.HandleFunc("GET /api/v1/projects/{projectId}/materials", listProjectMaterialsHandler(value))
