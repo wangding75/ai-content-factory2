@@ -6,7 +6,7 @@ import { Icon } from "@/components/ui/icons";
 import type { Project, ProjectStatus } from "@/lib/api";
 
 const statusLabels: Record<ProjectStatus, string> = { planning: "策划中", producing: "制作中", archived: "已归档" };
-const formatUpdated = (value: string) => new Intl.DateTimeFormat("zh-CN", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" }).format(new Date(value));
+const formatUpdated = (value: string) => new Intl.DateTimeFormat("zh-CN", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit", timeZone: "Asia/Shanghai" }).format(new Date(value));
 
 function CreateProjectCard() { return <Link href="/projects/new" className="projects-create-card" aria-label="新建项目"><span className="projects-create-icon"><Icon name="plus" size={32} /></span><h2>创建新项目</h2><p>开始一个新的内容创作项目</p><span>新建项目</span></Link>; }
 
