@@ -13,8 +13,8 @@ func TestIteration08FrozenDescriptorHandlers(t *testing.T) {
 		h    http.HandlerFunc
 		want string
 	}{
-		"builtin":      {listBuiltinWorkflowsHandler(), "content_mock_rewrite"},
-		"capabilities": {listCapabilitiesHandler(), "not_configured"},
+		"builtin":      {listBuiltinWorkflowsHandler(), "workflow_key"},
+		"capabilities": {listCapabilitiesHandler(), "workflow_keys"},
 		"integrations": {listIntegrationsHandler(), "not_available"},
 	} {
 		t.Run(name, func(t *testing.T) {

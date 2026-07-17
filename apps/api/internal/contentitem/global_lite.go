@@ -85,12 +85,28 @@ func (s *GlobalLiteService) ListWorkflowRuns(ctx context.Context, limit, offset 
 	return out, nil
 }
 
-type BuiltinWorkflowDefinition struct{ WorkflowKey, ProviderKey, Label, Description, Status, ResultKind string }
-type CapabilityDescriptor struct {
-	Key, Label, Status, Description string
-	WorkflowKeys                    []string
+type BuiltinWorkflowDefinition struct {
+	WorkflowKey string `json:"workflow_key"`
+	ProviderKey string `json:"provider_key"`
+	Label       string `json:"label"`
+	Description string `json:"description"`
+	Status      string `json:"status"`
+	ResultKind  string `json:"result_kind"`
 }
-type IntegrationDescriptor struct{ Key, Label, Category, Status, Description string }
+type CapabilityDescriptor struct {
+	Key          string   `json:"key"`
+	Label        string   `json:"label"`
+	Status       string   `json:"status"`
+	Description  string   `json:"description"`
+	WorkflowKeys []string `json:"workflow_keys"`
+}
+type IntegrationDescriptor struct {
+	Key         string `json:"key"`
+	Label       string `json:"label"`
+	Category    string `json:"category"`
+	Status      string `json:"status"`
+	Description string `json:"description"`
+}
 
 func BuiltinWorkflows() []BuiltinWorkflowDefinition {
 	return []BuiltinWorkflowDefinition{

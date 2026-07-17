@@ -1,56 +1,41 @@
-import { ApiError } from "@/lib/api";
+import { apiRequest, type ApiRequestInit } from "@/lib/api";
+import { getMaterialFromApi, listMaterialsFromApi } from "@/features/planning-materials/api/material-http-api";
 import type { Material, MaterialType } from "@/features/planning-materials/contracts/materials";
-import type { ProjectWorkDto } from "@/features/project-works/project-work-api";
+import type { ProjectWorkDto, WorkflowRunStatus } from "@/features/project-works/project-work-api";
 
-export type GlobalMockState = "loading" | "success" | "single" | "empty" | "error" | "invalid-pagination" | "paged" | "multi-use" | "unused" | "succeeded" | "failed" | "no-run" | "no-builtin" | "empty-runs" | "settings-empty";
-export type MaterialVm = Material & { references: { project_id: string; project_name: string; role_name: string }[] };
-export type WorkVm = { project: { id: string; name: string }; work: ProjectWorkDto };
-const projectA = "11111111-1111-4111-8111-111111111111";
-const projectB = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
-const material = (id:string, name:string, type:MaterialType, summary:string, references:MaterialVm["references"]):MaterialVm => ({ id,type,name,summary,references,tags_json:[type,"全局"],content_json:{},version:1,created_at:"2026-07-16T06:00:00Z",updated_at:"2026-07-16T07:10:00Z" });
-const materials: MaterialVm[] = [
-  material("d1111111-1111-4111-8111-111111111111","林野","character","幸存者与营地领导者，在红雾灾变中建立最初秩序。",[{project_id:projectA,project_name:"末世求生",role_name:"主角"},{project_id:projectB,project_name:"暗潮档案",role_name:"关联人物"}]),
-  material("d2222222-2222-4222-8222-222222222222","红雾末世设定","worldview","红雾降临后的生存规则与安全区秩序。",[{project_id:projectA,project_name:"末世求生",role_name:"世界观"}]),
-  material("d3333333-3333-4333-8333-333333333333","禁区通行证","item","标有旧城禁区通行权限的残缺证件。",[]),
-];
-const version=(id:string, item:string, number:number, current:boolean)=>({id,content_item_id:item,version_no:number,status:"frozen" as const,source:"mock_generated" as const,title:"禁区通行证",word_count:number===1?3180:3420,created_at:"2026-07-16T07:10:00Z",frozen_at:"2026-07-16T07:10:00Z",is_current:current});
-const work=(id:string, projectId:string, chapter:number, title:string, run:"succeeded"|"failed"|null, currentNo=1):ProjectWorkDto=>{const current=version(`c${chapter}0000-0000-4000-8000-000000000000`,id,currentNo,true);return {work_id:id,project_id:projectId,chapter_plan:{id:`p${chapter}0000-0000-4000-8000-000000000000`,chapter_no:chapter,title,status:"confirmed"},content_item:{id,title:`第 ${chapter} 章 ${title}`,status:"in_review",current_version_id:current.id},current_version:current,version_count:2,latest_review:{id:`r${chapter}0000-0000-4000-8000-000000000000`,status:"completed",conclusion:"revise",score:82,summary:"建议调整节奏与线索铺陈。",created_at:"2026-07-16T07:05:00Z"},latest_workflow_run:run?{id:`w${chapter}0000-0000-4000-8000-000000000000`,provider_key:"mock",workflow_key:"content_mock_rewrite",status:run,started_at:"2026-07-16T07:10:00Z",finished_at:"2026-07-16T07:11:00Z"}:null,navigation:{content_item_id:id,current_version_id:current.id,latest_review_report_id:`r${chapter}0000-0000-4000-8000-000000000000`,latest_workflow_run_id:run?`w${chapter}0000-0000-4000-8000-000000000000`:null,rewrite_source_version_id:current.id,rewrite_review_report_id:`r${chapter}0000-0000-4000-8000-000000000000`,rewrite_target_version_id:null}};};
-const works:WorkVm[]=[{project:{id:projectA,name:"末世求生"},work:work("22222222-2222-4222-8222-222222222222",projectA,62,"禁区通行证","succeeded")},{project:{id:projectB,name:"暗潮档案"},work:work("33333333-3333-4333-8333-333333333333",projectB,18,"地下通道","failed")},{project:{id:projectA,name:"末世求生"},work:work("44444444-4444-4444-8444-444444444444",projectA,65,"灰塔来信",null)}];
-const state = ():GlobalMockState => { const value=new URLSearchParams(window.location.search).get("mock"); return (["loading","success","single","empty","error","invalid-pagination","paged","multi-use","unused","succeeded","failed","no-run","no-builtin","empty-runs","settings-empty"].includes(value??"")?value:"success") as GlobalMockState; };
-const page=<T,>(items:T[],limit:number,offset:number)=>({items:items.slice(offset,offset+limit),total:items.length,limit,offset});
-export async function listGlobalMaterials(query:{type?:MaterialType;limit:number;offset:number}) { const mode=state(); if(mode==="loading") return new Promise<never>(()=>{}); if(mode==="error") throw new ApiError("素材列表暂时无法加载。",500,"internal_error"); if(mode==="invalid-pagination"||query.offset<0) throw new ApiError("分页参数无效。",400,"invalid_pagination"); let selected=mode==="empty"?[]:mode==="single"?[materials[0]!]:mode==="unused"?[materials[2]!]:mode==="multi-use"?[materials[0]!]:materials; if(query.type) selected=selected.filter(item=>item.type===query.type); return page(selected,query.limit,query.offset); }
-export async function listGlobalWorks(query:{limit:number;offset:number}) { const mode=state(); if(mode==="loading") return new Promise<never>(()=>{}); if(mode==="error") throw new ApiError("作品列表暂时无法加载。",500,"internal_error"); if(mode==="invalid-pagination"||query.offset<0) throw new ApiError("分页参数无效。",400,"invalid_pagination"); const selected=mode==="empty"?[]:mode==="single"?[works[0]!]:mode==="succeeded"?[works[0]!]:mode==="failed"?[works[1]!]:mode==="no-run"?[works[2]!]:works; return page(selected,query.limit,query.offset); }
-// These DTOs deliberately mirror the frozen OpenAPI descriptors. Fixtures stay at
-// this API boundary so pages render only their mapped view models.
-export type BuiltinWorkflowDto={workflow_key:"chapter_plan_mock_generate"|"content_mock_generate"|"content_mock_review"|"content_mock_rewrite";provider_key:"mock";label:string;description:string;status:"enabled";result_kind:"chapter_plan"|"content"|"review"|"rewrite"};
-export type GlobalWorkflowRunDto={id:string;provider_key:"mock";workflow_key:BuiltinWorkflowDto["workflow_key"];status:"running"|"succeeded"|"failed";project:{id:string;name:string;status:string}|null;subject:{type:"chapter_plan"|"content_item"|"review_report"|"content_version";id:string};error:{code:string;message:string}|null;started_at:string;finished_at:string|null};
-export type CapabilityDto={key:"mock_content"|"real_ai";label:string;status:"enabled"|"not_configured";description:string|null;workflow_keys:BuiltinWorkflowDto["workflow_key"][]};
-export type IntegrationDto={key:"wechat"|"douyin"|"youtube"|"n8n"|"coze"|"comfyui";label:string;category:"publish"|"workflow";status:"not_available";description:string|null};
-export type BuiltinWorkflowVm={key:string;provider:string;label:string;description:string;status:string;resultKind:string};
-export type WorkflowRunVm={id:string;workflowKey:string;provider:string;status:GlobalWorkflowRunDto["status"];projectName:string;subject:string;failureSummary:string|null;startedAt:string;finishedAt:string;projectWorksHref:string|null};
-export type CapabilityVm={key:string;label:string;status:string;description:string;enabled:boolean;workflowKeys:string[]};
-export type IntegrationVm={key:string;label:string;category:string;status:string;description:string;available:boolean};
-const builtinFixtures:BuiltinWorkflowDto[]=[
- {workflow_key:"chapter_plan_mock_generate",provider_key:"mock",label:"章节规划生成",description:"内置确定性章节规划生成。",status:"enabled",result_kind:"chapter_plan"},
- {workflow_key:"content_mock_generate",provider_key:"mock",label:"正文生成",description:"内置确定性正文生成。",status:"enabled",result_kind:"content"},
- {workflow_key:"content_mock_review",provider_key:"mock",label:"内容评审",description:"内置确定性内容评审。",status:"enabled",result_kind:"review"},
- {workflow_key:"content_mock_rewrite",provider_key:"mock",label:"内容重写",description:"内置确定性内容重写。",status:"enabled",result_kind:"rewrite"},
-];
-const workflowRunFixtures:GlobalWorkflowRunDto[]=[
- {id:"e1111111-1111-4111-8111-111111111111",provider_key:"mock",workflow_key:"content_mock_rewrite",status:"succeeded",project:{id:projectA,name:"末世求生",status:"active"},subject:{type:"content_version",id:"c1111111-1111-4111-8111-111111111111"},error:null,started_at:"2026-07-16T08:30:00Z",finished_at:"2026-07-16T08:31:04Z"},
- {id:"e2222222-2222-4222-8222-222222222222",provider_key:"mock",workflow_key:"content_mock_review",status:"running",project:{id:projectB,name:"暗潮档案",status:"active"},subject:{type:"content_item",id:"c2222222-2222-4222-8222-222222222222"},error:null,started_at:"2026-07-16T08:21:00Z",finished_at:null},
- {id:"e3333333-3333-4333-8333-333333333333",provider_key:"mock",workflow_key:"content_mock_generate",status:"failed",project:null,subject:{type:"chapter_plan",id:"c3333333-3333-4333-8333-333333333333"},error:{code:"mock_generation_failed",message:"模拟流程未能生成内容，请稍后在项目中重试。"},started_at:"2026-07-16T07:58:00Z",finished_at:"2026-07-16T07:58:02Z"},
- {id:"e4444444-4444-4444-8444-444444444444",provider_key:"mock",workflow_key:"chapter_plan_mock_generate",status:"succeeded",project:{id:projectA,name:"末世求生",status:"active"},subject:{type:"chapter_plan",id:"c4444444-4444-4444-8444-444444444444"},error:null,started_at:"2026-07-15T12:00:00Z",finished_at:"2026-07-15T12:00:01Z"},
-];
-const capabilityFixtures:CapabilityDto[]=[{key:"mock_content",label:"模拟内容能力",status:"enabled",description:"内置模拟流程已启用，用于验证内容创作闭环。",workflow_keys:builtinFixtures.map(item=>item.workflow_key)},{key:"real_ai",label:"真实 AI 能力",status:"not_configured",description:null,workflow_keys:[]}];
-const integrationFixtures:IntegrationDto[]=[{key:"wechat",label:"微信公众号",category:"publish",status:"not_available",description:"P0 尚未开放发布平台集成。"},{key:"douyin",label:"抖音",category:"publish",status:"not_available",description:"P0 尚未开放发布平台集成。"},{key:"youtube",label:"YouTube",category:"publish",status:"not_available",description:"P0 尚未开放发布平台集成。"},{key:"n8n",label:"n8n",category:"workflow",status:"not_available",description:"P0 不执行外部工作流。"},{key:"coze",label:"Coze",category:"workflow",status:"not_available",description:"P0 不执行外部工作流。"},{key:"comfyui",label:"ComfyUI",category:"workflow",status:"not_available",description:null}];
-const mapBuiltinWorkflow=(dto:BuiltinWorkflowDto):BuiltinWorkflowVm=>({key:dto.workflow_key,provider:dto.provider_key,label:dto.label,description:dto.description,status:dto.status,resultKind:dto.result_kind});
-const mapWorkflowRun=(dto:GlobalWorkflowRunDto):WorkflowRunVm=>({id:dto.id,workflowKey:dto.workflow_key,provider:dto.provider_key,status:dto.status,projectName:dto.project?.name??"未关联项目",subject:`${dto.subject.type} · ${dto.subject.id.slice(0,8)}`,failureSummary:dto.error?.message??null,startedAt:dto.started_at,finishedAt:dto.finished_at??"进行中",projectWorksHref:dto.project?`/projects/${dto.project.id}/works`:null});
-const mapCapability=(dto:CapabilityDto):CapabilityVm=>({key:dto.key,label:dto.label,status:dto.status,description:dto.description??"P0 不提供配置或凭据管理。",enabled:dto.status==="enabled",workflowKeys:dto.workflow_keys});
-const mapIntegration=(dto:IntegrationDto):IntegrationVm=>({key:dto.key,label:dto.label,category:dto.category,status:dto.status,description:dto.description??"P0 尚未开放此集成。",available:false});
-const fixtureError=(message:string)=>new ApiError(message,500,"internal_error");
-export async function listBuiltinWorkflows():Promise<BuiltinWorkflowVm[]>{const mode=state();if(mode==="loading")return new Promise<never>(()=>{});if(mode==="error")throw fixtureError("内置流程暂时无法加载。");return (mode==="no-builtin"?[]:builtinFixtures).map(mapBuiltinWorkflow);}
-export async function listGlobalWorkflowRuns(query:{workflowKey?:string;status?:GlobalWorkflowRunDto["status"];limit:number;offset:number}):Promise<{items:WorkflowRunVm[];total:number}>{const mode=state();if(mode==="loading")return new Promise<never>(()=>{});if(mode==="error")throw fixtureError("执行记录暂时无法加载。");if(mode==="invalid-pagination"||query.offset<0)throw new ApiError("分页参数无效。",400,"invalid_pagination");let selected=mode==="empty-runs"?[]:mode==="succeeded"?[workflowRunFixtures[0]!]:mode==="failed"?[workflowRunFixtures[2]!]:workflowRunFixtures;if(query.workflowKey)selected=selected.filter(item=>item.workflow_key===query.workflowKey);if(query.status)selected=selected.filter(item=>item.status===query.status);return {...page(selected.map(mapWorkflowRun),query.limit,query.offset)};}
-export async function listCapabilities():Promise<CapabilityVm[]>{const mode=state();if(mode==="loading")return new Promise<never>(()=>{});if(mode==="error")throw fixtureError("能力状态暂时无法加载。");return (mode==="settings-empty"?[]:capabilityFixtures).map(mapCapability);}
-export async function listIntegrations():Promise<IntegrationVm[]>{const mode=state();if(mode==="loading")return new Promise<never>(()=>{});if(mode==="error")throw fixtureError("集成状态暂时无法加载。");return (mode==="settings-empty"?[]:integrationFixtures).map(mapIntegration);}
-export const globalLiteRequestPaths={materials:"/api/v1/materials?scope=global",works:"/api/v1/works?scope=global",builtinWorkflows:"/api/v1/workflows/builtin",workflowRuns:"/api/v1/workflow-runs",capabilities:"/api/v1/capabilities",integrations:"/api/v1/integrations"} as const;
+export type MaterialVm = Material & { references: { project_id: string; project_name: string }[] };
+export type WorkVm = { project: { id: string; name: string; status: "planning" | "producing" | "archived" }; work: ProjectWorkDto };
+export type BuiltinWorkflowDto = { workflow_key: "chapter_plan_mock_generate" | "content_mock_generate" | "content_mock_review" | "content_mock_rewrite"; provider_key: "mock"; label: string; description: string; status: "enabled"; result_kind: "chapter_plan" | "content" | "review" | "rewrite" };
+export type GlobalWorkflowRunDto = { id: string; provider_key: "mock"; workflow_key: BuiltinWorkflowDto["workflow_key"]; status: WorkflowRunStatus; project: { id: string; name: string; status: "planning" | "producing" | "archived" } | null; subject: { type: "chapter_plan" | "content_item" | "review_report" | "content_version"; id: string }; error: { code: string; message: string } | null; started_at: string; finished_at: string | null };
+export type CapabilityDto = { key: "mock_content" | "real_ai"; label: string; status: "enabled" | "not_configured"; description: string; workflow_keys: string[] };
+export type IntegrationDto = { key: "wechat" | "douyin" | "youtube" | "n8n" | "coze" | "comfyui"; label: string; category: "publish" | "workflow"; status: "not_available"; description: string };
+export type BuiltinWorkflowVm = { key: string; provider: string; label: string; description: string; status: string; resultKind: string };
+export type WorkflowRunVm = { id: string; workflowKey: string; provider: string; status: WorkflowRunStatus; projectName: string; subject: string; failureSummary: string | null; startedAt: string; finishedAt: string | null; projectWorksHref: string | null };
+export type CapabilityVm = { key: string; label: string; status: string; description: string; enabled: boolean; workflowKeys: string[] };
+export type IntegrationVm = { key: string; label: string; category: string; status: string; description: string; available: boolean };
+type Page<T> = { items: T[]; total: number; limit: number; offset: number };
+
+const pageQuery = (values: Record<string, string | number | undefined>) => {
+  const params = new URLSearchParams();
+  for (const [key, value] of Object.entries(values)) if (value !== undefined) params.set(key, String(value));
+  return `?${params}`;
+};
+const mapBuiltinWorkflow = (dto: BuiltinWorkflowDto): BuiltinWorkflowVm => ({ key: dto.workflow_key, provider: dto.provider_key, label: dto.label, description: dto.description, status: dto.status, resultKind: dto.result_kind });
+const mapWorkflowRun = (dto: GlobalWorkflowRunDto): WorkflowRunVm => ({ id: dto.id, workflowKey: dto.workflow_key, provider: dto.provider_key, status: dto.status, projectName: dto.project?.name ?? "未关联项目", subject: `${dto.subject.type} · ${dto.subject.id.slice(0, 8)}`, failureSummary: dto.error?.message ?? null, startedAt: dto.started_at, finishedAt: dto.finished_at, projectWorksHref: dto.project ? `/projects/${dto.project.id}/works` : null });
+const mapCapability = (dto: CapabilityDto): CapabilityVm => ({ key: dto.key, label: dto.label, status: dto.status, description: dto.description, enabled: dto.status === "enabled", workflowKeys: dto.workflow_keys });
+const mapIntegration = (dto: IntegrationDto): IntegrationVm => ({ key: dto.key, label: dto.label, category: dto.category, status: dto.status, description: dto.description, available: false });
+
+export async function listGlobalMaterials(query: { type?: MaterialType; limit: number; offset: number }, init?: ApiRequestInit): Promise<Page<MaterialVm>> {
+  const list = await listMaterialsFromApi({ scope: "global", type: query.type, limit: query.limit, offset: query.offset, sort: "updated_at_desc" }, init);
+  const items = await Promise.all(list.items.map(async (material) => {
+    const detail = await getMaterialFromApi(material.id, init);
+    return { ...detail.material, references: detail.references.map(({ project_id, project_name }) => ({ project_id, project_name })) };
+  }));
+  return { ...list, items };
+}
+export function listGlobalWorks(query: { limit: number; offset: number }, init?: ApiRequestInit) { return apiRequest<Page<WorkVm>>(`/works${pageQuery({ scope: "global", limit: query.limit, offset: query.offset })}`, init); }
+export async function listBuiltinWorkflows(init?: ApiRequestInit) { const response = await apiRequest<{ items: BuiltinWorkflowDto[] }>("/workflows/builtin", init); return response.items.map(mapBuiltinWorkflow); }
+export async function listGlobalWorkflowRuns(query: { limit: number; offset: number }, init?: ApiRequestInit): Promise<Page<WorkflowRunVm>> { const response = await apiRequest<Page<GlobalWorkflowRunDto>>(`/workflow-runs${pageQuery(query)}`, init); return { ...response, items: response.items.map(mapWorkflowRun) }; }
+export async function listCapabilities(init?: ApiRequestInit) { const response = await apiRequest<{ items: CapabilityDto[] }>("/capabilities", init); return response.items.map(mapCapability); }
+export async function listIntegrations(init?: ApiRequestInit) { const response = await apiRequest<{ items: IntegrationDto[] }>("/integrations", init); return response.items.map(mapIntegration); }
+export const globalLiteRequestPaths = { materials: "/api/v1/materials?scope=global", works: "/api/v1/works?scope=global", builtinWorkflows: "/api/v1/workflows/builtin", workflowRuns: "/api/v1/workflow-runs", capabilities: "/api/v1/capabilities", integrations: "/api/v1/integrations" } as const;

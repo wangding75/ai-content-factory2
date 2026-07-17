@@ -40,7 +40,7 @@ func listGlobalWorksHandler(s *contentitem.GlobalLiteService) http.HandlerFunc {
 		}
 		items := make([]map[string]any, len(x.Items))
 		for i := range x.Items {
-			items[i] = work(x.Items[i])
+			items[i] = map[string]any{"project": map[string]any{"id": x.Items[i].ProjectID, "name": x.Items[i].ProjectName, "status": x.Items[i].ProjectStatus}, "work": work(x.Items[i])}
 		}
 		writeJSON(w, r, 200, map[string]any{"items": items, "total": x.Total, "limit": x.Limit, "offset": x.Offset})
 	}

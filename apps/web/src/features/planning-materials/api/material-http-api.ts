@@ -2,6 +2,7 @@ import { apiRequest, type ApiRequestInit } from "../../../lib/api.ts";
 import type { CreateMaterialRequest, Material, MaterialList, MaterialType, ProjectMaterialSort } from "../contracts/materials.ts";
 
 export interface ListGlobalMaterialsQuery {
+  scope?: "global";
   q?: string;
   type?: MaterialType;
   sort?: ProjectMaterialSort;
@@ -49,6 +50,7 @@ export interface UpdateMaterialRequest {
 }
 export function materialQuery(query: ListGlobalMaterialsQuery): string {
   const params = new URLSearchParams();
+  if (query.scope) params.set("scope", query.scope);
   if (query.q?.trim()) params.set("q", query.q.trim());
   if (query.type) params.set("type", query.type);
   if (query.sort) params.set("sort", query.sort);
