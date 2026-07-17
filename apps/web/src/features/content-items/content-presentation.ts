@@ -42,6 +42,7 @@ export const reviewCategoryLabel = (value: string) =>
   categories[value as ReviewFinding["category"]] ?? "其他问题";
 export const reviewSeverityLabel = (value: string) =>
   severities[value as ReviewFinding["severity"]] ?? "未分级";
+export const workflowStatusLabel = (value: string) => ({ running: "处理中", succeeded: "已完成", failed: "处理失败" })[value] ?? "状态未知";
 export const formatChineseDate = (value: string | null | undefined) =>
   value
     ? new Intl.DateTimeFormat("zh-CN", {

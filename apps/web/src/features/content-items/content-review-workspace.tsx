@@ -19,7 +19,7 @@ import {
   type ContentReviewList,
   type ReviewDetail,
 } from "./content-item-http-api";
-import { formatChineseDate, reviewCategoryLabel, reviewConclusionLabel, reviewSeverityLabel } from "./content-presentation";
+import { formatChineseDate, reviewCategoryLabel, reviewConclusionLabel, reviewSeverityLabel, workflowStatusLabel } from "./content-presentation";
 
 const PAGE_SIZE = 10;
 const idKey = () => crypto.randomUUID();
@@ -573,8 +573,7 @@ function ReviewDetailPanel({ detail }: { detail: ReviewDetail }) {
       <section className="content-review-run">
         <h3>工作流摘要</h3>
         <p>
-          {detail.workflow_run.workflow_key}｜{detail.workflow_run.status}
-          ｜开始：{formatChineseDate(detail.workflow_run.started_at)}
+          审核任务｜{workflowStatusLabel(detail.workflow_run.status)}｜开始：{formatChineseDate(detail.workflow_run.started_at)}
         </p>
       </section>
     </section>
