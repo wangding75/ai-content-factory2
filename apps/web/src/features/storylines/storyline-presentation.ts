@@ -25,3 +25,6 @@ export function formatChineseDate(value: string): string {
   const pick = (kind: Intl.DateTimeFormatPartTypes) => parts.find((part) => part.type === kind)?.value ?? "";
   return `${pick("year")}年${pick("month")}月${pick("day")}日 ${pick("hour")}:${pick("minute")}`;
 }
+export function storylineViewModel(node: StorylineNode, parentName?: string) {
+  return { displayName: storylineName(node.name), displaySummary: storylineSummary(node.summary), displayChapterRange: chapterRange(node), displayType: storylineType(node.type), displayStatus: storylineStatus(node.status), displayParentName: parentName ?? "主故事线", displayChildCount: childCount(node.children.length), displayCreatedAt: formatChineseDate(node.created_at), displayUpdatedAt: formatChineseDate(node.updated_at) };
+}
