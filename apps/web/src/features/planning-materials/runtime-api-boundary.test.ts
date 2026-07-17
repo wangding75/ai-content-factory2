@@ -61,7 +61,7 @@ test("project Material list and all direct routes use real APIs, keep Usage isol
     "materials/material-detail-page.tsx", "materials/edit-material-page.tsx", "materials/material-usage-page.tsx", "materials/unbind-material-page.tsx",
   ].map(read);
   for (const source of pages) assert.doesNotMatch(source, /mockScenario|material-repository|planning-api/);
-  assert.match(pages[0], /listProjectMaterialsFromApi\(projectId,\{q,type,sort,limit,offset\}/);
+  assert.match(pages[0], /listProjectMaterialsFromApi\(projectId,\s*\{\s*q,\s*type,\s*sort,\s*limit,\s*offset,?\s*\}/);
   assert.match(pages[1], /createProjectMaterialFromApi\(projectId,/);
   assert.match(pages[1], /if \(saving\) return/);
   assert.match(pages[2], /bindProjectMaterialFromApi\(projectId, selected\.id,/);

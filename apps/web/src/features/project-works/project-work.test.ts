@@ -8,7 +8,7 @@ test("D3 exposes all deterministic mock states", () => {
 });
 test("D3 page keeps fixture, mapper, pagination and navigation outside raw JSX", () => {
   const source=readFileSync(new URL("./project-works-workspace.tsx",import.meta.url),"utf8");
-  assert.match(source,/listProjectWorks\(projectId/);assert.match(source,/toProjectWorkView/);assert.match(source,/setOffset\(offset\+limit\)/);assert.match(source,/创建重写版本/);assert.match(source,/aria-busy/);assert.doesNotMatch(source,/href="#"/);assert.doesNotMatch(source,/JSON\.stringify/);
+  assert.match(source,/listProjectWorks\(projectId/);assert.match(source,/toProjectWorkView/);assert.match(source,/setOffset\(offset \+ limit\)/);assert.match(source,/创建重写版本/);assert.match(source,/aria-busy/);assert.doesNotMatch(source,/href="#"/);assert.doesNotMatch(source,/JSON\.stringify/);
 });
 test("D3 routes carry all available contract identifiers", () => {
   const source=readFileSync(new URL("./project-work-presentation.ts",import.meta.url),"utf8");

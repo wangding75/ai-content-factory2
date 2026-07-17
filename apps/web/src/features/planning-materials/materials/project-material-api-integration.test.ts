@@ -10,8 +10,8 @@ const whitespace = "\\s*";
 const call = (name: string, args: string) => new RegExp(`${name}\\(${args}\\)`);
 
 test("project material list sends searches, filters, sorting, and pages to the real API", () => {
-  assert.match(listSource, call("listProjectMaterialsFromApi", `projectId,${whitespace}\\{q,type,sort,limit,offset\\},${whitespace}\\{signal\\}`));
-  assert.match(listSource, /setOffset\(offset\+limit\)/);
+  assert.match(listSource, call("listProjectMaterialsFromApi", `projectId,${whitespace}\\{\\s*q,\\s*type,\\s*sort,\\s*limit,\\s*offset,?\\s*\\},${whitespace}\\{\\s*signal\\s*\\}`));
+  assert.match(listSource, /setOffset\(offset \+ limit\)/);
   assert.match(listSource, /new AbortController\(\)/);
   assert.match(listSource, /controller\.abort\(\)/);
   assert.doesNotMatch(listSource, /listProjectMaterials\(/);
