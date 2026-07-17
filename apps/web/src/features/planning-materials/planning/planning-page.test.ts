@@ -15,6 +15,10 @@ test("planning source derives read-only completion from persisted version and co
   const planningSource = source;
   assert.match(source, /isPlanningCompleted/);
   assert.match(source, /编辑策划方案/);
-  assert.match(source, /策划已完成/);
+  assert.match(source, /planningSaveStatus/);
   assert.doesNotMatch(source, /策划推进中/);
+});
+test("planning has no visible prototype number or English selling point label", () => {
+  assert.doesNotMatch(source, /P-2026-003|READ ONLY|Selling Points/);
+  assert.match(source, /planningSaveStatus/);
 });

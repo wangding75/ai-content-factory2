@@ -12,6 +12,7 @@ import type {
   ProjectPlanning,
   SaveProjectPlanningRequest,
 } from "../contracts/planning";
+import { planningCopy, planningSaveStatus } from "./planning-presentation";
 
 type FormState = Omit<SaveProjectPlanningRequest, "expected_version">;
 const blankForm = (): FormState => ({
@@ -110,7 +111,6 @@ export function PlanningPage({ projectId, project }: { projectId: string; projec
   );
   const planningCompleted = saved !== null && isPlanningCompleted(saved);
   const isEditing = !planningCompleted || editing;
-  const planningStatus = planningCompleted ? "策划已完成" : "策划中";
   const update = (key: "premise" | "audience" | "style", value: string) =>
     setForm((current) => ({ ...current, [key]: value }));
   const addTag = () => {
@@ -145,10 +145,15 @@ export function PlanningPage({ projectId, project }: { projectId: string; projec
   };
   const save = async () => {
     if (!saved || saving || !isEditing) return;
-    if (tagText.trim()) {
-      addTag();
+    const pendingTag = tagText.trim();
+    if (pendingTag && form.goals_json.selling_points.includes(pendingTag)) {
+      setErrors((current) => ({ ...current, selling_points: "\u6838\u5fc3\u5356\u70b9\u4e0d\u80fd\u91cd\u590d\u3002" }));
+      return;
     }
-    const nextErrors = validate(form);
+    const candidate = pendingTag && !form.goals_json.selling_points.includes(pendingTag)
+      ? { ...form, goals_json: { ...form.goals_json, selling_points: [...form.goals_json.selling_points, pendingTag] } }
+      : form;
+    const nextErrors = validate(candidate);
     setErrors(nextErrors);
     if (Object.values(nextErrors).some(Boolean)) return;
     setSaving(true);
@@ -156,7 +161,7 @@ export function PlanningPage({ projectId, project }: { projectId: string; projec
     setNotice(null);
     try {
       const result = await saveProjectPlanningToApi(projectId, {
-        ...form,
+        ...candidate,
         expected_version: saved.version,
       });
       setSaved(result);
@@ -243,7 +248,7 @@ export function PlanningPage({ projectId, project }: { projectId: string; projec
               </Field>
             </div>
             <Field
-              label="核心卖点 (Selling Points)"
+              label="核心卖点"
               error={errors.selling_points}
             >
               <div className="tag-editor">
@@ -339,25 +344,6 @@ export function PlanningPage({ projectId, project }: { projectId: string; projec
               />
             </Field>
           </section>
-          <section className="planning-readonly">
-            <h3>
-              <Icon name="info" size={19} />
-              基础信息 <small>READ ONLY</small>
-            </h3>
-            <div>
-              <p>
-                <span>项目名称</span>
-                {project.name}
-              </p>
-              <p>
-                <span>创作类型</span>长篇小说
-              </p>
-              <p>
-                <span>当前状态</span>
-                <b>{planningStatus}</b>
-              </p>
-            </div>
-          </section>
           <footer className="planning-actions">
             {isEditing ? (
               <>
@@ -394,36 +380,30 @@ export function PlanningPage({ projectId, project }: { projectId: string; projec
               <Icon name="book" size={42} />
               <div>
                 <h3>{project.name}</h3>
-                <span>策划编号：P-2026-003</span>
               </div>
             </div>
             <div className="planning-preview-body">
               <label>定位摘要</label>
               <h2>{form.premise || "尚未填写核心主题"}</h2>
               <p>
-                {form.audience || "填写目标受众后，这里会显示项目定位摘要。"}
+                {form.audience || planningCopy.emptyAudience}
               </p>
               <dl>
                 <div>
-                  <dt>风格调性</dt>
-                  <dd>{form.style || "未填写"}</dd>
+                  <dt>文学风格</dt>
+                  <dd>{form.style || planningCopy.emptyStyle}</dd>
                 </div>
                 <div>
-                  <dt>创作状态</dt>
-                  <dd>{planningStatus}</dd>
+                  <dt>保存状态</dt>
+                  <dd>{planningSaveStatus(saved)}</dd>
                 </div>
               </dl>
               <blockquote>
                 {form.constraints_json.emotional_tone
                   ? `“${form.constraints_json.emotional_tone}”`
-                  : "“等待定义项目的情感基调。”"}
+                  : planningCopy.emptyTone}
               </blockquote>
-              <small>
-                版本 {saved.version}
-                {saved.updated_at
-                  ? ` · 最后修改：${new Date(saved.updated_at).toLocaleString("zh-CN")}`
-                  : " · 尚未保存"}
-              </small>
+              <small>{planningSaveStatus(saved)}</small>
             </div>
           </article>
         </aside>

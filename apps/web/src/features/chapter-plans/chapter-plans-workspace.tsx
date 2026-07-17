@@ -3,7 +3,9 @@
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Icon } from "@/components/ui/icons";
-import { ApiError, type Project } from "@/lib/api";
+import { ApiError, getForeshadowings, getStorylines, type Foreshadowing, type Project, type StorylineNode } from "@/lib/api";
+import { listProjectMaterialsFromApi } from "@/features/planning-materials/api/project-material-http-api";
+import type { ProjectMaterialItem } from "@/features/planning-materials/contracts/materials";
 import {
   confirmChapterPlans,
   listChapterPlans,
@@ -14,10 +16,9 @@ import {
 import { MockGenerateDialog } from "./mock-generate-dialog";
 import { EditChapterPlanDrawer } from "./edit-chapter-plan-drawer";
 import { ConfirmChapterPlansDialog } from "./confirm-chapter-plans-dialog";
-const labels: Record<ChapterPlanStatus, string> = {
-  pending_confirmation: "???",
-  confirmed: "???",
-};
+import { chapterPlanGenerationSummary, chapterPlanStatusLabel, createRelationNames, relationValues } from "./chapter-plan-presentation";
+
+type RelationContext = { storylines: StorylineNode[]; materials: ProjectMaterialItem[]; foreshadowings: Foreshadowing[] };
 const limit = 10;
 export function ChapterPlansWorkspace({ projectId, project }: { projectId: string; project: Project }) {
   void project;
@@ -31,7 +32,8 @@ export function ChapterPlansWorkspace({ projectId, project }: { projectId: strin
     [selected, setSelected] = useState<Record<string, ChapterPlan>>({}),
     [confirmOpen, setConfirmOpen] = useState(false),
     [confirming, setConfirming] = useState(false),
-    [confirmError, setConfirmError] = useState<ApiError | null>(null);
+    [confirmError, setConfirmError] = useState<ApiError | null>(null),
+    [relations, setRelations] = useState<RelationContext | null>(null);
   const projectRef = useRef(projectId),
     requestRef = useRef(0),
     confirmControllerRef = useRef<AbortController | null>(null);
@@ -87,6 +89,16 @@ export function ChapterPlansWorkspace({ projectId, project }: { projectId: strin
     },
     [loadPlans, offset, projectId, status],
   );
+  const loadRelations = useCallback(async (signal?: AbortSignal) => {
+    const [storylines, materials, foreshadowings] = await Promise.all([
+      getStorylines(projectId, signal),
+      listProjectMaterialsFromApi(projectId, { limit: 100 }, { signal }),
+      getForeshadowings(projectId, signal),
+    ]);
+    if (!signal?.aborted && projectRef.current === projectId) {
+      setRelations({ storylines: storylines.items, materials: materials.items, foreshadowings: foreshadowings.items });
+    }
+  }, [projectId]);
   useEffect(() => {
     projectRef.current = projectId;
     setMockOpen(false);
@@ -94,14 +106,18 @@ export function ChapterPlansWorkspace({ projectId, project }: { projectId: strin
     setSelected({});
     setConfirmOpen(false);
     setConfirmError(null);
+    setRelations(null);
     confirmControllerRef.current?.abort();
     const controller = new AbortController();
     void loadInitial(controller.signal);
+    void loadRelations(controller.signal).catch(() => {
+      if (!controller.signal.aborted && projectRef.current === projectId) setRelations({ storylines: [], materials: [], foreshadowings: [] });
+    });
     return () => {
       controller.abort();
       confirmControllerRef.current?.abort();
     };
-  }, [loadInitial, projectId]);
+  }, [loadInitial, loadRelations, projectId]);
   const clearSelection = () => {
     setSelected({});
     setConfirmOpen(false);
@@ -224,9 +240,6 @@ export function ChapterPlansWorkspace({ projectId, project }: { projectId: strin
               <Icon name="wand" size={17} />
               模拟生成
             </button>
-            <button disabled title="C3 已实现">
-              编辑
-            </button>
           </div>
         </section>
         <p className="chapter-plans-notice">
@@ -237,13 +250,13 @@ export function ChapterPlansWorkspace({ projectId, project }: { projectId: strin
           <button className={!status ? "active" : ""} onClick={() => choose()}>
             全部
           </button>
-          {(Object.keys(labels) as ChapterPlanStatus[]).map((value) => (
+          {(["pending_confirmation", "confirmed"] as ChapterPlanStatus[]).map((value) => (
             <button
               className={status === value ? "active" : ""}
               onClick={() => choose(value)}
               key={value}
             >
-              {labels[value]}
+              {chapterPlanStatusLabel(value)}
             </button>
           ))}
         </nav>
@@ -279,6 +292,7 @@ export function ChapterPlansWorkspace({ projectId, project }: { projectId: strin
                 <Card
                   key={plan.id}
                   plan={plan}
+                  relations={relations}
                   selected={Boolean(selected[plan.id])}
                   onToggle={() => toggle(plan)}
                   onEdit={() => setEditing(plan)}
@@ -368,16 +382,19 @@ export function ChapterPlansWorkspace({ projectId, project }: { projectId: strin
 }
 function Card({
   plan,
+  relations,
   selected,
   onToggle,
   onEdit,
 }: {
   plan: ChapterPlan;
+  relations: RelationContext | null;
   selected: boolean;
   onToggle: () => void;
   onEdit: () => void;
 }) {
   const selectable = plan.status === "pending_confirmation";
+  const names = relations ? createRelationNames(relations.storylines, relations.materials, relations.foreshadowings) : null;
   return (
     <article className={`chapter-plan-card ${selected ? "selected" : ""}`}>
       <header>
@@ -394,9 +411,9 @@ function Card({
         <div className="chapter-plan-title">
           <h3>{plan.title}</h3>
           <span className={`chapter-plan-status ${plan.status}`}>
-            {labels[plan.status]}
+            {chapterPlanStatusLabel(plan.status)}
           </span>
-          <small>模拟生成</small>
+          <small>{chapterPlanGenerationSummary(plan)}</small>
         </div>
       </header>
       <p className="chapter-plan-summary">{plan.summary || "暂无章节摘要"}</p>
@@ -416,21 +433,18 @@ function Card({
       >
         <Relation
           icon="workflow"
-          label="Storyline"
-          values={plan.storyline_refs_json.map(
-            (ref) =>
-              `${ref.relation === "primary" ? "主线" : "支线"} · ${short(ref.storyline_id)}`,
-          )}
+          label="关联故事线"
+          values={names ? relationValues(plan.storyline_refs_json.map((ref) => ref.storyline_id), names.storylines, "暂无关联故事线") : ["正在加载关联故事线"]}
         />
         <Relation
           icon="archive"
-          label="Material"
-          values={plan.material_refs_json.map(short)}
+          label="关联素材"
+          values={names ? relationValues(plan.material_refs_json, names.materials, "暂无关联素材") : ["正在加载关联素材"]}
         />
         <Relation
           icon="sparkles"
-          label="Foreshadowing"
-          values={plan.foreshadowing_refs_json.map(short)}
+          label="关联伏笔"
+          values={names ? relationValues(plan.foreshadowing_refs_json, names.foreshadowings, "暂无关联伏笔") : ["正在加载关联伏笔"]}
         />
       </section>
       {selectable ? (
@@ -477,7 +491,6 @@ function Relation({
     </div>
   );
 }
-const short = (value: string) => value.slice(0, 8);
 function State({
   title,
   description,
