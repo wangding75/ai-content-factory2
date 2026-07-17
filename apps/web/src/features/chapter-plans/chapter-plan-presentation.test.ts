@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { chapterPlanDetail, chapterPlanStatusLabel, chapterPlanSummary, createChapterPlanStats, relationValues } from "./chapter-plan-presentation.ts";
+import { chapterPlanDetail, chapterPlanStatusLabel, chapterPlanSummary, createChapterPlanStats, createConfirmationViewModel, relationValues } from "./chapter-plan-presentation.ts";
 
 test("chapter plan statuses are presented in Chinese with a safe fallback", () => {
   assert.equal(chapterPlanStatusLabel("pending_confirmation"), "待确认");
@@ -25,4 +25,15 @@ test("chapter plan statistics are calculated from the loaded list", () => {
   const plans = [{ status: "pending_confirmation" }, { status: "confirmed" }] as never[];
   assert.deepEqual(createChapterPlanStats(plans), { all: 2, pending: 1, confirmed: 1, draftGenerated: 0 });
   assert.deepEqual(createChapterPlanStats([]), { all: 0, pending: 0, confirmed: 0, draftGenerated: 0 });
+});
+
+test("confirmation view model preserves non-contiguous chapters and blocks unsafe selections", () => {
+  const plans = [
+    { id: "a", chapter_no: 2, source: "mock_generated", status: "pending_confirmation", storyline_refs_json: [{ relation: "primary" }], foreshadowing_refs_json: [] },
+    { id: "b", chapter_no: 4, source: "mock_generated", status: "pending_confirmation", storyline_refs_json: [], foreshadowing_refs_json: [] },
+  ] as never[];
+  const model = createConfirmationViewModel(plans, plans);
+  assert.equal(model.rangeLabel, "章节范围：第 2、4 章");
+  assert.equal(model.canConfirm, false);
+  assert.equal(model.checks.some((check) => check.status === "error"), true);
 });
