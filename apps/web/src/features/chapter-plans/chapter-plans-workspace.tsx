@@ -1,532 +1,81 @@
 "use client";
 /* eslint-disable react-hooks/set-state-in-effect */
+
 import Link from "next/link";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Icon } from "@/components/ui/icons";
 import { ApiError, getForeshadowings, getStorylines, type Foreshadowing, type Project, type StorylineNode } from "@/lib/api";
 import { listProjectMaterialsFromApi } from "@/features/planning-materials/api/project-material-http-api";
 import type { ProjectMaterialItem } from "@/features/planning-materials/contracts/materials";
-import {
-  confirmChapterPlans,
-  listChapterPlans,
-  type ChapterPlan,
-  type ChapterPlanList,
-  type ChapterPlanStatus,
-} from "./chapter-plan-http-api";
-import { MockGenerateDialog } from "./mock-generate-dialog";
-import { EditChapterPlanDrawer } from "./edit-chapter-plan-drawer";
+import { confirmChapterPlans, listChapterPlans, type ChapterPlan } from "./chapter-plan-http-api";
 import { ConfirmChapterPlansDialog } from "./confirm-chapter-plans-dialog";
-import { chapterPlanDetail, chapterPlanGenerationSummary, chapterPlanStatusLabel, chapterPlanSummary, createRelationNames, relationValues } from "./chapter-plan-presentation";
+import { EditChapterPlanDrawer } from "./edit-chapter-plan-drawer";
+import { MockGenerateDialog } from "./mock-generate-dialog";
+import { chapterPlanDetail, chapterPlanSourceLabel, chapterPlanStatusLabel, chapterPlanSummary, createChapterPlanStats, createRelationNames, flattenStorylines, relationValues, type ChapterPlanFilterStatus } from "./chapter-plan-presentation";
 
-type RelationContext = { storylines: StorylineNode[]; materials: ProjectMaterialItem[]; foreshadowings: Foreshadowing[] };
-const limit = 10;
-export function ChapterPlansWorkspace({ projectId, project }: { projectId: string; project: Project }) {
-  void project;
-  const [data, setData] = useState<ChapterPlanList | null>(null),
-    [status, setStatus] = useState<ChapterPlanStatus | undefined>(),
-    [offset, setOffset] = useState(0),
-    [loading, setLoading] = useState(true),
-    [error, setError] = useState<ApiError | null>(null),
-    [mockOpen, setMockOpen] = useState(false),
-    [editing, setEditing] = useState<ChapterPlan | null>(null),
-    [selected, setSelected] = useState<Record<string, ChapterPlan>>({}),
-    [confirmOpen, setConfirmOpen] = useState(false),
-    [confirming, setConfirming] = useState(false),
-    [confirmError, setConfirmError] = useState<ApiError | null>(null),
-    [relations, setRelations] = useState<RelationContext | null>(null);
-  const projectRef = useRef(projectId),
-    requestRef = useRef(0),
-    confirmControllerRef = useRef<AbortController | null>(null);
-  const loadPlans = useCallback(
-    async (
-      query: { status?: ChapterPlanStatus; offset: number },
-      { signal }: { signal?: AbortSignal } = {},
-    ) => {
-      const request = ++requestRef.current;
-      try {
-        const plans = await listChapterPlans(
-          projectId,
-          { status: query.status, limit, offset: query.offset },
-          { signal },
-        );
-        if (
-          signal?.aborted ||
-          projectRef.current !== projectId ||
-          request !== requestRef.current
-        )
-          return;
-        setData(plans);
-      } catch (cause) {
-        if (
-          signal?.aborted ||
-          projectRef.current !== projectId ||
-          request !== requestRef.current
-        )
-          return;
-        throw cause;
-      }
-    },
-    [projectId],
-  );
-  const loadInitial = useCallback(
-    async (signal?: AbortSignal) => {
-      setLoading(true);
-      setError(null);
-      try {
-        await loadPlans({ status, offset }, { signal });
-        if (signal?.aborted || projectRef.current !== projectId) return;
-      } catch (cause) {
-        if (signal?.aborted || projectRef.current !== projectId) return;
-        setError(
-          cause instanceof ApiError
-            ? cause
-            : new ApiError("Unable to load chapter plans.", 500),
-        );
-      } finally {
-        if (!signal?.aborted && projectRef.current === projectId)
-          setLoading(false);
-      }
-    },
-    [loadPlans, offset, projectId, status],
-  );
-  const loadRelations = useCallback(async (signal?: AbortSignal) => {
-    const [storylines, materials, foreshadowings] = await Promise.all([
-      getStorylines(projectId, signal),
-      listProjectMaterialsFromApi(projectId, { limit: 100 }, { signal }),
-      getForeshadowings(projectId, signal),
-    ]);
-    if (!signal?.aborted && projectRef.current === projectId) {
-      setRelations({ storylines: storylines.items, materials: materials.items, foreshadowings: foreshadowings.items });
-    }
+type Relations = { storylines: StorylineNode[]; materials: ProjectMaterialItem[]; foreshadowings: Foreshadowing[] };
+const statuses: { value: ChapterPlanFilterStatus; label: string }[] = [{ value: "all", label: "全部" }, { value: "pending_confirmation", label: "待确认" }, { value: "confirmed", label: "已确认" }, { value: "draft_generated", label: "已生成草稿" }];
+
+export function ChapterPlansWorkspace({ projectId }: { projectId: string; project: Project }) {
+  const [plans, setPlans] = useState<ChapterPlan[] | null>(null);
+  const [relations, setRelations] = useState<Relations | null>(null);
+  const [status, setStatus] = useState<ChapterPlanFilterStatus>("all");
+  const [search, setSearch] = useState("");
+  const [storylineId, setStorylineId] = useState("");
+  const [foreshadowingId, setForeshadowingId] = useState("");
+  const [selected, setSelected] = useState<Record<string, ChapterPlan>>({});
+  const [loading, setLoading] = useState(true), [error, setError] = useState<ApiError | null>(null);
+  const [mockOpen, setMockOpen] = useState(false), [editing, setEditing] = useState<ChapterPlan | null>(null), [confirmOpen, setConfirmOpen] = useState(false), [confirming, setConfirming] = useState(false), [confirmError, setConfirmError] = useState<ApiError | null>(null);
+  const requestRef = useRef(0);
+  const load = useCallback(async (signal?: AbortSignal) => {
+    const request = ++requestRef.current;
+    setLoading(true); setError(null);
+    try {
+      const [response, storylines, materials, foreshadowings] = await Promise.all([
+        listChapterPlans(projectId, { limit: 100 }, { signal }), getStorylines(projectId, signal), listProjectMaterialsFromApi(projectId, { limit: 100 }, { signal }), getForeshadowings(projectId, signal),
+      ]);
+      if (signal?.aborted || request !== requestRef.current) return;
+      setPlans(response.items); setRelations({ storylines: storylines.items, materials: materials.items, foreshadowings: foreshadowings.items });
+    } catch (cause) {
+      if (!signal?.aborted && request === requestRef.current) setError(cause instanceof ApiError ? cause : new ApiError("Unable to load chapter plans.", 500));
+    } finally { if (!signal?.aborted && request === requestRef.current) setLoading(false); }
   }, [projectId]);
-  useEffect(() => {
-    projectRef.current = projectId;
-    setMockOpen(false);
-    setEditing(null);
-    setSelected({});
-    setConfirmOpen(false);
-    setConfirmError(null);
-    setRelations(null);
-    confirmControllerRef.current?.abort();
-    const controller = new AbortController();
-    void loadInitial(controller.signal);
-    void loadRelations(controller.signal).catch(() => {
-      if (!controller.signal.aborted && projectRef.current === projectId) setRelations({ storylines: [], materials: [], foreshadowings: [] });
-    });
-    return () => {
-      controller.abort();
-      confirmControllerRef.current?.abort();
-    };
-  }, [loadInitial, loadRelations, projectId]);
-  const clearSelection = () => {
-    setSelected({});
-    setConfirmOpen(false);
-    setConfirmError(null);
-  };
-  const choose = (next?: ChapterPlanStatus) => {
-    clearSelection();
-    setStatus(next);
-    setOffset(0);
-  };
-  const changePage = (nextOffset: number) => {
-    clearSelection();
-    setOffset(nextOffset);
-  };
-  const refreshAfterGeneration = useCallback(async () => {
-    clearSelection();
-    setStatus(undefined);
-    setOffset(0);
-    try {
-      await loadPlans({ offset: 0 });
-    } catch (cause) {
-      setError(
-        cause instanceof ApiError
-          ? cause
-          : new ApiError("Unable to reload chapter plans.", 500),
-      );
-      throw cause;
-    }
-  }, [loadPlans]);
-  if (loading && !data) return <Loading />;
-  if (error)
-    return (
-      <State
-        title={error.status === 404 ? "项目不存在" : "章节规划加载失败"}
-        description={
-          error.status === 404
-            ? "请确认项目仍存在，或返回项目列表。"
-            : "请检查网络连接后重试。"
-        }
-        retry={() => void loadInitial()}
-      />
-    );
-  if (!data) return null;
-  const page = Math.floor(data.offset / data.limit) + 1,
-    pages = Math.max(1, Math.ceil(data.total / data.limit)),
-    pending = data.items.filter(
-      (plan) => plan.status === "pending_confirmation",
-    ),
-    selectedPlans = Object.values(selected),
-    allPendingSelected =
-      pending.length > 0 && pending.every((plan) => selected[plan.id]);
-  const toggle = (plan: ChapterPlan) =>
-    setSelected((current) => {
-      const next = { ...current };
-      if (next[plan.id]) delete next[plan.id];
-      else next[plan.id] = plan;
-      return next;
-    });
-  const toggleAll = () =>
-    setSelected((current) => {
-      const next = { ...current };
-      const all = pending.every((plan) => next[plan.id]);
-      pending.forEach((plan) => {
-        if (all) delete next[plan.id];
-        else next[plan.id] = plan;
-      });
-      return next;
-    });
+  useEffect(() => { const controller = new AbortController(); setSelected({}); void load(controller.signal); return () => controller.abort(); }, [load]);
+  const relationNames = useMemo(() => relations && createRelationNames(relations.storylines, relations.materials, relations.foreshadowings), [relations]);
+  const visible = useMemo(() => (plans ?? []).filter((plan) => {
+    const needle = search.trim().toLowerCase();
+    return (status === "all" || plan.status === status) && (!needle || plan.title.toLowerCase().includes(needle) || String(plan.chapter_no).includes(needle)) && (!storylineId || plan.storyline_refs_json.some((ref) => ref.storyline_id === storylineId)) && (!foreshadowingId || plan.foreshadowing_refs_json.includes(foreshadowingId));
+  }), [plans, status, search, storylineId, foreshadowingId]);
+  const stats = useMemo(() => createChapterPlanStats(plans ?? []), [plans]);
+  const pendingVisible = visible.filter((plan) => plan.status === "pending_confirmation");
+  const selectedPlans = Object.values(selected);
+  const clearSelection = () => { setSelected({}); setConfirmOpen(false); setConfirmError(null); };
+  const toggle = (plan: ChapterPlan) => setSelected((current) => { const next = { ...current }; if (next[plan.id]) delete next[plan.id]; else next[plan.id] = plan; return next; });
+  const toggleAll = () => setSelected((current) => { const next = { ...current }; const all = pendingVisible.length > 0 && pendingVisible.every((plan) => next[plan.id]); pendingVisible.forEach((plan) => { if (all) delete next[plan.id]; else next[plan.id] = plan; }); return next; });
+  const refresh = useCallback(async () => { clearSelection(); await load(); }, [load]);
   const submitConfirm = async () => {
-    const plans = Object.values(selected).filter(
-      (plan) =>
-        plan.status === "pending_confirmation" && plan.project_id === projectId,
-    );
-    if (!plans.length) {
-      setConfirmError(new ApiError("请至少选择一个待确认章节。", 400));
-      return;
-    }
-    const controller = new AbortController();
-    confirmControllerRef.current = controller;
-    setConfirming(true);
-    setConfirmError(null);
-    try {
-      await confirmChapterPlans(
-        projectId,
-        {
-          selections: plans.map((plan) => ({
-            chapter_plan_id: plan.id,
-            expected_version: plan.version,
-          })),
-        },
-        { signal: controller.signal },
-      );
-      if (controller.signal.aborted || projectRef.current !== projectId) return;
-      clearSelection();
-      await loadPlans({ status, offset });
-    } catch (cause) {
-      if (controller.signal.aborted || projectRef.current !== projectId) return;
-      setConfirmError(
-        cause instanceof ApiError
-          ? cause
-          : new ApiError("暂时无法确认章节规划。", 500),
-      );
-    } finally {
-      if (!controller.signal.aborted && projectRef.current === projectId)
-        setConfirming(false);
-      if (confirmControllerRef.current === controller)
-        confirmControllerRef.current = null;
-    }
+    const candidates = Object.values(selected).filter((plan) => plan.status === "pending_confirmation");
+    if (!candidates.length || confirming) return;
+    setConfirming(true); setConfirmError(null);
+    try { await confirmChapterPlans(projectId, { selections: candidates.map((plan) => ({ chapter_plan_id: plan.id, expected_version: plan.version })) }); await refresh(); }
+    catch (cause) { setConfirmError(cause instanceof ApiError ? cause : new ApiError("暂时无法确认章节规划。", 500)); }
+    finally { setConfirming(false); }
   };
-  return (
-    <div className="chapter-plans-workspace">
-      <main className="chapter-plans-main">
-        <section className="chapter-plans-heading">
-          <div>
-            <h2>章节规划</h2>
-            <p>基于故事线、素材和伏笔生成并管理章节候选。</p>
-          </div>
-          <div className="chapter-plans-actions">
-            <button onClick={() => setMockOpen(true)}>
-              <Icon name="wand" size={17} />
-              模拟生成
-            </button>
-          </div>
-        </section>
-        <p className="chapter-plans-notice">
-          <Icon name="info" size={18} />
-          候选章节可编辑或删除；确认后将锁定，并可进入正文生产。
-        </p>
-        <nav className="chapter-plans-filters" aria-label="章节状态筛选">
-          <button className={!status ? "active" : ""} onClick={() => choose()}>
-            全部
-          </button>
-          {(["pending_confirmation", "confirmed"] as ChapterPlanStatus[]).map((value) => (
-            <button
-              className={status === value ? "active" : ""}
-              onClick={() => choose(value)}
-              key={value}
-            >
-              {chapterPlanStatusLabel(value)}
-            </button>
-          ))}
-        </nav>
-        {loading ? (
-          <LoadingList />
-        ) : data.total === 0 ? (
-          <section className="chapter-plans-empty">
-            <Icon name="book" size={34} />
-            <h3>暂无章节规划</h3>
-            <p>
-              {status
-                ? "当前筛选条件下没有章节规划。"
-                : "请先模拟生成章节规划候选。"}
-            </p>
-            {status && <button onClick={() => choose()}>查看全部</button>}
-          </section>
-        ) : (
-          <>
-            <div className="chapter-plan-select-all">
-              <label>
-                <input
-                  type="checkbox"
-                  checked={allPendingSelected}
-                  onChange={toggleAll}
-                  disabled={!pending.length}
-                />
-                <span>全选待确认章节</span>
-              </label>
-              <span>{pending.length} 条待确认</span>
-            </div>
-            <section className="chapter-plans-list" aria-live="polite">
-              {data.items.map((plan) => (
-                <Card
-                  key={plan.id}
-                  plan={plan}
-                  relations={relations}
-                  selected={Boolean(selected[plan.id])}
-                  onToggle={() => toggle(plan)}
-                  onEdit={() => setEditing(plan)}
-                />
-              ))}
-            </section>
-            <footer className="chapter-plans-pagination">
-              <span>共 {data.total} 条记录</span>
-              <div>
-                <button
-                  disabled={page === 1}
-                  onClick={() => changePage(Math.max(0, offset - limit))}
-                >
-                  上一页
-                </button>
-                <b>
-                  {page} / {pages}
-                </b>
-                <button
-                  disabled={page === pages}
-                  onClick={() => changePage(offset + limit)}
-                >
-                  下一页
-                </button>
-              </div>
-            </footer>
-          </>
-        )}
-      </main>
-      {selectedPlans.length > 0 && (
-        <footer className="chapter-plan-batch-bar">
-          <div>
-            <p>
-              已选择 <b>{selectedPlans.length}</b> 个候选章节
-            </p>
-            <button type="button" onClick={clearSelection}>
-              取消选择
-            </button>
-          </div>
-          <div>
-            <p>
-              确认后，所选候选章节将变为已确认，并允许用户手动进入正文生产。
-            </p>
-            <button
-              type="button"
-              onClick={() => {
-                setConfirmError(null);
-                setConfirmOpen(true);
-              }}
-            >
-              确认章节规划
-            </button>
-          </div>
-        </footer>
-      )}
-      {mockOpen && (
-        <MockGenerateDialog
-          projectId={projectId}
-          onClose={() => setMockOpen(false)}
-          onGenerated={refreshAfterGeneration}
-        />
-      )}{" "}
-      {editing && (
-        <EditChapterPlanDrawer
-          projectId={projectId}
-          plan={editing}
-          onClose={() => setEditing(null)}
-          onSaved={refreshAfterGeneration}
-        />
-      )}{" "}
-      {confirmOpen && (
-        <ConfirmChapterPlansDialog
-          plans={selectedPlans}
-          onClose={() => {
-            if (!confirming) {
-              setConfirmOpen(false);
-              setConfirmError(null);
-            }
-          }}
-          onConfirm={() => void submitConfirm()}
-          submitting={confirming}
-          error={confirmError}
-        />
-      )}
-    </div>
-  );
+  if (loading && !plans) return <Loading />;
+  if (error && !plans) return <State title={error.status === 404 ? "项目不存在" : "章节规划加载失败"} description="请检查网络连接后重试。" retry={() => void load()} />;
+  const storylines = relations ? flattenStorylines(relations.storylines) : [];
+  return <div className="chapter-plans-workspace"><main className="chapter-plans-main">
+    <section className="chapter-plans-heading"><div><h2>章节规划</h2><p>基于故事线、素材和伏笔生成并管理章节候选。</p></div><div className="chapter-plans-actions"><button type="button" onClick={() => setMockOpen(true)}><Icon name="wand" size={17} />模拟生成章节规划</button></div></section>
+    <section className="chapter-plan-stats" aria-label="章节规划统计">{[["全部章节", stats.all], ["待确认", stats.pending], ["已确认", stats.confirmed], ["已生成草稿", stats.draftGenerated]].map(([label, value]) => <article key={String(label)}><span>{label}</span><b>{value}</b></article>)}</section>
+    <nav className="chapter-plans-filters" aria-label="章节状态筛选">{statuses.map((item) => <button type="button" className={status === item.value ? "active" : ""} onClick={() => { setStatus(item.value); clearSelection(); }} key={item.value}>{item.label} <small>{item.value === "all" ? stats.all : item.value === "pending_confirmation" ? stats.pending : item.value === "confirmed" ? stats.confirmed : stats.draftGenerated}</small></button>)}</nav>
+    <section className="chapter-plans-toolbar" aria-label="章节规划搜索与筛选"><input aria-label="搜索章节标题或章节编号" placeholder="搜索章节标题或章节编号" value={search} onChange={(event) => setSearch(event.target.value)} /><select aria-label="故事线筛选" value={storylineId} onChange={(event) => setStorylineId(event.target.value)}><option value="">全部故事线</option>{storylines.map((line) => <option key={line.id} value={line.id}>{line.name}</option>)}</select><select aria-label="伏笔筛选" value={foreshadowingId} onChange={(event) => setForeshadowingId(event.target.value)}><option value="">全部伏笔</option>{relations?.foreshadowings.map((item) => <option key={item.id} value={item.id}>{item.title}</option>)}</select><button type="button" onClick={() => { setSearch(""); setStorylineId(""); setForeshadowingId(""); setStatus("all"); clearSelection(); }}>清除筛选</button></section>
+    {error && <p className="chapter-plans-form-error" role="alert">数据刷新失败，请重试。</p>}
+    <div className="chapter-plan-select-all"><label><input type="checkbox" checked={pendingVisible.length > 0 && pendingVisible.every((plan) => selected[plan.id])} onChange={toggleAll} disabled={!pendingVisible.length} />全选待确认章节</label><span>已选 {selectedPlans.length} 项</span></div>
+    {!visible.length ? <section className="chapter-plans-empty"><Icon name="book" size={34} /><h3>{plans?.length ? "未找到匹配章节" : "暂无章节规划"}</h3><p>{plans?.length ? "请调整搜索或筛选条件。" : "请先模拟生成章节规划候选。"}</p></section> : <section className="chapter-plans-table" aria-live="polite"><div className="chapter-plan-row header"><span>选择</span><span>章节</span><span>标题与摘要</span><span>关联故事线</span><span>关联子故事线</span><span>关联素材</span><span>关联伏笔</span><span>状态</span><span>来源</span><span>操作</span></div>{visible.map((plan) => <PlanRow key={plan.id} plan={plan} selected={Boolean(selected[plan.id])} names={relationNames} onToggle={() => toggle(plan)} onEdit={() => setEditing(plan)} />)}</section>}
+  </main>{selectedPlans.length > 0 && <footer className="chapter-plan-batch-bar"><div><p>已选择 <b>{selectedPlans.length}</b> 个待确认章节</p><button type="button" onClick={clearSelection}>取消选择</button></div><button type="button" onClick={() => setConfirmOpen(true)} disabled={confirming}>批量确认章节规划</button></footer>}
+  {mockOpen && <MockGenerateDialog projectId={projectId} onClose={() => setMockOpen(false)} onGenerated={async () => { setMockOpen(false); await refresh(); }} />}{editing && <EditChapterPlanDrawer projectId={projectId} plan={editing} onClose={() => setEditing(null)} onSaved={refresh} />}{confirmOpen && <ConfirmChapterPlansDialog plans={selectedPlans} onClose={() => !confirming && setConfirmOpen(false)} onConfirm={() => void submitConfirm()} submitting={confirming} error={confirmError} />}</div>;
 }
-function Card({
-  plan,
-  relations,
-  selected,
-  onToggle,
-  onEdit,
-}: {
-  plan: ChapterPlan;
-  relations: RelationContext | null;
-  selected: boolean;
-  onToggle: () => void;
-  onEdit: () => void;
-}) {
-  const selectable = plan.status === "pending_confirmation";
-  const names = relations ? createRelationNames(relations.storylines, relations.materials, relations.foreshadowings) : null;
-  return (
-    <article className={`chapter-plan-card ${selected ? "selected" : ""}`}>
-      <header>
-        <label className="chapter-plan-select">
-          <input
-            type="checkbox"
-            checked={selected}
-            onChange={onToggle}
-            disabled={!selectable}
-            aria-label={`选择第 ${plan.chapter_no} 章`}
-          />
-        </label>
-        <div className="chapter-plan-number">第 {plan.chapter_no} 章</div>
-        <div className="chapter-plan-title">
-          <h3>{plan.title}</h3>
-          <span className={`chapter-plan-status ${plan.status}`}>
-            {chapterPlanStatusLabel(plan.status)}
-          </span>
-          <small>{chapterPlanGenerationSummary(plan)}</small>
-        </div>
-      </header>
-      <p className="chapter-plan-summary">{chapterPlanSummary(plan.summary)}</p>
-      <dl className="chapter-plan-details">
-        <div>
-          <dt>章节目标</dt>
-          <dd>{chapterPlanDetail(plan.chapter_goal, "暂未设置章节目标")}</dd>
-        </div>
-        <div>
-          <dt>创作备注</dt>
-          <dd>{chapterPlanDetail(plan.creation_notes, "暂未设置创作备注")}</dd>
-        </div>
-      </dl>
-      <section
-        className="chapter-plan-relations"
-        aria-label={`第 ${plan.chapter_no} 章关联`}
-      >
-        <Relation
-          icon="workflow"
-          label="关联故事线"
-          values={names ? relationValues(plan.storyline_refs_json.map((ref) => ref.storyline_id), names.storylines, "暂无关联故事线") : ["正在加载关联故事线"]}
-        />
-        <Relation
-          icon="archive"
-          label="关联素材"
-          values={names ? relationValues(plan.material_refs_json, names.materials, "暂无关联素材") : ["正在加载关联素材"]}
-        />
-        <Relation
-          icon="sparkles"
-          label="关联伏笔"
-          values={names ? relationValues(plan.foreshadowing_refs_json, names.foreshadowings, "暂无关联伏笔") : ["正在加载关联伏笔"]}
-        />
-      </section>
-      {selectable ? (
-        <button
-          type="button"
-          className="chapter-plan-edit-button"
-          onClick={onEdit}
-        >
-          编辑
-        </button>
-      ) : (
-        <Link
-          className="chapter-plan-edit-button"
-          href={`/projects/${plan.project_id}/chapter-plans/${plan.id}/content`}
-        >
-          进入正文生产
-        </Link>
-      )}
-    </article>
-  );
-}
-function Relation({
-  icon,
-  label,
-  values,
-}: {
-  icon: "workflow" | "archive" | "sparkles";
-  label: string;
-  values: string[];
-}) {
-  return (
-    <div>
-      <dt>
-        <Icon name={icon} size={15} />
-        {label}
-      </dt>
-      <dd>
-        {values.length ? (
-          values.map((value) => <span key={value}>{value}</span>)
-        ) : (
-          <em>无</em>
-        )}
-      </dd>
-    </div>
-  );
-}
-function State({
-  title,
-  description,
-  retry,
-}: {
-  title: string;
-  description: string;
-  retry: () => void;
-}) {
-  return (
-    <main className="chapter-plans-state">
-      <Icon name="info" size={34} />
-      <h1>{title}</h1>
-      <p>{description}</p>
-      <button onClick={retry}>重试</button>
-    </main>
-  );
-}
-function Loading() {
-  return (
-    <div className="chapter-plans-workspace">
-      <div className="chapter-plans-skeleton header" />
-      <div className="chapter-plans-skeleton tabs" />
-      <main className="chapter-plans-main">
-        <div className="chapter-plans-skeleton heading" />
-        <LoadingList />
-      </main>
-    </div>
-  );
-}
-function LoadingList() {
-  return (
-    <section className="chapter-plans-list">
-      {[1, 2, 3].map((item) => (
-        <div className="chapter-plans-skeleton card" key={item} />
-      ))}
-    </section>
-  );
-}
+function PlanRow({ plan, selected, names, onToggle, onEdit }: { plan: ChapterPlan; selected: boolean; names: ReturnType<typeof createRelationNames> | null; onToggle: () => void; onEdit: () => void }) { const refs = plan.storyline_refs_json; const main = refs.filter((ref) => ref.relation === "primary").map((ref) => ref.storyline_id); const children = refs.filter((ref) => ref.relation === "secondary").map((ref) => ref.storyline_id); return <article className="chapter-plan-row"><span><input type="checkbox" aria-label={`选择第 ${plan.chapter_no} 章`} checked={selected} onChange={onToggle} disabled={plan.status !== "pending_confirmation"} /></span><b>第 {plan.chapter_no} 章</b><div><strong>{plan.title}</strong><p>{chapterPlanSummary(plan.summary)}</p><small>{chapterPlanDetail(plan.chapter_goal, "未设置章节目标")}</small></div><Badges values={names ? relationValues(main, names.storylines, "—") : ["加载中"]} /><Badges values={names ? relationValues(children, names.storylines, "—") : ["加载中"]} /><Badges values={names ? relationValues(plan.material_refs_json, names.materials, "—") : ["加载中"]} /><Badges values={names ? relationValues(plan.foreshadowing_refs_json, names.foreshadowings, "—") : ["加载中"]} /><span className={`chapter-plan-status ${plan.status}`}>{chapterPlanStatusLabel(plan.status)}</span><span>{chapterPlanSourceLabel(plan.source)}</span>{plan.status === "pending_confirmation" ? <button type="button" className="chapter-plan-edit-button" onClick={onEdit}>编辑</button> : <Link className="chapter-plan-edit-button" href={`/projects/${plan.project_id}/chapter-plans/${plan.id}/content`}>进入正文生产</Link>}</article>; }
+function Badges({ values }: { values: string[] }) { return <span className="chapter-plan-badges">{values.map((value) => <i key={value}>{value}</i>)}</span>; }
+function State({ title, description, retry }: { title: string; description: string; retry: () => void }) { return <main className="chapter-plans-state"><Icon name="info" size={34} /><h1>{title}</h1><p>{description}</p><button type="button" onClick={retry}>重试</button></main>; }
+function Loading() { return <div className="chapter-plans-workspace"><main className="chapter-plans-main"><div className="chapter-plans-skeleton heading" /><div className="chapter-plans-skeleton card" /></main></div>; }

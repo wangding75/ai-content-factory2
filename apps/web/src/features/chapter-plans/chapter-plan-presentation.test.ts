@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { chapterPlanDetail, chapterPlanStatusLabel, chapterPlanSummary, relationValues } from "./chapter-plan-presentation.ts";
+import { chapterPlanDetail, chapterPlanStatusLabel, chapterPlanSummary, createChapterPlanStats, relationValues } from "./chapter-plan-presentation.ts";
 
 test("chapter plan statuses are presented in Chinese with a safe fallback", () => {
   assert.equal(chapterPlanStatusLabel("pending_confirmation"), "待确认");
@@ -19,4 +19,10 @@ test("technical generation parameters are converted to a safe natural-language s
 test("relation values use loaded names and a safe empty state", () => {
   assert.deepEqual(relationValues(["a"], new Map([["a", "主线"]]), "暂无关联故事线"), ["主线"]);
   assert.deepEqual(relationValues(["missing"], new Map(), "暂无关联故事线"), ["暂无关联故事线"]);
+});
+
+test("chapter plan statistics are calculated from the loaded list", () => {
+  const plans = [{ status: "pending_confirmation" }, { status: "confirmed" }] as never[];
+  assert.deepEqual(createChapterPlanStats(plans), { all: 2, pending: 1, confirmed: 1, draftGenerated: 0 });
+  assert.deepEqual(createChapterPlanStats([]), { all: 0, pending: 0, confirmed: 0, draftGenerated: 0 });
 });

@@ -11,8 +11,12 @@ test("chapter plans batch-load relation names and never expose identifiers", () 
   assert.doesNotMatch(source, /"\?\?\?"/);
 });
 
-test("chapter plans use presentation mappers for filters, statuses, and sources", () => {
+test("chapter plans render client-side search, relation filters, statistics, and batch confirmation controls", () => {
   assert.match(source, /chapterPlanStatusLabel/);
-  assert.match(source, /chapterPlanGenerationSummary/);
+  assert.match(source, /createChapterPlanStats/);
+  assert.match(source, /搜索章节标题或章节编号/);
+  assert.match(source, /故事线筛选/);
+  assert.match(source, /伏笔筛选/);
+  assert.match(source, /批量确认章节规划/);
   assert.doesNotMatch(source, /disabled title=/);
 });
