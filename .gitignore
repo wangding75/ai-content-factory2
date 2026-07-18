@@ -31,3 +31,4 @@ logs/
 
 # Generated reports
 .ai-dev/reports/*.tmp
+.gstack/
