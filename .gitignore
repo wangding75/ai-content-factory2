@@ -30,5 +30,5 @@ tmp/
 logs/
 
 # Generated reports
-.ai-dev/reports/*.tmp
+.ai-dev/reports/
 .gstack/

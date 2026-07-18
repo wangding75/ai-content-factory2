@@ -1,0 +1,43 @@
+id: "<task-id>"
+type: "frontend-ui"
+model:
+  name: "gpt-5.6-terra"
+  reasoning: "medium"
+
+baseline:
+  branch: "main"
+  head: "<previous-full-commit-hash>"
+
+sources:
+  - "AGENTS.md"
+  - "docs/agent/00-project.md"
+  - "docs/agent/01-development-standard.md"
+  - "docs/agent/02-review-standard.md"
+  - "<frozen-task-file>"
+  - "<frozen-ui-or-contract>"
+
+goal:
+  - "<business goal>"
+
+scope:
+  include:
+    - "<approved path or module>"
+  exclude:
+    - "OpenAPI"
+    - "Migration"
+    - "unrelated pages"
+
+special_acceptance:
+  - "<only task-specific acceptance item>"
+
+verification:
+  targeted_tests:
+    - "<test file>"
+  lint_paths:
+    - "<modified source file>"
+  routes:
+    - "<route>"
+  forbidden_patterns: []
+
+commit:
+  message: "<commit message>"
