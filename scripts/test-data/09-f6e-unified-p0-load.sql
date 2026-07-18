@@ -16,8 +16,8 @@ INSERT INTO projects (id,name,type,status,description,current_stage,created_by,c
  ('f6e00000-0000-4000-8000-000000000005','F6E 图像策划项目','image','planning','统一测试数据：图像项目类型样本。','materials','acf-test-data-f6e','2026-01-06T08:00:00Z','2026-01-06T08:00:00Z');
 
 INSERT INTO project_plannings (project_id,premise,audience,style,goals_json,constraints_json,created_by,created_at,updated_at) VALUES
- ('f6e00000-0000-4000-8000-000000000002','一名剪辑师在雨夜寻找失踪胶片。','独立短片观众','悬疑克制','{"length":"15m"}','{"rating":"PG"}','acf-test-data-f6e','2026-01-03T08:00:00Z','2026-01-03T08:00:00Z'),
- ('f6e00000-0000-4000-8000-000000000003','星港管理员阻止失控航线坠入居民区。','科幻冒险读者','明快群像','{"chapters":3,"theme":"责任"}','{"perspective":"第三人称"}','acf-test-data-f6e','2026-01-04T08:00:00Z','2026-01-04T08:00:00Z');
+ ('f6e00000-0000-4000-8000-000000000002','一名剪辑师在雨夜寻找失踪胶片。','独立短片观众','悬疑克制','{"selling_points":["雨夜胶片","悬疑追寻"],"plot_summary":"剪辑师循着失踪胶片的线索，在雨夜完成最后一次放映。"}','{"emotional_tone":"克制紧张"}','acf-test-data-f6e','2026-01-03T08:00:00Z','2026-01-03T08:00:00Z'),
+ ('f6e00000-0000-4000-8000-000000000003','星港管理员阻止失控航线坠入居民区。','科幻冒险读者','明快群像','{"selling_points":["星港危机","导航仪谜团","群像协作"],"plot_summary":"林澈修复旧导航仪，带领伙伴阻止失控航线坠入居民区。"}','{"emotional_tone":"紧张而坚定"}','acf-test-data-f6e','2026-01-04T08:00:00Z','2026-01-04T08:00:00Z');
 
 INSERT INTO materials (id,type,name,summary,content_json,tags_json,created_by,created_at,updated_at) VALUES
  ('f6e00000-0000-4000-8001-000000000001','character','F6E 林澈','星港管理员，擅长修复旧导航仪。','{"role":"protagonist"}','["F6E","角色","星港"]','acf-test-data-f6e','2026-01-01T08:00:00Z','2026-01-01T08:00:00Z'),
