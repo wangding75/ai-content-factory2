@@ -20,7 +20,7 @@ func openIteration07MigrationDB(t *testing.T) (*pgxpool.Pool, context.Context, s
 	t.Helper()
 	// This is the local Compose PostgreSQL admin endpoint used exclusively for
 	// ephemeral migration integration databases.
-	raw := "postgres://postgres:postgres@127.0.0.1:15432/postgres?sslmode=disable"
+	raw := "postgres://postgres:postgres@127.0.0.1:15433/postgres?sslmode=disable"
 	parsed, err := url.Parse(raw)
 	if err != nil {
 		t.Fatal(err)
@@ -227,4 +227,60 @@ func TestIteration07Migration000007UpgradeConstraintsAndRollback(t *testing.T) {
 	if err = db.QueryRow(ctx, "SELECT COALESCE(MAX(version),0) FROM schema_migrations").Scan(&version); err != nil || version != 7 {
 		t.Fatalf("version after second upgrade=%d err=%v, want 7", version, err)
 	}
+}
+
+func TestIteration09Migration000008ProjectTypesUpgradeConstraintsAndRollback(t *testing.T) {
+	db, ctx, targetURL := openIteration07MigrationDB(t)
+	migrations := iteration07Migrations(t)
+	conn, err := pgx.Connect(ctx, targetURL)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = conn.Close(context.Background()) })
+
+	legacyID := uuid.New()
+	if _, err = db.Exec(ctx, "INSERT INTO projects(id,name,type,created_by) VALUES($1,'legacy novel','novel','i09-migration')", legacyID); err != nil {
+		t.Fatalf("insert legacy novel: %v", err)
+	}
+	if err = migrateUp(ctx, conn, migrations[:8]); err != nil {
+		t.Fatalf("upgrade 000007 to 000008: %v", err)
+	}
+	var version int
+	if err = db.QueryRow(ctx, "SELECT COALESCE(MAX(version), 0) FROM schema_migrations").Scan(&version); err != nil || version != 8 {
+		t.Fatalf("version after upgrade=%d err=%v, want 8", version, err)
+	}
+	var legacyType string
+	if err = db.QueryRow(ctx, "SELECT type FROM projects WHERE id=$1", legacyID).Scan(&legacyType); err != nil || legacyType != "novel" {
+		t.Fatalf("legacy novel after upgrade type=%q err=%v", legacyType, err)
+	}
+
+	for _, projectType := range []string{"novel", "short_film", "series", "graphic_text", "image"} {
+		if _, err = db.Exec(ctx, "INSERT INTO projects(id,name,type,created_by) VALUES($1,$2,$3,'i09-migration')", uuid.New(), "legal-"+projectType, projectType); err != nil {
+			t.Fatalf("insert legal type %s: %v", projectType, err)
+		}
+	}
+	_, err = db.Exec(ctx, "INSERT INTO projects(id,name,type,created_by) VALUES($1,'illegal','invalid','i09-migration')", uuid.New())
+	mustFail(t, err)
+
+	if err = migrateDownOne(ctx, conn, migrations); err == nil {
+		t.Fatal("expected down to reject non-novel projects")
+	}
+	if err = db.QueryRow(ctx, "SELECT COALESCE(MAX(version), 0) FROM schema_migrations").Scan(&version); err != nil || version != 8 {
+		t.Fatalf("failed down left version=%d err=%v, want 8", version, err)
+	}
+	if _, err = db.Exec(ctx, "INSERT INTO projects(id,name,type,created_by) VALUES($1,'still-five-types','image','i09-migration')", uuid.New()); err != nil {
+		t.Fatalf("failed down left partial type constraint: %v", err)
+	}
+
+	if _, err = db.Exec(ctx, "DELETE FROM projects WHERE created_by='i09-migration' AND type <> 'novel'"); err != nil {
+		t.Fatal(err)
+	}
+	if err = migrateDownOne(ctx, conn, migrations); err != nil {
+		t.Fatalf("downgrade 000008 to 000007: %v", err)
+	}
+	if err = db.QueryRow(ctx, "SELECT COALESCE(MAX(version), 0) FROM schema_migrations").Scan(&version); err != nil || version != 7 {
+		t.Fatalf("version after down=%d err=%v, want 7", version, err)
+	}
+	_, err = db.Exec(ctx, "INSERT INTO projects(id,name,type,created_by) VALUES($1,'rejected after down','image','i09-migration')", uuid.New())
+	mustFail(t, err)
 }

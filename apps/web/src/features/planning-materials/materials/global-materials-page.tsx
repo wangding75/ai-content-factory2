@@ -43,7 +43,8 @@ export function GlobalMaterialsPage() {
     setLoading(true);
     setError(null);
     try {
-      const result = await listMaterialsFromApi({ q, type, sort, limit, offset }, { signal });
+      const result = await listMaterialsFromApi({ scope: "global", q, type, sort, limit, offset }, { signal });
+      if (signal?.aborted) return;
       setItems(result.items);
       setTotal(result.total);
       setOffset(result.offset);

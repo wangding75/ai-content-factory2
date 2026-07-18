@@ -95,6 +95,20 @@ func (r *PostgresRepository) Get(ctx context.Context, id uuid.UUID) (Project, er
 	}
 	return p, nil
 }
+func (r *PostgresRepository) Progress(ctx context.Context, id uuid.UUID) (Progress, error) {
+	var progress Progress
+	err := r.pool.QueryRow(ctx, `SELECT
+		(SELECT COUNT(*) FROM project_material_usages WHERE project_id = $1 AND status = 'active'),
+		(SELECT COUNT(*) FROM storylines WHERE project_id = $1),
+		(SELECT COUNT(*) FROM chapter_plans WHERE project_id = $1 AND status = 'confirmed'),
+		(SELECT COUNT(*) FROM content_items WHERE project_id = $1)`, id).Scan(
+		&progress.MaterialCount, &progress.StorylineCount, &progress.ConfirmedChapterCount, &progress.WorkCount,
+	)
+	if err != nil {
+		return Progress{}, fmt.Errorf("get project progress: %w", err)
+	}
+	return progress, nil
+}
 func (r *PostgresRepository) Update(ctx context.Context, id uuid.UUID, name, description *string) (Project, error) {
 	p, err := scanProject(r.pool.QueryRow(ctx, "UPDATE projects SET name = COALESCE($2, name), description = COALESCE($3, description), updated_at = NOW() WHERE id = $1 RETURNING "+projectColumns, id, name, description))
 	if errors.Is(err, pgx.ErrNoRows) {

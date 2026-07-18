@@ -5,7 +5,8 @@ import test from "node:test";
 const source = readFileSync(new URL("./global-materials-page.tsx", import.meta.url), "utf8");
 
 test("global material list delegates loading, filters, pagination, and retry to the real API", () => {
-  assert.match(source, /listMaterialsFromApi\(\{ q, type, sort, limit, offset \}/);
+  assert.match(source, /listMaterialsFromApi\(\{ scope: "global", q, type, sort, limit, offset \}/);
+  assert.match(source, /if \(signal\?\.aborted\) return/);
   assert.match(source, /setOffset\(offset \+ limit\)/);
   assert.match(source, /onClick=\{\(\) => void load\(\)\}/);
   assert.match(source, /new AbortController\(\)/);

@@ -138,9 +138,10 @@ export async function apiRequest<T>(path: string, init?: ApiRequestInit): Promis
   return envelope.data as T;
 }
 
-export function listProjects(options: { status?: ProjectStatus; limit?: number; offset?: number; signal?: AbortSignal } = {}) {
+export function listProjects(options: { status?: ProjectStatus; q?: string; limit?: number; offset?: number; signal?: AbortSignal } = {}) {
   const params = new URLSearchParams({ limit: String(options.limit ?? 20), offset: String(options.offset ?? 0) });
   if (options.status) params.set("status", options.status);
+  if (options.q?.trim()) params.set("q", options.q.trim());
   return apiRequest<ProjectList>(`/projects?${params}`, { signal: options.signal });
 }
 

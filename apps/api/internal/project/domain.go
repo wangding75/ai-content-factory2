@@ -86,6 +86,9 @@ type Repository interface {
 	Get(context.Context, uuid.UUID) (Project, error)
 	Update(context.Context, uuid.UUID, *string, *string) (Project, error)
 }
+type ProgressReader interface {
+	Progress(context.Context, uuid.UUID) (Progress, error)
+}
 
 func New(name, projectType, description string) (Project, error) {
 	name = strings.TrimSpace(name)

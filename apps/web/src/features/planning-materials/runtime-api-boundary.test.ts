@@ -47,7 +47,7 @@ test("global Material list, detail, and editor use real HTTP APIs with loading, 
   assert.match(api, /\/materials\$\{materialQuery\(query\)\}/);
   assert.match(api, /method: "POST"/);
   assert.match(api, /method: "PATCH"/);
-  assert.match(list, /listMaterialsFromApi\(\{ q, type, sort, limit, offset \}/);
+  assert.match(list, /listMaterialsFromApi\(\{ scope: "global", q, type, sort, limit, offset \}/);
   assert.match(list, /onClick=\{\(\) => void load\(\)\}/);
   assert.match(detail, /getMaterialFromApi\(materialId,\{signal\}\)/);
   assert.match(editor, /getMaterialFromApi\(materialId/);

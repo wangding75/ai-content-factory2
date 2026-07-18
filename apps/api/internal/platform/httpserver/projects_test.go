@@ -11,7 +11,10 @@ import (
 	"github.com/local/ai-content-factory/apps/api/internal/project"
 )
 
-type memoryRepository struct{ projects map[uuid.UUID]project.Project }
+type memoryRepository struct {
+	projects map[uuid.UUID]project.Project
+	progress project.Progress
+}
 
 func newMemoryRepository() *memoryRepository {
 	return &memoryRepository{projects: map[uuid.UUID]project.Project{}}
@@ -35,6 +38,9 @@ func (r *memoryRepository) Get(_ context.Context, id uuid.UUID) (project.Project
 		return project.Project{}, project.ErrNotFound
 	}
 	return p, nil
+}
+func (r *memoryRepository) Progress(_ context.Context, _ uuid.UUID) (project.Progress, error) {
+	return r.progress, nil
 }
 func (r *memoryRepository) Update(_ context.Context, id uuid.UUID, n, d *string) (project.Project, error) {
 	p, ok := r.projects[id]
@@ -84,6 +90,23 @@ func TestProjectHandlersCreateDefaultsAndWorkspace(t *testing.T) {
 	workspace := doRequest(h, http.MethodGet, "/api/v1/projects/"+id.String()+"/workspace", "")
 	if workspace.Code != 200 || !strings.Contains(workspace.Body.String(), `"material_count":0`) {
 		t.Fatalf("workspace = %d %s", workspace.Code, workspace.Body.String())
+	}
+}
+func TestProjectWorkspaceReturnsRepositoryProgress(t *testing.T) {
+	repo := newMemoryRepository()
+	repo.progress = project.Progress{MaterialCount: 2, StorylineCount: 3, ConfirmedChapterCount: 4, WorkCount: 5}
+	p, err := project.New("workspace progress", "novel", "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err = repo.Create(context.Background(), p, "test"); err != nil {
+		t.Fatal(err)
+	}
+	workspace := doRequest(projectServer(repo), http.MethodGet, "/api/v1/projects/"+p.ID.String()+"/workspace", "")
+	for _, value := range []string{`"material_count":2`, `"storyline_count":3`, `"confirmed_chapter_count":4`, `"work_count":5`} {
+		if !strings.Contains(workspace.Body.String(), value) {
+			t.Fatalf("workspace missing %s: %s", value, workspace.Body.String())
+		}
 	}
 }
 func TestProjectTypeCatalogueAndCreateValidation(t *testing.T) {

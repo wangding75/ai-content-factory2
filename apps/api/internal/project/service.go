@@ -32,5 +32,12 @@ func (s *Service) Workspace(ctx context.Context, id uuid.UUID) (Workspace, error
 	if err != nil {
 		return Workspace{}, err
 	}
-	return Workspace{Project: p, Progress: Progress{}}, nil
+	if reader, ok := s.repository.(ProgressReader); ok {
+		progress, err := reader.Progress(ctx, id)
+		if err != nil {
+			return Workspace{}, err
+		}
+		return Workspace{Project: p, Progress: progress}, nil
+	}
+	return Workspace{Project: p}, nil
 }

@@ -41,3 +41,28 @@ test("09.F6C displays retryable list and type loading failures in the DOM", asyn
   await expect(page.locator(".create-type-state[role=alert]")).toBeVisible();
   await expect(page.locator(".create-type-state button")).toBeVisible();
 });
+
+test("09.F6D searches project names with the selected status as an AND filter", async ({ page }) => {
+  const name = `F6D-搜索项目-${Date.now()}`;
+  const requests: string[] = [];
+  page.on("request", (request) => { if (request.url().includes("/api/v1/projects?")) requests.push(request.url()); });
+
+  await page.goto("/projects/new");
+  await page.locator("#name").fill(name);
+  await page.locator('button[type="submit"]').click();
+  await expect(page).toHaveURL(/\/projects\/[0-9a-f-]{36}$/);
+
+  await page.goto("/projects");
+  const search = page.getByRole("textbox", { name: "搜索项目名称" });
+  await search.fill(name);
+  await search.press("Enter");
+  await page.locator(".projects-filter-controls button").nth(1).click();
+  await expect.poll(() => requests.some((url) => url.includes("q=") && url.includes("status=planning"))).toBe(true);
+  await expect(page.getByRole("heading", { name })).toBeVisible();
+
+  await search.fill("不存在的项目名称");
+  await search.press("Enter");
+  await expect(page.getByRole("heading", { name: "暂无匹配项目" })).toBeVisible();
+  await page.getByRole("button", { name: "清空项目搜索" }).click();
+  await expect(page.getByRole("heading", { name })).toBeVisible();
+});

@@ -21,14 +21,15 @@ test("loads project types from the formal catalogue endpoint", async () => {
   assert.equal((await listProjectTypes()).items[0]?.name, "小说");
 });
 
-test("lists projects with contract pagination and status", async () => {
+test("lists projects with contract pagination, status, and name search", async () => {
   global.fetch = async (input) => {
     assert.match(String(input), /limit=20/);
     assert.match(String(input), /offset=0/);
     assert.match(String(input), /status=planning/);
+    assert.match(String(input), /q=Novel/);
     return new Response(JSON.stringify({ data: { items: [], total: 0, limit: 20, offset: 0 }, request_id: "req_1" }), { status: 200 });
   };
-  assert.deepEqual(await listProjects({ status: "planning" }), { items: [], total: 0, limit: 20, offset: 0 });
+  assert.deepEqual(await listProjects({ status: "planning", q: " Novel " }), { items: [], total: 0, limit: 20, offset: 0 });
 });
 
 test("creates a novel project using the API contract", async () => {

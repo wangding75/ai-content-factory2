@@ -24,6 +24,17 @@ const statuses: Record<ProjectStatus, string> = {
   producing: "制作中",
   archived: "已归档",
 };
+const types = { novel: "小说", short_film: "短片", series: "剧集", graphic_text: "图文", image: "图片" } as const;
+const nextSteps: Record<ProjectStage, { message: string; action: string; href: "planning" | "materials" | "storylines" | "chapter-plans" | "works" }> = {
+  project_setup: { message: "项目处于初始阶段。完成详细的策划方案后，将解锁更多创作功能。", action: "去完善策划", href: "planning" },
+  project_planning: { message: "项目策划正在完善中。补充项目素材，让后续创作有更完整的参考。", action: "添加项目素材", href: "materials" },
+  materials: { message: "项目素材已开始沉淀。继续完善策划，或进入素材库补充创作参考。", action: "添加项目素材", href: "materials" },
+  storylines: { message: "故事线正在推进。继续完善故事结构，为章节规划做好准备。", action: "查看故事线", href: "storylines" },
+  chapter_planning: { message: "章节规划正在进行。确认章节后即可进入内容创作。", action: "查看章节规划", href: "chapter-plans" },
+  content_production: { message: "内容正在创作中。可进入项目作品继续编辑正文。", action: "查看项目作品", href: "works" },
+  review: { message: "项目正在审核。可进入项目作品查看审核和后续处理。", action: "查看项目作品", href: "works" },
+  completed: { message: "项目已完成。仍可查看并复用项目中的素材。", action: "查看项目素材", href: "materials" },
+};
 const date = (v: string) =>
   new Date(v).toLocaleString("zh-CN", {
     dateStyle: "medium",
@@ -84,6 +95,7 @@ export default async function ProjectOverviewPage({
       ["book", progress.confirmed_chapter_count, "已确认章节"],
       ["movie", progress.work_count, "发布作品"],
     ] as const;
+    const nextStep = nextSteps[project.current_stage];
     return (
       <AppShell active="projects"><ProjectWorkspaceFrame project={project} active="overview">
         <main className="overview-main">
@@ -109,7 +121,7 @@ export default async function ProjectOverviewPage({
                 <dl className="overview-info-grid">
                   <div>
                     <dt>项目类型</dt>
-                    <dd>小说</dd>
+                    <dd>{types[project.type]}</dd>
                   </div>
                   <div>
                     <dt>当前状态</dt>
@@ -159,10 +171,10 @@ export default async function ProjectOverviewPage({
                 <div>
                   <h2>下一步建议</h2>
                   <p>
-                    项目处于初始阶段。完成详细的策划方案后，将解锁更多创作功能。
+                    {nextStep.message}
                   </p>
-                  <Link href={"/projects/" + id + "/planning"}>
-                    去完善策划 <Icon name="arrowRight" size={18} />
+                  <Link href={`/projects/${id}/${nextStep.href}`}>
+                    {nextStep.action} <Icon name="arrowRight" size={18} />
                   </Link>
                   <Link
                     className="overview-materials-link"
