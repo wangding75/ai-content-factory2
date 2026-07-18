@@ -35,6 +35,78 @@ function Invoke-Native {
     }
 }
 
+function Invoke-CapturedNative {
+    <#
+    Runs a native command without PowerShell redirection.  Docker frequently
+    writes useful daemon failures to stderr; keeping both streams separately
+    makes the report actionable and also works with fake executables in tests.
+    #>
+    param(
+        [Parameter(Mandatory)][string]$FilePath,
+        [Parameter()][string[]]$Arguments = @(),
+        [Parameter()][string]$Label = ""
+    )
+
+    if ($Label) { Write-Host "== $Label ==" -ForegroundColor Cyan }
+    $display = "$FilePath $($Arguments -join ' ')"
+    Write-Host "> $display" -ForegroundColor DarkGray
+    $started = Get-Date
+    $psi = [System.Diagnostics.ProcessStartInfo]::new()
+    $psi.FileName = $FilePath
+    $psi.UseShellExecute = $false
+    $psi.RedirectStandardOutput = $true
+    $psi.RedirectStandardError = $true
+    # Docker Desktop emits UTF-8 JSON (including the ellipsis in compact mount
+    # names).  Windows PowerShell otherwise decodes it with the console code
+    # page and can corrupt the captured JSON/report.
+    $psi.StandardOutputEncoding = [Text.UTF8Encoding]::new($false)
+    $psi.StandardErrorEncoding = [Text.UTF8Encoding]::new($false)
+    # Windows PowerShell 5.1 lacks ProcessStartInfo.ArgumentList. Quote every
+    # argument for the compatible Arguments property instead.
+    $psi.Arguments = (($Arguments | ForEach-Object {
+        '"' + ([string]$_).Replace('"', '\\"') + '"'
+    }) -join ' ')
+    $process = [System.Diagnostics.Process]::new()
+    $process.StartInfo = $psi
+    [void]$process.Start()
+    $stdoutTask = $process.StandardOutput.ReadToEndAsync()
+    $stderrTask = $process.StandardError.ReadToEndAsync()
+    $process.WaitForExit()
+    $stdout = ConvertTo-JsonSafeText $stdoutTask.GetAwaiter().GetResult()
+    $stderr = ConvertTo-JsonSafeText $stderrTask.GetAwaiter().GetResult()
+    $finished = Get-Date
+    if ($stdout) { Write-Host $stdout.TrimEnd() }
+    if ($stderr) { Write-Host $stderr.TrimEnd() -ForegroundColor DarkYellow }
+    return [pscustomobject]@{
+        command = $display; arguments = $Arguments; exit_code = $process.ExitCode
+        stdout = $stdout; stderr = $stderr
+        started_at = $started.ToString('o'); finished_at = $finished.ToString('o')
+    }
+}
+
+function ConvertTo-JsonSafeText {
+    param([AllowNull()][string]$Text)
+    if ($null -eq $Text) { return '' }
+    $builder = [Text.StringBuilder]::new($Text.Length)
+    foreach ($character in $Text.ToCharArray()) {
+        if ([char]::IsSurrogate($character)) { [void]$builder.Append([char]0xFFFD) }
+        else { [void]$builder.Append($character) }
+    }
+    return $builder.ToString()
+}
+
+function ConvertTo-CommandReport {
+    param([Parameter(Mandatory)]$Record)
+    # Preserve byte-for-byte-ish diagnostic streams as Base64. This prevents a
+    # malformed console glyph from making the entire JSON report unreadable.
+    return [ordered]@{
+        command = $Record.command; arguments = $Record.arguments; exit_code = $Record.exit_code
+        stdout_base64 = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes([string]$Record.stdout))
+        stderr_base64 = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes([string]$Record.stderr))
+        started_at = $Record.started_at; finished_at = $Record.finished_at
+    }
+}
+
 function Ensure-Directory {
     param([Parameter(Mandatory)][string]$Path)
     if (-not (Test-Path -LiteralPath $Path)) {
