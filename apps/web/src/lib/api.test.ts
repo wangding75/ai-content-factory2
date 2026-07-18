@@ -1,6 +1,6 @@
 ﻿import assert from "node:assert/strict";
 import test from "node:test";
-import { ApiError, createProject, listProjects, validateProjectInput } from "./api.ts";
+import { ApiError, createProject, listProjectTypes, listProjects, validateProjectInput } from "./api.ts";
 
 const originalFetch = global.fetch;
 test.after(() => { global.fetch = originalFetch; });
@@ -9,7 +9,16 @@ test("validates project input before submission", () => {
   assert.equal(validateProjectInput("", ""), "Project name is required.");
   assert.equal(validateProjectInput("x".repeat(121), ""), "Project name must be 120 characters or fewer.");
   assert.equal(validateProjectInput("Novel", "x".repeat(5001)), "Description must be 5,000 characters or fewer.");
-  assert.equal(validateProjectInput(" Novel ", ""), undefined);
+  assert.equal(validateProjectInput("Novel", ""), "Project type is required.");
+  assert.equal(validateProjectInput(" Novel ", "", "novel"), undefined);
+});
+
+test("loads project types from the formal catalogue endpoint", async () => {
+  global.fetch = async (input) => {
+    assert.match(String(input), /\/project-types$/);
+    return new Response(JSON.stringify({ data: { items: [{ code: "novel", name: "小说", description: "小说创作", enabled: true, sort_order: 10 }] }, request_id: "req_types" }), { status: 200 });
+  };
+  assert.equal((await listProjectTypes()).items[0]?.name, "小说");
 });
 
 test("lists projects with contract pagination and status", async () => {

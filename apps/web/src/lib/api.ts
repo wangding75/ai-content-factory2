@@ -1,4 +1,4 @@
-export type ProjectType = "novel";
+export type ProjectType = "novel" | "short_film" | "series" | "graphic_text" | "image";
 export type ProjectStatus = "planning" | "producing" | "archived";
 export type ProjectStage =
   | "project_setup"
@@ -26,6 +26,14 @@ export interface ProjectList {
   total: number;
   limit: number;
   offset: number;
+}
+
+export interface ProjectTypeDescriptor {
+  code: ProjectType;
+  name: string;
+  description: string;
+  enabled: boolean;
+  sort_order: number;
 }
 
 export interface ProjectWorkspace {
@@ -130,29 +138,34 @@ export async function apiRequest<T>(path: string, init?: ApiRequestInit): Promis
   return envelope.data as T;
 }
 
-export function listProjects(options: { status?: ProjectStatus; limit?: number; offset?: number } = {}) {
+export function listProjects(options: { status?: ProjectStatus; limit?: number; offset?: number; signal?: AbortSignal } = {}) {
   const params = new URLSearchParams({ limit: String(options.limit ?? 20), offset: String(options.offset ?? 0) });
   if (options.status) params.set("status", options.status);
-  return apiRequest<ProjectList>(`/projects?${params}`);
+  return apiRequest<ProjectList>(`/projects?${params}`, { signal: options.signal });
+}
+
+export function listProjectTypes(signal?: AbortSignal) {
+  return apiRequest<{ items: ProjectTypeDescriptor[] }>("/project-types", { signal });
 }
 
 export function getProjectWorkspace(projectId: string) {
   return apiRequest<ProjectWorkspace>(`/projects/${encodeURIComponent(projectId)}/workspace`);
 }
 
-export function createProject(input: { name: string; description?: string; type: ProjectType }) {
+export function createProject(input: { name: string; description?: string; type: ProjectType }, signal?: AbortSignal) {
   return apiRequest<Project>("/projects", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(input),
+    body: JSON.stringify(input), signal,
   });
 }
 
-export function validateProjectInput(name: string, description: string) {
+export function validateProjectInput(name: string, description: string, type?: ProjectType) {
   const trimmedName = name.trim();
   if (!trimmedName) return "Project name is required.";
   if (trimmedName.length > 120) return "Project name must be 120 characters or fewer.";
   if (description.length > 5000) return "Description must be 5,000 characters or fewer.";
+  if (!type) return "Project type is required.";
   return undefined;
 }
 

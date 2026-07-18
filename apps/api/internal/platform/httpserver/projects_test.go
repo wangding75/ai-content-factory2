@@ -86,6 +86,26 @@ func TestProjectHandlersCreateDefaultsAndWorkspace(t *testing.T) {
 		t.Fatalf("workspace = %d %s", workspace.Code, workspace.Body.String())
 	}
 }
+func TestProjectTypeCatalogueAndCreateValidation(t *testing.T) {
+	repo := newMemoryRepository()
+	h := projectServer(repo)
+	types := doRequest(h, http.MethodGet, "/api/v1/project-types", "")
+	if types.Code != http.StatusOK || !strings.Contains(types.Body.String(), `"code":"novel"`) || !strings.Contains(types.Body.String(), `"code":"short_film"`) || !strings.Contains(types.Body.String(), `"name":"小说"`) {
+		t.Fatalf("project types = %d %s", types.Code, types.Body.String())
+	}
+	if strings.Index(types.Body.String(), `"code":"novel"`) > strings.Index(types.Body.String(), `"code":"short_film"`) {
+		t.Fatalf("project types are not sorted: %s", types.Body.String())
+	}
+	created := doRequest(h, http.MethodPost, "/api/v1/projects", `{"name":"Short film","type":"short_film"}`)
+	if created.Code != http.StatusCreated || !strings.Contains(created.Body.String(), `"type":"short_film"`) {
+		t.Fatalf("create short film = %d %s", created.Code, created.Body.String())
+	}
+	w := doRequest(h, http.MethodPost, "/api/v1/projects", `{"name":"Bad","type":"disabled"}`)
+	requireErrorEnvelope(t, w, http.StatusBadRequest)
+	if !strings.Contains(w.Body.String(), `"code":"validation_error"`) {
+		t.Fatalf("invalid type error = %s", w.Body.String())
+	}
+}
 func TestProjectHandlersRejectInvalidInputs(t *testing.T) {
 	repo := newMemoryRepository()
 	h := projectServer(repo)

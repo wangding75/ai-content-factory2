@@ -36,6 +36,33 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Envelope"
+  /api/v1/project-types:
+    get:
+      operationId: listProjectTypes
+      description: Returns the supported project types in display order.
+      responses:
+        "200":
+          description: Project type catalogue
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProjectTypeListEnvelope"
+              example:
+                data:
+                  items:
+                    - code: novel
+                      name: 小说
+                      description: 用于长篇小说、大纲与章节创作。
+                      enabled: true
+                      sort_order: 10
+                    - code: short_film
+                      name: 短片
+                      description: 用于短片脚本与分镜创作。
+                      enabled: true
+                      sort_order: 20
+                request_id: req_project_types_01
+        "500":
+          $ref: "#/components/responses/InternalServerError"
   /api/v1/projects:
     get:
       operationId: listProjects
@@ -1527,7 +1554,44 @@ components:
       properties: {data: {$ref: "#/components/schemas/IntegrationList"}, request_id: {type: string}}
     ProjectType:
       type: string
-      enum: [novel]
+      enum: [novel, short_film, series, graphic_text, image]
+    ProjectTypeDescriptor:
+      type: object
+      additionalProperties: false
+      required: [code, name, description, enabled, sort_order]
+      properties:
+        code:
+          $ref: "#/components/schemas/ProjectType"
+        name:
+          type: string
+          minLength: 1
+          maxLength: 40
+        description:
+          type: string
+          maxLength: 200
+        enabled:
+          type: boolean
+        sort_order:
+          type: integer
+          minimum: 0
+    ProjectTypeList:
+      type: object
+      additionalProperties: false
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/ProjectTypeDescriptor"
+    ProjectTypeListEnvelope:
+      type: object
+      additionalProperties: false
+      required: [data, request_id]
+      properties:
+        data:
+          $ref: "#/components/schemas/ProjectTypeList"
+        request_id:
+          type: string
     ProjectStatus:
       type: string
       enum: [planning, producing, archived]

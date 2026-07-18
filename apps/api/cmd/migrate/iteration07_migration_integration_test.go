@@ -155,7 +155,7 @@ func TestIteration07Migration000007UpgradeConstraintsAndRollback(t *testing.T) {
 	}
 	t.Cleanup(func() { _ = conn.Close(context.Background()) })
 
-	if err = migrateUp(ctx, conn, migrations); err != nil {
+	if err = migrateUp(ctx, conn, migrations[:7]); err != nil {
 		t.Fatalf("upgrade 000006 to 000007: %v", err)
 	}
 	var version int
@@ -221,7 +221,7 @@ func TestIteration07Migration000007UpgradeConstraintsAndRollback(t *testing.T) {
 	_, err = db.Exec(ctx, "INSERT INTO content_versions(id,content_item_id,version_no,title,source,status) VALUES($1,$2,2,'v2','mock_rewrite','editable_draft')", uuid.New(), f.itemID)
 	mustFail(t, err)
 
-	if err = migrateUp(ctx, conn, migrations); err != nil {
+	if err = migrateUp(ctx, conn, migrations[:7]); err != nil {
 		t.Fatalf("upgrade 000006 to 000007 after down: %v", err)
 	}
 	if err = db.QueryRow(ctx, "SELECT COALESCE(MAX(version),0) FROM schema_migrations").Scan(&version); err != nil || version != 7 {

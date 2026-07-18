@@ -36,6 +36,7 @@ func New(address string, projects *project.Service, services ...any) *Server {
 	mux.HandleFunc("GET /healthz", healthHandler)
 	mux.HandleFunc("GET /readyz", readyHandler)
 	mux.HandleFunc("GET /api/v1/meta", metaHandler)
+	mux.HandleFunc("GET /api/v1/project-types", listProjectTypesHandler)
 	mux.HandleFunc("GET /api/v1/projects", listProjectsHandler(projects))
 	mux.HandleFunc("POST /api/v1/projects", createProjectHandler(projects))
 	mux.HandleFunc("GET /api/v1/projects/{projectId}", getProjectHandler(projects))
@@ -158,6 +159,10 @@ func listProjectsHandler(s *project.Service) http.HandlerFunc {
 		}
 		writeJSON(w, r, 200, map[string]any{"items": items, "total": total, "limit": limit, "offset": offset})
 	}
+}
+
+func listProjectTypesHandler(w http.ResponseWriter, r *http.Request) {
+	writeJSON(w, r, http.StatusOK, map[string]any{"items": project.ProjectTypes()})
 }
 
 type createRequest struct {
