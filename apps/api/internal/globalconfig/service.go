@@ -33,8 +33,9 @@ var (
 )
 
 type Service struct {
-	pool *pgxpool.Pool
-	key  []byte
+	pool                  *pgxpool.Pool
+	key                   []byte
+	beforeIdempotencyLock func()
 }
 
 func NewService(pool *pgxpool.Pool, encryptionKey string) (*Service, error) {
@@ -420,7 +421,7 @@ func (s *Service) UpdateConnection(ctx context.Context, id uuid.UUID, r Connecti
 	if e != nil {
 		return out, e
 	}
-	if e = s.audit(ctx, tx, "update", "workflow_connection", id, safeAudit("update", out.Version, map[string]any{"name": out.Name, "baseUrl": out.BaseURL, "authType": out.AuthType, "timeoutSeconds": out.TimeoutSeconds, "typeConfig": out.TypeConfig, "credentialChanged": r.Credential != nil, "credentialCleared": r.ClearCredential != nil})); e != nil {
+	if e = s.audit(ctx, tx, "update", "workflow_connection", id, safeAudit("update", out.Version, map[string]any{"name": out.Name, "baseUrl": out.BaseURL, "authType": out.AuthType, "timeoutSeconds": out.TimeoutSeconds, "typeConfigChanged": r.TypeConfig != nil, "credentialChanged": r.Credential != nil, "credentialCleared": r.ClearCredential != nil})); e != nil {
 		return out, e
 	}
 	if e = tx.Commit(ctx); e != nil {
@@ -603,7 +604,7 @@ func (s *Service) UpdateWorkflow(ctx context.Context, id uuid.UUID, r WorkflowUp
 	if e != nil {
 		return Workflow{}, e
 	}
-	if e = s.audit(ctx, tx, "update", "workflow_configuration", id, safeAudit("update", out.Version, map[string]any{"name": out.Name, "connectionId": out.ConnectionID, "applicableStages": out.ApplicableStages, "typeConfig": out.TypeConfig, "inputContractVersion": out.InputContractVersion, "outputContractVersion": out.OutputContractVersion, "defaultParameters": out.DefaultParameters, "note": out.Note})); e != nil {
+	if e = s.audit(ctx, tx, "update", "workflow_configuration", id, safeAudit("update", out.Version, map[string]any{"name": out.Name, "connectionId": out.ConnectionID, "applicableStages": out.ApplicableStages, "inputContractVersion": out.InputContractVersion, "outputContractVersion": out.OutputContractVersion, "typeConfigChanged": r.TypeConfig != nil, "defaultParametersChanged": r.DefaultParameters != nil, "noteChanged": r.Note != nil})); e != nil {
 		return Workflow{}, e
 	}
 	if e = tx.Commit(ctx); e != nil {
@@ -672,7 +673,7 @@ func (s *Service) UpdatePlatform(ctx context.Context, id uuid.UUID, r PlatformUp
 	if e != nil {
 		return out, e
 	}
-	if e = s.audit(ctx, tx, "update", "distribution_platform", id, safeAudit("update", out.Version, map[string]any{"name": out.Name, "accountIdentifier": out.AccountIdentifier, "endpointUrl": out.EndpointURL, "authType": out.AuthType, "timeoutSeconds": out.TimeoutSeconds, "typeConfig": out.TypeConfig, "note": out.Note, "credentialChanged": r.Credential != nil, "credentialCleared": r.ClearCredential != nil})); e != nil {
+	if e = s.audit(ctx, tx, "update", "distribution_platform", id, safeAudit("update", out.Version, map[string]any{"name": out.Name, "accountIdentifier": out.AccountIdentifier, "endpointUrl": out.EndpointURL, "authType": out.AuthType, "timeoutSeconds": out.TimeoutSeconds, "typeConfigChanged": r.TypeConfig != nil, "noteChanged": r.Note != nil, "credentialChanged": r.Credential != nil, "credentialCleared": r.ClearCredential != nil})); e != nil {
 		return out, e
 	}
 	if e = tx.Commit(ctx); e != nil {
@@ -734,20 +735,17 @@ func (s *Service) idempotent(ctx context.Context, scope, key string, request any
 	b, _ := json.Marshal(request)
 	h := sha256.Sum256(b)
 	hash := hex.EncodeToString(h[:])
-	repo := idempotency.NewPostgresRepository(s.pool)
-	if r, e := repo.Get(ctx, scope, key); e == nil {
-		if r.RequestHash != hash {
-			return nil, ErrIdempotency
-		}
-		return r.ResponseBody, nil
-	} else if !errors.Is(e, idempotency.ErrNotFound) {
-		return nil, e
-	}
 	tx, e := s.pool.Begin(ctx)
 	if e != nil {
 		return nil, e
 	}
 	defer tx.Rollback(ctx)
+	if s.beforeIdempotencyLock != nil {
+		s.beforeIdempotencyLock()
+	}
+	if _, e = tx.Exec(ctx, "SELECT pg_advisory_xact_lock(hashtextextended($1, 0))", scope+":"+key); e != nil {
+		return nil, fmt.Errorf("lock idempotency request: %w", e)
+	}
 	if r, e := idempotency.NewPostgresRepositoryTx(tx).Get(ctx, scope, key); e == nil {
 		if r.RequestHash != hash {
 			return nil, ErrIdempotency
@@ -774,7 +772,21 @@ func (s *Service) audit(ctx context.Context, tx pgx.Tx, action, subject string, 
 	return audit.NewRepository(tx).Insert(ctx, audit.Entry{ID: uuid.New(), ActorID: "system", Action: subject + "." + action, SubjectType: subject, SubjectID: id.String(), Payload: b})
 }
 func safeAudit(operation string, version int, changes map[string]any) map[string]any {
-	return map[string]any{"operation": operation, "version": version, "changes": changes}
+	allowed := map[string]struct{}{
+		"name": {}, "baseUrl": {}, "defaultModel": {}, "timeoutSeconds": {},
+		"secretChanged": {}, "secretCleared": {}, "authType": {},
+		"typeConfigChanged": {}, "credentialChanged": {}, "credentialCleared": {},
+		"connectionId": {}, "applicableStages": {}, "inputContractVersion": {},
+		"outputContractVersion": {}, "defaultParametersChanged": {}, "noteChanged": {},
+		"accountIdentifier": {}, "endpointUrl": {},
+	}
+	safeChanges := make(map[string]any, len(changes))
+	for key, value := range changes {
+		if _, ok := allowed[key]; ok {
+			safeChanges[key] = value
+		}
+	}
+	return map[string]any{"operation": operation, "version": version, "changes": safeChanges}
 }
 func (s *Service) updateMissingOrConflict(ctx context.Context, tx pgx.Tx, table string, id uuid.UUID) error {
 	var exists bool

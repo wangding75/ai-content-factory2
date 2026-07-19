@@ -15,6 +15,7 @@ function Invoke-Git {
     # PowerShell 7 会把原生命令 stderr 转成 ErrorRecord。
     # 临时关闭该行为，统一通过 $LASTEXITCODE 判断成功或失败。
     $oldNativePreference = $null
+    $oldErrorActionPreference = $ErrorActionPreference
     $hasNativePreference = Test-Path variable:PSNativeCommandUseErrorActionPreference
 
     if ($hasNativePreference) {
@@ -23,6 +24,7 @@ function Invoke-Git {
     }
 
     try {
+        $ErrorActionPreference = "Continue"
         $output = & git @Arguments 2>&1
         $exitCode = $LASTEXITCODE
         $text = $output -join [Environment]::NewLine
@@ -31,6 +33,7 @@ function Invoke-Git {
         if ($hasNativePreference) {
             $PSNativeCommandUseErrorActionPreference = $oldNativePreference
         }
+        $ErrorActionPreference = $oldErrorActionPreference
     }
 
     if (-not $AllowFailure -and $exitCode -ne 0) {
@@ -240,86 +243,59 @@ $diffCheck = Invoke-Git -Arguments @(
         -LiteralPath (Join-Path $bundleDir "09-push-and-clean-status.txt") `
         -Encoding UTF8
 
-$changedFilesRaw = (
-    Invoke-Git -Arguments @(
-        "diff",
-        "--name-only",
-        "--diff-filter=ACMRT",
-        "HEAD^",
-        "HEAD"
-    )
-).Output
-
-$changedFiles = @(
-    $changedFilesRaw -split "\r?\n" |
-        Where-Object {
-            -not [string]::IsNullOrWhiteSpace($_)
-        } |
-        Sort-Object -Unique
-)
-
-$changedFiles |
-    Set-Content `
-        -LiteralPath (Join-Path $bundleDir "10-changed-files.txt") `
-        -Encoding UTF8
-
-if ($changedFiles.Count -gt 0) {
-    $afterArchive = Join-Path $bundleDir "after.tar"
-
-    $afterArgs = @(
-        "archive",
-        "--format=tar",
-        "--output=$afterArchive",
-        "HEAD",
-        "--"
-    ) + $changedFiles
-
-    Invoke-Git -Arguments $afterArgs | Out-Null
-    tar -xf $afterArchive -C $afterDir
-    Remove-Item -LiteralPath $afterArchive -Force
-
-    # 只导出父提交中真实存在的文件。
-    # 新增文件不会出现在 HEAD^，因此不能直接用 cat-file -e 检查。
-    $beforeExisting = @()
-
-    foreach ($path in $changedFiles) {
-        $treeResult = Invoke-Git -Arguments @(
-            "ls-tree",
-            "-r",
-            "--name-only",
-            "HEAD^",
-            "--",
-            $path
-        ) -AllowFailure
-
-        $matchedPaths = @(
-            $treeResult.Output -split "\r?\n" |
-                Where-Object {
-                    -not [string]::IsNullOrWhiteSpace($_)
-                }
-        )
-
-        if ($treeResult.ExitCode -eq 0 -and $matchedPaths -contains $path) {
-            $beforeExisting += $path
+$nameStatusPath = Join-Path $bundleDir "name-status.z"
+$nameStatusProcess = [Diagnostics.Process]::new()
+$nameStatusProcess.StartInfo.FileName = "git"
+$nameStatusProcess.StartInfo.Arguments = "diff --name-status -z -M -C HEAD^ HEAD"
+$nameStatusProcess.StartInfo.WorkingDirectory = $RepoPath
+$nameStatusProcess.StartInfo.UseShellExecute = $false
+$nameStatusProcess.StartInfo.RedirectStandardOutput = $true
+$nameStatusProcess.StartInfo.RedirectStandardError = $true
+[void]$nameStatusProcess.Start()
+$nameStatusStream = [IO.File]::Open($nameStatusPath, [IO.FileMode]::Create, [IO.FileAccess]::Write)
+try {
+    $nameStatusProcess.StandardOutput.BaseStream.CopyTo($nameStatusStream)
+}
+finally {
+    $nameStatusStream.Dispose()
+}
+$nameStatusError = $nameStatusProcess.StandardError.ReadToEnd()
+$nameStatusProcess.WaitForExit()
+if ($nameStatusProcess.ExitCode -ne 0) { throw "git diff --name-status -z 执行失败，退出码：$($nameStatusProcess.ExitCode)`n$nameStatusError" }
+$tokens = @([Text.RegularExpressions.Regex]::Split([Text.Encoding]::UTF8.GetString([IO.File]::ReadAllBytes($nameStatusPath)), "`0") | Where-Object { $_.Length -gt 0 })
+Remove-Item -LiteralPath $nameStatusPath -Force
+$beforeFiles = [System.Collections.Generic.List[string]]::new()
+$afterFiles = [System.Collections.Generic.List[string]]::new()
+$changedLines = [System.Collections.Generic.List[string]]::new()
+for ($index = 0; $index -lt $tokens.Count;) {
+    $status = $tokens[$index++]
+    $kind = $status.Substring(0, 1)
+    switch ($kind) {
+        "A" { $afterFiles.Add($tokens[$index]); $changedLines.Add("A`t$($tokens[$index++])") }
+        "M" { $beforeFiles.Add($tokens[$index]); $afterFiles.Add($tokens[$index]); $changedLines.Add("M`t$($tokens[$index++])") }
+        "D" { $beforeFiles.Add($tokens[$index]); $changedLines.Add("D`t$($tokens[$index++])") }
+        "T" { $beforeFiles.Add($tokens[$index]); $afterFiles.Add($tokens[$index]); $changedLines.Add("T`t$($tokens[$index++])") }
+        { $_ -in "R", "C" } {
+            $oldPath = $tokens[$index++]; $newPath = $tokens[$index++]
+            $beforeFiles.Add($oldPath); $afterFiles.Add($newPath)
+            $changedLines.Add("$status`t$oldPath`t$newPath")
         }
-    }
-
-    if ($beforeExisting.Count -gt 0) {
-        $beforeArchive = Join-Path $bundleDir "before.tar"
-
-        $beforeArgs = @(
-            "archive",
-            "--format=tar",
-            "--output=$beforeArchive",
-            "HEAD^",
-            "--"
-        ) + $beforeExisting
-
-        Invoke-Git -Arguments $beforeArgs | Out-Null
-        tar -xf $beforeArchive -C $beforeDir
-        Remove-Item -LiteralPath $beforeArchive -Force
+        default { throw "不支持的 Git 变更状态：$status" }
     }
 }
+$changedLines | Set-Content -LiteralPath (Join-Path $bundleDir "10-changed-files.txt") -Encoding UTF8
+
+function Export-ChangedFiles([string]$Revision, [System.Collections.Generic.List[string]]$Paths, [string]$Destination, [string]$ArchiveName) {
+    $uniquePaths = @($Paths | Sort-Object -Unique)
+    if ($uniquePaths.Count -eq 0) { return }
+    $archive = Join-Path $bundleDir $ArchiveName
+    Invoke-Git -Arguments (@("archive", "--format=tar", "--output=$archive", $Revision, "--") + $uniquePaths) | Out-Null
+    tar -xf $archive -C $Destination
+    Remove-Item -LiteralPath $archive -Force
+}
+
+Export-ChangedFiles "HEAD^" $beforeFiles $beforeDir "before.tar"
+Export-ChangedFiles "HEAD" $afterFiles $afterDir "after.tar"
 
 @"
 最近一次提交审核包

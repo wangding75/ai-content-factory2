@@ -58,4 +58,30 @@ func TestWriteRequestsRejectEmptyCredentialsAndMissingVersions(t *testing.T) {
 	}
 }
 
+func TestSafeAuditWhitelistExcludesFreeSensitiveValues(t *testing.T) {
+	payload := safeAudit("update", 2, map[string]any{
+		"name":                "safe-name",
+		"typeConfigChanged":   true,
+		"noteChanged":         true,
+		"typeConfig":          map[string]any{"token": "type-config-token"},
+		"defaultParameters":   map[string]any{"secret": "default-secret"},
+		"note":                "note credential",
+		"encryptedCredential": "ciphertext",
+		"authorization":       "Bearer authorization-token",
+	})
+	encoded, err := json.Marshal(payload)
+	if err != nil {
+		t.Fatal(err)
+	}
+	text := string(encoded)
+	for _, sensitive := range []string{"type-config-token", "default-secret", "note credential", "ciphertext", "authorization-token"} {
+		if strings.Contains(text, sensitive) {
+			t.Fatalf("audit leaked sensitive free-form value %q: %s", sensitive, text)
+		}
+	}
+	if !strings.Contains(text, "safe-name") || !strings.Contains(text, "typeConfigChanged") || !strings.Contains(text, "noteChanged") {
+		t.Fatalf("audit omitted whitelisted change metadata: %s", text)
+	}
+}
+
 func fingerprintForTest(value string) string { return fingerprint(value) }

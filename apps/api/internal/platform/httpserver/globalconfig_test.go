@@ -80,6 +80,8 @@ func TestGlobalConfigurationProviderCRUDIntegration(t *testing.T) {
 	if err := pool.QueryRow(ctx, "SELECT COUNT(*) FROM llm_provider_configurations WHERE name='provider-http'").Scan(&providers); err != nil || providers != 1 {
 		t.Fatalf("provider replay count=%d err=%v", providers, err)
 	}
+	assertGlobalConfigurationCount(t, ctx, pool, "provider create audit", "SELECT COUNT(*) FROM audit_logs WHERE subject_id=$1 AND action='llm_provider.create'", created.Data.ID)
+	assertGlobalConfigurationCount(t, ctx, pool, "provider idempotency", "SELECT COUNT(*) FROM idempotency_records WHERE scope='llm-provider:create' AND idempotency_key='provider-http-create'")
 	list := call(http.MethodGet, "/api/v1/llm-providers", nil, "")
 	if list.Code != http.StatusOK || !strings.Contains(list.Body.String(), created.Data.ID) {
 		t.Fatalf("list providers: %d %s", list.Code, list.Body.String())
@@ -108,6 +110,7 @@ func TestGlobalConfigurationProviderCRUDIntegration(t *testing.T) {
 	if err := pool.QueryRow(ctx, "SELECT payload::text FROM audit_logs WHERE subject_id=$1 AND action='llm_provider.update'", created.Data.ID).Scan(&auditPayload); err != nil || strings.Contains(auditPayload, "super-secret") {
 		t.Fatalf("provider update audit=%q err=%v", auditPayload, err)
 	}
+	assertGlobalConfigurationCount(t, ctx, pool, "provider update audit", "SELECT COUNT(*) FROM audit_logs WHERE subject_id=$1 AND action='llm_provider.update'", created.Data.ID)
 }
 
 func TestGlobalConfigurationConnectionWorkflowAndPlatformCRUDIntegration(t *testing.T) {
@@ -148,6 +151,9 @@ func TestGlobalConfigurationConnectionWorkflowAndPlatformCRUDIntegration(t *test
 	if status != http.StatusConflict {
 		t.Fatalf("connection idempotency conflict: %d %s", status, text)
 	}
+	assertGlobalConfigurationCount(t, ctx, pool, "connection resource", "SELECT COUNT(*) FROM workflow_connections WHERE id=$1", connectionID)
+	assertGlobalConfigurationCount(t, ctx, pool, "connection create audit", "SELECT COUNT(*) FROM audit_logs WHERE subject_id=$1 AND action='workflow_connection.create'", connectionID)
+	assertGlobalConfigurationCount(t, ctx, pool, "connection idempotency", "SELECT COUNT(*) FROM idempotency_records WHERE scope='workflow-connection:create' AND idempotency_key='connection-create'")
 	status, _, text = call(http.MethodGet, "/api/v1/workflow-connections", nil, "")
 	if status != http.StatusOK || !strings.Contains(text, connectionID) {
 		t.Fatalf("list connection: %d %s", status, text)
@@ -171,6 +177,7 @@ func TestGlobalConfigurationConnectionWorkflowAndPlatformCRUDIntegration(t *test
 	if err := pool.QueryRow(ctx, "SELECT payload::text FROM audit_logs WHERE subject_id=$1 AND action='workflow_connection.update'", connectionID).Scan(&connectionAudit); err != nil || strings.Contains(connectionAudit, "connection-secret") {
 		t.Fatalf("connection audit=%q err=%v", connectionAudit, err)
 	}
+	assertGlobalConfigurationCount(t, ctx, pool, "connection update audit", "SELECT COUNT(*) FROM audit_logs WHERE subject_id=$1 AND action='workflow_connection.update'", connectionID)
 	status, workflow, text := call(http.MethodPost, "/api/v1/workflow-configurations", map[string]any{"name": "workflow-http", "connectionId": connectionID, "applicableStages": []string{"chapter_planning"}, "typeConfig": n8n, "inputContractVersion": "v1", "outputContractVersion": "v1", "defaultParameters": map[string]any{}}, "workflow-create")
 	if status != http.StatusCreated || workflow["workflowType"] != "n8n" || workflow["connectionType"] != "n8n" {
 		t.Fatalf("create workflow: %d %s", status, text)
@@ -184,6 +191,9 @@ func TestGlobalConfigurationConnectionWorkflowAndPlatformCRUDIntegration(t *test
 	if status != http.StatusConflict {
 		t.Fatalf("workflow idempotency conflict: %d %s", status, text)
 	}
+	assertGlobalConfigurationCount(t, ctx, pool, "workflow resource", "SELECT COUNT(*) FROM workflow_configurations WHERE id=$1", workflowID)
+	assertGlobalConfigurationCount(t, ctx, pool, "workflow create audit", "SELECT COUNT(*) FROM audit_logs WHERE subject_id=$1 AND action='workflow_configuration.create'", workflowID)
+	assertGlobalConfigurationCount(t, ctx, pool, "workflow idempotency", "SELECT COUNT(*) FROM idempotency_records WHERE scope='workflow-configuration:create' AND idempotency_key='workflow-create'")
 	status, _, text = call(http.MethodGet, "/api/v1/workflow-configurations", nil, "")
 	if status != http.StatusOK || !strings.Contains(text, workflowID) {
 		t.Fatalf("list workflow: %d %s", status, text)
@@ -204,6 +214,7 @@ func TestGlobalConfigurationConnectionWorkflowAndPlatformCRUDIntegration(t *test
 	if status != http.StatusConflict {
 		t.Fatalf("workflow conflict: %d %s", status, text)
 	}
+	assertGlobalConfigurationCount(t, ctx, pool, "workflow update audit", "SELECT COUNT(*) FROM audit_logs WHERE subject_id=$1 AND action='workflow_configuration.update'", workflowID)
 	status, platform, text := call(http.MethodPost, "/api/v1/distribution-platforms", map[string]any{"name": "platform-http", "platformType": "custom", "accountIdentifier": "account", "endpointUrl": "https://publish.example.test", "authType": "api_key", "timeoutSeconds": 30, "typeConfig": map[string]any{}, "credential": "platform-secret"}, "platform-create")
 	if status != http.StatusCreated || strings.Contains(text, "platform-secret") {
 		t.Fatalf("create platform: %d %s", status, text)
@@ -217,6 +228,9 @@ func TestGlobalConfigurationConnectionWorkflowAndPlatformCRUDIntegration(t *test
 	if status != http.StatusConflict {
 		t.Fatalf("platform idempotency conflict: %d %s", status, text)
 	}
+	assertGlobalConfigurationCount(t, ctx, pool, "platform resource", "SELECT COUNT(*) FROM distribution_platform_configurations WHERE id=$1", platformID)
+	assertGlobalConfigurationCount(t, ctx, pool, "platform create audit", "SELECT COUNT(*) FROM audit_logs WHERE subject_id=$1 AND action='distribution_platform.create'", platformID)
+	assertGlobalConfigurationCount(t, ctx, pool, "platform idempotency", "SELECT COUNT(*) FROM idempotency_records WHERE scope='distribution-platform:create' AND idempotency_key='platform-create'")
 	status, _, text = call(http.MethodGet, "/api/v1/distribution-platforms", nil, "")
 	if status != http.StatusOK || !strings.Contains(text, platformID) {
 		t.Fatalf("list platform: %d %s", status, text)
@@ -239,6 +253,15 @@ func TestGlobalConfigurationConnectionWorkflowAndPlatformCRUDIntegration(t *test
 	}
 	if err := pool.QueryRow(ctx, "SELECT payload::text FROM audit_logs WHERE subject_id=$1 AND action='distribution_platform.update'", platformID).Scan(&platformAudit); err != nil || strings.Contains(platformAudit, "platform-secret") {
 		t.Fatalf("platform audit=%q err=%v", platformAudit, err)
+	}
+	assertGlobalConfigurationCount(t, ctx, pool, "platform update audit", "SELECT COUNT(*) FROM audit_logs WHERE subject_id=$1 AND action='distribution_platform.update'", platformID)
+}
+
+func assertGlobalConfigurationCount(t *testing.T, ctx context.Context, pool *pgxpool.Pool, label, query string, args ...any) {
+	t.Helper()
+	var count int
+	if err := pool.QueryRow(ctx, query, args...).Scan(&count); err != nil || count != 1 {
+		t.Fatalf("%s count=%d err=%v", label, count, err)
 	}
 }
 
