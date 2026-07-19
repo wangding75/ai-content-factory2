@@ -11,6 +11,7 @@ import (
 	"github.com/local/ai-content-factory/apps/api/internal/chapterplan"
 	"github.com/local/ai-content-factory/apps/api/internal/contentitem"
 	"github.com/local/ai-content-factory/apps/api/internal/foreshadowing"
+	"github.com/local/ai-content-factory/apps/api/internal/globalconfig"
 	"github.com/local/ai-content-factory/apps/api/internal/material"
 	"github.com/local/ai-content-factory/apps/api/internal/planning"
 	"github.com/local/ai-content-factory/apps/api/internal/platform/config"
@@ -44,7 +45,11 @@ func main() {
 	rewriteService := contentitem.NewMockRewriteService(contentRepository, contentitem.DeterministicMockRewriteProvider{}, contentitem.NewPgxRewriteTransactionRunner(pool))
 	iteration07 := contentitem.NewIteration07Application(rewriteService, contentitem.NewQueryService(contentRepository))
 	iteration08 := contentitem.NewGlobalLiteService(contentitem.NewQueryService(contentRepository))
-	server := httpserver.New(cfg.APIAddress, projects, plannings, materials, projectMaterials, storylines, foreshadowings, chapterPlans, contentItems, iteration07, iteration08)
+	globalConfigurations, err := globalconfig.NewService(pool, cfg.ConfigurationEncryptionKey)
+	if err != nil {
+		log.Fatal(err)
+	}
+	server := httpserver.New(cfg.APIAddress, projects, plannings, materials, projectMaterials, storylines, foreshadowings, chapterPlans, contentItems, iteration07, iteration08, globalConfigurations)
 	log.Printf("api listening on %s", cfg.APIAddress)
 	if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 		log.Fatal(err)

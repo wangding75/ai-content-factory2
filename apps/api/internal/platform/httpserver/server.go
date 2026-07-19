@@ -11,6 +11,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/local/ai-content-factory/apps/api/internal/contentitem"
+	"github.com/local/ai-content-factory/apps/api/internal/globalconfig"
 	"github.com/local/ai-content-factory/apps/api/internal/material"
 	"github.com/local/ai-content-factory/apps/api/internal/planning"
 	"github.com/local/ai-content-factory/apps/api/internal/project"
@@ -87,6 +88,10 @@ func New(address string, projects *project.Service, services ...any) *Server {
 				mux.HandleFunc("POST /api/v1/projects/{projectId}/materials/{materialId}/binding", bindProjectMaterialHandler(value))
 				mux.HandleFunc("DELETE /api/v1/projects/{projectId}/materials/{materialId}/binding", unbindProjectMaterialHandler(value))
 				mux.HandleFunc("PATCH /api/v1/projects/{projectId}/materials/{materialId}/usage", updateProjectMaterialUsageHandler(value))
+			}
+		case *globalconfig.Service:
+			if value != nil {
+				registerGlobalConfigurationRoutes(mux, value)
 			}
 		}
 	}
