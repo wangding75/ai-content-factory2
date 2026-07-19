@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>AI Content Factory 2.0 - Connections Overview</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+  tailwind.config = {
+    darkMode: "class",
+    theme: {
+      extend: {
+        "colors": {
+                "on-surface-variant": "#464555",
+                "on-secondary-fixed-variant": "#38485d",
+                "on-tertiary-container": "#d6dce4",
+                "secondary-container": "#d0e1fb",
+                "primary": "#3525cd",
+                "surface-container-highest": "#e0e3e5",
+                "primary-fixed-dim": "#c3c0ff",
+                "secondary-fixed-dim": "#b7c8e1",
+                "on-tertiary-fixed": "#161c22",
+                "surface": "#f7f9fb",
+                "primary-fixed": "#e2dfff",
+                "surface-dim": "#d8dadc",
+                "secondary-fixed": "#d3e4fe",
+                "surface-variant": "#e0e3e5",
+                "on-background": "#191c1e",
+                "inverse-surface": "#2d3133",
+                "tertiary": "#434950",
+                "surface-bright": "#f7f9fb",
+                "tertiary-fixed-dim": "#c1c7cf",
+                "surface-container-lowest": "#ffffff",
+                "error": "#ba1a1a",
+                "tertiary-fixed": "#dde3eb",
+                "on-secondary": "#ffffff",
+                "on-secondary-fixed": "#0b1c30",
+                "on-tertiary-fixed-variant": "#41474e",
+                "inverse-on-surface": "#eff1f3",
+                "surface-container-high": "#e6e8ea",
+                "on-surface": "#191c1e",
+                "outline-variant": "#c7c4d8",
+                "on-primary-fixed-variant": "#3323cc",
+                "tertiary-container": "#5a6168",
+                "inverse-primary": "#c3c0ff",
+                "on-primary-container": "#dad7ff",
+                "on-error": "#ffffff",
+                "on-secondary-container": "#54647a",
+                "surface-tint": "#4d44e3",
+                "on-tertiary": "#ffffff",
+                "on-primary": "#ffffff",
+                "on-primary-fixed": "#0f0069",
+                "secondary": "#505f76",
+                "primary-container": "#4f46e5",
+                "outline": "#777587",
+                "background": "#f7f9fb",
+                "error-container": "#ffdad6",
+                "surface-container-low": "#f2f4f6",
+                "on-error-container": "#93000a",
+                "surface-container": "#eceef0"
+        },
+        "borderRadius": {
+                "DEFAULT": "0.25rem",
+                "lg": "0.5rem",
+                "xl": "0.75rem",
+                "full": "9999px"
+        },
+        "spacing": {},
+        "fontFamily": {
+                "headline": [
+                        "Inter"
+                ],
+                "display": [
+                        "Inter"
+                ],
+                "body": [
+                        "Inter"
+                ],
+                "label": [
+                        "Inter"
+                ]
+        },
+        "fontSize": {}
+},
+    },
+  }
+</script>
+<style>
+  body {
+    background-color: theme('colors.background');
+    font-family: 'Inter', sans-serif;
+  }
+  .material-symbols-outlined {
+    font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+  }
+</style>
+</head>
+<body class="text-on-surface antialiased bg-surface">
+<!-- SideNavBar -->
+<nav class="fixed left-0 top-0 h-full w-[240px] bg-surface-container-lowest border-r border-outline-variant flex flex-col p-4 gap-2 z-20">
+<div class="mb-6 px-2 flex items-center gap-3">
+<div class="w-8 h-8 rounded bg-primary text-on-primary flex items-center justify-center font-bold text-lg">AI</div>
+<div>
+<div class="text-lg font-headline font-bold text-primary">Content Factory</div>
+<div class="text-xs text-secondary">Enterprise Console</div>
+</div>
+</div>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg font-body text-sm font-medium text-secondary hover:bg-surface-container transition-colors scale-95 active:transition-transform" href="#">
+<span class="material-symbols-outlined text-xl">home</span>
+        Home
+      </a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg font-body text-sm font-medium text-secondary hover:bg-surface-container transition-colors scale-95 active:transition-transform" href="#">
+<span class="material-symbols-outlined text-xl">folder_open</span>
+        Projects
+      </a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg font-body text-sm font-medium text-secondary hover:bg-surface-container transition-colors scale-95 active:transition-transform" href="#">
+<span class="material-symbols-outlined text-xl">inventory_2</span>
+        Materials
+      </a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg font-body text-sm font-medium text-secondary hover:bg-surface-container transition-colors scale-95 active:transition-transform" href="#">
+<span class="material-symbols-outlined text-xl">precision_manufacturing</span>
+        Works
+      </a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg font-body text-sm font-medium text-secondary hover:bg-surface-container transition-colors scale-95 active:transition-transform" href="#">
+<span class="material-symbols-outlined text-xl">account_tree</span>
+        Workflows
+      </a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg font-body text-sm font-medium bg-primary-fixed text-primary font-semibold hover:bg-surface-container transition-colors scale-95 active:transition-transform" href="#">
+<span class="material-symbols-outlined text-xl" style="font-variation-settings: 'FILL' 1;">settings</span>
+        Settings
+      </a>
+</nav>
+<!-- TopNavBar -->
+<header class="fixed top-0 right-0 h-[64px] left-[240px] bg-surface-container-lowest border-b border-outline-variant flex justify-between items-center px-6 z-10 transition-all duration-200">
+<div class="flex items-center gap-4">
+<div class="font-bold text-primary font-body text-sm">AI Content Factory 2.0</div>
+</div>
+<div class="flex items-center gap-4">
+<button class="w-10 h-10 flex items-center justify-center text-secondary hover:bg-surface-container-high rounded-full transition-all duration-200">
+<span class="material-symbols-outlined">help</span>
+</button>
+<button class="w-10 h-10 flex items-center justify-center text-secondary hover:bg-surface-container-high rounded-full transition-all duration-200">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button class="w-10 h-10 flex items-center justify-center text-secondary hover:bg-surface-container-high rounded-full transition-all duration-200">
+<span class="material-symbols-outlined">account_circle</span>
+</button>
+</div>
+</header>
+<!-- Main Content -->
+<main class="ml-[240px] mt-[64px] p-8 max-w-[1440px] mx-auto min-h-screen">
+<!-- Breadcrumbs & Header -->
+<div class="mb-8">
+<div class="flex items-center gap-2 text-sm text-secondary mb-4">
+<a class="hover:text-primary" href="#">Settings</a>
+<span class="material-symbols-outlined text-sm">chevron_right</span>
+<span class="text-on-surface font-medium">Connections</span>
+</div>
+<div class="flex flex-col gap-1">
+<h1 class="text-2xl font-bold font-headline text-on-surface">AI 与工作流连接</h1>
+<p class="text-sm text-secondary">管理全局 LLM Provider 与 n8n 连接，供项目工作流绑定使用</p>
+</div>
+</div>
+<!-- Section 1: LLM Provider -->
+<section class="bg-surface-container-lowest rounded-xl border border-outline-variant mb-6 overflow-hidden">
+<div class="p-6 border-b border-outline-variant flex justify-between items-start bg-surface-container-lowest">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-lg bg-surface-container-high flex items-center justify-center text-primary">
+<span class="material-symbols-outlined">memory</span>
+</div>
+<div>
+<h2 class="text-lg font-semibold font-headline">LLM Provider</h2>
+<p class="text-xs text-secondary mt-1">Configured: 3 • Enabled: 2 • Last verified: Today 10:32</p>
+</div>
+</div>
+<button class="bg-primary text-on-primary px-4 py-2 rounded-lg text-sm font-medium hover:bg-primary-container transition-colors flex items-center gap-2">
+<span class="material-symbols-outlined text-sm">add</span>
+          新增 Provider
+        </button>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-surface-container-low border-b border-outline-variant text-sm text-secondary">
+<th class="px-6 py-3 font-medium">名称</th>
+<th class="px-6 py-3 font-medium">协议类型</th>
+<th class="px-6 py-3 font-medium">Base URL</th>
+<th class="px-6 py-3 font-medium">默认模型</th>
+<th class="px-6 py-3 font-medium">状态</th>
+<th class="px-6 py-3 font-medium">最近验证</th>
+<th class="px-6 py-3 font-medium text-right">操作</th>
+</tr>
+</thead>
+<tbody class="text-sm">
+<tr class="border-b border-outline-variant hover:bg-surface-bright transition-colors">
+<td class="px-6 py-4 font-medium text-on-surface">OpenAI Production</td>
+<td class="px-6 py-4 text-secondary">OpenAI-compatible</td>
+<td class="px-6 py-4 text-secondary font-mono text-xs">https://api.openai.com/v1</td>
+<td class="px-6 py-4 text-secondary">gpt-5.6</td>
+<td class="px-6 py-4">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-[#ecfdf5] text-[#065f46]">
+<span class="w-1.5 h-1.5 rounded-full bg-[#10b981]"></span>
+                  验证成功
+                </span>
+</td>
+<td class="px-6 py-4 text-secondary">今天 10:32</td>
+<td class="px-6 py-4 text-right">
+<button class="text-primary hover:text-primary-container font-medium mr-3">编辑</button>
+<button class="text-primary hover:text-primary-container font-medium mr-3">验证</button>
+<button class="text-error hover:text-error-container font-medium">停用</button>
+</td>
+</tr>
+<tr class="border-b border-outline-variant hover:bg-surface-bright transition-colors">
+<td class="px-6 py-4 font-medium text-on-surface">Local Gateway</td>
+<td class="px-6 py-4 text-secondary">OpenAI-compatible</td>
+<td class="px-6 py-4 text-secondary font-mono text-xs">http://host.docker.internal:11434/v1</td>
+<td class="px-6 py-4 text-secondary">qwen3</td>
+<td class="px-6 py-4">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-surface-container-high text-secondary">
+<span class="w-1.5 h-1.5 rounded-full bg-outline"></span>
+                  未验证
+                </span>
+</td>
+<td class="px-6 py-4 text-secondary">—</td>
+<td class="px-6 py-4 text-right">
+<button class="text-primary hover:text-primary-container font-medium mr-3">编辑</button>
+<button class="text-primary hover:text-primary-container font-medium mr-3">验证</button>
+<button class="text-primary hover:text-primary-container font-medium">启用</button>
+</td>
+</tr>
+<tr class="hover:bg-surface-bright transition-colors">
+<td class="px-6 py-4 font-medium text-secondary">Legacy Provider</td>
+<td class="px-6 py-4 text-secondary">OpenAI-compatible</td>
+<td class="px-6 py-4 text-secondary font-mono text-xs">https://llm.example.com/v1</td>
+<td class="px-6 py-4 text-secondary">old-model</td>
+<td class="px-6 py-4">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-error-container text-on-error-container">
+<span class="w-1.5 h-1.5 rounded-full bg-error"></span>
+                  已停用
+                </span>
+</td>
+<td class="px-6 py-4 text-secondary">7月15日</td>
+<td class="px-6 py-4 text-right">
+<button class="text-primary hover:text-primary-container font-medium mr-3">编辑</button>
+<button class="text-primary hover:text-primary-container font-medium mr-3">验证</button>
+<button class="text-primary hover:text-primary-container font-medium">启用</button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<!-- Section 2: n8n Connection -->
+<section class="bg-surface-container-lowest rounded-xl border border-outline-variant mb-8 overflow-hidden">
+<div class="p-6 border-b border-outline-variant flex justify-between items-start bg-surface-container-lowest">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-lg bg-surface-container-high flex items-center justify-center text-primary">
+<span class="material-symbols-outlined">hub</span>
+</div>
+<div>
+<h2 class="text-lg font-semibold font-headline">n8n Connection</h2>
+<p class="text-xs text-secondary mt-1">Configured: 2 • Enabled: 1 • Last verified: Yesterday 18:05</p>
+</div>
+</div>
+<button class="bg-surface-container-lowest text-primary border border-outline-variant px-4 py-2 rounded-lg text-sm font-medium hover:bg-surface-container-low transition-colors flex items-center gap-2">
+<span class="material-symbols-outlined text-sm">add</span>
+          新增 n8n 连接
+        </button>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-surface-container-low border-b border-outline-variant text-sm text-secondary">
+<th class="px-6 py-3 font-medium">连接名称</th>
+<th class="px-6 py-3 font-medium">服务地址</th>
+<th class="px-6 py-3 font-medium">认证方式</th>
+<th class="px-6 py-3 font-medium">状态</th>
+<th class="px-6 py-3 font-medium">最近验证</th>
+<th class="px-6 py-3 font-medium text-right">操作</th>
+</tr>
+</thead>
+<tbody class="text-sm">
+<tr class="border-b border-outline-variant hover:bg-surface-bright transition-colors">
+<td class="px-6 py-4 font-medium text-on-surface">Production n8n</td>
+<td class="px-6 py-4 text-secondary font-mono text-xs">https://n8n.example.com</td>
+<td class="px-6 py-4 text-secondary">API Key</td>
+<td class="px-6 py-4">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-[#ecfdf5] text-[#065f46]">
+<span class="w-1.5 h-1.5 rounded-full bg-[#10b981]"></span>
+                  验证成功
+                </span>
+</td>
+<td class="px-6 py-4 text-secondary">昨天 18:05</td>
+<td class="px-6 py-4 text-right">
+<button class="text-primary hover:text-primary-container font-medium mr-3">编辑</button>
+<button class="text-primary hover:text-primary-container font-medium mr-3">验证</button>
+<button class="text-error hover:text-error-container font-medium">停用</button>
+</td>
+</tr>
+<tr class="hover:bg-surface-bright transition-colors">
+<td class="px-6 py-4 font-medium text-on-surface">
+<div class="flex items-center gap-2">
+                  Local n8n
+                  <span class="material-symbols-outlined text-error text-[16px]">warning</span>
+</div>
+<div class="text-xs text-error mt-1 font-normal">Connection unavailable; projects bound to it cannot start new runs</div>
+</td>
+<td class="px-6 py-4 text-secondary font-mono text-xs align-top pt-5">http://localhost:5678</td>
+<td class="px-6 py-4 text-secondary align-top pt-5">API Key</td>
+<td class="px-6 py-4 align-top pt-4">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-error-container text-on-error-container">
+<span class="w-1.5 h-1.5 rounded-full bg-error"></span>
+                  验证失败
+                </span>
+</td>
+<td class="px-6 py-4 text-secondary align-top pt-5">今天 09:14</td>
+<td class="px-6 py-4 text-right align-top pt-5">
+<button class="text-primary hover:text-primary-container font-medium mr-3">编辑</button>
+<button class="text-primary hover:text-primary-container font-medium mr-3">验证</button>
+<button class="text-primary hover:text-primary-container font-medium">启用</button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<!-- Bottom Section: Empty State Pattern Note -->
+<div class="border-2 border-dashed border-outline-variant rounded-xl p-8 flex flex-col items-center justify-center bg-surface-bright text-center">
+<div class="text-xs font-semibold text-secondary tracking-wider uppercase mb-4">Design Pattern Note: Empty State</div>
+<div class="w-16 h-16 rounded-full bg-surface-container-high flex items-center justify-center text-outline mb-4">
+<span class="material-symbols-outlined text-3xl">storage</span>
+</div>
+<h3 class="text-lg font-medium text-on-surface mb-2">No Vector Databases Configured</h3>
+<p class="text-sm text-secondary mb-6 max-w-sm">Connect a vector database like Pinecone, Milvus, or Qdrant to enable RAG workflows and semantic search capabilities.</p>
+<button class="bg-surface-container-lowest text-primary border border-outline-variant px-5 py-2.5 rounded-lg text-sm font-medium hover:bg-surface-container-low transition-colors flex items-center gap-2">
+<span class="material-symbols-outlined text-sm">add</span>
+        Add Vector DB
+      </button>
+</div>
+</main>
+</body></html>

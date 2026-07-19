@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+
+<html class="light" lang="zh-CN"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>生成章节规划</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "background": "#f7f9fb",
+                        "primary-fixed-dim": "#c3c0ff",
+                        "primary": "#3525cd",
+                        "error": "#ba1a1a",
+                        "surface-container-high": "#e6e8ea",
+                        "surface": "#f7f9fb",
+                        "inverse-primary": "#c3c0ff",
+                        "inverse-on-surface": "#eff1f3",
+                        "secondary-fixed": "#d3e4fe",
+                        "surface-dim": "#d8dadc",
+                        "tertiary-container": "#5a6168",
+                        "tertiary": "#434950",
+                        "outline-variant": "#c7c4d8",
+                        "on-secondary-fixed-variant": "#38485d",
+                        "on-primary-container": "#dad7ff",
+                        "tertiary-fixed": "#dde3eb",
+                        "surface-container-low": "#f2f4f6",
+                        "on-tertiary-fixed-variant": "#41474e",
+                        "on-surface": "#191c1e",
+                        "on-primary-fixed": "#0f0069",
+                        "secondary": "#505f76",
+                        "on-secondary": "#ffffff",
+                        "error-container": "#ffdad6",
+                        "secondary-container": "#d0e1fb",
+                        "on-tertiary-fixed": "#161c22",
+                        "on-background": "#191c1e",
+                        "surface-tint": "#4d44e3",
+                        "outline": "#777587",
+                        "on-secondary-fixed": "#0b1c30",
+                        "on-primary": "#ffffff",
+                        "on-error-container": "#93000a",
+                        "on-secondary-container": "#54647a",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-container": "#eceef0",
+                        "secondary-fixed-dim": "#b7c8e1",
+                        "on-tertiary": "#ffffff",
+                        "on-tertiary-container": "#d6dce4",
+                        "surface-variant": "#e0e3e5",
+                        "surface-container-highest": "#e0e3e5",
+                        "primary-container": "#4f46e5",
+                        "inverse-surface": "#2d3133",
+                        "surface-bright": "#f7f9fb",
+                        "tertiary-fixed-dim": "#c1c7cf",
+                        "on-surface-variant": "#464555",
+                        "on-primary-fixed-variant": "#3323cc",
+                        "primary-fixed": "#e2dfff",
+                        "on-error": "#ffffff",
+                        "success": "#166534",
+                        "warning": "#b45309"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "fontFamily": {
+                        "headline": ["Inter", "sans-serif"],
+                        "display": ["Inter", "sans-serif"],
+                        "body": ["Inter", "sans-serif"],
+                        "label": ["Inter", "sans-serif"]
+                    }
+                },
+            },
+        }
+    </script>
+</head>
+<body class="bg-background text-on-surface font-body overflow-hidden h-screen flex">
+<!-- Parent Context Background (Dimmed) -->
+<div aria-hidden="true" class="fixed inset-0 bg-surface-dim/70 backdrop-blur-sm z-40"></div>
+<!-- Drawer -->
+<div class="fixed right-0 top-0 bottom-0 w-[520px] bg-surface shadow-2xl flex flex-col z-50 transform transition-transform duration-300 translate-x-0 border-l border-outline-variant">
+<!-- Header -->
+<div class="px-8 py-6 border-b border-outline-variant bg-surface sticky top-0 z-10">
+<div class="flex items-start justify-between">
+<div>
+<h2 class="text-xl font-headline font-bold text-on-surface">生成章节规划</h2>
+<p class="text-sm text-secondary mt-1">基于当前项目上下文创建新的待确认章节候选</p>
+</div>
+<button class="p-2 rounded-full hover:bg-surface-container-high transition-colors text-on-surface-variant">
+<span class="material-symbols-outlined text-xl">close</span>
+</button>
+</div>
+</div>
+<!-- Scrollable Content -->
+<div class="flex-1 overflow-y-auto px-8 py-6 space-y-8">
+<!-- Read-only Workflow Summary Section -->
+<section class="bg-surface-container-low rounded-xl p-5 border border-outline-variant">
+<div class="flex items-center gap-3 mb-4">
+<div class="w-8 h-8 rounded-lg bg-surface-container-high flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-lg">account_tree</span>
+</div>
+<div>
+<h3 class="text-sm font-semibold text-on-surface">n8n · Novel Chapter Planner v2</h3>
+<div class="flex items-center gap-2 text-xs mt-0.5">
+<span class="text-secondary">Production n8n</span>
+<span class="flex items-center gap-1 text-success bg-green-50 px-1.5 py-0.5 rounded border border-green-200">
+<span class="material-symbols-outlined text-[12px] font-bold">check_circle</span> Verified
+                            </span>
+</div>
+</div>
+</div>
+<div class="space-y-2 text-sm text-secondary">
+<div class="flex">
+<span class="w-28 flex-shrink-0">Default Params:</span>
+<span class="text-on-surface-variant">20 chapters, balanced pacing, medium summary</span>
+</div>
+</div>
+<div class="mt-4 pt-3 border-t border-outline-variant/50">
+<a class="text-sm text-primary hover:text-primary-fixed-variant font-medium flex items-center gap-1 transition-colors" href="#">
+                        查看项目工作流配置
+                        <span class="material-symbols-outlined text-sm">arrow_forward</span>
+</a>
+</div>
+</section>
+<!-- This-run Inputs -->
+<section class="space-y-6">
+<h3 class="text-sm font-bold text-on-surface uppercase tracking-wider">执行参数</h3>
+<!-- Radio Group -->
+<div class="space-y-3">
+<label class="flex items-center gap-3 p-3 rounded-lg border-2 border-primary bg-primary/5 cursor-pointer">
+<input checked="" class="text-primary focus:ring-primary h-4 w-4" name="gen_range" type="radio"/>
+<span class="text-sm font-medium text-on-surface">继续生成后续章节</span>
+</label>
+<label class="flex items-center gap-3 p-3 rounded-lg border border-outline-variant hover:bg-surface-container-low cursor-pointer transition-colors">
+<input class="text-primary focus:ring-primary h-4 w-4" name="gen_range" type="radio"/>
+<span class="text-sm font-medium text-on-surface-variant">重新生成指定范围</span>
+</label>
+</div>
+<!-- Input Fields -->
+<div class="grid grid-cols-2 gap-4">
+<div class="space-y-1.5">
+<label class="text-xs font-medium text-secondary">Start after</label>
+<select class="w-full text-sm border-outline-variant rounded-lg bg-surface text-on-surface focus:border-primary focus:ring-primary shadow-sm">
+<option>第 8 章 失踪的证词</option>
+</select>
+</div>
+<div class="space-y-1.5">
+<label class="text-xs font-medium text-secondary">Number of chapters</label>
+<input class="w-full text-sm border-outline-variant rounded-lg bg-surface text-on-surface focus:border-primary focus:ring-primary shadow-sm" type="number" value="5"/>
+</div>
+</div>
+<!-- Context Summary -->
+<div class="space-y-3">
+<label class="text-xs font-medium text-secondary">包含上下文 (只读)</label>
+<div class="border border-outline-variant rounded-lg divide-y divide-outline-variant bg-surface-container-lowest">
+<div class="flex items-center gap-3 px-4 py-2.5">
+<span class="material-symbols-outlined text-primary text-sm">check_box</span>
+<span class="text-sm text-on-surface-variant">项目策划</span>
+</div>
+<div class="flex items-center gap-3 px-4 py-2.5">
+<span class="material-symbols-outlined text-primary text-sm">check_box</span>
+<span class="text-sm text-on-surface-variant">已选素材 <span class="bg-surface-container-high px-1.5 py-0.5 rounded text-xs ml-1">12</span></span>
+</div>
+<div class="flex items-center gap-3 px-4 py-2.5">
+<span class="material-symbols-outlined text-primary text-sm">check_box</span>
+<span class="text-sm text-on-surface-variant">故事线 <span class="bg-surface-container-high px-1.5 py-0.5 rounded text-xs ml-1">3</span></span>
+</div>
+<div class="flex items-center gap-3 px-4 py-2.5">
+<span class="material-symbols-outlined text-primary text-sm">check_box</span>
+<span class="text-sm text-on-surface-variant">伏笔 <span class="bg-surface-container-high px-1.5 py-0.5 rounded text-xs ml-1">5</span></span>
+</div>
+<div class="flex items-center gap-3 px-4 py-2.5">
+<span class="material-symbols-outlined text-primary text-sm">check_box</span>
+<span class="text-sm text-on-surface-variant">已确认章节规划 <span class="bg-surface-container-high px-1.5 py-0.5 rounded text-xs ml-1">8</span></span>
+</div>
+</div>
+</div>
+<!-- Textarea -->
+<div class="space-y-1.5">
+<label class="text-xs font-medium text-secondary flex justify-between">
+                        本次补充说明
+                        <span class="text-outline">可选</span>
+</label>
+<textarea class="w-full text-sm border-outline-variant rounded-lg bg-surface text-on-surface focus:border-primary focus:ring-primary shadow-sm h-24 resize-none">加快主线推进，保留第二条支线的悬念.</textarea>
+</div>
+</section>
+<!-- Preflight Checks Section -->
+<section class="space-y-4">
+<h3 class="text-sm font-bold text-on-surface uppercase tracking-wider">执行前检查</h3>
+<div class="space-y-3 bg-surface-container-low p-4 rounded-xl border border-outline-variant/50">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-success text-lg" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+<span class="text-sm text-on-surface">Workflow configured</span>
+</div>
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-success text-lg" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+<span class="text-sm text-on-surface">Connection available</span>
+</div>
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-success text-lg" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+<span class="text-sm text-on-surface">Input contract valid</span>
+</div>
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-success text-lg" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+<span class="text-sm text-on-surface">No conflicting active run</span>
+</div>
+</div>
+</section>
+<!-- Reference State Patterns (Hidden in actual flow, shown for design requirement) -->
+<section class="space-y-4 pt-6 border-t border-outline-variant border-dashed">
+<h3 class="text-xs font-bold text-outline uppercase tracking-wider">状态模式参考 (设计示例)</h3>
+<div class="p-3 rounded-lg border border-outline-variant bg-surface-container-lowest flex items-center gap-3">
+<span class="material-symbols-outlined text-secondary animate-pulse">schedule</span>
+<span class="text-sm text-secondary">Queued</span>
+</div>
+<div class="p-3 rounded-lg border border-primary/30 bg-primary/5 flex items-center gap-3">
+<span class="material-symbols-outlined text-primary animate-spin">autorenew</span>
+<span class="text-sm text-primary">Running</span>
+</div>
+<div class="p-4 rounded-xl border border-error/30 bg-error-container flex flex-col gap-2">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-on-error-container text-sm">error</span>
+<span class="text-sm font-medium text-on-error-container">Failed</span>
+</div>
+<span class="text-xs text-on-error-container/80">output contract validation failed</span>
+<div class="flex gap-2 mt-2">
+<button class="text-xs px-2 py-1 bg-surface/50 border border-error/20 rounded text-on-error-container hover:bg-surface">查看详情</button>
+<button class="text-xs px-2 py-1 bg-on-error-container text-on-error rounded hover:opacity-90">重试</button>
+</div>
+</div>
+</section>
+</div>
+<!-- Sticky Footer -->
+<div class="px-8 py-5 border-t border-outline-variant bg-surface sticky bottom-0 z-10 flex flex-col gap-4 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
+<p class="text-xs text-secondary flex items-start gap-2">
+<span class="material-symbols-outlined text-[14px]">info</span>
+                执行将异步进行；您可以离开此页面并在流程中心跟踪进度。
+            </p>
+<div class="flex justify-end gap-3">
+<button class="px-5 py-2 text-sm font-medium rounded-lg border border-outline-variant text-on-surface hover:bg-surface-container-high transition-colors bg-surface">
+                    取消
+                </button>
+<button class="px-5 py-2 text-sm font-medium rounded-lg bg-primary text-on-primary hover:bg-primary-fixed-variant transition-colors shadow-sm">
+                    开始生成
+                </button>
+</div>
+</div>
+</div>
+</body></html>

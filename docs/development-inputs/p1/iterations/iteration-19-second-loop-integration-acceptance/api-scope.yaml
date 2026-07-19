@@ -1,0 +1,10 @@
+iteration: iteration-19-second-loop-integration-acceptance
+status: planned
+apis:
+  - "全部第二闭环 API"
+common_requirements:
+  - OpenAPI is the single contract source
+  - all commands use Idempotency-Key where applicable
+  - errors use the shared error envelope
+  - secrets and raw upstream responses are never returned
+  - optimistic locking is required for mutable configuration

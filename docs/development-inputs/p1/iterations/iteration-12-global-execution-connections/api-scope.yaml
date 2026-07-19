@@ -1,0 +1,15 @@
+iteration: iteration-12-global-execution-connections
+status: planned
+apis:
+  - "GET/POST/PATCH /api/v1/llm-providers"
+  - "POST /llm-providers/{id}/verify|enable|disable"
+  - "GET /llm-providers/{id}/models"
+  - "GET/POST/PATCH /api/v1/n8n-connections"
+  - "POST /n8n-connections/{id}/verify|enable|disable"
+  - "GET /n8n-connections/{id}/workflows"
+common_requirements:
+  - OpenAPI is the single contract source
+  - all commands use Idempotency-Key where applicable
+  - errors use the shared error envelope
+  - secrets and raw upstream responses are never returned
+  - optimistic locking is required for mutable configuration

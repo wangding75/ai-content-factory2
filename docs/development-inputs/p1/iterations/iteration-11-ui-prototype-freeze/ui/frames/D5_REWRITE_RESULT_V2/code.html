@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+
+<html lang="zh-CN"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>AI Content Factory 2.0 - D5 Rewrite Result</title>
+<!-- Tailwind CSS v3 CDN -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Google Fonts: Inter -->
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#4F46E5',
+            'primary-hover': '#4338CA',
+            sidebar: '#F9FAFB',
+            border: '#E5E7EB'
+          },
+          fontFamily: {
+            sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+          },
+          borderRadius: {
+            'custom': '8px',
+          }
+        }
+      }
+    }
+  </script>
+<style data-purpose="layout-core">
+    body {
+      background-color: #F3F4F6;
+      color: #111827;
+      overflow-x: hidden;
+    }
+    .sidebar-width { width: 240px; }
+    .topbar-height { height: 64px; }
+    .main-content { margin-left: 240px; padding-top: 64px; min-height: 100vh; }
+    .scrollbar-hide::-webkit-scrollbar { display: none; }
+  </style>
+</head>
+<body class="font-sans">
+<!-- BEGIN: NavigationSidebar -->
+<aside class="fixed inset-y-0 left-0 sidebar-width bg-sidebar border-r border-border z-50 flex flex-col">
+<div class="h-16 flex items-center px-6 border-b border-border">
+<div class="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
+<div class="w-4 h-4 bg-white rounded-sm"></div>
+</div>
+<span class="ml-3 font-bold text-lg tracking-tight">Content Factory</span>
+</div>
+<nav class="flex-1 p-4 space-y-1 overflow-y-auto">
+<div class="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">主要</div>
+<a class="flex items-center px-3 py-2 text-sm font-medium text-gray-900 bg-gray-100 rounded-custom" href="#">
+<svg class="w-5 h-5 mr-3 text-primary" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+        工作台
+      </a>
+<a class="flex items-center px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 rounded-custom" href="#">
+<svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+        作品库
+      </a>
+<a class="flex items-center px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 rounded-custom" href="#">
+<svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+        自动化流程
+      </a>
+<div class="pt-4 px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">系统</div>
+<a class="flex items-center px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 rounded-custom" href="#">
+<svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+        设置
+      </a>
+</nav>
+<div class="p-4 border-t border-border">
+<div class="flex items-center">
+<div class="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold text-xs">AD</div>
+<div class="ml-3">
+<p class="text-xs font-medium text-gray-900">Admin User</p>
+<p class="text-[10px] text-gray-500">Enterprise Plan</p>
+</div>
+</div>
+</div>
+</aside>
+<!-- END: NavigationSidebar -->
+<!-- BEGIN: TopBar -->
+<header class="fixed top-0 right-0 left-0 ml-[240px] topbar-height bg-white border-b border-border z-40 px-8 flex items-center justify-between">
+<div class="flex items-center space-x-2 text-sm text-gray-500">
+<span>项目</span>
+<span class="text-gray-300">/</span>
+<span class="hover:text-primary cursor-pointer transition-colors">雾城回声</span>
+<span class="text-gray-300">/</span>
+<span class="hover:text-primary cursor-pointer transition-colors">审核</span>
+<span class="text-gray-300">/</span>
+<span class="text-gray-900 font-medium">重写结果</span>
+</div>
+<div class="flex items-center space-x-4">
+<button class="p-2 text-gray-400 hover:text-gray-600 transition-colors">
+<svg class="w-5 h-5" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+</button>
+<div class="h-6 w-px bg-gray-200"></div>
+<button class="text-sm font-medium text-gray-700">帮助</button>
+</div>
+</header>
+<!-- END: TopBar -->
+<!-- BEGIN: MainContent -->
+<main class="main-content">
+<!-- BEGIN: ErrorBanner -->
+<div class="px-8 pt-6" data-purpose="status-banner-container">
+<div class="bg-red-50 border border-red-200 rounded-custom px-4 py-3 flex items-center justify-between">
+<div class="flex items-center">
+<svg class="w-5 h-5 text-red-400 mr-3" fill="currentColor" viewbox="0 0 20 20"><path clip-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" fill-rule="evenodd"></path></svg>
+<span class="text-sm text-red-800 font-medium">版本提交异常: 已完成重写但未自动更新至版本库</span>
+</div>
+<button class="px-3 py-1 bg-white border border-red-200 text-red-700 text-xs font-semibold rounded hover:bg-red-50 transition-colors">
+          重试提交
+        </button>
+</div>
+</div>
+<!-- END: ErrorBanner -->
+<!-- BEGIN: HeaderSection -->
+<div class="px-8 py-8 flex items-end justify-between">
+<div>
+<h1 class="text-2xl font-bold text-gray-900">重写结果</h1>
+<p class="mt-1 text-sm text-gray-500">新版本已创建，源版本保持不变</p>
+</div>
+<button class="px-5 py-2.5 bg-primary text-white text-sm font-semibold rounded-custom hover:bg-primary-hover shadow-sm transition-all flex items-center">
+<svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+        打开编辑器
+      </button>
+</div>
+<!-- END: HeaderSection -->
+<!-- BEGIN: SuccessSummaryBar -->
+<div class="px-8 mb-8">
+<div class="bg-white border border-border rounded-custom p-4 flex items-center text-sm">
+<div class="flex items-center pr-6 border-r border-border mr-6">
+<div class="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
+<span class="font-semibold text-gray-900">RUN-8F24 succeeded</span>
+</div>
+<div class="grid grid-cols-4 flex-1 gap-4">
+<div class="flex flex-col">
+<span class="text-xs text-gray-400">工作流</span>
+<span class="text-gray-700">n8n · Rewrite from Review v1</span>
+</div>
+<div class="flex flex-col">
+<span class="text-xs text-gray-400">连接</span>
+<span class="text-gray-700">Production n8n</span>
+</div>
+<div class="flex flex-col">
+<span class="text-xs text-gray-400">执行时间</span>
+<span class="text-gray-700">今天 12:08</span>
+</div>
+<div class="flex flex-col">
+<span class="text-xs text-gray-400">耗时</span>
+<span class="text-gray-700">2m 31s</span>
+</div>
+</div>
+<div class="pl-6 border-l border-border ml-6">
+<a class="text-primary font-medium hover:underline" href="#">查看执行详情</a>
+</div>
+</div>
+</div>
+<!-- END: SuccessSummaryBar -->
+<!-- BEGIN: ContentArea -->
+<div class="px-8 grid grid-cols-12 gap-8 items-start pb-24">
+<!-- Left Column: Recommendations -->
+<div class="col-span-12 lg:col-span-4 space-y-6">
+<!-- Version Relationship Card -->
+<div class="bg-white border border-border rounded-custom overflow-hidden shadow-sm">
+<div class="p-4 border-b border-border bg-gray-50">
+<h3 class="font-semibold text-gray-900">版本控制</h3>
+</div>
+<div class="p-5">
+<div class="flex items-center justify-between mb-6">
+<div class="text-center">
+<div class="text-xs text-gray-400 mb-1 uppercase tracking-wide">源版本</div>
+<div class="px-3 py-1 bg-gray-100 rounded text-sm font-bold text-gray-700">v4</div>
+<div class="mt-2 text-[10px] text-gray-400">Immutable</div>
+</div>
+<div class="flex-1 px-4 flex items-center justify-center">
+<svg class="w-6 h-6 text-gray-300" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M17 8l4 4m0 0l-4 4m4-4H3" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+</div>
+<div class="text-center">
+<div class="text-xs text-gray-400 mb-1 uppercase tracking-wide">新版本</div>
+<div class="px-3 py-1 bg-indigo-50 border border-indigo-200 rounded text-sm font-bold text-indigo-700">v5</div>
+<div class="mt-2 text-[10px] text-indigo-500 font-medium uppercase">Candidate</div>
+</div>
+</div>
+<div class="p-3 bg-amber-50 rounded border border-amber-100 flex items-start mb-6">
+<svg class="w-4 h-4 text-amber-500 mt-0.5 mr-2 shrink-0" fill="currentColor" viewbox="0 0 20 20"><path clip-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" fill-rule="evenodd"></path></svg>
+<span class="text-xs text-amber-800">v5 尚未设为当前版本</span>
+</div>
+<div class="flex gap-2">
+<button class="flex-1 px-4 py-2 bg-indigo-600 text-white text-xs font-bold rounded-custom hover:bg-indigo-700 transition-colors">
+                设为当前版本
+              </button>
+<button class="flex-1 px-4 py-2 border border-gray-300 text-gray-700 text-xs font-bold rounded-custom hover:bg-gray-50 transition-colors">
+                与 v4 对比
+              </button>
+</div>
+</div>
+</div>
+<!-- Applied Recommendations List -->
+<div class="bg-white border border-border rounded-custom overflow-hidden shadow-sm">
+<div class="p-4 border-b border-border bg-gray-50 flex items-center justify-between">
+<h3 class="font-semibold text-gray-900">已应用审核建议</h3>
+<span class="text-xs font-bold text-indigo-600 px-2 py-0.5 bg-indigo-50 rounded-full">5 项已应用</span>
+</div>
+<div class="divide-y divide-gray-100">
+<!-- Item 1 -->
+<div class="p-4 flex items-start">
+<div class="mt-0.5 mr-3 flex-shrink-0">
+<div class="w-5 h-5 bg-green-100 rounded-full flex items-center justify-center">
+<svg class="w-3.5 h-3.5 text-green-600" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round" stroke-width="3"></path></svg>
+</div>
+</div>
+<div class="flex-1">
+<div class="flex items-center justify-between">
+<span class="text-sm font-medium text-gray-900">Character Consistency</span>
+<span class="text-[10px] px-1.5 py-0.5 bg-red-100 text-red-700 rounded font-bold uppercase tracking-tight">Critical</span>
+</div>
+<p class="text-xs text-gray-500 mt-1">罗杰的台词风格已调整为更冷峻的基调</p>
+</div>
+</div>
+<!-- Item 2 -->
+<div class="p-4 flex items-start">
+<div class="mt-0.5 mr-3 flex-shrink-0">
+<div class="w-5 h-5 bg-green-100 rounded-full flex items-center justify-center">
+<svg class="w-3.5 h-3.5 text-green-600" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round" stroke-width="3"></path></svg>
+</div>
+</div>
+<div class="flex-1">
+<div class="flex items-center justify-between">
+<span class="text-sm font-medium text-gray-900">Plot Logic</span>
+<span class="text-[10px] px-1.5 py-0.5 bg-amber-100 text-amber-700 rounded font-bold uppercase tracking-tight">Warning</span>
+</div>
+<p class="text-xs text-gray-500 mt-1">修正了灰塔入口守卫数量的逻辑前后矛盾</p>
+</div>
+</div>
+<!-- Item 3 -->
+<div class="p-4 flex items-start">
+<div class="mt-0.5 mr-3 flex-shrink-0">
+<div class="w-5 h-5 bg-green-100 rounded-full flex items-center justify-center">
+<svg class="w-3.5 h-3.5 text-green-600" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round" stroke-width="3"></path></svg>
+</div>
+</div>
+<div class="flex-1">
+<div class="flex items-center justify-between">
+<span class="text-sm font-medium text-gray-900">Style &amp; Tone</span>
+<span class="text-[10px] px-1.5 py-0.5 bg-blue-100 text-blue-700 rounded font-bold uppercase tracking-tight">Info</span>
+</div>
+<p class="text-xs text-gray-500 mt-1">增强了环境描写中的克苏鲁式惊悚感</p>
+</div>
+</div>
+<!-- Item 4 -->
+<div class="p-4 flex items-start">
+<div class="mt-0.5 mr-3 flex-shrink-0">
+<div class="w-5 h-5 bg-green-100 rounded-full flex items-center justify-center">
+<svg class="w-3.5 h-3.5 text-green-600" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round" stroke-width="3"></path></svg>
+</div>
+</div>
+<div class="flex-1">
+<div class="flex items-center justify-between">
+<span class="text-sm font-medium text-gray-900">Pacing</span>
+<span class="text-[10px] px-1.5 py-0.5 bg-blue-100 text-blue-700 rounded font-bold uppercase tracking-tight">Info</span>
+</div>
+<p class="text-xs text-gray-500 mt-1">压缩了进入地窖前的冗长对话部分</p>
+</div>
+</div>
+<!-- Item 5 -->
+<div class="p-4 flex items-start">
+<div class="mt-0.5 mr-3 flex-shrink-0">
+<div class="w-5 h-5 bg-green-100 rounded-full flex items-center justify-center">
+<svg class="w-3.5 h-3.5 text-green-600" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round" stroke-width="3"></path></svg>
+</div>
+</div>
+<div class="flex-1">
+<div class="flex items-center justify-between">
+<span class="text-sm font-medium text-gray-900">Dialogue</span>
+<span class="text-[10px] px-1.5 py-0.5 bg-amber-100 text-amber-700 rounded font-bold uppercase tracking-tight">Warning</span>
+</div>
+<p class="text-xs text-gray-500 mt-1">优化了反派揭秘时刻的台词张力</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Right Column: Content Preview -->
+<div class="col-span-12 lg:col-span-8">
+<div class="bg-white border border-border rounded-custom shadow-sm overflow-hidden flex flex-col h-[720px]">
+<!-- Preview Header -->
+<div class="p-4 border-b border-border bg-gray-50 flex items-center justify-between">
+<div class="flex items-center space-x-4">
+<h3 class="font-semibold text-gray-900">v5 内容预览</h3>
+<div class="h-4 w-px bg-gray-300"></div>
+<span class="text-xs text-gray-500">第9章 灰塔下的交易</span>
+</div>
+<div class="flex items-center space-x-3 text-xs">
+<span class="flex items-center"><span class="w-2 h-2 bg-green-500 rounded-full mr-1.5"></span>新增 12%</span>
+<span class="flex items-center"><span class="w-2 h-2 bg-red-500 rounded-full mr-1.5"></span>移除 8%</span>
+<span class="ml-4 font-mono text-gray-400">324 字</span>
+</div>
+</div>
+<!-- Content Body -->
+<div class="flex-1 p-10 overflow-y-auto scrollbar-hide">
+<div class="max-w-2xl mx-auto space-y-6 text-gray-800 leading-relaxed">
+<h2 class="text-2xl font-bold text-center mb-8">第9章 灰塔下的交易</h2>
+<p class="text-justify">
+                罗杰裹紧了那件散发着霉味的灰斗篷，深吸一口略带海腥味的冷空气。眼前的灰塔在浓雾中若隐若现，像是一根刺破苍穹的枯指。他并不喜欢这个地方，尤其是今晚。塔门前原本应该有三名守卫，但此刻那里只剩下两团模糊的暗影，火把的微光在潮湿的空气里挣扎。
+              </p>
+<div class="bg-indigo-50 border-l-4 border-indigo-500 p-4 my-4">
+<p class="italic text-gray-700">
+                  “你迟到了，罗杰。”一个如枯叶摩擦般的声音从阴影中传来。格里高利从黑暗中踱步而出，他的面容隐藏在宽大的兜帽下，只有那双混浊的眼睛闪烁着病态的光芒。“在这个时代，时间比黄金更脆弱。”
+                </p>
+</div>
+<p class="text-justify">
+                罗杰没有回答，只是冷冷地盯着对方。他能感觉到周围的空气正在变得粘稠，仿佛某种不可名状的存在正注视着这桩不洁的交易。这种令人窒息的克苏鲁式压迫感，他在圣地亚哥号沉没的那晚也曾感受过。他从怀中掏出一个用黑色丝绒包裹的长方形物体，递了过去。
+              </p>
+<p class="text-justify">
+                “这是你要的名单，”罗杰的声音压得很低，带着一丝不容置疑的决绝，“但记住我们的约定，格里高利。如果名单上的任何一个名字在明天太阳升起前消失，这整座塔都会成为你的坟地。”
+              </p>
+<p class="text-justify">
+                格里高利发出一阵令人毛骨悚然的低笑，枯瘦的手指急切地接过那个包裹。在触碰到包裹的一瞬间，他似乎颤抖了一下。雾气变得更浓了，将两人的身影彻底吞没在灰塔坚硬的石墙之下。
+              </p>
+</div>
+</div>
+<!-- Preview Footer Utilities -->
+<div class="px-4 py-3 border-t border-border bg-gray-50 flex items-center justify-between text-xs text-gray-500">
+<div class="flex items-center space-x-4">
+<button class="hover:text-primary flex items-center">
+<svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M10 20l4-4m0 0l4 4m-4-4V4" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+                下载草稿
+              </button>
+<button class="hover:text-primary flex items-center">
+<svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+                分享预览
+              </button>
+</div>
+<div class="flex items-center">
+<span>渲染引擎: NeuralWrite-Ultra v2.1</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- END: ContentArea -->
+<!-- BEGIN: ActionFooter -->
+<footer class="fixed bottom-0 right-0 left-0 ml-[240px] bg-white border-t border-border p-4 px-8 z-40 flex items-center justify-between">
+<button class="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 flex items-center transition-colors">
+<svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M10 19l-7-7m0 0l7-7m-7 7h18" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+        返回审核结果
+      </button>
+<div class="flex items-center space-x-3">
+<button class="px-6 py-2 text-sm font-semibold text-gray-700 border border-gray-300 rounded-custom hover:bg-gray-50 transition-all">
+          前往项目作品
+        </button>
+<button class="px-6 py-2 text-sm font-semibold text-white bg-primary rounded-custom hover:bg-primary-hover shadow-md transition-all">
+          确认并应用 v5
+        </button>
+</div>
+</footer>
+<!-- END: ActionFooter -->
+</main>
+<!-- END: MainContent -->
+</body></html>

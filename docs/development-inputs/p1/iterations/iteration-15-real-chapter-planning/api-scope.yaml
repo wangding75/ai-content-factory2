@@ -1,0 +1,11 @@
+iteration: iteration-15-real-chapter-planning
+status: planned
+apis:
+  - "POST /api/v1/projects/{projectId}/chapter-plan-runs"
+  - "复用 ChapterPlan 编辑/删除/确认 API"
+common_requirements:
+  - OpenAPI is the single contract source
+  - all commands use Idempotency-Key where applicable
+  - errors use the shared error envelope
+  - secrets and raw upstream responses are never returned
+  - optimistic locking is required for mutable configuration

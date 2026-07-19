@@ -1,0 +1,11 @@
+iteration: iteration-16-real-content-generation
+status: planned
+apis:
+  - "POST /api/v1/chapters/{chapterId}/content-generation-runs"
+  - "复用 ContentVersion 查询/设为当前版本 API"
+common_requirements:
+  - OpenAPI is the single contract source
+  - all commands use Idempotency-Key where applicable
+  - errors use the shared error envelope
+  - secrets and raw upstream responses are never returned
+  - optimistic locking is required for mutable configuration

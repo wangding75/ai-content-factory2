@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+
+<html class="light" lang="zh-CN"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>D1_EDITOR_V2 | AI Content Factory 2.0</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "outline": "#777587",
+                        "surface-container-highest": "#e0e3e5",
+                        "secondary-container": "#d0e1fb",
+                        "tertiary": "#434950",
+                        "on-error": "#ffffff",
+                        "inverse-surface": "#2d3133",
+                        "secondary-fixed-dim": "#b7c8e1",
+                        "primary-fixed-dim": "#c3c0ff",
+                        "on-secondary": "#ffffff",
+                        "surface-variant": "#e0e3e5",
+                        "on-primary-fixed": "#0f0069",
+                        "on-primary-fixed-variant": "#3323cc",
+                        "tertiary-fixed-dim": "#c1c7cf",
+                        "on-surface-variant": "#464555",
+                        "on-tertiary-fixed-variant": "#41474e",
+                        "on-tertiary-container": "#d6dce4",
+                        "surface-container-lowest": "#ffffff",
+                        "error-container": "#ffdad6",
+                        "surface": "#f7f9fb",
+                        "tertiary-fixed": "#dde3eb",
+                        "on-secondary-fixed-variant": "#38485d",
+                        "inverse-on-surface": "#eff1f3",
+                        "surface-bright": "#f7f9fb",
+                        "secondary": "#505f76",
+                        "primary-fixed": "#e2dfff",
+                        "on-background": "#191c1e",
+                        "primary": "#3525cd",
+                        "on-surface": "#191c1e",
+                        "tertiary-container": "#5a6168",
+                        "on-primary-container": "#dad7ff",
+                        "on-secondary-fixed": "#0b1c30",
+                        "background": "#f7f9fb",
+                        "surface-container": "#eceef0",
+                        "on-tertiary-fixed": "#161c22",
+                        "inverse-primary": "#c3c0ff",
+                        "surface-dim": "#d8dadc",
+                        "error": "#ba1a1a",
+                        "secondary-fixed": "#d3e4fe",
+                        "on-secondary-container": "#54647a",
+                        "surface-container-high": "#e6e8ea",
+                        "on-primary": "#ffffff",
+                        "surface-tint": "#4d44e3",
+                        "outline-variant": "#c7c4d8",
+                        "on-tertiary": "#ffffff",
+                        "primary-container": "#4f46e5",
+                        "on-error-container": "#93000a"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "fontFamily": {
+                        "headline": ["Inter"],
+                        "display": ["Inter"],
+                        "body": ["Inter"],
+                        "label": ["Inter"]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+            font-size: 20px;
+        }
+        .sidebar-active { @apply bg-primary-container text-on-primary-container font-semibold rounded-lg; }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #e0e3e5; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #c7c4d8; }
+    </style>
+</head>
+<body class="bg-surface text-on-surface flex h-screen overflow-hidden">
+<!-- Shared SideNavBar -->
+<aside class="w-[240px] h-screen fixed left-0 top-0 border-r border-outline-variant flex flex-col p-4 gap-2 bg-surface">
+<div class="flex items-center gap-3 px-2 py-4 mb-4">
+<div class="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-on-primary">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">factory</span>
+</div>
+<div>
+<h1 class="text-lg font-headline font-bold text-on-surface leading-tight">AI Content Factory</h1>
+<p class="text-[10px] uppercase tracking-wider text-on-surface-variant font-semibold">Enterprise Console</p>
+</div>
+</div>
+<nav class="flex flex-col gap-1">
+<a class="flex items-center gap-3 px-3 py-2.5 text-secondary hover:bg-surface-container-high hover:text-on-surface-variant transition-colors duration-150 rounded-lg" href="#">
+<span class="material-symbols-outlined">home</span>
+<span class="text-label-sm font-medium">Home</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2.5 bg-primary-container text-on-primary-container font-semibold rounded-lg" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">folder</span>
+<span class="text-label-sm font-medium">Projects</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2.5 text-secondary hover:bg-surface-container-high hover:text-on-surface-variant transition-colors duration-150 rounded-lg" href="#">
+<span class="material-symbols-outlined">description</span>
+<span class="text-label-sm font-medium">Materials</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2.5 text-secondary hover:bg-surface-container-high hover:text-on-surface-variant transition-colors duration-150 rounded-lg" href="#">
+<span class="material-symbols-outlined">terminal</span>
+<span class="text-label-sm font-medium">Works</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2.5 text-secondary hover:bg-surface-container-high hover:text-on-surface-variant transition-colors duration-150 rounded-lg" href="#">
+<span class="material-symbols-outlined">account_tree</span>
+<span class="text-label-sm font-medium">Workflows</span>
+</a>
+<div class="mt-auto pt-4 border-t border-outline-variant">
+<a class="flex items-center gap-3 px-3 py-2.5 text-secondary hover:bg-surface-container-high hover:text-on-surface-variant transition-colors duration-150 rounded-lg" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span class="text-label-sm font-medium">Settings</span>
+</a>
+</div>
+</nav>
+</aside>
+<!-- Main Wrapper -->
+<div class="flex-1 ml-[240px] flex flex-col h-screen relative">
+<!-- Shared TopNavBar -->
+<header class="h-16 border-b border-outline-variant bg-surface flex items-center justify-between px-6 sticky top-0 z-10">
+<div class="flex items-center gap-8">
+<div class="flex items-center bg-surface-container-low px-3 py-1.5 rounded-full border border-outline-variant/30 w-80">
+<span class="material-symbols-outlined text-outline">search</span>
+<input class="bg-transparent border-none focus:ring-0 text-sm w-full ml-2 text-on-surface" placeholder="Search projects or workflows..." type="text"/>
+</div>
+<nav class="flex gap-6 items-center">
+<a class="text-on-surface-variant text-sm font-medium hover:text-primary transition-colors" href="#">概览</a>
+<a class="text-primary font-bold text-sm border-b-2 border-primary h-16 flex items-center" href="#">章节管理</a>
+<a class="text-on-surface-variant text-sm font-medium hover:text-primary transition-colors" href="#">角色库</a>
+<a class="text-on-surface-variant text-sm font-medium hover:text-primary transition-colors" href="#">发布中心</a>
+</nav>
+</div>
+<div class="flex items-center gap-4">
+<button class="p-2 text-on-surface-variant hover:bg-surface-container-low rounded-full transition-all">
+<span class="material-symbols-outlined">help</span>
+</button>
+<button class="p-2 text-on-surface-variant hover:bg-surface-container-low rounded-full transition-all relative">
+<span class="material-symbols-outlined">notifications</span>
+<span class="absolute top-2 right-2 w-2 h-2 bg-error rounded-full border-2 border-surface"></span>
+</button>
+<div class="h-8 w-[1px] bg-outline-variant mx-2"></div>
+<div class="flex items-center gap-3 pl-2">
+<div class="text-right">
+<p class="text-xs font-bold leading-none">Admin User</p>
+<p class="text-[10px] text-on-surface-variant">Production Team</p>
+</div>
+<img class="w-9 h-9 rounded-full border border-outline-variant" data-alt="A professional headshot of a female executive with short dark hair, wearing a navy blazer, in a bright modern office with soft natural light, high-end photography style." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBIIUVixAaR1cw9yk0nfiJYp2YPxHIGorGlknR-3dbKSS-kpJJzqBm6iAE0k6NVsTXXTZYKHbvPrK4li_MecaYWLDKF-2gCkfjM3nkAc_FiBuQdfW7PIInNI98Ei3GvppeTKoG_v0B4yaeu3yfklMw8sOjYSeCFqembHU-dfHpyDkOvMiyX3-de2N1ioO5ly4jb11Q8roU93ce6ITK0uw6bGch8yqiAX8yhHf6Y7h4_29IHP1_A4RfjcnEylcj2aT55NkdwEaFGJeo"/>
+</div>
+</div>
+</header>
+<!-- Context Action Bar (Sub-header) -->
+<div class="h-14 bg-surface-container-low border-b border-outline-variant flex items-center justify-between px-6">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-outline">auto_stories</span>
+<span class="text-sm font-semibold text-on-surface">《黑塔纪元：灰烬之城的崛起》</span>
+<span class="text-outline mx-2">/</span>
+<span class="text-sm text-on-surface-variant">第九章：灰塔下的交易</span>
+</div>
+<div class="flex items-center gap-3">
+<div class="flex items-center gap-1 mr-4 px-2 py-1 bg-surface-container-highest rounded text-[11px] font-medium text-on-surface-variant">
+<span class="material-symbols-outlined text-[14px]">save</span>
+                    已保存
+                </div>
+<button class="px-4 py-1.5 text-sm font-medium border border-outline-variant text-secondary rounded hover:bg-surface-container-high transition-colors">版本历史</button>
+<button class="px-4 py-1.5 text-sm font-medium border border-outline-variant text-secondary rounded hover:bg-surface-container-high transition-colors">提交审核</button>
+<button class="px-4 py-1.5 text-sm font-semibold bg-primary text-on-primary rounded shadow-sm hover:opacity-90 transition-all flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px]">bolt</span>
+                    生成正文
+                </button>
+</div>
+</div>
+<!-- Main Workspace Area -->
+<main class="flex flex-1 overflow-hidden">
+<!-- Column 1: Chapter List -->
+<aside class="w-[280px] border-r border-outline-variant bg-surface flex flex-col">
+<div class="p-4 border-b border-outline-variant flex items-center justify-between">
+<h3 class="text-xs font-bold uppercase tracking-widest text-outline">目录章节 (12)</h3>
+<button class="p-1 hover:bg-surface-container-high rounded transition-colors">
+<span class="material-symbols-outlined text-primary">add_box</span>
+</button>
+</div>
+<div class="flex-1 overflow-y-auto p-2 flex flex-col gap-1">
+<div class="px-3 py-2 text-sm text-secondary hover:bg-surface-container-low rounded cursor-pointer transition-colors flex items-center justify-between group">
+<span class="truncate">第7章 阴影中的低语</span>
+<span class="text-[10px] text-outline opacity-0 group-hover:opacity-100">2.8k</span>
+</div>
+<div class="px-3 py-2 text-sm text-secondary hover:bg-surface-container-low rounded cursor-pointer transition-colors flex items-center justify-between group">
+<span class="truncate">第8章 被遗忘的盟约</span>
+<span class="text-[10px] text-outline opacity-0 group-hover:opacity-100">3.1k</span>
+</div>
+<!-- Active Chapter -->
+<div class="px-3 py-2.5 text-sm font-semibold bg-primary-container text-on-primary-container rounded-lg border-l-4 border-primary shadow-sm flex items-center justify-between">
+<span class="truncate">第9章 灰塔下的交易</span>
+<span class="text-[10px] bg-primary text-on-primary px-1.5 py-0.5 rounded">DRAFT</span>
+</div>
+<div class="px-3 py-2 text-sm text-outline italic rounded flex items-center justify-between">
+<span class="truncate">第10章 (未命名)</span>
+<span class="material-symbols-outlined text-sm">lock</span>
+</div>
+</div>
+</aside>
+<!-- Column 2: Editor Center -->
+<section class="flex-1 flex flex-col bg-surface-bright overflow-y-auto relative">
+<!-- Active Run Bar -->
+<div class="m-6 mb-0 p-4 bg-primary-container/10 border border-primary/20 rounded-xl flex items-center justify-between animate-pulse-subtle">
+<div class="flex items-center gap-4">
+<div class="relative w-8 h-8 flex items-center justify-center">
+<div class="absolute inset-0 bg-primary/20 rounded-full animate-ping"></div>
+<span class="material-symbols-outlined text-primary" style="font-variation-settings: 'FILL' 1;">play_circle</span>
+</div>
+<div>
+<div class="flex items-center gap-2">
+<span class="text-xs font-bold text-primary">RUN-8F20 正在生成正文</span>
+<span class="px-1.5 py-0.5 bg-primary text-on-primary text-[10px] font-bold rounded">RUNNING</span>
+</div>
+<p class="text-xs text-on-surface-variant mt-0.5">阶段: <span class="font-medium text-on-surface">正在生成并校验结构</span> • 已耗时: 1m12s</p>
+</div>
+</div>
+<div class="flex gap-3">
+<button class="text-xs font-bold text-primary hover:underline transition-all">查看执行详情</button>
+<button class="text-xs font-bold text-primary hover:underline transition-all">前往流程中心</button>
+</div>
+</div>
+<!-- Error Pattern: Timeout Alert -->
+<div class="mx-6 mt-4 p-3 bg-error-container border border-error/20 rounded-lg flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-error">error_outline</span>
+<span class="text-xs font-semibold text-on-error-container">Provider 请求超时: Internal LLM Error (Timeout)</span>
+</div>
+<div class="flex gap-4">
+<button class="text-xs font-bold text-on-error-container/80 hover:text-on-error-container transition-all">查看详情</button>
+<button class="text-xs font-bold text-error border-b border-error leading-tight">重试</button>
+</div>
+</div>
+<!-- Workflow Config Summary -->
+<div class="mx-6 mt-4 p-4 bg-surface-container border border-outline-variant/30 rounded-xl">
+<div class="flex items-center justify-between mb-3">
+<div class="flex items-center gap-2">
+<span class="text-xs font-bold text-outline uppercase tracking-wider">Workflow Configuration</span>
+<span class="material-symbols-outlined text-primary text-[14px]" style="font-variation-settings: 'FILL' 1;">verified</span>
+</div>
+<div class="flex gap-4">
+<a class="text-[11px] font-semibold text-primary hover:underline" href="#">查看项目配置</a>
+<a class="text-[11px] font-semibold text-primary hover:underline" href="#">查看最近执行</a>
+</div>
+</div>
+<div class="grid grid-cols-2 gap-4">
+<div class="flex flex-col gap-1">
+<p class="text-[10px] text-on-surface-variant font-medium">执行模型</p>
+<p class="text-xs font-semibold text-on-surface">内置 LLM · OpenAI Production · gpt-5.6</p>
+</div>
+<div class="flex flex-col gap-1">
+<p class="text-[10px] text-on-surface-variant font-medium">生成参数</p>
+<div class="flex flex-wrap gap-2">
+<span class="px-2 py-0.5 bg-surface-container-highest rounded text-[10px] font-medium">3000字</span>
+<span class="px-2 py-0.5 bg-surface-container-highest rounded text-[10px] font-medium">参考前3章</span>
+<span class="px-2 py-0.5 bg-surface-container-highest rounded text-[10px] font-medium">保持项目文风</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Editor Canvas -->
+<div class="flex-1 mx-6 my-8 bg-white border border-outline-variant/40 rounded-xl shadow-sm p-12 max-w-4xl mx-auto w-full min-h-[1200px]">
+<div class="prose prose-slate max-w-none">
+<h1 class="text-3xl font-bold text-on-surface mb-8">第九章：灰塔下的交易</h1>
+<div class="space-y-6 text-on-surface-variant leading-relaxed text-lg font-serif">
+<p>灰塔的影子像一柄巨大的黑色阔剑，斜斜地插在莫斯卡尔广场的废墟中。冷风穿过残破的拱门，发出的尖啸如同游魂的呜咽。阿瑟兰拉紧了兜帽，指尖轻轻触碰着腰间冰冷的匕首柄，皮革的纹理在寒风中显得格外粗糙。</p>
+<p>“你迟到了，阿瑟兰。”一个低沉而沙哑的声音从塔基的阴影中传来。随着脚步声，一个披着灰色长袍的高大身影缓缓走入月光。他的脸上戴着一副由发黑的白银铸成的面具，面具上刻满了禁忌的符文，在微光下泛着幽幽的蓝光。</p>
+<p>阿瑟兰冷笑一声，“在这样一个连耗子都不愿意出没的地方，准时并不是什么美德，尤里乌斯。”他停下脚步，与对方保持着五步的距离——这是最完美的爆发冲刺距离，也是逃脱暗算的防备红线。</p>
+<p>尤里乌斯发出了像风干木头摩擦的声音，那大概是他的笑声。他从怀中掏出一个用黑色丝绸包裹的长方形物体，周围的空气似乎在那个物体出现的瞬间降了几度。“我要的东西呢？那颗属于旧神的‘余烬’。”</p>
+<p>“在交付之前，我需要先看到你承诺的通行证，”阿瑟兰的眼神变得锐利，瞳孔中隐约有金色的流光闪过，“通往灰塔底层，接触那台‘起源引擎’的唯一凭证。”</p>
+<p>广场周围的断壁残垣中，几双赤红的眼睛在暗处一闪而逝。阿瑟兰知道，这场交易远没有表面上看起来那么简单。灰塔不仅仅是一座废墟，它是这片大陆跳动的心脏，也是埋葬无数野心家的墓地。</p>
+<p>……（此处省略部分内容）</p>
+</div>
+</div>
+</div>
+<!-- Editor Footer (Fixed Overlay) -->
+<div class="sticky bottom-0 w-full px-6 py-4 bg-surface/90 backdrop-blur-sm border-t border-outline-variant flex items-center justify-between">
+<div class="flex items-center gap-6">
+<div class="flex items-center gap-2">
+<span class="text-xs font-bold text-outline">字数统计:</span>
+<span class="text-sm font-bold text-on-surface">3,126</span>
+</div>
+<div class="h-4 w-[1px] bg-outline-variant"></div>
+<div class="flex items-center gap-3 p-1.5 pr-4 bg-surface-container rounded-lg border border-outline-variant/30">
+<div class="w-7 h-7 bg-primary text-on-primary rounded flex items-center justify-center font-bold text-xs">v3</div>
+<div>
+<p class="text-[10px] text-on-surface-variant font-medium leading-none">手动编辑</p>
+<p class="text-[11px] font-bold text-on-surface leading-tight">最后保存于 11:18</p>
+</div>
+</div>
+</div>
+<div class="flex gap-2">
+<button class="p-2 hover:bg-surface-container-high rounded transition-colors text-outline">
+<span class="material-symbols-outlined">zoom_in</span>
+</button>
+<button class="p-2 hover:bg-surface-container-high rounded transition-colors text-outline">
+<span class="material-symbols-outlined">fullscreen</span>
+</button>
+</div>
+</div>
+</section>
+<!-- Column 3: Context Drawer -->
+<aside class="w-[320px] border-l border-outline-variant bg-surface flex flex-col">
+<!-- Context Tabs -->
+<div class="flex border-b border-outline-variant">
+<button class="flex-1 py-3 text-xs font-bold text-primary border-b-2 border-primary bg-primary-container/10 transition-all">
+                        项目素材 (24)
+                    </button>
+<button class="flex-1 py-3 text-xs font-medium text-on-surface-variant hover:bg-surface-container-low transition-all">
+                        故事线 (8)
+                    </button>
+<button class="flex-1 py-3 text-xs font-medium text-on-surface-variant hover:bg-surface-container-low transition-all">
+                        伏笔 (12)
+                    </button>
+</div>
+<!-- Tab Content: Materials -->
+<div class="flex-1 overflow-y-auto p-4 space-y-4">
+<div class="space-y-3">
+<div class="flex items-center justify-between">
+<h4 class="text-[10px] font-extrabold text-outline uppercase tracking-wider">关键角色</h4>
+<span class="material-symbols-outlined text-outline text-[16px]">expand_more</span>
+</div>
+<!-- Character Card -->
+<div class="p-3 bg-surface-container-low rounded-lg border border-outline-variant/30 hover:border-primary/40 transition-colors cursor-pointer group">
+<div class="flex items-center gap-3 mb-2">
+<img class="w-10 h-10 rounded-lg object-cover grayscale group-hover:grayscale-0 transition-all" data-alt="A detailed character portrait of a rogue-like young man with messy dark hair, sharp features, and glowing golden eyes, wearing tattered leather armor in a cinematic dark fantasy style." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAQE3UscEHSvKnl2t97ZEGRCeaGMJhdKsXRM7CdTYp5CpTDGu24Jgf2jcyFsBtSUhphLkr5ywwLxdL9nIzJpVSuX5rb-_g3yjkesbSZYgdmdKjrf6c_LjHdvs5wELkBF6acOxDht7rafDItXIUwXww9DevgWNxnpri8Q_TXN4E6vC_JVtNaXf2THwLC1n2EsbciDOHhIamNtsgAHT0CXRaU_7eeGnuDwBQUTmjX6ycr0Lc0O7MGOUq3gtEyVWLz8GqxwLoc8I29iSk"/>
+<div>
+<p class="text-sm font-bold text-on-surface">阿瑟兰 (Arthelan)</p>
+<p class="text-[10px] text-primary font-semibold">主角 · 影舞者</p>
+</div>
+</div>
+<p class="text-[11px] text-on-surface-variant leading-relaxed line-clamp-2">拥有旧神血脉的孤儿，在灰烬之城边缘长大。能够短暂操控阴影并读取历史残响。</p>
+</div>
+<div class="p-3 bg-surface-container-low rounded-lg border border-outline-variant/30 hover:border-primary/40 transition-colors cursor-pointer group">
+<div class="flex items-center gap-3 mb-2">
+<img class="w-10 h-10 rounded-lg object-cover grayscale group-hover:grayscale-0 transition-all" data-alt="A mysterious tall figure in gray tattered robes wearing a polished silver mask with blue glowing ancient runes, standing in a foggy dark alley, epic lighting, dark fantasy." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDEV2l4SQ93fFLMr4XCLS3KIjAHowhJ9QRN1L67GIo1ctxlEvHkIDX_4HeMvIBlMDfLS52gTGSksj8RPOP0N0lwhLNReNFzbQJ71e3D0_EZa0b7rbm_s-tStBwpVrgV0GyxRA0v_P9-Sx634P55mFvezm0oDztE5RpQXOpk-wMPZdsmqCieYSxoLHfyb2aUils6ltFiH6VaWqjk69qRymuYUjHVtBTPSFoqJH3ULMxwqsZrSu4OLQ8ppFGT5k1Vz4GEUYuX9AlxUR4"/>
+<div>
+<p class="text-sm font-bold text-on-surface">尤里乌斯 (Julius)</p>
+<p class="text-[10px] text-secondary font-semibold">关键 NPC · 灰塔守门人</p>
+</div>
+</div>
+<p class="text-[11px] text-on-surface-variant leading-relaxed line-clamp-2">真面目不详，常年徘徊在灰塔周围，掌握着进入塔底的秘密钥匙。</p>
+</div>
+</div>
+<div class="space-y-3 pt-4 border-t border-outline-variant">
+<div class="flex items-center justify-between">
+<h4 class="text-[10px] font-extrabold text-outline uppercase tracking-wider">世界设定</h4>
+<span class="material-symbols-outlined text-outline text-[16px]">expand_more</span>
+</div>
+<div class="p-3 bg-surface-container-low rounded-lg border border-outline-variant/30">
+<div class="flex items-center gap-2 mb-1">
+<span class="material-symbols-outlined text-[16px] text-primary">landscape</span>
+<p class="text-xs font-bold text-on-surface">灰烬之城 (Ash City)</p>
+</div>
+<p class="text-[11px] text-on-surface-variant">大崩溃后幸存的人类聚落，建立在古文明的废墟之上，空气中弥漫着无法消散的灰烬。</p>
+</div>
+<div class="p-3 bg-surface-container-low rounded-lg border border-outline-variant/30">
+<div class="flex items-center gap-2 mb-1">
+<span class="material-symbols-outlined text-[16px] text-primary">token</span>
+<p class="text-xs font-bold text-on-surface">旧神余烬</p>
+</div>
+<p class="text-[11px] text-on-surface-variant">蕴含着纯净能源的晶体，是启动远古机械装置的唯一动力源，被多方势力觊觎。</p>
+</div>
+</div>
+</div>
+<!-- Right Context Footer -->
+<div class="p-4 border-t border-outline-variant bg-surface-container-low">
+<button class="w-full py-2 flex items-center justify-center gap-2 bg-white border border-outline-variant rounded text-xs font-bold text-secondary hover:bg-surface-container-high transition-all">
+<span class="material-symbols-outlined text-[18px]">auto_fix</span>
+                        智能提取素材
+                    </button>
+</div>
+</aside>
+</main>
+</div>
+<!-- Micro-interaction Scripts -->
+<script>
+        // Simple hover effects and scroll behaviors
+        document.querySelectorAll('nav a').forEach(link => {
+            link.addEventListener('mouseenter', () => {
+                if (!link.classList.contains('bg-primary-container')) {
+                    link.style.transform = 'translateX(4px)';
+                }
+            });
+            link.addEventListener('mouseleave', () => {
+                link.style.transform = 'translateX(0px)';
+            });
+            link.style.transition = 'transform 0.2s ease-in-out';
+        });
+
+        // Simulating auto-save status change
+        setInterval(() => {
+            const statusLabel = document.querySelector('.bg-surface-container-highest');
+            if(statusLabel) {
+                statusLabel.classList.add('opacity-50');
+                setTimeout(() => statusLabel.classList.remove('opacity-50'), 500);
+            }
+        }, 30000);
+    </script>
+</body></html>

@@ -1,0 +1,74 @@
+{
+  "iteration": "iteration-12-global-execution-connections",
+  "uiAcceptance": "CONDITIONAL_PASS",
+  "knownIssues": [
+    "Some Stitch user-visible copy is English; development must use Chinese locale resources."
+  ],
+  "frames": [
+    {
+      "frameId": "E4_AI_CONNECTIONS_OVERVIEW",
+      "area": "全局设置",
+      "purpose": "LLM Provider 与 n8n 连接总览",
+      "sourceFolder": "ai_connections_overview_2",
+      "screen": "ui/frames/E4_AI_CONNECTIONS_OVERVIEW/screen.png",
+      "html": "ui/frames/E4_AI_CONNECTIONS_OVERVIEW/code.html",
+      "acceptance": "CONDITIONAL_PASS",
+      "developmentCorrections": [
+        "replace user-visible English copy with Chinese locale resources",
+        "preserve technical identifiers only when appropriate"
+      ]
+    },
+    {
+      "frameId": "E4_LLM_PROVIDER_DRAWER",
+      "area": "全局设置",
+      "purpose": "新增/编辑/验证 LLM Provider",
+      "sourceFolder": "e4_llm_provider_drawer",
+      "screen": "ui/frames/E4_LLM_PROVIDER_DRAWER/screen.png",
+      "html": "ui/frames/E4_LLM_PROVIDER_DRAWER/code.html",
+      "acceptance": "CONDITIONAL_PASS",
+      "developmentCorrections": [
+        "replace user-visible English copy with Chinese locale resources",
+        "preserve technical identifiers only when appropriate"
+      ]
+    },
+    {
+      "frameId": "E4_N8N_CONNECTION_DRAWER",
+      "area": "全局设置",
+      "purpose": "新增/编辑/验证 n8n Connection",
+      "sourceFolder": "e4_n8n_connection_drawer",
+      "screen": "ui/frames/E4_N8N_CONNECTION_DRAWER/screen.png",
+      "html": "ui/frames/E4_N8N_CONNECTION_DRAWER/code.html",
+      "acceptance": "CONDITIONAL_PASS",
+      "developmentCorrections": [
+        "replace user-visible English copy with Chinese locale resources",
+        "preserve technical identifiers only when appropriate"
+      ]
+    },
+    {
+      "frameId": "STATE_TASK_FAILED_NOTICE",
+      "area": "共享组件",
+      "purpose": "安全错误通知与恢复动作",
+      "sourceFolder": "component_spec_state_task_failed_notice",
+      "screen": "ui/frames/STATE_TASK_FAILED_NOTICE/screen.png",
+      "html": "ui/frames/STATE_TASK_FAILED_NOTICE/code.html",
+      "acceptance": "CONDITIONAL_PASS",
+      "developmentCorrections": [
+        "replace user-visible English copy with Chinese locale resources",
+        "preserve technical identifiers only when appropriate"
+      ]
+    },
+    {
+      "frameId": "STATE_NOT_CONFIGURED_EMPTY",
+      "area": "共享组件",
+      "purpose": "未配置、失效与空结果状态",
+      "sourceFolder": "component_spec_state_not_configured_empty",
+      "screen": "ui/frames/STATE_NOT_CONFIGURED_EMPTY/screen.png",
+      "html": "ui/frames/STATE_NOT_CONFIGURED_EMPTY/code.html",
+      "acceptance": "CONDITIONAL_PASS",
+      "developmentCorrections": [
+        "replace user-visible English copy with Chinese locale resources",
+        "preserve technical identifiers only when appropriate"
+      ]
+    }
+  ]
+}

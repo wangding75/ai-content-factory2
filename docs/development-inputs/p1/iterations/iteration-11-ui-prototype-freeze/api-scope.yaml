@@ -1,0 +1,10 @@
+iteration: iteration-11-ui-prototype-freeze
+status: planned
+apis:
+  - "全部冻结 API 的前端消费范围"
+common_requirements:
+  - OpenAPI is the single contract source
+  - all commands use Idempotency-Key where applicable
+  - errors use the shared error envelope
+  - secrets and raw upstream responses are never returned
+  - optimistic locking is required for mutable configuration

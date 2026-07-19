@@ -1,0 +1,87 @@
+{
+  "iteration": "iteration-13-project-workflow-bindings",
+  "uiAcceptance": "CONDITIONAL_PASS",
+  "knownIssues": [
+    "Some Stitch user-visible copy is English; development must use Chinese locale resources."
+  ],
+  "frames": [
+    {
+      "frameId": "S02_PROJECT_WORKFLOW_SETTINGS",
+      "area": "项目设置",
+      "purpose": "四环节工作流绑定总览",
+      "sourceFolder": "project_workflow_settings",
+      "screen": "ui/frames/S02_PROJECT_WORKFLOW_SETTINGS/screen.png",
+      "html": "ui/frames/S02_PROJECT_WORKFLOW_SETTINGS/code.html",
+      "acceptance": "CONDITIONAL_PASS",
+      "developmentCorrections": [
+        "replace user-visible English copy with Chinese locale resources",
+        "preserve technical identifiers only when appropriate"
+      ]
+    },
+    {
+      "frameId": "S02_BIND_CHAPTER_WORKFLOW_DRAWER",
+      "area": "项目设置",
+      "purpose": "章节规划绑定与默认参数",
+      "sourceFolder": "s02_bind_chapter_workflow_drawer",
+      "screen": "ui/frames/S02_BIND_CHAPTER_WORKFLOW_DRAWER/screen.png",
+      "html": "ui/frames/S02_BIND_CHAPTER_WORKFLOW_DRAWER/code.html",
+      "acceptance": "CONDITIONAL_PASS",
+      "developmentCorrections": [
+        "replace user-visible English copy with Chinese locale resources",
+        "preserve technical identifiers only when appropriate"
+      ]
+    },
+    {
+      "frameId": "S02_BIND_CONTENT_WORKFLOW_DRAWER",
+      "area": "项目设置",
+      "purpose": "正文生成绑定与默认参数",
+      "sourceFolder": "s02_bind_content_workflow_drawer",
+      "screen": "ui/frames/S02_BIND_CONTENT_WORKFLOW_DRAWER/screen.png",
+      "html": "ui/frames/S02_BIND_CONTENT_WORKFLOW_DRAWER/code.html",
+      "acceptance": "CONDITIONAL_PASS",
+      "developmentCorrections": [
+        "replace user-visible English copy with Chinese locale resources",
+        "preserve technical identifiers only when appropriate"
+      ]
+    },
+    {
+      "frameId": "S02_BIND_REVIEW_WORKFLOW_DRAWER",
+      "area": "项目设置",
+      "purpose": "内容审核绑定与默认参数",
+      "sourceFolder": "s02_bind_review_workflow_drawer",
+      "screen": "ui/frames/S02_BIND_REVIEW_WORKFLOW_DRAWER/screen.png",
+      "html": "ui/frames/S02_BIND_REVIEW_WORKFLOW_DRAWER/code.html",
+      "acceptance": "CONDITIONAL_PASS",
+      "developmentCorrections": [
+        "replace user-visible English copy with Chinese locale resources",
+        "preserve technical identifiers only when appropriate"
+      ]
+    },
+    {
+      "frameId": "S02_BIND_REWRITE_WORKFLOW_DRAWER",
+      "area": "项目设置",
+      "purpose": "正文重写绑定与默认参数",
+      "sourceFolder": "s02_bind_rewrite_workflow_drawer",
+      "screen": "ui/frames/S02_BIND_REWRITE_WORKFLOW_DRAWER/screen.png",
+      "html": "ui/frames/S02_BIND_REWRITE_WORKFLOW_DRAWER/code.html",
+      "acceptance": "CONDITIONAL_PASS",
+      "developmentCorrections": [
+        "replace user-visible English copy with Chinese locale resources",
+        "preserve technical identifiers only when appropriate"
+      ]
+    },
+    {
+      "frameId": "STATE_NOT_CONFIGURED_EMPTY",
+      "area": "共享组件",
+      "purpose": "未配置、失效与空结果状态",
+      "sourceFolder": "component_spec_state_not_configured_empty",
+      "screen": "ui/frames/STATE_NOT_CONFIGURED_EMPTY/screen.png",
+      "html": "ui/frames/STATE_NOT_CONFIGURED_EMPTY/code.html",
+      "acceptance": "CONDITIONAL_PASS",
+      "developmentCorrections": [
+        "replace user-visible English copy with Chinese locale resources",
+        "preserve technical identifiers only when appropriate"
+      ]
+    }
+  ]
+}

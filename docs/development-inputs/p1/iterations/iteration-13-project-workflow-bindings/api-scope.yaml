@@ -1,0 +1,12 @@
+iteration: iteration-13-project-workflow-bindings
+status: planned
+apis:
+  - "GET /projects/{projectId}/workflow-bindings"
+  - "GET/PUT /projects/{projectId}/workflow-bindings/{stage}"
+  - "POST /workflow-bindings/{stage}/validate|enable|disable"
+common_requirements:
+  - OpenAPI is the single contract source
+  - all commands use Idempotency-Key where applicable
+  - errors use the shared error envelope
+  - secrets and raw upstream responses are never returned
+  - optimistic locking is required for mutable configuration

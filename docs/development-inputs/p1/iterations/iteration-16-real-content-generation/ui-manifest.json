@@ -1,0 +1,74 @@
+{
+  "iteration": "iteration-16-real-content-generation",
+  "uiAcceptance": "CONDITIONAL_PASS",
+  "knownIssues": [
+    "Some Stitch user-visible copy is English; development must use Chinese locale resources."
+  ],
+  "frames": [
+    {
+      "frameId": "D1_EDITOR_V2",
+      "area": "正文",
+      "purpose": "正文编辑器与真实生成状态",
+      "sourceFolder": "d1_editor_v2_ai_editor_console_3",
+      "screen": "ui/frames/D1_EDITOR_V2/screen.png",
+      "html": "ui/frames/D1_EDITOR_V2/code.html",
+      "acceptance": "CONDITIONAL_PASS",
+      "developmentCorrections": [
+        "replace user-visible English copy with Chinese locale resources",
+        "preserve technical identifiers only when appropriate"
+      ]
+    },
+    {
+      "frameId": "D1_GENERATE_CONTENT_DRAWER",
+      "area": "正文",
+      "purpose": "发起真实正文生成",
+      "sourceFolder": "generate_content_drawer_ai_content_factory_2.0",
+      "screen": "ui/frames/D1_GENERATE_CONTENT_DRAWER/screen.png",
+      "html": "ui/frames/D1_GENERATE_CONTENT_DRAWER/code.html",
+      "acceptance": "CONDITIONAL_PASS",
+      "developmentCorrections": [
+        "replace user-visible English copy with Chinese locale resources",
+        "preserve technical identifiers only when appropriate"
+      ]
+    },
+    {
+      "frameId": "STATE_TASK_RUNNING_BAR",
+      "area": "共享组件",
+      "purpose": "异步运行状态条",
+      "sourceFolder": "component_spec_state_task_running_bar",
+      "screen": "ui/frames/STATE_TASK_RUNNING_BAR/screen.png",
+      "html": "ui/frames/STATE_TASK_RUNNING_BAR/code.html",
+      "acceptance": "CONDITIONAL_PASS",
+      "developmentCorrections": [
+        "replace user-visible English copy with Chinese locale resources",
+        "preserve technical identifiers only when appropriate"
+      ]
+    },
+    {
+      "frameId": "STATE_TASK_FAILED_NOTICE",
+      "area": "共享组件",
+      "purpose": "安全错误通知与恢复动作",
+      "sourceFolder": "component_spec_state_task_failed_notice",
+      "screen": "ui/frames/STATE_TASK_FAILED_NOTICE/screen.png",
+      "html": "ui/frames/STATE_TASK_FAILED_NOTICE/code.html",
+      "acceptance": "CONDITIONAL_PASS",
+      "developmentCorrections": [
+        "replace user-visible English copy with Chinese locale resources",
+        "preserve technical identifiers only when appropriate"
+      ]
+    },
+    {
+      "frameId": "STATE_NOT_CONFIGURED_EMPTY",
+      "area": "共享组件",
+      "purpose": "未配置、失效与空结果状态",
+      "sourceFolder": "component_spec_state_not_configured_empty",
+      "screen": "ui/frames/STATE_NOT_CONFIGURED_EMPTY/screen.png",
+      "html": "ui/frames/STATE_NOT_CONFIGURED_EMPTY/code.html",
+      "acceptance": "CONDITIONAL_PASS",
+      "developmentCorrections": [
+        "replace user-visible English copy with Chinese locale resources",
+        "preserve technical identifiers only when appropriate"
+      ]
+    }
+  ]
+}

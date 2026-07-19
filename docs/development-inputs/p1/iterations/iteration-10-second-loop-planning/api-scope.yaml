@@ -1,0 +1,10 @@
+iteration: iteration-10-second-loop-planning
+status: planned
+apis:
+  - "全局连接、项目绑定、四类真实执行入口、WorkflowRun 查询与重试的冻结契约"
+common_requirements:
+  - OpenAPI is the single contract source
+  - all commands use Idempotency-Key where applicable
+  - errors use the shared error envelope
+  - secrets and raw upstream responses are never returned
+  - optimistic locking is required for mutable configuration

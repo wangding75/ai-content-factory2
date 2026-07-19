@@ -1,0 +1,1139 @@
+{
+  "acceptance": "CONDITIONAL_PASS",
+  "frames": [
+    {
+      "iteration": "iteration-11-ui-prototype-freeze",
+      "frameId": "E4_AI_CONNECTIONS_OVERVIEW",
+      "area": "全局设置",
+      "purpose": "LLM Provider 与 n8n 连接总览",
+      "sourceFolder": "ai_connections_overview_2",
+      "screen": "ui/frames/E4_AI_CONNECTIONS_OVERVIEW/screen.png",
+      "html": "ui/frames/E4_AI_CONNECTIONS_OVERVIEW/code.html",
+      "acceptance": "CONDITIONAL_PASS",
+      "developmentCorrections": [
+        "replace user-visible English copy with Chinese locale resources",
+        "preserve technical identifiers only when appropriate"
+      ]
+    },
+    {
+      "iteration": "iteration-11-ui-prototype-freeze",
+      "frameId": "E4_LLM_PROVIDER_DRAWER",
+      "area": "全局设置",
+      "purpose": "新增/编辑/验证 LLM Provider",
+      "sourceFolder": "e4_llm_provider_drawer",
+      "screen": "ui/frames/E4_LLM_PROVIDER_DRAWER/screen.png",
+      "html": "ui/frames/E4_LLM_PROVIDER_DRAWER/code.html",
+      "acceptance": "CONDITIONAL_PASS",
+      "developmentCorrections": [
+        "replace user-visible English copy with Chinese locale resources",
+        "preserve technical identifiers only when appropriate"
+      ]
+    },
+    {
+      "iteration": "iteration-11-ui-prototype-freeze",
+      "frameId": "E4_N8N_CONNECTION_DRAWER",
+      "area": "全局设置",
+      "purpose": "新增/编辑/验证 n8n Connection",
+      "sourceFolder": "e4_n8n_connection_drawer",
+      "screen": "ui/frames/E4_N8N_CONNECTION_DRAWER/screen.png",
+      "html": "ui/frames/E4_N8N_CONNECTION_DRAWER/code.html",
+      "acceptance": "CONDITIONAL_PASS",
+      "developmentCorrections": [
+        "replace user-visible English copy with Chinese locale resources",
+        "preserve technical identifiers only when appropriate"
+      ]
+    },
+    {
+      "iteration": "iteration-11-ui-prototype-freeze",
+      "frameId": "S02_PROJECT_WORKFLOW_SETTINGS",
+      "area": "项目设置",
+      "purpose": "四环节工作流绑定总览",
+      "sourceFolder": "project_workflow_settings",
+      "screen": "ui/frames/S02_PROJECT_WORKFLOW_SETTINGS/screen.png",
+      "html": "ui/frames/S02_PROJECT_WORKFLOW_SETTINGS/code.html",
+      "acceptance": "CONDITIONAL_PASS",
+      "developmentCorrections": [
+        "replace user-visible English copy with Chinese locale resources",
+        "preserve technical identifiers only when appropriate"
+      ]
+    },
+    {
+      "iteration": "iteration-11-ui-prototype-freeze",
+      "frameId": "S02_BIND_CHAPTER_WORKFLOW_DRAWER",
+      "area": "项目设置",
+      "purpose": "章节规划绑定与默认参数",
+      "sourceFolder": "s02_bind_chapter_workflow_drawer",
+      "screen": "ui/frames/S02_BIND_CHAPTER_WORKFLOW_DRAWER/screen.png",
+      "html": "ui/frames/S02_BIND_CHAPTER_WORKFLOW_DRAWER/code.html",
+      "acceptance": "CONDITIONAL_PASS",
+      "developmentCorrections": [
+        "replace user-visible English copy with Chinese locale resources",
+        "preserve technical identifiers only when appropriate"
+      ]
+    },
+    {
+      "iteration": "iteration-11-ui-prototype-freeze",
+      "frameId": "S02_BIND_CONTENT_WORKFLOW_DRAWER",
+      "area": "项目设置",
+      "purpose": "正文生成绑定与默认参数",
+      "sourceFolder": "s02_bind_content_workflow_drawer",
+      "screen": "ui/frames/S02_BIND_CONTENT_WORKFLOW_DRAWER/screen.png",
+      "html": "ui/frames/S02_BIND_CONTENT_WORKFLOW_DRAWER/code.html",
+      "acceptance": "CONDITIONAL_PASS",
+      "developmentCorrections": [
+        "replace user-visible English copy with Chinese locale resources",
+        "preserve technical identifiers only when appropriate"
+      ]
+    },
+    {
+      "iteration": "iteration-11-ui-prototype-freeze",
+      "frameId": "S02_BIND_REVIEW_WORKFLOW_DRAWER",
+      "area": "项目设置",
+      "purpose": "内容审核绑定与默认参数",
+      "sourceFolder": "s02_bind_review_workflow_drawer",
+      "screen": "ui/frames/S02_BIND_REVIEW_WORKFLOW_DRAWER/screen.png",
+      "html": "ui/frames/S02_BIND_REVIEW_WORKFLOW_DRAWER/code.html",
+      "acceptance": "CONDITIONAL_PASS",
+      "developmentCorrections": [
+        "replace user-visible English copy with Chinese locale resources",
+        "preserve technical identifiers only when appropriate"
+      ]
+    },
+    {
+      "iteration": "iteration-11-ui-prototype-freeze",
+      "frameId": "S02_BIND_REWRITE_WORKFLOW_DRAWER",
+      "area": "项目设置",
+      "purpose": "正文重写绑定与默认参数",
+      "sourceFolder": "s02_bind_rewrite_workflow_drawer",
+      "screen": "ui/frames/S02_BIND_REWRITE_WORKFLOW_DRAWER/screen.png",
+      "html": "ui/frames/S02_BIND_REWRITE_WORKFLOW_DRAWER/code.html",
+      "acceptance": "CONDITIONAL_PASS",
+      "developmentCorrections": [
+        "replace user-visible English copy with Chinese locale resources",
+        "preserve technical identifiers only when appropriate"
+      ]
+    },
+    {
+      "iteration": "iteration-11-ui-prototype-freeze",
+      "frameId": "E3_WORKFLOW_CENTER_V2",
+      "area": "流程中心",
+      "purpose": "真实运行列表、筛选、统计",
+      "sourceFolder": "workflow_center_console_v2.0",
+      "screen": "ui/frames/E3_WORKFLOW_CENTER_V2/screen.png",
+      "html": "ui/frames/E3_WORKFLOW_CENTER_V2/code.html",
+      "acceptance": "CONDITIONAL_PASS",
+      "developmentCorrections": [
+        "replace user-visible English copy with Chinese locale resources",
+        "preserve technical identifiers only when appropriate"
+      ]
+    },
+    {
+      "iteration": "iteration-11-ui-prototype-freeze",
+      "frameId": "E3_WORKFLOW_RUN_DETAIL_DRAWER",
+      "area": "流程中心",
+      "purpose": "运行详情、失败诊断、绑定快照",
+      "sourceFolder": "e3_workflow_run_detail_drawer",
+      "screen": "ui/frames/E3_WORKFLOW_RUN_DETAIL_DRAWER/screen.png",
+      "html": "ui/frames/E3_WORKFLOW_RUN_DETAIL_DRAWER/code.html",
+      "acceptance": "CONDITIONAL_PASS",
+      "developmentCorrections": [
+        "replace user-visible English copy with Chinese locale resources",
+        "preserve technical identifiers only when appropriate"
+      ]
+    },
+    {
+      "iteration": "iteration-11-ui-prototype-freeze",
+      "frameId": "E3_RETRY_RUN_CONFIRM_DIALOG",
+      "area": "流程中心",
+      "purpose": "重试确认与配置版本选择",
+      "sourceFolder": "retry_run_confirmation_dialog",
+      "screen": "ui/frames/E3_RETRY_RUN_CONFIRM_DIALOG/screen.png",
+      "html": "ui/frames/E3_RETRY_RUN_CONFIRM_DIALOG/code.html",
+      "acceptance": "CONDITIONAL_PASS",
+      "developmentCorrections": [
+        "replace user-visible English copy with Chinese locale resources",
+        "preserve technical identifiers only when appropriate"
+      ]
+    },
+    {
+      "iteration": "iteration-11-ui-prototype-freeze",
+      "frameId": "C1_CHAPTER_PLANNING_V2",
+      "area": "章节规划",
+      "purpose": "真实候选列表与运行状态",
+      "sourceFolder": "chapter_planning_console_v2.0",
+      "screen": "ui/frames/C1_CHAPTER_PLANNING_V2/screen.png",
+      "html": "ui/frames/C1_CHAPTER_PLANNING_V2/code.html",
+      "acceptance": "CONDITIONAL_PASS",
+      "developmentCorrections": [
+        "replace user-visible English copy with Chinese locale resources",
+        "preserve technical identifiers only when appropriate"
+      ]
+    },
+    {
+      "iteration": "iteration-11-ui-prototype-freeze",
+      "frameId": "C2_GENERATE_CHAPTER_PLAN_DRAWER_V2",
+      "area": "章节规划",
+      "purpose": "发起真实章节规划",
+      "sourceFolder": "generate_chapter_plan_drawer",
+      "screen": "ui/frames/C2_GENERATE_CHAPTER_PLAN_DRAWER_V2/screen.png",
+      "html": "ui/frames/C2_GENERATE_CHAPTER_PLAN_DRAWER_V2/code.html",
+      "acceptance": "CONDITIONAL_PASS",
+      "developmentCorrections": [
+        "replace user-visible English copy with Chinese locale resources",
+        "preserve technical identifiers only when appropriate"
+      ]
+    },
+    {
+      "iteration": "iteration-11-ui-prototype-freeze",
+      "frameId": "D1_EDITOR_V2",
+      "area": "正文",
+      "purpose": "正文编辑器与真实生成状态",
+      "sourceFolder": "d1_editor_v2_ai_editor_console_3",
+      "screen": "ui/frames/D1_EDITOR_V2/screen.png",
+      "html": "ui/frames/D1_EDITOR_V2/code.html",
+      "acceptance": "CONDITIONAL_PASS",
+      "developmentCorrections": [
+        "replace user-visible English copy with Chinese locale resources",
+        "preserve technical identifiers only when appropriate"
+      ]
+    },
+    {
+      "iteration": "iteration-11-ui-prototype-freeze",
+      "frameId": "D1_GENERATE_CONTENT_DRAWER",
+      "area": "正文",
+      "purpose": "发起真实正文生成",
+      "sourceFolder": "generate_content_drawer_ai_content_factory_2.0",
+      "screen": "ui/frames/D1_GENERATE_CONTENT_DRAWER/screen.png",
+      "html": "ui/frames/D1_GENERATE_CONTENT_DRAWER/code.html",
+      "acceptance": "CONDITIONAL_PASS",
+      "developmentCorrections": [
+        "replace user-visible English copy with Chinese locale resources",
+        "preserve technical identifiers only when appropriate"
+      ]
+    },
+    {
+      "iteration": "iteration-11-ui-prototype-freeze",
+      "frameId": "D2_REVIEW_V2",
+      "area": "审核",
+      "purpose": "真实审核结果与问题选择",
+      "sourceFolder": "content_review_console_v2.0",
+      "screen": "ui/frames/D2_REVIEW_V2/screen.png",
+      "html": "ui/frames/D2_REVIEW_V2/code.html",
+      "acceptance": "CONDITIONAL_PASS",
+      "developmentCorrections": [
+        "replace user-visible English copy with Chinese locale resources",
+        "preserve technical identifiers only when appropriate"
+      ]
+    },
+    {
+      "iteration": "iteration-11-ui-prototype-freeze",
+      "frameId": "D2_SUBMIT_REVIEW_DRAWER",
+      "area": "审核",
+      "purpose": "发起固定版本审核",
+      "sourceFolder": "submit_content_review_drawer",
+      "screen": "ui/frames/D2_SUBMIT_REVIEW_DRAWER/screen.png",
+      "html": "ui/frames/D2_SUBMIT_REVIEW_DRAWER/code.html",
+      "acceptance": "CONDITIONAL_PASS",
+      "developmentCorrections": [
+        "replace user-visible English copy with Chinese locale resources",
+        "preserve technical identifiers only when appropriate"
+      ]
+    },
+    {
+      "iteration": "iteration-11-ui-prototype-freeze",
+      "frameId": "D4_CREATE_REWRITE_V2",
+      "area": "重写",
+      "purpose": "选择审核问题并发起重写",
+      "sourceFolder": "d1_editor_v2_create_rewrite_console",
+      "screen": "ui/frames/D4_CREATE_REWRITE_V2/screen.png",
+      "html": "ui/frames/D4_CREATE_REWRITE_V2/code.html",
+      "acceptance": "CONDITIONAL_PASS",
+      "developmentCorrections": [
+        "replace user-visible English copy with Chinese locale resources",
+        "preserve technical identifiers only when appropriate"
+      ]
+    },
+    {
+      "iteration": "iteration-11-ui-prototype-freeze",
+      "frameId": "D5_REWRITE_RESULT_V2",
+      "area": "重写",
+      "purpose": "新旧版本关系与结果预览",
+      "sourceFolder": "d5_rewrite_result_v2_rewrite_result_console_2",
+      "screen": "ui/frames/D5_REWRITE_RESULT_V2/screen.png",
+      "html": "ui/frames/D5_REWRITE_RESULT_V2/code.html",
+      "acceptance": "CONDITIONAL_PASS",
+      "developmentCorrections": [
+        "replace user-visible English copy with Chinese locale resources",
+        "preserve technical identifiers only when appropriate"
+      ]
+    },
+    {
+      "iteration": "iteration-11-ui-prototype-freeze",
+      "frameId": "STATE_TASK_RUNNING_BAR",
+      "area": "共享组件",
+      "purpose": "异步运行状态条",
+      "sourceFolder": "component_spec_state_task_running_bar",
+      "screen": "ui/frames/STATE_TASK_RUNNING_BAR/screen.png",
+      "html": "ui/frames/STATE_TASK_RUNNING_BAR/code.html",
+      "acceptance": "CONDITIONAL_PASS",
+      "developmentCorrections": [
+        "replace user-visible English copy with Chinese locale resources",
+        "preserve technical identifiers only when appropriate"
+      ]
+    },
+    {
+      "iteration": "iteration-11-ui-prototype-freeze",
+      "frameId": "STATE_TASK_FAILED_NOTICE",
+      "area": "共享组件",
+      "purpose": "安全错误通知与恢复动作",
+      "sourceFolder": "component_spec_state_task_failed_notice",
+      "screen": "ui/frames/STATE_TASK_FAILED_NOTICE/screen.png",
+      "html": "ui/frames/STATE_TASK_FAILED_NOTICE/code.html",
+      "acceptance": "CONDITIONAL_PASS",
+      "developmentCorrections": [
+        "replace user-visible English copy with Chinese locale resources",
+        "preserve technical identifiers only when appropriate"
+      ]
+    },
+    {
+      "iteration": "iteration-11-ui-prototype-freeze",
+      "frameId": "STATE_NOT_CONFIGURED_EMPTY",
+      "area": "共享组件",
+      "purpose": "未配置、失效与空结果状态",
+      "sourceFolder": "component_spec_state_not_configured_empty",
+      "screen": "ui/frames/STATE_NOT_CONFIGURED_EMPTY/screen.png",
+      "html": "ui/frames/STATE_NOT_CONFIGURED_EMPTY/code.html",
+      "acceptance": "CONDITIONAL_PASS",
+      "developmentCorrections": [
+        "replace user-visible English copy with Chinese locale resources",
+        "preserve technical identifiers only when appropriate"
+      ]
+    },
+    {
+      "iteration": "iteration-12-global-execution-connections",
+      "frameId": "E4_AI_CONNECTIONS_OVERVIEW",
+      "area": "全局设置",
+      "purpose": "LLM Provider 与 n8n 连接总览",
+      "sourceFolder": "ai_connections_overview_2",
+      "screen": "ui/frames/E4_AI_CONNECTIONS_OVERVIEW/screen.png",
+      "html": "ui/frames/E4_AI_CONNECTIONS_OVERVIEW/code.html",
+      "acceptance": "CONDITIONAL_PASS",
+      "developmentCorrections": [
+        "replace user-visible English copy with Chinese locale resources",
+        "preserve technical identifiers only when appropriate"
+      ]
+    },
+    {
+      "iteration": "iteration-12-global-execution-connections",
+      "frameId": "E4_LLM_PROVIDER_DRAWER",
+      "area": "全局设置",
+      "purpose": "新增/编辑/验证 LLM Provider",
+      "sourceFolder": "e4_llm_provider_drawer",
+      "screen": "ui/frames/E4_LLM_PROVIDER_DRAWER/screen.png",
+      "html": "ui/frames/E4_LLM_PROVIDER_DRAWER/code.html",
+      "acceptance": "CONDITIONAL_PASS",
+      "developmentCorrections": [
+        "replace user-visible English copy with Chinese locale resources",
+        "preserve technical identifiers only when appropriate"
+      ]
+    },
+    {
+      "iteration": "iteration-12-global-execution-connections",
+      "frameId": "E4_N8N_CONNECTION_DRAWER",
+      "area": "全局设置",
+      "purpose": "新增/编辑/验证 n8n Connection",
+      "sourceFolder": "e4_n8n_connection_drawer",
+      "screen": "ui/frames/E4_N8N_CONNECTION_DRAWER/screen.png",
+      "html": "ui/frames/E4_N8N_CONNECTION_DRAWER/code.html",
+      "acceptance": "CONDITIONAL_PASS",
+      "developmentCorrections": [
+        "replace user-visible English copy with Chinese locale resources",
+        "preserve technical identifiers only when appropriate"
+      ]
+    },
+    {
+      "iteration": "iteration-12-global-execution-connections",
+      "frameId": "STATE_TASK_FAILED_NOTICE",
+      "area": "共享组件",
+      "purpose": "安全错误通知与恢复动作",
+      "sourceFolder": "component_spec_state_task_failed_notice",
+      "screen": "ui/frames/STATE_TASK_FAILED_NOTICE/screen.png",
+      "html": "ui/frames/STATE_TASK_FAILED_NOTICE/code.html",
+      "acceptance": "CONDITIONAL_PASS",
+      "developmentCorrections": [
+        "replace user-visible English copy with Chinese locale resources",
+        "preserve technical identifiers only when appropriate"
+      ]
+    },
+    {
+      "iteration": "iteration-12-global-execution-connections",
+      "frameId": "STATE_NOT_CONFIGURED_EMPTY",
+      "area": "共享组件",
+      "purpose": "未配置、失效与空结果状态",
+      "sourceFolder": "component_spec_state_not_configured_empty",
+      "screen": "ui/frames/STATE_NOT_CONFIGURED_EMPTY/screen.png",
+      "html": "ui/frames/STATE_NOT_CONFIGURED_EMPTY/code.html",
+      "acceptance": "CONDITIONAL_PASS",
+      "developmentCorrections": [
+        "replace user-visible English copy with Chinese locale resources",
+        "preserve technical identifiers only when appropriate"
+      ]
+    },
+    {
+      "iteration": "iteration-13-project-workflow-bindings",
+      "frameId": "S02_PROJECT_WORKFLOW_SETTINGS",
+      "area": "项目设置",
+      "purpose": "四环节工作流绑定总览",
+      "sourceFolder": "project_workflow_settings",
+      "screen": "ui/frames/S02_PROJECT_WORKFLOW_SETTINGS/screen.png",
+      "html": "ui/frames/S02_PROJECT_WORKFLOW_SETTINGS/code.html",
+      "acceptance": "CONDITIONAL_PASS",
+      "developmentCorrections": [
+        "replace user-visible English copy with Chinese locale resources",
+        "preserve technical identifiers only when appropriate"
+      ]
+    },
+    {
+      "iteration": "iteration-13-project-workflow-bindings",
+      "frameId": "S02_BIND_CHAPTER_WORKFLOW_DRAWER",
+      "area": "项目设置",
+      "purpose": "章节规划绑定与默认参数",
+      "sourceFolder": "s02_bind_chapter_workflow_drawer",
+      "screen": "ui/frames/S02_BIND_CHAPTER_WORKFLOW_DRAWER/screen.png",
+      "html": "ui/frames/S02_BIND_CHAPTER_WORKFLOW_DRAWER/code.html",
+      "acceptance": "CONDITIONAL_PASS",
+      "developmentCorrections": [
+        "replace user-visible English copy with Chinese locale resources",
+        "preserve technical identifiers only when appropriate"
+      ]
+    },
+    {
+      "iteration": "iteration-13-project-workflow-bindings",
+      "frameId": "S02_BIND_CONTENT_WORKFLOW_DRAWER",
+      "area": "项目设置",
+      "purpose": "正文生成绑定与默认参数",
+      "sourceFolder": "s02_bind_content_workflow_drawer",
+      "screen": "ui/frames/S02_BIND_CONTENT_WORKFLOW_DRAWER/screen.png",
+      "html": "ui/frames/S02_BIND_CONTENT_WORKFLOW_DRAWER/code.html",
+      "acceptance": "CONDITIONAL_PASS",
+      "developmentCorrections": [
+        "replace user-visible English copy with Chinese locale resources",
+        "preserve technical identifiers only when appropriate"
+      ]
+    },
+    {
+      "iteration": "iteration-13-project-workflow-bindings",
+      "frameId": "S02_BIND_REVIEW_WORKFLOW_DRAWER",
+      "area": "项目设置",
+      "purpose": "内容审核绑定与默认参数",
+      "sourceFolder": "s02_bind_review_workflow_drawer",
+      "screen": "ui/frames/S02_BIND_REVIEW_WORKFLOW_DRAWER/screen.png",
+      "html": "ui/frames/S02_BIND_REVIEW_WORKFLOW_DRAWER/code.html",
+      "acceptance": "CONDITIONAL_PASS",
+      "developmentCorrections": [
+        "replace user-visible English copy with Chinese locale resources",
+        "preserve technical identifiers only when appropriate"
+      ]
+    },
+    {
+      "iteration": "iteration-13-project-workflow-bindings",
+      "frameId": "S02_BIND_REWRITE_WORKFLOW_DRAWER",
+      "area": "项目设置",
+      "purpose": "正文重写绑定与默认参数",
+      "sourceFolder": "s02_bind_rewrite_workflow_drawer",
+      "screen": "ui/frames/S02_BIND_REWRITE_WORKFLOW_DRAWER/screen.png",
+      "html": "ui/frames/S02_BIND_REWRITE_WORKFLOW_DRAWER/code.html",
+      "acceptance": "CONDITIONAL_PASS",
+      "developmentCorrections": [
+        "replace user-visible English copy with Chinese locale resources",
+        "preserve technical identifiers only when appropriate"
+      ]
+    },
+    {
+      "iteration": "iteration-13-project-workflow-bindings",
+      "frameId": "STATE_NOT_CONFIGURED_EMPTY",
+      "area": "共享组件",
+      "purpose": "未配置、失效与空结果状态",
+      "sourceFolder": "component_spec_state_not_configured_empty",
+      "screen": "ui/frames/STATE_NOT_CONFIGURED_EMPTY/screen.png",
+      "html": "ui/frames/STATE_NOT_CONFIGURED_EMPTY/code.html",
+      "acceptance": "CONDITIONAL_PASS",
+      "developmentCorrections": [
+        "replace user-visible English copy with Chinese locale resources",
+        "preserve technical identifiers only when appropriate"
+      ]
+    },
+    {
+      "iteration": "iteration-14-workflow-run-runtime",
+      "frameId": "E3_WORKFLOW_CENTER_V2",
+      "area": "流程中心",
+      "purpose": "真实运行列表、筛选、统计",
+      "sourceFolder": "workflow_center_console_v2.0",
+      "screen": "ui/frames/E3_WORKFLOW_CENTER_V2/screen.png",
+      "html": "ui/frames/E3_WORKFLOW_CENTER_V2/code.html",
+      "acceptance": "CONDITIONAL_PASS",
+      "developmentCorrections": [
+        "replace user-visible English copy with Chinese locale resources",
+        "preserve technical identifiers only when appropriate"
+      ]
+    },
+    {
+      "iteration": "iteration-14-workflow-run-runtime",
+      "frameId": "E3_WORKFLOW_RUN_DETAIL_DRAWER",
+      "area": "流程中心",
+      "purpose": "运行详情、失败诊断、绑定快照",
+      "sourceFolder": "e3_workflow_run_detail_drawer",
+      "screen": "ui/frames/E3_WORKFLOW_RUN_DETAIL_DRAWER/screen.png",
+      "html": "ui/frames/E3_WORKFLOW_RUN_DETAIL_DRAWER/code.html",
+      "acceptance": "CONDITIONAL_PASS",
+      "developmentCorrections": [
+        "replace user-visible English copy with Chinese locale resources",
+        "preserve technical identifiers only when appropriate"
+      ]
+    },
+    {
+      "iteration": "iteration-14-workflow-run-runtime",
+      "frameId": "E3_RETRY_RUN_CONFIRM_DIALOG",
+      "area": "流程中心",
+      "purpose": "重试确认与配置版本选择",
+      "sourceFolder": "retry_run_confirmation_dialog",
+      "screen": "ui/frames/E3_RETRY_RUN_CONFIRM_DIALOG/screen.png",
+      "html": "ui/frames/E3_RETRY_RUN_CONFIRM_DIALOG/code.html",
+      "acceptance": "CONDITIONAL_PASS",
+      "developmentCorrections": [
+        "replace user-visible English copy with Chinese locale resources",
+        "preserve technical identifiers only when appropriate"
+      ]
+    },
+    {
+      "iteration": "iteration-14-workflow-run-runtime",
+      "frameId": "STATE_TASK_RUNNING_BAR",
+      "area": "共享组件",
+      "purpose": "异步运行状态条",
+      "sourceFolder": "component_spec_state_task_running_bar",
+      "screen": "ui/frames/STATE_TASK_RUNNING_BAR/screen.png",
+      "html": "ui/frames/STATE_TASK_RUNNING_BAR/code.html",
+      "acceptance": "CONDITIONAL_PASS",
+      "developmentCorrections": [
+        "replace user-visible English copy with Chinese locale resources",
+        "preserve technical identifiers only when appropriate"
+      ]
+    },
+    {
+      "iteration": "iteration-14-workflow-run-runtime",
+      "frameId": "STATE_TASK_FAILED_NOTICE",
+      "area": "共享组件",
+      "purpose": "安全错误通知与恢复动作",
+      "sourceFolder": "component_spec_state_task_failed_notice",
+      "screen": "ui/frames/STATE_TASK_FAILED_NOTICE/screen.png",
+      "html": "ui/frames/STATE_TASK_FAILED_NOTICE/code.html",
+      "acceptance": "CONDITIONAL_PASS",
+      "developmentCorrections": [
+        "replace user-visible English copy with Chinese locale resources",
+        "preserve technical identifiers only when appropriate"
+      ]
+    },
+    {
+      "iteration": "iteration-14-workflow-run-runtime",
+      "frameId": "STATE_NOT_CONFIGURED_EMPTY",
+      "area": "共享组件",
+      "purpose": "未配置、失效与空结果状态",
+      "sourceFolder": "component_spec_state_not_configured_empty",
+      "screen": "ui/frames/STATE_NOT_CONFIGURED_EMPTY/screen.png",
+      "html": "ui/frames/STATE_NOT_CONFIGURED_EMPTY/code.html",
+      "acceptance": "CONDITIONAL_PASS",
+      "developmentCorrections": [
+        "replace user-visible English copy with Chinese locale resources",
+        "preserve technical identifiers only when appropriate"
+      ]
+    },
+    {
+      "iteration": "iteration-15-real-chapter-planning",
+      "frameId": "C1_CHAPTER_PLANNING_V2",
+      "area": "章节规划",
+      "purpose": "真实候选列表与运行状态",
+      "sourceFolder": "chapter_planning_console_v2.0",
+      "screen": "ui/frames/C1_CHAPTER_PLANNING_V2/screen.png",
+      "html": "ui/frames/C1_CHAPTER_PLANNING_V2/code.html",
+      "acceptance": "CONDITIONAL_PASS",
+      "developmentCorrections": [
+        "replace user-visible English copy with Chinese locale resources",
+        "preserve technical identifiers only when appropriate"
+      ]
+    },
+    {
+      "iteration": "iteration-15-real-chapter-planning",
+      "frameId": "C2_GENERATE_CHAPTER_PLAN_DRAWER_V2",
+      "area": "章节规划",
+      "purpose": "发起真实章节规划",
+      "sourceFolder": "generate_chapter_plan_drawer",
+      "screen": "ui/frames/C2_GENERATE_CHAPTER_PLAN_DRAWER_V2/screen.png",
+      "html": "ui/frames/C2_GENERATE_CHAPTER_PLAN_DRAWER_V2/code.html",
+      "acceptance": "CONDITIONAL_PASS",
+      "developmentCorrections": [
+        "replace user-visible English copy with Chinese locale resources",
+        "preserve technical identifiers only when appropriate"
+      ]
+    },
+    {
+      "iteration": "iteration-15-real-chapter-planning",
+      "frameId": "STATE_TASK_RUNNING_BAR",
+      "area": "共享组件",
+      "purpose": "异步运行状态条",
+      "sourceFolder": "component_spec_state_task_running_bar",
+      "screen": "ui/frames/STATE_TASK_RUNNING_BAR/screen.png",
+      "html": "ui/frames/STATE_TASK_RUNNING_BAR/code.html",
+      "acceptance": "CONDITIONAL_PASS",
+      "developmentCorrections": [
+        "replace user-visible English copy with Chinese locale resources",
+        "preserve technical identifiers only when appropriate"
+      ]
+    },
+    {
+      "iteration": "iteration-15-real-chapter-planning",
+      "frameId": "STATE_TASK_FAILED_NOTICE",
+      "area": "共享组件",
+      "purpose": "安全错误通知与恢复动作",
+      "sourceFolder": "component_spec_state_task_failed_notice",
+      "screen": "ui/frames/STATE_TASK_FAILED_NOTICE/screen.png",
+      "html": "ui/frames/STATE_TASK_FAILED_NOTICE/code.html",
+      "acceptance": "CONDITIONAL_PASS",
+      "developmentCorrections": [
+        "replace user-visible English copy with Chinese locale resources",
+        "preserve technical identifiers only when appropriate"
+      ]
+    },
+    {
+      "iteration": "iteration-15-real-chapter-planning",
+      "frameId": "STATE_NOT_CONFIGURED_EMPTY",
+      "area": "共享组件",
+      "purpose": "未配置、失效与空结果状态",
+      "sourceFolder": "component_spec_state_not_configured_empty",
+      "screen": "ui/frames/STATE_NOT_CONFIGURED_EMPTY/screen.png",
+      "html": "ui/frames/STATE_NOT_CONFIGURED_EMPTY/code.html",
+      "acceptance": "CONDITIONAL_PASS",
+      "developmentCorrections": [
+        "replace user-visible English copy with Chinese locale resources",
+        "preserve technical identifiers only when appropriate"
+      ]
+    },
+    {
+      "iteration": "iteration-16-real-content-generation",
+      "frameId": "D1_EDITOR_V2",
+      "area": "正文",
+      "purpose": "正文编辑器与真实生成状态",
+      "sourceFolder": "d1_editor_v2_ai_editor_console_3",
+      "screen": "ui/frames/D1_EDITOR_V2/screen.png",
+      "html": "ui/frames/D1_EDITOR_V2/code.html",
+      "acceptance": "CONDITIONAL_PASS",
+      "developmentCorrections": [
+        "replace user-visible English copy with Chinese locale resources",
+        "preserve technical identifiers only when appropriate"
+      ]
+    },
+    {
+      "iteration": "iteration-16-real-content-generation",
+      "frameId": "D1_GENERATE_CONTENT_DRAWER",
+      "area": "正文",
+      "purpose": "发起真实正文生成",
+      "sourceFolder": "generate_content_drawer_ai_content_factory_2.0",
+      "screen": "ui/frames/D1_GENERATE_CONTENT_DRAWER/screen.png",
+      "html": "ui/frames/D1_GENERATE_CONTENT_DRAWER/code.html",
+      "acceptance": "CONDITIONAL_PASS",
+      "developmentCorrections": [
+        "replace user-visible English copy with Chinese locale resources",
+        "preserve technical identifiers only when appropriate"
+      ]
+    },
+    {
+      "iteration": "iteration-16-real-content-generation",
+      "frameId": "STATE_TASK_RUNNING_BAR",
+      "area": "共享组件",
+      "purpose": "异步运行状态条",
+      "sourceFolder": "component_spec_state_task_running_bar",
+      "screen": "ui/frames/STATE_TASK_RUNNING_BAR/screen.png",
+      "html": "ui/frames/STATE_TASK_RUNNING_BAR/code.html",
+      "acceptance": "CONDITIONAL_PASS",
+      "developmentCorrections": [
+        "replace user-visible English copy with Chinese locale resources",
+        "preserve technical identifiers only when appropriate"
+      ]
+    },
+    {
+      "iteration": "iteration-16-real-content-generation",
+      "frameId": "STATE_TASK_FAILED_NOTICE",
+      "area": "共享组件",
+      "purpose": "安全错误通知与恢复动作",
+      "sourceFolder": "component_spec_state_task_failed_notice",
+      "screen": "ui/frames/STATE_TASK_FAILED_NOTICE/screen.png",
+      "html": "ui/frames/STATE_TASK_FAILED_NOTICE/code.html",
+      "acceptance": "CONDITIONAL_PASS",
+      "developmentCorrections": [
+        "replace user-visible English copy with Chinese locale resources",
+        "preserve technical identifiers only when appropriate"
+      ]
+    },
+    {
+      "iteration": "iteration-16-real-content-generation",
+      "frameId": "STATE_NOT_CONFIGURED_EMPTY",
+      "area": "共享组件",
+      "purpose": "未配置、失效与空结果状态",
+      "sourceFolder": "component_spec_state_not_configured_empty",
+      "screen": "ui/frames/STATE_NOT_CONFIGURED_EMPTY/screen.png",
+      "html": "ui/frames/STATE_NOT_CONFIGURED_EMPTY/code.html",
+      "acceptance": "CONDITIONAL_PASS",
+      "developmentCorrections": [
+        "replace user-visible English copy with Chinese locale resources",
+        "preserve technical identifiers only when appropriate"
+      ]
+    },
+    {
+      "iteration": "iteration-17-real-content-review",
+      "frameId": "D2_REVIEW_V2",
+      "area": "审核",
+      "purpose": "真实审核结果与问题选择",
+      "sourceFolder": "content_review_console_v2.0",
+      "screen": "ui/frames/D2_REVIEW_V2/screen.png",
+      "html": "ui/frames/D2_REVIEW_V2/code.html",
+      "acceptance": "CONDITIONAL_PASS",
+      "developmentCorrections": [
+        "replace user-visible English copy with Chinese locale resources",
+        "preserve technical identifiers only when appropriate"
+      ]
+    },
+    {
+      "iteration": "iteration-17-real-content-review",
+      "frameId": "D2_SUBMIT_REVIEW_DRAWER",
+      "area": "审核",
+      "purpose": "发起固定版本审核",
+      "sourceFolder": "submit_content_review_drawer",
+      "screen": "ui/frames/D2_SUBMIT_REVIEW_DRAWER/screen.png",
+      "html": "ui/frames/D2_SUBMIT_REVIEW_DRAWER/code.html",
+      "acceptance": "CONDITIONAL_PASS",
+      "developmentCorrections": [
+        "replace user-visible English copy with Chinese locale resources",
+        "preserve technical identifiers only when appropriate"
+      ]
+    },
+    {
+      "iteration": "iteration-17-real-content-review",
+      "frameId": "STATE_TASK_RUNNING_BAR",
+      "area": "共享组件",
+      "purpose": "异步运行状态条",
+      "sourceFolder": "component_spec_state_task_running_bar",
+      "screen": "ui/frames/STATE_TASK_RUNNING_BAR/screen.png",
+      "html": "ui/frames/STATE_TASK_RUNNING_BAR/code.html",
+      "acceptance": "CONDITIONAL_PASS",
+      "developmentCorrections": [
+        "replace user-visible English copy with Chinese locale resources",
+        "preserve technical identifiers only when appropriate"
+      ]
+    },
+    {
+      "iteration": "iteration-17-real-content-review",
+      "frameId": "STATE_TASK_FAILED_NOTICE",
+      "area": "共享组件",
+      "purpose": "安全错误通知与恢复动作",
+      "sourceFolder": "component_spec_state_task_failed_notice",
+      "screen": "ui/frames/STATE_TASK_FAILED_NOTICE/screen.png",
+      "html": "ui/frames/STATE_TASK_FAILED_NOTICE/code.html",
+      "acceptance": "CONDITIONAL_PASS",
+      "developmentCorrections": [
+        "replace user-visible English copy with Chinese locale resources",
+        "preserve technical identifiers only when appropriate"
+      ]
+    },
+    {
+      "iteration": "iteration-17-real-content-review",
+      "frameId": "STATE_NOT_CONFIGURED_EMPTY",
+      "area": "共享组件",
+      "purpose": "未配置、失效与空结果状态",
+      "sourceFolder": "component_spec_state_not_configured_empty",
+      "screen": "ui/frames/STATE_NOT_CONFIGURED_EMPTY/screen.png",
+      "html": "ui/frames/STATE_NOT_CONFIGURED_EMPTY/code.html",
+      "acceptance": "CONDITIONAL_PASS",
+      "developmentCorrections": [
+        "replace user-visible English copy with Chinese locale resources",
+        "preserve technical identifiers only when appropriate"
+      ]
+    },
+    {
+      "iteration": "iteration-18-real-content-rewrite",
+      "frameId": "D4_CREATE_REWRITE_V2",
+      "area": "重写",
+      "purpose": "选择审核问题并发起重写",
+      "sourceFolder": "d1_editor_v2_create_rewrite_console",
+      "screen": "ui/frames/D4_CREATE_REWRITE_V2/screen.png",
+      "html": "ui/frames/D4_CREATE_REWRITE_V2/code.html",
+      "acceptance": "CONDITIONAL_PASS",
+      "developmentCorrections": [
+        "replace user-visible English copy with Chinese locale resources",
+        "preserve technical identifiers only when appropriate"
+      ]
+    },
+    {
+      "iteration": "iteration-18-real-content-rewrite",
+      "frameId": "D5_REWRITE_RESULT_V2",
+      "area": "重写",
+      "purpose": "新旧版本关系与结果预览",
+      "sourceFolder": "d5_rewrite_result_v2_rewrite_result_console_2",
+      "screen": "ui/frames/D5_REWRITE_RESULT_V2/screen.png",
+      "html": "ui/frames/D5_REWRITE_RESULT_V2/code.html",
+      "acceptance": "CONDITIONAL_PASS",
+      "developmentCorrections": [
+        "replace user-visible English copy with Chinese locale resources",
+        "preserve technical identifiers only when appropriate"
+      ]
+    },
+    {
+      "iteration": "iteration-18-real-content-rewrite",
+      "frameId": "STATE_TASK_RUNNING_BAR",
+      "area": "共享组件",
+      "purpose": "异步运行状态条",
+      "sourceFolder": "component_spec_state_task_running_bar",
+      "screen": "ui/frames/STATE_TASK_RUNNING_BAR/screen.png",
+      "html": "ui/frames/STATE_TASK_RUNNING_BAR/code.html",
+      "acceptance": "CONDITIONAL_PASS",
+      "developmentCorrections": [
+        "replace user-visible English copy with Chinese locale resources",
+        "preserve technical identifiers only when appropriate"
+      ]
+    },
+    {
+      "iteration": "iteration-18-real-content-rewrite",
+      "frameId": "STATE_TASK_FAILED_NOTICE",
+      "area": "共享组件",
+      "purpose": "安全错误通知与恢复动作",
+      "sourceFolder": "component_spec_state_task_failed_notice",
+      "screen": "ui/frames/STATE_TASK_FAILED_NOTICE/screen.png",
+      "html": "ui/frames/STATE_TASK_FAILED_NOTICE/code.html",
+      "acceptance": "CONDITIONAL_PASS",
+      "developmentCorrections": [
+        "replace user-visible English copy with Chinese locale resources",
+        "preserve technical identifiers only when appropriate"
+      ]
+    },
+    {
+      "iteration": "iteration-18-real-content-rewrite",
+      "frameId": "STATE_NOT_CONFIGURED_EMPTY",
+      "area": "共享组件",
+      "purpose": "未配置、失效与空结果状态",
+      "sourceFolder": "component_spec_state_not_configured_empty",
+      "screen": "ui/frames/STATE_NOT_CONFIGURED_EMPTY/screen.png",
+      "html": "ui/frames/STATE_NOT_CONFIGURED_EMPTY/code.html",
+      "acceptance": "CONDITIONAL_PASS",
+      "developmentCorrections": [
+        "replace user-visible English copy with Chinese locale resources",
+        "preserve technical identifiers only when appropriate"
+      ]
+    },
+    {
+      "iteration": "iteration-19-second-loop-integration-acceptance",
+      "frameId": "E4_AI_CONNECTIONS_OVERVIEW",
+      "area": "全局设置",
+      "purpose": "LLM Provider 与 n8n 连接总览",
+      "sourceFolder": "ai_connections_overview_2",
+      "screen": "ui/frames/E4_AI_CONNECTIONS_OVERVIEW/screen.png",
+      "html": "ui/frames/E4_AI_CONNECTIONS_OVERVIEW/code.html",
+      "acceptance": "CONDITIONAL_PASS",
+      "developmentCorrections": [
+        "replace user-visible English copy with Chinese locale resources",
+        "preserve technical identifiers only when appropriate"
+      ]
+    },
+    {
+      "iteration": "iteration-19-second-loop-integration-acceptance",
+      "frameId": "E4_LLM_PROVIDER_DRAWER",
+      "area": "全局设置",
+      "purpose": "新增/编辑/验证 LLM Provider",
+      "sourceFolder": "e4_llm_provider_drawer",
+      "screen": "ui/frames/E4_LLM_PROVIDER_DRAWER/screen.png",
+      "html": "ui/frames/E4_LLM_PROVIDER_DRAWER/code.html",
+      "acceptance": "CONDITIONAL_PASS",
+      "developmentCorrections": [
+        "replace user-visible English copy with Chinese locale resources",
+        "preserve technical identifiers only when appropriate"
+      ]
+    },
+    {
+      "iteration": "iteration-19-second-loop-integration-acceptance",
+      "frameId": "E4_N8N_CONNECTION_DRAWER",
+      "area": "全局设置",
+      "purpose": "新增/编辑/验证 n8n Connection",
+      "sourceFolder": "e4_n8n_connection_drawer",
+      "screen": "ui/frames/E4_N8N_CONNECTION_DRAWER/screen.png",
+      "html": "ui/frames/E4_N8N_CONNECTION_DRAWER/code.html",
+      "acceptance": "CONDITIONAL_PASS",
+      "developmentCorrections": [
+        "replace user-visible English copy with Chinese locale resources",
+        "preserve technical identifiers only when appropriate"
+      ]
+    },
+    {
+      "iteration": "iteration-19-second-loop-integration-acceptance",
+      "frameId": "S02_PROJECT_WORKFLOW_SETTINGS",
+      "area": "项目设置",
+      "purpose": "四环节工作流绑定总览",
+      "sourceFolder": "project_workflow_settings",
+      "screen": "ui/frames/S02_PROJECT_WORKFLOW_SETTINGS/screen.png",
+      "html": "ui/frames/S02_PROJECT_WORKFLOW_SETTINGS/code.html",
+      "acceptance": "CONDITIONAL_PASS",
+      "developmentCorrections": [
+        "replace user-visible English copy with Chinese locale resources",
+        "preserve technical identifiers only when appropriate"
+      ]
+    },
+    {
+      "iteration": "iteration-19-second-loop-integration-acceptance",
+      "frameId": "S02_BIND_CHAPTER_WORKFLOW_DRAWER",
+      "area": "项目设置",
+      "purpose": "章节规划绑定与默认参数",
+      "sourceFolder": "s02_bind_chapter_workflow_drawer",
+      "screen": "ui/frames/S02_BIND_CHAPTER_WORKFLOW_DRAWER/screen.png",
+      "html": "ui/frames/S02_BIND_CHAPTER_WORKFLOW_DRAWER/code.html",
+      "acceptance": "CONDITIONAL_PASS",
+      "developmentCorrections": [
+        "replace user-visible English copy with Chinese locale resources",
+        "preserve technical identifiers only when appropriate"
+      ]
+    },
+    {
+      "iteration": "iteration-19-second-loop-integration-acceptance",
+      "frameId": "S02_BIND_CONTENT_WORKFLOW_DRAWER",
+      "area": "项目设置",
+      "purpose": "正文生成绑定与默认参数",
+      "sourceFolder": "s02_bind_content_workflow_drawer",
+      "screen": "ui/frames/S02_BIND_CONTENT_WORKFLOW_DRAWER/screen.png",
+      "html": "ui/frames/S02_BIND_CONTENT_WORKFLOW_DRAWER/code.html",
+      "acceptance": "CONDITIONAL_PASS",
+      "developmentCorrections": [
+        "replace user-visible English copy with Chinese locale resources",
+        "preserve technical identifiers only when appropriate"
+      ]
+    },
+    {
+      "iteration": "iteration-19-second-loop-integration-acceptance",
+      "frameId": "S02_BIND_REVIEW_WORKFLOW_DRAWER",
+      "area": "项目设置",
+      "purpose": "内容审核绑定与默认参数",
+      "sourceFolder": "s02_bind_review_workflow_drawer",
+      "screen": "ui/frames/S02_BIND_REVIEW_WORKFLOW_DRAWER/screen.png",
+      "html": "ui/frames/S02_BIND_REVIEW_WORKFLOW_DRAWER/code.html",
+      "acceptance": "CONDITIONAL_PASS",
+      "developmentCorrections": [
+        "replace user-visible English copy with Chinese locale resources",
+        "preserve technical identifiers only when appropriate"
+      ]
+    },
+    {
+      "iteration": "iteration-19-second-loop-integration-acceptance",
+      "frameId": "S02_BIND_REWRITE_WORKFLOW_DRAWER",
+      "area": "项目设置",
+      "purpose": "正文重写绑定与默认参数",
+      "sourceFolder": "s02_bind_rewrite_workflow_drawer",
+      "screen": "ui/frames/S02_BIND_REWRITE_WORKFLOW_DRAWER/screen.png",
+      "html": "ui/frames/S02_BIND_REWRITE_WORKFLOW_DRAWER/code.html",
+      "acceptance": "CONDITIONAL_PASS",
+      "developmentCorrections": [
+        "replace user-visible English copy with Chinese locale resources",
+        "preserve technical identifiers only when appropriate"
+      ]
+    },
+    {
+      "iteration": "iteration-19-second-loop-integration-acceptance",
+      "frameId": "E3_WORKFLOW_CENTER_V2",
+      "area": "流程中心",
+      "purpose": "真实运行列表、筛选、统计",
+      "sourceFolder": "workflow_center_console_v2.0",
+      "screen": "ui/frames/E3_WORKFLOW_CENTER_V2/screen.png",
+      "html": "ui/frames/E3_WORKFLOW_CENTER_V2/code.html",
+      "acceptance": "CONDITIONAL_PASS",
+      "developmentCorrections": [
+        "replace user-visible English copy with Chinese locale resources",
+        "preserve technical identifiers only when appropriate"
+      ]
+    },
+    {
+      "iteration": "iteration-19-second-loop-integration-acceptance",
+      "frameId": "E3_WORKFLOW_RUN_DETAIL_DRAWER",
+      "area": "流程中心",
+      "purpose": "运行详情、失败诊断、绑定快照",
+      "sourceFolder": "e3_workflow_run_detail_drawer",
+      "screen": "ui/frames/E3_WORKFLOW_RUN_DETAIL_DRAWER/screen.png",
+      "html": "ui/frames/E3_WORKFLOW_RUN_DETAIL_DRAWER/code.html",
+      "acceptance": "CONDITIONAL_PASS",
+      "developmentCorrections": [
+        "replace user-visible English copy with Chinese locale resources",
+        "preserve technical identifiers only when appropriate"
+      ]
+    },
+    {
+      "iteration": "iteration-19-second-loop-integration-acceptance",
+      "frameId": "E3_RETRY_RUN_CONFIRM_DIALOG",
+      "area": "流程中心",
+      "purpose": "重试确认与配置版本选择",
+      "sourceFolder": "retry_run_confirmation_dialog",
+      "screen": "ui/frames/E3_RETRY_RUN_CONFIRM_DIALOG/screen.png",
+      "html": "ui/frames/E3_RETRY_RUN_CONFIRM_DIALOG/code.html",
+      "acceptance": "CONDITIONAL_PASS",
+      "developmentCorrections": [
+        "replace user-visible English copy with Chinese locale resources",
+        "preserve technical identifiers only when appropriate"
+      ]
+    },
+    {
+      "iteration": "iteration-19-second-loop-integration-acceptance",
+      "frameId": "C1_CHAPTER_PLANNING_V2",
+      "area": "章节规划",
+      "purpose": "真实候选列表与运行状态",
+      "sourceFolder": "chapter_planning_console_v2.0",
+      "screen": "ui/frames/C1_CHAPTER_PLANNING_V2/screen.png",
+      "html": "ui/frames/C1_CHAPTER_PLANNING_V2/code.html",
+      "acceptance": "CONDITIONAL_PASS",
+      "developmentCorrections": [
+        "replace user-visible English copy with Chinese locale resources",
+        "preserve technical identifiers only when appropriate"
+      ]
+    },
+    {
+      "iteration": "iteration-19-second-loop-integration-acceptance",
+      "frameId": "C2_GENERATE_CHAPTER_PLAN_DRAWER_V2",
+      "area": "章节规划",
+      "purpose": "发起真实章节规划",
+      "sourceFolder": "generate_chapter_plan_drawer",
+      "screen": "ui/frames/C2_GENERATE_CHAPTER_PLAN_DRAWER_V2/screen.png",
+      "html": "ui/frames/C2_GENERATE_CHAPTER_PLAN_DRAWER_V2/code.html",
+      "acceptance": "CONDITIONAL_PASS",
+      "developmentCorrections": [
+        "replace user-visible English copy with Chinese locale resources",
+        "preserve technical identifiers only when appropriate"
+      ]
+    },
+    {
+      "iteration": "iteration-19-second-loop-integration-acceptance",
+      "frameId": "D1_EDITOR_V2",
+      "area": "正文",
+      "purpose": "正文编辑器与真实生成状态",
+      "sourceFolder": "d1_editor_v2_ai_editor_console_3",
+      "screen": "ui/frames/D1_EDITOR_V2/screen.png",
+      "html": "ui/frames/D1_EDITOR_V2/code.html",
+      "acceptance": "CONDITIONAL_PASS",
+      "developmentCorrections": [
+        "replace user-visible English copy with Chinese locale resources",
+        "preserve technical identifiers only when appropriate"
+      ]
+    },
+    {
+      "iteration": "iteration-19-second-loop-integration-acceptance",
+      "frameId": "D1_GENERATE_CONTENT_DRAWER",
+      "area": "正文",
+      "purpose": "发起真实正文生成",
+      "sourceFolder": "generate_content_drawer_ai_content_factory_2.0",
+      "screen": "ui/frames/D1_GENERATE_CONTENT_DRAWER/screen.png",
+      "html": "ui/frames/D1_GENERATE_CONTENT_DRAWER/code.html",
+      "acceptance": "CONDITIONAL_PASS",
+      "developmentCorrections": [
+        "replace user-visible English copy with Chinese locale resources",
+        "preserve technical identifiers only when appropriate"
+      ]
+    },
+    {
+      "iteration": "iteration-19-second-loop-integration-acceptance",
+      "frameId": "D2_REVIEW_V2",
+      "area": "审核",
+      "purpose": "真实审核结果与问题选择",
+      "sourceFolder": "content_review_console_v2.0",
+      "screen": "ui/frames/D2_REVIEW_V2/screen.png",
+      "html": "ui/frames/D2_REVIEW_V2/code.html",
+      "acceptance": "CONDITIONAL_PASS",
+      "developmentCorrections": [
+        "replace user-visible English copy with Chinese locale resources",
+        "preserve technical identifiers only when appropriate"
+      ]
+    },
+    {
+      "iteration": "iteration-19-second-loop-integration-acceptance",
+      "frameId": "D2_SUBMIT_REVIEW_DRAWER",
+      "area": "审核",
+      "purpose": "发起固定版本审核",
+      "sourceFolder": "submit_content_review_drawer",
+      "screen": "ui/frames/D2_SUBMIT_REVIEW_DRAWER/screen.png",
+      "html": "ui/frames/D2_SUBMIT_REVIEW_DRAWER/code.html",
+      "acceptance": "CONDITIONAL_PASS",
+      "developmentCorrections": [
+        "replace user-visible English copy with Chinese locale resources",
+        "preserve technical identifiers only when appropriate"
+      ]
+    },
+    {
+      "iteration": "iteration-19-second-loop-integration-acceptance",
+      "frameId": "D4_CREATE_REWRITE_V2",
+      "area": "重写",
+      "purpose": "选择审核问题并发起重写",
+      "sourceFolder": "d1_editor_v2_create_rewrite_console",
+      "screen": "ui/frames/D4_CREATE_REWRITE_V2/screen.png",
+      "html": "ui/frames/D4_CREATE_REWRITE_V2/code.html",
+      "acceptance": "CONDITIONAL_PASS",
+      "developmentCorrections": [
+        "replace user-visible English copy with Chinese locale resources",
+        "preserve technical identifiers only when appropriate"
+      ]
+    },
+    {
+      "iteration": "iteration-19-second-loop-integration-acceptance",
+      "frameId": "D5_REWRITE_RESULT_V2",
+      "area": "重写",
+      "purpose": "新旧版本关系与结果预览",
+      "sourceFolder": "d5_rewrite_result_v2_rewrite_result_console_2",
+      "screen": "ui/frames/D5_REWRITE_RESULT_V2/screen.png",
+      "html": "ui/frames/D5_REWRITE_RESULT_V2/code.html",
+      "acceptance": "CONDITIONAL_PASS",
+      "developmentCorrections": [
+        "replace user-visible English copy with Chinese locale resources",
+        "preserve technical identifiers only when appropriate"
+      ]
+    },
+    {
+      "iteration": "iteration-19-second-loop-integration-acceptance",
+      "frameId": "STATE_TASK_RUNNING_BAR",
+      "area": "共享组件",
+      "purpose": "异步运行状态条",
+      "sourceFolder": "component_spec_state_task_running_bar",
+      "screen": "ui/frames/STATE_TASK_RUNNING_BAR/screen.png",
+      "html": "ui/frames/STATE_TASK_RUNNING_BAR/code.html",
+      "acceptance": "CONDITIONAL_PASS",
+      "developmentCorrections": [
+        "replace user-visible English copy with Chinese locale resources",
+        "preserve technical identifiers only when appropriate"
+      ]
+    },
+    {
+      "iteration": "iteration-19-second-loop-integration-acceptance",
+      "frameId": "STATE_TASK_FAILED_NOTICE",
+      "area": "共享组件",
+      "purpose": "安全错误通知与恢复动作",
+      "sourceFolder": "component_spec_state_task_failed_notice",
+      "screen": "ui/frames/STATE_TASK_FAILED_NOTICE/screen.png",
+      "html": "ui/frames/STATE_TASK_FAILED_NOTICE/code.html",
+      "acceptance": "CONDITIONAL_PASS",
+      "developmentCorrections": [
+        "replace user-visible English copy with Chinese locale resources",
+        "preserve technical identifiers only when appropriate"
+      ]
+    },
+    {
+      "iteration": "iteration-19-second-loop-integration-acceptance",
+      "frameId": "STATE_NOT_CONFIGURED_EMPTY",
+      "area": "共享组件",
+      "purpose": "未配置、失效与空结果状态",
+      "sourceFolder": "component_spec_state_not_configured_empty",
+      "screen": "ui/frames/STATE_NOT_CONFIGURED_EMPTY/screen.png",
+      "html": "ui/frames/STATE_NOT_CONFIGURED_EMPTY/code.html",
+      "acceptance": "CONDITIONAL_PASS",
+      "developmentCorrections": [
+        "replace user-visible English copy with Chinese locale resources",
+        "preserve technical identifiers only when appropriate"
+      ]
+    }
+  ]
+}
