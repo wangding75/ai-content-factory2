@@ -32,3 +32,4 @@ logs/
 # Generated reports
 .ai-dev/reports/
 .gstack/
+_review_bundle/

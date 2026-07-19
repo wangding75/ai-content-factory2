@@ -205,18 +205,25 @@ func (s *Service) CreateProvider(ctx context.Context, r ProviderCreate, key stri
 	if r.ProviderType != "openai_compatible" || !validProvider(r.Name, r.BaseURL, r.DefaultModel, r.TimeoutSeconds) || !validOptional(r.Secret) {
 		return Provider{}, ErrValidation
 	}
-	var out Provider
-	err := s.idempotent(ctx, "llm-provider:create", key, r, func(tx pgx.Tx) error {
+	body, err := s.idempotent(ctx, "llm-provider:create", key, r, func(tx pgx.Tx) (json.RawMessage, error) {
+		var out Provider
 		enc, fp, e := s.secret(r.Secret)
 		if e != nil {
-			return e
+			return nil, e
 		}
 		row := tx.QueryRow(ctx, "INSERT INTO llm_provider_configurations(id,name,provider_type,base_url,default_model,encrypted_secret,secret_fingerprint,timeout_seconds) VALUES($1,$2,$3,$4,$5,$6,$7,$8) RETURNING id,name,provider_type,base_url,default_model,timeout_seconds,encrypted_secret IS NOT NULL,secret_fingerprint,integration_status,enabled,last_verified_at,last_error_code,last_error_message,version,created_at,updated_at", uuid.New(), r.Name, r.ProviderType, r.BaseURL, r.DefaultModel, enc, fp, r.TimeoutSeconds)
 		if e = scanProvider(row, &out); e != nil {
-			return e
+			return nil, e
 		}
-		return s.audit(ctx, tx, "create", "llm_provider", out.ID, map[string]any{"name": out.Name})
+		if e = s.audit(ctx, tx, "create", "llm_provider", out.ID, safeAudit("create", out.Version, map[string]any{"name": out.Name})); e != nil {
+			return nil, e
+		}
+		return json.Marshal(out)
 	})
+	var out Provider
+	if err == nil {
+		err = json.Unmarshal(body, &out)
+	}
 	return out, err
 }
 func (s *Service) GetProvider(ctx context.Context, id uuid.UUID) (Provider, error) {
@@ -286,25 +293,49 @@ func (s *Service) UpdateProvider(ctx context.Context, id uuid.UUID, r ProviderUp
 		fp = nil
 	}
 	var out Provider
-	e = scanProvider(s.pool.QueryRow(ctx, "UPDATE llm_provider_configurations SET name=$2,base_url=$3,default_model=$4,timeout_seconds=$5,encrypted_secret=CASE WHEN $6::text IS NULL THEN encrypted_secret ELSE NULLIF($6::text,'') END,secret_fingerprint=CASE WHEN $6::text IS NULL THEN secret_fingerprint ELSE $7 END,version=version+1,updated_at=NOW() WHERE id=$1 AND version=$8 RETURNING id,name,provider_type,base_url,default_model,timeout_seconds,encrypted_secret IS NOT NULL,secret_fingerprint,integration_status,enabled,last_verified_at,last_error_code,last_error_message,version,created_at,updated_at", id, cur.Name, cur.BaseURL, cur.DefaultModel, cur.TimeoutSeconds, enc, fp, r.ExpectedVersion), &out)
-	return out, notFound(e)
+	tx, e := s.pool.Begin(ctx)
+	if e != nil {
+		return out, e
+	}
+	defer tx.Rollback(ctx)
+	e = scanProvider(tx.QueryRow(ctx, "UPDATE llm_provider_configurations SET name=$2,base_url=$3,default_model=$4,timeout_seconds=$5,encrypted_secret=CASE WHEN $6::text IS NULL THEN encrypted_secret ELSE NULLIF($6::text,'') END,secret_fingerprint=CASE WHEN $6::text IS NULL THEN secret_fingerprint ELSE $7 END,version=version+1,updated_at=NOW() WHERE id=$1 AND version=$8 RETURNING id,name,provider_type,base_url,default_model,timeout_seconds,encrypted_secret IS NOT NULL,secret_fingerprint,integration_status,enabled,last_verified_at,last_error_code,last_error_message,version,created_at,updated_at", id, cur.Name, cur.BaseURL, cur.DefaultModel, cur.TimeoutSeconds, enc, fp, r.ExpectedVersion), &out)
+	if errors.Is(e, pgx.ErrNoRows) {
+		return out, s.updateMissingOrConflict(ctx, tx, "llm_provider_configurations", id)
+	}
+	if e != nil {
+		return out, e
+	}
+	if e = s.audit(ctx, tx, "update", "llm_provider", id, safeAudit("update", out.Version, map[string]any{"name": out.Name, "baseUrl": out.BaseURL, "defaultModel": out.DefaultModel, "timeoutSeconds": out.TimeoutSeconds, "secretChanged": r.Secret != nil, "secretCleared": r.ClearSecret != nil})); e != nil {
+		return out, e
+	}
+	if e = tx.Commit(ctx); e != nil {
+		return out, e
+	}
+	return out, nil
 }
 func (s *Service) CreateConnection(ctx context.Context, r ConnectionCreate, key string) (Connection, error) {
 	if r.ConnectionType != "n8n" || r.AuthType != "api_key" || !validCommon(r.Name, r.BaseURL, r.TimeoutSeconds) || !validN8n(r.TypeConfig) || !validOptional(r.Credential) {
 		return Connection{}, ErrValidation
 	}
-	var out Connection
-	err := s.idempotent(ctx, "workflow-connection:create", key, r, func(tx pgx.Tx) error {
+	body, err := s.idempotent(ctx, "workflow-connection:create", key, r, func(tx pgx.Tx) (json.RawMessage, error) {
+		var out Connection
 		enc, fp, e := s.secret(r.Credential)
 		if e != nil {
-			return e
+			return nil, e
 		}
 		e = scanConnection(tx.QueryRow(ctx, "INSERT INTO workflow_connections(id,name,connection_type,base_url,auth_type,encrypted_credential,credential_fingerprint,timeout_seconds,type_config) VALUES($1,$2,'n8n',$3,'api_key',$4,$5,$6,$7) RETURNING "+connectionColumns, uuid.New(), r.Name, r.BaseURL, enc, fp, r.TimeoutSeconds, r.TypeConfig), &out)
-		if e == nil {
-			e = s.audit(ctx, tx, "create", "workflow_connection", out.ID, map[string]any{"name": out.Name})
+		if e != nil {
+			return nil, e
 		}
-		return e
+		if e = s.audit(ctx, tx, "create", "workflow_connection", out.ID, safeAudit("create", out.Version, map[string]any{"name": out.Name})); e != nil {
+			return nil, e
+		}
+		return json.Marshal(out)
 	})
+	var out Connection
+	if err == nil {
+		err = json.Unmarshal(body, &out)
+	}
 	return out, err
 }
 func (s *Service) GetConnection(ctx context.Context, id uuid.UUID) (Connection, error) {
@@ -377,8 +408,25 @@ func (s *Service) UpdateConnection(ctx context.Context, id uuid.UUID, r Connecti
 		fp = nil
 	}
 	var out Connection
-	e = scanConnection(s.pool.QueryRow(ctx, "UPDATE workflow_connections SET name=$2,base_url=$3,auth_type=$4,timeout_seconds=$5,type_config=$6,encrypted_credential=CASE WHEN $7::text IS NULL THEN encrypted_credential ELSE NULLIF($7::text,'') END,credential_fingerprint=CASE WHEN $7::text IS NULL THEN credential_fingerprint ELSE $8 END,version=version+1,updated_at=NOW() WHERE id=$1 AND version=$9 RETURNING "+connectionColumns, id, cur.Name, cur.BaseURL, cur.AuthType, cur.TimeoutSeconds, cur.TypeConfig, enc, fp, r.ExpectedVersion), &out)
-	return out, notFound(e)
+	tx, e := s.pool.Begin(ctx)
+	if e != nil {
+		return out, e
+	}
+	defer tx.Rollback(ctx)
+	e = scanConnection(tx.QueryRow(ctx, "UPDATE workflow_connections SET name=$2,base_url=$3,auth_type=$4,timeout_seconds=$5,type_config=$6,encrypted_credential=CASE WHEN $7::text IS NULL THEN encrypted_credential ELSE NULLIF($7::text,'') END,credential_fingerprint=CASE WHEN $7::text IS NULL THEN credential_fingerprint ELSE $8 END,version=version+1,updated_at=NOW() WHERE id=$1 AND version=$9 RETURNING "+connectionColumns, id, cur.Name, cur.BaseURL, cur.AuthType, cur.TimeoutSeconds, cur.TypeConfig, enc, fp, r.ExpectedVersion), &out)
+	if errors.Is(e, pgx.ErrNoRows) {
+		return out, s.updateMissingOrConflict(ctx, tx, "workflow_connections", id)
+	}
+	if e != nil {
+		return out, e
+	}
+	if e = s.audit(ctx, tx, "update", "workflow_connection", id, safeAudit("update", out.Version, map[string]any{"name": out.Name, "baseUrl": out.BaseURL, "authType": out.AuthType, "timeoutSeconds": out.TimeoutSeconds, "typeConfig": out.TypeConfig, "credentialChanged": r.Credential != nil, "credentialCleared": r.ClearCredential != nil})); e != nil {
+		return out, e
+	}
+	if e = tx.Commit(ctx); e != nil {
+		return out, e
+	}
+	return out, nil
 }
 func (s *Service) CreateWorkflow(ctx context.Context, r WorkflowCreate, key string) (Workflow, error) {
 	if !validWorkflow(r.Name, r.ApplicableStages, r.TypeConfig, r.InputContractVersion, r.OutputContractVersion, r.DefaultParameters) {
@@ -387,19 +435,27 @@ func (s *Service) CreateWorkflow(ctx context.Context, r WorkflowCreate, key stri
 	if _, e := s.GetConnection(ctx, r.ConnectionID); e != nil {
 		return Workflow{}, e
 	}
-	id := uuid.New()
-	var out Workflow
-	err := s.idempotent(ctx, "workflow-configuration:create", key, r, func(tx pgx.Tx) error {
+	body, err := s.idempotent(ctx, "workflow-configuration:create", key, r, func(tx pgx.Tx) (json.RawMessage, error) {
+		id := uuid.New()
 		_, e := tx.Exec(ctx, "INSERT INTO workflow_configurations(id,name,connection_id,applicable_stages,type_config,input_contract_version,output_contract_version,default_parameters,note) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9)", id, r.Name, r.ConnectionID, mustJSON(r.ApplicableStages), r.TypeConfig, r.InputContractVersion, r.OutputContractVersion, defaultJSON(r.DefaultParameters), r.Note)
-		if e == nil {
-			e = s.audit(ctx, tx, "create", "workflow_configuration", id, map[string]any{"name": r.Name})
+		if e != nil {
+			return nil, e
 		}
-		return e
+		var out Workflow
+		e = scanWorkflow(tx.QueryRow(ctx, "SELECT "+workflowColumns+" FROM workflow_configurations w JOIN workflow_connections c ON c.id=w.connection_id WHERE w.id=$1", id), &out)
+		if e != nil {
+			return nil, e
+		}
+		if e = s.audit(ctx, tx, "create", "workflow_configuration", id, safeAudit("create", out.Version, map[string]any{"name": out.Name})); e != nil {
+			return nil, e
+		}
+		return json.Marshal(out)
 	})
-	if err != nil {
-		return out, err
+	var out Workflow
+	if err == nil {
+		err = json.Unmarshal(body, &out)
 	}
-	return s.GetWorkflow(ctx, id)
+	return out, err
 }
 func (s *Service) GetWorkflow(ctx context.Context, id uuid.UUID) (Workflow, error) {
 	var x Workflow
@@ -441,18 +497,25 @@ func (s *Service) CreatePlatform(ctx context.Context, r PlatformCreate, key stri
 	if !validPlatform(r.Name, r.PlatformType, r.AccountIdentifier, r.EndpointURL, r.AuthType, r.TimeoutSeconds, r.TypeConfig) || !validOptional(r.Credential) {
 		return Platform{}, ErrValidation
 	}
-	var out Platform
-	err := s.idempotent(ctx, "distribution-platform:create", key, r, func(tx pgx.Tx) error {
+	body, err := s.idempotent(ctx, "distribution-platform:create", key, r, func(tx pgx.Tx) (json.RawMessage, error) {
+		var out Platform
 		enc, fp, e := s.secret(r.Credential)
 		if e != nil {
-			return e
+			return nil, e
 		}
 		e = scanPlatform(tx.QueryRow(ctx, "INSERT INTO distribution_platform_configurations(id,name,platform_type,account_identifier,endpoint_url,auth_type,encrypted_credential,credential_fingerprint,timeout_seconds,type_config,note) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING "+platformColumns, uuid.New(), r.Name, r.PlatformType, r.AccountIdentifier, r.EndpointURL, r.AuthType, enc, fp, r.TimeoutSeconds, r.TypeConfig, r.Note), &out)
-		if e == nil {
-			e = s.audit(ctx, tx, "create", "distribution_platform", out.ID, map[string]any{"name": out.Name})
+		if e != nil {
+			return nil, e
 		}
-		return e
+		if e = s.audit(ctx, tx, "create", "distribution_platform", out.ID, safeAudit("create", out.Version, map[string]any{"name": out.Name})); e != nil {
+			return nil, e
+		}
+		return json.Marshal(out)
 	})
+	var out Platform
+	if err == nil {
+		err = json.Unmarshal(body, &out)
+	}
 	return out, err
 }
 func (s *Service) GetPlatform(ctx context.Context, id uuid.UUID) (Platform, error) {
@@ -523,14 +586,30 @@ func (s *Service) UpdateWorkflow(ctx context.Context, id uuid.UUID, r WorkflowUp
 	if !validWorkflow(cur.Name, cur.ApplicableStages, cur.TypeConfig, cur.InputContractVersion, cur.OutputContractVersion, cur.DefaultParameters) {
 		return Workflow{}, ErrValidation
 	}
-	tag, e := s.pool.Exec(ctx, "UPDATE workflow_configurations SET name=$2,connection_id=$3,applicable_stages=$4,type_config=$5,input_contract_version=$6,output_contract_version=$7,default_parameters=$8,note=$9,version=version+1,updated_at=NOW() WHERE id=$1 AND version=$10", id, cur.Name, cur.ConnectionID, mustJSON(cur.ApplicableStages), cur.TypeConfig, cur.InputContractVersion, cur.OutputContractVersion, cur.DefaultParameters, cur.Note, r.ExpectedVersion)
+	tx, e := s.pool.Begin(ctx)
+	if e != nil {
+		return Workflow{}, e
+	}
+	defer tx.Rollback(ctx)
+	tag, e := tx.Exec(ctx, "UPDATE workflow_configurations SET name=$2,connection_id=$3,applicable_stages=$4,type_config=$5,input_contract_version=$6,output_contract_version=$7,default_parameters=$8,note=$9,version=version+1,updated_at=NOW() WHERE id=$1 AND version=$10", id, cur.Name, cur.ConnectionID, mustJSON(cur.ApplicableStages), cur.TypeConfig, cur.InputContractVersion, cur.OutputContractVersion, cur.DefaultParameters, cur.Note, r.ExpectedVersion)
 	if e != nil {
 		return Workflow{}, unique(e)
 	}
 	if tag.RowsAffected() != 1 {
-		return Workflow{}, ErrVersionConflict
+		return Workflow{}, s.updateMissingOrConflict(ctx, tx, "workflow_configurations", id)
 	}
-	return s.GetWorkflow(ctx, id)
+	var out Workflow
+	e = scanWorkflow(tx.QueryRow(ctx, "SELECT "+workflowColumns+" FROM workflow_configurations w JOIN workflow_connections c ON c.id=w.connection_id WHERE w.id=$1", id), &out)
+	if e != nil {
+		return Workflow{}, e
+	}
+	if e = s.audit(ctx, tx, "update", "workflow_configuration", id, safeAudit("update", out.Version, map[string]any{"name": out.Name, "connectionId": out.ConnectionID, "applicableStages": out.ApplicableStages, "typeConfig": out.TypeConfig, "inputContractVersion": out.InputContractVersion, "outputContractVersion": out.OutputContractVersion, "defaultParameters": out.DefaultParameters, "note": out.Note})); e != nil {
+		return Workflow{}, e
+	}
+	if e = tx.Commit(ctx); e != nil {
+		return Workflow{}, e
+	}
+	return out, nil
 }
 func (s *Service) UpdatePlatform(ctx context.Context, id uuid.UUID, r PlatformUpdate) (Platform, error) {
 	if r.ExpectedVersion < 1 {
@@ -581,8 +660,25 @@ func (s *Service) UpdatePlatform(ctx context.Context, id uuid.UUID, r PlatformUp
 		fp = nil
 	}
 	var out Platform
-	e = scanPlatform(s.pool.QueryRow(ctx, "UPDATE distribution_platform_configurations SET name=$2,account_identifier=$3,endpoint_url=$4,auth_type=$5,timeout_seconds=$6,type_config=$7,note=$8,encrypted_credential=CASE WHEN $9::text IS NULL THEN encrypted_credential ELSE NULLIF($9::text,'') END,credential_fingerprint=CASE WHEN $9::text IS NULL THEN credential_fingerprint ELSE $10 END,version=version+1,updated_at=NOW() WHERE id=$1 AND version=$11 RETURNING "+platformColumns, id, cur.Name, cur.AccountIdentifier, cur.EndpointURL, cur.AuthType, cur.TimeoutSeconds, cur.TypeConfig, cur.Note, enc, fp, r.ExpectedVersion), &out)
-	return out, notFound(e)
+	tx, e := s.pool.Begin(ctx)
+	if e != nil {
+		return out, e
+	}
+	defer tx.Rollback(ctx)
+	e = scanPlatform(tx.QueryRow(ctx, "UPDATE distribution_platform_configurations SET name=$2,account_identifier=$3,endpoint_url=$4,auth_type=$5,timeout_seconds=$6,type_config=$7,note=$8,encrypted_credential=CASE WHEN $9::text IS NULL THEN encrypted_credential ELSE NULLIF($9::text,'') END,credential_fingerprint=CASE WHEN $9::text IS NULL THEN credential_fingerprint ELSE $10 END,version=version+1,updated_at=NOW() WHERE id=$1 AND version=$11 RETURNING "+platformColumns, id, cur.Name, cur.AccountIdentifier, cur.EndpointURL, cur.AuthType, cur.TimeoutSeconds, cur.TypeConfig, cur.Note, enc, fp, r.ExpectedVersion), &out)
+	if errors.Is(e, pgx.ErrNoRows) {
+		return out, s.updateMissingOrConflict(ctx, tx, "distribution_platform_configurations", id)
+	}
+	if e != nil {
+		return out, e
+	}
+	if e = s.audit(ctx, tx, "update", "distribution_platform", id, safeAudit("update", out.Version, map[string]any{"name": out.Name, "accountIdentifier": out.AccountIdentifier, "endpointUrl": out.EndpointURL, "authType": out.AuthType, "timeoutSeconds": out.TimeoutSeconds, "typeConfig": out.TypeConfig, "note": out.Note, "credentialChanged": r.Credential != nil, "credentialCleared": r.ClearCredential != nil})); e != nil {
+		return out, e
+	}
+	if e = tx.Commit(ctx); e != nil {
+		return out, e
+	}
+	return out, nil
 }
 func validCommon(n, u string, t int) bool {
 	return strings.TrimSpace(n) != "" && len(n) <= 120 && validURL(u) && len(u) <= 512 && t >= 5 && t <= 300
@@ -631,9 +727,9 @@ func defaultJSON(v json.RawMessage) json.RawMessage {
 	return v
 }
 func mustJSON(v any) json.RawMessage { b, _ := json.Marshal(v); return b }
-func (s *Service) idempotent(ctx context.Context, scope, key string, request any, fn func(pgx.Tx) error) error {
+func (s *Service) idempotent(ctx context.Context, scope, key string, request any, fn func(pgx.Tx) (json.RawMessage, error)) (json.RawMessage, error) {
 	if strings.TrimSpace(key) == "" || len(key) > 128 {
-		return ErrValidation
+		return nil, ErrValidation
 	}
 	b, _ := json.Marshal(request)
 	h := sha256.Sum256(b)
@@ -641,37 +737,54 @@ func (s *Service) idempotent(ctx context.Context, scope, key string, request any
 	repo := idempotency.NewPostgresRepository(s.pool)
 	if r, e := repo.Get(ctx, scope, key); e == nil {
 		if r.RequestHash != hash {
-			return ErrIdempotency
+			return nil, ErrIdempotency
 		}
-		return nil
+		return r.ResponseBody, nil
 	} else if !errors.Is(e, idempotency.ErrNotFound) {
-		return e
+		return nil, e
 	}
 	tx, e := s.pool.Begin(ctx)
 	if e != nil {
-		return e
+		return nil, e
 	}
 	defer tx.Rollback(ctx)
 	if r, e := idempotency.NewPostgresRepositoryTx(tx).Get(ctx, scope, key); e == nil {
 		if r.RequestHash != hash {
-			return ErrIdempotency
+			return nil, ErrIdempotency
 		}
-		return nil
+		return r.ResponseBody, nil
 	} else if !errors.Is(e, idempotency.ErrNotFound) {
-		return e
+		return nil, e
 	}
-	if e = fn(tx); e != nil {
-		return unique(e)
-	}
-	_, e = idempotency.NewPostgresRepositoryTx(tx).Create(ctx, idempotency.Record{ID: uuid.New(), Scope: scope, Key: key, RequestHash: hash, ResponseStatus: 201, ResponseBody: json.RawMessage(`{}`)})
+	body, e := fn(tx)
 	if e != nil {
-		return ErrIdempotency
+		return nil, unique(e)
 	}
-	return tx.Commit(ctx)
+	_, e = idempotency.NewPostgresRepositoryTx(tx).Create(ctx, idempotency.Record{ID: uuid.New(), Scope: scope, Key: key, RequestHash: hash, ResponseStatus: 201, ResponseBody: body})
+	if e != nil {
+		return nil, ErrIdempotency
+	}
+	if e = tx.Commit(ctx); e != nil {
+		return nil, e
+	}
+	return body, nil
 }
 func (s *Service) audit(ctx context.Context, tx pgx.Tx, action, subject string, id uuid.UUID, payload any) error {
 	b, _ := json.Marshal(payload)
 	return audit.NewRepository(tx).Insert(ctx, audit.Entry{ID: uuid.New(), ActorID: "system", Action: subject + "." + action, SubjectType: subject, SubjectID: id.String(), Payload: b})
+}
+func safeAudit(operation string, version int, changes map[string]any) map[string]any {
+	return map[string]any{"operation": operation, "version": version, "changes": changes}
+}
+func (s *Service) updateMissingOrConflict(ctx context.Context, tx pgx.Tx, table string, id uuid.UUID) error {
+	var exists bool
+	if err := tx.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM "+table+" WHERE id=$1)", id).Scan(&exists); err != nil {
+		return err
+	}
+	if !exists {
+		return ErrNotFound
+	}
+	return ErrVersionConflict
 }
 func unique(e error) error {
 	var p *pgconn.PgError

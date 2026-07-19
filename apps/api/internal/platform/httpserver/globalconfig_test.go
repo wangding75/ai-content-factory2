@@ -68,6 +68,22 @@ func TestGlobalConfigurationProviderCRUDIntegration(t *testing.T) {
 	if created.Data.ID == "" || created.Data.Version != 1 || !created.Data.HasSecret {
 		t.Fatalf("unsafe create result: %s", w.Body.String())
 	}
+	replay := call(http.MethodPost, "/api/v1/llm-providers", create, "provider-http-create")
+	if replay.Code != http.StatusCreated || !strings.Contains(replay.Body.String(), created.Data.ID) {
+		t.Fatalf("provider idempotent replay: %d %s", replay.Code, replay.Body.String())
+	}
+	different := call(http.MethodPost, "/api/v1/llm-providers", map[string]any{"name": "provider-http-other", "providerType": "openai_compatible", "baseUrl": "https://api.example.test/v1", "defaultModel": "gpt-4.1-mini", "timeoutSeconds": 30}, "provider-http-create")
+	if different.Code != http.StatusConflict || !strings.Contains(different.Body.String(), "idempotency_key_reused_with_different_payload") {
+		t.Fatalf("provider idempotent conflict: %d %s", different.Code, different.Body.String())
+	}
+	var providers int
+	if err := pool.QueryRow(ctx, "SELECT COUNT(*) FROM llm_provider_configurations WHERE name='provider-http'").Scan(&providers); err != nil || providers != 1 {
+		t.Fatalf("provider replay count=%d err=%v", providers, err)
+	}
+	list := call(http.MethodGet, "/api/v1/llm-providers", nil, "")
+	if list.Code != http.StatusOK || !strings.Contains(list.Body.String(), created.Data.ID) {
+		t.Fatalf("list providers: %d %s", list.Code, list.Body.String())
+	}
 	get := call(http.MethodGet, "/api/v1/llm-providers/"+created.Data.ID, nil, "")
 	if get.Code != http.StatusOK || strings.Contains(get.Body.String(), "super-secret") {
 		t.Fatalf("get provider: %d %s", get.Code, get.Body.String())
@@ -80,14 +96,22 @@ func TestGlobalConfigurationProviderCRUDIntegration(t *testing.T) {
 	if conflict.Code != http.StatusConflict || !strings.Contains(conflict.Body.String(), "version_conflict") {
 		t.Fatalf("version conflict: %d %s", conflict.Code, conflict.Body.String())
 	}
+	missing := call(http.MethodPatch, "/api/v1/llm-providers/00000000-0000-4000-8000-000000000004", map[string]any{"expectedVersion": 1, "defaultModel": "missing"}, "")
+	if missing.Code != http.StatusNotFound {
+		t.Fatalf("provider not found: %d %s", missing.Code, missing.Body.String())
+	}
 	var ciphertext string
 	if err := pool.QueryRow(ctx, "SELECT encrypted_secret FROM llm_provider_configurations WHERE id=$1", created.Data.ID).Scan(&ciphertext); err != nil || strings.Contains(ciphertext, "super-secret") {
 		t.Fatalf("credential storage: %q %v", ciphertext, err)
 	}
+	var auditPayload string
+	if err := pool.QueryRow(ctx, "SELECT payload::text FROM audit_logs WHERE subject_id=$1 AND action='llm_provider.update'", created.Data.ID).Scan(&auditPayload); err != nil || strings.Contains(auditPayload, "super-secret") {
+		t.Fatalf("provider update audit=%q err=%v", auditPayload, err)
+	}
 }
 
 func TestGlobalConfigurationConnectionWorkflowAndPlatformCRUDIntegration(t *testing.T) {
-	pool, _ := globalConfigurationTestDatabase(t)
+	pool, ctx := globalConfigurationTestDatabase(t)
 	service, err := globalconfig.NewService(pool, "iteration-12-integration-key")
 	if err != nil {
 		t.Fatal(err)
@@ -116,27 +140,105 @@ func TestGlobalConfigurationConnectionWorkflowAndPlatformCRUDIntegration(t *test
 	if connectionID == "" || connection["hasCredential"] != true {
 		t.Fatalf("connection result: %s", text)
 	}
+	status, replayConnection, text := call(http.MethodPost, "/api/v1/workflow-connections", map[string]any{"name": "connection-http", "connectionType": "n8n", "baseUrl": "https://n8n.example.test", "authType": "api_key", "timeoutSeconds": 30, "typeConfig": n8n, "credential": "connection-secret"}, "connection-create")
+	if status != http.StatusCreated || replayConnection["id"] != connectionID {
+		t.Fatalf("connection replay: %d %s", status, text)
+	}
+	status, _, text = call(http.MethodPost, "/api/v1/workflow-connections", map[string]any{"name": "connection-different", "connectionType": "n8n", "baseUrl": "https://n8n.example.test", "authType": "api_key", "timeoutSeconds": 30, "typeConfig": n8n}, "connection-create")
+	if status != http.StatusConflict {
+		t.Fatalf("connection idempotency conflict: %d %s", status, text)
+	}
+	status, _, text = call(http.MethodGet, "/api/v1/workflow-connections", nil, "")
+	if status != http.StatusOK || !strings.Contains(text, connectionID) {
+		t.Fatalf("list connection: %d %s", status, text)
+	}
+	status, _, text = call(http.MethodGet, "/api/v1/workflow-connections/"+connectionID, nil, "")
+	if status != http.StatusOK || strings.Contains(text, "connection-secret") {
+		t.Fatalf("get connection: %d %s", status, text)
+	}
 	status, _, text = call(http.MethodPatch, "/api/v1/workflow-connections/"+connectionID, map[string]any{"expectedVersion": 1, "timeoutSeconds": 40}, "")
 	if status != http.StatusOK || strings.Contains(text, "connection-secret") {
 		t.Fatalf("update connection: %d %s", status, text)
+	}
+	status, _, text = call(http.MethodPatch, "/api/v1/workflow-connections/00000000-0000-4000-8000-000000000001", map[string]any{"expectedVersion": 1, "timeoutSeconds": 40}, "")
+	if status != http.StatusNotFound {
+		t.Fatalf("connection not found: %d %s", status, text)
+	}
+	var connectionCipher, connectionAudit string
+	if err := pool.QueryRow(ctx, "SELECT encrypted_credential FROM workflow_connections WHERE id=$1", connectionID).Scan(&connectionCipher); err != nil || strings.Contains(connectionCipher, "connection-secret") {
+		t.Fatalf("connection ciphertext=%q err=%v", connectionCipher, err)
+	}
+	if err := pool.QueryRow(ctx, "SELECT payload::text FROM audit_logs WHERE subject_id=$1 AND action='workflow_connection.update'", connectionID).Scan(&connectionAudit); err != nil || strings.Contains(connectionAudit, "connection-secret") {
+		t.Fatalf("connection audit=%q err=%v", connectionAudit, err)
 	}
 	status, workflow, text := call(http.MethodPost, "/api/v1/workflow-configurations", map[string]any{"name": "workflow-http", "connectionId": connectionID, "applicableStages": []string{"chapter_planning"}, "typeConfig": n8n, "inputContractVersion": "v1", "outputContractVersion": "v1", "defaultParameters": map[string]any{}}, "workflow-create")
 	if status != http.StatusCreated || workflow["workflowType"] != "n8n" || workflow["connectionType"] != "n8n" {
 		t.Fatalf("create workflow: %d %s", status, text)
 	}
 	workflowID, _ := workflow["id"].(string)
+	status, replayWorkflow, text := call(http.MethodPost, "/api/v1/workflow-configurations", map[string]any{"name": "workflow-http", "connectionId": connectionID, "applicableStages": []string{"chapter_planning"}, "typeConfig": n8n, "inputContractVersion": "v1", "outputContractVersion": "v1", "defaultParameters": map[string]any{}}, "workflow-create")
+	if status != http.StatusCreated || replayWorkflow["id"] != workflowID {
+		t.Fatalf("workflow replay: %d %s", status, text)
+	}
+	status, _, text = call(http.MethodPost, "/api/v1/workflow-configurations", map[string]any{"name": "workflow-different", "connectionId": connectionID, "applicableStages": []string{"chapter_planning"}, "typeConfig": n8n, "inputContractVersion": "v1", "outputContractVersion": "v1", "defaultParameters": map[string]any{}}, "workflow-create")
+	if status != http.StatusConflict {
+		t.Fatalf("workflow idempotency conflict: %d %s", status, text)
+	}
+	status, _, text = call(http.MethodGet, "/api/v1/workflow-configurations", nil, "")
+	if status != http.StatusOK || !strings.Contains(text, workflowID) {
+		t.Fatalf("list workflow: %d %s", status, text)
+	}
+	status, _, text = call(http.MethodGet, "/api/v1/workflow-configurations/"+workflowID, nil, "")
+	if status != http.StatusOK {
+		t.Fatalf("get workflow: %d %s", status, text)
+	}
 	status, _, text = call(http.MethodPatch, "/api/v1/workflow-configurations/"+workflowID, map[string]any{"expectedVersion": 1, "name": "workflow-http-updated"}, "")
 	if status != http.StatusOK {
 		t.Fatalf("update workflow: %d %s", status, text)
+	}
+	status, _, text = call(http.MethodPatch, "/api/v1/workflow-configurations/00000000-0000-4000-8000-000000000002", map[string]any{"expectedVersion": 1, "name": "missing"}, "")
+	if status != http.StatusNotFound {
+		t.Fatalf("workflow not found: %d %s", status, text)
+	}
+	status, _, text = call(http.MethodPatch, "/api/v1/workflow-configurations/"+workflowID, map[string]any{"expectedVersion": 1, "name": "conflict"}, "")
+	if status != http.StatusConflict {
+		t.Fatalf("workflow conflict: %d %s", status, text)
 	}
 	status, platform, text := call(http.MethodPost, "/api/v1/distribution-platforms", map[string]any{"name": "platform-http", "platformType": "custom", "accountIdentifier": "account", "endpointUrl": "https://publish.example.test", "authType": "api_key", "timeoutSeconds": 30, "typeConfig": map[string]any{}, "credential": "platform-secret"}, "platform-create")
 	if status != http.StatusCreated || strings.Contains(text, "platform-secret") {
 		t.Fatalf("create platform: %d %s", status, text)
 	}
 	platformID, _ := platform["id"].(string)
+	status, replayPlatform, text := call(http.MethodPost, "/api/v1/distribution-platforms", map[string]any{"name": "platform-http", "platformType": "custom", "accountIdentifier": "account", "endpointUrl": "https://publish.example.test", "authType": "api_key", "timeoutSeconds": 30, "typeConfig": map[string]any{}, "credential": "platform-secret"}, "platform-create")
+	if status != http.StatusCreated || replayPlatform["id"] != platformID {
+		t.Fatalf("platform replay: %d %s", status, text)
+	}
+	status, _, text = call(http.MethodPost, "/api/v1/distribution-platforms", map[string]any{"name": "platform-different", "platformType": "custom", "accountIdentifier": "account", "endpointUrl": "https://publish.example.test", "authType": "api_key", "timeoutSeconds": 30, "typeConfig": map[string]any{}}, "platform-create")
+	if status != http.StatusConflict {
+		t.Fatalf("platform idempotency conflict: %d %s", status, text)
+	}
+	status, _, text = call(http.MethodGet, "/api/v1/distribution-platforms", nil, "")
+	if status != http.StatusOK || !strings.Contains(text, platformID) {
+		t.Fatalf("list platform: %d %s", status, text)
+	}
+	status, _, text = call(http.MethodGet, "/api/v1/distribution-platforms/"+platformID, nil, "")
+	if status != http.StatusOK || strings.Contains(text, "platform-secret") {
+		t.Fatalf("get platform: %d %s", status, text)
+	}
+	status, _, text = call(http.MethodPatch, "/api/v1/distribution-platforms/00000000-0000-4000-8000-000000000003", map[string]any{"expectedVersion": 1, "accountIdentifier": "missing"}, "")
+	if status != http.StatusNotFound {
+		t.Fatalf("platform not found: %d %s", status, text)
+	}
 	status, _, text = call(http.MethodPatch, "/api/v1/distribution-platforms/"+platformID, map[string]any{"expectedVersion": 1, "accountIdentifier": "account-updated"}, "")
 	if status != http.StatusOK || strings.Contains(text, "platform-secret") {
 		t.Fatalf("update platform: %d %s", status, text)
+	}
+	var platformCipher, platformAudit string
+	if err := pool.QueryRow(ctx, "SELECT encrypted_credential FROM distribution_platform_configurations WHERE id=$1", platformID).Scan(&platformCipher); err != nil || strings.Contains(platformCipher, "platform-secret") {
+		t.Fatalf("platform ciphertext=%q err=%v", platformCipher, err)
+	}
+	if err := pool.QueryRow(ctx, "SELECT payload::text FROM audit_logs WHERE subject_id=$1 AND action='distribution_platform.update'", platformID).Scan(&platformAudit); err != nil || strings.Contains(platformAudit, "platform-secret") {
+		t.Fatalf("platform audit=%q err=%v", platformAudit, err)
 	}
 }
 
@@ -147,6 +249,9 @@ func globalConfigurationTestDatabase(t *testing.T) (*pgxpool.Pool, context.Conte
 	database := fmt.Sprintf("ai_content_factory_i12_test_%d", time.Now().UTC().UnixNano())
 	admin, err := pgx.Connect(ctx, "postgres://postgres:postgres@127.0.0.1:15433/postgres?sslmode=disable")
 	if err != nil {
+		if os.Getenv("REQUIRE_POSTGRES_INTEGRATION") == "1" {
+			t.Fatalf("PostgreSQL integration is required: %v", err)
+		}
 		t.Skipf("PostgreSQL integration test skipped: %v", err)
 	}
 	if _, err = admin.Exec(ctx, "CREATE DATABASE "+database); err != nil {
