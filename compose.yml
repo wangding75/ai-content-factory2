@@ -34,6 +34,7 @@ services:
       APP_ENV: development
       API_PORT: 8080
       DATABASE_URL: postgres://postgres:postgres@postgres:5432/ai_content_factory?sslmode=disable
+      CONFIGURATION_ENCRYPTION_KEY: ${CONFIGURATION_ENCRYPTION_KEY:-local-development-configuration-encryption-key}
     ports:
       - "18080:8080"
     healthcheck:
