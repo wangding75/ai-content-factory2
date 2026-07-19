@@ -1,12 +1,41 @@
 iteration: iteration-13-project-workflow-bindings
-status: planned
+title: Project Workflow Bindings
+status: frozen_for_development
+third_party_network_access: forbidden
+
 apis:
-  - "GET /projects/{projectId}/workflow-bindings"
-  - "GET/PUT /projects/{projectId}/workflow-bindings/{stage}"
-  - "POST /workflow-bindings/{stage}/validate|enable|disable"
+  - method: GET
+    path: /api/v1/projects/{projectId}/workflow-bindings
+    purpose: Return all four project stage bindings and derived workflow integration status
+  - method: GET
+    path: /api/v1/projects/{projectId}/workflow-bindings/{stage}
+    purpose: Return one stage binding
+  - method: PUT
+    path: /api/v1/projects/{projectId}/workflow-bindings/{stage}
+    purpose: Create or replace one stage binding with optimistic locking
+
 common_requirements:
   - OpenAPI is the single contract source
-  - all commands use Idempotency-Key where applicable
-  - errors use the shared error envelope
-  - secrets and raw upstream responses are never returned
-  - optimistic locking is required for mutable configuration
+  - PUT uses Idempotency-Key
+  - Errors use the shared error envelope
+  - Optimistic locking is required
+  - Workflow credentials and connection credentials are never returned
+  - The workflow integration status is derived from the referenced workflow configuration
+  - Saving a binding never verifies, enables or executes a workflow
+  - Implementations must not make any third-party outbound network requests
+
+business_rules:
+  - Supported stages are chapter_planning, content_generation, review and rewrite
+  - One current binding exists per project and stage
+  - The referenced workflow configuration must exist and must not be archived
+  - A workflow with integrationStatus=not_connected may be bound
+  - not_connected bindings are saved with a clear not-ready warning
+  - Execution readiness is evaluated in Iteration 14
+  - No WorkflowRun or binding snapshot is created in Iteration 13
+
+not_in_scope:
+  - Binding validate, enable or disable endpoints
+  - Third-party adapters
+  - Workflow execution
+  - WorkflowRun
+  - Retry and logs

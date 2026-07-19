@@ -214,3 +214,18 @@ docs/development-inputs/p1/ui-master-manifest.json
 docs/development-inputs/p1/iterations/*/ui-manifest.json
 docs/development-inputs/p1/iterations/*/ui/frames/
 ```
+
+## 9. Iteration 12 全局设置 V2 开发基准覆盖
+
+Iteration 12 已使用新 Stitch 项目 `AI Content Factory 2.0｜全局设置 V2` 的上传包重新组织。此前 Iteration 12 使用的 `E4_AI_CONNECTIONS_OVERVIEW`、`E4_LLM_PROVIDER_DRAWER`、`E4_N8N_CONNECTION_DRAWER` 和共享状态 Frame 不再作为 Iteration 12 的直接开发基准；它们仍保留在 Iteration 11 历史冻结记录中。
+
+Iteration 12 当前开发基准为 12 个规范化 Frame：
+
+| 领域 | 空状态 | 列表态 | 抽屉态 |
+|---|---|---|---|
+| LLM | `GLOBAL_SETTINGS_LLM_EMPTY_V2` | `GLOBAL_SETTINGS_LLM_LIST_V2` | `LLM_CONFIG_DRAWER_V2` |
+| 连接 | `GLOBAL_SETTINGS_CONNECTION_EMPTY_V2` | `GLOBAL_SETTINGS_CONNECTION_LIST_V2` | `CONNECTION_DRAWER_V2` |
+| 工作流 | `GLOBAL_SETTINGS_WORKFLOW_EMPTY_V2` | `GLOBAL_SETTINGS_WORKFLOW_LIST_V2` | `WORKFLOW_DRAWER_V2` |
+| 分发平台 | `GLOBAL_SETTINGS_DISTRIBUTION_EMPTY_V2` | `GLOBAL_SETTINGS_DISTRIBUTION_LIST_V2` | `DISTRIBUTION_DRAWER_V2` |
+
+这些原型的已知问题不再通过重生成 Stitch 修复，而是在开发阶段按 `iteration-12-global-execution-connections/prototype-review-and-development-fixes.md` 和 `acceptance.md` 强制修复。

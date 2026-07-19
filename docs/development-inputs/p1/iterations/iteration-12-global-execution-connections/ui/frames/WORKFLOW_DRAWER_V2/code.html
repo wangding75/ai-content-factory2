@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+
+<html class="light" lang="zh-CN"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>WORKFLOW_CONFIG_DRAWER_V2 - AI Content Factory</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-container-highest": "#e0e3e5",
+                        "secondary-fixed-dim": "#b7c8e1",
+                        "on-tertiary-container": "#d6dce4",
+                        "on-background": "#191c1e",
+                        "on-surface": "#191c1e",
+                        "inverse-on-surface": "#eff1f3",
+                        "tertiary": "#434950",
+                        "error-container": "#ffdad6",
+                        "surface-bright": "#f7f9fb",
+                        "on-primary-fixed-variant": "#3323cc",
+                        "error": "#ba1a1a",
+                        "primary-container": "#4f46e5",
+                        "on-primary": "#ffffff",
+                        "primary-fixed": "#e2dfff",
+                        "on-tertiary-fixed": "#161c22",
+                        "inverse-surface": "#2d3133",
+                        "surface": "#f7f9fb",
+                        "on-secondary-fixed-variant": "#38485d",
+                        "tertiary-fixed": "#dde3eb",
+                        "surface-container-high": "#e6e8ea",
+                        "secondary-fixed": "#d3e4fe",
+                        "on-tertiary-fixed-variant": "#41474e",
+                        "surface-variant": "#e0e3e5",
+                        "surface-tint": "#4d44e3",
+                        "on-tertiary": "#ffffff",
+                        "surface-container": "#eceef0",
+                        "primary-fixed-dim": "#c3c0ff",
+                        "primary": "#3525cd",
+                        "background": "#f7f9fb",
+                        "on-primary-container": "#dad7ff",
+                        "tertiary-container": "#5a6168",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-container-low": "#f2f4f6",
+                        "surface-dim": "#d8dadc",
+                        "on-secondary-fixed": "#0b1c30",
+                        "outline": "#777587",
+                        "secondary-container": "#d0e1fb",
+                        "secondary": "#505f76",
+                        "on-primary-fixed": "#0f0069",
+                        "inverse-primary": "#c3c0ff",
+                        "tertiary-fixed-dim": "#c1c7cf",
+                        "on-secondary-container": "#54647a",
+                        "on-surface-variant": "#464555",
+                        "outline-variant": "#c7c4d8",
+                        "on-secondary": "#ffffff",
+                        "on-error-container": "#93000a",
+                        "on-error": "#ffffff"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "fontFamily": {
+                        "headline": ["Inter", "sans-serif"],
+                        "display": ["Inter", "sans-serif"],
+                        "body": ["Inter", "sans-serif"],
+                        "label": ["Inter", "sans-serif"]
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-background text-on-background font-body h-screen w-full overflow-hidden flex">
+<!-- Background Layer: Simulated background screen -->
+<div class="absolute inset-0 z-0">
+<!-- Mock background image representing the Global Settings page -->
+<div class="w-full h-full bg-cover bg-center opacity-30" data-alt="A blurred, professional enterprise dashboard interface showing data tables and navigation. The lighting is soft and neutral, conveying a high-tech corporate environment with subtle light blue and grey tones." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuAhhtgymeSUiyF78vXvsIX9BjoqHJnxuNxJmkbjDhXbs0LJNhVkD637EbJ26bIRl07--Zo5oIx6CD_hGMIoiLaimem5mCmcE1ttVX_AawStCTBgceIRcEAEL4GXirQzO-AgLc55snFm183i5LU1woSfPNjnwC30ng5rt9gdkfgmUVeKs3-9oxn4s95AqUigxi3wMBlMrovUp_bnaNt2iuvcybBmT8bFg8NNkS2ga2w7bSqRqtj6jYxWEhF7LE9btlscEQ1udRGAVFk')"></div>
+</div>
+<!-- Scrim Overlay -->
+<div aria-hidden="true" class="fixed inset-0 bg-black/40 z-40 transition-opacity"></div>
+<!-- Drawer (Side Sheet) -->
+<div class="fixed inset-y-0 right-0 bg-surface-container-lowest shadow-2xl z-50 flex flex-col transform transition-transform duration-300 translate-x-0 border-l border-outline-variant" style="width: 480px;"><!-- Header -->
+<div class="flex items-start justify-between px-6 py-5 border-b border-outline-variant">
+<div>
+<h2 class="font-headline text-lg font-semibold text-on-surface">添加工作流</h2>
+<p class="text-sm text-on-surface-variant mt-1">创建可供项目绑定的工作流。</p>
+</div>
+<button aria-label="关闭" class="p-1.5 rounded-md hover:bg-surface-container-high transition-colors text-on-surface-variant">
+<span class="material-symbols-outlined" style="font-size: 20px;">close</span>
+</button>
+</div>
+<!-- Content (Scrollable) -->
+<div class="flex-1 overflow-y-auto p-6 flex flex-col gap-5">
+<!-- 工作流名称 -->
+<div>
+<label class="block text-sm font-medium text-on-surface mb-1.5">工作流名称 <span class="text-error">*</span></label>
+<input class="w-full h-9 px-3 rounded text-sm border border-outline-variant bg-surface-container-lowest focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none transition-shadow text-on-surface placeholder:text-on-surface-variant/50" placeholder="例如：标准章节规划工作流" type="text"/>
+</div>
+<!-- 关联连接 -->
+<div>
+<label class="block text-sm font-medium text-on-surface mb-1.5">关联连接 <span class="text-error">*</span></label>
+<div class="relative">
+<select class="w-full h-9 pl-3 pr-8 rounded text-sm border border-outline-variant bg-surface-container-lowest text-on-surface appearance-none focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none">
+<option disabled="" selected="" value="">选择已配置的连接资源</option>
+<option value="conn1">生产连接 · n8n</option>
+<option value="conn2">测试连接 · n8n</option>
+</select>
+<span class="material-symbols-outlined absolute right-2.5 top-2 text-on-surface-variant pointer-events-none" style="font-size: 20px;">expand_more</span>
+</div>
+</div>
+<!-- 工作流类型 (Read-only) -->
+<div>
+<label class="block text-sm font-medium text-on-surface mb-1.5">工作流类型</label>
+<input class="w-full h-9 px-3 rounded text-sm border border-outline-variant bg-surface-container-low text-on-surface-variant cursor-not-allowed" disabled="" readonly="" type="text" value="选择连接后自动识别"/>
+<p class="text-xs text-on-surface-variant mt-1.5">工作流类型由关联连接决定，不能独立修改。</p>
+</div>
+<!-- 适用环节 -->
+<div>
+<label class="block text-sm font-medium text-on-surface mb-2">适用环节 <span class="text-error">*</span></label>
+<div class="flex flex-wrap gap-4">
+<label class="inline-flex items-center cursor-pointer">
+<input checked="" class="rounded border-outline-variant text-primary focus:ring-primary" type="checkbox"/>
+<span class="ml-2 text-sm text-on-surface-variant">章节规划</span>
+</label>
+<label class="inline-flex items-center cursor-pointer">
+<input class="rounded border-outline-variant text-primary focus:ring-primary" type="checkbox"/>
+<span class="ml-2 text-sm text-on-surface-variant">正文生成</span>
+</label>
+<label class="inline-flex items-center cursor-pointer">
+<input class="rounded border-outline-variant text-primary focus:ring-primary" type="checkbox"/>
+<span class="ml-2 text-sm text-on-surface-variant">内容审核</span>
+</label>
+<label class="inline-flex items-center cursor-pointer">
+<input class="rounded border-outline-variant text-primary focus:ring-primary" type="checkbox"/>
+<span class="ml-2 text-sm text-on-surface-variant">正文重写</span>
+</label>
+</div>
+</div>
+<!-- Workflow ID / Webhook Path -->
+<div>
+<label class="block text-sm font-medium text-on-surface mb-1.5">Workflow ID / Webhook Path <span class="text-error">*</span></label>
+<input class="w-full h-9 px-3 rounded text-sm border border-outline-variant bg-surface-container-lowest focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none transition-shadow text-on-surface placeholder:text-on-surface-variant/50" placeholder="e.g. 1a2b3c4d-5678-90ef" type="text"/>
+<p class="text-xs text-on-surface-variant mt-1.5">对应 n8n 的 Workflow ID 或 Webhook 路径</p>
+</div>
+<!-- 契约版本 -->
+<div class="grid grid-cols-2 gap-4">
+<div>
+<label class="block text-sm font-medium text-on-surface mb-1.5">输入契约版本 <span class="text-error">*</span></label>
+<input class="w-full h-9 px-3 rounded text-sm border border-outline-variant bg-surface-container-lowest focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none transition-shadow text-on-surface" placeholder="v1.0.0" type="text"/>
+</div>
+<div>
+<label class="block text-sm font-medium text-on-surface mb-1.5">输出契约版本 <span class="text-error">*</span></label>
+<input class="w-full h-9 px-3 rounded text-sm border border-outline-variant bg-surface-container-lowest focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none transition-shadow text-on-surface" placeholder="v1.0.0" type="text"/>
+</div>
+</div>
+<!-- 默认参数摘要 -->
+<div>
+<label class="block text-sm font-medium text-on-surface mb-1.5">默认参数摘要 <span class="text-outline text-xs font-normal ml-1">(可选)</span></label>
+<textarea class="w-full p-3 rounded text-sm border border-outline-variant bg-surface-container-lowest focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none transition-shadow text-on-surface placeholder:text-on-surface-variant/50 resize-y" placeholder="JSON 格式或文本说明..." rows="3"></textarea>
+</div>
+<!-- 备注 -->
+<div>
+<label class="block text-sm font-medium text-on-surface mb-1.5">备注 <span class="text-outline text-xs font-normal ml-1">(可选)</span></label>
+<textarea class="w-full p-3 rounded text-sm border border-outline-variant bg-surface-container-lowest focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none transition-shadow text-on-surface placeholder:text-on-surface-variant/50 resize-y" placeholder="添加备注信息..." rows="2"></textarea>
+</div>
+<hr class="border-outline-variant/60 my-2"/>
+<!-- 验证操作区 -->
+<div class="bg-surface-container-low p-4 rounded border border-outline-variant/50">
+<div class="flex items-center gap-4">
+<button class="h-8 px-3 rounded border border-outline-variant bg-surface-container-lowest hover:bg-surface-container-high transition-colors text-sm font-medium text-on-surface flex items-center gap-1.5">
+<span class="material-symbols-outlined" style="font-size: 16px;">check_circle</span>
+                验证配置
+            </button>
+<span class="text-sm text-on-surface-variant flex items-center gap-1.5">
+<span class="material-symbols-outlined text-outline" style="font-size: 16px;">pending</span>
+                未验证
+            </span>
+</div>
+</div>
+</div>
+<!-- Footer -->
+<div class="p-4 border-t border-outline-variant flex justify-end gap-3 bg-surface-container-lowest">
+<button class="h-9 px-4 rounded text-sm font-medium text-on-surface border border-outline-variant hover:bg-surface-container-high transition-colors">取消</button>
+<button class="h-9 px-5 rounded text-sm font-medium text-white bg-primary-container hover:bg-primary transition-colors shadow-sm">保存</button>
+</div></div>
+</body></html>

@@ -1,14 +1,80 @@
 iteration: iteration-14-workflow-run-runtime
-status: planned
+title: n8n Adapter and WorkflowRun Runtime
+status: frozen_for_development
+
 apis:
-  - "GET /api/v1/workflow-runs"
-  - "GET /workflow-runs/{id}"
-  - "GET /workflow-runs/{id}/events"
-  - "POST /workflow-runs/{id}/retries"
-  - "POST /workflow-runs/{id}/domain-commit-retries"
+  workflow_connections:
+    - method: POST
+      path: /api/v1/workflow-connections/{connectionId}/verify
+      purpose: Verify the saved n8n connection using the n8n adapter
+    - method: POST
+      path: /api/v1/workflow-connections/{connectionId}/enable
+      purpose: Enable a verified connection and atomically disable the currently enabled connection
+    - method: POST
+      path: /api/v1/workflow-connections/{connectionId}/disable
+      purpose: Disable a connection
+
+  workflow_configurations:
+    - method: POST
+      path: /api/v1/workflow-configurations/{workflowId}/verify
+      purpose: Verify Workflow ID or Webhook Path through the bound connection
+    - method: POST
+      path: /api/v1/workflow-configurations/{workflowId}/enable
+      purpose: Enable a verified workflow whose connection is verified and enabled
+    - method: POST
+      path: /api/v1/workflow-configurations/{workflowId}/disable
+      purpose: Disable a workflow
+
+  workflow_runs:
+    - method: POST
+      path: /api/v1/workflow-runs
+      purpose: Create an idempotent queued run from a project stage binding
+    - method: GET
+      path: /api/v1/workflow-runs
+      purpose: List and filter WorkflowRuns
+    - method: GET
+      path: /api/v1/workflow-runs/{runId}
+      purpose: Read one run, safe error and binding snapshot
+    - method: GET
+      path: /api/v1/workflow-runs/{runId}/events
+      purpose: Return the ordered event timeline
+    - method: POST
+      path: /api/v1/workflow-runs/{runId}/retries
+      purpose: Create a new retry run while preserving the original run
+    - method: POST
+      path: /api/v1/workflow-runs/{runId}/domain-commit-retries
+      purpose: Retry domain commit only when external execution already succeeded
+
 common_requirements:
   - OpenAPI is the single contract source
-  - all commands use Idempotency-Key where applicable
-  - errors use the shared error envelope
-  - secrets and raw upstream responses are never returned
-  - optimistic locking is required for mutable configuration
+  - Commands use Idempotency-Key
+  - Errors use the shared error envelope
+  - Secrets and raw upstream responses are never returned
+  - Verification and runtime errors are normalized and redacted
+  - Mutable actions use optimistic locking where applicable
+  - A database constraint enforces at most one enabled workflow connection
+  - WorkflowRun stores immutable binding and configuration snapshots
+  - Worker execution is asynchronous
+  - No callback server is implemented
+  - n8n is invoked through a webhook and returns through the HTTP response
+  - Retries create new run records except domain-commit-only retry
+
+business_rules:
+  - Only n8n connection type is executable in Iteration 14
+  - A connection must be verified before enable
+  - A workflow must be verified before enable
+  - The bound connection must be verified and enabled before a workflow can be enabled
+  - A run requires a project binding, enabled workflow and enabled connection
+  - Configuration changes reset relevant verification state
+  - Output Schema failure never writes domain results
+  - Domain commit failure does not rerun n8n unless the user starts a full retry
+
+not_in_scope:
+  - LLM provider verification
+  - LLM model discovery
+  - Direct LLM invocation
+  - Distribution platform verification
+  - OAuth and publishing
+  - Coze, ComfyUI or other workflow adapters
+  - n8n visual editor
+  - Callback server

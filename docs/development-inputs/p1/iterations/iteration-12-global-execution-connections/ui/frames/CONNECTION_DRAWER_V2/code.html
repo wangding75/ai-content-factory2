@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+
+<html lang="zh-CN"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>通用连接抽屉</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "error": "#ba1a1a",
+                        "tertiary-fixed": "#dde3eb",
+                        "primary": "#3525cd",
+                        "on-tertiary-fixed": "#161c22",
+                        "on-primary-fixed-variant": "#3323cc",
+                        "surface-tint": "#4d44e3",
+                        "on-primary-container": "#dad7ff",
+                        "on-tertiary-container": "#d6dce4",
+                        "on-tertiary-fixed-variant": "#41474e",
+                        "on-background": "#191c1e",
+                        "on-secondary-container": "#54647a",
+                        "primary-fixed": "#e2dfff",
+                        "primary-fixed-dim": "#c3c0ff",
+                        "surface-variant": "#e0e3e5",
+                        "surface-bright": "#f7f9fb",
+                        "on-error-container": "#93000a",
+                        "on-secondary-fixed": "#0b1c30",
+                        "secondary": "#505f76",
+                        "on-tertiary": "#ffffff",
+                        "secondary-fixed-dim": "#b7c8e1",
+                        "on-secondary-fixed-variant": "#38485d",
+                        "error-container": "#ffdad6",
+                        "outline-variant": "#c7c4d8",
+                        "tertiary-fixed-dim": "#c1c7cf",
+                        "on-surface": "#191c1e",
+                        "surface": "#f7f9fb",
+                        "on-secondary": "#ffffff",
+                        "background": "#f7f9fb",
+                        "on-surface-variant": "#464555",
+                        "inverse-surface": "#2d3133",
+                        "on-primary-fixed": "#0f0069",
+                        "on-error": "#ffffff",
+                        "primary-container": "#4f46e5",
+                        "outline": "#777587",
+                        "inverse-on-surface": "#eff1f3",
+                        "tertiary": "#434950",
+                        "surface-dim": "#d8dadc",
+                        "secondary-fixed": "#d3e4fe",
+                        "surface-container-low": "#f2f4f6",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-container-highest": "#e0e3e5",
+                        "on-primary": "#ffffff",
+                        "surface-container": "#eceef0",
+                        "tertiary-container": "#5a6168",
+                        "inverse-primary": "#c3c0ff",
+                        "surface-container-high": "#e6e8ea",
+                        "secondary-container": "#d0e1fb"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "fontFamily": {
+                        "headline": ["Inter", "sans-serif"],
+                        "display": ["Inter", "sans-serif"],
+                        "body": ["Inter", "sans-serif"],
+                        "label": ["Inter", "sans-serif"]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-background text-on-surface overflow-hidden w-full h-screen relative antialiased flex font-body">
+<!-- 模拟背景层 -->
+<div class="absolute inset-0 z-0 overflow-hidden pointer-events-none">
+<img alt="Background Screen" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDXT6VENVgi_lhPyY8g4Bb1WLh5QXj6gutd6NRTUxO8zzW2O-9AlvOZJyqEdmnt7lYqhG8DtSbuFRJBn6YeON9ikorh4kFyO3yHMnILBjI6eHwNFztLUelVOgDPHO59EIaBsfyoFsn_vG4kfyYV9lZCaLljB6hKOyDhUtsoZKZBqf24vOJZo3aVXbqRUOanBluCh9aj43IBYQf0yJtsRR2O9XD-PoSx-TrCvm3rGHw3CDMzAtYsStE5q6kuYliTEokv_vcIKOkKeTg"/>
+<div class="absolute inset-0 bg-surface-container/60 backdrop-blur-[2px]"></div>
+</div>
+<!-- 右侧抽屉 -->
+<div class="absolute top-0 right-0 h-full w-[480px] bg-surface-container-lowest border-l border-outline-variant shadow-2xl flex flex-col z-10 transform transition-transform duration-300">
+<!-- Header -->
+<div class="flex items-start justify-between px-6 py-5 border-b border-outline-variant">
+<div>
+<h2 class="font-headline text-lg font-semibold text-on-surface">添加连接</h2>
+<p class="text-sm text-on-surface-variant mt-1">创建可供工作流使用的服务连接。</p>
+</div>
+<button aria-label="关闭" class="p-1.5 rounded-md hover:bg-surface-container-high transition-colors text-on-surface-variant">
+<span class="material-symbols-outlined" style="font-size: 20px;">close</span>
+</button>
+</div>
+<!-- Content (Scrollable) -->
+<div class="flex-1 overflow-y-auto p-6 flex flex-col gap-5 custom-scrollbar">
+<!-- 连接名称 -->
+<div>
+<label class="block text-sm font-medium text-on-surface mb-1.5" for="connName">连接名称 <span class="text-error">*</span></label>
+<input class="w-full h-9 px-3 rounded text-sm border border-outline-variant bg-surface-container-lowest focus:border-primary-container focus:ring-1 focus:ring-primary-container focus:outline-none transition-shadow text-on-surface placeholder:text-on-surface-variant/50" id="connName" placeholder="例：生产 n8n 连接" type="text"/>
+</div>
+<!-- 连接类型 -->
+<div>
+<label class="block text-sm font-medium text-on-surface mb-1.5" for="connType">连接类型 <span class="text-error">*</span></label>
+<div class="relative">
+<select class="w-full h-9 pl-3 pr-8 rounded text-sm border border-outline-variant bg-surface-container-lowest text-on-surface appearance-none disabled:bg-surface-container-high disabled:text-on-surface-variant disabled:cursor-not-allowed" disabled="" id="connType" readonly="">
+<option selected="" value="n8n">n8n</option>
+</select>
+<span class="material-symbols-outlined absolute right-2.5 top-2 text-on-surface-variant pointer-events-none" style="font-size: 20px;">expand_more</span>
+</div>
+<p class="text-xs text-on-surface-variant mt-1.5">连接类型创建后不可修改</p>
+</div>
+<!-- 服务地址/Base URL -->
+<div>
+<label class="block text-sm font-medium text-on-surface mb-1.5" for="baseUrl">服务地址/Base URL <span class="text-error">*</span></label>
+<input class="w-full h-9 px-3 rounded text-sm border border-outline-variant bg-surface-container-lowest focus:border-primary-container focus:ring-1 focus:ring-primary-container focus:outline-none transition-shadow text-on-surface placeholder:text-on-surface-variant/50" id="baseUrl" placeholder="https://n8n.example.com" type="url"/>
+</div>
+<!-- 认证方式 -->
+<div>
+<label class="block text-sm font-medium text-on-surface mb-1.5" for="authType">认证方式 <span class="text-error">*</span></label>
+<div class="relative">
+<select class="w-full h-9 pl-3 pr-8 rounded text-sm border border-outline-variant bg-surface-container-lowest focus:border-primary-container focus:ring-1 focus:ring-primary-container focus:outline-none transition-shadow text-on-surface appearance-none" id="authType">
+<option selected="" value="apikey">API Key</option>
+</select>
+<span class="material-symbols-outlined absolute right-2.5 top-2 text-on-surface-variant pointer-events-none" style="font-size: 20px;">expand_more</span>
+</div>
+</div>
+<!-- API Key -->
+<div>
+<label class="block text-sm font-medium text-on-surface mb-1.5" for="apiKey">API Key <span class="text-error">*</span></label>
+<input class="w-full h-9 px-3 rounded text-sm border border-outline-variant bg-surface-container-lowest focus:border-primary-container focus:ring-1 focus:ring-primary-container focus:outline-none transition-shadow text-on-surface placeholder:text-on-surface-variant/50" id="apiKey" placeholder="输入密钥" type="password"/>
+<p class="text-xs text-on-surface-variant mt-1.5">密钥加密保存，保存后不会回显明文</p>
+</div>
+<!-- 请求超时 -->
+<div>
+<label class="block text-sm font-medium text-on-surface mb-1.5" for="timeout">请求超时 <span class="text-error">*</span></label>
+<div class="relative w-32">
+<input class="w-full h-9 pl-3 pr-8 rounded text-sm border border-outline-variant bg-surface-container-lowest focus:border-primary-container focus:ring-1 focus:ring-primary-container focus:outline-none transition-shadow text-on-surface" id="timeout" min="1" type="number" value="60"/>
+<span class="absolute right-3 top-2 text-sm text-on-surface-variant pointer-events-none">秒</span>
+</div>
+</div>
+<!-- 备注 -->
+<div>
+<label class="block text-sm font-medium text-on-surface mb-1.5" for="remarks">备注</label>
+<textarea class="w-full p-3 rounded text-sm border border-outline-variant bg-surface-container-lowest focus:border-primary-container focus:ring-1 focus:ring-primary-container focus:outline-none transition-shadow text-on-surface placeholder:text-on-surface-variant/50 resize-y" id="remarks" placeholder="可选填..." rows="3"></textarea>
+</div>
+<hr class="border-outline-variant/60 my-2"/>
+<!-- 验证操作区 -->
+<div class="bg-surface-container-low p-4 rounded border border-outline-variant/50">
+<div class="flex items-center gap-4 mb-4">
+<button class="h-8 px-3 rounded border border-outline-variant bg-surface-container-lowest hover:bg-surface-container-high transition-colors text-sm font-medium text-on-surface flex items-center gap-1.5">
+<span class="material-symbols-outlined" style="font-size: 16px;">link</span>
+                        验证连接
+                    </button>
+<span class="text-sm text-on-surface-variant flex items-center gap-1.5">
+<span class="material-symbols-outlined text-outline" style="font-size: 16px;">pending</span>
+                        未验证
+                    </span>
+</div>
+<div class="text-xs text-on-surface-variant space-y-1.5">
+<div class="flex items-start gap-1.5">
+<span class="material-symbols-outlined shrink-0 mt-0.5" style="font-size: 14px;">info</span>
+<p>当前最多只能启用一个 n8n 连接。</p>
+</div>
+<div class="flex items-start gap-1.5">
+<span class="material-symbols-outlined shrink-0 mt-0.5" style="font-size: 14px;">info</span>
+<p>保存连接不等于启用连接；连接通过验证后才能启用。</p>
+</div>
+</div>
+</div>
+</div>
+<!-- Footer -->
+<div class="p-4 border-t border-outline-variant flex justify-end gap-3 bg-surface-container-lowest">
+<button class="h-9 px-4 rounded text-sm font-medium text-on-surface border border-outline-variant hover:bg-surface-container-high transition-colors">取消</button>
+<button class="h-9 px-4 rounded text-sm font-medium text-white bg-primary-container hover:bg-primary transition-colors shadow-sm">保存</button>
+</div>
+</div>
+</body></html>

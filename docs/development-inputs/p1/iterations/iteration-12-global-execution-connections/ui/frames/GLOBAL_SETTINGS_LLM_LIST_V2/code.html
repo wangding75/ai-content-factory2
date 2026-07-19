@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+
+<html class="light" lang="zh-CN"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>全局设置 - LLM 配置列表</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "on-secondary-container": "#54647a",
+                        "secondary": "#505f76",
+                        "on-secondary-fixed-variant": "#38485d",
+                        "error": "#ba1a1a",
+                        "on-secondary-fixed": "#0b1c30",
+                        "tertiary-fixed-dim": "#c1c7cf",
+                        "on-primary-container": "#dad7ff",
+                        "surface-container": "#eceef0",
+                        "surface-bright": "#f7f9fb",
+                        "surface-variant": "#e0e3e5",
+                        "surface-container-high": "#e6e8ea",
+                        "tertiary": "#434950",
+                        "on-tertiary-container": "#d6dce4",
+                        "on-error-container": "#93000a",
+                        "primary": "#3525cd",
+                        "inverse-on-surface": "#eff1f3",
+                        "surface-dim": "#d8dadc",
+                        "on-tertiary-fixed-variant": "#41474e",
+                        "outline": "#777587",
+                        "tertiary-fixed": "#dde3eb",
+                        "primary-fixed-dim": "#c3c0ff",
+                        "inverse-primary": "#c3c0ff",
+                        "on-primary-fixed": "#0f0069",
+                        "error-container": "#ffdad6",
+                        "surface": "#f7f9fb",
+                        "secondary-fixed-dim": "#b7c8e1",
+                        "on-tertiary-fixed": "#161c22",
+                        "background": "#f7f9fb",
+                        "surface-container-highest": "#e0e3e5",
+                        "on-tertiary": "#ffffff",
+                        "on-background": "#191c1e",
+                        "primary-fixed": "#e2dfff",
+                        "secondary-fixed": "#d3e4fe",
+                        "tertiary-container": "#5a6168",
+                        "surface-container-low": "#f2f4f6",
+                        "secondary-container": "#d0e1fb",
+                        "on-primary-fixed-variant": "#3323cc",
+                        "surface-container-lowest": "#ffffff",
+                        "on-error": "#ffffff",
+                        "inverse-surface": "#2d3133",
+                        "on-surface-variant": "#464555",
+                        "primary-container": "#4f46e5",
+                        "surface-tint": "#4d44e3",
+                        "outline-variant": "#c7c4d8",
+                        "on-secondary": "#ffffff",
+                        "on-primary": "#ffffff",
+                        "on-surface": "#191c1e"
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    fontFamily: {
+                        "headline": ["Inter"],
+                        "display": ["Inter"],
+                        "body": ["Inter"],
+                        "label": ["Inter"]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-background text-on-background min-h-screen">
+<!-- SideNavBar -->
+<nav class="fixed left-0 top-0 h-screen w-[240px] bg-surface-container-lowest dark:bg-surface-container-low border-r border-outline-variant dark:border-outline flex flex-col py-6 px-4 z-50">
+<div class="flex items-center gap-3 mb-8 px-2">
+<img alt="AI Factory Logo" class="w-8 h-8 object-cover rounded-DEFAULT" data-alt="A clean, minimalist logo featuring a stylized letter A intertwined with a spark symbol, rendered in deep indigo and bright white against a solid white background. The design is modern, vector-based, and highly corporate, suitable for an AI enterprise software brand." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCogJdA4APoSjdEuwWia07j1o3jw7Xao6vBtqB4FnfEFfX_UspVIDdJIwnGhEVQbOE_eCl9FJB0HbKLgjEQew4CZRHsQeLHzywd7m8SgW40VITHUViGJuNuJvIHY0L-VrMCpYdw4LrsDvuuwc2YUjW1MODvr7KY4I7RGzXkjxBh0SAGEL33JxvjwDiSNgFGNRYtYi8pC2NSz_O_ALJbnLGwM5csA8GWb1yTRgtzjEPmR0QDR2qpWpy_jHAyI9L8KCMSj38_w2DJdBk"/>
+<div>
+<h1 class="text-xl font-black text-primary dark:text-primary-fixed-dim tracking-tight">AI Content Factory</h1>
+<p class="text-xs text-on-surface-variant">2.0 企业版</p>
+</div>
+</div>
+<ul class="flex-1 space-y-1 font-body text-sm">
+<li>
+<a class="flex items-center gap-3 px-3 py-2 text-on-surface-variant dark:text-tertiary-fixed-dim hover:bg-surface-container-high dark:hover:bg-surface-variant transition-colors rounded-lg" href="#">
+<span class="material-symbols-outlined text-[20px]">home</span>
+                    首页
+                </a>
+</li>
+<li>
+<a class="flex items-center gap-3 px-3 py-2 text-on-surface-variant dark:text-tertiary-fixed-dim hover:bg-surface-container-high dark:hover:bg-surface-variant transition-colors rounded-lg" href="#">
+<span class="material-symbols-outlined text-[20px]">folder_open</span>
+                    项目
+                </a>
+</li>
+<li>
+<a class="flex items-center gap-3 px-3 py-2 text-on-surface-variant dark:text-tertiary-fixed-dim hover:bg-surface-container-high dark:hover:bg-surface-variant transition-colors rounded-lg" href="#">
+<span class="material-symbols-outlined text-[20px]">inventory_2</span>
+                    素材
+                </a>
+</li>
+<li>
+<a class="flex items-center gap-3 px-3 py-2 text-on-surface-variant dark:text-tertiary-fixed-dim hover:bg-surface-container-high dark:hover:bg-surface-variant transition-colors rounded-lg" href="#">
+<span class="material-symbols-outlined text-[20px]">auto_awesome</span>
+                    作品
+                </a>
+</li>
+<li>
+<a class="flex items-center gap-3 px-3 py-2 text-on-surface-variant dark:text-tertiary-fixed-dim hover:bg-surface-container-high dark:hover:bg-surface-variant transition-colors rounded-lg" href="#">
+<span class="material-symbols-outlined text-[20px]">account_tree</span>
+                    工作流
+                </a>
+</li>
+<li>
+<a class="flex items-center gap-3 px-3 py-2 bg-secondary-container dark:bg-on-secondary-fixed-variant text-on-secondary-container dark:text-secondary-fixed font-bold rounded-lg transition-transform duration-150 active:scale-[0.98]" href="#">
+<span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'FILL' 1;">settings</span>
+                    设置
+                </a>
+</li>
+</ul>
+</nav>
+<!-- TopAppBar -->
+<header class="fixed top-0 right-0 w-[calc(100%-240px)] h-16 bg-surface-container-lowest dark:bg-surface-container-low border-b border-outline-variant dark:border-outline flex items-center justify-between px-8 z-40">
+<div class="flex items-center gap-4">
+<!-- Breadcrumbs / Title Context could go here, but omitted as per JSON -->
+</div>
+<div class="flex items-center gap-6">
+<div class="flex items-center gap-4">
+<button class="text-on-surface-variant hover:bg-surface-container-high p-2 rounded-full transition-colors cursor-pointer">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button class="text-on-surface-variant hover:bg-surface-container-high p-2 rounded-full transition-colors cursor-pointer">
+<span class="material-symbols-outlined">help_outline</span>
+</button>
+</div>
+<div class="h-6 w-px bg-outline-variant"></div>
+<button class="flex items-center gap-2 hover:bg-surface-container-high p-1 pr-3 rounded-full transition-colors cursor-pointer">
+<img alt="用户头像" class="w-8 h-8 rounded-full object-cover" data-alt="A professional headshot of a business executive in a well-lit studio. The individual is looking directly at the camera with a subtle smile. The background is a soft, out-of-focus gray to emphasize the subject. Shot with high-end corporate photography styling." src="https://lh3.googleusercontent.com/aida-public/AB6AXuB2gQ8SSvcAQTVWHFo8sjqTy1e3Q_oMmCdIjCIsu7s7CzWx4eer3tShLov1XYMWcj4xUeuyORhS6K8ZOt9Q-kQlFaO0UkLneUij9GVI__LfjuzvknAEafEFp29LeeZWUHG5HJud3krwxEC3CpyHpaU8Lb1Z3AqICBszlUKG-iVdHvgJkko-VZiYAUu24NTs7eMdkoKTH4e-zfLrMBBaDgedeYzrVbQVu0P9UNUBrLeGRFYSSlRLfyXBWBV3bcQXZINyx4IijB6JLkk"/>
+<span class="font-headline text-sm font-medium text-on-surface">账号设置</span>
+</button>
+</div>
+</header>
+<!-- Main Canvas -->
+<main class="ml-[240px] pt-16 min-h-screen flex flex-col p-8">
+<!-- Page Header -->
+<div class="mb-8">
+<h2 class="text-3xl font-headline font-bold text-on-surface mb-2 tracking-tight">全局设置</h2>
+<p class="text-on-surface-variant text-sm max-w-2xl">统一管理全局 LLM、工作流和分发平台配置，这些配置可被项目设置引用。</p>
+</div>
+<!-- Tabs -->
+<div class="border-b border-outline-variant mb-6">
+<nav aria-label="Tabs" class="-mb-px flex space-x-8">
+<a class="border-primary text-primary whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm" href="#">
+                    LLM 配置
+                </a>
+<a class="border-transparent text-on-surface-variant hover:border-outline hover:text-on-surface whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors" href="#">
+                    工作流配置
+                </a>
+<a class="border-transparent text-on-surface-variant hover:border-outline hover:text-on-surface whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors" href="#">
+                    分发平台配置
+                </a>
+</nav>
+</div>
+<!-- Content Card -->
+<div class="bg-surface-container-lowest rounded-xl border border-outline-variant shadow-sm flex-1 flex flex-col">
+<!-- Card Header -->
+<div class="px-6 py-5 border-b border-outline-variant flex justify-between items-start">
+<div>
+<h3 class="text-lg font-semibold text-on-surface">LLM 配置</h3>
+<p class="text-sm text-on-surface-variant mt-1">管理全局大模型连接，供项目工作流调用</p>
+</div>
+<button class="bg-primary hover:bg-primary-container text-on-primary px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px]">add</span>
+                    添加 LLM 配置
+                </button>
+</div>
+<!-- Toolbar -->
+<div class="px-6 py-4 flex items-center justify-between border-b border-surface-container-high bg-surface-bright">
+<div class="flex items-center gap-4 flex-1">
+<div class="relative max-w-md w-full">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline text-[20px]">search</span>
+<input class="w-full pl-10 pr-4 py-2 bg-surface-container-lowest border border-outline-variant rounded-lg text-sm focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all placeholder:text-outline" placeholder="搜索配置名称、模型或地址" type="text"/>
+</div>
+<select class="py-2 pl-3 pr-8 bg-surface-container-lowest border border-outline-variant rounded-lg text-sm text-on-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none appearance-none">
+<option>全部状态</option>
+<option>已验证</option>
+<option>未验证</option>
+<option>验证失败</option>
+<option>已停用</option>
+</select>
+</div>
+<div class="text-sm text-on-surface-variant font-medium">
+                    共 3 个配置
+                </div>
+</div>
+<!-- Table -->
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="border-b border-surface-container-high text-sm text-on-surface-variant font-medium">
+<th class="px-6 py-4 font-medium">配置名称</th>
+<th class="px-6 py-4 font-medium">Provider 类型</th>
+<th class="px-6 py-4 font-medium">Base URL</th>
+<th class="px-6 py-4 font-medium">默认模型</th>
+<th class="px-6 py-4 font-medium">验证状态</th>
+<th class="px-6 py-4 font-medium">启用状态</th>
+<th class="px-6 py-4 font-medium">最近验证时间</th>
+<th class="px-6 py-4 font-medium text-right">操作</th>
+</tr>
+</thead>
+<tbody class="text-sm">
+<!-- Row 1 -->
+<tr class="border-b border-surface-container-low hover:bg-surface-bright transition-colors group">
+<td class="px-6 py-4 font-medium text-on-surface">OpenAI 主连接</td>
+<td class="px-6 py-4 text-on-surface-variant">OpenAI-compatible</td>
+<td class="px-6 py-4 text-on-surface-variant font-mono text-xs">https://api.openai.com/v1</td>
+<td class="px-6 py-4 text-on-surface-variant">gpt-5.6-terra</td>
+<td class="px-6 py-4">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-[#E6F4EA] text-[#137333]">
+<span class="w-1.5 h-1.5 rounded-full bg-[#137333]"></span>
+                                    已验证
+                                </span>
+</td>
+<td class="px-6 py-4">
+<div class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer" type="checkbox"/>
+<div class="w-9 h-5 bg-surface-variant peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary"></div>
+</div>
+</td>
+<td class="px-6 py-4 text-on-surface-variant">2026-07-19 14:20</td>
+<td class="px-6 py-4 text-right">
+<div class="flex items-center justify-end gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
+<button class="text-primary hover:text-primary-container font-medium">验证</button>
+<button class="text-on-surface-variant hover:text-on-surface font-medium">编辑</button>
+<button class="text-on-surface-variant hover:text-on-surface">
+<span class="material-symbols-outlined text-[18px] align-middle">more_vert</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 2 -->
+<tr class="border-b border-surface-container-low hover:bg-surface-bright transition-colors group">
+<td class="px-6 py-4 font-medium text-on-surface">内部模型网关</td>
+<td class="px-6 py-4 text-on-surface-variant">OpenAI-compatible</td>
+<td class="px-6 py-4 text-on-surface-variant font-mono text-xs">https://llm.example.com/v1</td>
+<td class="px-6 py-4 text-on-surface-variant">gpt-5.6-luna</td>
+<td class="px-6 py-4">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-surface-container-high text-on-surface-variant">
+<span class="w-1.5 h-1.5 rounded-full bg-outline"></span>
+                                    未验证
+                                </span>
+</td>
+<td class="px-6 py-4">
+<div class="relative inline-flex items-center cursor-pointer">
+<input class="sr-only peer" type="checkbox"/>
+<div class="w-9 h-5 bg-surface-variant peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary"></div>
+</div>
+</td>
+<td class="px-6 py-4 text-outline">—</td>
+<td class="px-6 py-4 text-right">
+<div class="flex items-center justify-end gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
+<button class="text-primary hover:text-primary-container font-medium">验证</button>
+<button class="text-on-surface-variant hover:text-on-surface font-medium">编辑</button>
+<button class="text-on-surface-variant hover:text-on-surface">
+<span class="material-symbols-outlined text-[18px] align-middle">more_vert</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 3 -->
+<tr class="hover:bg-surface-bright transition-colors group">
+<td class="px-6 py-4 font-medium text-on-surface">备用模型连接</td>
+<td class="px-6 py-4 text-on-surface-variant">OpenAI-compatible</td>
+<td class="px-6 py-4 text-on-surface-variant font-mono text-xs">https://backup.example.com/v1</td>
+<td class="px-6 py-4 text-on-surface-variant">gpt-5.6-terra</td>
+<td class="px-6 py-4">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-error-container text-error">
+<span class="w-1.5 h-1.5 rounded-full bg-error"></span>
+                                    验证失败
+                                </span>
+</td>
+<td class="px-6 py-4">
+<div class="relative inline-flex items-center cursor-pointer">
+<input class="sr-only peer" type="checkbox"/>
+<div class="w-9 h-5 bg-surface-variant peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary"></div>
+</div>
+</td>
+<td class="px-6 py-4 text-on-surface-variant">2026-07-18 21:35</td>
+<td class="px-6 py-4 text-right">
+<div class="flex items-center justify-end gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
+<button class="text-primary hover:text-primary-container font-medium">重新验证</button>
+<button class="text-on-surface-variant hover:text-on-surface font-medium">编辑</button>
+<button class="text-on-surface-variant hover:text-on-surface">
+<span class="material-symbols-outlined text-[18px] align-middle">more_vert</span>
+</button>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Pagination -->
+<div class="mt-auto px-6 py-4 border-t border-outline-variant flex items-center justify-between bg-surface-container-lowest rounded-b-xl">
+<p class="text-sm text-on-surface-variant">显示 1 至 3 条，共 3 条记录</p>
+<div class="flex items-center gap-2">
+<button class="p-1 rounded text-outline hover:bg-surface-container-high transition-colors cursor-not-allowed" disabled="">
+<span class="material-symbols-outlined text-[20px]">chevron_left</span>
+</button>
+<button class="px-3 py-1 rounded bg-primary-container text-on-primary-container text-sm font-medium">1</button>
+<button class="p-1 rounded text-on-surface-variant hover:bg-surface-container-high transition-colors cursor-not-allowed" disabled="">
+<span class="material-symbols-outlined text-[20px]">chevron_right</span>
+</button>
+</div>
+</div>
+</div>
+</main>
+</body></html>

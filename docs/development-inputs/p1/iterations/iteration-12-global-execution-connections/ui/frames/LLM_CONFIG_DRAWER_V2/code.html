@@ -1,0 +1,171 @@
+<!DOCTYPE html><html class="light" lang="zh-CN"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>LLM_CONFIG_DRAWER_V2</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-tint": "#4d44e3",
+                        "secondary-fixed": "#d3e4fe",
+                        "on-tertiary": "#ffffff",
+                        "on-secondary-fixed-variant": "#38485d",
+                        "on-primary-fixed-variant": "#3323cc",
+                        "surface-bright": "#f7f9fb",
+                        "secondary": "#505f76",
+                        "surface-container-lowest": "#ffffff",
+                        "on-error-container": "#93000a",
+                        "secondary-fixed-dim": "#b7c8e1",
+                        "error": "#ba1a1a",
+                        "surface-variant": "#e0e3e5",
+                        "on-tertiary-fixed-variant": "#41474e",
+                        "surface-container-high": "#e6e8ea",
+                        "inverse-primary": "#c3c0ff",
+                        "primary-container": "#4f46e5",
+                        "outline-variant": "#c7c4d8",
+                        "tertiary-container": "#5a6168",
+                        "background": "#f7f9fb",
+                        "on-secondary-fixed": "#0b1c30",
+                        "inverse-on-surface": "#eff1f3",
+                        "surface-container-low": "#f2f4f6",
+                        "tertiary-fixed": "#dde3eb",
+                        "surface-dim": "#d8dadc",
+                        "primary-fixed-dim": "#c3c0ff",
+                        "on-secondary": "#ffffff",
+                        "on-surface": "#191c1e",
+                        "on-primary": "#ffffff",
+                        "primary": "#3525cd",
+                        "tertiary": "#434950",
+                        "on-background": "#191c1e",
+                        "on-tertiary-fixed": "#161c22",
+                        "on-surface-variant": "#464555",
+                        "on-error": "#ffffff",
+                        "surface-container-highest": "#e0e3e5",
+                        "outline": "#777587",
+                        "on-primary-fixed": "#0f0069",
+                        "on-tertiary-container": "#d6dce4",
+                        "surface": "#f7f9fb",
+                        "on-secondary-container": "#54647a",
+                        "primary-fixed": "#e2dfff",
+                        "inverse-surface": "#2d3133",
+                        "surface-container": "#eceef0",
+                        "tertiary-fixed-dim": "#c1c7cf",
+                        "secondary-container": "#d0e1fb",
+                        "error-container": "#ffdad6",
+                        "on-primary-container": "#dad7ff"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "fontFamily": {
+                        "headline": ["Inter", "sans-serif"],
+                        "display": ["Inter", "sans-serif"],
+                        "body": ["Inter", "sans-serif"],
+                        "label": ["Inter", "sans-serif"]
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-background text-on-surface font-body overflow-hidden h-screen w-full relative">
+<!-- Background Screen Context -->
+<div class="absolute inset-0 z-0">
+        {{DATA:SCREEN:SCREEN_5}}
+    </div>
+<!-- Overlay -->
+<div class="absolute inset-0 z-10 bg-surface-variant/70 backdrop-blur-sm transition-opacity duration-300"></div>
+<!-- Drawer Panel -->
+<div class="absolute inset-y-0 right-0 z-20 w-[520px] bg-surface-container-lowest border-l border-outline-variant shadow-2xl flex flex-col transform transition-transform duration-300 ease-in-out translate-x-0">
+<!-- Drawer Header -->
+<div class="px-6 py-5 border-b border-outline-variant flex justify-between items-start shrink-0 bg-surface-container-lowest">
+<div>
+<h2 class="text-xl font-semibold font-headline text-on-surface tracking-tight">添加 LLM 配置</h2>
+<p class="text-sm text-on-surface-variant mt-1">配置全局 LLM 连接，供项目工作流调用</p>
+</div>
+<button class="text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high rounded-full p-2 transition-colors focus:outline-none focus:ring-2 focus:ring-primary">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">close</span>
+</button>
+</div>
+<!-- Form Content -->
+<div class="flex-1 overflow-y-auto p-6 space-y-6">
+<div class="space-y-1.5">
+<label class="block text-sm font-medium text-on-surface flex items-center" for="config_name">
+                    配置名称 <span class="text-error ml-1">*</span>
+</label>
+<input class="block w-full rounded-md border-outline-variant bg-surface-container-lowest text-sm focus:border-primary focus:ring-primary sm:text-sm text-on-surface placeholder:text-outline" id="config_name" placeholder="例如：全局通用 GPT-4" type="text">
+</div>
+<div class="space-y-1.5">
+<label class="block text-sm font-medium text-on-surface flex items-center" for="provider_type">
+                    Provider 类型 <span class="text-error ml-1">*</span>
+</label>
+<select class="block w-full rounded-md border-outline-variant bg-surface-container-lowest text-sm focus:border-primary focus:ring-primary sm:text-sm text-on-surface" id="provider_type">
+<option selected="" value="OpenAI-compatible">OpenAI-compatible</option>
+</select>
+</div>
+<div class="space-y-1.5">
+<label class="block text-sm font-medium text-on-surface flex items-center" for="base_url">
+                    Base URL <span class="text-error ml-1">*</span>
+</label>
+<input class="block w-full rounded-md border-outline-variant bg-surface-container-lowest text-sm focus:border-primary focus:ring-primary sm:text-sm text-on-surface placeholder:text-outline" id="base_url" placeholder="https://api.openai.com/v1" type="url">
+</div>
+<div class="space-y-1.5">
+<label class="block text-sm font-medium text-on-surface flex items-center" for="default_model">
+                    默认模型 <span class="text-error ml-1">*</span>
+</label>
+<input class="block w-full rounded-md border-outline-variant bg-surface-container-lowest text-sm focus:border-primary focus:ring-primary sm:text-sm text-on-surface placeholder:text-outline" id="default_model" placeholder="gpt-4-turbo" type="text">
+</div>
+<div class="space-y-1.5">
+<label class="block text-sm font-medium text-on-surface flex items-center" for="api_key">
+                    API Key <span class="text-error ml-1">*</span>
+</label>
+<input class="block w-full rounded-md border-outline-variant bg-surface-container-lowest text-sm focus:border-primary focus:ring-primary sm:text-sm text-on-surface" id="api_key" placeholder="sk-..." type="password">
+<p class="text-xs text-on-surface-variant flex items-center mt-1">
+<span class="material-symbols-outlined text-[14px] mr-1" style="font-variation-settings: 'FILL' 0;">lock</span>
+                    密钥加密保存，保存后不会回显明文
+                </p>
+</div>
+<div class="space-y-1.5">
+<label class="block text-sm font-medium text-on-surface flex items-center" for="timeout">
+                    请求超时
+                </label>
+<div class="relative rounded-md shadow-sm">
+<input class="block w-full rounded-md border-outline-variant bg-surface-container-lowest text-sm focus:border-primary focus:ring-primary sm:text-sm text-on-surface pr-12" id="timeout" type="number" value="60">
+<div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
+<span class="text-on-surface-variant sm:text-sm">秒</span>
+</div>
+</div>
+</div>
+<div class="space-y-1.5">
+<label class="block text-sm font-medium text-on-surface flex items-center" for="remarks">
+                    备注
+                </label>
+<textarea class="block w-full rounded-md border-outline-variant bg-surface-container-lowest text-sm focus:border-primary focus:ring-primary sm:text-sm text-on-surface placeholder:text-outline" id="remarks" placeholder="添加备注信息..." rows="3"></textarea>
+</div>
+<div class="pt-4 pb-2 border-t border-outline-variant/50">
+<button class="inline-flex items-center px-4 py-2 border border-outline-variant rounded-md shadow-sm text-sm font-medium text-on-surface bg-surface-container-lowest hover:bg-surface-container-low focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-colors" type="button">
+<span class="material-symbols-outlined text-[18px] mr-2" style="font-variation-settings: 'FILL' 0;">wifi_tethering</span>
+                    验证连接
+                </button>
+</div>
+</div>
+<!-- Fixed Bottom Bar -->
+<div class="px-6 py-4 border-t border-outline-variant bg-surface-container-lowest flex justify-between items-center shrink-0">
+<button class="inline-flex items-center px-4 py-2 border border-outline-variant rounded-md shadow-sm text-sm font-medium text-on-surface bg-surface-container-lowest hover:bg-surface-container-low focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-colors" type="button">
+                取消
+            </button>
+<button class="inline-flex items-center px-6 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-on-primary bg-primary-container hover:bg-primary focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-colors" type="button">
+                保存
+            </button>
+</div>
+</div>
+</body></html>

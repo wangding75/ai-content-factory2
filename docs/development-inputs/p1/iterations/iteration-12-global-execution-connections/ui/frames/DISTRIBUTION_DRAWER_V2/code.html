@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+
+<html lang="zh-CN"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>AI Content Factory 2.0 - 分发平台配置</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "primary-fixed": "#e2dfff",
+                    "surface-bright": "#f7f9fb",
+                    "error": "#ba1a1a",
+                    "surface-variant": "#e0e3e5",
+                    "on-tertiary-fixed-variant": "#41474e",
+                    "on-primary": "#ffffff",
+                    "surface-container-high": "#e6e8ea",
+                    "secondary-fixed": "#d3e4fe",
+                    "on-tertiary-fixed": "#161c22",
+                    "on-secondary-fixed": "#0b1c30",
+                    "error-container": "#ffdad6",
+                    "surface-container-low": "#f2f4f6",
+                    "secondary-fixed-dim": "#b7c8e1",
+                    "on-secondary-container": "#54647a",
+                    "primary-fixed-dim": "#c3c0ff",
+                    "surface-tint": "#4d44e3",
+                    "outline": "#777587",
+                    "surface-dim": "#d8dadc",
+                    "primary": "#3525cd",
+                    "tertiary-container": "#5a6168",
+                    "on-error-container": "#93000a",
+                    "on-surface-variant": "#464555",
+                    "inverse-on-surface": "#eff1f3",
+                    "on-secondary-fixed-variant": "#38485d",
+                    "surface": "#f7f9fb",
+                    "surface-container-highest": "#e0e3e5",
+                    "secondary-container": "#d0e1fb",
+                    "on-tertiary-container": "#d6dce4",
+                    "inverse-surface": "#2d3133",
+                    "on-primary-fixed-variant": "#3323cc",
+                    "primary-container": "#4f46e5",
+                    "secondary": "#505f76",
+                    "on-primary-fixed": "#0f0069",
+                    "tertiary-fixed-dim": "#c1c7cf",
+                    "on-secondary": "#ffffff",
+                    "surface-container-lowest": "#ffffff",
+                    "surface-container": "#eceef0",
+                    "outline-variant": "#c7c4d8",
+                    "on-error": "#ffffff",
+                    "on-background": "#191c1e",
+                    "background": "#f7f9fb",
+                    "on-surface": "#191c1e",
+                    "on-primary-container": "#dad7ff",
+                    "on-tertiary": "#ffffff",
+                    "tertiary": "#434950",
+                    "inverse-primary": "#c3c0ff",
+                    "tertiary-fixed": "#dde3eb"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "fontFamily": {
+                    "headline": ["Inter", "sans-serif"],
+                    "display": ["Inter", "sans-serif"],
+                    "body": ["Inter", "sans-serif"],
+                    "label": ["Inter", "sans-serif"]
+            }
+          }
+        }
+      }
+    </script>
+</head>
+<body class="bg-background text-on-surface font-body overflow-hidden">
+<!-- Screen Content Placeholder with Overlay -->
+<div class="absolute inset-0 z-0">
+<img alt="Distribution Platform Configuration Screen" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBFWAU5TOGiUOPYjRiONqE8wpgL67Pa_889mkKxG_rhx0aiyS3bMiZkvUU_oxhvxp2DoF_0LqAmHeJDfCxRereyVSinMgir2ZGQPJVVBZcmWFC4UpkykqI31ERBqTlkkZ5MeoL6OnBOqkgacTfE5gw482GKe_0SDQBtoSfLo0RZ4wqmYuHlrQB0cjfvJy9LUR-8u1BFdFhhNkg2IbUsv8vgOapxtxqjd4zfszY7lxCkeJuQeH12ZDu6ftyXw4yWS2R3J17Rc5KguKQ"/>
+<!-- Light Overlay -->
+<div class="absolute inset-0 bg-surface-container-low/60 backdrop-blur-sm"></div>
+</div>
+<!-- Main Layout -->
+<div class="relative z-10 flex h-screen w-full">
+<!-- Left Nav placeholder to maintain structure context (Hidden in this specific request to focus on drawer, but conceptually present) -->
+<!-- <div class="w-[240px] flex-shrink-0"></div> -->
+<!-- Main Content Area -->
+<div class="flex-1 flex justify-end">
+<!-- Right Drawer -->
+<div class="w-[520px] h-full bg-surface-container-lowest border-l border-outline-variant shadow-2xl flex flex-col transform transition-transform duration-300">
+<!-- Drawer Header -->
+<div class="flex items-start justify-between px-6 py-5 border-b border-outline-variant">
+<div>
+<h2 class="font-headline text-lg font-semibold text-on-surface">添加分发平台配置</h2>
+<p class="text-sm text-on-surface-variant mt-1">配置后续内容发布与分发所需的平台连接</p>
+</div>
+<button class="text-on-surface-variant hover:bg-surface-container-high p-2 rounded-full transition-colors flex items-center justify-center cursor-pointer" type="button">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">close</span>
+</button>
+</div>
+<!-- Drawer Body / Form -->
+<div class="flex-1 overflow-y-auto px-6 py-6 space-y-6">
+<!-- Input 1 -->
+<div class="space-y-1">
+<label class="block text-sm font-medium text-on-surface" for="config_name">配置名称 <span class="text-error">*</span></label>
+<input class="mt-1 block w-full rounded-md border-outline-variant shadow-sm focus:border-primary focus:ring focus:ring-primary/20 focus:ring-opacity-50 text-sm bg-surface-container-lowest py-2 px-3" id="config_name" name="config_name" placeholder="例如：主号微信公众号发布" type="text"/>
+</div>
+<!-- Select 1 -->
+<div class="space-y-1">
+<label class="block text-sm font-medium text-on-surface" for="platform_type">平台类型 <span class="text-error">*</span></label>
+<select class="mt-1 block w-full rounded-md border-outline-variant shadow-sm focus:border-primary focus:ring focus:ring-primary/20 focus:ring-opacity-50 text-sm bg-surface-container-lowest py-2 px-3" id="platform_type" name="platform_type">
+<option value="">请选择</option>
+<option value="wechat">微信公众号</option>
+<option value="douyin">抖音</option>
+<option value="youtube">YouTube</option>
+<option value="custom">自定义平台</option>
+</select>
+</div>
+<!-- Input 2 -->
+<div class="space-y-1">
+<label class="block text-sm font-medium text-on-surface" for="account_id">账号或渠道标识 <span class="text-error">*</span></label>
+<input class="mt-1 block w-full rounded-md border-outline-variant shadow-sm focus:border-primary focus:ring focus:ring-primary/20 focus:ring-opacity-50 text-sm bg-surface-container-lowest py-2 px-3" id="account_id" name="account_id" placeholder="请输入标识ID" type="text"/>
+</div>
+<!-- Conditional Input -->
+<div class="space-y-1">
+<label class="block text-sm font-medium text-on-surface" for="connection_url">连接地址 <span class="text-on-surface-variant font-normal text-xs">(自定义平台必填)</span></label>
+<input class="mt-1 block w-full rounded-md border-outline-variant shadow-sm focus:border-primary focus:ring focus:ring-primary/20 focus:ring-opacity-50 text-sm bg-surface-container-lowest py-2 px-3" id="connection_url" name="connection_url" placeholder="https://api.example.com/v1/distribute" type="url"/>
+</div>
+<!-- Select 2 -->
+<div class="space-y-1">
+<label class="block text-sm font-medium text-on-surface" for="auth_method">认证方式 <span class="text-error">*</span></label>
+<select class="mt-1 block w-full rounded-md border-outline-variant shadow-sm focus:border-primary focus:ring focus:ring-primary/20 focus:ring-opacity-50 text-sm bg-surface-container-lowest py-2 px-3" id="auth_method" name="auth_method">
+<option value="apikey">API Key</option>
+<option value="oauth">OAuth</option>
+<option value="accesstoken">Access Token</option>
+<option value="custom">自定义</option>
+</select>
+</div>
+<!-- Input 3 (Password) -->
+<div class="space-y-1">
+<label class="block text-sm font-medium text-on-surface" for="credentials">认证凭证 <span class="text-error">*</span></label>
+<input class="mt-1 block w-full rounded-md border-outline-variant shadow-sm focus:border-primary focus:ring focus:ring-primary/20 focus:ring-opacity-50 text-sm bg-surface-container-lowest py-2 px-3" id="credentials" name="credentials" placeholder="请输入凭证" type="password"/>
+<p class="text-xs text-on-surface-variant mt-1 flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">lock</span>
+                            凭证加密保存，保存后不会回显明文
+                        </p>
+</div>
+<!-- Input 4 (Number with Unit) -->
+<div class="space-y-1">
+<label class="block text-sm font-medium text-on-surface" for="timeout">请求超时 <span class="text-error">*</span></label>
+<div class="relative mt-1 rounded-md shadow-sm">
+<input class="block w-full rounded-md border-outline-variant pr-10 focus:border-primary focus:ring focus:ring-primary/20 focus:ring-opacity-50 text-sm bg-surface-container-lowest py-2 px-3" id="timeout" name="timeout" type="number" value="60"/>
+<div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
+<span class="text-on-surface-variant sm:text-sm">秒</span>
+</div>
+</div>
+</div>
+<!-- Textarea -->
+<div class="space-y-1">
+<label class="block text-sm font-medium text-on-surface" for="remarks">备注</label>
+<textarea class="mt-1 block w-full rounded-md border-outline-variant shadow-sm focus:border-primary focus:ring focus:ring-primary/20 focus:ring-opacity-50 text-sm bg-surface-container-lowest py-2 px-3" id="remarks" name="remarks" placeholder="选填，记录该平台的特殊用途" rows="3"></textarea>
+</div>
+<!-- Secondary Action & Tip -->
+<div class="pt-2 flex flex-col gap-4">
+<div>
+<button class="inline-flex items-center gap-2 px-4 py-2 border border-outline-variant rounded-md shadow-sm text-sm font-medium text-on-surface bg-surface-container-lowest hover:bg-surface-container-high focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-colors" type="button">
+<span class="material-symbols-outlined text-[18px]">verified</span>
+                                验证连接
+                            </button>
+</div>
+<div class="bg-surface-container-low border border-outline-variant rounded p-3 flex items-start gap-2">
+<span class="material-symbols-outlined text-primary text-[18px] mt-0.5">info</span>
+<p class="text-xs text-on-surface-variant leading-relaxed">不同平台后续可动态扩展专属字段</p>
+</div>
+</div>
+</div>
+<!-- Drawer Footer -->
+<div class="px-6 py-4 border-t border-outline-variant bg-surface-container-lowest flex justify-end gap-3">
+<button class="px-4 py-2 border border-outline-variant rounded-md shadow-sm text-sm font-medium text-on-surface bg-surface-container-lowest hover:bg-surface-container-high focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-colors" type="button">
+                        取消
+                    </button>
+<button class="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-on-primary bg-primary hover:bg-primary-container focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-colors" type="button">
+                        保存
+                    </button>
+</div>
+</div>
+</div>
+</div>
+</body></html>

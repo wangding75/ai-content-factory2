@@ -1,15 +1,135 @@
 iteration: iteration-12-global-execution-connections
-status: planned
+title: Global Configuration Center V2 - CRUD Only
+status: frozen_for_development
+third_party_network_access: forbidden
+
+scope:
+  resources:
+    - llm_provider_configuration
+    - workflow_connection
+    - workflow_configuration
+    - distribution_platform_configuration
+    - audit_log
+
 apis:
-  - "GET/POST/PATCH /api/v1/llm-providers"
-  - "POST /llm-providers/{id}/verify|enable|disable"
-  - "GET /llm-providers/{id}/models"
-  - "GET/POST/PATCH /api/v1/n8n-connections"
-  - "POST /n8n-connections/{id}/verify|enable|disable"
-  - "GET /n8n-connections/{id}/workflows"
+  llm_provider_types:
+    - method: GET
+      path: /api/v1/llm-provider-types
+      purpose: Return supported provider types and non-secret field schemas
+
+  llm_providers:
+    - method: GET
+      path: /api/v1/llm-providers
+      purpose: List and filter saved LLM provider configurations
+    - method: POST
+      path: /api/v1/llm-providers
+      purpose: Create an LLM provider configuration without contacting the provider
+    - method: GET
+      path: /api/v1/llm-providers/{providerId}
+      purpose: Read one saved LLM provider configuration
+    - method: PATCH
+      path: /api/v1/llm-providers/{providerId}
+      purpose: Update mutable fields and credential replacement semantics
+
+  workflow_connection_types:
+    - method: GET
+      path: /api/v1/workflow-connection-types
+      purpose: Return generic connection type catalog and non-secret dynamic field schemas; current type is n8n
+
+  workflow_connections:
+    - method: GET
+      path: /api/v1/workflow-connections
+      purpose: List/filter saved connections and provide options for workflow forms
+    - method: POST
+      path: /api/v1/workflow-connections
+      purpose: Create a connection configuration; connectionType is required
+    - method: GET
+      path: /api/v1/workflow-connections/{connectionId}
+      purpose: Read one saved connection configuration
+    - method: PATCH
+      path: /api/v1/workflow-connections/{connectionId}
+      purpose: Update mutable fields; connectionType is immutable and never updated
+
+  workflow_configurations:
+    - method: GET
+      path: /api/v1/workflow-configurations
+      purpose: List/filter saved reusable workflow configurations
+    - method: POST
+      path: /api/v1/workflow-configurations
+      purpose: Create a workflow bound to a saved connection; server derives workflowType
+    - method: GET
+      path: /api/v1/workflow-configurations/{workflowId}
+      purpose: Read one workflow with derived connectionType and workflowType
+    - method: PATCH
+      path: /api/v1/workflow-configurations/{workflowId}
+      purpose: Update workflow including rebinding connection; workflowType is never accepted from the client
+
+  distribution_platform_types:
+    - method: GET
+      path: /api/v1/distribution-platform-types
+      purpose: Return platform type catalog, auth options and non-secret dynamic field schemas
+
+  distribution_platforms:
+    - method: GET
+      path: /api/v1/distribution-platforms
+      purpose: List/filter saved distribution platform configurations
+    - method: POST
+      path: /api/v1/distribution-platforms
+      purpose: Create a platform configuration without contacting the platform
+    - method: GET
+      path: /api/v1/distribution-platforms/{platformId}
+      purpose: Read one saved platform configuration
+    - method: PATCH
+      path: /api/v1/distribution-platforms/{platformId}
+      purpose: Update mutable fields and credential replacement semantics
+
 common_requirements:
-  - OpenAPI is the single contract source
-  - all commands use Idempotency-Key where applicable
-  - errors use the shared error envelope
-  - secrets and raw upstream responses are never returned
-  - optimistic locking is required for mutable configuration
+  - The repository existing OpenAPI file is the single contract source
+  - List endpoints support UI filters and repository-standard pagination
+  - Applicable write commands use the repository Idempotency-Key convention
+  - All errors use the shared error envelope
+  - Mutable updates require repository-standard optimistic locking
+  - Secrets, encrypted values and authorization headers are never returned
+  - DTOs expose only hasSecret, hasCredential, safe masks or fingerprints when needed
+  - PATCH without a new credential preserves the stored credential
+  - Credential clearing is explicit; empty strings never clear credentials
+  - No DELETE endpoints are provided
+  - No verification, enable, disable, model discovery, execution or publishing endpoints are provided
+  - Audit records contain safe field differences only
+  - Implementations must not make any third-party outbound network requests
+
+business_rules:
+  - Connection is a generic product concept; n8n is only the currently supported connection type
+  - connectionType is selectable on create and immutable after creation
+  - workflowType is derived by the server from the selected connection and is read-only
+  - Rebinding a workflow recalculates workflowType and clears or revalidates typeConfig locally
+  - All configurations are created with integrationStatus=not_connected and enabled=false
+  - integrationStatus and enabled are read-only in Iteration 12
+  - Distribution platform configuration does not execute publishing
+
+deferred_capabilities:
+  iteration_14:
+    - n8n connection verification
+    - workflow reference verification
+    - connection and workflow enable or disable
+    - n8n adapter and webhook invocation
+    - WorkflowRun creation, queue, events, retry and execution
+  iteration_15_or_first_direct_llm_iteration:
+    - LLM provider verification
+    - provider model discovery
+    - direct LLM invocation when the product architecture requires it
+  future_distribution_iteration:
+    - platform credential verification
+    - OAuth flows
+    - platform enable or disable
+    - real publishing jobs
+
+not_in_scope:
+  - Project workflow bindings
+  - WorkflowRun runtime
+  - Any adapter implementation
+  - Any third-party network call
+  - n8n visual editor
+  - Callback server
+  - Real content publishing
+  - Coze, ComfyUI or additional connection types

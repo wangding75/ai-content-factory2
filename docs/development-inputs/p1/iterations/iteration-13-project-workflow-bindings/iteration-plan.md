@@ -2,13 +2,32 @@
 
 ## 1. 目标
 
-为章节规划、正文生成、内容审核、正文重写分别配置执行工作流和默认参数。
+为章节规划、正文生成、内容审核和正文重写分别保存项目级工作流绑定与默认参数。
 
-## 2. 用户闭环
+本迭代只管理绑定关系，不验证第三方连接，不启用工作流，不创建 WorkflowRun。
 
-项目四个环节拥有独立绑定；失效依赖被阻止执行；历史运行保留绑定快照。
+## 2. 前置条件
 
-## 3. 数据模型
+- Iteration 12 已完成全局工作流配置 CRUD；
+- 工作流配置可以处于 `not_connected`；
+- 项目绑定不要求工作流已经完成真实第三方验证；
+- 未接入状态必须在 UI 中明确展示。
+
+## 3. 用户闭环
+
+项目设置 → 查看四环节绑定总览 → 打开某环节抽屉 → 选择已保存的全局工作流 → 设置默认参数 → 保存 → 返回总览。
+
+规则：
+
+- 四个环节独立绑定；
+- 一个环节最多一个当前绑定；
+- 可选择 Iteration 12 已保存且未被归档的工作流；
+- 保存绑定不触发连接验证；
+- 保存绑定不触发工作流执行；
+- 若所选工作流处于 `not_connected`，显示“已绑定，尚未接入执行能力”；
+- 后续 Iteration 14 完成 n8n 验证和启用后，绑定可被运行时使用。
+
+## 4. 数据模型
 
 - `ProjectWorkflowBinding`
 - `ChapterPlanningParameters`
@@ -16,64 +35,70 @@
 - `ContentReviewParameters`
 - `ContentRewriteParameters`
 
-详细字段和约束见 `data-model.md`。
+本迭代不创建 `WorkflowRun`、运行事件或绑定快照。详细约束见 `data-model.md`。
 
-## 4. API
+## 5. API
 
-- GET /projects/{projectId}/workflow-bindings
-- GET/PUT /projects/{projectId}/workflow-bindings/{stage}
-- POST /workflow-bindings/{stage}/validate|enable|disable
+- `GET /api/v1/projects/{projectId}/workflow-bindings`
+- `GET /api/v1/projects/{projectId}/workflow-bindings/{stage}`
+- `PUT /api/v1/projects/{projectId}/workflow-bindings/{stage}`
+
+本迭代不包含：
+
+- validate；
+- enable；
+- disable；
+- run；
+- retry。
 
 冻结范围见 `api-scope.yaml`。
 
-## 5. UI 与原型关联
+## 6. UI 与原型
 
-- `S02_PROJECT_WORKFLOW_SETTINGS` → `ui/frames/S02_PROJECT_WORKFLOW_SETTINGS/screen.png`
-- `S02_BIND_CHAPTER_WORKFLOW_DRAWER` → `ui/frames/S02_BIND_CHAPTER_WORKFLOW_DRAWER/screen.png`
-- `S02_BIND_CONTENT_WORKFLOW_DRAWER` → `ui/frames/S02_BIND_CONTENT_WORKFLOW_DRAWER/screen.png`
-- `S02_BIND_REVIEW_WORKFLOW_DRAWER` → `ui/frames/S02_BIND_REVIEW_WORKFLOW_DRAWER/screen.png`
-- `S02_BIND_REWRITE_WORKFLOW_DRAWER` → `ui/frames/S02_BIND_REWRITE_WORKFLOW_DRAWER/screen.png`
-- `STATE_NOT_CONFIGURED_EMPTY` → `ui/frames/STATE_NOT_CONFIGURED_EMPTY/screen.png`
+- `S02_PROJECT_WORKFLOW_SETTINGS`
+- `S02_BIND_CHAPTER_WORKFLOW_DRAWER`
+- `S02_BIND_CONTENT_WORKFLOW_DRAWER`
+- `S02_BIND_REVIEW_WORKFLOW_DRAWER`
+- `S02_BIND_REWRITE_WORKFLOW_DRAWER`
+- `STATE_NOT_CONFIGURED_EMPTY`
 
-详细状态和开发约束见 `ui-scope.md` 与 `ui-manifest.json`。
+开发必须：
 
-## 6. 实施顺序
+- 使用中文 locale；
+- 展示关联工作流、连接类型和接入状态；
+- 对 `not_connected` 显示警告，但允许保存绑定；
+- 不展示运行中、重试、日志或执行结果。
 
-1. 读取冻结 OpenAPI、数据模型和原型；
-2. 后端先实现领域模型、迁移、Repository、Service 与 API；
-3. 前端可基于冻结契约和原型并行开发；
-4. 先使用 Mock Adapter 验证全部页面状态；
-5. 人工 UI 验收后接入真实 API；
-6. 局部测试通过后执行分组测试；
-7. 最终执行全链路 E2E、Code Review 和 Git 验收。
+## 7. 实施顺序
 
-## 7. 不在范围
+1. 冻结绑定 CRUD 契约；
+2. 实现数据模型、迁移、Repository 和 Service；
+3. 实现四环节绑定 API；
+4. 前端基于 Mock 完成全部页面状态；
+5. 人工 UI 验收；
+6. 接入真实绑定 CRUD API；
+7. 局部测试 → 分组测试 → 一次总门禁；
+8. Code Review 和 Git 验收。
 
-- 不接入 Coze、ComfyUI 或其他工作流平台；
-- 不建设 n8n 可视化编辑器或字段映射器；
-- 不实现多 n8n 实例路由、费用大盘或自动模型路由；
-- 不允许业务页面临时切换工作流；
-- 不静默改变第一闭环 Mock 契约。
+## 8. 不在范围
 
-## UI 条件通过与开发修正规则
+- 不验证 LLM、n8n 或分发平台；
+- 不实现任何 Adapter；
+- 不发起第三方网络请求；
+- 不启用或停用全局连接/工作流；
+- 不创建 WorkflowRun；
+- 不保存绑定快照；
+- 不执行章节规划、正文生成、审核或重写；
+- 不实现日志、失败诊断或重试；
+- 不允许业务页面临时切换工作流。
 
-Iteration 11 的人工验收结论为：**有条件通过**。
+## 9. 完成定义
 
-已知问题：部分 Stitch 原型文案为英文，尤其可能出现在左侧一级菜单、状态标签、表头、按钮、辅助说明和技术占位文案中。原型中的英文不构成最终产品文案冻结。
-
-开发必须满足：
-
-1. 默认中文环境下，用户可见文案全部使用统一中文资源，不得直接复制 HTML 中的英文硬编码；
-2. 左侧一级菜单统一为：首页、项目、素材、作品、工作流、设置；
-3. 状态统一为：排队中、运行中、已成功、已失败、未验证、验证成功、已停用、配置异常；
-4. `Run ID`、`Workflow ID`、Schema 版本、模型名、API 名称等技术标识可以保留英文；
-5. 所有业务文案进入前端 i18n/locale 资源；组件不得内嵌不可替换英文；
-6. 人工 UI 验收增加“中文文案与术语一致性”专项，发现英文用户文案即不通过。
-
-## 8. 完成定义
-
-- [ ] 数据模型、API 和 UI 三者一致；
-- [ ] 所有用户动作都有反馈、数据结果和失败恢复；
-- [ ] 原型关联文件存在且可打开；
-- [ ] 验收项全部通过；
-- [ ] 变更报告、测试报告与 Git 状态完整。
+- [ ] 四环节绑定 CRUD 完成；
+- [ ] 默认参数按环节 Schema 保存；
+- [ ] 绑定页面显示工作流接入状态；
+- [ ] `not_connected` 工作流可以绑定但明确不可执行；
+- [ ] 没有第三方网络请求；
+- [ ] 没有 WorkflowRun；
+- [ ] OpenAPI、数据模型和 UI 一致；
+- [ ] 局部、分组和最终验收通过。

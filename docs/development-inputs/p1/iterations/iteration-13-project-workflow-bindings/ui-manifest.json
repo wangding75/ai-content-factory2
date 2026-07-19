@@ -2,7 +2,8 @@
   "iteration": "iteration-13-project-workflow-bindings",
   "uiAcceptance": "CONDITIONAL_PASS",
   "knownIssues": [
-    "Some Stitch user-visible copy is English; development must use Chinese locale resources."
+    "Some Stitch user-visible copy is English; development must use Chinese locale resources.",
+    "Iteration 13 does not validate or execute workflows; not_connected bindings must show a warning."
   ],
   "frames": [
     {
@@ -15,7 +16,10 @@
       "acceptance": "CONDITIONAL_PASS",
       "developmentCorrections": [
         "replace user-visible English copy with Chinese locale resources",
-        "preserve technical identifiers only when appropriate"
+        "preserve technical identifiers only when appropriate",
+        "show workflow integration status and connection type",
+        "allow saving a not_connected workflow binding with a clear not-ready warning",
+        "do not implement validation, enable, execution, logs or retry in Iteration 13"
       ]
     },
     {
@@ -28,7 +32,10 @@
       "acceptance": "CONDITIONAL_PASS",
       "developmentCorrections": [
         "replace user-visible English copy with Chinese locale resources",
-        "preserve technical identifiers only when appropriate"
+        "preserve technical identifiers only when appropriate",
+        "show workflow integration status and connection type",
+        "allow saving a not_connected workflow binding with a clear not-ready warning",
+        "do not implement validation, enable, execution, logs or retry in Iteration 13"
       ]
     },
     {
@@ -41,7 +48,10 @@
       "acceptance": "CONDITIONAL_PASS",
       "developmentCorrections": [
         "replace user-visible English copy with Chinese locale resources",
-        "preserve technical identifiers only when appropriate"
+        "preserve technical identifiers only when appropriate",
+        "show workflow integration status and connection type",
+        "allow saving a not_connected workflow binding with a clear not-ready warning",
+        "do not implement validation, enable, execution, logs or retry in Iteration 13"
       ]
     },
     {
@@ -54,7 +64,10 @@
       "acceptance": "CONDITIONAL_PASS",
       "developmentCorrections": [
         "replace user-visible English copy with Chinese locale resources",
-        "preserve technical identifiers only when appropriate"
+        "preserve technical identifiers only when appropriate",
+        "show workflow integration status and connection type",
+        "allow saving a not_connected workflow binding with a clear not-ready warning",
+        "do not implement validation, enable, execution, logs or retry in Iteration 13"
       ]
     },
     {
@@ -67,7 +80,10 @@
       "acceptance": "CONDITIONAL_PASS",
       "developmentCorrections": [
         "replace user-visible English copy with Chinese locale resources",
-        "preserve technical identifiers only when appropriate"
+        "preserve technical identifiers only when appropriate",
+        "show workflow integration status and connection type",
+        "allow saving a not_connected workflow binding with a clear not-ready warning",
+        "do not implement validation, enable, execution, logs or retry in Iteration 13"
       ]
     },
     {
@@ -80,8 +96,17 @@
       "acceptance": "CONDITIONAL_PASS",
       "developmentCorrections": [
         "replace user-visible English copy with Chinese locale resources",
-        "preserve technical identifiers only when appropriate"
+        "preserve technical identifiers only when appropriate",
+        "show workflow integration status and connection type",
+        "allow saving a not_connected workflow binding with a clear not-ready warning",
+        "do not implement validation, enable, execution, logs or retry in Iteration 13"
       ]
     }
-  ]
+  ],
+  "scopePolicy": {
+    "bindingCrudOnly": true,
+    "thirdPartyNetworkAccess": "forbidden",
+    "workflowRunCreation": false,
+    "allowNotConnectedWorkflowBinding": true
+  }
 }
