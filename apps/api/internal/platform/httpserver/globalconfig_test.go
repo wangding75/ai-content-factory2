@@ -90,15 +90,23 @@ func TestGlobalConfigurationProviderCRUDIntegration(t *testing.T) {
 	if get.Code != http.StatusOK || strings.Contains(get.Body.String(), "super-secret") {
 		t.Fatalf("get provider: %d %s", get.Code, get.Body.String())
 	}
-	update := call(http.MethodPatch, "/api/v1/llm-providers/"+created.Data.ID, map[string]any{"expectedVersion": 1, "defaultModel": "gpt-4.1"}, "")
+	update := call(http.MethodPatch, "/api/v1/llm-providers/"+created.Data.ID, map[string]any{"expectedVersion": 1, "defaultModel": "gpt-4.1"}, "provider-update")
 	if update.Code != http.StatusOK || !strings.Contains(update.Body.String(), `"version":2`) {
 		t.Fatalf("update provider: %d %s", update.Code, update.Body.String())
 	}
-	conflict := call(http.MethodPatch, "/api/v1/llm-providers/"+created.Data.ID, map[string]any{"expectedVersion": 1, "defaultModel": "gpt-4.1-nano"}, "")
+	replayedUpdate := call(http.MethodPatch, "/api/v1/llm-providers/"+created.Data.ID, map[string]any{"expectedVersion": 1, "defaultModel": "gpt-4.1"}, "provider-update")
+	if replayedUpdate.Code != http.StatusOK || !strings.Contains(replayedUpdate.Body.String(), `"version":2`) {
+		t.Fatalf("replay provider update: %d %s", replayedUpdate.Code, replayedUpdate.Body.String())
+	}
+	differentUpdate := call(http.MethodPatch, "/api/v1/llm-providers/"+created.Data.ID, map[string]any{"expectedVersion": 1, "defaultModel": "gpt-4.1-nano"}, "provider-update")
+	if differentUpdate.Code != http.StatusConflict || !strings.Contains(differentUpdate.Body.String(), "idempotency_key_reused_with_different_payload") {
+		t.Fatalf("provider update idempotency conflict: %d %s", differentUpdate.Code, differentUpdate.Body.String())
+	}
+	conflict := call(http.MethodPatch, "/api/v1/llm-providers/"+created.Data.ID, map[string]any{"expectedVersion": 1, "defaultModel": "gpt-4.1-nano"}, "provider-conflict")
 	if conflict.Code != http.StatusConflict || !strings.Contains(conflict.Body.String(), "version_conflict") {
 		t.Fatalf("version conflict: %d %s", conflict.Code, conflict.Body.String())
 	}
-	missing := call(http.MethodPatch, "/api/v1/llm-providers/00000000-0000-4000-8000-000000000004", map[string]any{"expectedVersion": 1, "defaultModel": "missing"}, "")
+	missing := call(http.MethodPatch, "/api/v1/llm-providers/00000000-0000-4000-8000-000000000004", map[string]any{"expectedVersion": 1, "defaultModel": "missing"}, "provider-missing")
 	if missing.Code != http.StatusNotFound {
 		t.Fatalf("provider not found: %d %s", missing.Code, missing.Body.String())
 	}
@@ -162,11 +170,19 @@ func TestGlobalConfigurationConnectionWorkflowAndPlatformCRUDIntegration(t *test
 	if status != http.StatusOK || strings.Contains(text, "connection-secret") {
 		t.Fatalf("get connection: %d %s", status, text)
 	}
-	status, _, text = call(http.MethodPatch, "/api/v1/workflow-connections/"+connectionID, map[string]any{"expectedVersion": 1, "timeoutSeconds": 40}, "")
+	status, _, text = call(http.MethodPatch, "/api/v1/workflow-connections/"+connectionID, map[string]any{"expectedVersion": 1, "timeoutSeconds": 40}, "connection-update")
 	if status != http.StatusOK || strings.Contains(text, "connection-secret") {
 		t.Fatalf("update connection: %d %s", status, text)
 	}
-	status, _, text = call(http.MethodPatch, "/api/v1/workflow-connections/00000000-0000-4000-8000-000000000001", map[string]any{"expectedVersion": 1, "timeoutSeconds": 40}, "")
+	status, _, text = call(http.MethodPatch, "/api/v1/workflow-connections/"+connectionID, map[string]any{"expectedVersion": 1, "timeoutSeconds": 40}, "connection-update")
+	if status != http.StatusOK || !strings.Contains(text, `"version":2`) {
+		t.Fatalf("replay connection update: %d %s", status, text)
+	}
+	status, _, text = call(http.MethodPatch, "/api/v1/workflow-connections/"+connectionID, map[string]any{"expectedVersion": 1, "timeoutSeconds": 41}, "connection-update")
+	if status != http.StatusConflict || !strings.Contains(text, "idempotency_key_reused_with_different_payload") {
+		t.Fatalf("connection update key conflict: %d %s", status, text)
+	}
+	status, _, text = call(http.MethodPatch, "/api/v1/workflow-connections/00000000-0000-4000-8000-000000000001", map[string]any{"expectedVersion": 1, "timeoutSeconds": 40}, "connection-missing")
 	if status != http.StatusNotFound {
 		t.Fatalf("connection not found: %d %s", status, text)
 	}
@@ -202,15 +218,23 @@ func TestGlobalConfigurationConnectionWorkflowAndPlatformCRUDIntegration(t *test
 	if status != http.StatusOK {
 		t.Fatalf("get workflow: %d %s", status, text)
 	}
-	status, _, text = call(http.MethodPatch, "/api/v1/workflow-configurations/"+workflowID, map[string]any{"expectedVersion": 1, "name": "workflow-http-updated"}, "")
+	status, _, text = call(http.MethodPatch, "/api/v1/workflow-configurations/"+workflowID, map[string]any{"expectedVersion": 1, "name": "workflow-http-updated"}, "workflow-update")
 	if status != http.StatusOK {
 		t.Fatalf("update workflow: %d %s", status, text)
 	}
-	status, _, text = call(http.MethodPatch, "/api/v1/workflow-configurations/00000000-0000-4000-8000-000000000002", map[string]any{"expectedVersion": 1, "name": "missing"}, "")
+	status, _, text = call(http.MethodPatch, "/api/v1/workflow-configurations/"+workflowID, map[string]any{"expectedVersion": 1, "name": "workflow-http-updated"}, "workflow-update")
+	if status != http.StatusOK || !strings.Contains(text, `"version":2`) {
+		t.Fatalf("replay workflow update: %d %s", status, text)
+	}
+	status, _, text = call(http.MethodPatch, "/api/v1/workflow-configurations/"+workflowID, map[string]any{"expectedVersion": 1, "name": "workflow-other"}, "workflow-update")
+	if status != http.StatusConflict || !strings.Contains(text, "idempotency_key_reused_with_different_payload") {
+		t.Fatalf("workflow update key conflict: %d %s", status, text)
+	}
+	status, _, text = call(http.MethodPatch, "/api/v1/workflow-configurations/00000000-0000-4000-8000-000000000002", map[string]any{"expectedVersion": 1, "name": "missing"}, "workflow-missing")
 	if status != http.StatusNotFound {
 		t.Fatalf("workflow not found: %d %s", status, text)
 	}
-	status, _, text = call(http.MethodPatch, "/api/v1/workflow-configurations/"+workflowID, map[string]any{"expectedVersion": 1, "name": "conflict"}, "")
+	status, _, text = call(http.MethodPatch, "/api/v1/workflow-configurations/"+workflowID, map[string]any{"expectedVersion": 1, "name": "conflict"}, "workflow-conflict")
 	if status != http.StatusConflict {
 		t.Fatalf("workflow conflict: %d %s", status, text)
 	}
@@ -239,13 +263,21 @@ func TestGlobalConfigurationConnectionWorkflowAndPlatformCRUDIntegration(t *test
 	if status != http.StatusOK || strings.Contains(text, "platform-secret") {
 		t.Fatalf("get platform: %d %s", status, text)
 	}
-	status, _, text = call(http.MethodPatch, "/api/v1/distribution-platforms/00000000-0000-4000-8000-000000000003", map[string]any{"expectedVersion": 1, "accountIdentifier": "missing"}, "")
+	status, _, text = call(http.MethodPatch, "/api/v1/distribution-platforms/00000000-0000-4000-8000-000000000003", map[string]any{"expectedVersion": 1, "accountIdentifier": "missing"}, "platform-missing")
 	if status != http.StatusNotFound {
 		t.Fatalf("platform not found: %d %s", status, text)
 	}
-	status, _, text = call(http.MethodPatch, "/api/v1/distribution-platforms/"+platformID, map[string]any{"expectedVersion": 1, "accountIdentifier": "account-updated"}, "")
+	status, _, text = call(http.MethodPatch, "/api/v1/distribution-platforms/"+platformID, map[string]any{"expectedVersion": 1, "accountIdentifier": "account-updated"}, "platform-update")
 	if status != http.StatusOK || strings.Contains(text, "platform-secret") {
 		t.Fatalf("update platform: %d %s", status, text)
+	}
+	status, _, text = call(http.MethodPatch, "/api/v1/distribution-platforms/"+platformID, map[string]any{"expectedVersion": 1, "accountIdentifier": "account-updated"}, "platform-update")
+	if status != http.StatusOK || !strings.Contains(text, `"version":2`) {
+		t.Fatalf("replay platform update: %d %s", status, text)
+	}
+	status, _, text = call(http.MethodPatch, "/api/v1/distribution-platforms/"+platformID, map[string]any{"expectedVersion": 1, "accountIdentifier": "account-other"}, "platform-update")
+	if status != http.StatusConflict || !strings.Contains(text, "idempotency_key_reused_with_different_payload") {
+		t.Fatalf("platform update key conflict: %d %s", status, text)
 	}
 	var platformCipher, platformAudit string
 	if err := pool.QueryRow(ctx, "SELECT encrypted_credential FROM distribution_platform_configurations WHERE id=$1", platformID).Scan(&platformCipher); err != nil || strings.Contains(platformCipher, "platform-secret") {
@@ -308,6 +340,19 @@ func globalConfigurationTestDatabase(t *testing.T) (*pgxpool.Pool, context.Conte
 
 func TestGlobalConfigurationTypeCataloguesAndRequestBoundaries(t *testing.T) {
 	h := globalConfigurationHandler(t)
+	for _, tc := range []struct{ path, body string }{
+		{"/api/v1/llm-providers/00000000-0000-4000-8000-000000000001", `{"expectedVersion":1,"defaultModel":"x"}`},
+		{"/api/v1/workflow-connections/00000000-0000-4000-8000-000000000001", `{"expectedVersion":1,"timeoutSeconds":30}`},
+		{"/api/v1/workflow-configurations/00000000-0000-4000-8000-000000000001", `{"expectedVersion":1,"name":"x"}`},
+		{"/api/v1/distribution-platforms/00000000-0000-4000-8000-000000000001", `{"expectedVersion":1,"accountIdentifier":"x"}`},
+	} {
+		r := httptest.NewRequest(http.MethodPatch, tc.path, strings.NewReader(tc.body))
+		w := httptest.NewRecorder()
+		h.ServeHTTP(w, r)
+		if w.Code != http.StatusBadRequest || !strings.Contains(w.Body.String(), "Idempotency-Key") {
+			t.Fatalf("missing patch key %s: %d %s", tc.path, w.Code, w.Body.String())
+		}
+	}
 	for _, path := range []string{"/api/v1/llm-provider-types", "/api/v1/workflow-connection-types", "/api/v1/distribution-platform-types"} {
 		r := httptest.NewRequest(http.MethodGet, path, nil)
 		w := httptest.NewRecorder()

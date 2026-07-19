@@ -11,13 +11,13 @@ import (
 
 func registerGlobalConfigurationRoutes(m *http.ServeMux, s *globalconfig.Service) {
 	m.HandleFunc("GET /api/v1/llm-provider-types", func(w http.ResponseWriter, r *http.Request) {
-		writeJSON(w, r, 200, map[string]any{"items": []any{map[string]any{"providerType": "openai_compatible", "displayName": "OpenAI-compatible", "supportsSecret": true, "fieldSchemas": []any{}}}})
+		writeJSON(w, r, 200, map[string]any{"items": globalconfig.ProviderTypes()})
 	})
 	m.HandleFunc("GET /api/v1/workflow-connection-types", func(w http.ResponseWriter, r *http.Request) {
-		writeJSON(w, r, 200, map[string]any{"items": []any{map[string]any{"connectionType": "n8n", "displayName": "n8n", "authTypes": []string{"api_key"}, "fieldSchemas": []any{}}}})
+		writeJSON(w, r, 200, map[string]any{"items": globalconfig.ConnectionTypes()})
 	})
 	m.HandleFunc("GET /api/v1/distribution-platform-types", func(w http.ResponseWriter, r *http.Request) {
-		writeJSON(w, r, 200, map[string]any{"items": []any{map[string]any{"platformType": "wechat_official_account", "displayName": "WeChat Official Account", "authTypes": []string{"api_key"}, "fieldSchemas": []any{}}, map[string]any{"platformType": "douyin", "displayName": "Douyin", "authTypes": []string{"oauth", "access_token"}, "fieldSchemas": []any{}}, map[string]any{"platformType": "youtube", "displayName": "YouTube", "authTypes": []string{"oauth", "api_key"}, "fieldSchemas": []any{}}, map[string]any{"platformType": "custom", "displayName": "Custom", "authTypes": []string{"api_key", "oauth", "access_token", "custom"}, "fieldSchemas": []any{}}}})
+		writeJSON(w, r, 200, map[string]any{"items": globalconfig.PlatformTypes()})
 	})
 	m.HandleFunc("GET /api/v1/llm-providers", func(w http.ResponseWriter, r *http.Request) {
 		o, ok := configurationListOptions(w, r)
@@ -52,7 +52,11 @@ func registerGlobalConfigurationRoutes(m *http.ServeMux, s *globalconfig.Service
 		if !configurationBody(w, r, &x) {
 			return
 		}
-		v, e := s.UpdateProvider(r.Context(), id, x)
+		key, ok := configurationPatchKey(w, r)
+		if !ok {
+			return
+		}
+		v, e := s.UpdateProviderIdempotent(r.Context(), id, x, key)
 		configurationRead(w, r, v, e)
 	})
 	m.HandleFunc("GET /api/v1/workflow-connections", func(w http.ResponseWriter, r *http.Request) {
@@ -88,7 +92,11 @@ func registerGlobalConfigurationRoutes(m *http.ServeMux, s *globalconfig.Service
 		if !configurationBody(w, r, &x) {
 			return
 		}
-		v, e := s.UpdateConnection(r.Context(), id, x)
+		key, ok := configurationPatchKey(w, r)
+		if !ok {
+			return
+		}
+		v, e := s.UpdateConnectionIdempotent(r.Context(), id, x, key)
 		configurationRead(w, r, v, e)
 	})
 	m.HandleFunc("GET /api/v1/workflow-configurations", func(w http.ResponseWriter, r *http.Request) {
@@ -124,7 +132,11 @@ func registerGlobalConfigurationRoutes(m *http.ServeMux, s *globalconfig.Service
 		if !configurationBody(w, r, &x) {
 			return
 		}
-		v, e := s.UpdateWorkflow(r.Context(), id, x)
+		key, ok := configurationPatchKey(w, r)
+		if !ok {
+			return
+		}
+		v, e := s.UpdateWorkflowIdempotent(r.Context(), id, x, key)
 		configurationRead(w, r, v, e)
 	})
 	m.HandleFunc("GET /api/v1/distribution-platforms", func(w http.ResponseWriter, r *http.Request) {
@@ -160,13 +172,17 @@ func registerGlobalConfigurationRoutes(m *http.ServeMux, s *globalconfig.Service
 		if !configurationBody(w, r, &x) {
 			return
 		}
-		v, e := s.UpdatePlatform(r.Context(), id, x)
+		key, ok := configurationPatchKey(w, r)
+		if !ok {
+			return
+		}
+		v, e := s.UpdatePlatformIdempotent(r.Context(), id, x, key)
 		configurationRead(w, r, v, e)
 	})
 }
 func configurationBody(w http.ResponseWriter, r *http.Request, v any) bool {
 	if e := decodeBody(r, v); e != nil {
-		writeError(w, r, 400, "validation_error", "invalid request body", map[string]any{})
+		writeError(w, r, 400, "validation_error", "invalid request body", map[string]any{"fields": map[string]string{"body": "invalid_json_or_unknown_field"}})
 		return false
 	}
 	return true
@@ -182,8 +198,16 @@ func configurationID(w http.ResponseWriter, r *http.Request, n string) (uuid.UUI
 func configurationKey(r *http.Request) string {
 	return strings.TrimSpace(r.Header.Get("Idempotency-Key"))
 }
+func configurationPatchKey(w http.ResponseWriter, r *http.Request) (string, bool) {
+	key := configurationKey(r)
+	if key == "" || len(key) > 128 {
+		writeError(w, r, 400, "validation_error", "invalid idempotency key", map[string]any{"fields": map[string]string{"Idempotency-Key": "required_or_too_long"}})
+		return "", false
+	}
+	return key, true
+}
 func configurationListOptions(w http.ResponseWriter, r *http.Request) (globalconfig.ListOptions, bool) {
-	o := globalconfig.ListOptions{Query: strings.TrimSpace(r.URL.Query().Get("q")), Type: r.URL.Query().Get("providerType"), ConnectionID: r.URL.Query().Get("connectionId"), Limit: 20}
+	o := globalconfig.ListOptions{Query: strings.TrimSpace(r.URL.Query().Get("q")), Type: r.URL.Query().Get("providerType"), ConnectionID: r.URL.Query().Get("connectionId"), IntegrationStatus: r.URL.Query().Get("integrationStatus"), Limit: 20}
 	if o.Type == "" {
 		o.Type = r.URL.Query().Get("connectionType")
 	}
@@ -203,8 +227,30 @@ func configurationListOptions(w http.ResponseWriter, r *http.Request) (globalcon
 			*x.p = n
 		}
 	}
-	if len(o.Query) > 120 {
+	if len(o.Query) > 160 {
 		writeError(w, r, 400, "validation_error", "invalid query", map[string]any{})
+		return o, false
+	}
+	if o.ConnectionID != "" {
+		if _, err := uuid.Parse(o.ConnectionID); err != nil {
+			writeError(w, r, 400, "validation_error", "invalid query", map[string]any{"fields": map[string]string{"connectionId": "invalid_uuid"}})
+			return o, false
+		}
+	}
+	if o.IntegrationStatus != "" && !globalconfig.ValidIntegrationStatus(o.IntegrationStatus) {
+		writeError(w, r, 400, "validation_error", "invalid query", map[string]any{"fields": map[string]string{"integrationStatus": "invalid_enum"}})
+		return o, false
+	}
+	if raw, exists := r.URL.Query()["enabled"]; exists {
+		value, err := strconv.ParseBool(raw[0])
+		if err != nil {
+			writeError(w, r, 400, "validation_error", "invalid query", map[string]any{"fields": map[string]string{"enabled": "invalid_boolean"}})
+			return o, false
+		}
+		o.Enabled = &value
+	}
+	if o.Type != "" && !globalconfig.ValidType(r.URL.Path, o.Type) {
+		writeError(w, r, 400, "validation_error", "invalid query", map[string]any{"fields": map[string]string{"type": "invalid_enum"}})
 		return o, false
 	}
 	return o, true
@@ -238,8 +284,10 @@ func configurationError(w http.ResponseWriter, r *http.Request, e error) {
 		writeError(w, r, 409, "version_conflict", "configuration version conflict", map[string]any{})
 	case errors.Is(e, globalconfig.ErrIdempotency):
 		writeError(w, r, 409, "idempotency_key_reused_with_different_payload", "idempotency key reused", map[string]any{})
+	case errors.Is(e, globalconfig.ErrNameConflict):
+		writeError(w, r, 409, "validation_error", "configuration name already exists", map[string]any{"fields": map[string]string{"name": "already_exists"}})
 	case errors.Is(e, globalconfig.ErrValidation):
-		writeError(w, r, 400, "validation_error", "invalid configuration", map[string]any{})
+		writeError(w, r, 400, "validation_error", "invalid configuration", map[string]any{"fields": map[string]string{"body": "invalid"}})
 	default:
 		writeError(w, r, 500, "internal_error", "internal server error", map[string]any{})
 	}
