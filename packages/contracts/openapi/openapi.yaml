@@ -819,8 +819,245 @@ paths:
         "400": {$ref: "#/components/responses/BadRequest"}
         "404": {$ref: "#/components/responses/NotFound"}
         "500": {$ref: "#/components/responses/InternalServerError"}
+  /api/v1/llm-provider-types:
+    get:
+      operationId: listLlmProviderTypes
+      description: Returns supported LLM provider types and non-secret dynamic field definitions. This catalogue never contains credentials or model-discovery results.
+      responses:
+        "200":
+          description: LLM provider type catalogue.
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/LlmProviderTypeListEnvelope"}
+              example: {data: {items: [{providerType: openai_compatible, displayName: "OpenAI-compatible", supportsSecret: true, fieldSchemas: []}]}, request_id: req_llm_provider_types_01}
+        "500": {$ref: "#/components/responses/InternalServerError"}
+  /api/v1/llm-providers:
+    get:
+      operationId: listLlmProviders
+      description: Lists saved LLM provider configurations. q matches name after trimming; filters combine with AND. Results are ordered by updatedAt DESC, id ASC. Credentials, encrypted values and authorization headers are never returned.
+      parameters: [{$ref: "#/components/parameters/ConfigurationQuery"}, {$ref: "#/components/parameters/ProviderTypeQuery"}, {$ref: "#/components/parameters/IntegrationStatusQuery"}, {$ref: "#/components/parameters/EnabledQuery"}, {$ref: "#/components/parameters/LimitQuery"}, {$ref: "#/components/parameters/OffsetQuery"}]
+      responses:
+        "200": {description: Paginated LLM providers., content: {application/json: {schema: {$ref: "#/components/schemas/LlmProviderListEnvelope"}}}}
+        "400": {$ref: "#/components/responses/BadRequest"}
+        "500": {$ref: "#/components/responses/InternalServerError"}
+    post:
+      operationId: createLlmProvider
+      description: Creates a saved LLM provider without contacting the provider. Idempotency-Key is required and operation-scoped; replaying the same key and payload returns the original 201 result, while a different payload returns 409 idempotency_key_reused_with_different_payload. The returned configuration always has integrationStatus=not_connected and enabled=false.
+      parameters: [{$ref: "#/components/parameters/IdempotencyKey"}]
+      requestBody: {required: true, content: {application/json: {schema: {$ref: "#/components/schemas/CreateLlmProviderRequest"}}}}
+      responses:
+        "201": {description: LLM provider created., content: {application/json: {schema: {$ref: "#/components/schemas/LlmProviderEnvelope"}}}}
+        "400": {$ref: "#/components/responses/BadRequest"}
+        "409": {$ref: "#/components/responses/Conflict"}
+        "422": {$ref: "#/components/responses/UnprocessableEntity"}
+  /api/v1/llm-providers/{providerId}:
+    parameters: [{$ref: "#/components/parameters/ProviderId"}]
+    get:
+      operationId: getLlmProvider
+      responses:
+        "200": {description: Saved LLM provider without credential material., content: {application/json: {schema: {$ref: "#/components/schemas/LlmProviderEnvelope"}}}}
+        "400": {$ref: "#/components/responses/BadRequest"}
+        "404": {$ref: "#/components/responses/NotFound"}
+    patch:
+      operationId: updateLlmProvider
+      description: Updates mutable fields with optimistic locking. providerType, integrationStatus and enabled are read-only and rejected if supplied. Omitted secret preserves it; secret replaces it only when non-empty; clearSecret=true explicitly clears it. An empty secret never clears a stored secret.
+      parameters: [{$ref: "#/components/parameters/IdempotencyKey"}]
+      requestBody: {required: true, content: {application/json: {schema: {$ref: "#/components/schemas/UpdateLlmProviderRequest"}}}}
+      responses:
+        "200": {description: Updated LLM provider., content: {application/json: {schema: {$ref: "#/components/schemas/LlmProviderEnvelope"}}}}
+        "400": {$ref: "#/components/responses/BadRequest"}
+        "404": {$ref: "#/components/responses/NotFound"}
+        "409": {$ref: "#/components/responses/Conflict"}
+        "422": {$ref: "#/components/responses/UnprocessableEntity"}
+  /api/v1/workflow-connection-types:
+    get:
+      operationId: listWorkflowConnectionTypes
+      description: Returns generic workflow connection type definitions and non-secret dynamic field definitions. The only supported connectionType in Iteration 12 is n8n.
+      responses:
+        "200":
+          description: Workflow connection type catalogue.
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/WorkflowConnectionTypeListEnvelope"}
+              example: {data: {items: [{connectionType: n8n, displayName: n8n, authTypes: [api_key], fieldSchemas: []}]}, request_id: req_connection_types_01}
+        "500": {$ref: "#/components/responses/InternalServerError"}
+  /api/v1/workflow-connections:
+    get:
+      operationId: listWorkflowConnections
+      description: Lists saved generic workflow connections; q matches name after trimming and filters combine with AND. Results are ordered by updatedAt DESC, id ASC. Credential material is never returned.
+      parameters: [{$ref: "#/components/parameters/ConfigurationQuery"}, {$ref: "#/components/parameters/ConnectionTypeQuery"}, {$ref: "#/components/parameters/IntegrationStatusQuery"}, {$ref: "#/components/parameters/EnabledQuery"}, {$ref: "#/components/parameters/LimitQuery"}, {$ref: "#/components/parameters/OffsetQuery"}]
+      responses:
+        "200": {description: Paginated workflow connections., content: {application/json: {schema: {$ref: "#/components/schemas/WorkflowConnectionListEnvelope"}}}}
+        "400": {$ref: "#/components/responses/BadRequest"}
+        "500": {$ref: "#/components/responses/InternalServerError"}
+    post:
+      operationId: createWorkflowConnection
+      description: Creates a workflow connection without contacting n8n. connectionType is required and currently must be n8n. Idempotency-Key is required and operation-scoped. The returned configuration always has integrationStatus=not_connected and enabled=false.
+      parameters: [{$ref: "#/components/parameters/IdempotencyKey"}]
+      requestBody: {required: true, content: {application/json: {schema: {$ref: "#/components/schemas/CreateWorkflowConnectionRequest"}}}}
+      responses:
+        "201": {description: Workflow connection created., content: {application/json: {schema: {$ref: "#/components/schemas/WorkflowConnectionEnvelope"}}}}
+        "400": {$ref: "#/components/responses/BadRequest"}
+        "409": {$ref: "#/components/responses/Conflict"}
+        "422": {$ref: "#/components/responses/UnprocessableEntity"}
+  /api/v1/workflow-connections/{connectionId}:
+    parameters: [{$ref: "#/components/parameters/ConnectionId"}]
+    get:
+      operationId: getWorkflowConnection
+      responses:
+        "200": {description: Saved workflow connection without credential material., content: {application/json: {schema: {$ref: "#/components/schemas/WorkflowConnectionEnvelope"}}}}
+        "400": {$ref: "#/components/responses/BadRequest"}
+        "404": {$ref: "#/components/responses/NotFound"}
+    patch:
+      operationId: updateWorkflowConnection
+      description: Updates mutable fields with optimistic locking. connectionType, integrationStatus and enabled are read-only and rejected if supplied. Omitted credential preserves it; credential replaces it only when non-empty; clearCredential=true explicitly clears it. An empty credential never clears a stored credential.
+      parameters: [{$ref: "#/components/parameters/IdempotencyKey"}]
+      requestBody: {required: true, content: {application/json: {schema: {$ref: "#/components/schemas/UpdateWorkflowConnectionRequest"}}}}
+      responses:
+        "200": {description: Updated workflow connection., content: {application/json: {schema: {$ref: "#/components/schemas/WorkflowConnectionEnvelope"}}}}
+        "400": {$ref: "#/components/responses/BadRequest"}
+        "404": {$ref: "#/components/responses/NotFound"}
+        "409": {$ref: "#/components/responses/Conflict"}
+        "422": {$ref: "#/components/responses/UnprocessableEntity"}
+  /api/v1/workflow-configurations:
+    get:
+      operationId: listWorkflowConfigurations
+      description: Lists reusable workflow configurations. q matches name after trimming; connectionId and connectionType filters combine with AND. Results are ordered by updatedAt DESC, id ASC.
+      parameters: [{$ref: "#/components/parameters/ConfigurationQuery"}, {$ref: "#/components/parameters/ConnectionIdQuery"}, {$ref: "#/components/parameters/ConnectionTypeQuery"}, {$ref: "#/components/parameters/IntegrationStatusQuery"}, {$ref: "#/components/parameters/EnabledQuery"}, {$ref: "#/components/parameters/LimitQuery"}, {$ref: "#/components/parameters/OffsetQuery"}]
+      responses:
+        "200": {description: Paginated workflow configurations., content: {application/json: {schema: {$ref: "#/components/schemas/WorkflowConfigurationListEnvelope"}}}}
+        "400": {$ref: "#/components/responses/BadRequest"}
+        "500": {$ref: "#/components/responses/InternalServerError"}
+    post:
+      operationId: createWorkflowConfiguration
+      description: Creates a workflow bound to an existing connection. connectionId is required; workflowType is derived server-side and clients must not submit it. Idempotency-Key is required and operation-scoped. The returned configuration always has integrationStatus=not_connected and enabled=false.
+      parameters: [{$ref: "#/components/parameters/IdempotencyKey"}]
+      requestBody: {required: true, content: {application/json: {schema: {$ref: "#/components/schemas/CreateWorkflowConfigurationRequest"}}}}
+      responses:
+        "201": {description: Workflow configuration created., content: {application/json: {schema: {$ref: "#/components/schemas/WorkflowConfigurationEnvelope"}}}}
+        "400": {$ref: "#/components/responses/BadRequest"}
+        "404": {$ref: "#/components/responses/NotFound"}
+        "409": {$ref: "#/components/responses/Conflict"}
+        "422": {$ref: "#/components/responses/UnprocessableEntity"}
+  /api/v1/workflow-configurations/{workflowId}:
+    parameters: [{$ref: "#/components/parameters/WorkflowConfigurationId"}]
+    get:
+      operationId: getWorkflowConfiguration
+      responses:
+        "200": {description: Saved workflow with derived connectionType and workflowType., content: {application/json: {schema: {$ref: "#/components/schemas/WorkflowConfigurationEnvelope"}}}}
+        "400": {$ref: "#/components/responses/BadRequest"}
+        "404": {$ref: "#/components/responses/NotFound"}
+    patch:
+      operationId: updateWorkflowConfiguration
+      description: Updates mutable fields with optimistic locking. workflowType, connectionType, integrationStatus and enabled are read-only and rejected if supplied. Changing connectionId makes the server rederive workflowType and clear typeConfig when the type changes, or locally revalidate typeConfig when it does not; no external verification occurs.
+      parameters: [{$ref: "#/components/parameters/IdempotencyKey"}]
+      requestBody: {required: true, content: {application/json: {schema: {$ref: "#/components/schemas/UpdateWorkflowConfigurationRequest"}}}}
+      responses:
+        "200": {description: Updated workflow configuration., content: {application/json: {schema: {$ref: "#/components/schemas/WorkflowConfigurationEnvelope"}}}}
+        "400": {$ref: "#/components/responses/BadRequest"}
+        "404": {$ref: "#/components/responses/NotFound"}
+        "409": {$ref: "#/components/responses/Conflict"}
+        "422": {$ref: "#/components/responses/UnprocessableEntity"}
+  /api/v1/distribution-platform-types:
+    get:
+      operationId: listDistributionPlatformTypes
+      description: Returns distribution platform type definitions, auth options and non-secret dynamic field definitions. No credential verification, OAuth flow or publishing action is exposed.
+      responses:
+        "200":
+          description: Distribution platform type catalogue.
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/DistributionPlatformTypeListEnvelope"}
+              example: {data: {items: [{platformType: wechat_official_account, displayName: "WeChat Official Account", authTypes: [api_key], fieldSchemas: []}]}, request_id: req_distribution_types_01}
+        "500": {$ref: "#/components/responses/InternalServerError"}
+  /api/v1/distribution-platforms:
+    get:
+      operationId: listDistributionPlatforms
+      description: Lists saved distribution platform configurations. q matches name after trimming; filters combine with AND. Results are ordered by updatedAt DESC, id ASC. Credential material is never returned.
+      parameters: [{$ref: "#/components/parameters/ConfigurationQuery"}, {$ref: "#/components/parameters/PlatformTypeQuery"}, {$ref: "#/components/parameters/IntegrationStatusQuery"}, {$ref: "#/components/parameters/EnabledQuery"}, {$ref: "#/components/parameters/LimitQuery"}, {$ref: "#/components/parameters/OffsetQuery"}]
+      responses:
+        "200": {description: Paginated distribution platform configurations., content: {application/json: {schema: {$ref: "#/components/schemas/DistributionPlatformListEnvelope"}}}}
+        "400": {$ref: "#/components/responses/BadRequest"}
+        "500": {$ref: "#/components/responses/InternalServerError"}
+    post:
+      operationId: createDistributionPlatform
+      description: Creates a platform configuration without verifying credentials or contacting a platform. Idempotency-Key is required and operation-scoped. The returned configuration always has integrationStatus=not_connected and enabled=false.
+      parameters: [{$ref: "#/components/parameters/IdempotencyKey"}]
+      requestBody: {required: true, content: {application/json: {schema: {$ref: "#/components/schemas/CreateDistributionPlatformRequest"}}}}
+      responses:
+        "201": {description: Distribution platform created., content: {application/json: {schema: {$ref: "#/components/schemas/DistributionPlatformEnvelope"}}}}
+        "400": {$ref: "#/components/responses/BadRequest"}
+        "409": {$ref: "#/components/responses/Conflict"}
+        "422": {$ref: "#/components/responses/UnprocessableEntity"}
+  /api/v1/distribution-platforms/{platformId}:
+    parameters: [{$ref: "#/components/parameters/PlatformId"}]
+    get:
+      operationId: getDistributionPlatform
+      responses:
+        "200": {description: Saved distribution platform without credential material., content: {application/json: {schema: {$ref: "#/components/schemas/DistributionPlatformEnvelope"}}}}
+        "400": {$ref: "#/components/responses/BadRequest"}
+        "404": {$ref: "#/components/responses/NotFound"}
+    patch:
+      operationId: updateDistributionPlatform
+      description: Updates mutable fields with optimistic locking. platformType, integrationStatus and enabled are read-only and rejected if supplied. Omitted credential preserves it; credential replaces it only when non-empty; clearCredential=true explicitly clears it. An empty credential never clears a stored credential.
+      parameters: [{$ref: "#/components/parameters/IdempotencyKey"}]
+      requestBody: {required: true, content: {application/json: {schema: {$ref: "#/components/schemas/UpdateDistributionPlatformRequest"}}}}
+      responses:
+        "200": {description: Updated distribution platform., content: {application/json: {schema: {$ref: "#/components/schemas/DistributionPlatformEnvelope"}}}}
+        "400": {$ref: "#/components/responses/BadRequest"}
+        "404": {$ref: "#/components/responses/NotFound"}
+        "409": {$ref: "#/components/responses/Conflict"}
+        "422": {$ref: "#/components/responses/UnprocessableEntity"}
 components:
   parameters:
+    ProviderId:
+      name: providerId
+      in: path
+      required: true
+      schema: {type: string, format: uuid}
+    ConnectionId:
+      name: connectionId
+      in: path
+      required: true
+      schema: {type: string, format: uuid}
+    WorkflowConfigurationId:
+      name: workflowId
+      in: path
+      required: true
+      schema: {type: string, format: uuid}
+    PlatformId:
+      name: platformId
+      in: path
+      required: true
+      schema: {type: string, format: uuid}
+    ConfigurationQuery:
+      name: q
+      in: query
+      schema: {type: string, maxLength: 160}
+    ProviderTypeQuery:
+      name: providerType
+      in: query
+      schema: {$ref: "#/components/schemas/LlmProviderTypeCode"}
+    ConnectionTypeQuery:
+      name: connectionType
+      in: query
+      schema: {$ref: "#/components/schemas/WorkflowConnectionTypeCode"}
+    ConnectionIdQuery:
+      name: connectionId
+      in: query
+      schema: {type: string, format: uuid}
+    PlatformTypeQuery:
+      name: platformType
+      in: query
+      schema: {$ref: "#/components/schemas/DistributionPlatformTypeCode"}
+    IntegrationStatusQuery:
+      name: integrationStatus
+      in: query
+      schema: {$ref: "#/components/schemas/IntegrationStatus"}
+    EnabledQuery:
+      name: enabled
+      in: query
+      schema: {type: boolean}
     ContentItemId:
       name: contentItemId
       in: path
@@ -990,6 +1227,371 @@ components:
       description: "Unexpected safe server failure. Error bodies never include SQL, stack traces or implementation details."
       content: {application/json: {schema: {$ref: "#/components/schemas/ErrorEnvelope"}}}
   schemas:
+    IntegrationStatus:
+      type: string
+      enum: [not_connected, unverified, verified, failed]
+    ConfigurationFieldSchema:
+      type: object
+      additionalProperties: false
+      required: [name, label, valueType, required]
+      properties:
+        name: {type: string, minLength: 1, maxLength: 80}
+        label: {type: string, minLength: 1, maxLength: 120}
+        valueType: {type: string, enum: [string, integer, boolean, object]}
+        required: {type: boolean}
+        constraints: {type: object, additionalProperties: true}
+      description: Non-secret dynamic form field definition. It never defines a credential value or authorization header.
+    LlmProviderTypeCode:
+      type: string
+      enum: [openai_compatible]
+    LlmProviderType:
+      type: object
+      additionalProperties: false
+      required: [providerType, displayName, supportsSecret, fieldSchemas]
+      properties:
+        providerType: {$ref: "#/components/schemas/LlmProviderTypeCode"}
+        displayName: {type: string, minLength: 1, maxLength: 120}
+        supportsSecret: {type: boolean}
+        fieldSchemas: {type: array, items: {$ref: "#/components/schemas/ConfigurationFieldSchema"}}
+    LlmProviderTypeList:
+      type: object
+      additionalProperties: false
+      required: [items]
+      properties:
+        items: {type: array, items: {$ref: "#/components/schemas/LlmProviderType"}}
+    LlmProviderTypeListEnvelope:
+      type: object
+      additionalProperties: false
+      required: [data, request_id]
+      properties:
+        data: {$ref: "#/components/schemas/LlmProviderTypeList"}
+        request_id: {type: string}
+    LlmProvider:
+      type: object
+      additionalProperties: false
+      required: [id, name, providerType, baseUrl, defaultModel, timeoutSeconds, hasSecret, secretFingerprint, integrationStatus, enabled, lastVerifiedAt, lastErrorCode, lastErrorMessage, version, createdAt, updatedAt]
+      properties:
+        id: {type: string, format: uuid, readOnly: true}
+        name: {type: string, minLength: 1, maxLength: 120}
+        providerType: {allOf: [{$ref: "#/components/schemas/LlmProviderTypeCode"}], readOnly: true}
+        baseUrl: {type: string, format: uri, maxLength: 512}
+        defaultModel: {type: string, minLength: 1, maxLength: 160}
+        timeoutSeconds: {type: integer, minimum: 5, maximum: 300}
+        hasSecret: {type: boolean, readOnly: true}
+        secretFingerprint: {type: [string, "null"], maxLength: 32, readOnly: true, description: Non-reversible safe identifier; plaintext and ciphertext are never returned.}
+        integrationStatus: {allOf: [{$ref: "#/components/schemas/IntegrationStatus"}], readOnly: true}
+        enabled: {type: boolean, readOnly: true}
+        lastVerifiedAt: {type: [string, "null"], format: date-time, readOnly: true}
+        lastErrorCode: {type: [string, "null"], maxLength: 80, readOnly: true}
+        lastErrorMessage: {type: [string, "null"], maxLength: 300, readOnly: true}
+        version: {type: integer, minimum: 1, readOnly: true}
+        createdAt: {type: string, format: date-time, readOnly: true}
+        updatedAt: {type: string, format: date-time, readOnly: true}
+      example: {id: "018f0c20-0000-4000-8000-000000000001", name: Primary OpenAI-compatible, providerType: openai_compatible, baseUrl: "https://api.example.test/v1", defaultModel: gpt-4.1-mini, timeoutSeconds: 30, hasSecret: true, secretFingerprint: "4e3b9a1c", integrationStatus: not_connected, enabled: false, lastVerifiedAt: null, lastErrorCode: null, lastErrorMessage: null, version: 1, createdAt: "2026-07-19T09:00:00Z", updatedAt: "2026-07-19T09:00:00Z"}
+    CreateLlmProviderRequest:
+      type: object
+      additionalProperties: false
+      required: [name, providerType, baseUrl, defaultModel, timeoutSeconds]
+      properties:
+        name: {type: string, minLength: 1, maxLength: 120}
+        providerType: {$ref: "#/components/schemas/LlmProviderTypeCode"}
+        baseUrl: {type: string, format: uri, maxLength: 512}
+        defaultModel: {type: string, minLength: 1, maxLength: 160}
+        timeoutSeconds: {type: integer, minimum: 5, maximum: 300}
+        secret: {type: string, minLength: 1, maxLength: 16384, writeOnly: true, description: Stored securely and never returned.}
+      example: {name: Primary OpenAI-compatible, providerType: openai_compatible, baseUrl: "https://api.example.test/v1", defaultModel: gpt-4.1-mini, timeoutSeconds: 30, secret: "example-secret"}
+    UpdateLlmProviderRequest:
+      type: object
+      additionalProperties: false
+      required: [expectedVersion]
+      minProperties: 2
+      properties:
+        expectedVersion: {type: integer, minimum: 1}
+        name: {type: string, minLength: 1, maxLength: 120}
+        baseUrl: {type: string, format: uri, maxLength: 512}
+        defaultModel: {type: string, minLength: 1, maxLength: 160}
+        timeoutSeconds: {type: integer, minimum: 5, maximum: 300}
+        secret: {type: string, minLength: 1, maxLength: 16384, writeOnly: true, description: Omit to retain; empty string is invalid and never clears.}
+        clearSecret: {type: boolean, const: true, description: Explicitly clears the stored secret; cannot be expressed with an empty string.}
+    LlmProviderList:
+      type: object
+      additionalProperties: false
+      required: [items, total, limit, offset]
+      properties:
+        items: {type: array, items: {$ref: "#/components/schemas/LlmProvider"}}
+        total: {type: integer, minimum: 0}
+        limit: {type: integer, minimum: 1, maximum: 100}
+        offset: {type: integer, minimum: 0}
+    LlmProviderEnvelope:
+      type: object
+      additionalProperties: false
+      required: [data, request_id]
+      properties: {data: {$ref: "#/components/schemas/LlmProvider"}, request_id: {type: string}}
+    LlmProviderListEnvelope:
+      type: object
+      additionalProperties: false
+      required: [data, request_id]
+      properties: {data: {$ref: "#/components/schemas/LlmProviderList"}, request_id: {type: string}}
+    WorkflowConnectionTypeCode:
+      type: string
+      enum: [n8n]
+    WorkflowConnectionType:
+      type: object
+      additionalProperties: false
+      required: [connectionType, displayName, authTypes, fieldSchemas]
+      properties:
+        connectionType: {$ref: "#/components/schemas/WorkflowConnectionTypeCode"}
+        displayName: {type: string, minLength: 1, maxLength: 120}
+        authTypes: {type: array, minItems: 1, items: {type: string, enum: [api_key]}}
+        fieldSchemas: {type: array, items: {$ref: "#/components/schemas/ConfigurationFieldSchema"}}
+    WorkflowConnectionTypeList:
+      type: object
+      additionalProperties: false
+      required: [items]
+      properties: {items: {type: array, items: {$ref: "#/components/schemas/WorkflowConnectionType"}}}
+    WorkflowConnectionTypeListEnvelope:
+      type: object
+      additionalProperties: false
+      required: [data, request_id]
+      properties: {data: {$ref: "#/components/schemas/WorkflowConnectionTypeList"}, request_id: {type: string}}
+    N8nTypeConfig:
+      type: object
+      additionalProperties: false
+      required: [referenceType, referenceValue]
+      properties:
+        referenceType: {type: string, enum: [workflow_id, webhook_path]}
+        referenceValue: {type: string, minLength: 1, maxLength: 512}
+    WorkflowConnection:
+      type: object
+      additionalProperties: false
+      required: [id, name, connectionType, baseUrl, authType, timeoutSeconds, typeConfig, hasCredential, credentialFingerprint, integrationStatus, enabled, lastVerifiedAt, lastErrorCode, lastErrorMessage, version, createdAt, updatedAt]
+      properties:
+        id: {type: string, format: uuid, readOnly: true}
+        name: {type: string, minLength: 1, maxLength: 120}
+        connectionType: {allOf: [{$ref: "#/components/schemas/WorkflowConnectionTypeCode"}], readOnly: true}
+        baseUrl: {type: string, format: uri, maxLength: 512}
+        authType: {type: string, enum: [api_key]}
+        timeoutSeconds: {type: integer, minimum: 5, maximum: 300}
+        typeConfig: {$ref: "#/components/schemas/N8nTypeConfig"}
+        hasCredential: {type: boolean, readOnly: true}
+        credentialFingerprint: {type: [string, "null"], maxLength: 32, readOnly: true, description: Non-reversible safe identifier; plaintext and ciphertext are never returned.}
+        integrationStatus: {allOf: [{$ref: "#/components/schemas/IntegrationStatus"}], readOnly: true}
+        enabled: {type: boolean, readOnly: true}
+        lastVerifiedAt: {type: [string, "null"], format: date-time, readOnly: true}
+        lastErrorCode: {type: [string, "null"], maxLength: 80, readOnly: true}
+        lastErrorMessage: {type: [string, "null"], maxLength: 300, readOnly: true}
+        version: {type: integer, minimum: 1, readOnly: true}
+        createdAt: {type: string, format: date-time, readOnly: true}
+        updatedAt: {type: string, format: date-time, readOnly: true}
+    CreateWorkflowConnectionRequest:
+      type: object
+      additionalProperties: false
+      required: [name, connectionType, baseUrl, authType, timeoutSeconds, typeConfig]
+      properties:
+        name: {type: string, minLength: 1, maxLength: 120}
+        connectionType: {$ref: "#/components/schemas/WorkflowConnectionTypeCode"}
+        baseUrl: {type: string, format: uri, maxLength: 512}
+        authType: {type: string, enum: [api_key]}
+        timeoutSeconds: {type: integer, minimum: 5, maximum: 300}
+        typeConfig: {$ref: "#/components/schemas/N8nTypeConfig"}
+        credential: {type: string, minLength: 1, maxLength: 16384, writeOnly: true, description: Stored securely and never returned.}
+      example: {name: Main workflow connection, connectionType: n8n, baseUrl: "https://n8n.example.test", authType: api_key, timeoutSeconds: 30, typeConfig: {referenceType: workflow_id, referenceValue: "workflow-123"}, credential: "example-key"}
+    UpdateWorkflowConnectionRequest:
+      type: object
+      additionalProperties: false
+      required: [expectedVersion]
+      minProperties: 2
+      properties:
+        expectedVersion: {type: integer, minimum: 1}
+        name: {type: string, minLength: 1, maxLength: 120}
+        baseUrl: {type: string, format: uri, maxLength: 512}
+        authType: {type: string, enum: [api_key]}
+        timeoutSeconds: {type: integer, minimum: 5, maximum: 300}
+        typeConfig: {$ref: "#/components/schemas/N8nTypeConfig"}
+        credential: {type: string, minLength: 1, maxLength: 16384, writeOnly: true, description: Omit to retain; empty string is invalid and never clears.}
+        clearCredential: {type: boolean, const: true, description: Explicitly clears the stored credential; cannot be expressed with an empty string.}
+    WorkflowConnectionList:
+      type: object
+      additionalProperties: false
+      required: [items, total, limit, offset]
+      properties: {items: {type: array, items: {$ref: "#/components/schemas/WorkflowConnection"}}, total: {type: integer, minimum: 0}, limit: {type: integer, minimum: 1, maximum: 100}, offset: {type: integer, minimum: 0}}
+    WorkflowConnectionEnvelope:
+      type: object
+      additionalProperties: false
+      required: [data, request_id]
+      properties: {data: {$ref: "#/components/schemas/WorkflowConnection"}, request_id: {type: string}}
+    WorkflowConnectionListEnvelope:
+      type: object
+      additionalProperties: false
+      required: [data, request_id]
+      properties: {data: {$ref: "#/components/schemas/WorkflowConnectionList"}, request_id: {type: string}}
+    WorkflowType:
+      type: string
+      enum: [n8n]
+    ApplicableStage:
+      type: string
+      enum: [chapter_planning, content_generation, review, rewrite]
+    WorkflowConfiguration:
+      type: object
+      additionalProperties: false
+      required: [id, name, connectionId, connectionName, connectionType, workflowType, applicableStages, typeConfig, inputContractVersion, outputContractVersion, defaultParameters, note, integrationStatus, enabled, lastVerifiedAt, lastErrorCode, lastErrorMessage, version, createdAt, updatedAt]
+      properties:
+        id: {type: string, format: uuid, readOnly: true}
+        name: {type: string, minLength: 1, maxLength: 160}
+        connectionId: {type: string, format: uuid}
+        connectionName: {type: string, minLength: 1, maxLength: 120, readOnly: true}
+        connectionType: {allOf: [{$ref: "#/components/schemas/WorkflowConnectionTypeCode"}], readOnly: true}
+        workflowType: {allOf: [{$ref: "#/components/schemas/WorkflowType"}], readOnly: true, description: Derived by the server from connectionType; clients never submit this field.}
+        applicableStages: {type: array, minItems: 1, uniqueItems: true, items: {$ref: "#/components/schemas/ApplicableStage"}}
+        typeConfig: {$ref: "#/components/schemas/N8nTypeConfig"}
+        inputContractVersion: {type: string, minLength: 1, maxLength: 40}
+        outputContractVersion: {type: string, minLength: 1, maxLength: 40}
+        defaultParameters: {type: object, additionalProperties: true}
+        note: {type: [string, "null"], maxLength: 5000}
+        integrationStatus: {allOf: [{$ref: "#/components/schemas/IntegrationStatus"}], readOnly: true}
+        enabled: {type: boolean, readOnly: true}
+        lastVerifiedAt: {type: [string, "null"], format: date-time, readOnly: true}
+        lastErrorCode: {type: [string, "null"], maxLength: 80, readOnly: true}
+        lastErrorMessage: {type: [string, "null"], maxLength: 300, readOnly: true}
+        version: {type: integer, minimum: 1, readOnly: true}
+        createdAt: {type: string, format: date-time, readOnly: true}
+        updatedAt: {type: string, format: date-time, readOnly: true}
+    CreateWorkflowConfigurationRequest:
+      type: object
+      additionalProperties: false
+      required: [name, connectionId, applicableStages, typeConfig, inputContractVersion, outputContractVersion]
+      properties:
+        name: {type: string, minLength: 1, maxLength: 160}
+        connectionId: {type: string, format: uuid}
+        applicableStages: {type: array, minItems: 1, uniqueItems: true, items: {$ref: "#/components/schemas/ApplicableStage"}}
+        typeConfig: {$ref: "#/components/schemas/N8nTypeConfig"}
+        inputContractVersion: {type: string, minLength: 1, maxLength: 40}
+        outputContractVersion: {type: string, minLength: 1, maxLength: 40}
+        defaultParameters: {type: object, additionalProperties: true, default: {}}
+        note: {type: [string, "null"], maxLength: 5000}
+      example: {name: Chapter planner, connectionId: "018f0c20-0000-4000-8000-000000000002", applicableStages: [chapter_planning], typeConfig: {referenceType: workflow_id, referenceValue: "chapter-plan"}, inputContractVersion: v1, outputContractVersion: v1, defaultParameters: {}, note: null}
+    UpdateWorkflowConfigurationRequest:
+      type: object
+      additionalProperties: false
+      required: [expectedVersion]
+      minProperties: 2
+      properties:
+        expectedVersion: {type: integer, minimum: 1}
+        name: {type: string, minLength: 1, maxLength: 160}
+        connectionId: {type: string, format: uuid, description: Rebinding triggers server-side type derivation and local typeConfig clearing or revalidation.}
+        applicableStages: {type: array, minItems: 1, uniqueItems: true, items: {$ref: "#/components/schemas/ApplicableStage"}}
+        typeConfig: {$ref: "#/components/schemas/N8nTypeConfig"}
+        inputContractVersion: {type: string, minLength: 1, maxLength: 40}
+        outputContractVersion: {type: string, minLength: 1, maxLength: 40}
+        defaultParameters: {type: object, additionalProperties: true}
+        note: {type: [string, "null"], maxLength: 5000}
+    WorkflowConfigurationList:
+      type: object
+      additionalProperties: false
+      required: [items, total, limit, offset]
+      properties: {items: {type: array, items: {$ref: "#/components/schemas/WorkflowConfiguration"}}, total: {type: integer, minimum: 0}, limit: {type: integer, minimum: 1, maximum: 100}, offset: {type: integer, minimum: 0}}
+    WorkflowConfigurationEnvelope:
+      type: object
+      additionalProperties: false
+      required: [data, request_id]
+      properties: {data: {$ref: "#/components/schemas/WorkflowConfiguration"}, request_id: {type: string}}
+    WorkflowConfigurationListEnvelope:
+      type: object
+      additionalProperties: false
+      required: [data, request_id]
+      properties: {data: {$ref: "#/components/schemas/WorkflowConfigurationList"}, request_id: {type: string}}
+    DistributionPlatformTypeCode:
+      type: string
+      enum: [wechat_official_account, douyin, youtube, custom]
+    DistributionPlatformType:
+      type: object
+      additionalProperties: false
+      required: [platformType, displayName, authTypes, fieldSchemas]
+      properties:
+        platformType: {$ref: "#/components/schemas/DistributionPlatformTypeCode"}
+        displayName: {type: string, minLength: 1, maxLength: 120}
+        authTypes: {type: array, minItems: 1, items: {type: string, enum: [api_key, oauth, access_token, custom]}}
+        fieldSchemas: {type: array, items: {$ref: "#/components/schemas/ConfigurationFieldSchema"}}
+    DistributionPlatformTypeList:
+      type: object
+      additionalProperties: false
+      required: [items]
+      properties: {items: {type: array, items: {$ref: "#/components/schemas/DistributionPlatformType"}}}
+    DistributionPlatformTypeListEnvelope:
+      type: object
+      additionalProperties: false
+      required: [data, request_id]
+      properties: {data: {$ref: "#/components/schemas/DistributionPlatformTypeList"}, request_id: {type: string}}
+    DistributionPlatform:
+      type: object
+      additionalProperties: false
+      required: [id, name, platformType, accountIdentifier, endpointUrl, authType, timeoutSeconds, typeConfig, note, hasCredential, credentialFingerprint, integrationStatus, enabled, lastVerifiedAt, lastErrorCode, lastErrorMessage, version, createdAt, updatedAt]
+      properties:
+        id: {type: string, format: uuid, readOnly: true}
+        name: {type: string, minLength: 1, maxLength: 120}
+        platformType: {allOf: [{$ref: "#/components/schemas/DistributionPlatformTypeCode"}], readOnly: true}
+        accountIdentifier: {type: string, minLength: 1, maxLength: 240}
+        endpointUrl: {type: [string, "null"], format: uri, maxLength: 512, description: Required for platformType=custom and otherwise governed by the selected local type schema.}
+        authType: {type: string, enum: [api_key, oauth, access_token, custom]}
+        timeoutSeconds: {type: integer, minimum: 5, maximum: 300}
+        typeConfig: {type: object, additionalProperties: true}
+        note: {type: [string, "null"], maxLength: 5000}
+        hasCredential: {type: boolean, readOnly: true}
+        credentialFingerprint: {type: [string, "null"], maxLength: 32, readOnly: true, description: Non-reversible safe identifier; plaintext and ciphertext are never returned.}
+        integrationStatus: {allOf: [{$ref: "#/components/schemas/IntegrationStatus"}], readOnly: true}
+        enabled: {type: boolean, readOnly: true}
+        lastVerifiedAt: {type: [string, "null"], format: date-time, readOnly: true}
+        lastErrorCode: {type: [string, "null"], maxLength: 80, readOnly: true}
+        lastErrorMessage: {type: [string, "null"], maxLength: 300, readOnly: true}
+        version: {type: integer, minimum: 1, readOnly: true}
+        createdAt: {type: string, format: date-time, readOnly: true}
+        updatedAt: {type: string, format: date-time, readOnly: true}
+    CreateDistributionPlatformRequest:
+      type: object
+      additionalProperties: false
+      required: [name, platformType, accountIdentifier, authType, timeoutSeconds, typeConfig]
+      properties:
+        name: {type: string, minLength: 1, maxLength: 120}
+        platformType: {$ref: "#/components/schemas/DistributionPlatformTypeCode"}
+        accountIdentifier: {type: string, minLength: 1, maxLength: 240}
+        endpointUrl: {type: [string, "null"], format: uri, maxLength: 512, description: Required when platformType is custom.}
+        authType: {type: string, enum: [api_key, oauth, access_token, custom]}
+        timeoutSeconds: {type: integer, minimum: 5, maximum: 300}
+        typeConfig: {type: object, additionalProperties: true}
+        note: {type: [string, "null"], maxLength: 5000}
+        credential: {type: string, minLength: 1, maxLength: 16384, writeOnly: true, description: Stored securely and never returned.}
+      example: {name: Company WeChat, platformType: wechat_official_account, accountIdentifier: company-account, endpointUrl: null, authType: api_key, timeoutSeconds: 30, typeConfig: {}, note: null, credential: "example-key"}
+    UpdateDistributionPlatformRequest:
+      type: object
+      additionalProperties: false
+      required: [expectedVersion]
+      minProperties: 2
+      properties:
+        expectedVersion: {type: integer, minimum: 1}
+        name: {type: string, minLength: 1, maxLength: 120}
+        accountIdentifier: {type: string, minLength: 1, maxLength: 240}
+        endpointUrl: {type: [string, "null"], format: uri, maxLength: 512}
+        authType: {type: string, enum: [api_key, oauth, access_token, custom]}
+        timeoutSeconds: {type: integer, minimum: 5, maximum: 300}
+        typeConfig: {type: object, additionalProperties: true}
+        note: {type: [string, "null"], maxLength: 5000}
+        credential: {type: string, minLength: 1, maxLength: 16384, writeOnly: true, description: Omit to retain; empty string is invalid and never clears.}
+        clearCredential: {type: boolean, const: true, description: Explicitly clears the stored credential; cannot be expressed with an empty string.}
+    DistributionPlatformList:
+      type: object
+      additionalProperties: false
+      required: [items, total, limit, offset]
+      properties: {items: {type: array, items: {$ref: "#/components/schemas/DistributionPlatform"}}, total: {type: integer, minimum: 0}, limit: {type: integer, minimum: 1, maximum: 100}, offset: {type: integer, minimum: 0}}
+    DistributionPlatformEnvelope:
+      type: object
+      additionalProperties: false
+      required: [data, request_id]
+      properties: {data: {$ref: "#/components/schemas/DistributionPlatform"}, request_id: {type: string}}
+    DistributionPlatformListEnvelope:
+      type: object
+      additionalProperties: false
+      required: [data, request_id]
+      properties: {data: {$ref: "#/components/schemas/DistributionPlatformList"}, request_id: {type: string}}
     Envelope:
       type: object
       required: [data, request_id]
