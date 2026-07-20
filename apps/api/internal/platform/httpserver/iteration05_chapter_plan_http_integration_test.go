@@ -18,7 +18,7 @@ import (
 	"github.com/local/ai-content-factory/apps/api/internal/project"
 )
 
-const iteration05HTTPTestDatabase = "ai_content_factory_i05_http_test"
+const iteration05HTTPTestDatabase = "ai_content_factory_http_test"
 
 type i05Envelope struct {
 	Data      json.RawMessage `json:"data"`
@@ -73,7 +73,7 @@ func openI05HTTP(t *testing.T) (*pgxpool.Pool, context.Context) {
 	}
 	t.Cleanup(pool.Close)
 	var version int
-	if err = pool.QueryRow(ctx, "SELECT COALESCE(MAX(version),0) FROM schema_migrations").Scan(&version); err != nil || version != 5 {
+	if err = pool.QueryRow(ctx, "SELECT COALESCE(MAX(version),0) FROM schema_migrations").Scan(&version); err != nil || version < 5 {
 		t.Fatalf("expected migrations through version 5, got %d: %v", version, err)
 	}
 	return pool, ctx

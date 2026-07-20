@@ -18,7 +18,7 @@ import (
 	"github.com/local/ai-content-factory/apps/api/internal/storyline"
 )
 
-const iteration04HTTPTestDatabase = "ai_content_factory_i04_http_test"
+const iteration04HTTPTestDatabase = "ai_content_factory_http_test"
 
 type i04Envelope struct {
 	Data      json.RawMessage `json:"data"`
@@ -68,7 +68,7 @@ func openI04HTTP(t *testing.T) (*pgxpool.Pool, context.Context) {
 	t.Cleanup(p.Close)
 	var v int
 	e = p.QueryRow(ctx, "SELECT COALESCE(MAX(version),0) FROM schema_migrations").Scan(&v)
-	if e != nil || v != 4 {
+	if e != nil || v < 4 {
 		t.Fatalf("expected migrations through version 4, got %d: %v", v, e)
 	}
 	return p, ctx

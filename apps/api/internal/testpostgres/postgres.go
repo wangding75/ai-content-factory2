@@ -9,7 +9,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-const DatabaseName = "ai_content_factory_i04_test"
+const DatabaseName = "ai_content_factory_http_test"
 
 func Open(t *testing.T) (*pgxpool.Pool, context.Context) {
 	t.Helper()

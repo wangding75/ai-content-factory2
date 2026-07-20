@@ -2,6 +2,7 @@ package project
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"testing"
 	"time"
@@ -55,12 +56,13 @@ func TestPostgresRepositoryIntegrationRollsBackWhenAuditWriteFails(t *testing.T)
 		t.Fatalf("connect PostgreSQL: %v", err)
 	}
 	defer pool.Close()
-	_, err = pool.Exec(ctx, `CREATE OR REPLACE FUNCTION test_project_audit_failure() RETURNS trigger AS $$ BEGIN RAISE EXCEPTION 'forced audit failure'; END; $$ LANGUAGE plpgsql; CREATE TRIGGER test_project_audit_failure BEFORE INSERT ON audit_logs FOR EACH ROW EXECUTE FUNCTION test_project_audit_failure();`)
+	triggerName := fmt.Sprintf("test_audit_fail_%d", time.Now().UnixNano())
+	_, err = pool.Exec(ctx, fmt.Sprintf(`CREATE OR REPLACE FUNCTION %s_func() RETURNS trigger AS $$ BEGIN RAISE EXCEPTION 'forced audit failure'; END; $$ LANGUAGE plpgsql; CREATE TRIGGER %s BEFORE INSERT ON audit_logs FOR EACH ROW EXECUTE FUNCTION %s_func();`, triggerName, triggerName, triggerName))
 	if err != nil {
 		t.Fatalf("install failure trigger: %v", err)
 	}
 	defer func() {
-		_, _ = pool.Exec(context.Background(), "DROP TRIGGER IF EXISTS test_project_audit_failure ON audit_logs; DROP FUNCTION IF EXISTS test_project_audit_failure()")
+		_, _ = pool.Exec(context.Background(), fmt.Sprintf("DROP TRIGGER IF EXISTS %s ON audit_logs; DROP FUNCTION IF EXISTS %s_func()", triggerName, triggerName))
 	}()
 	p, err := New("rollback integration", TypeNovel, "")
 	if err != nil {

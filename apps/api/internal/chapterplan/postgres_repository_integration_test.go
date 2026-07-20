@@ -13,7 +13,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-const integrationDatabase = "ai_content_factory_i05_test"
+const integrationDatabase = "ai_content_factory_http_test"
 
 func openIntegrationDB(t *testing.T) (*pgxpool.Pool, context.Context) {
 	t.Helper()

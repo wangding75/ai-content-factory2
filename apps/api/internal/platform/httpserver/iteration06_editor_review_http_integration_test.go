@@ -18,7 +18,7 @@ import (
 	"github.com/local/ai-content-factory/apps/api/internal/project"
 )
 
-const iteration06HTTPTestDatabase = "ai_content_factory_i06_http_test"
+const iteration06HTTPTestDatabase = "ai_content_factory_http_test"
 
 type i06Envelope struct { Data json.RawMessage `json:"data"`; Error struct { Code string `json:"code"` } `json:"error"`; RequestID string `json:"request_id"`; Raw []byte }
 
@@ -26,7 +26,7 @@ func i06Open(t *testing.T) (*pgxpool.Pool, context.Context) {
 	t.Helper(); u := os.Getenv("TEST_DATABASE_URL"); if u == "" { t.Skip("TEST_DATABASE_URL is not set; Iteration 06 HTTP PostgreSQL integration test skipped outside its targeted run") }
 	cfg, err := pgxpool.ParseConfig(u); if err != nil { t.Fatal(err) }; if cfg.ConnConfig.Database != iteration06HTTPTestDatabase { t.Fatalf("TEST_DATABASE_URL database=%q, want %q", cfg.ConnConfig.Database, iteration06HTTPTestDatabase) }
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second); t.Cleanup(cancel); p, err := pgxpool.NewWithConfig(ctx, cfg); if err != nil { t.Fatal(err) }; t.Cleanup(p.Close)
-	var v int; if err := p.QueryRow(ctx, "SELECT COALESCE(MAX(version),0) FROM schema_migrations").Scan(&v); err != nil || v != 6 { t.Fatalf("migration version=%d err=%v, want 6", v, err) }; return p, ctx
+	var v int; if err := p.QueryRow(ctx, "SELECT COALESCE(MAX(version),0) FROM schema_migrations").Scan(&v); err != nil || v < 6 { t.Fatalf("migration version=%d err=%v, want at least 6", v, err) }; return p, ctx
 }
 func i06Server(p *pgxpool.Pool) *httptest.Server { return httptest.NewServer(New(":0", project.NewService(project.NewPostgresRepository(p)), contentitem.NewApplication(contentitem.NewPostgresRepository(p), nil)).httpServer.Handler) }
 func i06Call(t *testing.T, c *http.Client, method, url string, body any, key string) (*http.Response, i06Envelope) {
