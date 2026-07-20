@@ -1333,13 +1333,13 @@ components:
           schema:
             $ref: "#/components/schemas/ErrorEnvelope"
     NotFound:
-      description: "Resource not found. Error codes: PROJECT_NOT_FOUND, CONFIGURATION_NOT_FOUND, WORKFLOW_BINDING_NOT_FOUND."
+      description: "Resource not found. Error codes: project_not_found, configuration_not_found, workflow_binding_not_found."
       content:
         application/json:
           schema:
             $ref: "#/components/schemas/ErrorEnvelope"
     Conflict:
-      description: "Optimistic concurrency conflict. Error codes: VERSION_CONFLICT, IDEMPOTENCY_KEY_REUSED_WITH_DIFFERENT_PAYLOAD, BINDING_ALREADY_EXISTS. For version conflicts, details include expectedVersion, currentVersion, projectId, and stage."
+      description: "Optimistic concurrency conflict. Error codes: version_conflict, idempotency_key_reused_with_different_payload, binding_already_exists. For version conflicts, details include expectedVersion, currentVersion, projectId, and stage."
       content:
         application/json:
           schema:
@@ -1351,10 +1351,10 @@ components:
       description: "Unexpected safe server failure. Error bodies never include SQL, stack traces or implementation details."
       content: {application/json: {schema: {$ref: "#/components/schemas/ErrorEnvelope"}}}
     Unauthorized:
-      description: "Authentication required. Error code: UNAUTHENTICATED."
+      description: "Authentication required. Error code: unauthenticated."
       content: {application/json: {schema: {$ref: "#/components/schemas/ErrorEnvelope"}}}
     Forbidden:
-      description: "Insufficient permissions. Error code: FORBIDDEN."
+      description: "Insufficient permissions. Error code: forbidden."
       content: {application/json: {schema: {$ref: "#/components/schemas/ErrorEnvelope"}}}
   schemas:
     IntegrationStatus:

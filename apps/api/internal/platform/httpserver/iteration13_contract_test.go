@@ -67,14 +67,14 @@ func TestIteration13FrozenContract(t *testing.T) {
 
 	// ── Required error codes ─────────────────────────────────────────
 	for _, code := range []string{
-		"VERSION_CONFLICT",
-		"BINDING_ALREADY_EXISTS",
-		"IDEMPOTENCY_KEY_REUSED_WITH_DIFFERENT_PAYLOAD",
+		"version_conflict",
+		"binding_already_exists",
+		"idempotency_key_reused_with_different_payload",
 		"disabled_workflow",
 		"workflow_not_applicable_to_stage",
-		"UNAUTHENTICATED",
-		"FORBIDDEN",
-		"WORKFLOW_BINDING_NOT_FOUND",
+		"unauthenticated",
+		"forbidden",
+		"workflow_binding_not_found",
 	} {
 		if !strings.Contains(text, code) {
 			t.Fatalf("frozen Iteration 13 error code missing: %s", code)
