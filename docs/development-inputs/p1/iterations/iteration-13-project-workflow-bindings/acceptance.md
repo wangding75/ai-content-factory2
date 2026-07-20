@@ -17,12 +17,13 @@
 - [ ] PUT 和 DELETE 使用 `Idempotency-Key`；
 - [ ] 相同 Key、相同载荷重放返回同一业务结果；
 - [ ] 相同 Key、不同载荷返回统一 409（idempotency_key_reused_with_different_payload）；
-- [ ] 更换和解除使用 `expectedVersion`；
+- [ ] 更换和解除使用 `expectedVersion`（DELETE 通过 query parameter 承载，复用现有 DELETE 惯例）；
 - [ ] 409 冲突 details 包含 expectedVersion、currentVersion、projectId、stage；
 - [ ] 409 保留用户当前选择，并支持加载服务端最新配置；
 - [ ] 幂等重放不产生重复绑定或重复 Audit；
 - [ ] 创建、更换、解除的业务写入、幂等记录和 Audit 位于同一事务；
-- [ ] Audit 不包含 Secret、Credential、完整敏感 URL、配置正文或 Idempotency-Key 明文。
+- [ ] Audit 不包含 Secret、Credential、完整敏感 URL、配置正文或 Idempotency-Key 明文；
+- [ ] 401 返回 `unauthenticated`，403 返回 `forbidden`，解绑 404 返回 `workflow_binding_not_found`。
 
 ## 3. UI 验收
 

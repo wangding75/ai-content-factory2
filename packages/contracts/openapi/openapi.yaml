@@ -1030,6 +1030,10 @@ paths:
                 $ref: "#/components/schemas/WorkflowBindingStageListEnvelope"
         "400":
           $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
   /api/v1/projects/{projectId}/workflow-bindings/{stage}:
@@ -1072,6 +1076,10 @@ paths:
                 $ref: "#/components/schemas/WorkflowBindingStageEnvelope"
         "400":
           $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
         "409":
@@ -1088,12 +1096,7 @@ paths:
         An absent binding returns 404.
       parameters:
         - $ref: "#/components/parameters/IdempotencyKey"
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/DeleteProjectWorkflowBindingRequest"
+        - $ref: "#/components/parameters/ExpectedBindingVersionQuery"
       responses:
         "200":
           description: Binding removed.
@@ -1103,6 +1106,10 @@ paths:
                 $ref: "#/components/schemas/UnbindProjectWorkflowBindingResultEnvelope"
         "400":
           $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
         "409":
@@ -1271,6 +1278,14 @@ components:
       schema:
         type: integer
         minimum: 1
+    ExpectedBindingVersionQuery:
+      name: expected_version
+      in: query
+      required: true
+      schema:
+        type: integer
+        minimum: 1
+      description: Expected version of the project workflow binding for optimistic concurrency control.
     ProjectId:
       name: projectId
       in: path
@@ -1318,7 +1333,7 @@ components:
           schema:
             $ref: "#/components/schemas/ErrorEnvelope"
     NotFound:
-      description: "Resource not found. Error code: PROJECT_NOT_FOUND."
+      description: "Resource not found. Error codes: PROJECT_NOT_FOUND, CONFIGURATION_NOT_FOUND, WORKFLOW_BINDING_NOT_FOUND."
       content:
         application/json:
           schema:
@@ -1330,10 +1345,16 @@ components:
           schema:
             $ref: "#/components/schemas/ErrorEnvelope"
     UnprocessableEntity:
-      description: "Semantically invalid request. Error codes include DISABLED_WORKFLOW, WORKFLOW_NOT_APPLICABLE_TO_STAGE, invalid_generation_parameters, and invalid_pagination."
+      description: "Semantically invalid request. Error codes include disabled_workflow, workflow_not_applicable_to_stage, invalid_generation_parameters, and invalid_pagination."
       content: {application/json: {schema: {$ref: "#/components/schemas/ErrorEnvelope"}}}
     InternalServerError:
       description: "Unexpected safe server failure. Error bodies never include SQL, stack traces or implementation details."
+      content: {application/json: {schema: {$ref: "#/components/schemas/ErrorEnvelope"}}}
+    Unauthorized:
+      description: "Authentication required. Error code: UNAUTHENTICATED."
+      content: {application/json: {schema: {$ref: "#/components/schemas/ErrorEnvelope"}}}
+    Forbidden:
+      description: "Insufficient permissions. Error code: FORBIDDEN."
       content: {application/json: {schema: {$ref: "#/components/schemas/ErrorEnvelope"}}}
   schemas:
     IntegrationStatus:
@@ -3325,13 +3346,6 @@ components:
         expectedVersion: {type: integer, minimum: 1, description: Required for replacement; must be omitted for first-time bind.}
       description: |
         Omit expectedVersion when creating a first binding. Supply expectedVersion matching the current binding version when replacing an existing binding.
-    DeleteProjectWorkflowBindingRequest:
-      type: object
-      additionalProperties: false
-      required: [expectedVersion]
-      properties:
-        expectedVersion: {type: integer, minimum: 1}
-      description: expectedVersion must match the current binding version.
     UnbindProjectWorkflowBindingResult:
       type: object
       additionalProperties: false

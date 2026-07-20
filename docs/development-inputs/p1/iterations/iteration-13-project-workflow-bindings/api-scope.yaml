@@ -15,6 +15,8 @@ apis:
     responses:
       "200": WorkflowBindingStageListEnvelope (exactly four items)
       "400": BadRequest
+      "401": Unauthorized
+      "403": Forbidden
       "404": NotFound
     notes:
       - read-only, no audit
@@ -34,6 +36,8 @@ apis:
       "201": WorkflowBindingStageEnvelope (first bind created)
       "200": WorkflowBindingStageEnvelope (replaced or no-change idempotent)
       "400": BadRequest
+      "401": Unauthorized
+      "403": Forbidden
       "404": NotFound
       "409": Conflict (version conflict, concurrent bind, idempotency key reused)
       "422": UnprocessableEntity (disabled workflow, stage not applicable)
@@ -50,15 +54,17 @@ apis:
     purpose: remove one project-stage binding without deleting the global workflow
     request:
       header: Idempotency-Key (required)
-      body:
-        expectedVersion: integer (required)
+      query: expected_version (required, integer, minimum 1)
     responses:
       "200": UnbindProjectWorkflowBindingResultEnvelope
       "400": BadRequest
-      "404": NotFound (binding not found)
-      "409": Conflict (version conflict, idempotency key reused)
+      "401": Unauthorized
+      "403": Forbidden
+      "404": NotFound (workflow_binding_not_found)
+      "409": Conflict (version_conflict, idempotency_key_reused_with_different_payload)
     notes:
       - physical delete, audit preserved
+      - expectedVersion via query parameter, matching existing DELETE convention
       - expectedVersion must match current binding version
 
 reused_apis:
@@ -83,13 +89,13 @@ error_codes:
   "400":
     - validation_error: invalid stage, invalid request body, missing header
   "401":
-    - unauthenticated
+    - unauthenticated: authentication required
   "403":
-    - no project access or modification permission
+    - forbidden: no project access or modification permission
   "404":
     - project_not_found: project does not exist
     - configuration_not_found: workflow configuration does not exist
-    - binding not found (DELETE)
+    - workflow_binding_not_found: binding not found on DELETE
   "409":
     - version_conflict: expectedVersion missing or mismatch
       details: expectedVersion, currentVersion, projectId, stage
