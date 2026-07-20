@@ -53,12 +53,14 @@ func highRiskUsageRequest() ProjectMaterialUsageRequest {
 
 func highRiskAuditFailure(t *testing.T, ctx context.Context, pool *pgxpool.Pool) {
 	t.Helper()
-	_, err := pool.Exec(ctx, "CREATE OR REPLACE FUNCTION test_material_audit_failure() RETURNS trigger AS $$ BEGIN IF NEW.actor_id = 'high-risk' THEN RAISE EXCEPTION 'forced audit failure'; END IF; RETURN NEW; END; $$ LANGUAGE plpgsql; CREATE TRIGGER test_material_audit_failure BEFORE INSERT ON audit_logs FOR EACH ROW EXECUTE FUNCTION test_material_audit_failure();")
+	_, err := pool.Exec(ctx, "CREATE OR REPLACE FUNCTION test_material_audit_failure() RETURNS trigger AS $$ BEGIN IF NEW.actor_id = 'high-risk' THEN RAISE EXCEPTION 'forced audit failure'; END IF; RETURN NEW; END; $$ LANGUAGE plpgsql; CREATE TRIGGER test_material_audit_failure BEFORE INSERT ON audit_logs FOR EACH ROW WHEN (NEW.actor_id = 'high-risk') EXECUTE FUNCTION test_material_audit_failure();")
 	if err != nil {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() {
-		_, _ = pool.Exec(context.Background(), "DROP TRIGGER IF EXISTS test_material_audit_failure ON audit_logs; DROP FUNCTION IF EXISTS test_material_audit_failure()")
+		cleanCtx, cleanCancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cleanCancel()
+		_, _ = pool.Exec(cleanCtx, "DROP TRIGGER IF EXISTS test_material_audit_failure ON audit_logs; DROP FUNCTION IF EXISTS test_material_audit_failure()")
 	})
 }
 
