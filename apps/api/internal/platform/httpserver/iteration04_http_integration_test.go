@@ -68,6 +68,9 @@ func openI04HTTP(t *testing.T) (*pgxpool.Pool, context.Context) {
 	t.Cleanup(p.Close)
 	var v int
 	e = p.QueryRow(ctx, "SELECT COALESCE(MAX(version),0) FROM schema_migrations").Scan(&v)
+	// Minimum version check: this HTTP E2E test verifies Iteration 04 functionality
+	// remains compatible on the latest schema. Precise Migration 4 boundary validation
+	// is covered by the migration integration tests in cmd/migrate.
 	if e != nil || v < 4 {
 		t.Fatalf("expected migrations through version 4, got %d: %v", v, e)
 	}

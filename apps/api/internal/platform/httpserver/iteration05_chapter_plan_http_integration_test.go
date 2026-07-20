@@ -74,6 +74,9 @@ func openI05HTTP(t *testing.T) (*pgxpool.Pool, context.Context) {
 	t.Cleanup(pool.Close)
 	var version int
 	if err = pool.QueryRow(ctx, "SELECT COALESCE(MAX(version),0) FROM schema_migrations").Scan(&version); err != nil || version < 5 {
+		// Minimum version check: this HTTP E2E test verifies Iteration 05 functionality
+		// remains compatible on the latest schema. Precise Migration 5 boundary validation
+		// is covered by the migration integration tests in cmd/migrate.
 		t.Fatalf("expected migrations through version 5, got %d: %v", version, err)
 	}
 	return pool, ctx

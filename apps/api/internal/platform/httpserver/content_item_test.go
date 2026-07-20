@@ -228,7 +228,7 @@ func TestMockReviewHandler(t *testing.T) {
 		requireContentError(t, contentRequest(mockReviewContentHandler(f), http.MethodPost, path, body, h), 400, "idempotency_key_required")
 	}
 	for _, bad := range []string{`{`, `{"content_version_id":"bad","expected_version":2}`, `{"content_version_id":"` + d.ContentVersion.ID.String() + `","expected_version":2,"extra":true}`} {
-	requireContentError(t, contentRequest(mockReviewContentHandler(f), http.MethodPost, path, bad, map[string]string{"Idempotency-Key": "x"}), 422, "invalid_review_parameters")
+		requireContentError(t, contentRequest(mockReviewContentHandler(f), http.MethodPost, path, bad, map[string]string{"Idempotency-Key": "x"}), 422, "invalid_review_parameters")
 	}
 	requireContentError(t, contentRequest(mockReviewContentHandler(f), http.MethodPost, "/api/v1/content-items/bad/reviews/mock", body, map[string]string{"Idempotency-Key": "x"}), 400, "invalid_uuid")
 	for _, x := range []struct {
