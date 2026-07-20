@@ -1,5 +1,5 @@
 iteration: iteration-13-project-workflow-bindings
-status: draft_for_contract_freeze
+status: frozen
 
 stages:
   - chapter_planning
@@ -8,59 +8,120 @@ stages:
   - rewrite
 
 apis:
-  - operation: list_project_workflow_bindings
+  - operation: listProjectWorkflowBindings
     method: GET
     path: /projects/{projectId}/workflow-bindings
     purpose: return the four fixed stages with current binding and read-only global workflow status
+    responses:
+      "200": WorkflowBindingStageListEnvelope (exactly four items)
+      "400": BadRequest
+      "404": NotFound
+    notes:
+      - read-only, no audit
+      - bound is independent of enabled/integration/connection status
+      - unbound stages return null for binding and workflowConfigurationSummary
 
-  - operation: put_project_workflow_binding
+  - operation: putProjectWorkflowBinding
     method: PUT
     path: /projects/{projectId}/workflow-bindings/{stage}
     purpose: create or replace one project-stage binding
-    requirements:
-      - Idempotency-Key
-      - workflowConfigurationId
-      - applicableStages must include stage
-      - disabled workflows cannot be newly selected
-    concurrency:
-      - create requires no existing binding for projectId and stage
-      - replace requires expectedVersion matching the current binding
-      - an existing binding with missing or stale expectedVersion returns 409
+    request:
+      header: Idempotency-Key (required)
+      body:
+        workflowConfigurationId: UUID (required)
+        expectedVersion: integer (required for replace, must be omitted for first bind)
+    responses:
+      "201": WorkflowBindingStageEnvelope (first bind created)
+      "200": WorkflowBindingStageEnvelope (replaced or no-change idempotent)
+      "400": BadRequest
+      "404": NotFound
+      "409": Conflict (version conflict, concurrent bind, idempotency key reused)
+      "422": UnprocessableEntity (disabled workflow, stage not applicable)
+    binding_rules:
+      - first bind: no existing binding, expectedVersion must be absent
+      - replace: existing binding, expectedVersion must match current version
+      - workflow must be enabled and applicableStages must include stage
+      - same workflowConfigurationId + correct expectedVersion = no change, no audit
+      - concurrent first bind: UNIQUE(project_id, stage) guards, loser gets 409
 
-  - operation: delete_project_workflow_binding
+  - operation: deleteProjectWorkflowBinding
     method: DELETE
     path: /projects/{projectId}/workflow-bindings/{stage}
     purpose: remove one project-stage binding without deleting the global workflow
-    requirements:
-      - Idempotency-Key
-      - expectedVersion
+    request:
+      header: Idempotency-Key (required)
+      body:
+        expectedVersion: integer (required)
+    responses:
+      "200": UnbindProjectWorkflowBindingResultEnvelope
+      "400": BadRequest
+      "404": NotFound (binding not found)
+      "409": Conflict (version conflict, idempotency key reused)
+    notes:
+      - physical delete, audit preserved
+      - expectedVersion must match current binding version
 
 reused_apis:
-  - operation: list_global_workflow_configurations
-    purpose: list candidate global workflow configurations
-    source: Iteration 12 global workflow configuration list API
-    iteration_13_contract_extension:
-      - add optional applicableStage query filter
+  - operation: listWorkflowConfigurations
+    source: Iteration 12
+    iteration_13_extension:
+      - added optional applicableStage query parameter
     query_parameters:
       - q
       - applicableStage
+      - connectionId
+      - connectionType
+      - integrationStatus
+      - enabled
       - limit
       - offset
-      - enabled (optional; the binding selector does not force enabled=true because disabled workflows remain visible but non-selectable)
-    selection_rules:
-      - applicableStages must include the requested stage
+    notes:
+      - does not force enabled=true
       - disabled workflows may be returned for status visibility but cannot be selected
-      - the binding command rechecks applicability and enabled state transactionally
 
-common_requirements:
-  - OpenAPI is the single contract source
-  - errors use the shared error envelope
-  - optimistic locking is required for replace and remove
-  - duplicate idempotent requests do not create duplicate bindings or Audit events
-  - project authorization and cross-project isolation are mandatory
-  - no secrets, credentials, raw upstream responses, or complete sensitive URLs are returned
-  - all business writes and idempotency records use one transaction
-  - no third-party outbound request is allowed in this iteration
+error_codes:
+  "400":
+    - validation_error: invalid stage, invalid request body, missing header
+  "401":
+    - unauthenticated
+  "403":
+    - no project access or modification permission
+  "404":
+    - project_not_found: project does not exist
+    - configuration_not_found: workflow configuration does not exist
+    - binding not found (DELETE)
+  "409":
+    - version_conflict: expectedVersion missing or mismatch
+      details: expectedVersion, currentVersion, projectId, stage
+    - binding_already_exists: concurrent first bind conflict
+    - idempotency_key_reused_with_different_payload
+  "422":
+    - disabled_workflow: workflow is not enabled
+    - workflow_not_applicable_to_stage: stage not in applicableStages
+
+idempotency:
+  scope: user + HTTP method + path + stage
+  key: Idempotency-Key header (1-128 chars)
+  behavior:
+    - same key, same fingerprint: return original response, no DB write, no version increment, no audit
+    - same key, different fingerprint: return 409
+  fingerprint_components: projectId, stage, workflowConfigurationId, expectedVersion, operation type
+  audit: never records plaintext Idempotency-Key
+
+optimistic_locking:
+  version: integer, starts at 1, incremented on replace
+  expectedVersion:
+    - PUT first bind: must be absent
+    - PUT replace: must equal current binding version
+    - DELETE: must equal current binding version
+  conflict: 409 with details {expectedVersion, currentVersion, projectId, stage}
+
+audit:
+  actions:
+    - project_workflow_binding.create: projectId, stage, bindingId, workflowConfigurationId, newVersion
+    - project_workflow_binding.replace: projectId, stage, bindingId, oldWorkflowConfigurationId, newWorkflowConfigurationId, oldVersion, newVersion
+    - project_workflow_binding.remove: projectId, stage, bindingId, oldWorkflowConfigurationId, oldVersion
+  no_audit: GET, validation failures, auth failures, version conflicts, idempotent replays, no-change requests, transaction failures
 
 out_of_scope:
   - validate workflow

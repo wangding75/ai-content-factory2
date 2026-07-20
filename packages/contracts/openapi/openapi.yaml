@@ -922,8 +922,8 @@ paths:
   /api/v1/workflow-configurations:
     get:
       operationId: listWorkflowConfigurations
-      description: Lists reusable workflow configurations. q matches name after trimming; connectionId and connectionType filters combine with AND. Results are ordered by updatedAt DESC, id ASC.
-      parameters: [{$ref: "#/components/parameters/ConfigurationQuery"}, {$ref: "#/components/parameters/ConnectionIdQuery"}, {$ref: "#/components/parameters/ConnectionTypeQuery"}, {$ref: "#/components/parameters/IntegrationStatusQuery"}, {$ref: "#/components/parameters/EnabledQuery"}, {$ref: "#/components/parameters/LimitQuery"}, {$ref: "#/components/parameters/OffsetQuery"}]
+      description: Lists reusable workflow configurations. q matches name after trimming; connectionId, connectionType, and applicableStage filters combine with AND. Results are ordered by updatedAt DESC, id ASC. When applicableStage is supplied, only configurations whose applicableStages array contains the given stage are returned. This endpoint does not force enabled=true; disabled workflows may be returned for status visibility but cannot be selected for binding.
+      parameters: [{$ref: "#/components/parameters/ConfigurationQuery"}, {$ref: "#/components/parameters/ConnectionIdQuery"}, {$ref: "#/components/parameters/ConnectionTypeQuery"}, {$ref: "#/components/parameters/IntegrationStatusQuery"}, {$ref: "#/components/parameters/EnabledQuery"}, {$ref: "#/components/parameters/ApplicableStageQuery"}, {$ref: "#/components/parameters/LimitQuery"}, {$ref: "#/components/parameters/OffsetQuery"}]
       responses:
         "200": {description: Paginated workflow configurations., content: {application/json: {schema: {$ref: "#/components/schemas/WorkflowConfigurationListEnvelope"}}}}
         "400": {$ref: "#/components/responses/BadRequest"}
@@ -1008,6 +1008,105 @@ paths:
         "404": {$ref: "#/components/responses/NotFound"}
         "409": {$ref: "#/components/responses/Conflict"}
         "422": {$ref: "#/components/responses/UnprocessableEntity"}
+  /api/v1/projects/{projectId}/workflow-bindings:
+    parameters:
+      - $ref: "#/components/parameters/ProjectId"
+    get:
+      operationId: listProjectWorkflowBindings
+      description: >
+        Returns exactly four fixed stages (chapter_planning, content_generation, review, rewrite)
+        with their current binding status and read-only global workflow configuration summary.
+        Stages without a binding return null for binding and workflowConfigurationSummary.
+        bound is true only when a binding exists; it does not imply the workflow is enabled,
+        integrated, or executable. workflowConfigurationSummary.enabled, .integrationStatus,
+        .connectionType, and .connectionName are read from the global workflow configuration.
+        This is a read-only endpoint that produces no audit events.
+      responses:
+        "200":
+          description: Four fixed stages with binding status.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkflowBindingStageListEnvelope"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /api/v1/projects/{projectId}/workflow-bindings/{stage}:
+    parameters:
+      - $ref: "#/components/parameters/ProjectId"
+      - $ref: "#/components/parameters/Stage"
+    put:
+      operationId: putProjectWorkflowBinding
+      description: >
+        Creates or replaces a project-stage binding. Idempotency-Key is required and
+        operation-scoped. For a first-time bind (no existing binding), omit expectedVersion.
+        For a replacement, expectedVersion must match the current binding version.
+        The target workflow must be enabled and its applicableStages must include the
+        requested stage. A same-key same-payload retry returns the original result without
+        version increment or audit. A same-key different-payload retry returns 409.
+        Replacing with the same workflowConfigurationId (no change) when expectedVersion
+        matches returns the current result without version change or audit.
+        Concurrent first-time binds are guarded by UNIQUE(project_id, stage) and the
+        loser returns 409.
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PutProjectWorkflowBindingRequest"
+      responses:
+        "201":
+          description: Binding created (first bind), or idempotent replay of a create.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkflowBindingStageEnvelope"
+        "200":
+          description: Binding replaced, or unchanged current result for an identical retry or same-workflow no-change request.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkflowBindingStageEnvelope"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+    delete:
+      operationId: deleteProjectWorkflowBinding
+      description: >
+        Removes a project-stage binding without deleting the global workflow configuration.
+        Idempotency-Key is required and expectedVersion must match the current binding version.
+        A same-key same-payload retry returns the original result without duplicate audit.
+        The binding is physically deleted; audit history is preserved.
+        An absent binding returns 404.
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DeleteProjectWorkflowBindingRequest"
+      responses:
+        "200":
+          description: Binding removed.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UnbindProjectWorkflowBindingResultEnvelope"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
 components:
   parameters:
     ProviderId:
@@ -1058,6 +1157,10 @@ components:
       name: enabled
       in: query
       schema: {type: boolean}
+    ApplicableStageQuery:
+      name: applicableStage
+      in: query
+      schema: {$ref: "#/components/schemas/ApplicableStage"}
     ContentItemId:
       name: contentItemId
       in: path
@@ -1175,6 +1278,12 @@ components:
       schema:
         type: string
         format: uuid
+    Stage:
+      name: stage
+      in: path
+      required: true
+      schema:
+        $ref: "#/components/schemas/ApplicableStage"
     ProjectQuery:
       name: q
       in: query
@@ -1215,13 +1324,13 @@ components:
           schema:
             $ref: "#/components/schemas/ErrorEnvelope"
     Conflict:
-      description: "Optimistic concurrency conflict. Error code: VERSION_CONFLICT."
+      description: "Optimistic concurrency conflict. Error codes: VERSION_CONFLICT, IDEMPOTENCY_KEY_REUSED_WITH_DIFFERENT_PAYLOAD, BINDING_ALREADY_EXISTS. For version conflicts, details include expectedVersion, currentVersion, projectId, and stage."
       content:
         application/json:
           schema:
             $ref: "#/components/schemas/ErrorEnvelope"
     UnprocessableEntity:
-      description: "Semantically invalid request. Error codes include invalid_generation_parameters and invalid_pagination."
+      description: "Semantically invalid request. Error codes include DISABLED_WORKFLOW, WORKFLOW_NOT_APPLICABLE_TO_STAGE, invalid_generation_parameters, and invalid_pagination."
       content: {application/json: {schema: {$ref: "#/components/schemas/ErrorEnvelope"}}}
     InternalServerError:
       description: "Unexpected safe server failure. Error bodies never include SQL, stack traces or implementation details."
@@ -3152,3 +3261,88 @@ components:
       properties:
         data: {$ref: "#/components/schemas/MockGenerateChapterPlansResult"}
         request_id: {type: string}
+    ProjectWorkflowBinding:
+      type: object
+      additionalProperties: false
+      required: [id, projectId, stage, workflowConfigurationId, version, createdAt, updatedAt]
+      properties:
+        id: {type: string, format: uuid, readOnly: true}
+        projectId: {type: string, format: uuid, readOnly: true}
+        stage: {$ref: "#/components/schemas/ApplicableStage"}
+        workflowConfigurationId: {type: string, format: uuid}
+        version: {type: integer, minimum: 1, readOnly: true}
+        createdAt: {type: string, format: date-time, readOnly: true}
+        updatedAt: {type: string, format: date-time, readOnly: true}
+    WorkflowBindingStage:
+      type: object
+      additionalProperties: false
+      required: [stage, bound, binding, workflowConfigurationSummary]
+      properties:
+        stage:
+          $ref: "#/components/schemas/ApplicableStage"
+        bound:
+          type: boolean
+          description: True when a binding exists. Does not imply the workflow is enabled or executable.
+        binding:
+          anyOf:
+            - $ref: "#/components/schemas/ProjectWorkflowBinding"
+            - type: "null"
+          description: The binding record or null when unbound.
+        workflowConfigurationSummary:
+          anyOf:
+            - $ref: "#/components/schemas/WorkflowConfiguration"
+            - type: "null"
+          description: The full global workflow configuration or null when unbound.
+      description: A single fixed stage with its binding and global workflow configuration read model.
+    WorkflowBindingStageList:
+      type: object
+      additionalProperties: false
+      required: [items]
+      properties:
+        items:
+          type: array
+          minItems: 4
+          maxItems: 4
+          items:
+            $ref: "#/components/schemas/WorkflowBindingStage"
+          description: Exactly four items one per fixed stage.
+    WorkflowBindingStageEnvelope:
+      type: object
+      additionalProperties: false
+      required: [data, request_id]
+      properties: {data: {$ref: "#/components/schemas/WorkflowBindingStage"}, request_id: {type: string}}
+    WorkflowBindingStageListEnvelope:
+      type: object
+      additionalProperties: false
+      required: [data, request_id]
+      properties: {data: {$ref: "#/components/schemas/WorkflowBindingStageList"}, request_id: {type: string}}
+    PutProjectWorkflowBindingRequest:
+      type: object
+      additionalProperties: false
+      required: [workflowConfigurationId]
+      properties:
+        workflowConfigurationId: {type: string, format: uuid}
+        expectedVersion: {type: integer, minimum: 1, description: Required for replacement; must be omitted for first-time bind.}
+      description: |
+        Omit expectedVersion when creating a first binding. Supply expectedVersion matching the current binding version when replacing an existing binding.
+    DeleteProjectWorkflowBindingRequest:
+      type: object
+      additionalProperties: false
+      required: [expectedVersion]
+      properties:
+        expectedVersion: {type: integer, minimum: 1}
+      description: expectedVersion must match the current binding version.
+    UnbindProjectWorkflowBindingResult:
+      type: object
+      additionalProperties: false
+      required: [projectId, stage, unbound, workflowConfigurationRetained]
+      properties:
+        projectId: {type: string, format: uuid}
+        stage: {$ref: "#/components/schemas/ApplicableStage"}
+        unbound: {type: boolean, const: true}
+        workflowConfigurationRetained: {type: boolean, const: true}
+    UnbindProjectWorkflowBindingResultEnvelope:
+      type: object
+      additionalProperties: false
+      required: [data, request_id]
+      properties: {data: {$ref: "#/components/schemas/UnbindProjectWorkflowBindingResult"}, request_id: {type: string}}
