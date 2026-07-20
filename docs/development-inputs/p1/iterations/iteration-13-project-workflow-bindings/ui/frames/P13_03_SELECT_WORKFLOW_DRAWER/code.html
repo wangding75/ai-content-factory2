@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+
+<html lang="zh-CN"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Select Workflow Drawer - ACF 2.0</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "on-error-container": "#93000a",
+                      "tertiary-fixed": "#dde3eb",
+                      "on-tertiary-fixed-variant": "#41474e",
+                      "on-tertiary-fixed": "#161c22",
+                      "surface-variant": "#e0e3e5",
+                      "on-primary": "#ffffff",
+                      "inverse-surface": "#2d3133",
+                      "on-surface": "#191c1e",
+                      "on-secondary": "#ffffff",
+                      "primary-fixed-dim": "#c3c0ff",
+                      "primary-fixed": "#e2dfff",
+                      "on-primary-fixed": "#0f0069",
+                      "on-surface-variant": "#464555",
+                      "background": "#f7f9fb",
+                      "outline-variant": "#c7c4d8",
+                      "outline": "#777587",
+                      "on-tertiary-container": "#d6dce4",
+                      "surface-dim": "#d8dadc",
+                      "secondary-container": "#d0e1fb",
+                      "on-background": "#191c1e",
+                      "tertiary": "#434950",
+                      "on-secondary-container": "#54647a",
+                      "error": "#ba1a1a",
+                      "inverse-primary": "#c3c0ff",
+                      "surface-container-low": "#f2f4f6",
+                      "tertiary-fixed-dim": "#c1c7cf",
+                      "surface-container": "#eceef0",
+                      "secondary-fixed-dim": "#b7c8e1",
+                      "secondary-fixed": "#d3e4fe",
+                      "error-container": "#ffdad6",
+                      "surface-container-highest": "#e0e3e5",
+                      "on-secondary-fixed": "#0b1c30",
+                      "surface-tint": "#4d44e3",
+                      "secondary": "#505f76",
+                      "surface-container-high": "#e6e8ea",
+                      "on-primary-container": "#dad7ff",
+                      "tertiary-container": "#5a6168",
+                      "on-tertiary": "#ffffff",
+                      "primary-container": "#4f46e5",
+                      "on-secondary-fixed-variant": "#38485d",
+                      "on-error": "#ffffff",
+                      "surface-bright": "#f7f9fb",
+                      "surface": "#f7f9fb",
+                      "primary": "#3525cd",
+                      "inverse-on-surface": "#eff1f3",
+                      "surface-container-lowest": "#ffffff",
+                      "on-primary-fixed-variant": "#3323cc"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.25rem",
+                      "lg": "0.5rem",
+                      "xl": "0.75rem",
+                      "full": "9999px"
+              },
+              "fontFamily": {
+                      "headline": ["Inter", "sans-serif"],
+                      "display": ["Inter", "sans-serif"],
+                      "body": ["Inter", "sans-serif"],
+                      "label": ["Inter", "sans-serif"]
+              }
+            }
+          }
+        }
+    </script>
+<style>
+        body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
+    </style>
+</head>
+<body class="bg-background text-on-background font-body min-h-screen overflow-hidden">
+<!-- SideNavBar (from JSON) -->
+<nav class="fixed left-0 top-0 h-full w-[240px] bg-surface-container-lowest border-r border-outline-variant flex flex-col gap-2 p-4 z-20">
+<div class="flex items-center gap-3 px-4 py-3 mb-4">
+<div class="w-8 h-8 bg-primary rounded flex items-center justify-center text-on-primary font-bold text-sm">
+                AI
+            </div>
+<div>
+<h1 class="text-xl font-headline font-bold text-primary">ACF 2.0</h1>
+<p class="text-xs text-on-surface-variant">Enterprise Console</p>
+</div>
+</div>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-secondary hover:bg-surface-container-high transition-colors font-body text-label-md cursor-pointer active:scale-95" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">home</span>
+            首页
+        </a>
+<!-- Active Tab: 项目 -->
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg bg-primary-fixed text-on-primary-fixed-variant font-bold transition-colors font-body text-label-md cursor-pointer active:scale-95" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">folder_open</span>
+            项目
+        </a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-secondary hover:bg-surface-container-high transition-colors font-body text-label-md cursor-pointer active:scale-95" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">inventory_2</span>
+            素材
+        </a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-secondary hover:bg-surface-container-high transition-colors font-body text-label-md cursor-pointer active:scale-95" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">movie</span>
+            作品
+        </a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-secondary hover:bg-surface-container-high transition-colors font-body text-label-md cursor-pointer active:scale-95" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">account_tree</span>
+            工作流
+        </a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-secondary hover:bg-surface-container-high transition-colors font-body text-label-md cursor-pointer active:scale-95 mt-auto" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">settings</span>
+            设置
+        </a>
+</nav>
+<!-- TopNavBar (from JSON) -->
+<header class="fixed top-0 right-0 h-16 w-[calc(100%-240px)] bg-surface-container-lowest border-b border-outline-variant flex justify-between items-center px-8 z-20">
+<div class="flex items-center gap-4">
+<div class="text-on-surface font-body text-label-lg font-medium">项目 / 示例项目 / 设置</div>
+</div>
+<div class="flex items-center gap-4">
+<div class="relative hidden md:block">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline text-sm">search</span>
+<input class="w-64 pl-9 pr-4 py-1.5 bg-surface-container-low border-transparent focus:border-primary focus:ring-1 focus:ring-primary rounded-full text-sm text-on-surface" placeholder="搜索..." type="text"/>
+</div>
+<button class="w-10 h-10 flex items-center justify-center text-on-surface-variant hover:bg-surface-container-high rounded-full transition-all duration-200">
+<span class="material-symbols-outlined">help</span>
+</button>
+<button class="w-10 h-10 flex items-center justify-center text-on-surface-variant hover:bg-surface-container-high rounded-full transition-all duration-200">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<div class="w-8 h-8 rounded-full overflow-hidden bg-surface-container-high border border-outline-variant cursor-pointer ml-2">
+<img alt="User Avatar" class="w-full h-full object-cover" data-alt="Professional corporate headshot of a young professional in a modern office, cool balanced lighting, minimalist aesthetic, suitable for enterprise user avatar." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDefg5ATTE_ToILpTutR9oQkq9VkaC-RM2XoZ5ubwOoIpR1OA2cc1Gdedu47C9jugM_bEMPQ8WbeuiHQvV7VT7UU7Uj9vtNeMfBBVlB8iUHwVSMteAa8qXRK36I3uh3Qba3f5KamvOhsImSNT6cx1W1o0abxgVaJWxXcIJnxiDbUJYVS_QITtLryebd5NwAxQkO_H5DptAppHSpucVFbcCpEwBtS2pntzfmsEPKALKWppsgIq5uLf4dM-8rAfoHY6kO8SpXIZ_-fHs-"/>
+</div>
+</div>
+</header>
+<!-- Main Workspace Area (Simulated Background) -->
+<main class="ml-[240px] pt-16 h-screen flex flex-col relative">
+<!-- Overlay for Drawer -->
+<div class="absolute inset-0 bg-inverse-surface/40 backdrop-blur-sm z-30 transition-opacity"></div>
+<!-- Content below overlay (Background Screen) -->
+<div class="flex-1 p-8 overflow-y-auto filter blur-[1px]">
+<div class="max-w-5xl mx-auto space-y-6">
+<!-- Page Header -->
+<div class="flex items-center justify-between">
+<div>
+<h2 class="text-2xl font-headline font-bold text-on-surface">项目设置</h2>
+<p class="text-on-surface-variant mt-1">配置『示例项目』的基础信息与工作流绑定。</p>
+</div>
+</div>
+<!-- Tabs -->
+<div class="flex gap-6 border-b border-outline-variant mb-6">
+<button class="pb-3 px-1 text-on-surface-variant hover:text-on-surface font-medium border-b-2 border-transparent transition-colors">基础信息</button>
+<button class="pb-3 px-1 text-primary font-medium border-b-2 border-primary transition-colors">工作流绑定</button>
+<button class="pb-3 px-1 text-on-surface-variant hover:text-on-surface font-medium border-b-2 border-transparent transition-colors">成员权限</button>
+</div>
+<!-- Fake cards to simulate background -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-6">
+<h3 class="font-medium text-on-surface mb-4">章节策划阶段</h3>
+<button class="text-primary hover:bg-surface-container-low px-4 py-2 rounded-lg border border-primary transition-colors flex items-center gap-2">
+<span class="material-symbols-outlined text-sm">add</span>绑定工作流
+                    </button>
+</div>
+</div>
+</div>
+<!-- Drawer -->
+<aside class="absolute right-0 top-0 h-full w-[520px] bg-surface-container-lowest shadow-[-8px_0_24px_rgba(0,0,0,0.12)] border-l border-outline-variant z-40 flex flex-col transform transition-transform duration-300">
+<!-- Drawer Header -->
+<div class="flex-none px-6 py-5 border-b border-outline-variant flex flex-col gap-4">
+<div class="flex items-center justify-between">
+<h2 class="text-xl font-headline font-bold text-on-surface">为『章节策划』选择工作流</h2>
+<button class="w-8 h-8 flex items-center justify-center text-on-surface-variant hover:bg-surface-container-high rounded-full transition-colors">
+<span class="material-symbols-outlined text-xl">close</span>
+</button>
+</div>
+<div class="relative">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline text-[20px]">search</span>
+<input class="w-full pl-10 pr-4 py-2 bg-surface-container-low border-outline-variant focus:border-primary focus:ring-1 focus:ring-primary rounded-lg text-sm text-on-surface transition-colors" placeholder="搜索工作流名称..." type="text"/>
+</div>
+</div>
+<!-- Drawer Content (Radio List) -->
+<div class="flex-1 overflow-y-auto p-6 bg-surface-bright">
+<div class="space-y-4">
+<p class="text-xs font-medium text-on-surface-variant mb-2">可用的全局工作流 (章节策划)</p>
+<!-- Workflow Item 1 -->
+<label class="block relative bg-surface-container-lowest border border-outline-variant rounded-xl p-4 cursor-pointer hover:border-primary hover:shadow-sm transition-all focus-within:ring-2 focus-within:ring-primary focus-within:ring-offset-1">
+<div class="flex gap-4">
+<div class="flex-none pt-1">
+<input class="w-4 h-4 text-primary border-outline focus:ring-primary bg-surface-container-lowest" name="workflow_selection" type="radio"/>
+</div>
+<div class="flex-1 min-w-0">
+<div class="flex items-start justify-between gap-2 mb-1">
+<h4 class="font-medium text-on-surface truncate">章节策划标准流程</h4>
+<span class="flex-none inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-[#e6f4ea] text-[#137333] border border-[#ceead6]">
+                                        已启用
+                                    </span>
+</div>
+<p class="text-sm text-on-surface-variant mb-3 line-clamp-2">适用于通用长篇内容生成的标准节点编排，包含大纲拆解与角色提点。适用于通用长篇内容生成的标准节点编排，包含大纲拆解与角色提点。</p>
+<div class="grid grid-cols-2 gap-y-2 gap-x-4 text-xs text-on-surface-variant">
+<div class="flex items-center gap-1.5 truncate">
+<span class="material-symbols-outlined text-[14px]">integration_instructions</span>
+<span>类型: n8n</span>
+</div>
+<div class="flex items-center gap-1.5 truncate">
+<span class="material-symbols-outlined text-[14px]">link</span>
+<span>Main Production Env</span>
+</div>
+<div class="flex items-center gap-1.5 truncate text-[#137333]">
+<span class="material-symbols-outlined text-[14px]">check_circle</span>
+<span>已集成</span>
+</div>
+</div>
+</div>
+</div>
+</label>
+<!-- Workflow Item 2 (Selected simulation) -->
+<label class="block relative bg-surface-container-lowest border-2 border-primary rounded-xl p-4 cursor-pointer shadow-sm transition-all bg-primary-fixed/10">
+<div class="flex gap-4">
+<div class="flex-none pt-1">
+<input checked="" class="w-4 h-4 text-primary border-primary focus:ring-primary bg-surface-container-lowest" name="workflow_selection" type="radio"/>
+</div>
+<div class="flex-1 min-w-0">
+<div class="flex items-start justify-between gap-2 mb-1">
+<h4 class="font-medium text-on-surface truncate">长篇小说策划流程 (增强版)</h4>
+<span class="flex-none inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-[#e6f4ea] text-[#137333] border border-[#ceead6]">
+                                        已启用
+                                    </span>
+</div>
+<p class="text-sm text-on-surface-variant mb-3 line-clamp-2">专为网文设计的增强型节点，内置更严格的情节连贯性检查机制和世界观冲突判定。</p>
+<div class="grid grid-cols-2 gap-y-2 gap-x-4 text-xs text-on-surface-variant">
+<div class="flex items-center gap-1.5 truncate">
+<span class="material-symbols-outlined text-[14px]">integration_instructions</span>
+<span>类型: n8n</span>
+</div>
+<div class="flex items-center gap-1.5 truncate">
+<span class="material-symbols-outlined text-[14px]">link</span>
+<span>Main Production Env</span>
+</div>
+<div class="flex items-center gap-1.5 truncate text-[#137333]">
+<span class="material-symbols-outlined text-[14px]">check_circle</span>
+<span>已集成</span>
+</div>
+</div>
+</div>
+</div>
+</label>
+<!-- Workflow Item 3 (Disabled simulation) -->
+<label class="block relative bg-surface-container-lowest border border-outline-variant/50 opacity-60 rounded-xl p-4 cursor-not-allowed">
+<div class="flex gap-4">
+<div class="flex-none pt-1">
+<input class="w-4 h-4 text-outline border-outline-variant/50 bg-surface-container-lowest cursor-not-allowed" disabled="" name="workflow_selection" type="radio"/>
+</div>
+<div class="flex-1 min-w-0">
+<div class="flex items-start justify-between gap-2 mb-1">
+<h4 class="font-medium text-on-surface truncate">测试专用策划脚本</h4>
+<span class="flex-none inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-surface-container-high text-on-surface-variant border border-outline-variant">
+                                        未启用
+                                    </span>
+</div>
+<p class="text-sm text-on-surface-variant mb-3 line-clamp-2">本地调试用 Python 脚本，未连接正式生产环境。</p>
+<div class="grid grid-cols-2 gap-y-2 gap-x-4 text-xs text-on-surface-variant">
+<div class="flex items-center gap-1.5 truncate">
+<span class="material-symbols-outlined text-[14px]">code</span>
+<span>类型: Python Script</span>
+</div>
+<div class="flex items-center gap-1.5 truncate">
+<span class="material-symbols-outlined text-[14px]">link_off</span>
+<span>Local Env Only</span>
+</div>
+<div class="flex items-center gap-1.5 truncate text-error">
+<span class="material-symbols-outlined text-[14px]">error</span>
+<span>未集成</span>
+</div>
+</div>
+</div>
+</div>
+</label>
+</div>
+</div>
+<!-- Drawer Footer -->
+<div class="flex-none px-6 py-4 border-t border-outline-variant bg-surface-container-lowest flex justify-end gap-3">
+<button class="px-5 py-2 text-sm font-medium text-on-surface bg-surface-container-lowest border border-outline-variant rounded-lg hover:bg-surface-container-low transition-colors">
+                    取消
+                </button>
+<!-- Enabled state shown (would be disabled if no radio is checked) -->
+<button class="px-5 py-2 text-sm font-medium text-on-primary bg-primary rounded-lg hover:bg-primary/90 transition-colors shadow-sm">
+                    确认绑定
+                </button>
+</div>
+</aside>
+</main>
+</body></html>

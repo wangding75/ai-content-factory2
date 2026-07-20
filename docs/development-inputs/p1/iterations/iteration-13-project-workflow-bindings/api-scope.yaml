@@ -1,41 +1,71 @@
 iteration: iteration-13-project-workflow-bindings
-title: Project Workflow Bindings
-status: frozen_for_development
-third_party_network_access: forbidden
+status: draft_for_contract_freeze
+
+stages:
+  - chapter_planning
+  - content_generation
+  - review
+  - rewrite
 
 apis:
-  - method: GET
-    path: /api/v1/projects/{projectId}/workflow-bindings
-    purpose: Return all four project stage bindings and derived workflow integration status
-  - method: GET
-    path: /api/v1/projects/{projectId}/workflow-bindings/{stage}
-    purpose: Return one stage binding
-  - method: PUT
-    path: /api/v1/projects/{projectId}/workflow-bindings/{stage}
-    purpose: Create or replace one stage binding with optimistic locking
+  - operation: list_project_workflow_bindings
+    method: GET
+    path: /projects/{projectId}/workflow-bindings
+    purpose: return the four fixed stages with current binding and read-only global workflow status
+
+  - operation: put_project_workflow_binding
+    method: PUT
+    path: /projects/{projectId}/workflow-bindings/{stage}
+    purpose: create or replace one project-stage binding
+    requirements:
+      - Idempotency-Key
+      - workflowConfigurationId
+      - applicableStages must include stage
+      - disabled workflows cannot be newly selected
+    concurrency:
+      - create requires no existing binding for projectId and stage
+      - replace requires expectedVersion matching the current binding
+      - an existing binding with missing or stale expectedVersion returns 409
+
+  - operation: delete_project_workflow_binding
+    method: DELETE
+    path: /projects/{projectId}/workflow-bindings/{stage}
+    purpose: remove one project-stage binding without deleting the global workflow
+    requirements:
+      - Idempotency-Key
+      - expectedVersion
+
+reused_apis:
+  - operation: list_global_workflow_configurations
+    purpose: list candidate global workflow configurations
+    source: Iteration 12 global workflow configuration list API
+    iteration_13_contract_extension:
+      - add optional applicableStage query filter
+    query_parameters:
+      - q
+      - applicableStage
+      - limit
+      - offset
+      - enabled (optional; the binding selector does not force enabled=true because disabled workflows remain visible but non-selectable)
+    selection_rules:
+      - applicableStages must include the requested stage
+      - disabled workflows may be returned for status visibility but cannot be selected
+      - the binding command rechecks applicability and enabled state transactionally
 
 common_requirements:
   - OpenAPI is the single contract source
-  - PUT uses Idempotency-Key
-  - Errors use the shared error envelope
-  - Optimistic locking is required
-  - Workflow credentials and connection credentials are never returned
-  - The workflow integration status is derived from the referenced workflow configuration
-  - Saving a binding never verifies, enables or executes a workflow
-  - Implementations must not make any third-party outbound network requests
+  - errors use the shared error envelope
+  - optimistic locking is required for replace and remove
+  - duplicate idempotent requests do not create duplicate bindings or Audit events
+  - project authorization and cross-project isolation are mandatory
+  - no secrets, credentials, raw upstream responses, or complete sensitive URLs are returned
+  - all business writes and idempotency records use one transaction
+  - no third-party outbound request is allowed in this iteration
 
-business_rules:
-  - Supported stages are chapter_planning, content_generation, review and rewrite
-  - One current binding exists per project and stage
-  - The referenced workflow configuration must exist and must not be archived
-  - A workflow with integrationStatus=not_connected may be bound
-  - not_connected bindings are saved with a clear not-ready warning
-  - Execution readiness is evaluated in Iteration 14
-  - No WorkflowRun or binding snapshot is created in Iteration 13
-
-not_in_scope:
-  - Binding validate, enable or disable endpoints
-  - Third-party adapters
-  - Workflow execution
+out_of_scope:
+  - validate workflow
+  - enable or disable workflow
+  - execute workflow
   - WorkflowRun
-  - Retry and logs
+  - retries and execution logs
+  - project-level default parameter overrides

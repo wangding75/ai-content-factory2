@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+
+<html lang="zh-CN"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>ACF 2.0 - 工作流绑定</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-container-high": "#e6e8ea",
+                        "on-tertiary-fixed": "#161c22",
+                        "surface-container-highest": "#e0e3e5",
+                        "primary-fixed": "#e2dfff",
+                        "outline": "#777587",
+                        "secondary-fixed-dim": "#b7c8e1",
+                        "on-tertiary-fixed-variant": "#41474e",
+                        "on-primary-container": "#dad7ff",
+                        "error-container": "#ffdad6",
+                        "surface-bright": "#f7f9fb",
+                        "error": "#ba1a1a",
+                        "background": "#f7f9fb",
+                        "tertiary-fixed": "#dde3eb",
+                        "surface-container-low": "#f2f4f6",
+                        "surface-dim": "#d8dadc",
+                        "on-primary-fixed": "#0f0069",
+                        "primary": "#3525cd",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-container": "#eceef0",
+                        "secondary-container": "#d0e1fb",
+                        "secondary": "#505f76",
+                        "on-secondary-container": "#54647a",
+                        "tertiary": "#434950",
+                        "on-background": "#191c1e",
+                        "on-secondary-fixed-variant": "#38485d",
+                        "primary-container": "#4f46e5",
+                        "on-secondary-fixed": "#0b1c30",
+                        "surface-tint": "#4d44e3",
+                        "inverse-primary": "#c3c0ff",
+                        "on-error": "#ffffff",
+                        "surface-variant": "#e0e3e5",
+                        "secondary-fixed": "#d3e4fe",
+                        "inverse-on-surface": "#eff1f3",
+                        "on-tertiary": "#ffffff",
+                        "tertiary-container": "#5a6168",
+                        "outline-variant": "#c7c4d8",
+                        "on-primary-fixed-variant": "#3323cc",
+                        "primary-fixed-dim": "#c3c0ff",
+                        "tertiary-fixed-dim": "#c1c7cf",
+                        "on-surface-variant": "#464555",
+                        "on-secondary": "#ffffff",
+                        "on-tertiary-container": "#d6dce4",
+                        "inverse-surface": "#2d3133",
+                        "on-error-container": "#93000a",
+                        "surface": "#f7f9fb",
+                        "on-surface": "#191c1e",
+                        "on-primary": "#ffffff"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "fontFamily": {
+                        "headline": ["Inter", "sans-serif"],
+                        "display": ["Inter", "sans-serif"],
+                        "body": ["Inter", "sans-serif"],
+                        "label": ["Inter", "sans-serif"]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; background-color: #f7f9fb; }
+    </style>
+</head>
+<body class="text-on-background h-screen overflow-hidden flex bg-background">
+<!-- SideNavBar -->
+<nav class="fixed left-0 top-0 h-full w-[240px] bg-surface-container-lowest border-r border-outline-variant flex flex-col gap-2 p-4 z-20">
+<div class="flex items-center gap-3 px-4 py-4 mb-2">
+<div class="w-8 h-8 rounded-lg bg-primary flex items-center justify-center text-on-primary font-bold">A</div>
+<div>
+<h1 class="text-xl font-headline font-bold text-primary leading-tight">ACF 2.0</h1>
+<p class="text-[10px] text-secondary font-label uppercase tracking-wider">Enterprise Console</p>
+</div>
+</div>
+<ul class="flex flex-col gap-1 font-body text-label-md">
+<li>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-secondary hover:bg-surface-container-low transition-colors cursor-pointer active:scale-95" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">home</span>
+                    首页
+                </a>
+</li>
+<li>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg bg-primary-fixed text-on-primary-fixed-variant font-bold transition-colors cursor-pointer active:scale-95" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">folder_open</span>
+                    项目
+                </a>
+</li>
+<li>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-secondary hover:bg-surface-container-low transition-colors cursor-pointer active:scale-95" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">inventory_2</span>
+                    素材
+                </a>
+</li>
+<li>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-secondary hover:bg-surface-container-low transition-colors cursor-pointer active:scale-95" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">movie</span>
+                    作品
+                </a>
+</li>
+<li>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-secondary hover:bg-surface-container-low transition-colors cursor-pointer active:scale-95" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">account_tree</span>
+                    工作流
+                </a>
+</li>
+<li>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-secondary hover:bg-surface-container-low transition-colors cursor-pointer active:scale-95" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">settings</span>
+                    设置
+                </a>
+</li>
+</ul>
+</nav>
+<!-- TopNavBar -->
+<header class="fixed top-0 right-0 h-16 w-[calc(100%-240px)] bg-surface-container-lowest border-b border-outline-variant flex justify-between items-center px-8 z-10 font-body text-label-lg transition-all duration-200">
+<div class="flex items-center gap-4 text-on-surface">
+<span class="font-medium text-sm text-on-surface-variant">项目</span>
+<span class="text-on-surface-variant">/</span>
+<span class="font-medium text-sm text-on-surface-variant">示例项目名称</span>
+<span class="text-on-surface-variant">/</span>
+<span class="font-medium text-sm text-on-surface">设置</span>
+</div>
+<div class="flex items-center gap-4">
+<button class="p-2 text-on-surface-variant hover:bg-surface-container-high rounded-full transition-colors flex items-center justify-center">
+<span class="material-symbols-outlined">help</span>
+</button>
+<button class="p-2 text-on-surface-variant hover:bg-surface-container-high rounded-full transition-colors flex items-center justify-center relative">
+<span class="material-symbols-outlined">notifications</span>
+<span class="absolute top-2 right-2 w-2 h-2 bg-error rounded-full border border-surface-container-lowest"></span>
+</button>
+<div class="w-8 h-8 rounded-full overflow-hidden border border-outline-variant bg-surface-container-high ml-2 cursor-pointer">
+<img alt="User Avatar" class="w-full h-full object-cover" data-alt="A professional headshot of a corporate user, neutral lighting, minimalist background, corporate SaaS UI context." src="https://lh3.googleusercontent.com/aida-public/AB6AXuALdFX9rlmiQBeFGiNLI9ywcnxsOAahIRvjTz8qDHI7r808OD0q6KPTJBn9qZ1Hw_GpQSCVnHplDLWa73YSRcFbAumRL0-BnNSZtFFy7cGugFFdmFkHSofGs_hsrMw1KxkXgjssqCF1sO8ZsRhLxrEBrJixwp9ygdR5IUc8hygt54V2SrWCwVNJbbzcnpYrxbCKsKv9LS6tWuJa0Bdr321yET0OdZX80d7NsCZIx06TMiwYOBUKUr3QVuu77xjqUg-UZvspX7dL1Zkl"/>
+</div>
+</div>
+</header>
+<!-- Main Content -->
+<main class="ml-[240px] mt-16 p-8 w-full h-[calc(100vh-64px)] overflow-y-auto">
+<!-- Header & Secondary Nav -->
+<div class="mb-8">
+<h2 class="text-3xl font-headline font-bold text-on-surface mb-2">项目设置</h2>
+<p class="text-on-surface-variant text-sm mb-6">配置当前项目的基础信息、工作流绑定与其他项目级参数。</p>
+<div class="flex border-b border-outline-variant">
+<a class="px-6 py-3 text-sm font-medium text-on-surface-variant hover:text-on-surface transition-colors" href="#">基本信息</a>
+<a class="px-6 py-3 text-sm font-medium text-primary border-b-2 border-primary" href="#">工作流绑定</a>
+<a class="px-6 py-3 text-sm font-medium text-on-surface-variant hover:text-on-surface transition-colors" href="#">其他设置</a>
+</div>
+</div>
+<!-- Workflow Binding Grid -->
+<div class="grid grid-cols-1 xl:grid-cols-2 gap-6 max-w-6xl">
+<!-- Card 1: Bound -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-6 shadow-sm flex flex-col relative overflow-hidden group">
+<div class="absolute top-0 left-0 w-1 h-full bg-primary"></div>
+<div class="flex justify-between items-start mb-4 pl-2">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-lg bg-surface-container flex items-center justify-center text-primary">
+<span class="material-symbols-outlined">edit_note</span>
+</div>
+<div>
+<h3 class="font-bold text-lg text-on-surface">章节策划</h3>
+<div class="flex items-center gap-2 mt-1">
+<span class="px-2 py-0.5 rounded text-xs font-medium bg-[#e6f4ea] text-[#137333] border border-[#ceead6]">已集成</span>
+<span class="px-2 py-0.5 rounded text-xs font-medium bg-[#e6f4ea] text-[#137333] border border-[#ceead6]">已启用</span>
+</div>
+</div>
+</div>
+</div>
+<div class="bg-surface border border-outline-variant rounded-lg p-4 mb-6 flex-grow pl-4">
+<div class="flex items-center gap-2 mb-2">
+<span class="material-symbols-outlined text-secondary text-sm">schema</span>
+<span class="font-medium text-sm text-on-surface truncate pr-4" title="长篇小说策划流程 (增强版)">长篇小说策划流程 (增强版)</span>
+</div>
+<div class="grid grid-cols-2 gap-y-2 mt-4 text-xs text-on-surface-variant">
+<div class="flex flex-col gap-1">
+<span class="text-secondary opacity-70">类型</span>
+<span class="font-medium">n8n</span>
+</div>
+<div class="flex flex-col gap-1">
+<span class="text-secondary opacity-70">连接环境</span>
+<span class="font-medium">Main Production Env</span>
+</div>
+</div>
+</div>
+<div class="flex gap-3 mt-auto pt-2">
+<button class="px-4 py-2 bg-surface-container-lowest border border-outline-variant text-on-surface text-sm font-medium rounded-lg hover:bg-surface-container-low transition-colors w-full">更换工作流</button>
+<button class="px-4 py-2 bg-surface-container-lowest border border-outline-variant text-error text-sm font-medium rounded-lg hover:bg-error-container hover:border-error-container transition-colors w-full">解除绑定</button>
+</div>
+</div>
+<!-- Card 2: Partially Bound -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-6 shadow-sm flex flex-col relative overflow-hidden group">
+<div class="absolute top-0 left-0 w-1 h-full bg-primary"></div>
+<div class="flex justify-between items-start mb-4 pl-2">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-lg bg-surface-container flex items-center justify-center text-primary">
+<span class="material-symbols-outlined">magic_button</span>
+</div>
+<div>
+<h3 class="font-bold text-lg text-on-surface">内容生成</h3>
+<div class="flex items-center gap-2 mt-1">
+<span class="px-2 py-0.5 rounded text-xs font-medium bg-[#fef7e0] text-[#b06000] border border-[#fbe9a2]">未接入</span>
+<span class="px-2 py-0.5 rounded text-xs font-medium bg-[#e6f4ea] text-[#137333] border border-[#ceead6]">已启用</span>
+</div>
+</div>
+</div>
+</div>
+<div class="bg-surface border border-outline-variant rounded-lg p-4 mb-6 flex-grow pl-4">
+<div class="flex items-center gap-2 mb-2">
+<span class="material-symbols-outlined text-secondary text-sm">code</span>
+<span class="font-medium text-sm text-on-surface truncate pr-4" title="通用多模态内容生成流">通用多模态内容生成流</span>
+</div>
+<div class="grid grid-cols-2 gap-y-2 mt-4 text-xs text-on-surface-variant">
+<div class="flex flex-col gap-1">
+<span class="text-secondary opacity-70">类型</span>
+<span class="font-medium">Python Script</span>
+</div>
+<div class="flex flex-col gap-1">
+<span class="text-secondary opacity-70">连接环境</span>
+<span class="font-medium">Main Production Env</span>
+</div>
+</div>
+</div>
+<div class="flex gap-3 mt-auto pt-2">
+<button class="px-4 py-2 bg-surface-container-lowest border border-outline-variant text-on-surface text-sm font-medium rounded-lg hover:bg-surface-container-low transition-colors w-full">更换工作流</button>
+<button class="px-4 py-2 bg-surface-container-lowest border border-outline-variant text-error text-sm font-medium rounded-lg hover:bg-error-container hover:border-error-container transition-colors w-full">解除绑定</button>
+</div>
+</div>
+<!-- Card 3: Unbound -->
+<div class="bg-surface border border-dashed border-outline-variant rounded-xl p-6 flex flex-col justify-center items-center text-center min-h-[280px]">
+<div class="w-12 h-12 rounded-full bg-surface-container flex items-center justify-center text-secondary mb-3">
+<span class="material-symbols-outlined text-2xl">fact_check</span>
+</div>
+<h3 class="font-bold text-lg text-on-surface mb-1">审核</h3>
+<span class="px-2 py-1 rounded text-xs font-medium bg-surface-container-high text-on-surface-variant mb-3">尚未绑定工作流</span>
+<p class="text-sm text-on-surface-variant mb-6 max-w-[280px]">针对生成内容进行合规性、一致性与质量审查。</p>
+<button class="px-6 py-2 bg-primary text-on-primary text-sm font-medium rounded-lg hover:bg-surface-tint transition-colors shadow-sm flex items-center gap-2">
+<span class="material-symbols-outlined text-sm">add</span>
+                    选择工作流
+                </button>
+</div>
+<!-- Card 4: Unbound -->
+<div class="bg-surface border border-dashed border-outline-variant rounded-xl p-6 flex flex-col justify-center items-center text-center min-h-[280px]">
+<div class="w-12 h-12 rounded-full bg-surface-container flex items-center justify-center text-secondary mb-3">
+<span class="material-symbols-outlined text-2xl">ink_eraser</span>
+</div>
+<h3 class="font-bold text-lg text-on-surface mb-1">改写</h3>
+<span class="px-2 py-1 rounded text-xs font-medium bg-surface-container-high text-on-surface-variant mb-3">尚未绑定工作流</span>
+<p class="text-sm text-on-surface-variant mb-6 max-w-[280px]">根据反馈或风格需求对现有内容进行重组与优化。</p>
+<button class="px-6 py-2 bg-primary text-on-primary text-sm font-medium rounded-lg hover:bg-surface-tint transition-colors shadow-sm flex items-center gap-2">
+<span class="material-symbols-outlined text-sm">add</span>
+                    选择工作流
+                </button>
+</div>
+</div>
+</main>
+</body></html>

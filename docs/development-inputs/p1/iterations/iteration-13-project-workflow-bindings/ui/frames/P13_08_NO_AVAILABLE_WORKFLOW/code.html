@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+
+<html class="light" lang="zh-CN"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>ACF 2.0 - No Available Workflow State</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-tertiary": "#ffffff",
+                        "secondary-container": "#d0e1fb",
+                        "tertiary-fixed": "#dde3eb",
+                        "secondary": "#505f76",
+                        "tertiary-container": "#5a6168",
+                        "on-tertiary-container": "#d6dce4",
+                        "on-secondary": "#ffffff",
+                        "inverse-on-surface": "#eff1f3",
+                        "on-primary": "#ffffff",
+                        "on-background": "#191c1e",
+                        "surface-container-highest": "#e0e3e5",
+                        "secondary-fixed-dim": "#b7c8e1",
+                        "secondary-fixed": "#d3e4fe",
+                        "on-primary-container": "#dad7ff",
+                        "on-secondary-fixed": "#0b1c30",
+                        "primary-fixed": "#e2dfff",
+                        "surface-container": "#eceef0",
+                        "surface-container-low": "#f2f4f6",
+                        "error": "#ba1a1a",
+                        "primary-fixed-dim": "#c3c0ff",
+                        "error-container": "#ffdad6",
+                        "surface-dim": "#d8dadc",
+                        "primary-container": "#4f46e5",
+                        "primary": "#3525cd",
+                        "on-primary-fixed-variant": "#3323cc",
+                        "surface-tint": "#4d44e3",
+                        "surface-container-lowest": "#ffffff",
+                        "outline": "#777587",
+                        "surface-variant": "#e0e3e5",
+                        "on-error-container": "#93000a",
+                        "on-surface-variant": "#464555",
+                        "background": "#f7f9fb",
+                        "tertiary": "#434950",
+                        "on-secondary-fixed-variant": "#38485d",
+                        "surface": "#f7f9fb",
+                        "on-tertiary-fixed-variant": "#41474e",
+                        "tertiary-fixed-dim": "#c1c7cf",
+                        "on-secondary-container": "#54647a",
+                        "on-error": "#ffffff",
+                        "inverse-surface": "#2d3133",
+                        "surface-bright": "#f7f9fb",
+                        "inverse-primary": "#c3c0ff",
+                        "outline-variant": "#c7c4d8",
+                        "on-surface": "#191c1e",
+                        "surface-container-high": "#e6e8ea",
+                        "on-primary-fixed": "#0f0069",
+                        "on-tertiary-fixed": "#161c22"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "fontFamily": {
+                        "headline": ["Inter", "sans-serif"],
+                        "display": ["Inter", "sans-serif"],
+                        "body": ["Inter", "sans-serif"],
+                        "label": ["Inter", "sans-serif"]
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-background font-body text-on-surface antialiased overflow-hidden">
+<!-- Background Context (Blurred/Overlayed) -->
+<div class="h-screen w-full flex relative filter blur-sm">
+<!-- Side Nav Shell (Immutable Content & Mandatory Styling) -->
+<nav class="fixed left-0 top-0 h-full w-[240px] bg-surface-container-lowest border-r border-outline-variant flex flex-col gap-2 p-4 z-10">
+<div class="mb-8 px-4 flex items-center gap-3">
+<div class="w-8 h-8 rounded bg-primary text-on-primary flex items-center justify-center font-bold text-lg">A</div>
+<div>
+<h1 class="text-xl font-headline font-bold text-primary">ACF 2.0</h1>
+<p class="text-xs text-on-surface-variant">Enterprise Console</p>
+</div>
+</div>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-secondary hover:bg-surface-container-low transition-colors" href="#">
+<span class="material-symbols-outlined">home</span>
+<span class="text-label-md">首页</span>
+</a>
+<!-- Active State Logic: Project Settings context => "项目" is active -->
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg bg-primary-fixed text-on-primary-fixed-variant font-bold" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">folder_open</span>
+<span class="text-label-md">项目</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-secondary hover:bg-surface-container-low transition-colors" href="#">
+<span class="material-symbols-outlined">inventory_2</span>
+<span class="text-label-md">素材</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-secondary hover:bg-surface-container-low transition-colors" href="#">
+<span class="material-symbols-outlined">movie</span>
+<span class="text-label-md">作品</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-secondary hover:bg-surface-container-low transition-colors" href="#">
+<span class="material-symbols-outlined">account_tree</span>
+<span class="text-label-md">工作流</span>
+</a>
+<div class="mt-auto">
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-secondary hover:bg-surface-container-low transition-colors" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span class="text-label-md">设置</span>
+</a>
+</div>
+</nav>
+<!-- Main Content Area -->
+<main class="ml-[240px] flex-1 flex flex-col h-full bg-background relative">
+<!-- Top Nav Shell -->
+<header class="fixed top-0 right-0 h-16 w-[calc(100%-240px)] bg-surface-container-lowest border-b border-outline-variant flex justify-between items-center px-8 z-10">
+<div class="flex items-center gap-2">
+<span class="text-label-lg text-on-surface font-medium">项目 / 示例项目 / 设置</span>
+</div>
+<div class="flex items-center gap-4">
+<button class="w-10 h-10 rounded-full hover:bg-surface-container-high transition-all duration-200 flex items-center justify-center text-on-surface-variant">
+<span class="material-symbols-outlined">help</span>
+</button>
+<button class="w-10 h-10 rounded-full hover:bg-surface-container-high transition-all duration-200 flex items-center justify-center text-on-surface-variant relative">
+<span class="material-symbols-outlined">notifications</span>
+<span class="absolute top-2 right-2 w-2 h-2 bg-error rounded-full"></span>
+</button>
+<div class="w-8 h-8 rounded-full bg-secondary-container text-on-secondary-container flex items-center justify-center ml-2 border border-outline-variant overflow-hidden cursor-pointer">
+<img alt="User Avatar" class="w-full h-full object-cover" data-alt="A professional headshot of a corporate user, smiling slightly, well-lit, neutral background, enterprise software context, high resolution, light mode aesthetic, clean and modern." src="https://lh3.googleusercontent.com/aida-public/AB6AXuB8oJT0vq1NIdUYxTz7oxLDj5vJOjwNdQqc6VzgFXnvC9zd97vyOL2HD5WtRY4QAaaBaslWfJq_Y5s079HqkX2Dn3b_RvOQBnri3Zgv8aAmE-SLXUIbO_fEHY91tyBGQ8QxiGNs2EGfAwF15idkwVVinaYRz5y7QnZEzcKaWFzt4ieDDFnndTzOWOlmZ4On5eC3XGq0rZAa3bGaoMLk1349Q2yI47R0pHo3DnuX5tpCF323Zwc62Bp9WiQ2b5pk1MRed7qJYbdK7Uyz"/>
+</div>
+</div>
+</header>
+<!-- Page Content (Dummy Background Content) -->
+<div class="pt-24 px-8 pb-8 flex-1 overflow-y-auto">
+<div class="max-w-5xl mx-auto space-y-6">
+<div class="flex justify-between items-end border-b border-outline-variant pb-4">
+<div>
+<h2 class="text-2xl font-headline font-bold text-on-surface">工作流绑定</h2>
+<p class="text-sm text-on-surface-variant mt-1">配置项目各个环节所使用的工作流。</p>
+</div>
+</div>
+<div class="bg-surface-container-lowest rounded-xl border border-outline-variant overflow-hidden">
+<div class="p-6 border-b border-outline-variant flex justify-between items-center bg-surface-container-low/50">
+<div>
+<h3 class="text-base font-semibold text-on-surface flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-xl">edit_document</span>
+                                     改写环节
+                                 </h3>
+<p class="text-sm text-on-surface-variant mt-1">负责将原始素材改写为目标风格的文案内容。</p>
+</div>
+<button class="px-4 py-2 border border-outline text-secondary bg-surface-container-lowest rounded-lg text-sm font-medium hover:bg-surface-container-low transition-colors">
+                                 选择工作流
+                             </button>
+</div>
+<div class="p-8 flex flex-col items-center justify-center text-center">
+<div class="w-16 h-16 rounded-full bg-surface-container-high flex items-center justify-center mb-4">
+<span class="material-symbols-outlined text-3xl text-secondary">account_tree</span>
+</div>
+<p class="text-on-surface font-medium">当前未绑定工作流</p>
+<p class="text-sm text-on-surface-variant mt-1">请选择一个适用于『改写』环节的工作流以启用该功能。</p>
+</div>
+</div>
+</div>
+</div>
+</main>
+</div>
+<!-- Overlay Scrim -->
+<div class="fixed inset-0 bg-on-surface/20 z-40 transition-opacity"></div>
+<!-- Right Drawer -->
+<div class="fixed top-0 right-0 h-full w-[520px] bg-surface-container-lowest shadow-2xl z-50 flex flex-col transform transition-transform duration-300 ease-in-out border-l border-outline-variant">
+<!-- Drawer Header -->
+<div class="flex items-center justify-between px-6 py-5 border-b border-outline-variant shrink-0">
+<h2 class="text-lg font-headline font-semibold text-on-surface">为『改写』选择工作流</h2>
+<button aria-label="Close drawer" class="w-8 h-8 rounded-full hover:bg-surface-container-high flex items-center justify-center text-on-surface-variant transition-colors">
+<span class="material-symbols-outlined">close</span>
+</button>
+</div>
+<!-- Drawer Content - Empty State -->
+<div class="flex-1 overflow-y-auto flex flex-col items-center justify-center p-8 text-center bg-surface-bright">
+<!-- Professional Empty State Icon/Graphic -->
+<div class="relative w-32 h-32 mb-6">
+<!-- Base shapes to look like an empty workflow structure -->
+<div class="absolute inset-0 bg-surface-container rounded-2xl border border-outline-variant/50 transform rotate-3"></div>
+<div class="absolute inset-0 bg-surface-container-lowest rounded-2xl border border-outline-variant shadow-sm flex flex-col items-center justify-center p-4">
+<div class="w-full flex items-center justify-between px-2 mb-4">
+<div class="w-3 h-3 rounded-full bg-outline-variant"></div>
+<div class="flex-1 h-px bg-outline-variant/50 mx-2 border-t border-dashed border-outline-variant"></div>
+<div class="w-3 h-3 rounded-full bg-outline-variant"></div>
+</div>
+<span class="material-symbols-outlined text-5xl text-outline-variant mb-2">account_circle_off</span>
+<div class="w-12 h-2 rounded-full bg-surface-container-high mt-2"></div>
+<div class="w-8 h-2 rounded-full bg-surface-container-high mt-1.5"></div>
+</div>
+<!-- Notification Badge to imply action needed -->
+<div class="absolute -top-2 -right-2 w-8 h-8 bg-surface-container-lowest rounded-full border border-outline-variant flex items-center justify-center shadow-sm">
+<span class="material-symbols-outlined text-lg text-secondary">info</span>
+</div>
+</div>
+<!-- Text Content -->
+<h3 class="text-xl font-headline font-semibold text-on-surface mb-3">暂无适用于『改写』的工作流</h3>
+<p class="text-on-surface-variant text-sm max-w-md mx-auto leading-relaxed mb-8">
+                请先在全局设置中创建工作流，并将适用环节设置为『改写』。
+            </p>
+<!-- Actions -->
+<div class="flex flex-col sm:flex-row gap-3 w-full justify-center max-w-[320px]">
+<button class="flex-1 bg-primary text-on-primary px-6 py-2.5 rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors shadow-sm order-1 sm:order-2">
+                    前往全局工作流设置
+                </button>
+<button class="flex-1 bg-surface-container-lowest border border-outline text-secondary px-6 py-2.5 rounded-lg text-sm font-medium hover:bg-surface-container-low transition-colors order-2 sm:order-1">
+                    关闭
+                </button>
+</div>
+<!-- Optional subtle visual context below actions -->
+<div class="mt-12 p-4 bg-surface-container-low rounded-lg border border-outline-variant/50 w-full max-w-sm text-left flex gap-3">
+<span class="material-symbols-outlined text-secondary text-xl mt-0.5">lightbulb</span>
+<div>
+<span class="block text-sm font-medium text-on-surface mb-1">提示</span>
+<span class="block text-xs text-on-surface-variant">工作流必须明确标记其适用的业务环节，才能在此处被筛选并绑定到项目中。</span>
+</div>
+</div>
+</div>
+</div>
+</body></html>

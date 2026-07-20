@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+
+<html lang="zh-CN"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>项目设置 - 工作流绑定</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-secondary-fixed": "#0b1c30",
+                        "background": "#f7f9fb",
+                        "primary-fixed": "#e2dfff",
+                        "surface-container-highest": "#e0e3e5",
+                        "secondary": "#505f76",
+                        "outline-variant": "#c7c4d8",
+                        "on-secondary-container": "#54647a",
+                        "on-secondary": "#ffffff",
+                        "tertiary-fixed-dim": "#c1c7cf",
+                        "on-tertiary-container": "#d6dce4",
+                        "on-error": "#ffffff",
+                        "outline": "#777587",
+                        "surface-container-lowest": "#ffffff",
+                        "on-background": "#191c1e",
+                        "surface-container-low": "#f2f4f6",
+                        "on-tertiary-fixed-variant": "#41474e",
+                        "on-surface-variant": "#464555",
+                        "inverse-on-surface": "#eff1f3",
+                        "secondary-fixed": "#d3e4fe",
+                        "surface-container-high": "#e6e8ea",
+                        "surface-dim": "#d8dadc",
+                        "primary-fixed-dim": "#c3c0ff",
+                        "secondary-container": "#d0e1fb",
+                        "on-primary-fixed-variant": "#3323cc",
+                        "inverse-primary": "#c3c0ff",
+                        "surface-tint": "#4d44e3",
+                        "inverse-surface": "#2d3133",
+                        "surface-variant": "#e0e3e5",
+                        "on-tertiary": "#ffffff",
+                        "on-secondary-fixed-variant": "#38485d",
+                        "on-surface": "#191c1e",
+                        "surface-container": "#eceef0",
+                        "tertiary-container": "#5a6168",
+                        "surface-bright": "#f7f9fb",
+                        "on-error-container": "#93000a",
+                        "error-container": "#ffdad6",
+                        "primary-container": "#4f46e5",
+                        "error": "#ba1a1a",
+                        "on-tertiary-fixed": "#161c22",
+                        "tertiary-fixed": "#dde3eb",
+                        "on-primary-fixed": "#0f0069",
+                        "primary": "#3525cd",
+                        "surface": "#f7f9fb",
+                        "secondary-fixed-dim": "#b7c8e1",
+                        "on-primary-container": "#dad7ff",
+                        "on-primary": "#ffffff",
+                        "tertiary": "#434950"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "fontFamily": {
+                        "headline": ["Inter"],
+                        "display": ["Inter"],
+                        "body": ["Inter"],
+                        "label": ["Inter"]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-background text-on-background w-full min-h-screen flex">
+<!-- SideNavBar -->
+<aside class="fixed left-0 top-0 h-full w-[240px] bg-surface-container-lowest border-r border-outline-variant flex flex-col gap-2 p-4 z-20 shadow-none">
+<div class="flex items-center gap-3 px-4 py-3 mb-4">
+<div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-on-primary font-bold">A</div>
+<div>
+<h1 class="text-xl font-headline font-bold text-primary">ACF 2.0</h1>
+<p class="text-xs text-on-surface-variant">Enterprise Console</p>
+</div>
+</div>
+<nav class="flex flex-col gap-1 w-full flex-grow">
+<a class="flex items-center gap-3 px-4 py-3 text-secondary hover:bg-surface-container-low hover:bg-surface-container-high transition-colors cursor-pointer active:scale-95 rounded-lg" href="#">
+<span class="material-symbols-outlined" data-icon="home">home</span>
+<span class="font-body text-label-md">首页</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 bg-primary-fixed text-on-primary-fixed-variant font-bold rounded-lg cursor-pointer active:scale-95 transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="folder_open">folder_open</span>
+<span class="font-body text-label-md">项目</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-secondary hover:bg-surface-container-low hover:bg-surface-container-high transition-colors cursor-pointer active:scale-95 rounded-lg" href="#">
+<span class="material-symbols-outlined" data-icon="inventory_2">inventory_2</span>
+<span class="font-body text-label-md">素材</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-secondary hover:bg-surface-container-low hover:bg-surface-container-high transition-colors cursor-pointer active:scale-95 rounded-lg" href="#">
+<span class="material-symbols-outlined" data-icon="movie">movie</span>
+<span class="font-body text-label-md">作品</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-secondary hover:bg-surface-container-low hover:bg-surface-container-high transition-colors cursor-pointer active:scale-95 rounded-lg" href="#">
+<span class="material-symbols-outlined" data-icon="account_tree">account_tree</span>
+<span class="font-body text-label-md">工作流</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-secondary hover:bg-surface-container-low hover:bg-surface-container-high transition-colors cursor-pointer active:scale-95 rounded-lg mt-auto" href="#">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+<span class="font-body text-label-md">设置</span>
+</a>
+</nav>
+</aside>
+<!-- TopNavBar -->
+<header class="fixed top-0 right-0 h-16 w-[calc(100%-240px)] bg-surface-container-lowest border-b border-outline-variant flex justify-between items-center px-8 z-10 shadow-none">
+<div class="flex items-center gap-2 text-on-surface-variant font-body text-label-lg">
+<span class="text-secondary hover:text-primary cursor-pointer transition-colors">项目</span>
+<span class="material-symbols-outlined text-sm">chevron_right</span>
+<span class="text-secondary hover:text-primary cursor-pointer transition-colors">示例项目名称</span>
+<span class="material-symbols-outlined text-sm">chevron_right</span>
+<span class="text-on-surface font-medium">设置</span>
+</div>
+<div class="flex items-center gap-4">
+<div class="relative flex items-center">
+<span class="material-symbols-outlined absolute left-3 text-on-surface-variant">search</span>
+<input class="pl-10 pr-4 py-2 bg-surface-container-low border border-transparent focus:border-primary focus:bg-surface-container-lowest rounded-full text-sm outline-none transition-all w-64 text-on-surface" placeholder="Search..." type="text"/>
+</div>
+<button class="w-10 h-10 rounded-full flex items-center justify-center text-on-surface-variant hover:bg-surface-container-high transition-all duration-200">
+<span class="material-symbols-outlined" data-icon="help">help</span>
+</button>
+<button class="w-10 h-10 rounded-full flex items-center justify-center text-on-surface-variant hover:bg-surface-container-high transition-all duration-200">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+<div class="w-8 h-8 rounded-full bg-secondary-container flex items-center justify-center text-on-secondary-container font-bold overflow-hidden cursor-pointer ml-2">
+<img alt="User Avatar" class="object-cover w-full h-full" data-alt="A clean, minimalist 3D rendering of an abstract human avatar face, using soft lighting and light blue and white tones, suitable for a professional enterprise UI profile picture placeholder. High quality, smooth surfaces." src="https://lh3.googleusercontent.com/aida-public/AB6AXuD_0y3btYAGnRb_42Kv_nKr_UHOKGk8xh3Ct1z5F_yMLpacd7JlI9E_e9l3gQPgjYx9fSzyWiNp5OSEDcZFQx8PTrvAXuVd_DpI-dsSkO7GnMguUB5EcqFdnvVKYtYJj8RGRZ0mOkjaJ9dqv4twnyePOmqjvieKKKcBDM71YRDvP0R8SWZlqcaZNIp6R0nfquOuWheO2ErHIrDXrrs0J7K2cXEFiDH_R38e9YzBA3_GZlEWNCNWTWKuxLDSWODwel75k8KbQrOasvDi"/>
+</div>
+</div>
+</header>
+<!-- Main Content Canvas -->
+<main class="ml-[240px] mt-16 p-8 w-[calc(100%-240px)]">
+<!-- Page Header -->
+<div class="mb-6">
+<h2 class="text-2xl font-headline font-bold text-on-surface mb-2">项目设置</h2>
+<p class="text-on-surface-variant text-sm font-body">配置当前项目的基础信息、工作流绑定与其他项目级参数。</p>
+</div>
+<!-- Horizontal Tabs -->
+<div class="flex border-b border-outline-variant mb-8 gap-8">
+<button class="pb-3 px-1 text-sm font-medium text-secondary hover:text-on-surface transition-colors border-b-2 border-transparent">
+                基本信息
+            </button>
+<button class="pb-3 px-1 text-sm font-medium text-primary border-b-2 border-primary">
+                工作流绑定
+            </button>
+<button class="pb-3 px-1 text-sm font-medium text-secondary hover:text-on-surface transition-colors border-b-2 border-transparent">
+                其他设置
+            </button>
+</div>
+<!-- Section Content -->
+<div class="max-w-5xl">
+<div class="mb-6">
+<h3 class="text-lg font-headline font-semibold text-on-surface mb-2">工作流绑定</h3>
+<p class="text-sm text-secondary font-body">为项目的不同业务环节选择全局工作流。绑定仅保存配置关系，不代表工作流已验证或可以执行。</p>
+</div>
+<!-- Bento Grid / Cards -->
+<div class="grid grid-cols-2 gap-6">
+<!-- Card 1: 章节策划 -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-6 flex flex-col hover:border-outline transition-colors shadow-sm">
+<div class="flex justify-between items-start mb-4">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-lg bg-surface-container-low flex items-center justify-center text-secondary">
+<span class="material-symbols-outlined">library_books</span>
+</div>
+<h4 class="font-headline font-semibold text-on-surface text-base">章节策划</h4>
+</div>
+<span class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-surface-container-high text-on-surface-variant">
+<span class="w-1.5 h-1.5 rounded-full bg-outline mr-1.5"></span>
+                            尚未绑定工作流
+                        </span>
+</div>
+<p class="text-sm text-secondary mb-6 flex-grow">自动化拆解大纲并生成章节详细规划。</p>
+<button class="w-full py-2 bg-surface-container-lowest border border-outline-variant rounded-lg text-primary text-sm font-medium hover:bg-surface-container-low transition-colors flex justify-center items-center gap-2">
+<span class="material-symbols-outlined text-sm">add</span> 选择工作流
+                    </button>
+</div>
+<!-- Card 2: 内容生成 -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-6 flex flex-col hover:border-outline transition-colors shadow-sm">
+<div class="flex justify-between items-start mb-4">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-lg bg-surface-container-low flex items-center justify-center text-secondary">
+<span class="material-symbols-outlined">edit_document</span>
+</div>
+<h4 class="font-headline font-semibold text-on-surface text-base">内容生成</h4>
+</div>
+<span class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-surface-container-high text-on-surface-variant">
+<span class="w-1.5 h-1.5 rounded-full bg-outline mr-1.5"></span>
+                            尚未绑定工作流
+                        </span>
+</div>
+<p class="text-sm text-secondary mb-6 flex-grow">基于章节规划进行多模态内容初稿生成。</p>
+<button class="w-full py-2 bg-surface-container-lowest border border-outline-variant rounded-lg text-primary text-sm font-medium hover:bg-surface-container-low transition-colors flex justify-center items-center gap-2">
+<span class="material-symbols-outlined text-sm">add</span> 选择工作流
+                    </button>
+</div>
+<!-- Card 3: 审核 -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-6 flex flex-col hover:border-outline transition-colors shadow-sm">
+<div class="flex justify-between items-start mb-4">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-lg bg-surface-container-low flex items-center justify-center text-secondary">
+<span class="material-symbols-outlined">fact_check</span>
+</div>
+<h4 class="font-headline font-semibold text-on-surface text-base">审核</h4>
+</div>
+<span class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-surface-container-high text-on-surface-variant">
+<span class="w-1.5 h-1.5 rounded-full bg-outline mr-1.5"></span>
+                            尚未绑定工作流
+                        </span>
+</div>
+<p class="text-sm text-secondary mb-6 flex-grow">针对生成内容进行合规性、一致性与质量审查。</p>
+<button class="w-full py-2 bg-surface-container-lowest border border-outline-variant rounded-lg text-primary text-sm font-medium hover:bg-surface-container-low transition-colors flex justify-center items-center gap-2">
+<span class="material-symbols-outlined text-sm">add</span> 选择工作流
+                    </button>
+</div>
+<!-- Card 4: 改写 -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-6 flex flex-col hover:border-outline transition-colors shadow-sm">
+<div class="flex justify-between items-start mb-4">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-lg bg-surface-container-low flex items-center justify-center text-secondary">
+<span class="material-symbols-outlined">auto_fix_high</span>
+</div>
+<h4 class="font-headline font-semibold text-on-surface text-base">改写</h4>
+</div>
+<span class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-surface-container-high text-on-surface-variant">
+<span class="w-1.5 h-1.5 rounded-full bg-outline mr-1.5"></span>
+                            尚未绑定工作流
+                        </span>
+</div>
+<p class="text-sm text-secondary mb-6 flex-grow">根据反馈或风格需求对现有内容进行重组与优化。</p>
+<button class="w-full py-2 bg-surface-container-lowest border border-outline-variant rounded-lg text-primary text-sm font-medium hover:bg-surface-container-low transition-colors flex justify-center items-center gap-2">
+<span class="material-symbols-outlined text-sm">add</span> 选择工作流
+                    </button>
+</div>
+</div>
+</div>
+</main>
+</body></html>

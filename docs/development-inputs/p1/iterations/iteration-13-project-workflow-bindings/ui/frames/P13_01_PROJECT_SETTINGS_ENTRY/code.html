@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+
+<html lang="zh-CN"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>ACF 2.0 - 项目设置</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-container-lowest": "#ffffff",
+                        "on-secondary-fixed-variant": "#38485d",
+                        "surface-container-high": "#e6e8ea",
+                        "on-primary-fixed": "#0f0069",
+                        "primary-container": "#4f46e5",
+                        "on-tertiary-container": "#d6dce4",
+                        "on-secondary": "#ffffff",
+                        "inverse-on-surface": "#eff1f3",
+                        "tertiary-fixed-dim": "#c1c7cf",
+                        "tertiary": "#434950",
+                        "surface-bright": "#f7f9fb",
+                        "on-primary": "#ffffff",
+                        "on-background": "#191c1e",
+                        "surface": "#f7f9fb",
+                        "background": "#f7f9fb",
+                        "on-tertiary-fixed": "#161c22",
+                        "surface-container-low": "#f2f4f6",
+                        "inverse-surface": "#2d3133",
+                        "tertiary-container": "#5a6168",
+                        "surface-tint": "#4d44e3",
+                        "secondary-container": "#d0e1fb",
+                        "secondary": "#505f76",
+                        "error-container": "#ffdad6",
+                        "on-surface-variant": "#464555",
+                        "secondary-fixed-dim": "#b7c8e1",
+                        "inverse-primary": "#c3c0ff",
+                        "tertiary-fixed": "#dde3eb",
+                        "on-secondary-fixed": "#0b1c30",
+                        "surface-variant": "#e0e3e5",
+                        "primary": "#3525cd",
+                        "on-error-container": "#93000a",
+                        "on-surface": "#191c1e",
+                        "on-primary-fixed-variant": "#3323cc",
+                        "surface-container": "#eceef0",
+                        "error": "#ba1a1a",
+                        "primary-fixed": "#e2dfff",
+                        "outline-variant": "#c7c4d8",
+                        "primary-fixed-dim": "#c3c0ff",
+                        "on-tertiary": "#ffffff",
+                        "secondary-fixed": "#d3e4fe",
+                        "outline": "#777587",
+                        "on-primary-container": "#dad7ff",
+                        "surface-container-highest": "#e0e3e5",
+                        "on-tertiary-fixed-variant": "#41474e",
+                        "on-error": "#ffffff",
+                        "surface-dim": "#d8dadc",
+                        "on-secondary-container": "#54647a"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "fontFamily": {
+                        "headline": ["Inter", "sans-serif"],
+                        "display": ["Inter", "sans-serif"],
+                        "body": ["Inter", "sans-serif"],
+                        "label": ["Inter", "sans-serif"]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-background text-on-background min-h-screen font-body flex">
+<!-- SideNavBar (JSON Component) -->
+<nav class="bg-surface-container-lowest dark:bg-surface-dim border-r border-outline-variant dark:border-outline fixed left-0 top-0 h-full w-[240px] flex flex-col gap-2 p-4 z-50">
+<div class="flex items-center gap-3 mb-6 px-2">
+<div class="w-8 h-8 rounded bg-primary-container flex items-center justify-center text-on-primary font-bold">
+                A
+            </div>
+<div>
+<div class="text-xl font-headline font-bold text-primary dark:text-primary-fixed">ACF 2.0</div>
+<div class="text-xs text-secondary">Enterprise Console</div>
+</div>
+</div>
+<ul class="flex flex-col gap-1 w-full">
+<li class="w-full">
+<a class="flex items-center gap-3 px-3 py-2 text-secondary dark:text-secondary-fixed-dim hover:bg-surface-container-low hover:bg-surface-container-high transition-colors cursor-pointer active:scale-95 rounded-lg" href="#">
+<span class="material-symbols-outlined text-[20px]">home</span>
+<span class="font-body text-label-md">首页</span>
+</a>
+</li>
+<li class="w-full">
+<a class="flex items-center gap-3 px-3 py-2 bg-primary-fixed text-on-primary-fixed-variant font-bold rounded-lg cursor-pointer active:scale-95 transition-colors" href="#">
+<span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'FILL' 1;">folder_open</span>
+<span class="font-body text-label-md">项目</span>
+</a>
+</li>
+<li class="w-full">
+<a class="flex items-center gap-3 px-3 py-2 text-secondary dark:text-secondary-fixed-dim hover:bg-surface-container-low hover:bg-surface-container-high transition-colors cursor-pointer active:scale-95 rounded-lg" href="#">
+<span class="material-symbols-outlined text-[20px]">inventory_2</span>
+<span class="font-body text-label-md">素材</span>
+</a>
+</li>
+<li class="w-full">
+<a class="flex items-center gap-3 px-3 py-2 text-secondary dark:text-secondary-fixed-dim hover:bg-surface-container-low hover:bg-surface-container-high transition-colors cursor-pointer active:scale-95 rounded-lg" href="#">
+<span class="material-symbols-outlined text-[20px]">movie</span>
+<span class="font-body text-label-md">作品</span>
+</a>
+</li>
+<li class="w-full">
+<a class="flex items-center gap-3 px-3 py-2 text-secondary dark:text-secondary-fixed-dim hover:bg-surface-container-low hover:bg-surface-container-high transition-colors cursor-pointer active:scale-95 rounded-lg" href="#">
+<span class="material-symbols-outlined text-[20px]">account_tree</span>
+<span class="font-body text-label-md">工作流</span>
+</a>
+</li>
+<li class="w-full">
+<a class="flex items-center gap-3 px-3 py-2 text-secondary dark:text-secondary-fixed-dim hover:bg-surface-container-low hover:bg-surface-container-high transition-colors cursor-pointer active:scale-95 rounded-lg" href="#">
+<span class="material-symbols-outlined text-[20px]">settings</span>
+<span class="font-body text-label-md">设置</span>
+</a>
+</li>
+</ul>
+</nav>
+<!-- TopNavBar (JSON Component) -->
+<header class="bg-surface-container-lowest dark:bg-surface-dim border-b border-outline-variant dark:border-outline fixed top-0 right-0 h-16 w-[calc(100%-240px)] flex justify-between items-center px-8 z-40">
+<div class="flex items-center gap-2">
+<span class="text-on-surface-variant font-body text-sm">项目</span>
+<span class="material-symbols-outlined text-outline-variant text-sm">chevron_right</span>
+<span class="text-on-surface-variant font-body text-sm">示例项目名称</span>
+<span class="material-symbols-outlined text-outline-variant text-sm">chevron_right</span>
+<span class="text-on-surface font-body text-sm font-medium">设置</span>
+</div>
+<div class="flex items-center gap-4">
+<div class="relative hidden md:block">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline-variant text-sm">search</span>
+<input class="w-64 h-9 pl-9 pr-3 rounded-full bg-surface-container-low border-none focus:ring-1 focus:ring-primary text-sm text-on-surface placeholder:text-outline transition-all" placeholder="搜索..." type="text"/>
+</div>
+<button class="w-9 h-9 flex items-center justify-center text-on-surface-variant dark:text-surface-variant hover:bg-surface-container-high rounded-full transition-all duration-200">
+<span class="material-symbols-outlined text-[20px]">help</span>
+</button>
+<button class="w-9 h-9 flex items-center justify-center text-on-surface-variant dark:text-surface-variant hover:bg-surface-container-high rounded-full transition-all duration-200">
+<span class="material-symbols-outlined text-[20px]">notifications</span>
+</button>
+<div class="w-8 h-8 rounded-full bg-secondary-container flex items-center justify-center overflow-hidden cursor-pointer border border-outline-variant">
+<img alt="User Avatar" class="w-full h-full object-cover" data-alt="A professional headshot of a corporate user in a modern office setting. The lighting is bright and even, highlighting a confident, neutral expression. Soft focus background with subtle cool grey and indigo tones reflecting an enterprise software environment. High resolution, clean composition." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAFmObUuus5BDQq5akhvWeBbxAJGML12LANZw-Q2OURoCjdDoqH8zEk_ujAiP4sTwif0ndi2AJRl8EMKe_OHQdzZUZi_bz5s_n2VotfDui1lMh6SsVvkUxzVjikoS6AsuPzTkMADS0r7kXWwxGRtw4784hNMBKnTfHhVVdmu5kHacwwg0cjk8nqEv_GqKQF12uEwgZWqjcMF5I4vbefYSBH5s3KgfFXkzgQH_zwm8RjMrnSg4_m2TV85G9RrgmcjsTopvrHQEUEEopc"/>
+</div>
+</div>
+</header>
+<!-- Main Content Canvas -->
+<main class="ml-[240px] mt-[64px] p-8 w-[calc(100%-240px)] h-[calc(100vh-64px)] overflow-y-auto">
+<div class="max-w-5xl mx-auto space-y-6">
+<!-- Page Header -->
+<div class="flex flex-col gap-1">
+<h1 class="text-2xl font-headline font-bold text-on-surface">项目设置</h1>
+<p class="text-sm text-secondary font-body">配置当前项目的基础信息、工作流绑定与其他项目级参数。</p>
+</div>
+<!-- Tabs -->
+<div class="border-b border-outline-variant">
+<nav aria-label="Tabs" class="flex space-x-8">
+<a class="border-primary text-primary whitespace-nowrap py-3 border-b-2 font-medium text-sm" href="#">基本信息</a>
+<a class="border-transparent text-secondary hover:text-on-surface hover:border-outline-variant whitespace-nowrap py-3 border-b-2 font-medium text-sm transition-colors" href="#">工作流绑定</a>
+<a class="border-transparent text-secondary hover:text-on-surface hover:border-outline-variant whitespace-nowrap py-3 border-b-2 font-medium text-sm transition-colors" href="#">其他设置</a>
+</nav>
+</div>
+<!-- Forms Container -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+<!-- Main Form (Basic Info) -->
+<div class="lg:col-span-2 space-y-6">
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-6 shadow-sm flex flex-col gap-6">
+<div class="flex items-start gap-6">
+<!-- Avatar Upload -->
+<div class="flex flex-col items-center gap-3">
+<div class="w-24 h-24 rounded-lg bg-surface-container border border-dashed border-outline-variant flex flex-col items-center justify-center text-secondary hover:bg-surface-container-high hover:border-outline cursor-pointer transition-colors relative overflow-hidden group">
+<span class="material-symbols-outlined text-[24px] mb-1">add_photo_alternate</span>
+<span class="text-xs">上传图标</span>
+</div>
+<span class="text-[11px] text-outline text-center w-24">建议尺寸 512x512px<br/>PNG 或 JPG</span>
+</div>
+<div class="flex-1 space-y-4">
+<!-- Project Name -->
+<div>
+<label class="block text-sm font-medium text-on-surface mb-1" for="project_name">项目名称 <span class="text-error">*</span></label>
+<input class="block w-full rounded-md border-outline-variant bg-surface-container-lowest text-on-surface focus:border-primary focus:ring-primary sm:text-sm h-9 px-3" id="project_name" type="text" value="示例项目名称"/>
+</div>
+<!-- Project ID (Read-only) -->
+<div>
+<label class="block text-sm font-medium text-on-surface mb-1" for="project_id">项目 ID</label>
+<div class="flex rounded-md shadow-sm">
+<input class="block w-full rounded-md border-outline-variant bg-surface-container-low text-secondary sm:text-sm h-9 px-3 cursor-not-allowed" disabled="" id="project_id" type="text" value="PRJ-8F92A3"/>
+<button class="ml-2 px-3 py-1 bg-surface-container-lowest border border-outline-variant rounded-md text-secondary hover:bg-surface-container-high hover:text-on-surface transition-colors flex items-center justify-center" title="复制 ID">
+<span class="material-symbols-outlined text-[18px]">content_copy</span>
+</button>
+</div>
+<p class="mt-1 text-xs text-outline">项目唯一标识，不可修改。</p>
+</div>
+</div>
+</div>
+<!-- Description -->
+<div>
+<label class="block text-sm font-medium text-on-surface mb-1" for="project_desc">项目描述</label>
+<textarea class="block w-full rounded-md border-outline-variant bg-surface-container-lowest text-on-surface focus:border-primary focus:ring-primary sm:text-sm p-3 resize-none" id="project_desc" placeholder="输入项目相关描述，方便团队成员了解项目背景..." rows="4">这是一个用于演示 AI 自动化内容生产流程的示例项目。</textarea>
+</div>
+</div>
+<!-- Actions -->
+<div class="flex justify-end gap-3 pt-2">
+<button class="px-4 py-2 bg-surface-container-lowest border border-outline-variant text-on-surface rounded-lg text-sm font-medium hover:bg-surface-container-high transition-colors">取消</button>
+<button class="px-4 py-2 bg-primary-container text-on-primary rounded-lg text-sm font-medium hover:bg-primary transition-colors shadow-sm">保存设置</button>
+</div>
+</div>
+<!-- Right Sidebar (Workflow Binding Promo/Shortcut) -->
+<div class="space-y-6">
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-6 shadow-sm relative overflow-hidden group cursor-pointer hover:border-primary-fixed-dim transition-colors">
+<!-- Decorative bg -->
+<div class="absolute -right-4 -top-4 w-24 h-24 bg-primary-fixed rounded-full opacity-50 group-hover:scale-110 transition-transform duration-500 blur-xl"></div>
+<div class="relative z-10 flex flex-col gap-3">
+<div class="w-10 h-10 rounded-lg bg-primary-fixed flex items-center justify-center text-on-primary-fixed-variant">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">account_tree</span>
+</div>
+<h3 class="text-base font-bold text-on-surface mt-1">工作流绑定</h3>
+<p class="text-xs text-secondary leading-relaxed mb-2">
+                                为当前项目绑定全局系统工作流配置，实现章节策划、内容生成与审核等自动化流程的接入。
+                            </p>
+<div class="flex items-center text-primary text-sm font-medium gap-1 group-hover:gap-2 transition-all">
+<span>前往配置</span>
+<span class="material-symbols-outlined text-[18px]">arrow_forward</span>
+</div>
+</div>
+</div>
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-5 shadow-sm">
+<h4 class="text-sm font-bold text-on-surface mb-4">项目状态</h4>
+<div class="flex items-center justify-between">
+<span class="text-sm text-secondary">当前状态</span>
+<span class="inline-flex items-center rounded-md bg-secondary-fixed px-2 py-1 text-xs font-medium text-on-secondary-fixed ring-1 ring-inset ring-secondary-fixed-dim">进行中</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+</body></html>

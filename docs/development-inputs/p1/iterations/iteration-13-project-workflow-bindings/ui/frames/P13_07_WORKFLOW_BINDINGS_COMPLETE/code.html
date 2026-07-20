@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+
+<html lang="zh-CN"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>工作流绑定总览 - 已绑定</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined {
+            font-family: 'Material Symbols Outlined';
+            font-weight: normal;
+            font-style: normal;
+            font-size: 24px;
+            line-height: 1;
+            letter-spacing: normal;
+            text-transform: none;
+            display: inline-block;
+            white-space: nowrap;
+            word-wrap: normal;
+            direction: ltr;
+            -webkit-font-feature-settings: 'liga';
+            -webkit-font-smoothing: antialiased;
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "surface-container-high": "#e6e8ea",
+                        "on-primary-fixed": "#0f0069",
+                        "on-tertiary-fixed": "#161c22",
+                        "on-surface": "#191c1e",
+                        "surface-bright": "#f7f9fb",
+                        "inverse-primary": "#c3c0ff",
+                        "outline-variant": "#c7c4d8",
+                        "on-secondary-container": "#54647a",
+                        "on-error": "#ffffff",
+                        "inverse-surface": "#2d3133",
+                        "tertiary-fixed-dim": "#c1c7cf",
+                        "surface": "#f7f9fb",
+                        "on-tertiary-fixed-variant": "#41474e",
+                        "background": "#f7f9fb",
+                        "tertiary": "#434950",
+                        "on-secondary-fixed-variant": "#38485d",
+                        "on-surface-variant": "#464555",
+                        "on-error-container": "#93000a",
+                        "surface-tint": "#4d44e3",
+                        "surface-container-lowest": "#ffffff",
+                        "outline": "#777587",
+                        "surface-variant": "#e0e3e5",
+                        "surface-dim": "#d8dadc",
+                        "primary-container": "#4f46e5",
+                        "primary": "#3525cd",
+                        "on-primary-fixed-variant": "#3323cc",
+                        "error-container": "#ffdad6",
+                        "primary-fixed-dim": "#c3c0ff",
+                        "surface-container-low": "#f2f4f6",
+                        "error": "#ba1a1a",
+                        "surface-container": "#eceef0",
+                        "primary-fixed": "#e2dfff",
+                        "on-secondary-fixed": "#0b1c30",
+                        "on-primary-container": "#dad7ff",
+                        "on-primary": "#ffffff",
+                        "on-background": "#191c1e",
+                        "surface-container-highest": "#e0e3e5",
+                        "secondary-fixed-dim": "#b7c8e1",
+                        "secondary-fixed": "#d3e4fe",
+                        "on-tertiary-container": "#d6dce4",
+                        "on-secondary": "#ffffff",
+                        "inverse-on-surface": "#eff1f3",
+                        "tertiary-container": "#5a6168",
+                        "tertiary-fixed": "#dde3eb",
+                        "secondary": "#505f76",
+                        "secondary-container": "#d0e1fb",
+                        "on-tertiary": "#ffffff"
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    fontFamily: {
+                        "headline": ["Inter", "sans-serif"],
+                        "display": ["Inter", "sans-serif"],
+                        "body": ["Inter", "sans-serif"],
+                        "label": ["Inter", "sans-serif"]
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-background text-on-surface font-body h-screen flex overflow-hidden">
+<!-- SideNavBar -->
+<nav class="bg-surface-container-lowest fixed left-0 top-0 h-full w-[240px] border-r border-outline-variant flex flex-col gap-2 p-4 z-20">
+<!-- Brand / Header -->
+<div class="flex items-center gap-3 px-4 py-4 mb-4">
+<div class="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-on-primary">
+<span class="material-symbols-outlined text-lg" style="font-variation-settings: 'FILL' 1;">dataset</span>
+</div>
+<div class="flex flex-col">
+<span class="text-xl font-headline font-bold text-primary leading-tight">ACF 2.0</span>
+<span class="text-xs text-on-surface-variant leading-tight">Enterprise Console</span>
+</div>
+</div>
+<!-- Navigation Tabs -->
+<a class="flex items-center gap-3 px-4 py-3 text-secondary hover:bg-surface-container-high transition-colors cursor-pointer active:scale-95 rounded-lg text-label-md" href="#">
+<span class="material-symbols-outlined text-xl">home</span>
+<span>首页</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-secondary hover:bg-surface-container-high transition-colors cursor-pointer active:scale-95 rounded-lg text-label-md" href="#">
+<span class="material-symbols-outlined text-xl">folder_open</span>
+<span>项目</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-secondary hover:bg-surface-container-high transition-colors cursor-pointer active:scale-95 rounded-lg text-label-md" href="#">
+<span class="material-symbols-outlined text-xl">inventory_2</span>
+<span>素材</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-secondary hover:bg-surface-container-high transition-colors cursor-pointer active:scale-95 rounded-lg text-label-md" href="#">
+<span class="material-symbols-outlined text-xl">movie</span>
+<span>作品</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-secondary hover:bg-surface-container-high transition-colors cursor-pointer active:scale-95 rounded-lg text-label-md" href="#">
+<span class="material-symbols-outlined text-xl">account_tree</span>
+<span>工作流</span>
+</a>
+<!-- Active Tab: 设置 -->
+<a class="flex items-center gap-3 px-4 py-3 bg-primary-fixed text-on-primary-fixed-variant font-bold rounded-lg cursor-pointer active:scale-95 transition-colors text-label-md" href="#">
+<span class="material-symbols-outlined text-xl" style="font-variation-settings: 'FILL' 1;">settings</span>
+<span>设置</span>
+</a>
+</nav>
+<!-- Main Content Wrapper -->
+<div class="flex-1 ml-[240px] flex flex-col h-full relative">
+<!-- TopNavBar -->
+<header class="bg-surface-container-lowest fixed top-0 right-0 h-16 w-[calc(100%-240px)] border-b border-outline-variant flex justify-between items-center px-8 z-10 font-body text-label-lg">
+<!-- Breadcrumbs / Product Name -->
+<div class="flex items-center text-on-surface">
+<span class="text-on-surface-variant mr-2">项目 / 示例项目名称 /</span>
+<span class="font-medium text-on-surface">设置</span>
+</div>
+<!-- Trailing Actions -->
+<div class="flex items-center gap-4">
+<button class="w-10 h-10 flex items-center justify-center text-on-surface-variant hover:bg-surface-container-high rounded-full transition-all duration-200">
+<span class="material-symbols-outlined">help</span>
+</button>
+<button class="w-10 h-10 flex items-center justify-center text-on-surface-variant hover:bg-surface-container-high rounded-full transition-all duration-200">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<div class="w-8 h-8 rounded-full bg-primary-container border border-outline-variant overflow-hidden cursor-pointer ml-2">
+<img class="w-full h-full object-cover" data-alt="A professional user avatar image for an enterprise dashboard, minimal lighting, flat background, highly detailed face." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDHVHdVLWeoqEduob_G-kUG01ZPpSzvV0skkN-njVpzINq-QYV5oQmSgPIPLYoDdTZBnzA2CpzgznVryMNd-f9flv9aJCj3kO5qy7rGJ0fbVnZvWMYQBEPzUZdefioZlKmhn1Uy4Mcuj3g7RSUIUsKxiQOxPZxQ0zKrT6MqkCdrSAYtGxwdjNqNO335BOxH_Xss27YYkPJDcx-DzVcKN29WPeX9PzqMkw842pP0BzTKm31ZEUrChr3ww6c9FLk23p6A4PuzkO6-IqQD"/>
+</div>
+</div>
+</header>
+<!-- Page Canvas -->
+<main class="flex-1 mt-16 p-8 overflow-y-auto bg-surface flex flex-col gap-6">
+<!-- Page Header & Sub-tabs -->
+<div class="flex flex-col gap-6">
+<h1 class="text-2xl font-headline font-bold text-on-surface">项目设置</h1>
+<div class="flex border-b border-outline-variant gap-8">
+<a class="pb-3 text-sm font-medium text-on-surface-variant hover:text-on-surface transition-colors" href="#">基本信息</a>
+<a class="pb-3 text-sm font-bold text-primary border-b-2 border-primary" href="#">工作流绑定</a>
+<a class="pb-3 text-sm font-medium text-on-surface-variant hover:text-on-surface transition-colors" href="#">其他设置</a>
+</div>
+</div>
+<!-- Bento Grid - Workflow Stages -->
+<div class="grid grid-cols-2 gap-6 w-full max-w-[1200px]">
+<!-- Card 1: 章节策划 -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl flex flex-col relative overflow-hidden h-[300px]">
+<div class="absolute left-0 top-0 bottom-0 w-1.5 bg-primary"></div>
+<div class="p-6 pl-8 flex flex-col h-full gap-5">
+<!-- Header -->
+<div class="flex flex-col gap-1">
+<div class="flex items-center gap-2 text-on-surface">
+<span class="material-symbols-outlined text-primary">menu_book</span>
+<h3 class="font-bold text-lg">章节策划</h3>
+</div>
+<p class="text-sm text-on-surface-variant">构建项目骨架，定义全局大纲与结构逻辑</p>
+</div>
+<!-- Binding Info Box -->
+<div class="bg-surface-container-low rounded-lg p-4 flex flex-col gap-3 border border-surface-container-highest flex-1">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-secondary text-sm">schema</span>
+<span class="text-sm font-bold text-on-surface truncate flex-1" title="长篇小说深度大纲生成流 (增强版 V2.0)">长篇小说深度大纲生成流 (增强版 V2.0)</span>
+</div>
+<div class="grid grid-cols-2 gap-4 mt-1">
+<div class="flex flex-col gap-0.5">
+<span class="text-xs text-on-surface-variant">工作流类型</span>
+<span class="text-sm font-medium text-on-surface">n8n</span>
+</div>
+<div class="flex flex-col gap-0.5">
+<span class="text-xs text-on-surface-variant">连接环境</span>
+<span class="text-sm font-medium text-on-surface">Main Production Env</span>
+</div>
+</div>
+<!-- Tags -->
+<div class="flex gap-2 mt-auto pt-2">
+<span class="px-2 py-1 rounded text-xs font-medium bg-secondary-container text-on-secondary-container flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">check_circle</span>
+                                    已集成
+                                </span>
+<span class="px-2 py-1 rounded text-xs font-medium bg-secondary-container text-on-secondary-container flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">play_circle</span>
+                                    已启用
+                                </span>
+</div>
+</div>
+<!-- Actions -->
+<div class="grid grid-cols-2 gap-3 mt-auto">
+<button class="bg-surface-container-lowest border border-outline-variant text-secondary hover:bg-surface-container-low hover:text-on-surface rounded-lg py-2 text-sm font-medium transition-colors flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-[18px]">swap_horiz</span>
+                                更换工作流
+                            </button>
+<button class="bg-surface-container-lowest border border-outline-variant text-error hover:bg-error-container rounded-lg py-2 text-sm font-medium transition-colors flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-[18px]">link_off</span>
+                                解除绑定
+                            </button>
+</div>
+</div>
+</div>
+<!-- Card 2: 内容生成 -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl flex flex-col relative overflow-hidden h-[300px]">
+<div class="absolute left-0 top-0 bottom-0 w-1.5 bg-[#6366f1]"></div>
+<div class="p-6 pl-8 flex flex-col h-full gap-5">
+<!-- Header -->
+<div class="flex flex-col gap-1">
+<div class="flex items-center gap-2 text-on-surface">
+<span class="material-symbols-outlined text-[#6366f1]">edit_document</span>
+<h3 class="font-bold text-lg">内容生成</h3>
+</div>
+<p class="text-sm text-on-surface-variant">驱动底层模型，执行核心多模态图文生产</p>
+</div>
+<!-- Binding Info Box -->
+<div class="bg-surface-container-low rounded-lg p-4 flex flex-col gap-3 border border-surface-container-highest flex-1">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-secondary text-sm">neurology</span>
+<span class="text-sm font-bold text-on-surface truncate flex-1" title="通用多模态内容生成流">通用多模态内容生成流</span>
+</div>
+<div class="grid grid-cols-2 gap-4 mt-1">
+<div class="flex flex-col gap-0.5">
+<span class="text-xs text-on-surface-variant">工作流类型</span>
+<span class="text-sm font-medium text-on-surface">Python Script</span>
+</div>
+<div class="flex flex-col gap-0.5">
+<span class="text-xs text-on-surface-variant">连接环境</span>
+<span class="text-sm font-medium text-on-surface">Dedicated GPU Cluster</span>
+</div>
+</div>
+<!-- Tags -->
+<div class="flex gap-2 mt-auto pt-2">
+<span class="px-2 py-1 rounded text-xs font-medium bg-secondary-container text-on-secondary-container flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">check_circle</span>
+                                    已集成
+                                </span>
+<span class="px-2 py-1 rounded text-xs font-medium bg-secondary-container text-on-secondary-container flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">play_circle</span>
+                                    已启用
+                                </span>
+</div>
+</div>
+<!-- Actions -->
+<div class="grid grid-cols-2 gap-3 mt-auto">
+<button class="bg-surface-container-lowest border border-outline-variant text-secondary hover:bg-surface-container-low hover:text-on-surface rounded-lg py-2 text-sm font-medium transition-colors flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-[18px]">swap_horiz</span>
+                                更换工作流
+                            </button>
+<button class="bg-surface-container-lowest border border-outline-variant text-error hover:bg-error-container rounded-lg py-2 text-sm font-medium transition-colors flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-[18px]">link_off</span>
+                                解除绑定
+                            </button>
+</div>
+</div>
+</div>
+<!-- Card 3: 审核 -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl flex flex-col relative overflow-hidden h-[300px]">
+<div class="absolute left-0 top-0 bottom-0 w-1.5 bg-[#10b981]"></div>
+<div class="p-6 pl-8 flex flex-col h-full gap-5">
+<!-- Header -->
+<div class="flex flex-col gap-1">
+<div class="flex items-center gap-2 text-on-surface">
+<span class="material-symbols-outlined text-[#10b981]">fact_check</span>
+<h3 class="font-bold text-lg">审核</h3>
+</div>
+<p class="text-sm text-on-surface-variant">自动化质量评估与平台合规性检查准则</p>
+</div>
+<!-- Binding Info Box -->
+<div class="bg-surface-container-low rounded-lg p-4 flex flex-col gap-3 border border-surface-container-highest flex-1">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-secondary text-sm">verified_user</span>
+<span class="text-sm font-bold text-on-surface truncate flex-1" title="自动化合规性审计专家流">自动化合规性审计专家流</span>
+</div>
+<div class="grid grid-cols-2 gap-4 mt-1">
+<div class="flex flex-col gap-0.5">
+<span class="text-xs text-on-surface-variant">工作流类型</span>
+<span class="text-sm font-medium text-on-surface">n8n</span>
+</div>
+<div class="flex flex-col gap-0.5">
+<span class="text-xs text-on-surface-variant">连接环境</span>
+<span class="text-sm font-medium text-on-surface">Secure Sandbox API</span>
+</div>
+</div>
+<!-- Tags -->
+<div class="flex gap-2 mt-auto pt-2">
+<span class="px-2 py-1 rounded text-xs font-medium bg-secondary-container text-on-secondary-container flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">check_circle</span>
+                                    已集成
+                                </span>
+<span class="px-2 py-1 rounded text-xs font-medium bg-secondary-container text-on-secondary-container flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">play_circle</span>
+                                    已启用
+                                </span>
+</div>
+</div>
+<!-- Actions -->
+<div class="grid grid-cols-2 gap-3 mt-auto">
+<button class="bg-surface-container-lowest border border-outline-variant text-secondary hover:bg-surface-container-low hover:text-on-surface rounded-lg py-2 text-sm font-medium transition-colors flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-[18px]">swap_horiz</span>
+                                更换工作流
+                            </button>
+<button class="bg-surface-container-lowest border border-outline-variant text-error hover:bg-error-container rounded-lg py-2 text-sm font-medium transition-colors flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-[18px]">link_off</span>
+                                解除绑定
+                            </button>
+</div>
+</div>
+</div>
+<!-- Card 4: 改写 -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl flex flex-col relative overflow-hidden h-[300px]">
+<div class="absolute left-0 top-0 bottom-0 w-1.5 bg-[#f59e0b]"></div>
+<div class="p-6 pl-8 flex flex-col h-full gap-5">
+<!-- Header -->
+<div class="flex flex-col gap-1">
+<div class="flex items-center gap-2 text-on-surface">
+<span class="material-symbols-outlined text-[#f59e0b]">auto_fix_high</span>
+<h3 class="font-bold text-lg">改写</h3>
+</div>
+<p class="text-sm text-on-surface-variant">二次加工、语言润色与多重风格适配转换</p>
+</div>
+<!-- Binding Info Box -->
+<div class="bg-surface-container-low rounded-lg p-4 flex flex-col gap-3 border border-surface-container-highest flex-1">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-secondary text-sm">transform</span>
+<span class="text-sm font-bold text-on-surface truncate flex-1" title="智能风格化重组改写脚本">智能风格化重组改写脚本</span>
+</div>
+<div class="grid grid-cols-2 gap-4 mt-1">
+<div class="flex flex-col gap-0.5">
+<span class="text-xs text-on-surface-variant">工作流类型</span>
+<span class="text-sm font-medium text-on-surface">Node.js Service</span>
+</div>
+<div class="flex flex-col gap-0.5">
+<span class="text-xs text-on-surface-variant">连接环境</span>
+<span class="text-sm font-medium text-on-surface">Edge Worker Area</span>
+</div>
+</div>
+<!-- Tags -->
+<div class="flex gap-2 mt-auto pt-2">
+<span class="px-2 py-1 rounded text-xs font-medium bg-secondary-container text-on-secondary-container flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">check_circle</span>
+                                    已集成
+                                </span>
+<span class="px-2 py-1 rounded text-xs font-medium bg-secondary-container text-on-secondary-container flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">play_circle</span>
+                                    已启用
+                                </span>
+</div>
+</div>
+<!-- Actions -->
+<div class="grid grid-cols-2 gap-3 mt-auto">
+<button class="bg-surface-container-lowest border border-outline-variant text-secondary hover:bg-surface-container-low hover:text-on-surface rounded-lg py-2 text-sm font-medium transition-colors flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-[18px]">swap_horiz</span>
+                                更换工作流
+                            </button>
+<button class="bg-surface-container-lowest border border-outline-variant text-error hover:bg-error-container rounded-lg py-2 text-sm font-medium transition-colors flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-[18px]">link_off</span>
+                                解除绑定
+                            </button>
+</div>
+</div>
+</div>
+</div>
+</main>
+</div>
+</body></html>

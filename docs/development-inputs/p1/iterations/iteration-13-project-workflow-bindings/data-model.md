@@ -1,71 +1,63 @@
 # Iteration 13 — 项目四环节工作流绑定 — 数据模型
 
-## 1. ProjectWorkflowBinding
+## 1. 核心模型
 
-建议字段：
+### `ProjectWorkflowBinding`
 
 | 字段 | 类型 | 约束 |
 |---|---|---|
-| `id` | uuid | PK |
-| `project_id` | uuid | FK, not null |
-| `stage` | varchar(40) | `chapter_planning / content_generation / review / rewrite` |
-| `workflow_configuration_id` | uuid | FK → `workflow_configurations.id`, not null |
-| `default_parameters` | jsonb | 按环节本地 Schema 校验 |
-| `version` | integer | 乐观锁 |
-| `created_at` | timestamptz | not null |
-| `updated_at` | timestamptz | not null |
+| `id` | UUID | 主键 |
+| `projectId` | UUID | 必填，关联项目 |
+| `stage` | enum | `chapter_planning` / `content_generation` / `review` / `rewrite` |
+| `workflowConfigurationId` | UUID | 必填，关联 Iteration 12 的全局工作流配置 |
+| `version` | integer | 必填，用于乐观锁 |
+| `createdAt` | timestamp | 必填 |
+| `updatedAt` | timestamp | 必填 |
 
-唯一约束：
+## 2. 数据库约束
 
-- `(project_id, stage)` 唯一。
+- `UNIQUE(project_id, stage)`：同一项目的同一环节最多存在一个绑定；
+- 项目必须存在且当前用户拥有访问权限；
+- 全局工作流配置必须存在；
+- 创建或更换时，工作流的 `applicableStages` 必须包含目标 `stage`；
+- 已停用工作流不得作为新的绑定候选；
+- 已存在绑定在全局工作流后续停用、未接入或连接异常时继续保留，不自动解绑；
+- 更新和解除必须校验 `expectedVersion`；
+- 创建、更换和解除在同一事务内完成业务写入、幂等记录和 Audit。
 
-## 2. 环节参数
+## 3. 读取模型
+
+绑定列表可组合返回全局工作流的只读展示信息：
+
+- 工作流名称；
+- 工作流类型；
+- 关联连接名称；
+- 启用状态；
+- 集成状态；
+- 连接状态；
+- 当前绑定版本。
+
+这些状态来自全局配置，不在 `ProjectWorkflowBinding` 中重复持久化。
+
+## 4. Audit
+
+建议动作：
+
+- `project_workflow_binding.create`
+- `project_workflow_binding.replace`
+- `project_workflow_binding.remove`
+
+Audit 不记录 Secret、Credential、完整 URL、默认参数正文或其他敏感配置。
+
+## 5. 本迭代不新增的模型
+
+以下模型不属于 Iteration 13：
 
 - `ChapterPlanningParameters`
 - `ContentGenerationParameters`
 - `ContentReviewParameters`
 - `ContentRewriteParameters`
+- `WorkflowRun`
+- 运行快照、输出 Schema 和领域结果模型
 
-参数只做本地 Schema 校验，不访问工作流平台。
-
-## 3. 派生字段
-
-查询 DTO 可以返回：
-
-- 工作流名称；
-- 关联连接名称；
-- 连接类型；
-- `integrationStatus`；
-- `enabled`；
-- `runtimeReady`。
-
-Iteration 13 中：
-
-- `runtimeReady=false`，除非后续迭代已经完成并回填真实接入状态；
-- 该字段只用于展示，不在保存绑定时触发验证。
-
-## 4. 约束
-
-- 工作流配置必须存在；
-- 工作流配置必须关联连接；
-- 连接或工作流处于 `not_connected` 时仍允许保存绑定；
-- UI 必须显示“尚未接入执行能力”；
-- 本迭代不复制密钥；
-- 本迭代不创建绑定快照；
-- 本迭代不创建 WorkflowRun；
-- 删除或归档被绑定工作流的行为不在本迭代实现。
-
-## 5. 审计
-
-记录：
-
-- `binding_create`；
-- `binding_replace`；
-- `default_parameters_update`。
-
-不得记录：
-
-- 凭证；
-- 第三方请求；
-- 运行结果；
-- 虚构验证状态。
+项目级参数覆盖和工作流执行由后续迭代单独设计。

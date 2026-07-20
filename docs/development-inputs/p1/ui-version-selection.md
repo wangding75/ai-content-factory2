@@ -56,11 +56,16 @@ Iteration 11 UI 人工验收结论：
 | `E4_AI_CONNECTIONS_OVERVIEW` AI 与工作流连接总览 | `ai_connections_overview_1`；`ai_connections_overview_2`；`ai_content_factory_workflow_management` | `ai_connections_overview_2` |
 | `E4_LLM_PROVIDER_DRAWER` LLM Provider 配置抽屉 | `e4_llm_provider_drawer` | `e4_llm_provider_drawer` |
 | `E4_N8N_CONNECTION_DRAWER` n8n 连接配置抽屉 | `e4_n8n_connection_drawer` | `e4_n8n_connection_drawer` |
-| `S02_PROJECT_WORKFLOW_SETTINGS` 项目工作流设置 | `project_workflow_settings` | `project_workflow_settings` |
-| `S02_BIND_CHAPTER_WORKFLOW_DRAWER` 章节规划工作流绑定 | `s02_bind_chapter_workflow_drawer` | `s02_bind_chapter_workflow_drawer` |
-| `S02_BIND_CONTENT_WORKFLOW_DRAWER` 正文生成工作流绑定 | `s02_bind_content_workflow_drawer` | `s02_bind_content_workflow_drawer` |
-| `S02_BIND_REVIEW_WORKFLOW_DRAWER` 内容审核工作流绑定 | `s02_bind_review_workflow_drawer` | `s02_bind_review_workflow_drawer` |
-| `S02_BIND_REWRITE_WORKFLOW_DRAWER` 正文重写工作流绑定 | `s02_bind_rewrite_workflow_drawer` | `s02_bind_rewrite_workflow_drawer` |
+| `P13_01_PROJECT_SETTINGS_ENTRY` 项目设置入口参考 | `p13_01` | `p13_01` |
+| `P13_02_WORKFLOW_BINDINGS_UNBOUND` 全部未绑定 | `p13_02` | `p13_02` |
+| `P13_03_SELECT_WORKFLOW_DRAWER` 选择工作流抽屉 | `p13_03` | `p13_03` |
+| `P13_04_WORKFLOW_BINDINGS_PARTIAL` 部分已绑定 | `p13_04` | `p13_04` |
+| `P13_05_REPLACE_WORKFLOW_DRAWER` 更换工作流抽屉 | `p13_05` | `p13_05` |
+| `P13_06_UNBIND_CONFIRM_DIALOG` 解除绑定确认 | `p13_06` | `p13_06` |
+| `P13_07_WORKFLOW_BINDINGS_COMPLETE` 全部已绑定 | `p13_07` | `p13_07` |
+| `P13_08_NO_AVAILABLE_WORKFLOW` 无可用工作流 | `p13_08` | `p13_08` |
+| `P13_09_WORKFLOW_BINDING_EXCEPTIONS` 绑定异常状态 | `p13_09` | `p13_09` |
+| `P13_10_BINDING_CONFLICT` 保存冲突状态 | `p13_10` | `p13_10` |
 | `E3_WORKFLOW_CENTER_V2` 工作流运行中心 | `workflow_center_monitoring_console`；`workflow_center_dashboard`；`workflow_center_monitoring_console_v2.0`；`workflow_center_console_v2.0` | `workflow_center_console_v2.0` |
 | `E3_WORKFLOW_RUN_DETAIL_DRAWER` 工作流运行详情 | `e3_workflow_run_detail_drawer` | `e3_workflow_run_detail_drawer` |
 | `E3_RETRY_RUN_CONFIRM_DIALOG` 工作流重试确认 | `retry_run_confirmation_dialog` | `retry_run_confirmation_dialog` |
@@ -75,6 +80,25 @@ Iteration 11 UI 人工验收结论：
 | `STATE_TASK_RUNNING_BAR` 任务运行状态条 | `component_spec_state_task_running_bar` | `component_spec_state_task_running_bar` |
 | `STATE_TASK_FAILED_NOTICE` 任务失败提示 | `component_spec_state_task_failed_notice` | `component_spec_state_task_failed_notice` |
 | `STATE_NOT_CONFIGURED_EMPTY` 未配置/空状态 | `component_spec_state_not_configured_empty` | `component_spec_state_not_configured_empty` |
+
+## 4.1 Iteration 13 UI 基线覆盖
+
+Iteration 13 不再使用早期的 `S02_PROJECT_WORKFLOW_SETTINGS` 与四个 `S02_BIND_*` Frame 作为直接开发输入。
+
+本迭代采用首次生成的 Stitch `P13-01` 至 `P13-10` 版本，具体映射以：
+
+- `iterations/iteration-13-project-workflow-bindings/ui-manifest.json`
+- `iterations/iteration-13-project-workflow-bindings/ui-scope.md`
+
+为准。
+
+开发解释：
+
+1. 首版原型的卡片、抽屉、弹窗和状态层级作为视觉基线；
+2. 原型应用外壳不得复制，必须复用现有项目工作区；
+3. `P13-01` 只提供项目设置入口和内层 Tab 参考，不扩展项目基础信息；
+4. 项目策划页可提供快捷入口，项目概览只动态调整“下一步建议”，主管理页仍位于项目设置；
+5. 术语统一为“章节规划、内容生成、审核、改写”。
 
 ## 5. 多版本页面选择说明
 
@@ -183,7 +207,11 @@ Iteration 11 UI 人工验收结论：
 | `chapter_editor_console_v2.0` | 正文编辑器另一设计分支 |
 | `d1_editor_v2_ai_editor_console_2` | 正文编辑器版本 2 |
 | `d5_rewrite_result_v2_rewrite_result_console_1` | 重写结果版本 1 |
-| `ai_content_factory_2.0_desktop/DESIGN.md` | Stitch 设计说明，不属于独立 UI 页面 |
+| `project_workflow_settings` | Iteration 13 早期项目工作流设置版本，已由首版 P13 系列替代 |
+| `s02_bind_chapter_workflow_drawer` | Iteration 13 早期章节规划绑定抽屉 |
+| `s02_bind_content_workflow_drawer` | Iteration 13 早期内容生成绑定抽屉 |
+| `s02_bind_review_workflow_drawer` | Iteration 13 早期审核绑定抽屉 |
+| `s02_bind_rewrite_workflow_drawer` | Iteration 13 早期改写绑定抽屉 || `ai_content_factory_2.0_desktop/DESIGN.md` | Stitch 设计说明，不属于独立 UI 页面 |
 
 ## 7. 开发使用规则
 
@@ -214,18 +242,3 @@ docs/development-inputs/p1/ui-master-manifest.json
 docs/development-inputs/p1/iterations/*/ui-manifest.json
 docs/development-inputs/p1/iterations/*/ui/frames/
 ```
-
-## 9. Iteration 12 全局设置 V2 开发基准覆盖
-
-Iteration 12 已使用新 Stitch 项目 `AI Content Factory 2.0｜全局设置 V2` 的上传包重新组织。此前 Iteration 12 使用的 `E4_AI_CONNECTIONS_OVERVIEW`、`E4_LLM_PROVIDER_DRAWER`、`E4_N8N_CONNECTION_DRAWER` 和共享状态 Frame 不再作为 Iteration 12 的直接开发基准；它们仍保留在 Iteration 11 历史冻结记录中。
-
-Iteration 12 当前开发基准为 12 个规范化 Frame：
-
-| 领域 | 空状态 | 列表态 | 抽屉态 |
-|---|---|---|---|
-| LLM | `GLOBAL_SETTINGS_LLM_EMPTY_V2` | `GLOBAL_SETTINGS_LLM_LIST_V2` | `LLM_CONFIG_DRAWER_V2` |
-| 连接 | `GLOBAL_SETTINGS_CONNECTION_EMPTY_V2` | `GLOBAL_SETTINGS_CONNECTION_LIST_V2` | `CONNECTION_DRAWER_V2` |
-| 工作流 | `GLOBAL_SETTINGS_WORKFLOW_EMPTY_V2` | `GLOBAL_SETTINGS_WORKFLOW_LIST_V2` | `WORKFLOW_DRAWER_V2` |
-| 分发平台 | `GLOBAL_SETTINGS_DISTRIBUTION_EMPTY_V2` | `GLOBAL_SETTINGS_DISTRIBUTION_LIST_V2` | `DISTRIBUTION_DRAWER_V2` |
-
-这些原型的已知问题不再通过重生成 Stitch 修复，而是在开发阶段按 `iteration-12-global-execution-connections/prototype-review-and-development-fixes.md` 和 `acceptance.md` 强制修复。
