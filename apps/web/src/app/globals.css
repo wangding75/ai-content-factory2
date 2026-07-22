@@ -318,19 +318,30 @@ button,a { -webkit-tap-highlight-color:transparent; }
 .workflow-binding-drawer header h2{font-size:18px;color:#0f172a}
 .workflow-binding-drawer header p{margin-top:4px;color:#64748b;font-size:13px}
 .workflow-drawer-body{min-height:0;flex:1;overflow:auto;padding:20px}
-.workflow-drawer-body>label{display:grid;gap:7px;color:#334155;font-weight:600;font-size:14px}
-.workflow-drawer-body input[type=text],.workflow-drawer-body input:not([type]){height:40px;border:1px solid #cbd5e1;border-radius:8px;padding:0 12px;font:inherit}
-.workflow-candidates{display:grid;gap:10px;margin-top:16px}
-.workflow-candidate{display:flex;gap:12px;align-items:flex-start;border:1px solid #e2e8f0;border-radius:10px;padding:14px;cursor:pointer;background:#fff;transition:all .15s}
-.workflow-candidate.selected{border-color:#4648d4;background:#fff;box-shadow:0 0 0 2px rgba(70,72,212,.15)}
-.workflow-candidate.disabled{opacity:.55;cursor:not-allowed;background:#f8fafc;border-color:#e2e8f0}
-.workflow-candidate span{min-width:0;flex:1}
-.workflow-candidate strong,.workflow-candidate small,.workflow-candidate em{display:block}
-.workflow-candidate strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:14px;color:#0f172a}
-.workflow-candidate small,.workflow-candidate em{margin-top:4px;color:#64748b;font-size:12px;font-style:normal}
-.workflow-candidate em{color:#b45309;font-weight:500}
-.workflow-candidate.disabled em{color:#64748b}
-.workflow-candidate b{font-size:12px;color:#4648d4;white-space:nowrap;background:#eef2ff;padding:2px 8px;border-radius:4px;font-weight:600}
+.workflow-drawer-search{margin-bottom:16px}
+.workflow-drawer-search input{width:100%;height:40px;border:1px solid #cbd5e1;border-radius:8px;padding:0 14px;font:inherit;font-size:14px;box-sizing:border-box}
+.workflow-drawer-search input:focus{outline:2px solid rgba(70,72,212,.2);border-color:#4648d4}
+.workflow-drawer-loading{color:#64748b;font-size:14px;text-align:center;margin:32px 0}
+.workflow-candidates{display:grid;gap:12px;margin-top:8px}
+.workflow-candidate{display:flex;gap:12px;align-items:flex-start;border:1px solid #e2e8f0;border-radius:12px;padding:16px;cursor:pointer;background:#fff!important;transition:all .15s}
+.workflow-candidate input[type=radio]{margin-top:3px;flex-shrink:0;accent-color:#4648d4;width:16px;height:16px;cursor:pointer}
+.workflow-candidate.selected{border:2px solid #4648d4!important;background:#fff!important;box-shadow:0 0 0 1px #4648d4,0 2px 8px rgba(70,72,212,0.08)!important}
+.workflow-candidate.disabled{opacity:.6!important;cursor:not-allowed!important;background:#f8fafc!important;border-color:#e2e8f0!important}
+.workflow-candidate.disabled input[type=radio]{cursor:not-allowed}
+.candidate-body{flex:1;min-width:0;display:grid;gap:6px}
+.candidate-header{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+.candidate-header strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:15px;font-weight:700;color:#0f172a}
+.candidate-badges{display:flex;gap:6px;flex-shrink:0}
+.candidate-pill{font-size:11px;font-weight:600;padding:2px 8px;border-radius:4px;white-space:nowrap;line-height:1.4}
+.candidate-pill.good{color:#15803d;background:#dcfce7;border:1px solid #bbf7d0}
+.candidate-pill.disabled{color:#64748b;background:#f1f5f9;border:1px solid #cbd5e1}
+.candidate-pill.current{color:#4648d4;background:#eef2ff;border:1px solid #c7d2fe}
+.candidate-description{margin:2px 0 0;color:#64748b;font-size:13px;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.candidate-meta{display:flex;flex-wrap:wrap;gap:12px;margin-top:4px;color:#64748b;font-size:12px}
+.candidate-meta span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.candidate-risk-line{margin-top:6px;padding:6px 10px;border-radius:6px;font-size:12px;display:flex;align-items:center;gap:6px}
+.candidate-risk-line.integration{color:#b45309;background:#fffbe6;border:1px solid #fde68a}
+.candidate-risk-line.connection{color:#b91c1c;background:#fef2f2;border:1px solid #fca5a5}
 .workflow-binding-drawer footer{border-top:1px solid #e2e8f0;padding:16px 22px}
 .workflow-conflict{margin-top:16px;border:1px solid #fde68a;border-radius:8px;padding:12px;background:#fffbeb}
 .workflow-conflict p{margin:0;font-size:13px;color:#92400e}

@@ -132,16 +132,16 @@ function WorkflowDrawer({projectId,drawer,onClose,onSaved}:{projectId:string;dra
           <button onClick={onClose} disabled={saving} aria-label="关闭">×</button>
         </header>
         <div className="workflow-drawer-body">
-          <label>搜索工作流
-            <input autoFocus value={query} onChange={e=>setQuery(e.target.value)} placeholder="输入工作流名称"/>
-          </label>
+          <div className="workflow-drawer-search">
+            <input autoFocus value={query} onChange={e=>setQuery(e.target.value)} placeholder="搜索工作流名称…"/>
+          </div>
           {error ? (
             <div className="workflow-binding-state" role="alert">
               <p>候选工作流加载失败。</p>
               <button onClick={()=>void load()}>重试</button>
             </div>
           ) : !workflows ? (
-            <p>正在加载候选工作流…</p>
+            <p className="workflow-drawer-loading">正在加载候选工作流…</p>
           ) : workflows.length === 0 ? (
             <div className="workflow-binding-state">
               <h3>没有可用的工作流</h3>
@@ -153,31 +153,58 @@ function WorkflowDrawer({projectId,drawer,onClose,onSaved}:{projectId:string;dra
               {workflows.map(w => {
                 const disabled = !w.enabled;
                 const isCurrent = currentId === w.id;
-                let candidateHint = "已集成";
-                if (disabled) candidateHint = "已停用，不能选择";
-                else if (w.integrationStatus === "not_connected") candidateHint = "未接入：可绑定，但需注意配置风险";
-                else if (w.integrationStatus === "connection_error" || Boolean(w.lastErrorMessage) || w.connectionName === "连接异常") candidateHint = "连接异常：可绑定，但需检查服务环境";
+                const isSelected = selected === w.id;
+
+                let riskNotice: string | null = null;
+                let riskType: "integration" | "connection" = "integration";
+                if (w.integrationStatus === "not_connected") {
+                  riskNotice = "未接入：可绑定，但需注意配置风险";
+                  riskType = "integration";
+                } else if (w.integrationStatus === "connection_error" || Boolean(w.lastErrorMessage) || w.connectionName === "连接异常") {
+                  riskNotice = "连接异常：可绑定，但需检查服务环境";
+                  riskType = "connection";
+                }
+
+                const description = stageDescriptions[drawer.stage.stage] || "适用于此环节的标准节点编排流程。";
 
                 return (
                   <label
                     key={w.id}
-                    className={`workflow-candidate ${selected === w.id ? "selected" : ""} ${disabled ? "disabled" : ""}`}
+                    className={`workflow-candidate ${isSelected ? "selected" : ""} ${disabled ? "disabled" : ""}`}
                     onClick={(e) => { if (disabled) e.preventDefault(); }}
                   >
                     <input
                       type="radio"
                       name="workflow"
                       value={w.id}
-                      checked={selected === w.id}
+                      checked={isSelected}
                       disabled={disabled}
                       onChange={() => { if (!disabled) setSelected(w.id); }}
                     />
-                    <span>
-                      <strong title={w.name}>{w.name}</strong>
-                      <small>{w.workflowType} · {w.connectionName}（{w.connectionType}）</small>
-                      <em>{candidateHint}</em>
-                    </span>
-                    {isCurrent && <b>当前绑定</b>}
+                    <div className="candidate-body">
+                      <header className="candidate-header">
+                        <strong title={w.name}>{w.name}</strong>
+                        <div className="candidate-badges">
+                          {isCurrent && <span className="candidate-pill current">当前绑定</span>}
+                          {w.enabled ? (
+                            <span className="candidate-pill good">已启用</span>
+                          ) : (
+                            <span className="candidate-pill disabled">未启用</span>
+                          )}
+                        </div>
+                      </header>
+                      <p className="candidate-description">{description}</p>
+                      <div className="candidate-meta">
+                        <span>类型：{w.workflowType}</span>
+                        <span>连接：{w.connectionName}（{w.connectionType}）</span>
+                      </div>
+                      {riskNotice && (
+                        <div className={`candidate-risk-line ${riskType}`}>
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                          <span>{riskNotice}</span>
+                        </div>
+                      )}
+                    </div>
                   </label>
                 );
               })}
