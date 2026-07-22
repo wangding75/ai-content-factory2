@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+
+<html lang="zh"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>P14_07 运行详情—失败 - AI Content Factory</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "primary-dim": "#0048c1",
+                    "surface-dim": "#cedce5",
+                    "on-secondary-fixed": "#364053",
+                    "secondary-fixed": "#d9e3fb",
+                    "surface-variant": "#d9e4ec",
+                    "primary-fixed-dim": "#c7d3ff",
+                    "on-error-container": "#752121",
+                    "inverse-primary": "#618bff",
+                    "primary-fixed": "#dbe1ff",
+                    "surface-container-highest": "#d9e4ec",
+                    "surface-container-low": "#f0f4f8",
+                    "on-surface": "#29343a",
+                    "secondary-container": "#d9e3fb",
+                    "surface-container-lowest": "#ffffff",
+                    "surface-tint": "#0053db",
+                    "secondary-dim": "#495367",
+                    "surface-container-high": "#e1e9f0",
+                    "on-primary-container": "#0048bf",
+                    "on-tertiary-fixed-variant": "#006c30",
+                    "on-tertiary-container": "#00612a",
+                    "secondary": "#555f74",
+                    "inverse-on-surface": "#9a9da0",
+                    "on-error": "#fff7f6",
+                    "on-secondary-container": "#485266",
+                    "secondary-fixed-dim": "#cad4ec",
+                    "on-surface-variant": "#566168",
+                    "primary": "#0053db",
+                    "outline-variant": "#a8b3bb",
+                    "error-container": "#fe8983",
+                    "error": "#9f403d",
+                    "on-secondary": "#f8f8ff",
+                    "surface-container": "#e8eff4",
+                    "tertiary-container": "#98fba9",
+                    "background": "#f7f9fc",
+                    "tertiary": "#006e31",
+                    "tertiary-fixed-dim": "#8aec9c",
+                    "surface-bright": "#f7f9fc",
+                    "on-tertiary": "#e9ffe7",
+                    "outline": "#717c84",
+                    "on-background": "#29343a",
+                    "surface": "#f7f9fc",
+                    "on-tertiary-fixed": "#004c20",
+                    "on-secondary-fixed-variant": "#525c70",
+                    "inverse-surface": "#0b0f11",
+                    "tertiary-fixed": "#98fba9",
+                    "error-dim": "#4e0309",
+                    "tertiary-dim": "#00612a",
+                    "primary-container": "#dbe1ff",
+                    "on-primary-fixed": "#003798",
+                    "on-primary-fixed-variant": "#0050d4",
+                    "on-primary": "#f8f7ff"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {},
+            "fontFamily": {
+                    "headline": [
+                            "Inter"
+                    ],
+                    "display": [
+                            "Inter"
+                    ],
+                    "body": [
+                            "Inter"
+                    ],
+                    "label": [
+                            "Inter"
+                    ]
+            },
+            "fontSize": {}
+    },
+        },
+      }
+    </script>
+</head>
+<body class="bg-surface text-on-surface font-body h-screen flex overflow-hidden">
+<!-- SideNavBar Component -->
+<aside class="fixed z-20 flex-shrink-0 bg-surface-container-lowest dark:bg-inverse-surface border-r border-outline-variant dark:border-outline docked h-screen w-64 left-0 top-0 flex flex-col h-full py-6 px-3">
+<div class="mb-8 px-4 flex items-center gap-3">
+<div class="w-8 h-8 bg-primary rounded-lg flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-on-primary text-xl" style="font-variation-settings: 'FILL' 1;">generating_tokens</span>
+</div>
+<div>
+<h1 class="text-lg font-headline font-bold text-on-surface dark:text-inverse-on-surface leading-tight">AI Content Factory</h1>
+<p class="text-xs text-on-surface-variant">v2.0 商业化版</p>
+</div>
+</div>
+<nav class="flex-1 space-y-1 font-body text-label-sm tracking-wide">
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant dark:text-surface-variant hover:bg-surface-container-high transition-colors duration-200" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">dashboard</span>
+<span>概览</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant dark:text-surface-variant hover:bg-surface-container-high transition-colors duration-200" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">event_note</span>
+<span>项目规划</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant dark:text-surface-variant hover:bg-surface-container-high transition-colors duration-200" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">auto_awesome</span>
+<span>内容生产</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 bg-secondary-container dark:bg-secondary-dim text-on-secondary-container dark:text-on-secondary-fixed font-bold rounded-lg transition-colors duration-200" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">account_tree</span>
+<span>流程中心</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant dark:text-surface-variant hover:bg-surface-container-high transition-colors duration-200" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">settings</span>
+<span>项目设置</span>
+</a>
+</nav>
+<div class="mt-auto px-4 pt-4 border-t border-outline-variant/30 flex items-center gap-3">
+<img class="w-8 h-8 rounded-full object-cover" data-alt="Professional headshot of an Asian male in his 30s wearing a smart casual outfit, well-lit studio lighting, neutral background, looking confident and approachable, high quality photography." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDJM1SLASxG9wTb47pGKbThrqeJlM1iBlGmck9XcGci0PcYNp6P-fXdFyDfXeC5I_F4-8MZhhfYbJ6gHVGzZb5kh2jIxExrahb9zPuErwzPYOirKj5V03k6P_QzNhW08PKX1Wxx9Kdi1MgzKUZ1CVGB2EO2GlYLQWFxKH3Xf0Jo_p71oas6ZAYoG-S4qrYfZjuEo3yyWLoJ1n1UuFo4rDSNSXc5SKmCgJ7XqgIJjLlqil1UsdwxJk1WzKBK5T9yiOIlW5fzuNh_G1Yh"/>
+<div class="flex-1 min-w-0">
+<p class="text-sm font-medium text-on-surface truncate">王鼎</p>
+<p class="text-xs text-on-surface-variant truncate">系统管理员</p>
+</div>
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="flex-1 ml-64 flex flex-col h-screen overflow-hidden bg-background">
+<!-- TopAppBar Contextual (Breadcrumbs & Action) -->
+<header class="bg-surface-container-lowest border-b border-outline-variant/50 h-16 flex justify-between items-center px-8 shrink-0">
+<div class="flex items-center text-sm font-medium">
+<a class="text-on-surface-variant hover:text-primary transition-colors flex items-center gap-1" href="#">
+                    流程中心
+                </a>
+<span class="material-symbols-outlined text-outline-variant text-sm mx-1">chevron_right</span>
+<a class="text-on-surface-variant hover:text-primary transition-colors" href="#">
+                    运行记录
+                </a>
+<span class="material-symbols-outlined text-outline-variant text-sm mx-1">chevron_right</span>
+<span class="text-on-surface font-semibold">RUN-20260722-00130</span>
+</div>
+<div class="flex items-center gap-3">
+<button class="flex items-center gap-2 px-4 py-2 border border-outline-variant rounded-lg text-sm font-medium text-on-surface hover:bg-surface-container-low transition-colors">
+<span class="material-symbols-outlined text-[18px]">arrow_back</span>
+                    返回运行记录
+                </button>
+</div>
+</header>
+<!-- Scrollable Content -->
+<div class="flex-1 overflow-y-auto p-8">
+<div class="max-w-7xl mx-auto space-y-6">
+<!-- Page Header (Title, Subtitle, Main Actions) -->
+<div class="flex flex-col md:flex-row md:items-start justify-between gap-4">
+<div>
+<div class="flex items-center gap-3 mb-1">
+<h2 class="text-2xl font-headline font-bold text-on-surface">运行详情</h2>
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-error-container/20 text-error border border-error-container/30">
+<span class="material-symbols-outlined text-[14px]">cancel</span>
+                                运行失败
+                            </span>
+</div>
+<p class="text-sm text-on-surface-variant">审核 · Content Reviewer</p>
+</div>
+<div class="flex items-center gap-3">
+<button class="px-4 py-2 rounded-lg text-sm font-medium text-on-surface border border-outline-variant hover:bg-surface-container-low transition-colors">
+                            查看工作流配置
+                        </button>
+<button class="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-primary text-on-primary hover:bg-primary-dim transition-colors shadow-sm">
+<span class="material-symbols-outlined text-[18px]">replay</span>
+                            重新运行
+                        </button>
+</div>
+</div>
+<!-- Bento Grid Layout for Content -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+<!-- Left Column (Main details) -->
+<div class="lg:col-span-8 space-y-6">
+<!-- Primary Error Card (Crucial Information) -->
+<div class="bg-surface-container-lowest rounded-xl border border-error-container/40 p-6 shadow-sm relative overflow-hidden">
+<!-- Subtle red glow accent on left -->
+<div class="absolute left-0 top-0 bottom-0 w-1 bg-error"></div>
+<div class="flex items-start gap-4 mb-6">
+<div class="w-10 h-10 rounded-full bg-error/10 flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-error text-xl">error</span>
+</div>
+<div>
+<h3 class="text-lg font-semibold text-on-surface mb-1">内容审核执行失败</h3>
+<p class="text-on-surface-variant text-sm">工作流连接等待响应超时，本次运行未生成可保存的审核结果。</p>
+</div>
+</div>
+<div class="grid grid-cols-1 sm:grid-cols-3 gap-4 p-4 bg-surface-container-low rounded-lg mb-4 border border-outline-variant/20">
+<div>
+<span class="block text-xs text-on-surface-variant mb-1">错误阶段</span>
+<span class="text-sm font-medium text-on-surface">调用工作流</span>
+</div>
+<div>
+<span class="block text-xs text-on-surface-variant mb-1">错误编号</span>
+<span class="text-sm font-mono text-error">WF_TIMEOUT</span>
+</div>
+<div>
+<span class="block text-xs text-on-surface-variant mb-1">建议处理</span>
+<span class="text-sm font-medium text-on-surface">检查工作流连接状态后重新运行</span>
+</div>
+</div>
+<details class="group">
+<summary class="flex items-center gap-2 text-sm font-medium text-on-surface-variant hover:text-primary cursor-pointer select-none">
+<span class="material-symbols-outlined text-[18px] transition-transform group-open:rotate-90">chevron_right</span>
+                                    技术详情
+                                </summary>
+<div class="mt-3 p-4 bg-inverse-surface rounded-lg text-xs font-mono text-inverse-on-surface space-y-2 overflow-x-auto border border-outline/20">
+<div class="flex"><span class="text-surface-variant w-24 shrink-0">Request ID:</span> <span>7823-992-001</span></div>
+<div class="flex"><span class="text-surface-variant w-24 shrink-0">Timestamp:</span> <span>2026-07-22T14:31:12.453Z</span></div>
+<div class="flex"><span class="text-surface-variant w-24 shrink-0">Raw Error:</span> <span class="text-error-container">Connection timeout after 30000ms. Service unreachable at endpoint /api/v1/review/execute.</span></div>
+<div class="flex"><span class="text-surface-variant w-24 shrink-0">Trace ID:</span> <span>tr_8f92a4b11c3d900e</span></div>
+</div>
+</details>
+</div>
+<!-- Basic Info Card -->
+<div class="bg-surface-container-lowest rounded-xl border border-outline-variant/30 p-6 shadow-sm">
+<h3 class="text-base font-semibold text-on-surface mb-5 flex items-center gap-2">
+<span class="material-symbols-outlined text-[20px] text-primary">info</span>
+                                基础信息
+                            </h3>
+<div class="grid grid-cols-2 md:grid-cols-4 gap-y-6 gap-x-4">
+<div>
+<span class="block text-xs text-on-surface-variant mb-1">运行编号</span>
+<span class="text-sm font-mono text-on-surface">RUN-20260722-00130</span>
+</div>
+<div>
+<span class="block text-xs text-on-surface-variant mb-1">所属项目</span>
+<a class="text-sm font-medium text-primary hover:underline" href="#">星海纪元</a>
+</div>
+<div>
+<span class="block text-xs text-on-surface-variant mb-1">业务环节</span>
+<span class="text-sm text-on-surface">内容审核</span>
+</div>
+<div>
+<span class="block text-xs text-on-surface-variant mb-1">工作流名称</span>
+<span class="text-sm text-on-surface">文本合规性检查 v1.2</span>
+</div>
+<div>
+<span class="block text-xs text-on-surface-variant mb-1">触发方式</span>
+<span class="inline-flex items-center px-2 py-0.5 rounded text-xs bg-surface-container-high text-on-surface-variant border border-outline-variant/30">手动触发</span>
+</div>
+<div>
+<span class="block text-xs text-on-surface-variant mb-1">开始时间</span>
+<span class="text-sm font-mono text-on-surface">2026-07-22 14:30:05</span>
+</div>
+<div>
+<span class="block text-xs text-on-surface-variant mb-1">结束时间</span>
+<span class="text-sm font-mono text-on-surface">2026-07-22 14:31:12</span>
+</div>
+<div>
+<span class="block text-xs text-on-surface-variant mb-1">总耗时</span>
+<span class="text-sm font-mono font-medium text-on-surface">67s</span>
+</div>
+</div>
+</div>
+<!-- Input Parameters Card -->
+<div class="bg-surface-container-lowest rounded-xl border border-outline-variant/30 p-6 shadow-sm">
+<div class="flex items-center justify-between mb-5">
+<h3 class="text-base font-semibold text-on-surface flex items-center gap-2">
+<span class="material-symbols-outlined text-[20px] text-primary">data_object</span>
+                                    输入参数
+                                </h3>
+<button class="text-xs font-medium text-primary hover:text-primary-dim">复制 JSON</button>
+</div>
+<div class="bg-surface-container rounded-lg border border-outline-variant/20 p-4 font-mono text-sm overflow-x-auto text-on-surface">
+<pre class="leading-relaxed"><code>{
+  <span class="text-primary-dim">"content_id"</span>: <span class="text-on-surface-variant">"CNT-88392-A1"</span>,
+  <span class="text-primary-dim">"content_type"</span>: <span class="text-on-surface-variant">"article"</span>,
+  <span class="text-primary-dim">"review_policy"</span>: <span class="text-on-surface-variant">"strict_v2"</span>,
+  <span class="text-primary-dim">"target_regions"</span>: [
+    <span class="text-on-surface-variant">"CN"</span>,
+    <span class="text-on-surface-variant">"SG"</span>
+  ],
+  <span class="text-primary-dim">"metadata"</span>: {
+    <span class="text-primary-dim">"author"</span>: <span class="text-on-surface-variant">"usr_9918a"</span>,
+    <span class="text-primary-dim">"word_count"</span>: <span class="text-secondary">4280</span>
+  }
+}</code></pre>
+</div>
+</div>
+</div>
+<!-- Right Column (Timeline & Summary) -->
+<div class="lg:col-span-4 space-y-6">
+<!-- Run Summary Card -->
+<div class="bg-surface-container-lowest rounded-xl border border-outline-variant/30 p-5 shadow-sm">
+<h3 class="text-sm font-semibold text-on-surface mb-4 uppercase tracking-wider text-on-surface-variant">运行摘要</h3>
+<div class="space-y-4">
+<div class="flex items-center justify-between py-2 border-b border-outline-variant/20">
+<span class="text-sm text-on-surface-variant">最终状态</span>
+<span class="text-sm font-medium text-error flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px]">cancel</span>
+                                        Failed
+                                    </span>
+</div>
+<div class="flex items-center justify-between py-2 border-b border-outline-variant/20">
+<span class="text-sm text-on-surface-variant">重试次数</span>
+<span class="text-sm font-mono text-on-surface">1 / 3</span>
+</div>
+<div class="flex items-center justify-between py-2 border-b border-outline-variant/20">
+<span class="text-sm text-on-surface-variant">触发人员</span>
+<div class="flex items-center gap-2">
+<img class="w-5 h-5 rounded-full object-cover" data-alt="Professional headshot of an Asian male in his 30s wearing a smart casual outfit, well-lit studio lighting, neutral background, looking confident and approachable, high quality photography." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAPPYSZAC4DO-5FpkqJTEFLM6H5fPf4WMeW72vJpPJuKA80mrgSa78hYGQFuhw4wZCsuatz5mNKr5Lsw52u2K8eqDQMJDGa3Znv4v4VyKRZSaWeqNHtxXKyRUdKPx5poG4sdpAjzTXSQ7WgnozyqnrtkJstDNpbblu3NbcF4-BLhtBFsn-QM1B1FS_5DGLIg57a6SKClMBhSLUJnMgzBS9TpwFRVcnif9WaClIb-ji1IvEGYq0PQH93UKx51T3RekBfXc5xV7YJ0oq5"/>
+<span class="text-sm text-on-surface">王鼎</span>
+</div>
+</div>
+<div class="flex items-center justify-between py-2">
+<span class="text-sm text-on-surface-variant">环境版本</span>
+<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-mono bg-surface-container-high text-on-surface-variant border border-outline-variant/30">v3</span>
+</div>
+</div>
+</div>
+<!-- Execution Progress Timeline -->
+<div class="bg-surface-container-lowest rounded-xl border border-outline-variant/30 p-6 shadow-sm">
+<h3 class="text-base font-semibold text-on-surface mb-6 flex items-center gap-2">
+<span class="material-symbols-outlined text-[20px] text-primary">linear_scale</span>
+                                执行轨迹
+                            </h3>
+<div class="relative pl-3">
+<!-- Timeline vertical line -->
+<div class="absolute left-[15px] top-2 bottom-2 w-0.5 bg-outline-variant/30"></div>
+<div class="space-y-6">
+<!-- Step 1: Completed -->
+<div class="relative flex items-start gap-4">
+<div class="w-3 h-3 rounded-full bg-tertiary absolute -left-[1.5px] top-1.5 ring-4 ring-surface-container-lowest"></div>
+<div>
+<p class="text-sm font-medium text-on-surface">创建运行任务</p>
+<p class="text-xs font-mono text-on-surface-variant mt-0.5">14:30:05.102</p>
+</div>
+</div>
+<!-- Step 2: Completed -->
+<div class="relative flex items-start gap-4">
+<div class="w-3 h-3 rounded-full bg-tertiary absolute -left-[1.5px] top-1.5 ring-4 ring-surface-container-lowest"></div>
+<div>
+<p class="text-sm font-medium text-on-surface">进入执行队列</p>
+<p class="text-xs font-mono text-on-surface-variant mt-0.5">14:30:05.850</p>
+</div>
+</div>
+<!-- Step 3: Failed -->
+<div class="relative flex items-start gap-4">
+<div class="w-4 h-4 rounded-full bg-error absolute -left-[3.5px] top-1 flex items-center justify-center ring-4 ring-surface-container-lowest shadow-sm z-10">
+<div class="w-1.5 h-1.5 rounded-full bg-surface-container-lowest"></div>
+</div>
+<div class="bg-error-container/10 p-3 rounded-lg border border-error-container/30 w-full mt-[-4px]">
+<p class="text-sm font-medium text-error">调用工作流</p>
+<p class="text-xs text-error/80 mt-1 mb-2">工作流返回异常</p>
+<p class="text-xs font-mono text-on-surface-variant">14:31:12.453</p>
+</div>
+</div>
+<!-- Step 4: Pending/Grey -->
+<div class="relative flex items-start gap-4">
+<div class="w-3 h-3 rounded-full bg-outline-variant absolute -left-[1.5px] top-1.5 ring-4 ring-surface-container-lowest"></div>
+<div>
+<p class="text-sm font-medium text-outline-variant">保存执行结果</p>
+<p class="text-xs text-outline-variant/70 mt-0.5">未执行</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+</body></html>

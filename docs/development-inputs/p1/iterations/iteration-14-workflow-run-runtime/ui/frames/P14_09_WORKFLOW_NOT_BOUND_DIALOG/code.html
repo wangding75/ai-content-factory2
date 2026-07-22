@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+
+<html lang="zh-CN"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>P14_09 未绑定工作流提示弹窗</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-tertiary-fixed-variant": "#006c30",
+                        "on-tertiary": "#e9ffe7",
+                        "on-secondary-fixed-variant": "#525c70",
+                        "surface-container-low": "#f0f4f8",
+                        "on-background": "#29343a",
+                        "on-tertiary-container": "#00612a",
+                        "on-tertiary-fixed": "#004c20",
+                        "inverse-surface": "#0b0f11",
+                        "secondary": "#555f74",
+                        "tertiary-fixed-dim": "#8aec9c",
+                        "primary-container": "#dbe1ff",
+                        "inverse-on-surface": "#9a9da0",
+                        "tertiary": "#006e31",
+                        "surface-container": "#e8eff4",
+                        "error-dim": "#4e0309",
+                        "surface-dim": "#cedce5",
+                        "primary": "#0053db",
+                        "on-surface-variant": "#566168",
+                        "surface-tint": "#0053db",
+                        "surface-container-highest": "#d9e4ec",
+                        "on-error-container": "#752121",
+                        "on-secondary": "#f8f8ff",
+                        "secondary-dim": "#495367",
+                        "tertiary-fixed": "#98fba9",
+                        "surface-container-lowest": "#ffffff",
+                        "on-primary-fixed-variant": "#0050d4",
+                        "surface-bright": "#f7f9fc",
+                        "on-surface": "#29343a",
+                        "on-primary": "#f8f7ff",
+                        "error-container": "#fe8983",
+                        "error": "#9f403d",
+                        "surface": "#f7f9fc",
+                        "on-error": "#fff7f6",
+                        "tertiary-container": "#98fba9",
+                        "primary-dim": "#0048c1",
+                        "background": "#f7f9fc",
+                        "secondary-container": "#d9e3fb",
+                        "on-primary-container": "#0048bf",
+                        "on-secondary-fixed": "#364053",
+                        "inverse-primary": "#618bff",
+                        "tertiary-dim": "#00612a",
+                        "surface-container-high": "#e1e9f0",
+                        "secondary-fixed-dim": "#cad4ec",
+                        "outline-variant": "#a8b3bb",
+                        "surface-variant": "#d9e4ec",
+                        "primary-fixed": "#dbe1ff",
+                        "on-secondary-container": "#485266",
+                        "on-primary-fixed": "#003798",
+                        "outline": "#717c84",
+                        "secondary-fixed": "#d9e3fb",
+                        "primary-fixed-dim": "#c7d3ff"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "fontFamily": {
+                        "headline": ["Inter"],
+                        "display": ["Inter"],
+                        "body": ["Inter"],
+                        "label": ["Inter"]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f7f9fc;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-surface h-screen flex overflow-hidden">
+<!-- Background App View (Blurred & Masked) -->
+<div class="flex flex-1 w-full h-full filter blur-[2px] opacity-60 transition-all duration-300">
+<!-- Side Navigation (Simulated JSON Anchor) -->
+<nav class="bg-surface-container-lowest dark:bg-inverse-surface border-r border-outline-variant dark:border-outline docked h-screen w-64 left-0 top-0 flex flex-col h-full py-6 px-3">
+<div class="flex items-center px-4 mb-8">
+<span class="material-symbols-outlined text-primary text-3xl mr-3">view_in_ar</span>
+<div>
+<h1 class="text-lg font-headline font-bold text-on-surface dark:text-inverse-on-surface">AI Content Factory</h1>
+<p class="text-xs text-on-surface-variant">v2.0 商业化版</p>
+</div>
+</div>
+<ul class="flex-1 space-y-1 font-body text-label-sm tracking-wide">
+<li>
+<a class="flex items-center px-4 py-3 rounded-lg text-on-surface-variant dark:text-surface-variant hover:bg-surface-container-high transition-colors duration-200" href="#">
+<span class="material-symbols-outlined mr-3">dashboard</span>
+                        概览
+                    </a>
+</li>
+<li>
+<a class="flex items-center px-4 py-3 bg-secondary-container dark:bg-secondary-dim text-on-secondary-container dark:text-on-secondary-fixed font-bold rounded-lg transition-colors duration-200" href="#">
+<span class="material-symbols-outlined mr-3">event_note</span>
+                        项目规划
+                    </a>
+</li>
+<li>
+<a class="flex items-center px-4 py-3 rounded-lg text-on-surface-variant dark:text-surface-variant hover:bg-surface-container-high transition-colors duration-200" href="#">
+<span class="material-symbols-outlined mr-3">auto_awesome</span>
+                        内容生产
+                    </a>
+</li>
+<li>
+<a class="flex items-center px-4 py-3 rounded-lg text-on-surface-variant dark:text-surface-variant hover:bg-surface-container-high transition-colors duration-200" href="#">
+<span class="material-symbols-outlined mr-3">account_tree</span>
+                        流程中心
+                    </a>
+</li>
+<li>
+<a class="flex items-center px-4 py-3 rounded-lg text-on-surface-variant dark:text-surface-variant hover:bg-surface-container-high transition-colors duration-200" href="#">
+<span class="material-symbols-outlined mr-3">settings</span>
+                        项目设置
+                    </a>
+</li>
+</ul>
+</nav>
+<!-- Main Content Area (Blurred) -->
+<div class="flex-1 flex flex-col bg-surface">
+<!-- Top App Bar -->
+<header class="bg-surface border-b border-outline-variant flex justify-between items-center px-8 h-16 w-full">
+<h2 class="font-headline text-headline-sm font-medium text-on-surface">章节规划</h2>
+<div class="flex items-center space-x-4 text-on-surface-variant">
+<span class="material-symbols-outlined cursor-pointer hover:text-primary transition-all">notifications</span>
+<span class="material-symbols-outlined cursor-pointer hover:text-primary transition-all">help_outline</span>
+<div class="w-8 h-8 rounded-full bg-surface-container-highest overflow-hidden ml-4">
+<img alt="User Avatar" class="w-full h-full object-cover" data-alt="A clean, minimalist 3D avatar of a professional user, rendered in high detail against a soft white background with subtle studio lighting, fitting a modern SaaS dashboard aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAbXTD1J5eK23NrB0NRRZqLMXXmRk433sbqsU4rXdWn0pc8aU8ZF44PeRxDyEaPhdObkWq1PaDrIAUKpvOUDya6x9I05MwiZtsv-nQZz0aAeEbQNchFFLW3xITtqY0WAxJxpaG8mnz8PWfoVN5A9dNd1aLKLsGD-ZuFoLx0bvBB68hz8PfxHa2dXyhiysO0BjksQ348dZGb6fVOJIORamxyi15jtO0u7UoFY-kpC5CXUFxffIQ1SfCmakJ3AwWgWVCjAVjibyfTNByN"/>
+</div>
+</div>
+</header>
+<main class="p-8 flex-1">
+<div class="max-w-5xl mx-auto bg-surface-container-lowest border border-outline-variant rounded-lg h-96 p-6 shadow-sm flex items-center justify-center">
+<div class="text-center text-on-surface-variant">
+<span class="material-symbols-outlined text-4xl mb-2 opacity-50">data_object</span>
+<p>章节规划业务内容加载中...</p>
+</div>
+</div>
+</main>
+</div>
+</div>
+<!-- Modal Overlay -->
+<div class="fixed inset-0 z-50 flex items-center justify-center bg-inverse-surface/30 backdrop-blur-sm p-4">
+<!-- Dialog Window (P14_09) -->
+<div class="bg-surface-container-lowest w-full max-w-[480px] rounded-lg shadow-lg border border-outline-variant overflow-hidden transform scale-100 transition-all duration-200">
+<!-- Dialog Header -->
+<div class="px-8 pt-8 pb-4 flex flex-col items-center text-center">
+<div class="w-12 h-12 bg-surface-container rounded-full flex items-center justify-center mb-4">
+<span class="material-symbols-outlined text-secondary-dim text-2xl">account_tree</span>
+</div>
+<h3 class="font-headline text-xl font-semibold text-on-surface mb-2">当前环节尚未绑定工作流</h3>
+<p class="text-sm text-on-surface-variant px-4">请先在项目设置中为“章节规划”绑定一个可用工作流，再发起运行。</p>
+</div>
+<!-- Dialog Body - Info Summary Box -->
+<div class="px-8 py-4">
+<div class="bg-surface-bright border border-outline-variant rounded-lg p-5 space-y-4">
+<!-- Data Row 1 -->
+<div class="flex justify-between items-center text-sm">
+<span class="text-on-surface-variant">当前项目</span>
+<span class="font-medium text-on-surface">星海纪元</span>
+</div>
+<div class="h-px w-full bg-outline-variant opacity-30"></div>
+<!-- Data Row 2 -->
+<div class="flex justify-between items-center text-sm">
+<span class="text-on-surface-variant">执行环节</span>
+<span class="font-medium text-on-surface">章节规划</span>
+</div>
+<div class="h-px w-full bg-outline-variant opacity-30"></div>
+<!-- Data Row 3 -->
+<div class="flex justify-between items-center text-sm">
+<span class="text-on-surface-variant">绑定状态</span>
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-surface-variant text-on-surface-variant border border-outline-variant/50">
+                            未配置
+                        </span>
+</div>
+</div>
+<!-- Footer Hint -->
+<div class="mt-4 flex items-start text-xs text-secondary-dim">
+<span class="material-symbols-outlined text-[16px] mr-1.5 mt-0.5">info</span>
+<p>完成绑定后返回当前页面即可继续运行。</p>
+</div>
+</div>
+<!-- Dialog Actions -->
+<div class="px-8 py-6 bg-surface-bright flex justify-end space-x-3 border-t border-outline-variant/30">
+<button class="px-5 py-2.5 text-sm font-medium text-on-surface bg-surface-container-lowest border border-outline-variant rounded-lg hover:bg-surface-container transition-colors duration-200">
+                    取消
+                </button>
+<button class="px-5 py-2.5 text-sm font-medium text-on-primary bg-primary rounded-lg hover:bg-primary-dim shadow-sm transition-colors duration-200">
+                    前往工作流绑定
+                </button>
+</div>
+</div>
+</div>
+</body></html>

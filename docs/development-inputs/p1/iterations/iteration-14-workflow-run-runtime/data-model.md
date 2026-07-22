@@ -1,143 +1,200 @@
-# Iteration 14 — n8n 适配与 WorkflowRun 异步运行 — 数据模型
+# Iteration 14 — WorkflowRun 运行时 — 数据模型
 
-## 1. 激活既有配置运行状态
+## 1. 设计原则
 
-Iteration 12 已预留：
-
-- `integrationStatus`；
-- `enabled`；
-- `lastVerifiedAt`；
-- `lastErrorCode`；
-- `lastErrorMessage`。
-
-Iteration 14 开始允许这些字段变化。
-
-### WorkflowConnection
-
-状态规则：
-
-- `not_connected`：仅保存配置，尚未执行真实验证；
-- `unverified`：配置已进入真实适配阶段，等待验证或配置修改后需重新验证；
-- `verified`：最近一次真实验证成功；
-- `failed`：最近一次真实验证失败。
-
-启用规则：
-
-- 只有 `verified` 可以启用；
-- 第二闭环最多一个连接 `enabled=true`；
-- 使用数据库部分唯一索引或等价约束；
-- Base URL、凭证、认证方式或类型专属字段变化后重置为 `unverified`。
-
-### WorkflowConfiguration
-
-- 只有绑定连接已验证且启用时，工作流才能验证和启用；
-- `connection_id`、类型专属引用、契约版本变化后重置为 `unverified`；
-- 连接变化后 `workflowType` 重新推导。
+1. 一次运行是一条不可变业务记录；
+2. 完整重试创建新运行，不覆盖历史运行；
+3. 项目侧摘要由运行记录聚合，不维护第二份统计真相；
+4. 运行保存创建时的非敏感快照；
+5. 输入、输出、错误和事件不得包含凭证明文、密文或原始 Authorization Header；
+6. 当前 Iteration 只要求最终数据与环境状态正确，不要求支持回滚到历史指定版本。
 
 ## 2. WorkflowRun
 
 建议字段：
 
-| 字段 | 类型 | 说明 |
+| 字段 | 类型 | 约束/说明 |
 |---|---|---|
 | `id` | uuid | PK |
-| `project_id` | uuid | 项目 |
-| `stage` | varchar(40) | 四环节之一 |
-| `status` | varchar(30) | `queued / running / succeeded / failed` |
-| `binding_snapshot` | jsonb | 不含明文密钥的绑定快照 |
-| `input_payload` | jsonb | 经 Schema 校验后的输入 |
-| `output_payload` | jsonb | 成功后的安全输出 |
-| `error_code` | varchar(80) | 脱敏错误码 |
-| `error_message` | varchar(300) | 脱敏错误 |
-| `retry_of_run_id` | uuid | nullable |
-| `idempotency_key` | varchar(160) | 创建幂等 |
+| `run_number` | varchar(40) | 唯一、用户可见，如 `RUN-20260722-00128` |
+| `project_id` | uuid | not null，FK Project |
+| `stage` | varchar(40) | `chapter_planning / content_generation / review / rewrite` |
+| `binding_id` | uuid | 创建时使用的项目绑定 |
+| `workflow_configuration_id` | uuid | 创建时使用的工作流配置 |
+| `workflow_connection_id` | uuid | 创建时使用的连接 |
+| `status` | varchar(30) | `queued / running / succeeded / failed / cancelled` |
+| `trigger_source` | varchar(20) | `manual / system / api` |
+| `triggered_by` | varchar(120) | 用户或系统主体标识 |
+| `binding_snapshot` | jsonb | 不含敏感信息的绑定、工作流、连接快照 |
+| `input_payload` | jsonb | 经输入 Schema 校验后的参数 |
+| `output_payload` | jsonb | 成功后可安全保存的结构化输出 |
+| `output_summary` | jsonb | UI 可直接使用的业务摘要 |
+| `error_code` | varchar(80) | 归一化错误码 |
+| `error_message` | varchar(300) | 脱敏、业务可理解的错误说明 |
+| `retry_of_run_id` | uuid | nullable，完整重试来源 |
+| `idempotency_record_id` | uuid | nullable，关联共享幂等记录，不保存 Key 明文 |
 | `started_at` | timestamptz | nullable |
 | `finished_at` | timestamptz | nullable |
-| `version` | integer | 并发控制 |
+| `cancelled_at` | timestamptz | nullable |
+| `version` | integer | 乐观锁，初始 1 |
 | `created_at` | timestamptz | not null |
 | `updated_at` | timestamptz | not null |
 
-禁止在快照和 Payload 中保存：
+### 2.1 索引与约束
 
-- 明文 API Key；
-- 加密密文；
-- Authorization Header；
-- 原始上游错误响应。
+- `UNIQUE(run_number)`；
+- `(project_id, created_at desc)`；
+- `(project_id, stage, created_at desc)`；
+- `(status, created_at)`；
+- `(workflow_configuration_id, created_at desc)`；
+- `retry_of_run_id` 外键不级联删除历史；
+- `finished_at >= started_at`；
+- `succeeded/failed/cancelled` 必须有 `finished_at`；
+- `cancelled` 必须有 `cancelled_at`；
+- `succeeded` 不得同时存在业务失败错误码。
 
 ## 3. WorkflowRunEvent
 
-字段：
+| 字段 | 类型 | 说明 |
+|---|---|---|
+| `id` | uuid | PK |
+| `run_id` | uuid | FK WorkflowRun |
+| `sequence` | integer | 同一运行内严格递增 |
+| `event_type` | varchar(60) | 事件类型 |
+| `safe_payload` | jsonb | 脱敏后的事件信息 |
+| `created_at` | timestamptz | not null |
 
-- `id`；
-- `run_id`；
-- `sequence`；
-- `event_type`；
-- `safe_payload`；
-- `created_at`。
+约束：
+
+- `UNIQUE(run_id, sequence)`；
+- 事件追加写，不更新历史事件。
 
 事件示例：
 
-- queued；
-- worker_started；
-- request_sent；
-- response_received；
-- output_validated；
-- domain_commit_started；
-- succeeded；
-- failed；
-- retry_created。
+- `run_queued`；
+- `worker_started`；
+- `request_sent`；
+- `response_received`；
+- `output_validated`；
+- `domain_commit_started`；
+- `run_succeeded`；
+- `run_failed`；
+- `cancel_requested`；
+- `run_cancelled`；
+- `retry_created`；
+- `domain_commit_retry_started`。
 
-## 4. ProjectWorkflowBindingSnapshot
+## 4. 绑定快照
 
-保存：
+`binding_snapshot` 至少保存：
 
-- 项目 ID；
+- 项目 ID 和名称；
 - 环节；
-- 绑定 ID 和版本；
-- 工作流 ID、名称、版本；
-- 连接 ID、类型、版本；
-- 类型专属非敏感配置；
-- 契约版本；
+- Binding ID、version；
+- WorkflowConfiguration ID、名称、version、类型；
+- WorkflowConnection ID、名称、类型、version；
+- 非敏感执行地址标识；
+- 输入/输出契约版本；
 - 默认参数；
-- 创建运行时的时间戳。
+- 创建运行时间。
 
-不保存凭证明文或密文。
+禁止保存：
 
-## 5. Adapter 契约
+- API Key、Token、密码；
+- Secret 密文；
+- Authorization Header；
+- 完整上游原始错误响应；
+- 不必要的 PII。
+
+## 5. 状态机
+
+合法转换：
+
+```text
+queued → running
+queued → cancelled
+running → succeeded
+running → failed
+running → cancelled
+```
+
+禁止：
+
+- 终态回到 running；
+- 原记录被重试覆盖；
+- failed 直接改为 succeeded；
+- cancelled 再次执行。
+
+完整重试：
+
+```text
+failed/cancelled → 创建新的 queued WorkflowRun
+```
+
+领域提交重试：
+
+- 仅用于外部执行成功、领域提交失败；
+- 不重新调用 n8n；
+- 记录独立事件；
+- 成功后原运行可推进至 `succeeded`，但必须保留完整事件轨迹。
+
+## 6. 运行摘要
+
+项目概览 P14_10 需要：
+
+- 总运行次数；
+- 运行中数量；
+- 最近失败数量；
+- 最近运行时间；
+- 最近三条运行。
+
+这些字段通过 `WorkflowRun` 聚合查询返回，不新增 `project_workflow_run_stats` 表。
+
+统计口径：
+
+- 总运行次数：项目所有未删除运行；
+- 运行中：`queued + running`；
+- 最近失败：默认最近 7 天 `failed` 数量；
+- 最近运行：按 `created_at desc`；
+- 最近三条运行：按 `created_at desc limit 3`。
+
+## 7. 连接和工作流状态
+
+沿用 Iteration 12 字段：
+
+- `integration_status`；
+- `enabled`；
+- `last_verified_at`；
+- `last_error_code`；
+- `last_error_message`。
+
+规则：
+
+- Connection 只有 `verified` 才能启用；
+- WorkflowConfiguration 只有自身和关联 Connection 都满足条件才可启用；
+- Base URL、凭证、连接引用或类型专属配置变化后重置验证状态；
+- 运行创建时冻结状态和版本，后续修改不改变历史。
+
+## 8. Adapter 契约
 
 通用 `WorkflowAdapter`：
 
 - `verifyConnection`；
 - `verifyWorkflow`；
 - `execute`；
+- `cancel`（Adapter 不支持时返回标准不可取消错误）；
 - `normalizeError`。
 
-Iteration 14 实现：
+Iteration 14 实现 `N8nWorkflowAdapter`。
 
-- `N8nWorkflowAdapter`。
+凭证只在 Worker 内短暂解密，使用后释放，不写日志或数据库。
 
-Adapter 输入凭证仅在 Worker 内短暂解密，使用后释放，不写日志和数据库。
+## 9. 迁移
 
-## 6. 状态机和事务
-
-合法状态转换：
-
-```text
-queued → running → succeeded
-queued → running → failed
-```
-
-重试：
-
-- 完整重试创建新 WorkflowRun；
-- 原运行不可覆盖；
-- 外部执行成功但领域提交失败时，可以创建领域提交重试；
-- 领域提交重试不重复调用 n8n。
-
-## 7. 迁移
-
-- 激活 Iteration 12 预留状态字段；
-- 将已有 `not_connected` 连接和工作流迁移为等待用户验证；
-- 增加最多一个启用连接约束；
-- 增加 WorkflowRun、Event 和快照存储；
-- 不修改 LLM Provider 和分发平台为已验证状态。
+- 激活已有连接、工作流验证和启停字段；
+- 增加 `workflow_runs`；
+- 增加 `workflow_run_events`；
+- 增加索引、状态约束和引用关系；
+- 不新增项目侧运行记录副本或统计表；
+- 不修改 LLM Provider 和分发平台为已验证；
+- 迁移验收只检查当前 Iteration 终态一致性，不验证历史版本回滚。

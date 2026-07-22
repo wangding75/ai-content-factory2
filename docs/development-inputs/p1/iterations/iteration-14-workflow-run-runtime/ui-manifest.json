@@ -1,113 +1,137 @@
 {
   "iteration": "iteration-14-workflow-run-runtime",
-  "uiAcceptance": "CONDITIONAL_PASS",
-  "knownIssues": [
-    "Some Stitch user-visible copy is English; development must use Chinese locale resources.",
-    "Iteration 14 activates n8n connection/workflow validation and enable controls; LLM and distribution integrations remain deferred."
+  "selectedUiBaseline": "AI Content Factory 2.0 - Iteration 14 Runtime UI R2",
+  "stitchProjectId": "16382408539250329714",
+  "designSystem": "AI Content Factory 2.0 Commercial SaaS R2",
+  "designSystemFile": "ui/design-system/DESIGN.md",
+  "uiAcceptance": "PASS",
+  "primaryRoutes": {
+    "workflowRunList": "/workflow-runs",
+    "workflowRunDetail": "/workflow-runs/{runId}",
+    "projectOverview": "/projects/{projectId}",
+    "projectBinding": "/projects/{projectId}/settings?tab=workflow-bindings"
+  },
+  "navigationRules": [
+    "workflow center has no tabs and directly renders the global run list",
+    "workflow center is the only run record list",
+    "project overview links to /workflow-runs?projectId={projectId}",
+    "stage links add &stage={stage}",
+    "run detail breadcrumb is Workflow Center / Run Records / Run Number",
+    "project is a clickable run attribute, not a parent route",
+    "unbound workflow is a modal triggered by the run action, not a standalone page"
+  ],
+  "globalDevelopmentCorrections": [
+    "reuse the existing global shell and ProjectWorkspace shell; do not copy prototype navigation verbatim",
+    "all user-visible product copy uses Chinese locale resources",
+    "do not add a workflow configuration tab to the workflow center",
+    "do not add /projects/{projectId}/workflow-runs as a second list",
+    "preserve source filter query parameters when returning from run detail",
+    "statistics and list rows use the same server-side filter",
+    "project overview is a summary only and uses the dedicated summary response",
+    "long project and workflow names use ellipsis and accessible tooltips",
+    "loading, empty and error states are distinct",
+    "technical errors are redacted and technical details are collapsed by default"
   ],
   "frames": [
     {
-      "frameId": "E3_WORKFLOW_CENTER_V2",
+      "frameId": "P14_01_WORKFLOW_RUN_LIST",
       "area": "流程中心",
-      "purpose": "真实运行列表、筛选、统计",
-      "sourceFolder": "workflow_center_console_v2.0",
-      "screen": "ui/frames/E3_WORKFLOW_CENTER_V2/screen.png",
-      "html": "ui/frames/E3_WORKFLOW_CENTER_V2/code.html",
-      "acceptance": "CONDITIONAL_PASS",
-      "developmentCorrections": [
-        "replace user-visible English copy with Chinese locale resources",
-        "preserve technical identifiers only when appropriate",
-        "use safe normalized n8n runtime states and redacted errors",
-        "do not expose credentials or raw upstream responses",
-        "do not add LLM or distribution integration controls in Iteration 14"
-      ]
+      "purpose": "全局运行记录列表、统计、筛选和分页",
+      "routeOrTrigger": "/workflow-runs",
+      "screen": "ui/frames/P14_01_WORKFLOW_RUN_LIST/screen.png",
+      "html": "ui/frames/P14_01_WORKFLOW_RUN_LIST/code.html",
+      "implementationRequired": true,
+      "acceptance": "PASS"
     },
     {
-      "frameId": "E3_WORKFLOW_RUN_DETAIL_DRAWER",
+      "frameId": "P14_02_WORKFLOW_RUN_LIST_PROJECT_FILTERED",
       "area": "流程中心",
-      "purpose": "运行详情、失败诊断、绑定快照",
-      "sourceFolder": "e3_workflow_run_detail_drawer",
-      "screen": "ui/frames/E3_WORKFLOW_RUN_DETAIL_DRAWER/screen.png",
-      "html": "ui/frames/E3_WORKFLOW_RUN_DETAIL_DRAWER/code.html",
-      "acceptance": "CONDITIONAL_PASS",
-      "developmentCorrections": [
-        "replace user-visible English copy with Chinese locale resources",
-        "preserve technical identifiers only when appropriate",
-        "use safe normalized n8n runtime states and redacted errors",
-        "do not expose credentials or raw upstream responses",
-        "do not add LLM or distribution integration controls in Iteration 14"
-      ]
+      "purpose": "从项目侧进入后的项目筛选状态",
+      "routeOrTrigger": "/workflow-runs?projectId={projectId}",
+      "screen": "ui/frames/P14_02_WORKFLOW_RUN_LIST_PROJECT_FILTERED/screen.png",
+      "html": "ui/frames/P14_02_WORKFLOW_RUN_LIST_PROJECT_FILTERED/code.html",
+      "implementationRequired": true,
+      "acceptance": "PASS"
     },
     {
-      "frameId": "E3_RETRY_RUN_CONFIRM_DIALOG",
+      "frameId": "P14_03_WORKFLOW_RUN_LIST_EMPTY",
       "area": "流程中心",
-      "purpose": "重试确认与配置版本选择",
-      "sourceFolder": "retry_run_confirmation_dialog",
-      "screen": "ui/frames/E3_RETRY_RUN_CONFIRM_DIALOG/screen.png",
-      "html": "ui/frames/E3_RETRY_RUN_CONFIRM_DIALOG/code.html",
-      "acceptance": "CONDITIONAL_PASS",
-      "developmentCorrections": [
-        "replace user-visible English copy with Chinese locale resources",
-        "preserve technical identifiers only when appropriate",
-        "use safe normalized n8n runtime states and redacted errors",
-        "do not expose credentials or raw upstream responses",
-        "do not add LLM or distribution integration controls in Iteration 14"
-      ]
+      "purpose": "全局无运行记录",
+      "routeOrTrigger": "/workflow-runs",
+      "screen": "ui/frames/P14_03_WORKFLOW_RUN_LIST_EMPTY/screen.png",
+      "html": "ui/frames/P14_03_WORKFLOW_RUN_LIST_EMPTY/code.html",
+      "implementationRequired": true,
+      "acceptance": "PASS"
     },
     {
-      "frameId": "STATE_TASK_RUNNING_BAR",
-      "area": "共享组件",
-      "purpose": "异步运行状态条",
-      "sourceFolder": "component_spec_state_task_running_bar",
-      "screen": "ui/frames/STATE_TASK_RUNNING_BAR/screen.png",
-      "html": "ui/frames/STATE_TASK_RUNNING_BAR/code.html",
-      "acceptance": "CONDITIONAL_PASS",
-      "developmentCorrections": [
-        "replace user-visible English copy with Chinese locale resources",
-        "preserve technical identifiers only when appropriate",
-        "use safe normalized n8n runtime states and redacted errors",
-        "do not expose credentials or raw upstream responses",
-        "do not add LLM or distribution integration controls in Iteration 14"
-      ]
+      "frameId": "P14_04_WORKFLOW_RUN_LIST_ERROR",
+      "area": "流程中心",
+      "purpose": "运行记录加载失败",
+      "routeOrTrigger": "/workflow-runs",
+      "screen": "ui/frames/P14_04_WORKFLOW_RUN_LIST_ERROR/screen.png",
+      "html": "ui/frames/P14_04_WORKFLOW_RUN_LIST_ERROR/code.html",
+      "implementationRequired": true,
+      "acceptance": "PASS"
     },
     {
-      "frameId": "STATE_TASK_FAILED_NOTICE",
-      "area": "共享组件",
-      "purpose": "安全错误通知与恢复动作",
-      "sourceFolder": "component_spec_state_task_failed_notice",
-      "screen": "ui/frames/STATE_TASK_FAILED_NOTICE/screen.png",
-      "html": "ui/frames/STATE_TASK_FAILED_NOTICE/code.html",
-      "acceptance": "CONDITIONAL_PASS",
-      "developmentCorrections": [
-        "replace user-visible English copy with Chinese locale resources",
-        "preserve technical identifiers only when appropriate",
-        "use safe normalized n8n runtime states and redacted errors",
-        "do not expose credentials or raw upstream responses",
-        "do not add LLM or distribution integration controls in Iteration 14"
-      ]
+      "frameId": "P14_05_WORKFLOW_RUN_DETAIL_SUCCEEDED",
+      "area": "流程中心",
+      "purpose": "运行成功详情与业务结果入口",
+      "routeOrTrigger": "/workflow-runs/{runId}",
+      "screen": "ui/frames/P14_05_WORKFLOW_RUN_DETAIL_SUCCEEDED/screen.png",
+      "html": "ui/frames/P14_05_WORKFLOW_RUN_DETAIL_SUCCEEDED/code.html",
+      "implementationRequired": true,
+      "acceptance": "PASS"
     },
     {
-      "frameId": "STATE_NOT_CONFIGURED_EMPTY",
-      "area": "共享组件",
-      "purpose": "未配置、失效与空结果状态",
-      "sourceFolder": "component_spec_state_not_configured_empty",
-      "screen": "ui/frames/STATE_NOT_CONFIGURED_EMPTY/screen.png",
-      "html": "ui/frames/STATE_NOT_CONFIGURED_EMPTY/code.html",
-      "acceptance": "CONDITIONAL_PASS",
-      "developmentCorrections": [
-        "replace user-visible English copy with Chinese locale resources",
-        "preserve technical identifiers only when appropriate",
-        "use safe normalized n8n runtime states and redacted errors",
-        "do not expose credentials or raw upstream responses",
-        "do not add LLM or distribution integration controls in Iteration 14"
-      ]
+      "frameId": "P14_06_WORKFLOW_RUN_DETAIL_RUNNING",
+      "area": "流程中心",
+      "purpose": "运行中详情、刷新和取消",
+      "routeOrTrigger": "/workflow-runs/{runId}",
+      "screen": "ui/frames/P14_06_WORKFLOW_RUN_DETAIL_RUNNING/screen.png",
+      "html": "ui/frames/P14_06_WORKFLOW_RUN_DETAIL_RUNNING/code.html",
+      "implementationRequired": true,
+      "acceptance": "PASS"
+    },
+    {
+      "frameId": "P14_07_WORKFLOW_RUN_DETAIL_FAILED",
+      "area": "流程中心",
+      "purpose": "运行失败详情、诊断和重试",
+      "routeOrTrigger": "/workflow-runs/{runId}",
+      "screen": "ui/frames/P14_07_WORKFLOW_RUN_DETAIL_FAILED/screen.png",
+      "html": "ui/frames/P14_07_WORKFLOW_RUN_DETAIL_FAILED/code.html",
+      "implementationRequired": true,
+      "acceptance": "PASS"
+    },
+    {
+      "frameId": "P14_08_RUN_CONFIRM_DIALOG",
+      "area": "业务环节",
+      "purpose": "已绑定且可运行时的确认弹窗",
+      "routeOrTrigger": "triggered from stage page",
+      "screen": "ui/frames/P14_08_RUN_CONFIRM_DIALOG/screen.png",
+      "html": "ui/frames/P14_08_RUN_CONFIRM_DIALOG/code.html",
+      "implementationRequired": true,
+      "acceptance": "PASS"
+    },
+    {
+      "frameId": "P14_09_WORKFLOW_NOT_BOUND_DIALOG",
+      "area": "业务环节",
+      "purpose": "未绑定时的提示和配置入口",
+      "routeOrTrigger": "triggered from stage page",
+      "screen": "ui/frames/P14_09_WORKFLOW_NOT_BOUND_DIALOG/screen.png",
+      "html": "ui/frames/P14_09_WORKFLOW_NOT_BOUND_DIALOG/code.html",
+      "implementationRequired": true,
+      "acceptance": "PASS"
+    },
+    {
+      "frameId": "P14_10_PROJECT_WORKFLOW_RUN_SUMMARY",
+      "area": "项目概览",
+      "purpose": "项目运行摘要、最近运行和快捷入口",
+      "routeOrTrigger": "/projects/{projectId}",
+      "screen": "ui/frames/P14_10_PROJECT_WORKFLOW_RUN_SUMMARY/screen.png",
+      "html": "ui/frames/P14_10_PROJECT_WORKFLOW_RUN_SUMMARY/code.html",
+      "implementationRequired": true,
+      "acceptance": "PASS"
     }
-  ],
-  "scopePolicy": {
-    "realThirdPartyIntegration": "n8n_only",
-    "llmDirectIntegration": false,
-    "distributionIntegration": false,
-    "callbackServer": false,
-    "activatesIteration12ConnectionWorkflowControls": true
-  }
+  ]
 }
