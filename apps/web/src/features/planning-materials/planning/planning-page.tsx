@@ -200,10 +200,18 @@ export function PlanningPage({ projectId, project }: { projectId: string; projec
       <main className="planning-main">
         <section className="planning-content">
           <div className="planning-intro">
-            <h2>项目策划</h2>
-            <p>明确创作方向，让后续的素材与故事创作保持一致。</p>
+            <div>
+              <h2>项目策划</h2>
+              <p>明确创作方向，让后续的素材与故事创作保持一致。</p>
+            </div>
+            {planningCompleted && (
+              <Link className="planning-workflow-shortcut" href={`/projects/${projectId}/settings?tab=workflow-bindings`}>
+                <Icon name="settings" size={16} />
+                前往工作流绑定
+                <Icon name="arrowRight" size={14} />
+              </Link>
+            )}
           </div>
-          {planningCompleted && <Link className="planning-workflow-shortcut" href={`/projects/${projectId}/settings?tab=workflow-bindings`}>配置工作流</Link>}
           {dirty && (
             <div className="planning-dirty">
               <span>
