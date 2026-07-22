@@ -1,137 +1,34 @@
 {
   "iteration": "iteration-14-workflow-run-runtime",
-  "selectedUiBaseline": "AI Content Factory 2.0 - Iteration 14 Runtime UI R2",
-  "stitchProjectId": "16382408539250329714",
-  "designSystem": "AI Content Factory 2.0 Commercial SaaS R2",
-  "designSystemFile": "ui/design-system/DESIGN.md",
   "uiAcceptance": "PASS",
-  "primaryRoutes": {
-    "workflowRunList": "/workflow-runs",
-    "workflowRunDetail": "/workflow-runs/{runId}",
-    "projectOverview": "/projects/{projectId}",
-    "projectBinding": "/projects/{projectId}/settings?tab=workflow-bindings"
+  "primaryRoute": "/workflow-runs",
+  "detailRoute": "/workflow-runs/{runId}",
+  "noWorkflowConfigurationTab": true,
+  "projectEntryRoutes": {
+    "allProjectRuns": "/workflow-runs?projectId={projectId}",
+    "stageRuns": "/workflow-runs?projectId={projectId}&stage={stage}",
+    "rules": [
+      "Project entries filter the shared global list; no project-scoped duplicate run-list route is created.",
+      "Project name is a detail field and clickable link, not a detail parent route."
+    ]
   },
-  "navigationRules": [
-    "workflow center has no tabs and directly renders the global run list",
-    "workflow center is the only run record list",
-    "project overview links to /workflow-runs?projectId={projectId}",
-    "stage links add &stage={stage}",
-    "run detail breadcrumb is Workflow Center / Run Records / Run Number",
-    "project is a clickable run attribute, not a parent route",
-    "unbound workflow is a modal triggered by the run action, not a standalone page"
-  ],
-  "globalDevelopmentCorrections": [
-    "reuse the existing global shell and ProjectWorkspace shell; do not copy prototype navigation verbatim",
-    "all user-visible product copy uses Chinese locale resources",
-    "do not add a workflow configuration tab to the workflow center",
-    "do not add /projects/{projectId}/workflow-runs as a second list",
-    "preserve source filter query parameters when returning from run detail",
-    "statistics and list rows use the same server-side filter",
-    "project overview is a summary only and uses the dedicated summary response",
-    "long project and workflow names use ellipsis and accessible tooltips",
-    "loading, empty and error states are distinct",
-    "technical errors are redacted and technical details are collapsed by default"
-  ],
   "frames": [
-    {
-      "frameId": "P14_01_WORKFLOW_RUN_LIST",
-      "area": "流程中心",
-      "purpose": "全局运行记录列表、统计、筛选和分页",
-      "routeOrTrigger": "/workflow-runs",
-      "screen": "ui/frames/P14_01_WORKFLOW_RUN_LIST/screen.png",
-      "html": "ui/frames/P14_01_WORKFLOW_RUN_LIST/code.html",
-      "implementationRequired": true,
-      "acceptance": "PASS"
-    },
-    {
-      "frameId": "P14_02_WORKFLOW_RUN_LIST_PROJECT_FILTERED",
-      "area": "流程中心",
-      "purpose": "从项目侧进入后的项目筛选状态",
-      "routeOrTrigger": "/workflow-runs?projectId={projectId}",
-      "screen": "ui/frames/P14_02_WORKFLOW_RUN_LIST_PROJECT_FILTERED/screen.png",
-      "html": "ui/frames/P14_02_WORKFLOW_RUN_LIST_PROJECT_FILTERED/code.html",
-      "implementationRequired": true,
-      "acceptance": "PASS"
-    },
-    {
-      "frameId": "P14_03_WORKFLOW_RUN_LIST_EMPTY",
-      "area": "流程中心",
-      "purpose": "全局无运行记录",
-      "routeOrTrigger": "/workflow-runs",
-      "screen": "ui/frames/P14_03_WORKFLOW_RUN_LIST_EMPTY/screen.png",
-      "html": "ui/frames/P14_03_WORKFLOW_RUN_LIST_EMPTY/code.html",
-      "implementationRequired": true,
-      "acceptance": "PASS"
-    },
-    {
-      "frameId": "P14_04_WORKFLOW_RUN_LIST_ERROR",
-      "area": "流程中心",
-      "purpose": "运行记录加载失败",
-      "routeOrTrigger": "/workflow-runs",
-      "screen": "ui/frames/P14_04_WORKFLOW_RUN_LIST_ERROR/screen.png",
-      "html": "ui/frames/P14_04_WORKFLOW_RUN_LIST_ERROR/code.html",
-      "implementationRequired": true,
-      "acceptance": "PASS"
-    },
-    {
-      "frameId": "P14_05_WORKFLOW_RUN_DETAIL_SUCCEEDED",
-      "area": "流程中心",
-      "purpose": "运行成功详情与业务结果入口",
-      "routeOrTrigger": "/workflow-runs/{runId}",
-      "screen": "ui/frames/P14_05_WORKFLOW_RUN_DETAIL_SUCCEEDED/screen.png",
-      "html": "ui/frames/P14_05_WORKFLOW_RUN_DETAIL_SUCCEEDED/code.html",
-      "implementationRequired": true,
-      "acceptance": "PASS"
-    },
-    {
-      "frameId": "P14_06_WORKFLOW_RUN_DETAIL_RUNNING",
-      "area": "流程中心",
-      "purpose": "运行中详情、刷新和取消",
-      "routeOrTrigger": "/workflow-runs/{runId}",
-      "screen": "ui/frames/P14_06_WORKFLOW_RUN_DETAIL_RUNNING/screen.png",
-      "html": "ui/frames/P14_06_WORKFLOW_RUN_DETAIL_RUNNING/code.html",
-      "implementationRequired": true,
-      "acceptance": "PASS"
-    },
-    {
-      "frameId": "P14_07_WORKFLOW_RUN_DETAIL_FAILED",
-      "area": "流程中心",
-      "purpose": "运行失败详情、诊断和重试",
-      "routeOrTrigger": "/workflow-runs/{runId}",
-      "screen": "ui/frames/P14_07_WORKFLOW_RUN_DETAIL_FAILED/screen.png",
-      "html": "ui/frames/P14_07_WORKFLOW_RUN_DETAIL_FAILED/code.html",
-      "implementationRequired": true,
-      "acceptance": "PASS"
-    },
-    {
-      "frameId": "P14_08_RUN_CONFIRM_DIALOG",
-      "area": "业务环节",
-      "purpose": "已绑定且可运行时的确认弹窗",
-      "routeOrTrigger": "triggered from stage page",
-      "screen": "ui/frames/P14_08_RUN_CONFIRM_DIALOG/screen.png",
-      "html": "ui/frames/P14_08_RUN_CONFIRM_DIALOG/code.html",
-      "implementationRequired": true,
-      "acceptance": "PASS"
-    },
-    {
-      "frameId": "P14_09_WORKFLOW_NOT_BOUND_DIALOG",
-      "area": "业务环节",
-      "purpose": "未绑定时的提示和配置入口",
-      "routeOrTrigger": "triggered from stage page",
-      "screen": "ui/frames/P14_09_WORKFLOW_NOT_BOUND_DIALOG/screen.png",
-      "html": "ui/frames/P14_09_WORKFLOW_NOT_BOUND_DIALOG/code.html",
-      "implementationRequired": true,
-      "acceptance": "PASS"
-    },
-    {
-      "frameId": "P14_10_PROJECT_WORKFLOW_RUN_SUMMARY",
-      "area": "项目概览",
-      "purpose": "项目运行摘要、最近运行和快捷入口",
-      "routeOrTrigger": "/projects/{projectId}",
-      "screen": "ui/frames/P14_10_PROJECT_WORKFLOW_RUN_SUMMARY/screen.png",
-      "html": "ui/frames/P14_10_PROJECT_WORKFLOW_RUN_SUMMARY/code.html",
-      "implementationRequired": true,
-      "acceptance": "PASS"
-    }
-  ]
+    { "frameId": "P14_01_WORKFLOW_RUN_LIST", "area": "流程中心", "purpose": "全局运行记录列表", "screen": "ui/frames/P14_01_WORKFLOW_RUN_LIST/screen.png", "html": "ui/frames/P14_01_WORKFLOW_RUN_LIST/code.html" },
+    { "frameId": "P14_02_WORKFLOW_RUN_LIST_PROJECT_FILTERED", "area": "流程中心", "purpose": "项目筛选后的运行记录", "screen": "ui/frames/P14_02_WORKFLOW_RUN_LIST_PROJECT_FILTERED/screen.png", "html": "ui/frames/P14_02_WORKFLOW_RUN_LIST_PROJECT_FILTERED/code.html" },
+    { "frameId": "P14_03_WORKFLOW_RUN_LIST_EMPTY", "area": "流程中心", "purpose": "运行记录空状态", "screen": "ui/frames/P14_03_WORKFLOW_RUN_LIST_EMPTY/screen.png", "html": "ui/frames/P14_03_WORKFLOW_RUN_LIST_EMPTY/code.html" },
+    { "frameId": "P14_04_WORKFLOW_RUN_LIST_ERROR", "area": "流程中心", "purpose": "运行记录错误状态", "screen": "ui/frames/P14_04_WORKFLOW_RUN_LIST_ERROR/screen.png", "html": "ui/frames/P14_04_WORKFLOW_RUN_LIST_ERROR/code.html" },
+    { "frameId": "P14_05_WORKFLOW_RUN_DETAIL_SUCCEEDED", "area": "流程中心", "purpose": "成功运行详情", "screen": "ui/frames/P14_05_WORKFLOW_RUN_DETAIL_SUCCEEDED/screen.png", "html": "ui/frames/P14_05_WORKFLOW_RUN_DETAIL_SUCCEEDED/code.html" },
+    { "frameId": "P14_06_WORKFLOW_RUN_DETAIL_RUNNING", "area": "流程中心", "purpose": "运行中详情", "screen": "ui/frames/P14_06_WORKFLOW_RUN_DETAIL_RUNNING/screen.png", "html": "ui/frames/P14_06_WORKFLOW_RUN_DETAIL_RUNNING/code.html" },
+    { "frameId": "P14_07_WORKFLOW_RUN_DETAIL_FAILED", "area": "流程中心", "purpose": "失败详情", "screen": "ui/frames/P14_07_WORKFLOW_RUN_DETAIL_FAILED/screen.png", "html": "ui/frames/P14_07_WORKFLOW_RUN_DETAIL_FAILED/code.html" },
+    { "frameId": "P14_08_RUN_CONFIRM_DIALOG", "area": "项目业务页", "purpose": "已绑定可运行时的确认弹窗", "screen": "ui/frames/P14_08_RUN_CONFIRM_DIALOG/screen.png", "html": "ui/frames/P14_08_RUN_CONFIRM_DIALOG/code.html" },
+    { "frameId": "P14_09_WORKFLOW_NOT_BOUND_DIALOG", "area": "项目业务页", "purpose": "未绑定工作流提示弹窗，不是独立页面", "screen": "ui/frames/P14_09_WORKFLOW_NOT_BOUND_DIALOG/screen.png", "html": "ui/frames/P14_09_WORKFLOW_NOT_BOUND_DIALOG/code.html" },
+    { "frameId": "P14_10_PROJECT_WORKFLOW_RUN_SUMMARY", "area": "项目概览", "purpose": "项目运行摘要、最近运行和筛选入口", "screen": "ui/frames/P14_10_PROJECT_WORKFLOW_RUN_SUMMARY/screen.png", "html": "ui/frames/P14_10_PROJECT_WORKFLOW_RUN_SUMMARY/code.html" }
+  ],
+  "scopePolicy": {
+    "n8nAdapterOnly": true,
+    "callbackServer": false,
+    "llmDirectIntegration": false,
+    "distributionIntegration": false,
+    "stitchHtmlReferenceOnly": true
+  }
 }

@@ -1,173 +1,69 @@
 iteration: iteration-14-workflow-run-runtime
-title: WorkflowRun Runtime and n8n Execution
-status: frozen_for_development
+title: n8n Adapter and WorkflowRun Runtime
+status: draft_for_contract_freeze
 
 apis:
   workflow_connections:
     - method: POST
       path: /api/v1/workflow-connections/{connectionId}/verify
-      purpose: Verify the saved n8n connection
+      purpose: Verify a saved n8n connection through the adapter.
     - method: POST
       path: /api/v1/workflow-connections/{connectionId}/enable
-      purpose: Enable a verified connection according to the existing global configuration rules
+      purpose: Enable a verified connection and atomically disable the existing enabled connection.
     - method: POST
       path: /api/v1/workflow-connections/{connectionId}/disable
-      purpose: Disable a connection
-
+      purpose: Disable a connection.
   workflow_configurations:
     - method: POST
-      path: /api/v1/workflow-configurations/{workflowId}/verify
-      purpose: Verify Workflow ID or Webhook Path through the bound connection
+      path: /api/v1/workflow-configurations/{workflowConfigurationId}/verify
+      purpose: Verify the Workflow ID or Webhook Path through its bound connection.
     - method: POST
-      path: /api/v1/workflow-configurations/{workflowId}/enable
-      purpose: Enable a verified workflow whose connection is ready
+      path: /api/v1/workflow-configurations/{workflowConfigurationId}/enable
+      purpose: Enable a verified workflow configuration with a verified enabled connection.
     - method: POST
-      path: /api/v1/workflow-configurations/{workflowId}/disable
-      purpose: Disable a workflow
-
+      path: /api/v1/workflow-configurations/{workflowConfigurationId}/disable
+      purpose: Disable a workflow configuration.
   workflow_runs:
     - method: POST
       path: /api/v1/workflow-runs
-      purpose: Create an idempotent queued run from a project stage binding
-      request:
-        headers:
-          Idempotency-Key: required
-        body:
-          projectId: uuid
-          stage: chapter_planning | content_generation | review | rewrite
-          input: object
-      responses:
-        "202": WorkflowRunDetailEnvelope
-        "404": project_not_found | project_workflow_not_bound
-        "409": idempotency_key_reused_with_different_payload
-        "422": workflow_not_ready | workflow_not_applicable_to_stage
-
+      purpose: Create an idempotent queued run from a project stage binding; creation returns the new run for direct detail navigation.
     - method: GET
       path: /api/v1/workflow-runs
-      purpose: List the global run center and apply project/stage filters
-      query:
-        projectId: optional uuid
-        stage: optional stage code
-        workflowConfigurationId: optional uuid
-        status: optional queued | running | succeeded | failed | cancelled
-        triggerSource: optional manual | system | api
-        startedFrom: optional timestamp
-        startedTo: optional timestamp
-        q: optional run number or workflow name
-        limit: optional
-        offset: optional
-      response_notes:
-        - returns aggregate counts for the active filter
-        - project filter remains visible and removable in the UI
-
+      purpose: List global runs or project/stage-filtered runs using one shared endpoint.
     - method: GET
       path: /api/v1/workflow-runs/{runId}
-      purpose: Read one run with safe snapshot, progress, input, output and error
-
+      purpose: Read one run with safe binding/configuration snapshot and redacted errors.
     - method: GET
       path: /api/v1/workflow-runs/{runId}/events
-      purpose: Return the ordered event timeline
-
-    - method: POST
-      path: /api/v1/workflow-runs/{runId}/cancel
-      purpose: Cancel a queued or running run
-      request:
-        headers:
-          Idempotency-Key: required
-        body:
-          expectedVersion: integer
-      errors:
-        - run_not_cancellable
-        - version_conflict
-
+      purpose: Read the ordered safe event timeline.
     - method: POST
       path: /api/v1/workflow-runs/{runId}/retries
-      purpose: Create a new queued run while preserving the original
-      request:
-        headers:
-          Idempotency-Key: required
-        body:
-          useCurrentConfiguration: boolean
-          inputOverride: optional object
-      errors:
-        - run_not_retryable
-
+      purpose: Create a new full retry run while preserving the original run.
     - method: POST
-      path: /api/v1/workflow-runs/{runId}/domain-commit-retries
-      purpose: Retry only the domain commit after successful external execution
-
+      path: /api/v1/workflow-runs/{runId}/cancel
+      purpose: Request cancellation for a cancellable queued or running run.
   project_workflow_run_summary:
     - method: GET
       path: /api/v1/projects/{projectId}/workflow-run-summary
-      purpose: Return project overview statistics and the three most recent runs
-      response:
-        totalRuns: integer
-        activeRuns: integer
-        recentFailedRuns: integer
-        lastRunAt: optional timestamp
-        recentRuns: array
+      purpose: Return the project run query aggregation used by the project overview.
+
+list_query:
+  supported: [projectId, stage, workflowConfigurationId, status, triggerSource, q, runNumber, from, to, limit, offset]
+  rules:
+    - q and runNumber search the displayed run number.
+    - project-side filtering and the global list use GET /api/v1/workflow-runs; no duplicate project run-list endpoint is added.
 
 common_requirements:
-  - OpenAPI is the single contract source
-  - command APIs use Idempotency-Key
-  - same key and same fingerprint returns the original result
-  - same key and different fingerprint returns 409
-  - errors use the shared error envelope
-  - secrets, encrypted credentials, Authorization headers and raw upstream responses are never returned
-  - runtime errors are normalized and redacted
-  - mutable actions use optimistic locking where applicable
-  - WorkflowRun stores immutable non-sensitive snapshots
-  - Worker execution is asynchronous
-  - no callback server is implemented
-  - n8n returns results through the webhook HTTP response
-  - full retry creates a new WorkflowRun
-  - domain-commit-only retry never calls n8n again
-  - project overview summary is derived from WorkflowRun and is not a second source of truth
-
-navigation_contract:
-  workflow_run_list: /workflow-runs
-  workflow_run_detail: /workflow-runs/{runId}
-  project_filtered_list: /workflow-runs?projectId={projectId}
-  project_stage_filtered_list: /workflow-runs?projectId={projectId}&stage={stage}
-  project_binding_page: /projects/{projectId}/settings?tab=workflow-bindings
-
-business_rules:
-  - the workflow center has no workflow configuration tab
-  - the workflow center is the only run record list
-  - a run requires an existing project-stage binding
-  - a bound workflow must be enabled and its connection must be verified and enabled
-  - disabled, unverified or disconnected dependencies do not create a run
-  - successful creation redirects to the run detail page
-  - retry preserves the original run and creates a new run number
-  - project summary and list filters must use the same underlying run records
-
-error_codes:
-  "404":
-    - project_not_found
-    - project_workflow_not_bound
-    - workflow_run_not_found
-  "409":
-    - version_conflict
-    - idempotency_key_reused_with_different_payload
-  "422":
-    - workflow_not_ready
-    - workflow_not_applicable_to_stage
-    - run_not_cancellable
-    - run_not_retryable
-    - output_schema_invalid
-    - domain_commit_failed
-  "502":
-    - workflow_upstream_error
-  "504":
-    - workflow_timeout
+  - POST commands use Idempotency-Key.
+  - Errors use the shared error structure.
+  - Verification errors, execution errors, snapshots and upstream responses are redacted; secrets are never returned.
+  - WorkflowRun stores immutable binding and configuration snapshots without keys.
+  - Worker execution is asynchronous and follows the frozen state machine.
+  - n8n is invoked through webhook HTTP response; no callback server is built.
+  - CF-14-01 will place the final interfaces in the authoritative OpenAPI.
 
 not_in_scope:
-  - workflow configuration tab inside the workflow center
-  - project-level duplicate run list
-  - LLM provider verification or direct invocation
-  - LLM model discovery
-  - distribution platform verification, binding, OAuth or publishing
-  - Coze, ComfyUI or other adapters
-  - n8n visual editor
-  - callback server
-  - automatic retry orchestration
+  - Distribution-platform binding or execution
+  - LLM Provider validation, discovery or invocation
+  - OAuth, publishing and other adapters
+  - Callback server
