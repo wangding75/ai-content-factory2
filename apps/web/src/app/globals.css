@@ -300,7 +300,7 @@ button,a { -webkit-tap-highlight-color:transparent; }
 .workflow-binding-card button:hover,.workflow-binding-drawer button:hover{background:#f8fafc}
 .workflow-binding-card .primary,.workflow-binding-drawer .primary{border-color:#4648d4;background:#4648d4;color:#fff}
 .workflow-binding-card .primary:hover,.workflow-binding-drawer .primary:hover{background:#3b3dbf}
-.workflow-binding-drawer .primary:disabled{background:#94a3b8;border-color:#94a3b8;opacity:.65;cursor:not-allowed}
+.workflow-binding-drawer button.primary:disabled,.workflow-binding-drawer button:disabled,.workflow-binding-card button.primary:disabled,.workflow-binding-card button:disabled{background:#e2e8f0!important;border-color:#cbd5e1!important;color:#94a3b8!important;opacity:.65!important;cursor:not-allowed!important;box-shadow:none!important}
 .workflow-binding-card .danger,.workflow-unbind-dialog .danger{border-color:#fca5a5;background:#fff;color:#dc2626}
 .workflow-binding-card .danger:hover,.workflow-unbind-dialog .danger:hover{background:#fef2f2}
 .workflow-binding-notice{border:1px solid #bbf7d0;border-radius:8px;padding:10px 14px;color:#15803d;background:#f0fdf4;margin:0 0 14px;font-size:14px}
@@ -338,7 +338,7 @@ button,a { -webkit-tap-highlight-color:transparent; }
 .workflow-unbind-dialog{position:relative;width:min(440px,calc(100vw - 32px));border-radius:12px;padding:24px;background:#fff;box-shadow:0 10px 25px rgba(0,0,0,.15)}
 .workflow-unbind-dialog h2{margin:0 0 10px;font-size:18px;color:#0f172a}
 .workflow-unbind-dialog p{color:#475569;line-height:1.5;margin:0 0 8px;font-size:14px}
-.planning-workflow-shortcut{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:8px;background:#4648d4;color:#fff;font-weight:600;font-size:13px;text-decoration:none;transition:background .15s}
+.planning-workflow-shortcut{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:8px;background:#4648d4;color:#fff!important;font-weight:600;font-size:13px;text-decoration:none!important;box-shadow:0 2px 4px rgba(70,72,212,.2);transition:background .15s}
 .planning-workflow-shortcut:hover{background:#3b3dbf}
 .planning-intro{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:16px}
 @media(max-width:600px){.project-settings-tabs{gap:14px;overflow:auto}.workflow-binding-card{min-height:0}.workflow-binding-details dl{grid-template-columns:1fr}.workflow-binding-card footer{flex-wrap:wrap}.workflow-binding-drawer{width:100%}}
