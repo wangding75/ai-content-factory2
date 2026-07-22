@@ -194,27 +194,16 @@ function WorkflowDrawer({projectId,drawer,onClose,onSaved}:{projectId:string;dra
                         </div>
                       </header>
                       <p className="candidate-description">{description}</p>
-                      <div className="candidate-meta-grid">
-                        <div className="meta-item">
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
-                          <span>类型: {w.workflowType}</span>
-                        </div>
-                        <div className="meta-item">
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
-                          <span>{w.connectionName}</span>
-                        </div>
-                        {riskNotice ? (
-                          <div className={`meta-item risk-${riskType}`}>
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-                            <span>{riskNotice}</span>
-                          </div>
-                        ) : (
-                          <div className="meta-item success">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-                            <span>已集成</span>
-                          </div>
-                        )}
+                      <div className="candidate-meta">
+                        <span>类型：{w.workflowType}</span>
+                        <span>连接：{w.connectionName}（{w.connectionType}）</span>
                       </div>
+                      {riskNotice && (
+                        <div className={`candidate-risk-line ${riskType}`}>
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                          <span>{riskNotice}</span>
+                        </div>
+                      )}
                     </div>
                   </label>
                 );
