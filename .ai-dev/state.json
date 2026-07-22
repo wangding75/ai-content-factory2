@@ -1,12 +1,13 @@
 {
   "project": "ai-content-factory-2.0",
-  "current_iteration": 6,
+  "current_iteration": 13,
   "status": "completed",
-  "next_iteration": 9,
-  "contract_version": "p0-v1",
-  "ui_baseline": "p0-frozen",
+  "acceptance": "passed_with_user_waiver",
+  "next_iteration": 14,
+  "contract_version": "p1-v1",
+  "ui_baseline": "p1-frozen",
   "technical_skeleton": "same-as-1.0",
-  "updated_at_utc": "2026-07-17T02:30:27Z",
+  "updated_at_utc": "2026-07-22T09:07:31Z",
   "development_inputs": {
     "package": "ai-content-factory-2.0-p0-full-initialization-package-v2.1.1",
     "version": "2.1.1",
@@ -17,7 +18,7 @@
     "technical_docs": "docs/architecture",
     "frozen_inputs": "docs/development-inputs/p0"
   },
-  "manual_ui_acceptance": "skipped_by_user",
+  "manual_ui_acceptance": "passed",
   "iteration_04": {
     "contract": "completed",
     "backend": "completed",
@@ -66,5 +67,31 @@
     "real_api_integration": "passed",
     "manual_ui_acceptance": "passed",
     "final_verification": "completed"
+  },
+  "iteration_13": {
+    "status": "completed",
+    "acceptance": "passed_with_user_waiver",
+    "next_iteration": 14,
+    "cf_13_05_manual_ui_acceptance": {
+      "status": "PASS",
+      "baseline_commit": "2e8f3cd7e1a36c7d1e53d266666b2723f609ea6f",
+      "summary": "人工 UI 验收通过"
+    },
+    "cf_13_06_real_api_integration": {
+      "status": "PASS_WITH_WAIVER",
+      "summary": "四环节真实 API 绑定、换绑、no-op、解绑通过；applicableStage、expectedVersion、Idempotency-Key、409 冲突通过；后端完整测试通过；前端 test、typecheck、lint、build 通过；Chromium Route Smoke 通过；未修改代码完成真实 API 联调"
+    },
+    "final_e2e_results": {
+      "total": 7,
+      "passed": 5,
+      "failed": 2,
+      "skipped": 0,
+      "user_waiver": "用户明确批准跳过 2 个历史测试债务失败，不作为 Iteration 13 阻塞项"
+    },
+    "known_test_debt": [
+      "Iteration 02 空态断言与当前 UI 不一致",
+      "Iteration 06 E2E Fixture 缺乏 Spec 级数据隔离"
+    ],
+    "db_rollback_acceptance_required": false
   }
 }

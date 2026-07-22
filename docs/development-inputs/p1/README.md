@@ -42,6 +42,8 @@ Iteration 11：有条件通过。
 
 Iteration 12 全局设置 V2 原型：有条件通过，P0-1/P0-2/P0-3、页面壳层差异和重复按钮均在开发阶段强制修复，不再要求修改 Stitch 原型。
 
+Iteration 13 项目四环节工作流绑定：已完成（completed, passed_with_user_waiver）。CF-13-05 人工 UI 验收 PASS，CF-13-06 真实 API 联调 PASS WITH WAIVER，历史 E2E 测试债务获用户豁免。下一迭代：14。
+
 ## 开发顺序
 
 契约冻结后，后端先完成数据、安全和 Application Service 基础；前端基于冻结 OpenAPI 和规范化 Frame 并行开发。真实 API 联调前先完成人工 UI 验收。
