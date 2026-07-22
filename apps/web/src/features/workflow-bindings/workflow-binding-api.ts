@@ -1,12 +1,13 @@
 import { apiRequest, type ApiRequestInit } from "@/lib/api";
 
 export type WorkflowStage = "chapter_planning" | "content_generation" | "review" | "rewrite";
-export type WorkflowConfiguration = { id:string; name:string; connectionId:string; connectionName:string; connectionType:string; workflowType:string; applicableStages:WorkflowStage[]; integrationStatus:"connected"|"not_connected"|"connection_error"|string; connectionStatus?:"connected"|"disconnected"|"error"|string; enabled:boolean; version:number; updatedAt:string; lastErrorMessage:string|null };
+export type WorkflowConfiguration = { id:string; name:string; note?:string; connectionId:string; connectionName:string; connectionType:string; workflowType:string; applicableStages:WorkflowStage[]; integrationStatus:"connected"|"not_connected"|"connection_error"|string; connectionStatus?:"connected"|"disconnected"|"error"|string; enabled:boolean; version:number; updatedAt:string; lastErrorMessage:string|null };
 export type Binding = { id:string; projectId:string; stage:WorkflowStage; workflowConfigurationId:string; version:number; createdAt:string; updatedAt:string };
 export type BindingStage = { stage:WorkflowStage; bound:boolean; binding:Binding|null; workflowConfigurationSummary:WorkflowConfiguration|null };
 export const stageOrder:WorkflowStage[]=["chapter_planning","content_generation","review","rewrite"];
 export const stageLabels:Record<WorkflowStage,string>={chapter_planning:"章节规划",content_generation:"内容生成",review:"审核",rewrite:"改写"};
 export const stageDescriptions:Record<WorkflowStage,string>={chapter_planning:"为章节结构与创作目标选择工作流。",content_generation:"为正文内容生成选择工作流。",review:"为内容审核选择工作流。",rewrite:"为审核后的改写选择工作流。"};
+export const formatWorkflowNote=(note:string)=>Object.entries(stageLabels).reduce((value,[stage,label])=>value.replaceAll(stage,label),note);
 
 export type WorkflowExceptionType = "none" | "disabled" | "integration_error" | "connection_error";
 

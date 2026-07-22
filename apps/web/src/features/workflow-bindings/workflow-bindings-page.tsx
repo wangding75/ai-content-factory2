@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ApiError } from "@/lib/api";
-import { bindWorkflow, bindingCopy, listApplicableWorkflows, listProjectWorkflowBindings, newIdempotencyKey, stageDescriptions, stageLabels, stageOrder, type BindingStage, type WorkflowConfiguration, unbindWorkflow } from "./workflow-binding-api";
+import { bindWorkflow, bindingCopy, formatWorkflowNote, listApplicableWorkflows, listProjectWorkflowBindings, newIdempotencyKey, stageDescriptions, stageLabels, stageOrder, type BindingStage, type WorkflowConfiguration, unbindWorkflow } from "./workflow-binding-api";
 
 type Drawer={stage:BindingStage; mode:"select"|"replace"}|null;
 const safeError=(error:unknown)=>error instanceof ApiError&&error.code.toLowerCase()==="version_conflict"?"配置已在其他位置更新。请加载最新状态后重新确认。":"操作未完成，请稍后重试。";
@@ -78,6 +78,7 @@ function BindingCard({item,onSelect,onUnbind}:{item:BindingStage;onSelect:()=>vo
 function WorkflowDrawer({projectId,drawer,onClose,onSaved}:{projectId:string;drawer:Exclude<Drawer,null>;onClose:()=>void;onSaved:()=>Promise<void>}){
   const [query,setQuery]=useState(""),[workflows,setWorkflows]=useState<WorkflowConfiguration[]|null>(null),[error,setError]=useState(false),[selected,setSelected]=useState(drawer.stage.workflowConfigurationSummary?.id??""),[saving,setSaving]=useState(false),[conflict,setConflict]=useState(false);
   const key=useRef(newIdempotencyKey());
+  const drawerRef=useRef<HTMLElement>(null);
 
   const load=useCallback(async(signal?:AbortSignal)=>{
     setError(false);
@@ -101,6 +102,24 @@ function WorkflowDrawer({projectId,drawer,onClose,onSaved}:{projectId:string;dra
     return()=>window.removeEventListener("keydown",esc);
   },[onClose,saving]);
 
+  useEffect(()=>{
+    const panel=drawerRef.current;
+    if(!panel)return;
+    const first=panel.querySelector<HTMLElement>("input,button:not(:disabled),a[href]");
+    first?.focus();
+    const trap=(event:KeyboardEvent)=>{
+      if(event.key!=="Tab")return;
+      const focusable=[...panel.querySelectorAll<HTMLElement>("input,button:not(:disabled),a[href]")];
+      if(!focusable.length)return;
+      const current=document.activeElement as HTMLElement|null;
+      const index=focusable.indexOf(current as HTMLElement);
+      if(event.shiftKey&&index<=0){event.preventDefault();focusable.at(-1)?.focus()}
+      else if(!event.shiftKey&&index===focusable.length-1){event.preventDefault();focusable[0]?.focus()}
+    };
+    panel.addEventListener("keydown",trap);
+    return()=>panel.removeEventListener("keydown",trap);
+  },[]);
+
   const currentId = drawer.stage.workflowConfigurationSummary?.id ?? "";
   const isReplace = drawer.mode === "replace";
   const submitDisabled = !selected || saving || (isReplace && selected === currentId);
@@ -123,11 +142,11 @@ function WorkflowDrawer({projectId,drawer,onClose,onSaved}:{projectId:string;dra
   return (
     <div className="workflow-drawer-layer" role="presentation">
       <button className="workflow-drawer-backdrop" aria-label="关闭选择工作流" onClick={onClose} disabled={saving}/>
-      <aside className="workflow-binding-drawer" role="dialog" aria-modal="true" aria-labelledby="workflow-drawer-title">
+      <aside ref={drawerRef} className="workflow-binding-drawer" role="dialog" aria-modal="true" aria-labelledby="workflow-drawer-title">
         <header>
           <div>
-            <h2 id="workflow-drawer-title">{isReplace ? "更换工作流" : "选择工作流"}</h2>
-            <p>{stageLabels[drawer.stage.stage]} · 仅显示适用于此环节的工作流</p>
+            <h2 id="workflow-drawer-title">{isReplace ? `为「${stageLabels[drawer.stage.stage]}」更换工作流` : `为「${stageLabels[drawer.stage.stage]}」选择工作流`}</h2>
+            <p>仅显示适用于此环节的工作流</p>
           </div>
           <button onClick={onClose} disabled={saving} aria-label="关闭">×</button>
         </header>
@@ -135,6 +154,7 @@ function WorkflowDrawer({projectId,drawer,onClose,onSaved}:{projectId:string;dra
           <div className="workflow-drawer-search">
             <input autoFocus value={query} onChange={e=>setQuery(e.target.value)} placeholder="搜索工作流名称…"/>
           </div>
+          {!error && workflows && workflows.length > 0 && <p className="workflow-drawer-available">可用的全局工作流（{stageLabels[drawer.stage.stage]}）</p>}
           {error ? (
             <div className="workflow-binding-state" role="alert">
               <p>候选工作流加载失败。</p>
@@ -165,8 +185,6 @@ function WorkflowDrawer({projectId,drawer,onClose,onSaved}:{projectId:string;dra
                   riskType = "connection";
                 }
 
-                const description = stageDescriptions[drawer.stage.stage] || "适用于此环节的标准节点编排流程。";
-
                 return (
                   <label
                     key={w.id}
@@ -193,13 +211,13 @@ function WorkflowDrawer({projectId,drawer,onClose,onSaved}:{projectId:string;dra
                           )}
                         </div>
                       </header>
-                      <p className="candidate-description">{description}</p>
+                      {w.note && <p className="candidate-description">{formatWorkflowNote(w.note)}</p>}
                       <div className="candidate-meta">
-                        <span>类型：{w.workflowType}</span>
-                        <span>连接：{w.connectionName}（{w.connectionType}）</span>
+                        <span><i aria-hidden="true">◇</i>类型：{w.workflowType}</span>
+                        <span><i aria-hidden="true">↗</i>连接：{w.connectionName || "无关联连接"}</span>
                       </div>
                       {riskNotice && (
-                        <div className={`candidate-risk-line ${riskType}`}>
+                        <div className={`candidate-risk-line ${riskType} meta-item risk-${riskType}`}>
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
                           <span>{riskNotice}</span>
                         </div>
