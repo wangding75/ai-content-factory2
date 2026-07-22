@@ -5,6 +5,7 @@ import (
 	"errors"
 	"strings"
 	"time"
+	"unicode"
 
 	"github.com/google/uuid"
 )
@@ -174,6 +175,6 @@ func redactValue(value any) {
 	}
 }
 func isSensitiveKey(key string) bool {
-	normalized := strings.ToLower(strings.ReplaceAll(key, "_", ""))
-	return strings.Contains(normalized, "secret") || strings.Contains(normalized, "credential") || strings.Contains(normalized, "password") || strings.Contains(normalized, "apikey") || strings.Contains(normalized, "authorization") || strings.Contains(normalized, "token") || strings.Contains(normalized, "idempotency")
+	normalized := strings.Map(func(r rune) rune { if unicode.IsLetter(r) || unicode.IsDigit(r) { return unicode.ToLower(r) }; return -1 }, key)
+	return strings.Contains(normalized, "secret") || strings.Contains(normalized, "credential") || strings.Contains(normalized, "password") || strings.Contains(normalized, "apikey") || strings.Contains(normalized, "authorization") || strings.Contains(normalized, "token") || strings.Contains(normalized, "cookie") || strings.Contains(normalized, "idempotency")
 }

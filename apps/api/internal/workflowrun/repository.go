@@ -36,9 +36,12 @@ type ListFilter struct {
 	Limit, Offset                                                    int
 }
 type Summary struct {
-	TotalRuns, RunningCount  int
+	TotalRuns, ActiveRuns, RecentFailedRuns int
+	LastRunAt *time.Time
+	RecentRuns []WorkflowRun
+	// Compatibility fields remain for the repository contract completed in CF-14-02A.
+	RunningCount int
 	LatestFailure, LatestRun *WorkflowRun
-	RecentRuns               []WorkflowRun
 }
 
 func scanRun(row pgx.Row) (WorkflowRun, error) {
@@ -101,7 +104,7 @@ func (r *Repository) List(ctx context.Context, f ListFilter) ([]WorkflowRun, err
 		add("trigger_source=$%d", f.TriggerSource)
 	}
 	if f.RunNumber != "" {
-		add("run_number ILIKE '%%' || $%d || '%%'", f.RunNumber)
+		add("run_number=$%d", f.RunNumber)
 	}
 	if f.Query != "" {
 		add("run_number ILIKE '%%' || $%d || '%%'", f.Query)
@@ -139,6 +142,23 @@ func (r *Repository) List(ctx context.Context, f ListFilter) ([]WorkflowRun, err
 		return nil, fmt.Errorf("iterate workflow runs: %w", err)
 	}
 	return out, nil
+}
+func (r *Repository) Count(ctx context.Context, f ListFilter) (int, error) {
+	if f.StartTime != nil && f.EndTime != nil && f.StartTime.After(*f.EndTime) { return 0, ErrValidation }
+	q, args := "SELECT COUNT(*) FROM workflow_run_records WHERE TRUE", []any{}
+	add := func(clause string, value any) { args = append(args, value); q += fmt.Sprintf(" AND "+clause, len(args)) }
+	if f.ProjectID != nil { add("project_id=$%d", *f.ProjectID) }
+	if f.Stage != "" { add("stage=$%d", f.Stage) }
+	if f.WorkflowConfigurationID != "" { add("workflow_configuration_id=$%d", f.WorkflowConfigurationID) }
+	if f.Status != "" { add("status=$%d", f.Status) }
+	if f.TriggerSource != "" { add("trigger_source=$%d", f.TriggerSource) }
+	if f.RunNumber != "" { add("run_number=$%d", f.RunNumber) }
+	if f.Query != "" { add("run_number ILIKE '%%' || $%d || '%%'", f.Query) }
+	if f.StartTime != nil { add("created_at >= $%d", f.StartTime.UTC()) }
+	if f.EndTime != nil { add("created_at <= $%d", f.EndTime.UTC()) }
+	var total int
+	if err := r.db.QueryRow(ctx, q, args...).Scan(&total); err != nil { return 0, fmt.Errorf("count workflow runs: %w", err) }
+	return total, nil
 }
 func (r *Repository) UpdateStatus(ctx context.Context, value WorkflowRun) (WorkflowRun, error) {
 	if _, err := NewFromDB(value); err != nil {
@@ -226,25 +246,18 @@ func (r *Repository) UpdateStatusWithEvent(ctx context.Context, current, next Wo
 	return updated, createdEvent, nil
 }
 func (r *Repository) QuerySummary(ctx context.Context, projectID uuid.UUID, recentLimit int) (Summary, error) {
-	if recentLimit <= 0 || recentLimit > 20 {
-		recentLimit = 5
+	if recentLimit <= 0 || recentLimit > 3 {
+		recentLimit = 3
 	}
 	var s Summary
-	if err := r.db.QueryRow(ctx, "SELECT COUNT(*), COUNT(*) FILTER (WHERE status IN ('queued','running')) FROM workflow_run_records WHERE project_id=$1", projectID).Scan(&s.TotalRuns, &s.RunningCount); err != nil {
+	if err := r.db.QueryRow(ctx, "SELECT COUNT(*), COUNT(*) FILTER (WHERE status IN ('queued','running')), COUNT(*) FILTER (WHERE status='failed' AND created_at >= NOW() - INTERVAL '7 days'), MAX(created_at) FROM workflow_run_records WHERE project_id=$1", projectID).Scan(&s.TotalRuns, &s.ActiveRuns, &s.RecentFailedRuns, &s.LastRunAt); err != nil {
 		return Summary{}, fmt.Errorf("query workflow run totals: %w", err)
 	}
+	s.RunningCount = s.ActiveRuns
 	latest, err := scanRun(r.db.QueryRow(ctx, "SELECT "+runColumns+" FROM workflow_run_records WHERE project_id=$1 ORDER BY created_at DESC,id DESC LIMIT 1", projectID))
-	if err == nil {
-		s.LatestRun = &latest
-	} else if !errors.Is(err, pgx.ErrNoRows) {
-		return Summary{}, fmt.Errorf("query latest workflow run: %w", err)
-	}
+	if err == nil { s.LatestRun = &latest } else if !errors.Is(err, pgx.ErrNoRows) { return Summary{}, fmt.Errorf("query latest workflow run: %w", err) }
 	failure, err := scanRun(r.db.QueryRow(ctx, "SELECT "+runColumns+" FROM workflow_run_records WHERE project_id=$1 AND status='failed' ORDER BY finished_at DESC,id DESC LIMIT 1", projectID))
-	if err == nil {
-		s.LatestFailure = &failure
-	} else if !errors.Is(err, pgx.ErrNoRows) {
-		return Summary{}, fmt.Errorf("query latest failed workflow run: %w", err)
-	}
+	if err == nil { s.LatestFailure = &failure } else if !errors.Is(err, pgx.ErrNoRows) { return Summary{}, fmt.Errorf("query latest failed workflow run: %w", err) }
 	recent, err := r.List(ctx, ListFilter{ProjectID: &projectID, Limit: recentLimit})
 	if err != nil {
 		return Summary{}, err
