@@ -104,9 +104,9 @@ type Platform struct {
 	CredentialFingerprint *string         `json:"credentialFingerprint"`
 }
 type ListOptions struct {
-	Query, Type, ConnectionID, IntegrationStatus string
-	Enabled                                      *bool
-	Limit, Offset                                int
+	Query, Type, ConnectionID, IntegrationStatus, ApplicableStage string
+	Enabled                                                       *bool
+	Limit, Offset                                                 int
 }
 type ProviderCreate struct {
 	Name, ProviderType, BaseURL, DefaultModel string
@@ -623,6 +623,10 @@ func (s *Service) ListWorkflows(ctx context.Context, o ListOptions) ([]Workflow,
 	if o.Enabled != nil {
 		args = append(args, *o.Enabled)
 		where += map[bool]string{true: " AND", false: " WHERE"}[where != ""] + fmt.Sprintf(" w.enabled=$%d", len(args))
+	}
+	if o.ApplicableStage != "" {
+		args = append(args, o.ApplicableStage)
+		where += map[bool]string{true: " AND", false: " WHERE"}[where != ""] + fmt.Sprintf(" w.applicable_stages::jsonb ? $%d", len(args))
 	}
 	var n int
 	if e := s.pool.QueryRow(ctx, "SELECT COUNT(*) FROM workflow_configurations w JOIN workflow_connections c ON c.id=w.connection_id"+where, args...).Scan(&n); e != nil {

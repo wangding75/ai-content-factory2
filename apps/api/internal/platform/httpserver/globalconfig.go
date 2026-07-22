@@ -253,7 +253,20 @@ func configurationListOptions(w http.ResponseWriter, r *http.Request) (globalcon
 		writeError(w, r, 400, "validation_error", "invalid query", map[string]any{"fields": map[string]string{"type": "invalid_enum"}})
 		return o, false
 	}
+	o.ApplicableStage = strings.TrimSpace(r.URL.Query().Get("applicableStage"))
+	if o.ApplicableStage != "" && !validApplicableStage(o.ApplicableStage) {
+		writeError(w, r, 400, "validation_error", "invalid query", map[string]any{"fields": map[string]string{"applicableStage": "invalid_enum"}})
+		return o, false
+	}
 	return o, true
+}
+
+func validApplicableStage(v string) bool {
+	switch v {
+	case "chapter_planning", "content_generation", "review", "rewrite":
+		return true
+	}
+	return false
 }
 func configurationResult(w http.ResponseWriter, r *http.Request, x any, n int, o globalconfig.ListOptions, e error) {
 	if e != nil {

@@ -18,6 +18,7 @@ import (
 	"github.com/local/ai-content-factory/apps/api/internal/platform/httpserver"
 	"github.com/local/ai-content-factory/apps/api/internal/project"
 	"github.com/local/ai-content-factory/apps/api/internal/storyline"
+	"github.com/local/ai-content-factory/apps/api/internal/workflowbinding"
 )
 
 func main() {
@@ -49,7 +50,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	server := httpserver.New(cfg.APIAddress, projects, plannings, materials, projectMaterials, storylines, foreshadowings, chapterPlans, contentItems, iteration07, iteration08, globalConfigurations)
+	server := httpserver.New(cfg.APIAddress, projects, plannings, materials, projectMaterials, storylines, foreshadowings, chapterPlans, contentItems, iteration07, iteration08, globalConfigurations, workflowbinding.NewCloseLoop(pool, projectRepository, globalConfigurations))
 	log.Printf("api listening on %s", cfg.APIAddress)
 	if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 		log.Fatal(err)

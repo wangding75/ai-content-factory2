@@ -15,6 +15,7 @@ import (
 	"github.com/local/ai-content-factory/apps/api/internal/material"
 	"github.com/local/ai-content-factory/apps/api/internal/planning"
 	"github.com/local/ai-content-factory/apps/api/internal/project"
+	"github.com/local/ai-content-factory/apps/api/internal/workflowbinding"
 )
 
 type Server struct{ httpServer *http.Server }
@@ -92,6 +93,10 @@ func New(address string, projects *project.Service, services ...any) *Server {
 		case *globalconfig.Service:
 			if value != nil {
 				registerGlobalConfigurationRoutes(mux, value)
+			}
+		case *workflowbinding.CloseLoop:
+			if value != nil {
+				registerWorkflowBindingRoutes(mux, value.Service)
 			}
 		}
 	}
