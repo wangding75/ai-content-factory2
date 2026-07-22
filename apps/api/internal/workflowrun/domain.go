@@ -46,7 +46,6 @@ type WorkflowRun struct {
 	ErrorCode               *string
 	ErrorMessage            *string
 	ErrorDetails            json.RawMessage
-	IdempotencyKey          *string
 	RetryOfRunID            *uuid.UUID
 	StartedAt               *time.Time
 	FinishedAt              *time.Time
@@ -65,9 +64,9 @@ type Event struct {
 	CreatedAt time.Time
 }
 
-func New(id, projectID, workflowConfigurationID uuid.UUID, runNumber, stage, triggerSource string, snapshot, input json.RawMessage, idempotencyKey *string) (WorkflowRun, error) {
+func New(id, projectID, workflowConfigurationID uuid.UUID, runNumber, stage, triggerSource string, snapshot, input json.RawMessage) (WorkflowRun, error) {
 	now := time.Now().UTC()
-	run := WorkflowRun{ID: id, RunNumber: runNumber, ProjectID: projectID, Stage: stage, WorkflowConfigurationID: workflowConfigurationID, TriggerSource: triggerSource, Status: StatusQueued, ConfigurationSnapshot: RedactJSON(snapshot), InputPayload: RedactJSON(input), IdempotencyKey: trimOptional(idempotencyKey), CreatedAt: now, UpdatedAt: now, Version: 1}
+	run := WorkflowRun{ID: id, RunNumber: runNumber, ProjectID: projectID, Stage: stage, WorkflowConfigurationID: workflowConfigurationID, TriggerSource: triggerSource, Status: StatusQueued, ConfigurationSnapshot: RedactJSON(snapshot), InputPayload: RedactJSON(input), CreatedAt: now, UpdatedAt: now, Version: 1}
 	if err := run.validate(); err != nil {
 		return WorkflowRun{}, err
 	}
@@ -142,17 +141,6 @@ func (r WorkflowRun) validate() error {
 func validJSONObject(value json.RawMessage) bool {
 	return len(value) > 0 && json.Valid(value) && strings.HasPrefix(strings.TrimSpace(string(value)), "{")
 }
-func trimOptional(value *string) *string {
-	if value == nil {
-		return nil
-	}
-	trimmed := strings.TrimSpace(*value)
-	if trimmed == "" {
-		return nil
-	}
-	return &trimmed
-}
-
 // RedactJSON removes secret-bearing values before data becomes part of a durable run record.
 func RedactJSON(value json.RawMessage) json.RawMessage {
 	if !validJSONObject(value) {
@@ -187,5 +175,5 @@ func redactValue(value any) {
 }
 func isSensitiveKey(key string) bool {
 	normalized := strings.ToLower(strings.ReplaceAll(key, "_", ""))
-	return strings.Contains(normalized, "secret") || strings.Contains(normalized, "credential") || strings.Contains(normalized, "password") || strings.Contains(normalized, "apikey") || strings.Contains(normalized, "authorization") || strings.Contains(normalized, "token")
+	return strings.Contains(normalized, "secret") || strings.Contains(normalized, "credential") || strings.Contains(normalized, "password") || strings.Contains(normalized, "apikey") || strings.Contains(normalized, "authorization") || strings.Contains(normalized, "token") || strings.Contains(normalized, "idempotency")
 }

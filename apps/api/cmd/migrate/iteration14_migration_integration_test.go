@@ -25,4 +25,14 @@ func TestIteration14MigrationWorkflowRunRuntimeFinalState(t *testing.T) {
 			t.Fatalf("constraint %s exists=%t err=%v", constraint, exists, err)
 		}
 	}
+	var idempotencyColumnExists bool
+	if err := db.QueryRow(ctx, "SELECT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema=current_schema() AND table_name='workflow_run_records' AND column_name='idempotency_key')").Scan(&idempotencyColumnExists); err != nil || idempotencyColumnExists {
+		t.Fatalf("workflow_run_records idempotency_key exists=%t err=%v", idempotencyColumnExists, err)
+	}
+	for _, name := range []string{"workflow_run_records_idempotency_key_check", "workflow_run_records_project_stage_idempotency_key_unique"} {
+		var exists bool
+		if err := db.QueryRow(ctx, "SELECT EXISTS (SELECT 1 FROM pg_constraint WHERE conname=$1)", name).Scan(&exists); err != nil || exists {
+			t.Fatalf("idempotency constraint %s exists=%t err=%v", name, exists, err)
+		}
+	}
 }

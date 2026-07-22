@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
@@ -17,16 +18,21 @@ type queryer interface {
 	Query(context.Context, string, ...any) (pgx.Rows, error)
 	Exec(context.Context, string, ...any) (pgconn.CommandTag, error)
 }
-type Repository struct{ db queryer }
+type Repository struct {
+	db   queryer
+	pool *pgxpool.Pool
+}
 
-func NewPostgresRepository(pool *pgxpool.Pool) *Repository { return &Repository{db: pool} }
+func NewPostgresRepository(pool *pgxpool.Pool) *Repository { return &Repository{db: pool, pool: pool} }
 func NewPostgresRepositoryTx(tx pgx.Tx) *Repository        { return &Repository{db: tx} }
 
-const runColumns = "id, run_number, project_id, stage, workflow_configuration_id, trigger_source, status, configuration_snapshot, input_payload, output_payload, error_code, error_message, error_details, idempotency_key, retry_of_run_id, started_at, finished_at, cancelled_at, created_at, updated_at, version"
+const runColumns = "id, run_number, project_id, stage, workflow_configuration_id, trigger_source, status, configuration_snapshot, input_payload, output_payload, error_code, error_message, error_details, retry_of_run_id, started_at, finished_at, cancelled_at, created_at, updated_at, version"
 
 type ListFilter struct {
 	ProjectID                                                        *uuid.UUID
 	Stage, WorkflowConfigurationID, Status, TriggerSource, RunNumber string
+	Query                                                            string
+	StartTime, EndTime                                               *time.Time
 	Limit, Offset                                                    int
 }
 type Summary struct {
@@ -37,7 +43,7 @@ type Summary struct {
 
 func scanRun(row pgx.Row) (WorkflowRun, error) {
 	var r WorkflowRun
-	if err := row.Scan(&r.ID, &r.RunNumber, &r.ProjectID, &r.Stage, &r.WorkflowConfigurationID, &r.TriggerSource, &r.Status, &r.ConfigurationSnapshot, &r.InputPayload, &r.OutputPayload, &r.ErrorCode, &r.ErrorMessage, &r.ErrorDetails, &r.IdempotencyKey, &r.RetryOfRunID, &r.StartedAt, &r.FinishedAt, &r.CancelledAt, &r.CreatedAt, &r.UpdatedAt, &r.Version); err != nil {
+	if err := row.Scan(&r.ID, &r.RunNumber, &r.ProjectID, &r.Stage, &r.WorkflowConfigurationID, &r.TriggerSource, &r.Status, &r.ConfigurationSnapshot, &r.InputPayload, &r.OutputPayload, &r.ErrorCode, &r.ErrorMessage, &r.ErrorDetails, &r.RetryOfRunID, &r.StartedAt, &r.FinishedAt, &r.CancelledAt, &r.CreatedAt, &r.UpdatedAt, &r.Version); err != nil {
 		return WorkflowRun{}, err
 	}
 	return NewFromDB(r)
@@ -54,7 +60,7 @@ func scanEvent(row pgx.Row) (Event, error) {
 }
 
 func (r *Repository) Create(ctx context.Context, value WorkflowRun) (WorkflowRun, error) {
-	created, err := scanRun(r.db.QueryRow(ctx, "INSERT INTO workflow_run_records ("+runColumns+") VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21) RETURNING "+runColumns, value.ID, value.RunNumber, value.ProjectID, value.Stage, value.WorkflowConfigurationID, value.TriggerSource, value.Status, value.ConfigurationSnapshot, value.InputPayload, nullableJSON(value.OutputPayload), value.ErrorCode, value.ErrorMessage, nullableJSON(value.ErrorDetails), value.IdempotencyKey, value.RetryOfRunID, value.StartedAt, value.FinishedAt, value.CancelledAt, value.CreatedAt, value.UpdatedAt, value.Version))
+	created, err := scanRun(r.db.QueryRow(ctx, "INSERT INTO workflow_run_records ("+runColumns+") VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20) RETURNING "+runColumns, value.ID, value.RunNumber, value.ProjectID, value.Stage, value.WorkflowConfigurationID, value.TriggerSource, value.Status, value.ConfigurationSnapshot, value.InputPayload, nullableJSON(value.OutputPayload), value.ErrorCode, value.ErrorMessage, nullableJSON(value.ErrorDetails), value.RetryOfRunID, value.StartedAt, value.FinishedAt, value.CancelledAt, value.CreatedAt, value.UpdatedAt, value.Version))
 	if err != nil {
 		return WorkflowRun{}, fmt.Errorf("create workflow run: %w", err)
 	}
@@ -71,6 +77,9 @@ func (r *Repository) GetByID(ctx context.Context, id uuid.UUID) (WorkflowRun, er
 	return value, nil
 }
 func (r *Repository) List(ctx context.Context, f ListFilter) ([]WorkflowRun, error) {
+	if f.StartTime != nil && f.EndTime != nil && f.StartTime.After(*f.EndTime) {
+		return nil, ErrValidation
+	}
 	q, args := "SELECT "+runColumns+" FROM workflow_run_records WHERE TRUE", []any{}
 	add := func(clause string, value any) {
 		args = append(args, value)
@@ -92,7 +101,16 @@ func (r *Repository) List(ctx context.Context, f ListFilter) ([]WorkflowRun, err
 		add("trigger_source=$%d", f.TriggerSource)
 	}
 	if f.RunNumber != "" {
-		add("run_number ILIKE '%' || $%d || '%'", f.RunNumber)
+		add("run_number ILIKE '%%' || $%d || '%%'", f.RunNumber)
+	}
+	if f.Query != "" {
+		add("run_number ILIKE '%%' || $%d || '%%'", f.Query)
+	}
+	if f.StartTime != nil {
+		add("created_at >= $%d", f.StartTime.UTC())
+	}
+	if f.EndTime != nil {
+		add("created_at <= $%d", f.EndTime.UTC())
 	}
 	limit := f.Limit
 	if limit <= 0 || limit > 100 {
@@ -157,12 +175,62 @@ func (r *Repository) AddEvent(ctx context.Context, value Event) (Event, error) {
 	}
 	return created, nil
 }
+func (r *Repository) ListEvents(ctx context.Context, runID uuid.UUID) ([]Event, error) {
+	rows, err := r.db.Query(ctx, "SELECT id,run_id,event_type,status,payload,created_at FROM workflow_run_events WHERE run_id=$1 ORDER BY created_at ASC,id ASC", runID)
+	if err != nil {
+		return nil, fmt.Errorf("list workflow run events: %w", err)
+	}
+	defer rows.Close()
+	events := []Event{}
+	for rows.Next() {
+		event, err := scanEvent(rows)
+		if err != nil {
+			return nil, fmt.Errorf("scan workflow run event: %w", err)
+		}
+		events = append(events, event)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("iterate workflow run events: %w", err)
+	}
+	return events, nil
+}
+func (r *Repository) CreateWithInitialEvent(ctx context.Context, value WorkflowRun, event Event) (WorkflowRun, Event, error) {
+	if r.pool == nil || event.RunID != value.ID || event.Status != StatusQueued {
+		return WorkflowRun{}, Event{}, ErrValidation
+	}
+	tx, err := r.pool.Begin(ctx)
+	if err != nil { return WorkflowRun{}, Event{}, fmt.Errorf("begin workflow run creation transaction: %w", err) }
+	defer tx.Rollback(ctx)
+	txRepo := NewPostgresRepositoryTx(tx)
+	created, err := txRepo.Create(ctx, value)
+	if err != nil { return WorkflowRun{}, Event{}, err }
+	createdEvent, err := txRepo.AddEvent(ctx, event)
+	if err != nil { return WorkflowRun{}, Event{}, err }
+	if err = tx.Commit(ctx); err != nil { return WorkflowRun{}, Event{}, fmt.Errorf("commit workflow run creation transaction: %w", err) }
+	return created, createdEvent, nil
+}
+func (r *Repository) UpdateStatusWithEvent(ctx context.Context, current, next WorkflowRun, event Event) (WorkflowRun, Event, error) {
+	if r.pool == nil || current.ID != next.ID || next.Version != current.Version+1 || !canTransition(current.Status, next.Status) || event.RunID != current.ID || event.Status != next.Status {
+		return WorkflowRun{}, Event{}, ErrInvalidTransition
+	}
+	if _, err := NewFromDB(next); err != nil { return WorkflowRun{}, Event{}, err }
+	tx, err := r.pool.Begin(ctx)
+	if err != nil { return WorkflowRun{}, Event{}, fmt.Errorf("begin workflow run status transaction: %w", err) }
+	defer tx.Rollback(ctx)
+	txRepo := NewPostgresRepositoryTx(tx)
+	updated, err := txRepo.UpdateStatus(ctx, next)
+	if err != nil { return WorkflowRun{}, Event{}, err }
+	createdEvent, err := txRepo.AddEvent(ctx, event)
+	if err != nil { return WorkflowRun{}, Event{}, err }
+	if err = tx.Commit(ctx); err != nil { return WorkflowRun{}, Event{}, fmt.Errorf("commit workflow run status transaction: %w", err) }
+	return updated, createdEvent, nil
+}
 func (r *Repository) QuerySummary(ctx context.Context, projectID uuid.UUID, recentLimit int) (Summary, error) {
 	if recentLimit <= 0 || recentLimit > 20 {
 		recentLimit = 5
 	}
 	var s Summary
-	if err := r.db.QueryRow(ctx, "SELECT COUNT(*), COUNT(*) FILTER (WHERE status='running') FROM workflow_run_records WHERE project_id=$1", projectID).Scan(&s.TotalRuns, &s.RunningCount); err != nil {
+	if err := r.db.QueryRow(ctx, "SELECT COUNT(*), COUNT(*) FILTER (WHERE status IN ('queued','running')) FROM workflow_run_records WHERE project_id=$1", projectID).Scan(&s.TotalRuns, &s.RunningCount); err != nil {
 		return Summary{}, fmt.Errorf("query workflow run totals: %w", err)
 	}
 	latest, err := scanRun(r.db.QueryRow(ctx, "SELECT "+runColumns+" FROM workflow_run_records WHERE project_id=$1 ORDER BY created_at DESC,id DESC LIMIT 1", projectID))

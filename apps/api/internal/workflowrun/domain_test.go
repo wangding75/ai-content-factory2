@@ -11,7 +11,7 @@ import (
 
 func testRun(t *testing.T) WorkflowRun {
 	t.Helper()
-	value, err := New(uuid.New(), uuid.New(), uuid.New(), "WR-20260722-001", "review", "project", json.RawMessage(`{"workflowConfiguration":{"id":"safe"}}`), json.RawMessage(`{"subject":"safe"}`), nil)
+	value, err := New(uuid.New(), uuid.New(), uuid.New(), "WR-20260722-001", "review", "project", json.RawMessage(`{"workflowConfiguration":{"id":"safe"}}`), json.RawMessage(`{"subject":"safe"}`))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -68,11 +68,12 @@ func TestWorkflowRunRejectsIllegalTransitionAndInvalidFailure(t *testing.T) {
 	}
 }
 func TestWorkflowRunRedactsSensitivePayloadFields(t *testing.T) {
-	run, err := New(uuid.New(), uuid.New(), uuid.New(), "WR-20260722-002", "review", "project", json.RawMessage(`{"authorization":"Bearer secret","nested":{"api_key":"secret"}}`), json.RawMessage(`{"content":"safe"}`), nil)
+	run, err := New(uuid.New(), uuid.New(), uuid.New(), "WR-20260722-002", "review", "project", json.RawMessage(`{"authorization":"Bearer secret","nested":{"api_key":"secret"}}`), json.RawMessage(`{"content":"safe","idempotencyKey":"must-not-persist"}`))
 	if err != nil {
 		t.Fatal(err)
 	}
 	if string(run.ConfigurationSnapshot) != `{"authorization":"[REDACTED]","nested":{"api_key":"[REDACTED]"}}` {
 		t.Fatalf("snapshot=%s", run.ConfigurationSnapshot)
 	}
+	if string(run.InputPayload) != `{"content":"safe","idempotencyKey":"[REDACTED]"}` { t.Fatalf("input=%s", run.InputPayload) }
 }

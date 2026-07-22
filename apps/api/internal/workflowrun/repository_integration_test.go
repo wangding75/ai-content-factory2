@@ -3,6 +3,7 @@ package workflowrun
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"os"
 	"testing"
 	"time"
@@ -50,7 +51,7 @@ func fixture(t *testing.T, ctx context.Context, db *pgxpool.Pool) (uuid.UUID, uu
 }
 func newRun(t *testing.T, p, w uuid.UUID, n string) WorkflowRun {
 	t.Helper()
-	v, err := New(uuid.New(), p, w, n, "review", "project", json.RawMessage(`{"connection":{"type":"n8n"}}`), json.RawMessage(`{"content":"safe"}`), nil)
+	v, err := New(uuid.New(), p, w, n, "review", "project", json.RawMessage(`{"connection":{"type":"n8n"}}`), json.RawMessage(`{"content":"safe"}`))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -98,4 +99,104 @@ func TestRepositoryCRUDEventsAndSummary(t *testing.T) {
 	if summary.TotalRuns != 1 || summary.RunningCount != 0 || summary.LatestFailure == nil || summary.LatestRun == nil || len(summary.RecentRuns) != 1 {
 		t.Fatalf("summary=%+v", summary)
 	}
+}
+
+func TestRepositoryListQueryTimeAndPaginationFilters(t *testing.T) {
+	db, ctx := openDB(t)
+	repo := NewPostgresRepository(db)
+	p, w := fixture(t, ctx, db)
+	base := time.Date(2026, time.July, 22, 12, 0, 0, 0, time.UTC)
+	for index, number := range []string{"WR-ALPHA", "WR-BRAVO", "WR-CHARLIE"} {
+		run := newRun(t, p, w, number)
+		run.CreatedAt = base.Add(time.Duration(index) * time.Hour)
+		run.UpdatedAt = run.CreatedAt
+		if _, err := repo.Create(ctx, run); err != nil { t.Fatal(err) }
+	}
+	q, err := repo.List(ctx, ListFilter{ProjectID: &p, Query: "bravo"})
+	if err != nil || len(q) != 1 || q[0].RunNumber != "WR-BRAVO" { t.Fatalf("q list=%+v err=%v", q, err) }
+	noResult, err := repo.List(ctx, ListFilter{ProjectID: &p, Query: "missing"})
+	if err != nil || len(noResult) != 0 { t.Fatalf("empty q len=%d err=%v", len(noResult), err) }
+	start := base.Add(time.Hour)
+	fromStart, err := repo.List(ctx, ListFilter{ProjectID: &p, StartTime: &start})
+	if err != nil || len(fromStart) != 2 { t.Fatalf("start range len=%d err=%v", len(fromStart), err) }
+	end := base.Add(time.Hour)
+	toEnd, err := repo.List(ctx, ListFilter{ProjectID: &p, EndTime: &end})
+	if err != nil || len(toEnd) != 2 { t.Fatalf("end range len=%d err=%v", len(toEnd), err) }
+	between, err := repo.List(ctx, ListFilter{ProjectID: &p, StartTime: &start, EndTime: &end, Stage: "review"})
+	if err != nil || len(between) != 1 || between[0].RunNumber != "WR-BRAVO" { t.Fatalf("between=%+v err=%v", between, err) }
+	invalidEnd := base
+	if _, err = repo.List(ctx, ListFilter{ProjectID: &p, StartTime: &start, EndTime: &invalidEnd}); !errors.Is(err, ErrValidation) { t.Fatalf("invalid range=%v", err) }
+	page, err := repo.List(ctx, ListFilter{ProjectID: &p, Limit: 1, Offset: 1})
+	if err != nil || len(page) != 1 || page[0].RunNumber != "WR-BRAVO" { t.Fatalf("page=%+v err=%v", page, err) }
+}
+
+func TestRepositorySummaryCountsQueuedAndRunningOnly(t *testing.T) {
+	db, ctx := openDB(t)
+	repo := NewPostgresRepository(db)
+	p, w := fixture(t, ctx, db)
+	queued, err := repo.Create(ctx, newRun(t, p, w, "WR-SUMMARY-QUEUED"))
+	if err != nil { t.Fatal(err) }
+	running, err := queued.Start(time.Now().UTC())
+	if err != nil { t.Fatal(err) }
+	if _, err = repo.Create(ctx, newRun(t, p, w, "WR-SUMMARY-RUNNING")); err != nil { t.Fatal(err) }
+	storedRunning, err := repo.GetByID(ctx, queued.ID)
+	if err != nil { t.Fatal(err) }
+	if _, err = repo.UpdateStatus(ctx, running); err != nil { t.Fatal(err) }
+	_ = storedRunning
+	succeeded, err := newRun(t, p, w, "WR-SUMMARY-SUCCEEDED").Start(time.Now().UTC())
+	if err != nil { t.Fatal(err) }
+	succeeded, err = succeeded.Succeed(time.Now().UTC(), json.RawMessage(`{"ok":true}`))
+	if err != nil { t.Fatal(err) }
+	if _, err = repo.Create(ctx, succeeded); err != nil { t.Fatal(err) }
+	failed, err := newRun(t, p, w, "WR-SUMMARY-FAILED").Start(time.Now().UTC())
+	if err != nil { t.Fatal(err) }
+	failed, err = failed.Fail(time.Now().UTC(), Failure{Code: "FAILED", Message: "failed", Details: json.RawMessage(`{}`)})
+	if err != nil { t.Fatal(err) }
+	if _, err = repo.Create(ctx, failed); err != nil { t.Fatal(err) }
+	cancelled, err := newRun(t, p, w, "WR-SUMMARY-CANCELLED").Cancel(time.Now().UTC())
+	if err != nil { t.Fatal(err) }
+	if _, err = repo.Create(ctx, cancelled); err != nil { t.Fatal(err) }
+	summary, err := repo.QuerySummary(ctx, p, 10)
+	if err != nil || summary.TotalRuns != 5 || summary.RunningCount != 2 { t.Fatalf("summary=%+v err=%v", summary, err) }
+}
+
+func TestRepositoryAtomicRunAndEventWrites(t *testing.T) {
+	db, ctx := openDB(t)
+	repo := NewPostgresRepository(db)
+	p, w := fixture(t, ctx, db)
+	run := newRun(t, p, w, "WR-ATOMIC")
+	initial := Event{ID: uuid.New(), RunID: run.ID, EventType: "queued", Status: StatusQueued, Payload: json.RawMessage(`{}`), CreatedAt: time.Now().UTC()}
+	if _, _, err := repo.CreateWithInitialEvent(ctx, run, initial); err != nil { t.Fatal(err) }
+	events, err := repo.ListEvents(ctx, run.ID)
+	if err != nil || len(events) != 1 { t.Fatalf("initial events=%+v err=%v", events, err) }
+	next, err := run.Start(time.Now().UTC())
+	if err != nil { t.Fatal(err) }
+	if _, _, err = repo.UpdateStatusWithEvent(ctx, run, next, Event{ID: uuid.New(), RunID: run.ID, EventType: "worker_started", Status: StatusRunning, Payload: json.RawMessage(`{}`), CreatedAt: time.Now().UTC()}); err != nil { t.Fatal(err) }
+	rollbackRun := newRun(t, p, w, "WR-ROLLBACK-CREATE")
+	if _, _, err = repo.CreateWithInitialEvent(ctx, rollbackRun, Event{ID: uuid.New(), RunID: rollbackRun.ID, EventType: "queued", Status: StatusQueued, Payload: json.RawMessage(`[]`), CreatedAt: time.Now().UTC()}); !errors.Is(err, ErrValidation) { t.Fatalf("create validation=%v", err) }
+	if _, err = repo.GetByID(ctx, rollbackRun.ID); !errors.Is(err, ErrNotFound) { t.Fatalf("create rollback=%v", err) }
+	badNext, err := next.Succeed(time.Now().UTC(), json.RawMessage(`{"ok":true}`))
+	if err != nil { t.Fatal(err) }
+	_, _, err = repo.UpdateStatusWithEvent(ctx, next, badNext, Event{ID: uuid.New(), RunID: run.ID, EventType: "succeeded", Status: StatusSucceeded, Payload: json.RawMessage(`[]`), CreatedAt: time.Now().UTC()})
+	if !errors.Is(err, ErrValidation) { t.Fatalf("event failure=%v", err) }
+	current, err := repo.GetByID(ctx, run.ID)
+	if err != nil || current.Status != StatusRunning || current.Version != 2 { t.Fatalf("rollback status=%+v err=%v", current, err) }
+	events, err = repo.ListEvents(ctx, run.ID)
+	if err != nil || len(events) != 2 { t.Fatalf("rollback events=%+v err=%v", events, err) }
+	if _, _, err = repo.UpdateStatusWithEvent(ctx, run, next, Event{ID: uuid.New(), RunID: run.ID, EventType: "worker_started", Status: StatusRunning, Payload: json.RawMessage(`{}`), CreatedAt: time.Now().UTC()}); !errors.Is(err, ErrVersionConflict) { t.Fatalf("conflict=%v", err) }
+}
+
+func TestRepositoryListEventsHasStableCreatedAtIDOrder(t *testing.T) {
+	db, ctx := openDB(t)
+	repo := NewPostgresRepository(db)
+	p, w := fixture(t, ctx, db)
+	run, err := repo.Create(ctx, newRun(t, p, w, "WR-EVENT-ORDER"))
+	if err != nil { t.Fatal(err) }
+	at := time.Now().UTC()
+	firstID, secondID := uuid.New(), uuid.New()
+	if firstID.String() > secondID.String() { firstID, secondID = secondID, firstID }
+	if _, err = repo.AddEvent(ctx, Event{ID: secondID, RunID: run.ID, EventType: "queued", Status: StatusQueued, Payload: json.RawMessage(`{}`), CreatedAt: at}); err != nil { t.Fatal(err) }
+	if _, err = repo.AddEvent(ctx, Event{ID: firstID, RunID: run.ID, EventType: "queued", Status: StatusQueued, Payload: json.RawMessage(`{}`), CreatedAt: at}); err != nil { t.Fatal(err) }
+	events, err := repo.ListEvents(ctx, run.ID)
+	if err != nil || len(events) != 2 || events[0].ID != firstID { t.Fatalf("events=%+v err=%v", events, err) }
 }
