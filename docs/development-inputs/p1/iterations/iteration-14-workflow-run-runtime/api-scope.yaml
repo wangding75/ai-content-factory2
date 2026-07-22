@@ -1,6 +1,6 @@
 iteration: iteration-14-workflow-run-runtime
 title: n8n Adapter and WorkflowRun Runtime
-status: draft_for_contract_freeze
+status: frozen_cf_14_01
 
 apis:
   workflow_connections:
@@ -48,14 +48,14 @@ apis:
       purpose: Return the project run query aggregation used by the project overview.
 
 list_query:
-  supported: [projectId, stage, workflowConfigurationId, status, triggerSource, q, runNumber, from, to, limit, offset]
+  supported: [projectId, stage, workflowConfigurationId, status, triggerSource, runNumber, q, startTime, endTime, limit, offset]
   rules:
     - q and runNumber search the displayed run number.
     - project-side filtering and the global list use GET /api/v1/workflow-runs; no duplicate project run-list endpoint is added.
 
 common_requirements:
-  - POST commands use Idempotency-Key.
-  - Errors use the shared error structure.
+  - POST commands use Idempotency-Key and expectedVersion in their request body.
+  - Errors use the shared redacted ErrorEnvelope: error.code, error.message, error.details, request_id.
   - Verification errors, execution errors, snapshots and upstream responses are redacted; secrets are never returned.
   - WorkflowRun stores immutable binding and configuration snapshots without keys.
   - Worker execution is asynchronous and follows the frozen state machine.

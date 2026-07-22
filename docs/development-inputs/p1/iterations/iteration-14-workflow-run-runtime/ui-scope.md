@@ -30,3 +30,9 @@
 ## 范围边界
 
 本迭代激活 n8n 连接和工作流的验证、启用、停用，以及运行记录闭环；不激活 LLM Provider、分发平台、OAuth 或发布执行。运行状态与错误必须使用中文资源和脱敏 ViewModel。
+
+## 字段契约与资料存在性
+
+列表与详情使用 `runNumber` 作为用户可见编号；`status` 使用固定运行状态；`projectId` 只用于链接和筛选；`stage`、`workflowConfigurationId`、`triggerSource` 为筛选语义；`inputPayload`、`outputPayload`、`errorDetails` 仅展示 API 已脱敏且允许展示的内容；`version` 仅用于命令并发控制，不直接展示。时间字段为 `startedAt`、`finishedAt`、`cancelledAt`、`createdAt`、`updatedAt`。项目摘要为查询聚合，不对应新业务表。
+
+P14_01～P14_10 的 `code.html` 与 `screen.png` 均存在于 `ui/frames/{frameId}/`；设计基线为 `ui/design-system/DESIGN.md`。

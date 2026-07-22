@@ -1,5 +1,7 @@
 # Iteration 14 — n8n 适配与 WorkflowRun 异步运行 — 待执行验收清单
 
+**状态：未完成。** CF-14-01 仅冻结契约；下列 CF-14 后续验收项均不得因本任务标记完成。
+
 - [ ] n8n Adapter 支持连接验证、工作流验证和异步执行，凭证不写入日志、快照或响应。
 - [ ] WorkflowConnection 可以验证、启用和停用；仅验证成功的连接可启用，且最多一个连接启用。
 - [ ] WorkflowConfiguration 可以验证、启用和停用；启用前绑定连接已验证且已启用。
@@ -20,3 +22,13 @@
 - [ ] 数据库验收确认当前 Iteration 最终状态正确。
 - [ ] 不验证历史 Migration 回滚。
 - [ ] 不建设 callback server，不接入 LLM Provider 或分发平台执行。
+- [ ] API：实现并以真实服务验证连接/配置 verify、enable、disable，以及 WorkflowRun 创建、列表、详情、事件、重试、取消和项目摘要；响应符合冻结 OpenAPI。
+- [ ] 数据库终态：仅验证当前 Iteration 最终表结构、快照脱敏、运行及事件记录正确；不要求历史 Migration 回滚。
+- [ ] Worker：queued 运行被异步领取，n8n Webhook 响应、超时和输出校验均形成脱敏事件与正确终态。
+- [ ] 状态机：仅允许 `queued`、`running`、`succeeded`、`failed`、`cancelled` 及冻结的迁移；终态不可再变更。
+- [ ] 幂等与并发：所有命令验证 Idempotency-Key 和 expectedVersion；同键同载荷回放稳定，不同载荷或版本冲突返回统一错误。
+- [ ] 错误处理：`code`、`message`、`details`、`requestId` 语义完整，且不泄露密钥、Authorization、原始上游响应、SQL 或堆栈。
+- [ ] 重试与取消：重试创建新的 WorkflowRun 并保留旧记录；仅 queued/running 可取消并记录 cancelledAt。
+- [ ] UI：P14_01～P14_10 按冻结路由、筛选和弹窗语义实现；不得新增项目级运行列表路由或流程中心 Tab。
+- [ ] 浏览器验证：使用真实浏览器验证列表、详情、空态、错误恢复、确认/未绑定弹窗、取消和重试，无控制台错误或技术字段泄露。
+- [ ] 真实联调：以真实 API、PostgreSQL、Worker、n8n 和浏览器完成成功、失败、取消、重试与项目摘要闭环。

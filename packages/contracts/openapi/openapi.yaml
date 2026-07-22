@@ -770,19 +770,24 @@ paths:
         "500": {$ref: "#/components/responses/InternalServerError"}
   /api/v1/workflow-runs:
     get:
-      operationId: listGlobalWorkflowRuns
-      description: >
-        Read-only global WorkflowRun projection for E3. It lists existing runs only and never starts,
-        retries, edits, or orchestrates a run. Fixed stable order is started_at DESC, id DESC. project
-        is null only when the historical subject cannot be resolved to a project; a result navigation is
-        enabled only when project.id is present. error is a safe nullable user-facing summary and excludes
-        SQL, credentials, stacks, infrastructure paths, and provider configuration. Errors: 400
-        invalid_pagination; 500 internal_error.
-      parameters: [{$ref: "#/components/parameters/LimitQuery"}, {$ref: "#/components/parameters/OffsetQuery"}]
+      operationId: listWorkflowRuns
+      description: Global WorkflowRun list. Project and stage filters use this shared endpoint; no project-scoped duplicate list endpoint exists. Results are ordered by createdAt DESC, id DESC.
+      parameters: [{$ref: "#/components/parameters/WorkflowRunProjectIdQuery"}, {$ref: "#/components/parameters/WorkflowRunStageQuery"}, {$ref: "#/components/parameters/WorkflowRunConfigurationIdQuery"}, {$ref: "#/components/parameters/WorkflowRunStatusQuery"}, {$ref: "#/components/parameters/WorkflowRunTriggerSourceQuery"}, {$ref: "#/components/parameters/WorkflowRunNumberQuery"}, {$ref: "#/components/parameters/WorkflowRunQuery"}, {$ref: "#/components/parameters/WorkflowRunStartTimeQuery"}, {$ref: "#/components/parameters/WorkflowRunEndTimeQuery"}, {$ref: "#/components/parameters/LimitQuery"}, {$ref: "#/components/parameters/OffsetQuery"}]
       responses:
-        "200": {description: Global workflow run list., content: {application/json: {schema: {$ref: "#/components/schemas/GlobalWorkflowRunListEnvelope"}, example: {data: {items: [], total: 0, limit: 20, offset: 0}, request_id: req_08_runs}}}}
+        "200": {description: Workflow run list., content: {application/json: {schema: {$ref: "#/components/schemas/Iteration14WorkflowRunListEnvelope"}}}}
         "400": {$ref: "#/components/responses/BadRequest"}
         "500": {$ref: "#/components/responses/InternalServerError"}
+    post:
+      operationId: createWorkflowRun
+      description: Creates an idempotent queued run from an executable project-stage binding, captures a redacted configuration snapshot, and returns the new run for direct detail navigation.
+      parameters: [{$ref: "#/components/parameters/IdempotencyKey"}]
+      requestBody: {required: true, content: {application/json: {schema: {$ref: "#/components/schemas/CreateWorkflowRunRequest"}}}}
+      responses:
+        "201": {description: Queued workflow run created., content: {application/json: {schema: {$ref: "#/components/schemas/Iteration14WorkflowRunEnvelope"}}}}
+        "400": {$ref: "#/components/responses/BadRequest"}
+        "404": {$ref: "#/components/responses/NotFound"}
+        "409": {$ref: "#/components/responses/Conflict"}
+        "422": {$ref: "#/components/responses/UnprocessableEntity"}
   /api/v1/workflows/builtin:
     get:
       operationId: listBuiltinWorkflows
@@ -804,10 +809,10 @@ paths:
       responses:
         "200": {description: Integration descriptors., content: {application/json: {schema: {$ref: "#/components/schemas/IntegrationListEnvelope"}, example: {data: {items: []}, request_id: req_08_integrations}}}}
         "500": {$ref: "#/components/responses/InternalServerError"}
-  /api/v1/workflow-runs/{workflowRunId}:
-    parameters: [{$ref: "#/components/parameters/WorkflowRunId"}]
+  /api/v1/workflow-runs/{runId}:
+    parameters: [{$ref: "#/components/parameters/Iteration14WorkflowRunId"}]
     get:
-      operationId: getWorkflowRun
+      operationId: getWorkflowRunDetail
       description: >
         Returns one project-isolated WorkflowRun. A rewrite run includes provider mock, workflow key content_mock_rewrite, source ContentItem/v1/ReviewReport, nullable target v2, summaries, safe error information, idempotency key, fingerprint, and lifecycle timestamps. A run is created for each new-key attempt and transitions running to succeeded or failed. Failed runs are retained with null target v2 and never expose SQL, connection strings, stacks, service paths, or repository details. Error codes: 400 invalid_uuid; 404 workflow_run_not_found; 500 internal_error.
       responses:
@@ -815,10 +820,45 @@ paths:
           description: WorkflowRun detail.
           content:
             application/json:
-              schema: {$ref: "#/components/schemas/WorkflowRunDetailEnvelope"}
+              schema: {$ref: "#/components/schemas/Iteration14WorkflowRunEnvelope"}
         "400": {$ref: "#/components/responses/BadRequest"}
         "404": {$ref: "#/components/responses/NotFound"}
         "500": {$ref: "#/components/responses/InternalServerError"}
+  /api/v1/workflow-runs/{runId}/events:
+    parameters: [{$ref: "#/components/parameters/Iteration14WorkflowRunId"}]
+    get:
+      operationId: listWorkflowRunEvents
+      description: Returns the immutable, creation-ordered, redacted event timeline for one run.
+      responses:
+        "200": {description: Workflow run events., content: {application/json: {schema: {$ref: "#/components/schemas/WorkflowRunEventListEnvelope"}}}}
+        "400": {$ref: "#/components/responses/BadRequest"}
+        "404": {$ref: "#/components/responses/NotFound"}
+  /api/v1/workflow-runs/{runId}/retries:
+    parameters: [{$ref: "#/components/parameters/Iteration14WorkflowRunId"}]
+    post:
+      operationId: retryWorkflowRun
+      description: Creates a new queued WorkflowRun from a failed or cancelled source. The original run, snapshot and events remain immutable.
+      parameters: [{$ref: "#/components/parameters/IdempotencyKey"}]
+      requestBody: {required: true, content: {application/json: {schema: {$ref: "#/components/schemas/WorkflowRunCommandRequest"}}}}
+      responses:
+        "201": {description: Retry run created., content: {application/json: {schema: {$ref: "#/components/schemas/Iteration14WorkflowRunEnvelope"}}}}
+        "400": {$ref: "#/components/responses/BadRequest"}
+        "404": {$ref: "#/components/responses/NotFound"}
+        "409": {$ref: "#/components/responses/Conflict"}
+        "422": {$ref: "#/components/responses/UnprocessableEntity"}
+  /api/v1/workflow-runs/{runId}/cancel:
+    parameters: [{$ref: "#/components/parameters/Iteration14WorkflowRunId"}]
+    post:
+      operationId: cancelWorkflowRun
+      description: Requests cancellation only for queued or running runs; terminal runs are rejected.
+      parameters: [{$ref: "#/components/parameters/IdempotencyKey"}]
+      requestBody: {required: true, content: {application/json: {schema: {$ref: "#/components/schemas/WorkflowRunCommandRequest"}}}}
+      responses:
+        "200": {description: Workflow run cancelled., content: {application/json: {schema: {$ref: "#/components/schemas/Iteration14WorkflowRunEnvelope"}}}}
+        "400": {$ref: "#/components/responses/BadRequest"}
+        "404": {$ref: "#/components/responses/NotFound"}
+        "409": {$ref: "#/components/responses/Conflict"}
+        "422": {$ref: "#/components/responses/UnprocessableEntity"}
   /api/v1/llm-provider-types:
     get:
       operationId: listLlmProviderTypes
@@ -919,6 +959,30 @@ paths:
         "404": {$ref: "#/components/responses/NotFound"}
         "409": {$ref: "#/components/responses/Conflict"}
         "422": {$ref: "#/components/responses/UnprocessableEntity"}
+  /api/v1/workflow-connections/{connectionId}/verify:
+    parameters: [{$ref: "#/components/parameters/ConnectionId"}]
+    post:
+      operationId: verifyWorkflowConnection
+      description: Verifies a saved n8n connection through the adapter. Credential material and upstream response bodies are never returned.
+      parameters: [{$ref: "#/components/parameters/IdempotencyKey"}]
+      requestBody: {required: true, content: {application/json: {schema: {$ref: "#/components/schemas/WorkflowRunCommandRequest"}}}}
+      responses: {"200": {description: Verified connection., content: {application/json: {schema: {$ref: "#/components/schemas/WorkflowConnectionEnvelope"}}}}, "400": {$ref: "#/components/responses/BadRequest"}, "404": {$ref: "#/components/responses/NotFound"}, "409": {$ref: "#/components/responses/Conflict"}, "422": {$ref: "#/components/responses/UnprocessableEntity"}}
+  /api/v1/workflow-connections/{connectionId}/enable:
+    parameters: [{$ref: "#/components/parameters/ConnectionId"}]
+    post:
+      operationId: enableWorkflowConnection
+      description: Enables a verified connection and atomically disables the existing enabled connection.
+      parameters: [{$ref: "#/components/parameters/IdempotencyKey"}]
+      requestBody: {required: true, content: {application/json: {schema: {$ref: "#/components/schemas/WorkflowRunCommandRequest"}}}}
+      responses: {"200": {description: Enabled connection., content: {application/json: {schema: {$ref: "#/components/schemas/WorkflowConnectionEnvelope"}}}}, "400": {$ref: "#/components/responses/BadRequest"}, "404": {$ref: "#/components/responses/NotFound"}, "409": {$ref: "#/components/responses/Conflict"}, "422": {$ref: "#/components/responses/UnprocessableEntity"}}
+  /api/v1/workflow-connections/{connectionId}/disable:
+    parameters: [{$ref: "#/components/parameters/ConnectionId"}]
+    post:
+      operationId: disableWorkflowConnection
+      description: Disables a connection without deleting it.
+      parameters: [{$ref: "#/components/parameters/IdempotencyKey"}]
+      requestBody: {required: true, content: {application/json: {schema: {$ref: "#/components/schemas/WorkflowRunCommandRequest"}}}}
+      responses: {"200": {description: Disabled connection., content: {application/json: {schema: {$ref: "#/components/schemas/WorkflowConnectionEnvelope"}}}}, "400": {$ref: "#/components/responses/BadRequest"}, "404": {$ref: "#/components/responses/NotFound"}, "409": {$ref: "#/components/responses/Conflict"}, "422": {$ref: "#/components/responses/UnprocessableEntity"}}
   /api/v1/workflow-configurations:
     get:
       operationId: listWorkflowConfigurations
@@ -958,6 +1022,36 @@ paths:
         "404": {$ref: "#/components/responses/NotFound"}
         "409": {$ref: "#/components/responses/Conflict"}
         "422": {$ref: "#/components/responses/UnprocessableEntity"}
+  /api/v1/workflow-configurations/{workflowConfigurationId}/verify:
+    parameters: [{$ref: "#/components/parameters/Iteration14WorkflowConfigurationId"}]
+    post:
+      operationId: verifyWorkflowConfiguration
+      description: Verifies the Workflow ID or Webhook Path through its bound connection.
+      parameters: [{$ref: "#/components/parameters/IdempotencyKey"}]
+      requestBody: {required: true, content: {application/json: {schema: {$ref: "#/components/schemas/WorkflowRunCommandRequest"}}}}
+      responses: {"200": {description: Verified workflow configuration., content: {application/json: {schema: {$ref: "#/components/schemas/WorkflowConfigurationEnvelope"}}}}, "400": {$ref: "#/components/responses/BadRequest"}, "404": {$ref: "#/components/responses/NotFound"}, "409": {$ref: "#/components/responses/Conflict"}, "422": {$ref: "#/components/responses/UnprocessableEntity"}}
+  /api/v1/workflow-configurations/{workflowConfigurationId}/enable:
+    parameters: [{$ref: "#/components/parameters/Iteration14WorkflowConfigurationId"}]
+    post:
+      operationId: enableWorkflowConfiguration
+      description: Enables a verified workflow configuration only when its connection is verified and enabled.
+      parameters: [{$ref: "#/components/parameters/IdempotencyKey"}]
+      requestBody: {required: true, content: {application/json: {schema: {$ref: "#/components/schemas/WorkflowRunCommandRequest"}}}}
+      responses: {"200": {description: Enabled workflow configuration., content: {application/json: {schema: {$ref: "#/components/schemas/WorkflowConfigurationEnvelope"}}}}, "400": {$ref: "#/components/responses/BadRequest"}, "404": {$ref: "#/components/responses/NotFound"}, "409": {$ref: "#/components/responses/Conflict"}, "422": {$ref: "#/components/responses/UnprocessableEntity"}}
+  /api/v1/workflow-configurations/{workflowConfigurationId}/disable:
+    parameters: [{$ref: "#/components/parameters/Iteration14WorkflowConfigurationId"}]
+    post:
+      operationId: disableWorkflowConfiguration
+      description: Disables a workflow configuration without deleting it.
+      parameters: [{$ref: "#/components/parameters/IdempotencyKey"}]
+      requestBody: {required: true, content: {application/json: {schema: {$ref: "#/components/schemas/WorkflowRunCommandRequest"}}}}
+      responses: {"200": {description: Disabled workflow configuration., content: {application/json: {schema: {$ref: "#/components/schemas/WorkflowConfigurationEnvelope"}}}}, "400": {$ref: "#/components/responses/BadRequest"}, "404": {$ref: "#/components/responses/NotFound"}, "409": {$ref: "#/components/responses/Conflict"}, "422": {$ref: "#/components/responses/UnprocessableEntity"}}
+  /api/v1/projects/{projectId}/workflow-run-summary:
+    parameters: [{$ref: "#/components/parameters/ProjectId"}]
+    get:
+      operationId: getProjectWorkflowRunSummary
+      description: Query aggregation for project overview; it creates no business table.
+      responses: {"200": {description: Project workflow run aggregation., content: {application/json: {schema: {$ref: "#/components/schemas/ProjectWorkflowRunSummaryEnvelope"}}}}, "400": {$ref: "#/components/responses/BadRequest"}, "404": {$ref: "#/components/responses/NotFound"}}
   /api/v1/distribution-platform-types:
     get:
       operationId: listDistributionPlatformTypes
@@ -1325,6 +1419,52 @@ components:
         type: integer
         minimum: 0
         default: 0
+    Iteration14WorkflowRunId:
+      name: runId
+      in: path
+      required: true
+      schema: {type: string, format: uuid}
+    Iteration14WorkflowConfigurationId:
+      name: workflowConfigurationId
+      in: path
+      required: true
+      schema: {type: string, format: uuid}
+    WorkflowRunProjectIdQuery:
+      name: projectId
+      in: query
+      schema: {type: string, format: uuid}
+    WorkflowRunStageQuery:
+      name: stage
+      in: query
+      schema: {$ref: "#/components/schemas/ApplicableStage"}
+    WorkflowRunConfigurationIdQuery:
+      name: workflowConfigurationId
+      in: query
+      schema: {type: string, format: uuid}
+    WorkflowRunStatusQuery:
+      name: status
+      in: query
+      schema: {$ref: "#/components/schemas/Iteration14WorkflowRunStatus"}
+    WorkflowRunTriggerSourceQuery:
+      name: triggerSource
+      in: query
+      schema: {type: string, enum: [project, workflow_center, retry]}
+    WorkflowRunNumberQuery:
+      name: runNumber
+      in: query
+      schema: {type: string, maxLength: 80}
+    WorkflowRunQuery:
+      name: q
+      in: query
+      schema: {type: string, maxLength: 160}
+    WorkflowRunStartTimeQuery:
+      name: startTime
+      in: query
+      schema: {type: string, format: date-time}
+    WorkflowRunEndTimeQuery:
+      name: endTime
+      in: query
+      schema: {type: string, format: date-time}
   responses:
     BadRequest:
       description: "Invalid request. Error codes include INVALID_PROJECT_ID and VALIDATION_ERROR."
@@ -3360,3 +3500,91 @@ components:
       additionalProperties: false
       required: [data, request_id]
       properties: {data: {$ref: "#/components/schemas/UnbindProjectWorkflowBindingResult"}, request_id: {type: string}}
+    Iteration14WorkflowRunStatus:
+      type: string
+      enum: [queued, running, succeeded, failed, cancelled]
+    CreateWorkflowRunRequest:
+      type: object
+      additionalProperties: false
+      required: [projectId, stage, expectedVersion, inputPayload]
+      properties:
+        projectId: {type: string, format: uuid}
+        stage: {$ref: "#/components/schemas/ApplicableStage"}
+        expectedVersion: {type: integer, minimum: 1}
+        inputPayload: {type: object, additionalProperties: true}
+    WorkflowRunCommandRequest:
+      type: object
+      additionalProperties: false
+      required: [expectedVersion]
+      properties:
+        expectedVersion: {type: integer, minimum: 1}
+    Iteration14WorkflowRun:
+      type: object
+      additionalProperties: false
+      required: [id, runNumber, projectId, stage, workflowConfigurationId, triggerSource, status, inputPayload, outputPayload, errorCode, errorMessage, errorDetails, configurationSnapshot, startedAt, finishedAt, cancelledAt, createdAt, updatedAt, version]
+      properties:
+        id: {type: string, format: uuid}
+        runNumber: {type: string, minLength: 1, maxLength: 80}
+        projectId: {type: string, format: uuid}
+        stage: {$ref: "#/components/schemas/ApplicableStage"}
+        workflowConfigurationId: {type: string, format: uuid}
+        triggerSource: {type: string, enum: [project, workflow_center, retry]}
+        status: {$ref: "#/components/schemas/Iteration14WorkflowRunStatus"}
+        inputPayload: {type: object, additionalProperties: true, description: "Redacted, schema-validated input."}
+        outputPayload: {type: [object, "null"], additionalProperties: true, description: "Redacted, schema-validated output."}
+        errorCode: {type: [string, "null"], maxLength: 80}
+        errorMessage: {type: [string, "null"], maxLength: 300}
+        errorDetails: {type: [object, "null"], additionalProperties: true, description: Redacted display-safe details only.}
+        configurationSnapshot: {type: object, additionalProperties: true, description: Redacted execution-time configuration snapshot; never contains credentials.}
+        startedAt: {type: [string, "null"], format: date-time}
+        finishedAt: {type: [string, "null"], format: date-time}
+        cancelledAt: {type: [string, "null"], format: date-time}
+        createdAt: {type: string, format: date-time}
+        updatedAt: {type: string, format: date-time}
+        version: {type: integer, minimum: 1}
+    Iteration14WorkflowRunEnvelope:
+      type: object
+      additionalProperties: false
+      required: [data, request_id]
+      properties: {data: {$ref: "#/components/schemas/Iteration14WorkflowRun"}, request_id: {type: string}}
+    Iteration14WorkflowRunList:
+      type: object
+      additionalProperties: false
+      required: [items, total, limit, offset]
+      properties: {items: {type: array, items: {$ref: "#/components/schemas/Iteration14WorkflowRun"}}, total: {type: integer, minimum: 0}, limit: {type: integer, minimum: 1, maximum: 100}, offset: {type: integer, minimum: 0}}
+    Iteration14WorkflowRunListEnvelope:
+      type: object
+      additionalProperties: false
+      required: [data, request_id]
+      properties: {data: {$ref: "#/components/schemas/Iteration14WorkflowRunList"}, request_id: {type: string}}
+    WorkflowRunEvent:
+      type: object
+      additionalProperties: false
+      required: [id, runId, eventType, status, payload, createdAt]
+      properties:
+        id: {type: string, format: uuid}
+        runId: {type: string, format: uuid}
+        eventType: {type: string, enum: [queued, worker_started, request_sent, response_received, output_validated, succeeded, failed, cancelled, retry_created]}
+        status: {$ref: "#/components/schemas/Iteration14WorkflowRunStatus"}
+        payload: {type: object, additionalProperties: true, description: Redacted event payload.}
+        createdAt: {type: string, format: date-time}
+    WorkflowRunEventListEnvelope:
+      type: object
+      additionalProperties: false
+      required: [data, request_id]
+      properties: {data: {type: object, additionalProperties: false, required: [items], properties: {items: {type: array, items: {$ref: "#/components/schemas/WorkflowRunEvent"}}}}, request_id: {type: string}}
+    ProjectWorkflowRunSummary:
+      type: object
+      additionalProperties: false
+      required: [totalRuns, runningCount, latestFailedRun, latestRun, recentRuns]
+      properties:
+        totalRuns: {type: integer, minimum: 0}
+        runningCount: {type: integer, minimum: 0}
+        latestFailedRun: {anyOf: [{$ref: "#/components/schemas/Iteration14WorkflowRun"}, {type: "null"}]}
+        latestRun: {anyOf: [{$ref: "#/components/schemas/Iteration14WorkflowRun"}, {type: "null"}]}
+        recentRuns: {type: array, items: {$ref: "#/components/schemas/Iteration14WorkflowRun"}}
+    ProjectWorkflowRunSummaryEnvelope:
+      type: object
+      additionalProperties: false
+      required: [data, request_id]
+      properties: {data: {$ref: "#/components/schemas/ProjectWorkflowRunSummary"}, request_id: {type: string}}

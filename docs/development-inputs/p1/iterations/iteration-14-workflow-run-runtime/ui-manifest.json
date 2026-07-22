@@ -3,6 +3,8 @@
   "uiAcceptance": "PASS",
   "primaryRoute": "/workflow-runs",
   "detailRoute": "/workflow-runs/{runId}",
+  "contractFreeze": "CF-14-01",
+  "frameAssetsRequired": ["code.html", "screen.png"],
   "noWorkflowConfigurationTab": true,
   "projectEntryRoutes": {
     "allProjectRuns": "/workflow-runs?projectId={projectId}",
