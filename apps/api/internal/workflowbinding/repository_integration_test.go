@@ -18,6 +18,9 @@ func openIntegrationDB(t *testing.T) (*pgxpool.Pool, context.Context) {
 	t.Helper()
 	u := os.Getenv("TEST_DATABASE_URL")
 	if u == "" {
+		if os.Getenv("REQUIRE_POSTGRES_INTEGRATION") == "1" {
+			t.Fatalf("TEST_DATABASE_URL must be set when REQUIRE_POSTGRES_INTEGRATION=1")
+		}
 		t.Skip("TEST_DATABASE_URL is not set; PostgreSQL integration test skipped")
 	}
 	cfg, err := pgxpool.ParseConfig(u)
@@ -25,7 +28,7 @@ func openIntegrationDB(t *testing.T) (*pgxpool.Pool, context.Context) {
 		t.Fatalf("parse TEST_DATABASE_URL: %v", err)
 	}
 	if cfg.ConnConfig.Database != integrationDatabase {
-		t.Skipf("TEST_DATABASE_URL targets database %q, not %q; PostgreSQL integration test skipped", cfg.ConnConfig.Database, integrationDatabase)
+		t.Fatalf("TEST_DATABASE_URL database=%q, want %q", cfg.ConnConfig.Database, integrationDatabase)
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	t.Cleanup(cancel)
@@ -50,6 +53,7 @@ func insertProject(t *testing.T, ctx context.Context, db queryer, id uuid.UUID) 
 	if err != nil {
 		t.Fatalf("insert project fixture: %v", err)
 	}
+	t.Cleanup(func() { cleanupFixtureRow(t, db, "DELETE FROM projects WHERE id=$1", id) })
 }
 
 // insertWorkflowConfig inserts a minimal workflow_configuration row needed for FK constraints.
@@ -63,6 +67,7 @@ func insertWorkflowConfig(t *testing.T, ctx context.Context, db queryer, wfID, c
 	if err != nil {
 		t.Fatalf("insert connection fixture: %v", err)
 	}
+	t.Cleanup(func() { cleanupFixtureRow(t, db, "DELETE FROM workflow_connections WHERE id=$1 AND NOT EXISTS (SELECT 1 FROM workflow_configurations WHERE connection_id=$1)", connID) })
 	stagesJSON := "[]"
 	if len(stages) > 0 {
 		stagesJSON = "["
@@ -80,12 +85,22 @@ func insertWorkflowConfig(t *testing.T, ctx context.Context, db queryer, wfID, c
 	if err != nil {
 		t.Fatalf("insert workflow config fixture: %v", err)
 	}
+	t.Cleanup(func() { cleanupFixtureRow(t, db, "DELETE FROM workflow_configurations WHERE id=$1", wfID) })
+}
+
+func cleanupFixtureRow(t *testing.T, db queryer, sql string, args ...any) {
+	t.Helper()
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	if _, err := db.Exec(ctx, sql, args...); err != nil {
+		t.Errorf("cleanup fixture: %v", err)
+	}
 }
 
 // cleanupBinding removes test data inserted during a test.
 func cleanupBinding(t *testing.T, ctx context.Context, db queryer, id uuid.UUID) {
 	t.Helper()
-	_, _ = db.Exec(ctx, "DELETE FROM project_workflow_bindings WHERE id=$1", id)
+	cleanupFixtureRow(t, db, "DELETE FROM project_workflow_bindings WHERE id=$1", id)
 }
 
 // ── Repository Integration Tests ──────────────────────────────────────────

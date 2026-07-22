@@ -2,6 +2,7 @@ package workflowbinding
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"strings"
@@ -116,16 +117,16 @@ func countBindingsForProject(t *testing.T, ctx context.Context, db queryer, proj
 // tests do not leak rows across runs.
 func cleanupProjectBindings(t *testing.T, ctx context.Context, db queryer, projectID uuid.UUID) {
 	t.Helper()
-	_, _ = db.Exec(ctx, "DELETE FROM project_workflow_bindings WHERE project_id=$1", projectID)
+	cleanupFixtureRow(t, db, "DELETE FROM project_workflow_bindings WHERE project_id=$1", projectID)
 }
 
 func cleanupIdempotency(t *testing.T, ctx context.Context, db queryer, scope, key string) {
 	t.Helper()
-	_, _ = db.Exec(ctx, "DELETE FROM idempotency_records WHERE scope=$1 AND idempotency_key=$2", scope, key)
+	cleanupFixtureRow(t, db, "DELETE FROM idempotency_records WHERE scope=$1 AND idempotency_key=$2", scope, key)
 }
 
-func cleanupAuditForSubject(ctx context.Context, db queryer, subjectID string) {
-	_, _ = db.Exec(ctx, "DELETE FROM audit_logs WHERE subject_id=$1", subjectID)
+func cleanupAuditForSubject(t *testing.T, ctx context.Context, db queryer, subjectID string) {
+	cleanupFixtureRow(t, db, "DELETE FROM audit_logs WHERE subject_id=$1", subjectID)
 }
 
 // ── Service Unit Tests ────────────────────────────────────────────────────
@@ -214,7 +215,7 @@ func TestServicePutFirstBind(t *testing.T) {
 	}
 	t.Cleanup(func() {
 		cleanupBinding(t, context.Background(), pool, result.Binding.ID)
-		cleanupAuditForSubject(context.Background(), pool, result.Binding.ID.String())
+		cleanupAuditForSubject(t, context.Background(), pool, result.Binding.ID.String())
 	})
 	if !result.Created {
 		t.Fatal("Put() Created = false, want true")
@@ -252,7 +253,7 @@ func TestServicePutReplace(t *testing.T) {
 	}
 	t.Cleanup(func() {
 		cleanupBinding(t, context.Background(), pool, created.ID)
-		cleanupAuditForSubject(context.Background(), pool, created.ID.String())
+		cleanupAuditForSubject(t, context.Background(), pool, created.ID.String())
 	})
 
 	wf2 := newEnabledWorkflow(wfID2, []string{"review"})
@@ -301,7 +302,7 @@ func TestServicePutSameWorkflowNoOp(t *testing.T) {
 	}
 	t.Cleanup(func() {
 		cleanupBinding(t, context.Background(), pool, created.ID)
-		cleanupAuditForSubject(context.Background(), pool, created.ID.String())
+		cleanupAuditForSubject(t, context.Background(), pool, created.ID.String())
 	})
 
 	wf := newEnabledWorkflow(wfID, []string{"chapter_planning"})
@@ -339,7 +340,7 @@ func TestServiceDelete(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { cleanupAuditForSubject(context.Background(), pool, created.ID.String()) })
+	t.Cleanup(func() { cleanupAuditForSubject(t, context.Background(), pool, created.ID.String()) })
 
 	svc := NewService(pool, mockProjectRepo{}, mockWorkflowRepo{}, "system")
 	result, err := svc.Delete(ctx, projectID, StageRewrite, DeleteRequest{ExpectedVersion: 1})
@@ -455,7 +456,7 @@ func TestServicePutVersionConflict(t *testing.T) {
 	}
 	t.Cleanup(func() {
 		cleanupBinding(t, context.Background(), pool, created.ID)
-		cleanupAuditForSubject(context.Background(), pool, created.ID.String())
+		cleanupAuditForSubject(t, context.Background(), pool, created.ID.String())
 	})
 
 	wf2 := newEnabledWorkflow(wfID2, []string{"review"})
@@ -500,6 +501,36 @@ func TestServicePutExpectedVersionOnFirstBind(t *testing.T) {
 	_, err := svc.Put(ctx, projectID, StageChapterPlanning, PutRequest{WorkflowConfigurationID: wfID, ExpectedVersion: intPtr(1)})
 	if !errors.Is(err, ErrValidation) {
 		t.Fatalf("Put() expectedVersion on first bind error = %v, want ErrValidation", err)
+	}
+}
+
+func TestPutRequestExpectedVersionJSONSemantics(t *testing.T) {
+	cases := []struct {
+		name       string
+		body       string
+		provided   bool
+		version    *int
+		valid      bool
+	}{
+		{"omitted", `{"workflowConfigurationId":"11111111-1111-4111-8111-111111111111"}`, false, nil, true},
+		{"null", `{"workflowConfigurationId":"11111111-1111-4111-8111-111111111111","expectedVersion":null}`, true, nil, false},
+		{"zero", `{"workflowConfigurationId":"11111111-1111-4111-8111-111111111111","expectedVersion":0}`, true, intPtr(0), false},
+		{"negative", `{"workflowConfigurationId":"11111111-1111-4111-8111-111111111111","expectedVersion":-1}`, true, intPtr(-1), false},
+		{"positive", `{"workflowConfigurationId":"11111111-1111-4111-8111-111111111111","expectedVersion":1}`, true, intPtr(1), true},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			var req PutRequest
+			if err := json.Unmarshal([]byte(tc.body), &req); err != nil {
+				t.Fatalf("unmarshal request: %v", err)
+			}
+			if req.expectedVersionProvided != tc.provided || req.invalidExpectedVersion() == tc.valid {
+				t.Fatalf("provided=%t invalid=%t", req.expectedVersionProvided, req.invalidExpectedVersion())
+			}
+			if (req.ExpectedVersion == nil) != (tc.version == nil) || req.ExpectedVersion != nil && *req.ExpectedVersion != *tc.version {
+				t.Fatalf("expectedVersion=%v want %v", req.ExpectedVersion, tc.version)
+			}
+		})
 	}
 }
 
@@ -557,7 +588,7 @@ func TestServicePutConcurrentFirstBind(t *testing.T) {
 	if status != 201 {
 		t.Fatalf("first bind status = %d, want 201", status)
 	}
-	t.Cleanup(func() { cleanupAuditForSubject(context.Background(), pool, result.Binding.ID.String()) })
+	t.Cleanup(func() { cleanupAuditForSubject(t, context.Background(), pool, result.Binding.ID.String()) })
 
 	// Replay with the same key + payload returns the original 201 result and the
 	// same binding id, without a duplicate business write or audit.
@@ -787,7 +818,7 @@ func TestServicePutWithIdempotencySameKeySamePayload(t *testing.T) {
 	if status1 != 201 {
 		t.Fatalf("first status = %d, want 201", status1)
 	}
-	t.Cleanup(func() { cleanupAuditForSubject(context.Background(), pool, result1.Binding.ID.String()) })
+	t.Cleanup(func() { cleanupAuditForSubject(t, context.Background(), pool, result1.Binding.ID.String()) })
 
 	// Verify idempotency record exists with the correct hash.
 	record := idempotencyRecordFor(t, ctx, pool, scope, key)
@@ -849,7 +880,7 @@ func TestServicePutWithIdempotencySameKeyDifferentPayload(t *testing.T) {
 	if err != nil {
 		t.Fatalf("first put failed: %v", err)
 	}
-	t.Cleanup(func() { cleanupAuditForSubject(context.Background(), pool, result1.Binding.ID.String()) })
+	t.Cleanup(func() { cleanupAuditForSubject(t, context.Background(), pool, result1.Binding.ID.String()) })
 
 	_, _, err = svc.PutWithIdempotency(ctx, projectID, StageChapterPlanning, PutRequest{WorkflowConfigurationID: wfID2}, key)
 	if !errors.Is(err, ErrIdempotencyReused) {
@@ -900,7 +931,7 @@ func TestServicePutReplayPreservesStatusCode(t *testing.T) {
 	if status != 201 {
 		t.Fatalf("create status = %d, want 201", status)
 	}
-	t.Cleanup(func() { cleanupAuditForSubject(context.Background(), pool, created.Binding.ID.String()) })
+	t.Cleanup(func() { cleanupAuditForSubject(t, context.Background(), pool, created.Binding.ID.String()) })
 	if _, s, err := svc.PutWithIdempotency(ctx, projectID, StageReview, PutRequest{WorkflowConfigurationID: wfID1}, createKey); err != nil || s != 201 {
 		t.Fatalf("create replay status=%d err=%v, want 201", s, err)
 	}
@@ -946,7 +977,7 @@ func TestServiceDeleteWithIdempotencySameKeySamePayload(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { cleanupAuditForSubject(context.Background(), pool, created.ID.String()) })
+	t.Cleanup(func() { cleanupAuditForSubject(t, context.Background(), pool, created.ID.String()) })
 
 	svc := NewService(pool, mockProjectRepo{}, mockWorkflowRepo{}, "system")
 	key := "idem-del-key-" + uuid.New().String()[:8]
@@ -1016,7 +1047,7 @@ func TestServicePutNoOpDoesNotWriteOrAudit(t *testing.T) {
 	}
 	t.Cleanup(func() {
 		cleanupBinding(t, context.Background(), pool, created.ID)
-		cleanupAuditForSubject(context.Background(), pool, created.ID.String())
+		cleanupAuditForSubject(t, context.Background(), pool, created.ID.String())
 	})
 
 	wf := newEnabledWorkflow(wfID, []string{"chapter_planning"})
@@ -1070,7 +1101,7 @@ func TestServiceDeleteVersionConflict(t *testing.T) {
 	}
 	t.Cleanup(func() {
 		cleanupBinding(t, context.Background(), pool, created.ID)
-		cleanupAuditForSubject(context.Background(), pool, created.ID.String())
+		cleanupAuditForSubject(t, context.Background(), pool, created.ID.String())
 	})
 
 	svc := NewService(pool, mockProjectRepo{}, mockWorkflowRepo{}, "system")
@@ -1099,7 +1130,7 @@ func TestServiceDeleteVersionConflictDetails(t *testing.T) {
 	}
 	t.Cleanup(func() {
 		cleanupBinding(t, context.Background(), pool, created.ID)
-		cleanupAuditForSubject(context.Background(), pool, created.ID.String())
+		cleanupAuditForSubject(t, context.Background(), pool, created.ID.String())
 	})
 
 	svc := NewService(pool, mockProjectRepo{}, mockWorkflowRepo{}, "system")

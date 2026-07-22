@@ -2,6 +2,7 @@ package workflowbinding
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"strings"
@@ -84,6 +85,43 @@ func (s *Service) loadSummary(ctx context.Context, workflowID uuid.UUID) (ReadWo
 type PutRequest struct {
 	WorkflowConfigurationID uuid.UUID `json:"workflowConfigurationId"`
 	ExpectedVersion         *int      `json:"expectedVersion"`
+	expectedVersionProvided bool
+}
+
+// UnmarshalJSON preserves the distinction between an omitted expectedVersion
+// (valid for a first bind) and an explicit null (always invalid).
+func (r *PutRequest) UnmarshalJSON(data []byte) error {
+	var fields map[string]json.RawMessage
+	if err := json.Unmarshal(data, &fields); err != nil {
+		return err
+	}
+	for name := range fields {
+		if name != "workflowConfigurationId" && name != "expectedVersion" {
+			return fmt.Errorf("unknown field %q", name)
+		}
+	}
+	if raw, ok := fields["workflowConfigurationId"]; ok {
+		if err := json.Unmarshal(raw, &r.WorkflowConfigurationID); err != nil {
+			return err
+		}
+	}
+	r.ExpectedVersion = nil
+	r.expectedVersionProvided = false
+	if raw, ok := fields["expectedVersion"]; ok {
+		r.expectedVersionProvided = true
+		if string(raw) != "null" {
+			var version int
+			if err := json.Unmarshal(raw, &version); err != nil {
+				return err
+			}
+			r.ExpectedVersion = &version
+		}
+	}
+	return nil
+}
+
+func (r PutRequest) invalidExpectedVersion() bool {
+	return r.expectedVersionProvided && r.ExpectedVersion == nil || r.ExpectedVersion != nil && *r.ExpectedVersion < 1
 }
 
 // PutResult reports the operation result and whether it was a no-op.
@@ -103,6 +141,9 @@ func (s *Service) Put(ctx context.Context, projectID uuid.UUID, stage WorkflowBi
 		return PutResult{}, err
 	}
 	if req.WorkflowConfigurationID == uuid.Nil {
+		return PutResult{}, ErrValidation
+	}
+	if req.invalidExpectedVersion() {
 		return PutResult{}, ErrValidation
 	}
 	wf, err := s.workflows.GetWorkflow(ctx, req.WorkflowConfigurationID)
@@ -260,6 +301,9 @@ func (s *Service) putTx(ctx context.Context, tx pgx.Tx, projectID uuid.UUID, sta
 		return PutResult{}, err
 	}
 	if req.WorkflowConfigurationID == uuid.Nil {
+		return PutResult{}, ErrValidation
+	}
+	if req.invalidExpectedVersion() {
 		return PutResult{}, ErrValidation
 	}
 	wf, err := s.workflows.GetWorkflow(ctx, req.WorkflowConfigurationID)
@@ -420,7 +464,7 @@ func (s *Service) idempotent(ctx context.Context, scope, key, hash string, fn fu
 		return nil, 0, err
 	}
 	if _, err := idempotency.NewPostgresRepositoryTx(tx).Create(ctx, idempotency.Record{ID: uuid.New(), Scope: scope, Key: key, RequestHash: hash, ResponseStatus: status, ResponseBody: body}); err != nil {
-		if isUniqueViolation(err) {
+		if errors.Is(err, idempotency.ErrConflict) {
 			return nil, 0, ErrIdempotencyReused
 		}
 		return nil, 0, fmt.Errorf("create idempotency record: %w", err)

@@ -106,7 +106,7 @@ func (h *workflowBindingHandler) delete(w http.ResponseWriter, r *http.Request) 
 func workflowBindingPathUUID(w http.ResponseWriter, r *http.Request, name string) (uuid.UUID, bool) {
 	id, err := uuid.Parse(strings.TrimSpace(r.PathValue(name)))
 	if err != nil {
-		writeError(w, r, http.StatusBadRequest, "validation_error", "projectId must be a UUID", map[string]any{"fields": map[string]string{strings.ToLower(name): "invalid_uuid"}})
+		writeError(w, r, http.StatusBadRequest, "validation_error", "projectId must be a UUID", map[string]any{"fields": map[string]string{name: "invalid_uuid"}})
 		return uuid.Nil, false
 	}
 	return id, true

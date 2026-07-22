@@ -126,6 +126,30 @@ func TestWorkflowBindingRoutesRegistered(t *testing.T) {
 	}
 }
 
+func TestWorkflowBindingInvalidProjectIDUsesContractFieldName(t *testing.T) {
+	h := workflowBindingTestHandler(&fakeBindingService{})
+	w := doWorkflowBindingRequest(h, http.MethodGet, "/api/v1/projects/not-a-uuid/workflow-bindings", "", "")
+	if w.Code != http.StatusBadRequest {
+		t.Fatalf("status=%d body=%s", w.Code, w.Body.String())
+	}
+	var envelope struct {
+		Error struct {
+			Details struct {
+				Fields map[string]string `json:"fields"`
+			} `json:"details"`
+		} `json:"error"`
+	}
+	if err := json.Unmarshal(w.Body.Bytes(), &envelope); err != nil {
+		t.Fatalf("decode error: %v", err)
+	}
+	if envelope.Error.Details.Fields["projectId"] != "invalid_uuid" {
+		t.Fatalf("projectId field=%q", envelope.Error.Details.Fields["projectId"])
+	}
+	if _, found := envelope.Error.Details.Fields["projectid"]; found {
+		t.Fatalf("unexpected lower-case projectid field: %s", w.Body.String())
+	}
+}
+
 func TestWorkflowBindingGetFourStagesFixedOrder(t *testing.T) {
 	projectID := uuid.MustParse("11111111-1111-4111-8111-111111111111")
 	svc := &fakeBindingService{
@@ -590,17 +614,7 @@ func TestWorkflowBindingHandlerIntegration(t *testing.T) {
 	connID := uuid.New()
 	wfID := uuid.New()
 
-	t.Cleanup(func() {
-		cleanCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-		defer cancel()
-		pStr := projectID.String()
-		_, _ = pool.Exec(cleanCtx, "DELETE FROM project_workflow_bindings WHERE project_id = $1", projectID)
-		_, _ = pool.Exec(cleanCtx, "DELETE FROM idempotency_records WHERE scope LIKE $1", "workflow_binding:"+pStr+"%")
-		_, _ = pool.Exec(cleanCtx, "DELETE FROM audit_logs WHERE payload->>'projectId' = $1 OR payload->>'project_id' = $1", pStr)
-		_, _ = pool.Exec(cleanCtx, "DELETE FROM workflow_configurations WHERE id = $1", wfID)
-		_, _ = pool.Exec(cleanCtx, "DELETE FROM workflow_connections WHERE id = $1", connID)
-		_, _ = pool.Exec(cleanCtx, "DELETE FROM projects WHERE id = $1", projectID)
-	})
+	t.Cleanup(func() { cleanupWorkflowBindingHTTPFixture(t, pool, projectID, wfID, connID) })
 
 	insertWorkflowBindingProject(t, ctx, pool, projectID)
 	insertWorkflowBindingWorkflow(t, ctx, pool, wfID, connID, []string{"chapter_planning"})
@@ -657,15 +671,7 @@ func TestWorkflowBindingHandlerIntegration(t *testing.T) {
 func TestWorkflowBindingHandlerIntegrationValidation(t *testing.T) {
 	pool, ctx := workflowBindingIntegrationDatabase(t)
 	projectID := uuid.New()
-	t.Cleanup(func() {
-		cleanCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-		defer cancel()
-		pStr := projectID.String()
-		_, _ = pool.Exec(cleanCtx, "DELETE FROM project_workflow_bindings WHERE project_id = $1", projectID)
-		_, _ = pool.Exec(cleanCtx, "DELETE FROM idempotency_records WHERE scope LIKE $1", "workflow_binding:"+pStr+"%")
-		_, _ = pool.Exec(cleanCtx, "DELETE FROM audit_logs WHERE payload->>'projectId' = $1 OR payload->>'project_id' = $1", pStr)
-		_, _ = pool.Exec(cleanCtx, "DELETE FROM projects WHERE id = $1", projectID)
-	})
+	t.Cleanup(func() { cleanupWorkflowBindingHTTPFixture(t, pool, projectID, uuid.Nil, uuid.Nil) })
 
 	insertWorkflowBindingProject(t, ctx, pool, projectID)
 	h := workflowBindingIntegrationServer(t, pool)
@@ -685,6 +691,9 @@ func TestWorkflowBindingHandlerIntegrationValidation(t *testing.T) {
 		code string
 	}{
 		{"missing idempotency key put", http.MethodPut, "/api/v1/projects/" + projectID.String() + "/workflow-bindings/chapter_planning", `{"workflowConfigurationId":"22222222-2222-4222-8222-222222222222"}`, "", 400, "validation_error"},
+		{"null expectedVersion put", http.MethodPut, "/api/v1/projects/" + projectID.String() + "/workflow-bindings/chapter_planning", `{"workflowConfigurationId":"22222222-2222-4222-8222-222222222222","expectedVersion":null}`, "key-null", 400, "validation_error"},
+		{"zero expectedVersion put", http.MethodPut, "/api/v1/projects/" + projectID.String() + "/workflow-bindings/chapter_planning", `{"workflowConfigurationId":"22222222-2222-4222-8222-222222222222","expectedVersion":0}`, "key-zero", 400, "validation_error"},
+		{"negative expectedVersion put", http.MethodPut, "/api/v1/projects/" + projectID.String() + "/workflow-bindings/chapter_planning", `{"workflowConfigurationId":"22222222-2222-4222-8222-222222222222","expectedVersion":-1}`, "key-negative", 400, "validation_error"},
 		{"missing expected_version", http.MethodDelete, "/api/v1/projects/" + projectID.String() + "/workflow-bindings/chapter_planning", "", "key", 400, "validation_error"},
 		{"expected_version zero", http.MethodDelete, "/api/v1/projects/" + projectID.String() + "/workflow-bindings/chapter_planning?expected_version=0", "", "key", 400, "validation_error"},
 		{"invalid project id", http.MethodGet, "/api/v1/projects/bad-uuid/workflow-bindings", "", "", 400, "validation_error"},
@@ -759,6 +768,33 @@ func insertWorkflowBindingWorkflow(t *testing.T, ctx context.Context, pool *pgxp
 		VALUES ($1, $2, $3, $4::jsonb, '{}', 'v1', 'v1', '{}', true, $5, $6)`, wfID, "test-wf-"+wfID.String()[:8], connID, raw, now, now)
 	if err != nil {
 		t.Fatalf("insert workflow fixture: %v", err)
+	}
+}
+
+func cleanupWorkflowBindingHTTPFixture(t *testing.T, pool *pgxpool.Pool, projectID, workflowID, connectionID uuid.UUID) {
+	t.Helper()
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	project := projectID.String()
+	queries := []struct {
+		query string
+		args  []any
+	}{
+		{"DELETE FROM project_workflow_bindings WHERE project_id=$1", []any{projectID}},
+		{"DELETE FROM idempotency_records WHERE scope LIKE $1", []any{"project_workflow_binding:%:" + project + ":%"}},
+		{"DELETE FROM audit_logs WHERE payload->>'projectId'=$1 OR payload->>'project_id'=$1", []any{project}},
+		{"DELETE FROM workflow_configurations WHERE id=$1", []any{workflowID}},
+		{"DELETE FROM workflow_connections WHERE id=$1", []any{connectionID}},
+		{"DELETE FROM projects WHERE id=$1", []any{projectID}},
+	}
+	for _, q := range queries {
+		if _, err := pool.Exec(ctx, q.query, q.args...); err != nil {
+			t.Errorf("cleanup workflow binding HTTP fixture: %v", err)
+		}
+	}
+	var remaining int
+	if err := pool.QueryRow(ctx, "SELECT (SELECT COUNT(*) FROM projects WHERE id=$1) + (SELECT COUNT(*) FROM workflow_connections WHERE id=$2) + (SELECT COUNT(*) FROM workflow_configurations WHERE id=$3) + (SELECT COUNT(*) FROM project_workflow_bindings WHERE project_id=$1)", projectID, connectionID, workflowID).Scan(&remaining); err != nil || remaining != 0 {
+		t.Errorf("workflow binding HTTP fixture remained rows=%d err=%v", remaining, err)
 	}
 }
 
