@@ -10,6 +10,7 @@ test("project overview keeps real project types, progress-driven navigation, and
   assert.doesNotMatch(source, /<button disabled>添加项目素材<\/button>/);
   assert.doesNotMatch(source, /素材暂未开放/);
   assert.match(source, /types\[project\.type\]/);
-  assert.match(source, /const nextStep = nextSteps\[project\.current_stage\]/);
+  assert.match(source, /const nextStep = !planningCompleted/);
+  assert.match(source, /配置工作流/);
   assert.match(source, /href=\{`\/projects\/\$\{id\}\/\$\{nextStep\.href\}`\}/);
 });

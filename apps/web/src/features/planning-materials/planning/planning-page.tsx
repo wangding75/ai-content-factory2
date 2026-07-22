@@ -203,6 +203,7 @@ export function PlanningPage({ projectId, project }: { projectId: string; projec
             <h2>项目策划</h2>
             <p>明确创作方向，让后续的素材与故事创作保持一致。</p>
           </div>
+          {planningCompleted && <Link className="planning-workflow-shortcut" href={`/projects/${projectId}/settings?tab=workflow-bindings`}>配置工作流</Link>}
           {dirty && (
             <div className="planning-dirty">
               <span>

@@ -9,6 +9,8 @@ import {
   type ProjectStatus,
 } from "@/lib/api";
 import { ProjectWorkspaceFrame } from "@/features/planning-materials/components/project-workspace-frame";
+import { getProjectPlanningFromApi } from "@/features/planning-materials/api/planning-http-api";
+import { listProjectWorkflowBindings } from "@/features/workflow-bindings/workflow-binding-api";
 const stages: Record<ProjectStage, string> = {
   project_setup: "项目准备",
   project_planning: "项目策划",
@@ -89,13 +91,19 @@ export default async function ProjectOverviewPage({
     );
   try {
     const { project, progress } = await getProjectWorkspace(id);
+    const [planning, bindings] = await Promise.all([
+      getProjectPlanningFromApi(id).catch(() => null),
+      listProjectWorkflowBindings(id).catch(() => null),
+    ]);
     const cards = [
       ["archive", progress.material_count, "项目素材"],
       ["timeline", progress.storyline_count, "故事线节点"],
       ["book", progress.confirmed_chapter_count, "已确认章节"],
       ["movie", progress.work_count, "发布作品"],
     ] as const;
-    const nextStep = nextSteps[project.current_stage];
+    const planningCompleted = Boolean(planning && planning.version > 0 && (planning.premise.trim() || planning.audience.trim() || planning.style.trim() || planning.goals_json.plot_summary.trim() || planning.goals_json.selling_points.length || planning.constraints_json.emotional_tone.trim()));
+    const bindingsComplete = bindings?.items.every((item) => item.bound) ?? false;
+    const nextStep = !planningCompleted ? { message: "请先完成项目策划，明确后续创作方向。", action: "完成项目策划", href: "planning" as const } : !bindingsComplete ? { message: "项目策划已完成，请为四个创作环节配置工作流。", action: "配置工作流", href: "settings?tab=workflow-bindings" as const } : nextSteps[project.current_stage];
     return (
       <AppShell active="projects"><ProjectWorkspaceFrame project={project} active="overview">
         <main className="overview-main">
