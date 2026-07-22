@@ -63,9 +63,22 @@ func TestIteration14FrozenWorkflowRuntimeContract(t *testing.T) {
 		"enum: [queued, running, succeeded, failed, cancelled]",
 		"inputPayload", "outputPayload", "errorCode", "errorMessage", "errorDetails", "configurationSnapshot",
 		"error:", "code:", "message:", "details:", "request_id:",
+		"WorkflowRunRetryRequest:", "useCurrentConfiguration:", "inputOverride:",
+		"enum: [manual, retry, system, api]", "activeRuns:", "recentFailedRuns:", "lastRunAt:",
 	} {
 		if !strings.Contains(text, fragment) {
 			t.Fatalf("Iteration 14 schema or error wire fragment missing: %s", fragment)
 		}
+	}
+
+	createStart := strings.Index(text, "    CreateWorkflowRunRequest:")
+	commandStart := strings.Index(text, "    WorkflowRunCommandRequest:")
+	if createStart < 0 || commandStart < 0 || createStart >= commandStart { t.Fatal("workflow run request schemas missing or unordered") }
+	createSchema := text[createStart:commandStart]
+	if strings.Contains(createSchema, "expectedVersion") || strings.Contains(createSchema, "expected_version") { t.Fatal("CreateWorkflowRunRequest must not contain expectedVersion") }
+	if !strings.Contains(text, "Version of the WorkflowRun named by runId.") || !strings.Contains(text, "Version of the original WorkflowRun named by runId.") { t.Fatal("run command version targets must be explicit") }
+	if strings.Contains(text, "requestId") || strings.Contains(text, "workflow_center") { t.Fatal("Iteration 14 must use request_id and frozen trigger sources") }
+	for _, fragment := range []string{"inclusive lower bound for WorkflowRun.createdAt", "Exact displayed run number match", "contains match on runNumber only", "WorkflowRun status snapshot after this event is written"} {
+		if !strings.Contains(text, fragment) { t.Fatalf("missing frozen Iteration 14 semantics: %s", fragment) }
 	}
 }

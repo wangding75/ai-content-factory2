@@ -54,13 +54,22 @@ list_query:
     - project-side filtering and the global list use GET /api/v1/workflow-runs; no duplicate project run-list endpoint is added.
 
 common_requirements:
-  - POST commands use Idempotency-Key and expectedVersion in their request body.
+  - Create WorkflowRun uses Idempotency-Key and has no expectedVersion; Cancel and Retry expectedVersion target the path runId WorkflowRun.version; connection/configuration commands target their path resource version.
   - Errors use the shared redacted ErrorEnvelope: error.code, error.message, error.details, request_id.
   - Verification errors, execution errors, snapshots and upstream responses are redacted; secrets are never returned.
   - WorkflowRun stores immutable binding and configuration snapshots without keys.
   - Worker execution is asynchronous and follows the frozen state machine.
   - n8n is invoked through webhook HTTP response; no callback server is built.
   - CF-14-01 will place the final interfaces in the authoritative OpenAPI.
+
+workflow_run_semantics:
+  trigger_sources: [manual, retry, system, api]
+  retry: "failed/cancelled only; defaults to the source snapshot/input; useCurrentConfiguration resolves current runnable binding/configuration/connection; inputOverride fully replaces input."
+  list_time_range: "startTime/endTime are inclusive RFC 3339 bounds on createdAt."
+  list_search: "runNumber is exact; q is case-insensitive contains on runNumber; both combine with AND."
+  summary: "totalRuns all; activeRuns queued+running; recentFailedRuns failed created in last 7x24h; lastRunAt latest createdAt; recentRuns <=3 by createdAt DESC,id DESC."
+  event_status: "Required WorkflowRun five-state snapshot after event write; not an event lifecycle."
+  idempotency: "Use shared operationId plus target-resource scope and stable payload hash; create target is projectId+stage, cancel/retry target is runId."
 
 not_in_scope:
   - Distribution-platform binding or execution

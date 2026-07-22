@@ -779,7 +779,7 @@ paths:
         "500": {$ref: "#/components/responses/InternalServerError"}
     post:
       operationId: createWorkflowRun
-      description: Creates an idempotent queued run from an executable project-stage binding, captures a redacted configuration snapshot, and returns the new run for direct detail navigation.
+      description: Creates an idempotent queued run from the current executable project-stage binding, captures actual resource versions in a redacted configuration snapshot, and returns the new run. Creation has no expectedVersion because no WorkflowRun exists yet.
       parameters: [{$ref: "#/components/parameters/IdempotencyKey"}]
       requestBody: {required: true, content: {application/json: {schema: {$ref: "#/components/schemas/CreateWorkflowRunRequest"}}}}
       responses:
@@ -837,9 +837,9 @@ paths:
     parameters: [{$ref: "#/components/parameters/Iteration14WorkflowRunId"}]
     post:
       operationId: retryWorkflowRun
-      description: Creates a new queued WorkflowRun from a failed or cancelled source. The original run, snapshot and events remain immutable.
+      description: Creates a new queued WorkflowRun from a failed or cancelled source. expectedVersion targets the original runId WorkflowRun.version. By default it reuses the original snapshot and input; useCurrentConfiguration=true reads the current runnable binding/configuration/connection, and inputOverride fully replaces the input. The original run, snapshot and events remain immutable.
       parameters: [{$ref: "#/components/parameters/IdempotencyKey"}]
-      requestBody: {required: true, content: {application/json: {schema: {$ref: "#/components/schemas/WorkflowRunCommandRequest"}}}}
+      requestBody: {required: true, content: {application/json: {schema: {$ref: "#/components/schemas/WorkflowRunRetryRequest"}}}}
       responses:
         "201": {description: Retry run created., content: {application/json: {schema: {$ref: "#/components/schemas/Iteration14WorkflowRunEnvelope"}}}}
         "400": {$ref: "#/components/responses/BadRequest"}
@@ -850,7 +850,7 @@ paths:
     parameters: [{$ref: "#/components/parameters/Iteration14WorkflowRunId"}]
     post:
       operationId: cancelWorkflowRun
-      description: Requests cancellation only for queued or running runs; terminal runs are rejected.
+      description: Requests cancellation only for queued or running runs; terminal runs are rejected. expectedVersion targets the runId WorkflowRun.version.
       parameters: [{$ref: "#/components/parameters/IdempotencyKey"}]
       requestBody: {required: true, content: {application/json: {schema: {$ref: "#/components/schemas/WorkflowRunCommandRequest"}}}}
       responses:
@@ -963,7 +963,7 @@ paths:
     parameters: [{$ref: "#/components/parameters/ConnectionId"}]
     post:
       operationId: verifyWorkflowConnection
-      description: Verifies a saved n8n connection through the adapter. Credential material and upstream response bodies are never returned.
+      description: Verifies a saved n8n connection through the adapter. expectedVersion targets connectionId WorkflowConnection.version. Credential material and upstream response bodies are never returned.
       parameters: [{$ref: "#/components/parameters/IdempotencyKey"}]
       requestBody: {required: true, content: {application/json: {schema: {$ref: "#/components/schemas/WorkflowRunCommandRequest"}}}}
       responses: {"200": {description: Verified connection., content: {application/json: {schema: {$ref: "#/components/schemas/WorkflowConnectionEnvelope"}}}}, "400": {$ref: "#/components/responses/BadRequest"}, "404": {$ref: "#/components/responses/NotFound"}, "409": {$ref: "#/components/responses/Conflict"}, "422": {$ref: "#/components/responses/UnprocessableEntity"}}
@@ -971,7 +971,7 @@ paths:
     parameters: [{$ref: "#/components/parameters/ConnectionId"}]
     post:
       operationId: enableWorkflowConnection
-      description: Enables a verified connection and atomically disables the existing enabled connection.
+      description: Enables a verified connection and atomically disables the existing enabled connection. expectedVersion targets connectionId WorkflowConnection.version.
       parameters: [{$ref: "#/components/parameters/IdempotencyKey"}]
       requestBody: {required: true, content: {application/json: {schema: {$ref: "#/components/schemas/WorkflowRunCommandRequest"}}}}
       responses: {"200": {description: Enabled connection., content: {application/json: {schema: {$ref: "#/components/schemas/WorkflowConnectionEnvelope"}}}}, "400": {$ref: "#/components/responses/BadRequest"}, "404": {$ref: "#/components/responses/NotFound"}, "409": {$ref: "#/components/responses/Conflict"}, "422": {$ref: "#/components/responses/UnprocessableEntity"}}
@@ -979,7 +979,7 @@ paths:
     parameters: [{$ref: "#/components/parameters/ConnectionId"}]
     post:
       operationId: disableWorkflowConnection
-      description: Disables a connection without deleting it.
+      description: Disables a connection without deleting it. expectedVersion targets connectionId WorkflowConnection.version.
       parameters: [{$ref: "#/components/parameters/IdempotencyKey"}]
       requestBody: {required: true, content: {application/json: {schema: {$ref: "#/components/schemas/WorkflowRunCommandRequest"}}}}
       responses: {"200": {description: Disabled connection., content: {application/json: {schema: {$ref: "#/components/schemas/WorkflowConnectionEnvelope"}}}}, "400": {$ref: "#/components/responses/BadRequest"}, "404": {$ref: "#/components/responses/NotFound"}, "409": {$ref: "#/components/responses/Conflict"}, "422": {$ref: "#/components/responses/UnprocessableEntity"}}
@@ -1026,7 +1026,7 @@ paths:
     parameters: [{$ref: "#/components/parameters/Iteration14WorkflowConfigurationId"}]
     post:
       operationId: verifyWorkflowConfiguration
-      description: Verifies the Workflow ID or Webhook Path through its bound connection.
+      description: Verifies the Workflow ID or Webhook Path through its bound connection. expectedVersion targets workflowConfigurationId WorkflowConfiguration.version.
       parameters: [{$ref: "#/components/parameters/IdempotencyKey"}]
       requestBody: {required: true, content: {application/json: {schema: {$ref: "#/components/schemas/WorkflowRunCommandRequest"}}}}
       responses: {"200": {description: Verified workflow configuration., content: {application/json: {schema: {$ref: "#/components/schemas/WorkflowConfigurationEnvelope"}}}}, "400": {$ref: "#/components/responses/BadRequest"}, "404": {$ref: "#/components/responses/NotFound"}, "409": {$ref: "#/components/responses/Conflict"}, "422": {$ref: "#/components/responses/UnprocessableEntity"}}
@@ -1034,7 +1034,7 @@ paths:
     parameters: [{$ref: "#/components/parameters/Iteration14WorkflowConfigurationId"}]
     post:
       operationId: enableWorkflowConfiguration
-      description: Enables a verified workflow configuration only when its connection is verified and enabled.
+      description: Enables a verified workflow configuration only when its connection is verified and enabled. expectedVersion targets workflowConfigurationId WorkflowConfiguration.version.
       parameters: [{$ref: "#/components/parameters/IdempotencyKey"}]
       requestBody: {required: true, content: {application/json: {schema: {$ref: "#/components/schemas/WorkflowRunCommandRequest"}}}}
       responses: {"200": {description: Enabled workflow configuration., content: {application/json: {schema: {$ref: "#/components/schemas/WorkflowConfigurationEnvelope"}}}}, "400": {$ref: "#/components/responses/BadRequest"}, "404": {$ref: "#/components/responses/NotFound"}, "409": {$ref: "#/components/responses/Conflict"}, "422": {$ref: "#/components/responses/UnprocessableEntity"}}
@@ -1042,7 +1042,7 @@ paths:
     parameters: [{$ref: "#/components/parameters/Iteration14WorkflowConfigurationId"}]
     post:
       operationId: disableWorkflowConfiguration
-      description: Disables a workflow configuration without deleting it.
+      description: Disables a workflow configuration without deleting it. expectedVersion targets workflowConfigurationId WorkflowConfiguration.version.
       parameters: [{$ref: "#/components/parameters/IdempotencyKey"}]
       requestBody: {required: true, content: {application/json: {schema: {$ref: "#/components/schemas/WorkflowRunCommandRequest"}}}}
       responses: {"200": {description: Disabled workflow configuration., content: {application/json: {schema: {$ref: "#/components/schemas/WorkflowConfigurationEnvelope"}}}}, "400": {$ref: "#/components/responses/BadRequest"}, "404": {$ref: "#/components/responses/NotFound"}, "409": {$ref: "#/components/responses/Conflict"}, "422": {$ref: "#/components/responses/UnprocessableEntity"}}
@@ -1050,7 +1050,7 @@ paths:
     parameters: [{$ref: "#/components/parameters/ProjectId"}]
     get:
       operationId: getProjectWorkflowRunSummary
-      description: Query aggregation for project overview; it creates no business table.
+      description: Query aggregation for project overview; it creates no business table. totalRuns counts all runs; activeRuns counts queued plus running; recentFailedRuns counts failed runs created in the last 7x24 hours; lastRunAt is the latest createdAt; recentRuns is at most 3 ordered by createdAt DESC, id DESC.
       responses: {"200": {description: Project workflow run aggregation., content: {application/json: {schema: {$ref: "#/components/schemas/ProjectWorkflowRunSummaryEnvelope"}}}}, "400": {$ref: "#/components/responses/BadRequest"}, "404": {$ref: "#/components/responses/NotFound"}}
   /api/v1/distribution-platform-types:
     get:
@@ -1448,22 +1448,27 @@ components:
     WorkflowRunTriggerSourceQuery:
       name: triggerSource
       in: query
-      schema: {type: string, enum: [project, workflow_center, retry]}
+      description: Exact WorkflowRun trigger source.
+      schema: {$ref: "#/components/schemas/WorkflowRunTriggerSource"}
     WorkflowRunNumberQuery:
       name: runNumber
       in: query
+      description: Exact displayed run number match.
       schema: {type: string, maxLength: 80}
     WorkflowRunQuery:
       name: q
       in: query
+      description: Case-insensitive contains match on runNumber only; does not search workflow, project, stage, status, or errors.
       schema: {type: string, maxLength: 160}
     WorkflowRunStartTimeQuery:
       name: startTime
       in: query
+      description: RFC 3339 inclusive lower bound for WorkflowRun.createdAt.
       schema: {type: string, format: date-time}
     WorkflowRunEndTimeQuery:
       name: endTime
       in: query
+      description: RFC 3339 inclusive upper bound for WorkflowRun.createdAt; must be greater than or equal to startTime.
       schema: {type: string, format: date-time}
   responses:
     BadRequest:
@@ -3506,18 +3511,28 @@ components:
     CreateWorkflowRunRequest:
       type: object
       additionalProperties: false
-      required: [projectId, stage, expectedVersion, inputPayload]
+      required: [projectId, stage, inputPayload]
       properties:
         projectId: {type: string, format: uuid}
         stage: {$ref: "#/components/schemas/ApplicableStage"}
-        expectedVersion: {type: integer, minimum: 1}
         inputPayload: {type: object, additionalProperties: true}
     WorkflowRunCommandRequest:
       type: object
       additionalProperties: false
       required: [expectedVersion]
       properties:
-        expectedVersion: {type: integer, minimum: 1}
+        expectedVersion: {type: integer, minimum: 1, description: Version of the WorkflowRun named by runId.}
+    WorkflowRunRetryRequest:
+      type: object
+      additionalProperties: false
+      required: [expectedVersion]
+      properties:
+        expectedVersion: {type: integer, minimum: 1, description: Version of the original WorkflowRun named by runId.}
+        useCurrentConfiguration: {type: boolean, default: false, description: When false reuse the immutable source snapshot; when true resolve the current runnable configuration.}
+        inputOverride: {type: object, additionalProperties: true, description: Complete replacement for the new run inputPayload; it is not deep-merged.}
+    WorkflowRunTriggerSource:
+      type: string
+      enum: [manual, retry, system, api]
     Iteration14WorkflowRun:
       type: object
       additionalProperties: false
@@ -3528,8 +3543,8 @@ components:
         projectId: {type: string, format: uuid}
         stage: {$ref: "#/components/schemas/ApplicableStage"}
         workflowConfigurationId: {type: string, format: uuid}
-        triggerSource: {type: string, enum: [project, workflow_center, retry]}
-        status: {$ref: "#/components/schemas/Iteration14WorkflowRunStatus"}
+        triggerSource: {$ref: "#/components/schemas/WorkflowRunTriggerSource"}
+        status: {$ref: "#/components/schemas/Iteration14WorkflowRunStatus", description: WorkflowRun status snapshot after this event is written; event status is not an independent lifecycle.}
         inputPayload: {type: object, additionalProperties: true, description: "Redacted, schema-validated input."}
         outputPayload: {type: [object, "null"], additionalProperties: true, description: "Redacted, schema-validated output."}
         errorCode: {type: [string, "null"], maxLength: 80}
@@ -3565,7 +3580,7 @@ components:
         id: {type: string, format: uuid}
         runId: {type: string, format: uuid}
         eventType: {type: string, enum: [queued, worker_started, request_sent, response_received, output_validated, succeeded, failed, cancelled, retry_created]}
-        status: {$ref: "#/components/schemas/Iteration14WorkflowRunStatus"}
+        status: {$ref: "#/components/schemas/Iteration14WorkflowRunStatus", description: WorkflowRun status snapshot after this event is written; event status is not an independent lifecycle.}
         payload: {type: object, additionalProperties: true, description: Redacted event payload.}
         createdAt: {type: string, format: date-time}
     WorkflowRunEventListEnvelope:
@@ -3576,13 +3591,13 @@ components:
     ProjectWorkflowRunSummary:
       type: object
       additionalProperties: false
-      required: [totalRuns, runningCount, latestFailedRun, latestRun, recentRuns]
+      required: [totalRuns, activeRuns, recentFailedRuns, lastRunAt, recentRuns]
       properties:
-        totalRuns: {type: integer, minimum: 0}
-        runningCount: {type: integer, minimum: 0}
-        latestFailedRun: {anyOf: [{$ref: "#/components/schemas/Iteration14WorkflowRun"}, {type: "null"}]}
-        latestRun: {anyOf: [{$ref: "#/components/schemas/Iteration14WorkflowRun"}, {type: "null"}]}
-        recentRuns: {type: array, items: {$ref: "#/components/schemas/Iteration14WorkflowRun"}}
+        totalRuns: {type: integer, minimum: 0, description: All WorkflowRuns for the project.}
+        activeRuns: {type: integer, minimum: 0, description: Runs whose status is queued or running.}
+        recentFailedRuns: {type: integer, minimum: 0, description: Failed runs with createdAt in the preceding 7x24 hours.}
+        lastRunAt: {type: [string, "null"], format: date-time, description: createdAt of the latest run, or null.}
+        recentRuns: {type: array, maxItems: 3, items: {$ref: "#/components/schemas/Iteration14WorkflowRun"}, description: At most 3 runs ordered by createdAt DESC, id DESC.}
     ProjectWorkflowRunSummaryEnvelope:
       type: object
       additionalProperties: false

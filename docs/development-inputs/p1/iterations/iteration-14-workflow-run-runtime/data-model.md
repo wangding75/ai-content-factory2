@@ -48,3 +48,4 @@
 - 完整重试始终创建新的 `WorkflowRun`，通过 `retry_of_run_id` 关联；原运行记录、快照和事件不可修改。
 - 项目运行摘要是对 WorkflowRun 的查询聚合，不新增重复业务表；提供总运行次数、运行中、最近失败、最近运行和最近运行列表。
 - 数据库验收只要求当前 Iteration 的最终状态正确，不要求历史版本 Migration 回滚。
+# CF-14-01-R1 clarification: WorkflowRun.version controls existing-run commands only; CreateRun has no expectedVersion. Snapshots record actual binding/configuration/connection IDs and versions. triggerSource is manual, retry, system, or api. Retry is failed/cancelled only, creates a queued child, defaults to source snapshot/input, can resolve current runnable configuration, and inputOverride fully replaces child input. startTime/endTime are inclusive RFC 3339 createdAt bounds; runNumber is exact and q is case-insensitive runNumber contains. Summary is query-only: totalRuns, activeRuns (queued+running), recentFailedRuns in 7x24h, lastRunAt, and <=3 recentRuns by createdAt DESC,id DESC. Event status is the persisted WorkflowRun state snapshot, not an event lifecycle.

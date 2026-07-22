@@ -21,3 +21,4 @@ Worker 领取 queued 运行后进入 running，调用 n8n Webhook，校验输出
 ## 重试与边界
 
 失败详情的完整重试创建新的 WorkflowRun 并记录 `retryOfRunId`；原运行、快照和事件不可修改。Iteration 14 不包含分发平台绑定或执行，也不包含 LLM Provider 执行。
+# CF-14-01-R1 clarification: CreateRun is idempotent and has no expectedVersion. Cancel/Retry expectedVersion targets runId WorkflowRun.version; Retry is failed/cancelled only, defaults to source snapshot/input, supports current configuration and complete inputOverride replacement. Shared Idempotency-Key replay returns the first response without duplicate writes. List time filters are inclusive createdAt bounds; runNumber is exact and q is runNumber contains. Summary is totalRuns, activeRuns (queued+running), recentFailedRuns (7x24h), lastRunAt, and <=3 recentRuns. Event status is a WorkflowRun status snapshot.
