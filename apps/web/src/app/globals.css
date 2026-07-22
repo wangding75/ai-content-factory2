@@ -285,7 +285,7 @@ button,a { -webkit-tap-highlight-color:transparent; }
 .workflow-binding-card .badge-danger{color:#b91c1c;background:#fee2e2;border:1px solid #fca5a5}
 .workflow-binding-details{min-width:0;flex:1;margin-top:14px}
 .workflow-binding-details>strong{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:15px;color:#0f172a}
-.workflow-binding-details dl{display:grid;grid-template-columns:1fr 1fr;gap:8px 16px;margin:12px 0}
+.workflow-binding-details dl{display:grid;grid-template-columns:1fr 1fr;gap:8px 16px;margin:8px 0}
 .workflow-binding-details dt{color:#64748b;font-size:12px}
 .workflow-binding-details dd{margin:2px 0 0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px;color:#1e293b}
 .workflow-warning{display:flex;align-items:flex-start;gap:7px;margin:8px 0 0;padding:0;color:#64748b;font-size:12px;line-height:1.5;background:transparent}
@@ -294,7 +294,7 @@ button,a { -webkit-tap-highlight-color:transparent; }
 .workflow-binding-empty{display:flex;flex-direction:column;flex:1;align-items:center;justify-content:center;margin-top:12px;border:1px dashed #cbd5e1;border-radius:8px;padding:16px;text-align:center;background:#fff}
 .workflow-binding-empty p{margin:0;font-weight:600;color:#475569;font-size:14px}
 .workflow-binding-empty small{margin-top:4px;color:#64748b;font-size:12px;line-height:1.4}
-.workflow-binding-card footer,.workflow-unbind-dialog footer,.workflow-binding-drawer footer{display:flex;justify-content:flex-end;gap:10px;margin-top:14px;padding-top:10px;border-top:1px solid #f1f5f9}
+.workflow-binding-card footer,.workflow-unbind-dialog footer,.workflow-binding-drawer footer{display:flex;justify-content:flex-end;gap:10px;margin-top:8px;padding-top:10px;border-top:1px solid #f1f5f9}
 .workflow-binding-card button,.workflow-unbind-dialog button,.workflow-binding-drawer button,.workflow-binding-state button{border:1px solid #cbd5e1;border-radius:8px;padding:8px 14px;background:#fff;color:#334155;font-weight:600;font-size:13px;cursor:pointer;transition:all .15s}
 .workflow-binding-card button:hover,.workflow-binding-drawer button:hover{background:#f8fafc}
 .workflow-binding-card .primary,.workflow-binding-drawer .primary{border-color:#4648d4;background:#4648d4;color:#fff}
