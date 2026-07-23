@@ -19,6 +19,7 @@ import (
 	"github.com/local/ai-content-factory/apps/api/internal/project"
 	"github.com/local/ai-content-factory/apps/api/internal/storyline"
 	"github.com/local/ai-content-factory/apps/api/internal/workflowbinding"
+	"github.com/local/ai-content-factory/apps/api/internal/workflowrun"
 )
 
 func main() {
@@ -50,7 +51,14 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	server := httpserver.New(cfg.APIAddress, projects, plannings, materials, projectMaterials, storylines, foreshadowings, chapterPlans, contentItems, iteration07, iteration08, globalConfigurations, workflowbinding.NewCloseLoop(pool, projectRepository, globalConfigurations))
+	workflowRuns := workflowrun.NewService(
+		workflowrun.NewPostgresRepository(pool),
+		projectRepository,
+		workflowbinding.NewPostgresRepository(pool),
+		globalConfigurations,
+		globalConfigurations,
+	)
+	server := httpserver.New(cfg.APIAddress, projects, plannings, materials, projectMaterials, storylines, foreshadowings, chapterPlans, contentItems, iteration07, iteration08, globalConfigurations, workflowbinding.NewCloseLoop(pool, projectRepository, globalConfigurations), workflowRuns)
 	log.Printf("api listening on %s", cfg.APIAddress)
 	if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 		log.Fatal(err)

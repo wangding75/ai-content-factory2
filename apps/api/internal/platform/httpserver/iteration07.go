@@ -13,7 +13,7 @@ import (
 
 func registerIteration07Routes(m *http.ServeMux, a *contentitem.Iteration07Application) {
 	m.HandleFunc("POST /api/v1/content-items/{contentItemId}/rewrites/mock", mockRewriteHandler(a))
-	m.HandleFunc("GET /api/v1/workflow-runs/{workflowRunId}", getWorkflowRunHandler(a))
+	m.HandleFunc("GET /api/v1/content-workflow-runs/{workflowRunId}", getWorkflowRunHandler(a))
 	m.HandleFunc("GET /api/v1/content-items/{contentItemId}/versions", listVersionsHandler(a))
 	m.HandleFunc("GET /api/v1/content-versions/{versionId}", getVersionHandler(a))
 	m.HandleFunc("GET /api/v1/projects/{projectId}/works", listWorksHandler(a))

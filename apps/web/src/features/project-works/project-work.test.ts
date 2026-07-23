@@ -6,6 +6,11 @@ test("D3 exposes all deterministic mock states", () => {
   const source=readFileSync(new URL("./project-work-api.ts",import.meta.url),"utf8");
   for (const state of ["loading","success","single","empty","error","invalid-pagination","not-found","succeeded","failed","no-run","paged"]) assert.match(source,new RegExp(`"${state}"`));
 });
+test("D3 workflow run detail keeps the legacy content-workflow-runs route", () => {
+  const source=readFileSync(new URL("./project-work-api.ts",import.meta.url),"utf8");
+  assert.match(source,/`\/content-workflow-runs\/\$\{encodeURIComponent\(workflowRunId\)\}`/);
+  assert.doesNotMatch(source,/`\/workflow-runs\/\$\{encodeURIComponent\(workflowRunId\)\}`/);
+});
 test("D3 page keeps fixture, mapper, pagination and navigation outside raw JSX", () => {
   const source=readFileSync(new URL("./project-works-workspace.tsx",import.meta.url),"utf8");
   assert.match(source,/listProjectWorks\(projectId/);assert.match(source,/toProjectWorkView/);assert.match(source,/setOffset\(offset \+ limit\)/);assert.match(source,/创建重写版本/);assert.match(source,/aria-busy/);assert.doesNotMatch(source,/href="#"/);assert.doesNotMatch(source,/JSON\.stringify/);

@@ -10,7 +10,7 @@ import (
 func registerIteration08Routes(m *http.ServeMux, s *contentitem.GlobalLiteService) {
 	m.HandleFunc("GET /api/v1/works", listGlobalWorksHandler(s))
 	m.HandleFunc("GET /api/v1/workflows/builtin", listBuiltinWorkflowsHandler())
-	m.HandleFunc("GET /api/v1/workflow-runs", listGlobalWorkflowRunsHandler(s))
+	m.HandleFunc("GET /api/v1/content-workflow-runs", listGlobalWorkflowRunsHandler(s))
 	m.HandleFunc("GET /api/v1/capabilities", listCapabilitiesHandler())
 	m.HandleFunc("GET /api/v1/integrations", listIntegrationsHandler())
 }

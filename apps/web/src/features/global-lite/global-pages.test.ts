@@ -10,3 +10,8 @@ test("E1 and E2 use real mapped API clients with loading, retry, pagination, and
 test("global client sends frozen scope and maps API DTOs before JSX", () => {
   for (const text of ["scope: \"global\"", "updated_at_desc", "mapWorkflowRun", "mapCapability", "mapIntegration", "ApiRequestInit"]) assert.match(api, new RegExp(text));
 });
+test("global workflow runs keep the legacy content-workflow-runs route", () => {
+  assert.match(api, /`\/content-workflow-runs\$\{pageQuery\(query\)\}`/);
+  assert.match(api, /workflowRuns: "\/api\/v1\/content-workflow-runs"/);
+  assert.doesNotMatch(api, /`\/workflow-runs\$\{pageQuery\(query\)\}`/);
+});
