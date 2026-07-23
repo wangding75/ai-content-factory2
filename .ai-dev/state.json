@@ -1,13 +1,13 @@
 {
   "project": "ai-content-factory-2.0",
-  "current_iteration": 13,
+  "current_iteration": 14,
   "status": "completed",
-  "acceptance": "passed_with_user_waiver",
-  "next_iteration": 14,
+  "acceptance": "accepted",
+  "next_iteration": 15,
   "contract_version": "p1-v1",
   "ui_baseline": "p1-frozen",
   "technical_skeleton": "same-as-1.0",
-  "updated_at_utc": "2026-07-22T09:07:31Z",
+  "updated_at_utc": "2026-07-23T09:14:24.9049450Z",
   "development_inputs": {
     "package": "ai-content-factory-2.0-p0-full-initialization-package-v2.1.1",
     "version": "2.1.1",
@@ -91,6 +91,23 @@
     "known_test_debt": [
       "Iteration 02 空态断言与当前 UI 不一致",
       "Iteration 06 E2E Fixture 缺乏 Spec 级数据隔离"
+    ],
+    "db_rollback_acceptance_required": false
+  },
+  "iteration_14": {
+    "status": "completed",
+    "acceptance": "accepted",
+    "next_iteration": 15,
+    "completed_at_utc": "2026-07-23T09:14:24.9049450Z",
+    "machine_acceptance": "PASS",
+    "manual_ui_acceptance": {
+      "status": "PASS",
+      "accepted_at": "2026-07-23"
+    },
+    "final_business_code_commit": "7b6d1e8fa64cb216e3b8645b6e596b503ce8379c",
+    "acceptance_evidence": ".ai-dev/reports/CF-14-03D/",
+    "deferred_scope": [
+      "CF-14-N8N-Integration: real n8n adapter, worker, queue consumption, callback server, external execution and status callbacks, connection/configuration verify-enable-disable"
     ],
     "db_rollback_acceptance_required": false
   }

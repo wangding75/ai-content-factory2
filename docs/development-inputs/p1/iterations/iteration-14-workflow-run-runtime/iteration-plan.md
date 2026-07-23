@@ -2,7 +2,7 @@
 
 ## 当前状态
 
-`frozen_cf_14_01_r3`。本迭代冻结“配置记录不等于真实集成”的终态契约。
+`completed`（冻结契约：`frozen_cf_14_01_r3`）。本迭代已完成“配置记录不等于真实集成”的终态契约收口。
 
 ## 当前目标与配置语义
 
@@ -20,6 +20,10 @@
 
 真实 n8n Adapter、鉴权、连接/工作流可调用性验证、verify、enable、disable、Worker、队列消费、callback server、外部状态回写及外部成功/失败/超时/取消联调均延后至 `CF-14-N8N-Integration`，不构成当前验收门槛。
 
-## 后续顺序
+## 验收与后续
 
-CF-14-01-R3 → CF-14-02-R2 → CF-14-03A-R1 → CF-14-03B/C → Iteration 14 最终联调 → CF-14-N8N-Integration 后续独立开发。
+- 机器验收：PASS。
+- 人工 UI 验收：PASS（2026-07-23）。
+- 最终业务代码 Commit：`7b6d1e8fa64cb216e3b8645b6e596b503ce8379c`。
+- 验收证据：`.ai-dev/reports/CF-14-03D/`（本地忽略文件，不进入 Git）。
+- `CF-14-N8N-Integration` 仍为后续独立工作，不属于本迭代门禁；权威路线图的下一迭代为 Iteration 15。

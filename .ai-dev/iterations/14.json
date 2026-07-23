@@ -1,0 +1,19 @@
+{
+  "iteration": 14,
+  "name": "workflow-run-runtime",
+  "status": "completed",
+  "acceptance": "accepted",
+  "next_iteration": 15,
+  "completed_at_utc": "2026-07-23T09:14:24.9049450Z",
+  "machine_acceptance": "PASS",
+  "manual_ui_acceptance": {
+    "status": "PASS",
+    "accepted_at": "2026-07-23"
+  },
+  "final_business_code_commit": "7b6d1e8fa64cb216e3b8645b6e596b503ce8379c",
+  "acceptance_evidence": ".ai-dev/reports/CF-14-03D/",
+  "deferred_scope": [
+    "CF-14-N8N-Integration: real n8n adapter, worker, queue consumption, callback server, external execution and status callbacks, connection/configuration verify-enable-disable"
+  ],
+  "db_rollback_acceptance_required": false
+}
