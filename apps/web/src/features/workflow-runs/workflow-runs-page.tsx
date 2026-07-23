@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { ApiError, listProjects, type Project } from "@/lib/api";
 import { stageLabels, type WorkflowStage } from "@/features/workflow-bindings/workflow-binding-api";
 import { listWorkflowRuns, type WorkflowRunStatus, type WorkflowRunVm } from "./workflow-run-api";
+import Link from "next/link";
 
 type TimeRange = "all" | "today" | "sevenDays" | "thirtyDays";
 const statusOptions: Array<{ value: "" | WorkflowRunStatus; label: string }> = [{ value: "", label: "全部状态" }, { value: "queued", label: "等待执行" }, { value: "running", label: "运行中" }, { value: "succeeded", label: "已成功" }, { value: "failed", label: "失败" }, { value: "cancelled", label: "已取消" }];
@@ -21,7 +22,7 @@ function timeBounds(range: TimeRange) {
 
 function RunTable({ items, projects }: { items: WorkflowRunVm[]; projects: Project[] }) {
   const projectNames = new Map(projects.map((project) => [project.id, project.name]));
-  return <div className="workflow-runs-table" role="table" aria-label="运行记录"><div className="workflow-runs-table-head" role="row"><span>运行编号</span><span>项目</span><span>业务环节</span><span>状态</span><span>触发来源</span><span>创建时间</span><span>更新时间</span><span>操作</span></div>{items.map((item) => <div className="workflow-runs-row" role="row" key={item.id}><strong>{item.runNumber}</strong><span>{projectNames.get(item.projectId) ?? "未知项目"}</span><span>{item.stageLabel}</span><span><i className={`workflow-runs-status ${item.status}`}>{item.statusLabel}</i></span><span>{item.triggerSourceLabel}</span><time>{item.createdAtLabel}</time><time>{item.updatedAtLabel}</time><span className="workflow-runs-pending" aria-label="运行详情尚未在本任务范围内">详情待开放</span></div>)}</div>;
+  return <div className="workflow-runs-table" role="table" aria-label="运行记录"><div className="workflow-runs-table-head" role="row"><span>运行编号</span><span>项目</span><span>业务环节</span><span>状态</span><span>触发来源</span><span>创建时间</span><span>更新时间</span><span>操作</span></div>{items.map((item) => <div className="workflow-runs-row" role="row" key={item.id}><strong>{item.runNumber}</strong><span>{projectNames.get(item.projectId) ?? "未知项目"}</span><span>{item.stageLabel}</span><span><i className={`workflow-runs-status ${item.status}`}>{item.statusLabel}</i></span><span>{item.triggerSourceLabel}</span><time>{item.createdAtLabel}</time><time>{item.updatedAtLabel}</time><Link className="workflow-runs-detail-link" href={`/workflow-runs/${item.id}`}>查看详情</Link></div>)}</div>;
 }
 
 export function WorkflowRunsPage({ projectId: initialProjectId, initialStage }: { projectId?: string; initialStage?: WorkflowStage }) {
