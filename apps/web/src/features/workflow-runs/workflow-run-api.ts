@@ -1,6 +1,6 @@
-import type { ApiRequestInit } from "@/lib/api";
-import { apiRequest } from "@/lib/api";
-import type { WorkflowStage } from "@/features/workflow-bindings/workflow-binding-api";
+import type { ApiRequestInit } from "../../lib/api.ts";
+import { apiRequest } from "../../lib/api.ts";
+import type { WorkflowStage } from "../workflow-bindings/workflow-binding-api.ts";
 
 export type WorkflowRunStatus = "queued" | "running" | "succeeded" | "failed" | "cancelled";
 export type WorkflowRunTriggerSource = "manual" | "retry" | "system" | "api";
