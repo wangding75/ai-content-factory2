@@ -1,0 +1,569 @@
+﻿<!DOCTYPE html>
+
+<html lang="zh-CN"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>S1 故事线管理｜章节职责修正版</title>
+<script id="tailwind-config">
+        window.tailwind = window.tailwind || {}; tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-surface": "#2b333b",
+                        "tertiary-fixed": "#8342f4",
+                        "tertiary-container": "#8342f4",
+                        "primary-dim": "#4034d7",
+                        "secondary-fixed": "#d3e4fe",
+                        "error": "#9e3f4e",
+                        "on-tertiary": "#fdf7ff",
+                        "secondary-fixed-dim": "#c5d6f0",
+                        "on-secondary-fixed": "#314055",
+                        "on-primary-container": "#3f33d6",
+                        "surface-bright": "#f8f9fd",
+                        "error-dim": "#4f0116",
+                        "surface-container-highest": "#dbe3ee",
+                        "on-tertiary-fixed": "#ffffff",
+                        "error-container": "#ff8b9a",
+                        "on-tertiary-fixed-variant": "#e5d5ff",
+                        "on-background": "#2b333b",
+                        "on-secondary": "#f7f9ff",
+                        "outline-variant": "#aab3bd",
+                        "outline": "#737c85",
+                        "on-primary": "#faf6ff",
+                        "primary-container": "#e2dfff",
+                        "on-error": "#fff7f7",
+                        "primary-fixed-dim": "#d2d0ff",
+                        "surface-container-low": "#f1f4f9",
+                        "on-secondary-container": "#435368",
+                        "surface-container-lowest": "#ffffff",
+                        "on-error-container": "#782232",
+                        "tertiary": "#742fe5",
+                        "inverse-primary": "#8582ff",
+                        "on-tertiary-container": "#ffffff",
+                        "secondary-container": "#d3e4fe",
+                        "on-primary-fixed": "#2a13c5",
+                        "surface-variant": "#dbe3ee",
+                        "surface": "#f8f9fd",
+                        "on-surface-variant": "#576069",
+                        "surface-dim": "#d0dbe7",
+                        "on-primary-fixed-variant": "#4a40e0",
+                        "secondary-dim": "#44546a",
+                        "secondary": "#506076",
+                        "background": "#f8f9fd",
+                        "inverse-surface": "#0c0e11",
+                        "tertiary-dim": "#681ad9",
+                        "surface-container": "#e9eef5",
+                        "inverse-on-surface": "#9b9da1",
+                        "surface-container-high": "#e2e9f2",
+                        "primary": "#4d44e3",
+                        "on-secondary-fixed-variant": "#4d5d73",
+                        "tertiary-fixed-dim": "#7632e7",
+                        "primary-fixed": "#e2dfff",
+                        "surface-tint": "#4d44e3"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {},
+                    "fontFamily": {
+                        "headline": ["Inter"],
+                        "display": ["Inter"],
+                        "body": ["Inter"],
+                        "label": ["Inter"]
+                    },
+                    "fontSize": {}
+                },
+            },
+        }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; }
+        /* Custom scrollbar for a cleaner SaaS look */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #dbe3ee;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #aab3bd;
+        }
+        .tree-line::before {
+            content: '';
+            position: absolute;
+            top: 24px;
+            left: 20px;
+            bottom: -8px;
+            width: 1px;
+            background-color: #dbe3ee;
+        }
+        .tree-node-last::before {
+            bottom: 24px;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-surface min-h-screen overflow-hidden selection:bg-primary-container selection:text-on-primary-container">
+<!-- Shell Framework: SideNavBar -->
+<nav class="fixed left-0 top-0 h-full w-[274px] border-r border-outline-variant bg-surface-container-lowest flex flex-col z-20">
+<!-- Header -->
+<div class="px-6 py-6 mb-2">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-lg bg-primary-container flex items-center justify-center flex-shrink-0 text-on-primary-container">
+<span class="material-symbols-outlined font-bold">view_in_ar</span>
+</div>
+<div>
+<h1 class="text-headline-sm font-black text-on-surface leading-tight tracking-tight">AI Content Factory</h1>
+<p class="text-label-sm text-on-surface-variant">Creator SaaS</p>
+</div>
+</div>
+</div>
+<!-- Navigation Tabs -->
+<div class="flex-1 overflow-y-auto font-body text-label-sm">
+<!-- Inactive -->
+<a class="flex items-center gap-3 px-6 py-3 text-on-surface-variant hover:bg-surface-container-high transition-colors cursor-pointer active:opacity-80" href="#">
+<span class="material-symbols-outlined">home</span>
+<span>首页</span>
+</a>
+<!-- Active -->
+<a class="flex items-center gap-3 px-6 py-3 bg-secondary-container text-on-primary-container border-l-4 border-primary font-bold hover:bg-surface-container-high transition-colors cursor-pointer active:opacity-80" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">folder_open</span>
+<span>项目</span>
+</a>
+<!-- Inactive -->
+<a class="flex items-center gap-3 px-6 py-3 text-on-surface-variant hover:bg-surface-container-high transition-colors cursor-pointer active:opacity-80" href="#">
+<span class="material-symbols-outlined">category</span>
+<span>素材</span>
+</a>
+<a class="flex items-center gap-3 px-6 py-3 text-on-surface-variant hover:bg-surface-container-high transition-colors cursor-pointer active:opacity-80" href="#">
+<span class="material-symbols-outlined">movie_filter</span>
+<span>作品</span>
+</a>
+<a class="flex items-center gap-3 px-6 py-3 text-on-surface-variant hover:bg-surface-container-high transition-colors cursor-pointer active:opacity-80" href="#">
+<span class="material-symbols-outlined">account_tree</span>
+<span>流程</span>
+</a>
+<a class="flex items-center gap-3 px-6 py-3 text-on-surface-variant hover:bg-surface-container-high transition-colors cursor-pointer active:opacity-80" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span>设置</span>
+</a>
+</div>
+<!-- Footer CTA -->
+<div class="p-6 border-t border-outline-variant mt-auto">
+<div class="flex items-center gap-3 p-3 rounded-lg bg-surface-container-low border border-outline-variant hover:bg-surface-container-high transition-colors cursor-pointer">
+<div class="w-8 h-8 rounded-full bg-tertiary-container text-on-tertiary-container flex items-center justify-center flex-shrink-0">
+<span class="material-symbols-outlined text-sm">workspace_premium</span>
+</div>
+<span class="font-body text-label-sm font-bold text-on-surface">高级创作者 / Pro Plan</span>
+</div>
+</div>
+</nav>
+<!-- Shell Framework: TopNavBar -->
+<header class="fixed top-0 right-0 left-[274px] h-32 bg-surface border-b border-outline-variant z-10 flex flex-col justify-between px-8 py-4 w-[calc(100%-274px)] shadow-sm">
+<!-- Top Row: Project Context & Utility -->
+<div class="flex justify-between items-center w-full">
+<div class="flex items-center gap-4">
+<h2 class="text-body font-bold text-on-surface text-lg tracking-tight">项目 &gt; 末世求生</h2>
+<div class="flex items-center gap-2">
+<span class="px-2 py-0.5 rounded text-xs font-medium bg-surface-container-high text-on-surface-variant border border-outline-variant">小说</span>
+<span class="px-2 py-0.5 rounded text-xs font-medium bg-secondary-container text-on-secondary-container border border-secondary-fixed-dim">策划中</span>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<!-- Search -->
+<div class="relative group">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none group-focus-within:text-primary transition-colors">search</span>
+<input class="w-64 pl-10 pr-4 py-2 rounded-full bg-surface-container-lowest border border-outline-variant focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-sm text-on-surface placeholder:text-on-surface-variant transition-all shadow-sm" placeholder="搜索资源..." type="text"/>
+</div>
+<!-- Actions -->
+<button class="w-10 h-10 rounded-full flex items-center justify-center text-on-surface-variant hover:bg-surface-container-high hover:text-primary transition-colors cursor-pointer">
+<span class="material-symbols-outlined">help</span>
+</button>
+<button class="w-10 h-10 rounded-full flex items-center justify-center text-on-surface-variant hover:bg-surface-container-high hover:text-primary transition-colors cursor-pointer relative">
+<span class="material-symbols-outlined">notifications</span>
+<span class="absolute top-2 right-2 w-2 h-2 bg-error rounded-full border border-surface"></span>
+</button>
+<div class="w-10 h-10 rounded-full overflow-hidden border-2 border-outline-variant hover:border-primary transition-colors cursor-pointer ml-2 flex-shrink-0">
+<img alt="User Avatar" class="w-full h-full object-cover" data-alt="A highly detailed close-up portrait of an AI creator persona avatar. Minimalist aesthetic, soft high-key studio lighting on a pristine white background. The character wears sleek, modern dark techwear clothing. Deep blacks, whites, and subtle cool blue-gray tones. Professional, serene, and sophisticated mood." src="data:image/svg+xml,%3Csvg viewBox=%220 0 64 64%22%3E%3Crect width=%2264%22 height=%2264%22 fill=%22%23dbe3ee%22/%3E%3Ccircle cx=%2232%22 cy=%2224%22 r=%2212%22 fill=%22%23576069%22/%3E%3Cpath d=%22M8 64c3-16 13-24 24-24s21 8 24 24%22 fill=%22%23576069%22/%3E%3C/svg%3E"/>
+</div>
+</div>
+</div>
+<!-- Bottom Row: Navigation Links -->
+<div class="flex gap-8 font-headline text-on-surface text-sm font-medium">
+<a class="text-on-surface-variant hover:text-on-surface pb-2 border-b-2 border-transparent hover:border-outline-variant transition-all cursor-pointer" href="#">概览</a>
+<a class="text-on-surface-variant hover:text-on-surface pb-2 border-b-2 border-transparent hover:border-outline-variant transition-all cursor-pointer" href="#">策划</a>
+<a class="text-on-surface-variant hover:text-on-surface pb-2 border-b-2 border-transparent hover:border-outline-variant transition-all cursor-pointer" href="#">素材</a>
+<!-- Active Link -->
+<a class="text-primary border-b-2 border-primary font-bold pb-2 transition-all cursor-pointer" href="#">故事线</a>
+<a class="text-on-surface-variant hover:text-on-surface pb-2 border-b-2 border-transparent hover:border-outline-variant transition-all cursor-pointer" href="#">章节</a>
+<a class="text-on-surface-variant hover:text-on-surface pb-2 border-b-2 border-transparent hover:border-outline-variant transition-all cursor-pointer" href="#">审核</a>
+<a class="text-on-surface-variant hover:text-on-surface pb-2 border-b-2 border-transparent hover:border-outline-variant transition-all cursor-pointer" href="#">作品</a>
+<a class="text-on-surface-variant hover:text-on-surface pb-2 border-b-2 border-transparent hover:border-outline-variant transition-all cursor-pointer" href="#">设置</a>
+</div>
+</header>
+<!-- Main Workspace Area -->
+<main class="fixed top-32 left-[274px] right-0 bottom-0 overflow-hidden flex flex-col bg-surface-bright">
+<!-- Page Header -->
+<div class="px-8 py-6 flex justify-between items-center border-b border-surface-container flex-shrink-0 bg-surface-container-lowest z-10">
+<div>
+<h2 class="text-2xl font-bold text-on-surface tracking-tight">故事线管理</h2>
+<p class="text-sm text-on-surface-variant mt-1">构建多线叙事结构与分支情节</p>
+</div>
+<div class="flex items-center gap-3">
+<button class="px-4 py-2 bg-surface-container-lowest text-on-surface border border-outline-variant rounded hover:bg-surface-container-high transition-colors text-sm font-medium flex items-center gap-2">
+<span class="material-symbols-outlined text-sm">upload_file</span>
+                    导入/整理
+                </button>
+<button class="px-4 py-2 bg-primary text-on-primary rounded hover:bg-primary-dim transition-colors text-sm font-medium shadow-sm flex items-center gap-2">
+<span class="material-symbols-outlined text-sm">add</span>
+                    新增主故事线
+                </button>
+</div>
+</div>
+<!-- Split Layout Content -->
+<div class="flex-1 flex overflow-hidden">
+<!-- Left Column: Storyline Tree -->
+<div class="w-[45%] lg:w-[40%] xl:w-[35%] flex flex-col border-r border-surface-container bg-surface-container-lowest relative z-0">
+<!-- Tree Toolbar -->
+<div class="p-4 border-b border-surface-container flex items-center justify-between bg-surface-container-low/50">
+<div class="relative w-full max-w-xs group">
+<span class="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-on-surface-variant text-sm group-focus-within:text-primary transition-colors">search</span>
+<input class="w-full pl-8 pr-3 py-1.5 rounded bg-surface-container-lowest border border-outline-variant focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-sm text-on-surface placeholder:text-on-surface-variant transition-all" placeholder="搜索节点名称..." type="text"/>
+</div>
+<div class="flex gap-1 ml-2">
+<button class="w-8 h-8 flex items-center justify-center rounded text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface" title="全部展开">
+<span class="material-symbols-outlined text-[20px]">unfold_more</span>
+</button>
+<button class="w-8 h-8 flex items-center justify-center rounded text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface" title="筛选">
+<span class="material-symbols-outlined text-[20px]">filter_list</span>
+</button>
+</div>
+</div>
+<!-- Tree Content -->
+<div class="flex-1 overflow-y-auto p-4 relative">
+<!-- Root Node 1: 王国政变 -->
+<div class="mb-4 relative tree-line">
+<!-- Node Row (Selected) -->
+<div class="group flex items-start gap-2 p-2.5 rounded-lg bg-primary-container/30 border border-primary/20 hover:border-primary/40 transition-colors cursor-pointer mb-1">
+<div class="mt-0.5 w-5 flex-shrink-0 flex items-center justify-center text-on-surface-variant cursor-grab active:cursor-grabbing hover:text-primary">
+<span class="material-symbols-outlined text-[18px]">drag_indicator</span>
+</div>
+<button class="mt-0.5 w-5 h-5 flex-shrink-0 flex items-center justify-center rounded hover:bg-surface-container-highest text-on-surface-variant text-sm">
+<span class="material-symbols-outlined text-[16px] transition-transform rotate-90">chevron_right</span>
+</button>
+<div class="flex-1 min-w-0">
+<div class="flex items-center gap-2 mb-1">
+<span class="font-semibold text-sm text-on-surface truncate">王国政变</span>
+<span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-primary-container text-on-primary-container flex-shrink-0">主线</span>
+<span class="px-1.5 py-0.5 rounded text-[10px] font-medium bg-surface-container-high text-on-surface-variant flex-shrink-0">进行中</span>
+</div>
+<div class="flex items-center gap-3 text-[11px] text-on-surface-variant">
+<div class="flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">psychiatry</span>
+<span>伏笔: 2</span>
+</div>
+<div class="flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">account_tree</span>
+<span>子项: 3</span>
+</div>
+<div class="flex -space-x-1.5 ml-1">
+<img alt="Avatar" class="w-4 h-4 rounded-full border border-surface-container-lowest" data-alt="A tiny UI avatar portrait of a regal fantasy character. High key lighting, minimalist white background, soft focus." src="data:image/svg+xml,%3Csvg viewBox=%220 0 64 64%22%3E%3Crect width=%2264%22 height=%2264%22 fill=%22%23dbe3ee%22/%3E%3Ccircle cx=%2232%22 cy=%2224%22 r=%2212%22 fill=%22%23576069%22/%3E%3Cpath d=%22M8 64c3-16 13-24 24-24s21 8 24 24%22 fill=%22%23576069%22/%3E%3C/svg%3E"/>
+<img alt="Avatar" class="w-4 h-4 rounded-full border border-surface-container-lowest" data-alt="A tiny UI avatar portrait of a dark brooding fantasy character. High key lighting, minimalist white background, soft focus." src="data:image/svg+xml,%3Csvg viewBox=%220 0 64 64%22%3E%3Crect width=%2264%22 height=%2264%22 fill=%22%23dbe3ee%22/%3E%3Ccircle cx=%2232%22 cy=%2224%22 r=%2212%22 fill=%22%23576069%22/%3E%3Cpath d=%22M8 64c3-16 13-24 24-24s21 8 24 24%22 fill=%22%23576069%22/%3E%3C/svg%3E"/>
+</div>
+</div>
+</div>
+<!-- Inline Actions (Visible on hover) -->
+<div class="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
+<button class="w-7 h-7 flex items-center justify-center rounded hover:bg-surface-container-highest text-on-surface-variant hover:text-primary" title="新增子项">
+<span class="material-symbols-outlined text-[16px]">add</span>
+</button>
+<button class="w-7 h-7 flex items-center justify-center rounded hover:bg-surface-container-highest text-on-surface-variant hover:text-primary" title="编辑">
+<span class="material-symbols-outlined text-[16px]">edit</span>
+</button>
+</div>
+</div>
+<!-- Children Level 2 -->
+<div class="pl-7 space-y-1 relative">
+<!-- Child 1 -->
+<div class="relative tree-line">
+<div class="absolute -left-[14px] top-4 w-3 h-px bg-dbe3ee"></div>
+<div class="group flex items-start gap-2 p-2 rounded-lg hover:bg-surface-container-low border border-transparent hover:border-surface-container-highest transition-colors cursor-pointer mb-1">
+<div class="mt-0.5 w-5 flex-shrink-0 flex items-center justify-center text-on-surface-variant cursor-grab active:cursor-grabbing hover:text-primary opacity-0 group-hover:opacity-100">
+<span class="material-symbols-outlined text-[18px]">drag_indicator</span>
+</div>
+<button class="mt-0.5 w-5 h-5 flex-shrink-0 flex items-center justify-center rounded hover:bg-surface-container-highest text-on-surface-variant text-sm">
+<span class="material-symbols-outlined text-[16px] transition-transform rotate-90">chevron_right</span>
+</button>
+<div class="flex-1 min-w-0">
+<div class="flex items-center gap-2 mb-0.5">
+<span class="font-medium text-sm text-on-surface truncate">失踪密使</span>
+<span class="px-1.5 py-0.5 rounded text-[10px] font-medium bg-surface-container-high text-on-surface-variant flex-shrink-0 border border-outline-variant/30">支线</span>
+</div>
+</div>
+</div>
+<!-- Children Level 3 -->
+<div class="pl-7 space-y-1 relative tree-node-last">
+<div class="relative">
+<div class="absolute -left-[14px] top-4 w-3 h-px bg-dbe3ee"></div>
+<div class="group flex items-start gap-2 p-2 rounded-lg hover:bg-surface-container-low border border-transparent hover:border-surface-container-highest transition-colors cursor-pointer">
+<div class="mt-0.5 w-5 flex-shrink-0 flex items-center justify-center text-on-surface-variant cursor-grab active:cursor-grabbing hover:text-primary opacity-0 group-hover:opacity-100">
+<span class="material-symbols-outlined text-[18px]">drag_indicator</span>
+</div>
+<div class="mt-0.5 w-5 h-5 flex-shrink-0 flex items-center justify-center text-outline-variant">
+<span class="w-1.5 h-1.5 rounded-full bg-outline-variant"></span>
+</div>
+<div class="flex-1 min-w-0">
+<div class="flex items-center gap-2 mb-0.5">
+<span class="font-medium text-[13px] text-on-surface truncate">北境线索</span>
+<span class="px-1 py-0.5 rounded text-[9px] font-medium bg-surface-container-high text-on-surface-variant flex-shrink-0">已完结</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Child 2 -->
+<div class="relative">
+<div class="absolute -left-[14px] top-4 w-3 h-px bg-dbe3ee"></div>
+<div class="group flex items-start gap-2 p-2 rounded-lg hover:bg-surface-container-low border border-transparent hover:border-surface-container-highest transition-colors cursor-pointer">
+<div class="mt-0.5 w-5 flex-shrink-0 flex items-center justify-center text-on-surface-variant cursor-grab active:cursor-grabbing hover:text-primary opacity-0 group-hover:opacity-100">
+<span class="material-symbols-outlined text-[18px]">drag_indicator</span>
+</div>
+<div class="mt-0.5 w-5 h-5 flex-shrink-0 flex items-center justify-center text-outline-variant">
+<span class="w-1.5 h-1.5 rounded-full bg-outline-variant"></span>
+</div>
+<div class="flex-1 min-w-0">
+<div class="flex items-center gap-2 mb-0.5">
+<span class="font-medium text-sm text-on-surface truncate">贵族议会</span>
+<span class="px-1.5 py-0.5 rounded text-[10px] font-medium bg-surface-container-high text-on-surface-variant flex-shrink-0 border border-outline-variant/30">支线</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Child 3 -->
+<div class="relative tree-node-last">
+<div class="absolute -left-[14px] top-4 w-3 h-px bg-dbe3ee"></div>
+<div class="group flex items-start gap-2 p-2 rounded-lg hover:bg-surface-container-low border border-transparent hover:border-surface-container-highest transition-colors cursor-pointer">
+<div class="mt-0.5 w-5 flex-shrink-0 flex items-center justify-center text-on-surface-variant cursor-grab active:cursor-grabbing hover:text-primary opacity-0 group-hover:opacity-100">
+<span class="material-symbols-outlined text-[18px]">drag_indicator</span>
+</div>
+<div class="mt-0.5 w-5 h-5 flex-shrink-0 flex items-center justify-center text-outline-variant">
+<span class="w-1.5 h-1.5 rounded-full bg-outline-variant"></span>
+</div>
+<div class="flex-1 min-w-0">
+<div class="flex items-center gap-2 mb-0.5">
+<span class="font-medium text-sm text-on-surface truncate">王储身份危机</span>
+<span class="px-1.5 py-0.5 rounded text-[10px] font-medium bg-surface-container-high text-on-surface-variant flex-shrink-0 border border-outline-variant/30">支线</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Root Node 2: 主角成长 -->
+<div class="relative tree-line tree-node-last">
+<!-- Node Row -->
+<div class="group flex items-start gap-2 p-2.5 rounded-lg hover:bg-surface-container-low border border-transparent hover:border-surface-container-highest transition-colors cursor-pointer mb-1">
+<div class="mt-0.5 w-5 flex-shrink-0 flex items-center justify-center text-on-surface-variant cursor-grab active:cursor-grabbing hover:text-primary opacity-0 group-hover:opacity-100">
+<span class="material-symbols-outlined text-[18px]">drag_indicator</span>
+</div>
+<button class="mt-0.5 w-5 h-5 flex-shrink-0 flex items-center justify-center rounded hover:bg-surface-container-highest text-on-surface-variant text-sm">
+<span class="material-symbols-outlined text-[16px] transition-transform">chevron_right</span>
+</button>
+<div class="flex-1 min-w-0">
+<div class="flex items-center gap-2 mb-1">
+<span class="font-semibold text-sm text-on-surface truncate">主角成长</span>
+<span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-primary-container text-on-primary-container flex-shrink-0">主线</span>
+<span class="px-1.5 py-0.5 rounded text-[10px] font-medium bg-surface-container-high text-on-surface-variant flex-shrink-0">进行中</span>
+</div>
+<div class="flex items-center gap-3 text-[11px] text-on-surface-variant">
+<div class="flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">psychiatry</span>
+<span>伏笔: 1</span>
+</div>
+<div class="flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">account_tree</span>
+<span>子项: 2</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Right Column: Detail View -->
+<div class="flex-1 flex flex-col bg-surface-bright relative z-0">
+<div class="flex-1 overflow-y-auto">
+<div class="p-8 max-w-4xl mx-auto space-y-6">
+<!-- Detail Header -->
+<div class="flex items-start justify-between border-b border-surface-container pb-6">
+<div>
+<div class="flex items-center gap-3 mb-2">
+<h3 class="text-2xl font-bold text-on-surface">王国政变</h3>
+<div class="flex gap-2">
+<span class="px-2 py-0.5 rounded text-xs font-bold bg-primary-container text-on-primary-container border border-primary-fixed-dim">主线</span>
+<span class="px-2 py-0.5 rounded text-xs font-medium bg-surface-container-highest text-on-surface-variant border border-outline-variant/30">进行中</span>
+</div>
+</div>
+<p class="text-sm text-on-surface-variant max-w-2xl">围绕老国王遇刺后，宫廷内部各方势力的角逐与王权更迭展开的宏大叙事线。</p>
+</div>
+<div class="flex gap-2">
+<button class="w-9 h-9 rounded flex items-center justify-center text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface border border-outline-variant/50 transition-colors bg-surface-container-lowest" title="编辑节点">
+<span class="material-symbols-outlined text-[20px]">edit</span>
+</button>
+<button class="w-9 h-9 rounded flex items-center justify-center text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface border border-outline-variant/50 transition-colors bg-surface-container-lowest" title="更多操作">
+<span class="material-symbols-outlined text-[20px]">more_vert</span>
+</button>
+</div>
+</div>
+<!-- Content Grid: Bento Style -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+<!-- 叙事目标 -->
+<div class="bg-surface-container-lowest border border-surface-container rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group">
+<div class="absolute top-0 right-0 w-24 h-24 bg-primary-container/20 rounded-bl-full -z-10 group-hover:scale-110 transition-transform"></div>
+<div class="flex items-center gap-2 mb-3 text-primary">
+<span class="material-symbols-outlined text-[20px]">flag</span>
+<h4 class="font-bold text-sm text-on-surface">叙事目标</h4>
+</div>
+<p class="text-sm text-on-surface-variant leading-relaxed min-h-[60px]">展现权力的腐蚀性，推动主角认清帝国高层的真实面貌，为后续主角脱离体制、建立独立势力提供核心动机。</p>
+</div>
+<!-- 冲突核心 -->
+<div class="bg-surface-container-lowest border border-surface-container rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group">
+<div class="absolute top-0 right-0 w-24 h-24 bg-error-container/10 rounded-bl-full -z-10 group-hover:scale-110 transition-transform"></div>
+<div class="flex items-center gap-2 mb-3 text-error">
+<span class="material-symbols-outlined text-[20px]">local_fire_department</span>
+<h4 class="font-bold text-sm text-on-surface">冲突核心</h4>
+</div>
+<p class="text-sm text-on-surface-variant leading-relaxed min-h-[60px]">旧贵族保守派与新兴军功阶层之间的利益分配矛盾；王室正统血脉与摄政王实际掌控权之间的法理冲突。</p>
+</div>
+<!-- 阶段性规划 (Full Width) -->
+<div class="md:col-span-2 bg-surface-container-lowest border border-surface-container rounded-xl p-5 shadow-sm">
+<div class="flex items-center gap-2 mb-4 text-tertiary">
+<span class="material-symbols-outlined text-[20px]">timeline</span>
+<h4 class="font-bold text-sm text-on-surface">阶段性规划</h4>
+</div>
+<div class="space-y-4 relative">
+<div class="absolute left-3.5 top-2 bottom-2 w-0.5 bg-surface-container-highest"></div>
+<!-- Phase 1 -->
+<div class="relative pl-10">
+<div class="absolute left-2.5 top-1.5 w-2.5 h-2.5 rounded-full bg-primary border-2 border-surface-container-lowest shadow-sm z-10"></div>
+<div class="bg-surface-container-low rounded-lg p-3 border border-outline-variant/30">
+<h5 class="text-sm font-semibold text-on-surface mb-1">第一阶段：暗流涌动</h5>
+<p class="text-xs text-on-surface-variant">铺垫各方势力，制造密使失踪悬念，引出各方矛盾雏形。</p>
+</div>
+</div>
+<!-- Phase 2 -->
+<div class="relative pl-10">
+<div class="absolute left-2.5 top-1.5 w-2.5 h-2.5 rounded-full bg-surface-variant border-2 border-outline-variant z-10"></div>
+<div class="bg-surface-bright rounded-lg p-3 border border-outline-variant/30 border-dashed">
+<h5 class="text-sm font-semibold text-on-surface mb-1">第二阶段：公开决裂</h5>
+<p class="text-xs text-on-surface-variant">议会大屠杀事件爆发，矛盾完全公开化，主角被迫站队。</p>
+</div>
+</div>
+</div>
+</div>
+<!-- 相关角色 -->
+<div class="bg-surface-container-lowest border border-surface-container rounded-xl p-5 shadow-sm">
+<div class="flex justify-between items-center mb-4">
+<div class="flex items-center gap-2 text-secondary-dim">
+<span class="material-symbols-outlined text-[20px]">group</span>
+<h4 class="font-bold text-sm text-on-surface">相关角色</h4>
+</div>
+<button class="text-xs text-primary hover:underline font-medium">管理</button>
+</div>
+<div class="flex flex-wrap gap-2">
+<div class="flex items-center gap-2 px-2.5 py-1.5 rounded-md bg-surface-container-low border border-outline-variant/30 text-sm">
+<img alt="Role" class="w-5 h-5 rounded-full" data-alt="A small UI avatar of an elderly wise fantasy king. High key lighting, minimalist white background." src="data:image/svg+xml,%3Csvg viewBox=%220 0 64 64%22%3E%3Crect width=%2264%22 height=%2264%22 fill=%22%23dbe3ee%22/%3E%3Ccircle cx=%2232%22 cy=%2224%22 r=%2212%22 fill=%22%23576069%22/%3E%3Cpath d=%22M8 64c3-16 13-24 24-24s21 8 24 24%22 fill=%22%23576069%22/%3E%3C/svg%3E"/>
+<span class="text-on-surface font-medium text-xs">老国王 (遇害)</span>
+</div>
+<div class="flex items-center gap-2 px-2.5 py-1.5 rounded-md bg-surface-container-low border border-outline-variant/30 text-sm">
+<img alt="Role" class="w-5 h-5 rounded-full" data-alt="A small UI avatar of a cunning fantasy regent character. High key lighting, minimalist white background." src="data:image/svg+xml,%3Csvg viewBox=%220 0 64 64%22%3E%3Crect width=%2264%22 height=%2264%22 fill=%22%23dbe3ee%22/%3E%3Ccircle cx=%2232%22 cy=%2224%22 r=%2212%22 fill=%22%23576069%22/%3E%3Cpath d=%22M8 64c3-16 13-24 24-24s21 8 24 24%22 fill=%22%23576069%22/%3E%3C/svg%3E"/>
+<span class="text-on-surface font-medium text-xs">摄政王维克托</span>
+</div>
+<div class="flex items-center justify-center px-2.5 py-1.5 rounded-md border border-outline-variant border-dashed text-on-surface-variant hover:text-primary hover:border-primary transition-colors cursor-pointer bg-surface-bright">
+<span class="material-symbols-outlined text-[16px]">add</span>
+</div>
+</div>
+</div>
+<!-- 关联伏笔 -->
+<div class="bg-surface-container-lowest border border-surface-container rounded-xl p-5 shadow-sm">
+<div class="flex justify-between items-center mb-4">
+<div class="flex items-center gap-2 text-tertiary-dim">
+<span class="material-symbols-outlined text-[20px]">psychiatry</span>
+<h4 class="font-bold text-sm text-on-surface">关联伏笔</h4>
+</div>
+<button class="text-xs text-primary hover:underline font-medium">管理</button>
+</div>
+<ul class="space-y-2">
+<li class="flex items-start gap-2 text-sm bg-surface-container-low p-2 rounded-md border border-outline-variant/30">
+<span class="material-symbols-outlined text-[16px] text-tertiary mt-0.5">vpn_key</span>
+<div>
+<span class="font-medium text-on-surface text-xs block">丢失的王印</span>
+<span class="text-[10px] text-on-surface-variant">在第三章埋下，目前未回收</span>
+</div>
+</li>
+</ul>
+</div>
+<!-- Chapter Association Statistics (Read-only) - CRITICAL SECTION -->
+<div class="md:col-span-2 bg-gradient-to-br from-secondary-container/20 to-primary-container/10 border border-secondary-fixed-dim rounded-xl p-6 shadow-sm">
+<div class="flex items-center justify-between mb-4 border-b border-secondary-fixed-dim/50 pb-3">
+<div class="flex items-center gap-2 text-primary-dim">
+<span class="material-symbols-outlined text-[22px]">auto_stories</span>
+<h4 class="font-bold text-base text-on-surface">章节关联统计</h4>
+</div>
+<span class="text-xs text-on-surface-variant bg-surface-container-lowest px-2 py-1 rounded border border-outline-variant/30">自动汇聚，只读</span>
+</div>
+<div class="flex items-center justify-between">
+<div class="flex gap-8">
+<div>
+<p class="text-xs text-on-surface-variant mb-1 font-medium">总关联章节</p>
+<p class="text-3xl font-black text-on-surface">12</p>
+</div>
+<div class="w-px h-10 bg-outline-variant/30 self-center"></div>
+<div>
+<p class="text-xs text-on-surface-variant mb-1 font-medium flex items-center gap-1">
+<span class="w-2 h-2 rounded-full bg-primary inline-block"></span> 已确认
+                                            </p>
+<p class="text-2xl font-bold text-on-surface">8</p>
+</div>
+<div>
+<p class="text-xs text-on-surface-variant mb-1 font-medium flex items-center gap-1">
+<span class="w-2 h-2 rounded-full bg-tertiary inline-block"></span> 规划中
+                                            </p>
+<p class="text-2xl font-bold text-on-surface">4</p>
+</div>
+<div>
+<p class="text-xs text-on-surface-variant mb-1 font-medium flex items-center gap-1">
+<span class="w-2 h-2 rounded-full bg-surface-variant border border-outline-variant inline-block"></span> 候选推荐
+                                            </p>
+<p class="text-2xl font-bold text-on-surface">3</p>
+</div>
+</div>
+<button class="px-5 py-2.5 bg-surface-container-lowest text-primary border border-primary-fixed-dim rounded-lg hover:bg-primary-container hover:border-primary transition-colors text-sm font-semibold shadow-sm flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px]">read_more</span>
+                                        查看关联章节
+                                    </button>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Footer Context Info -->
+<div class="p-4 border-t border-surface-container bg-surface-container-lowest/80 backdrop-blur text-center flex-shrink-0">
+<p class="text-xs text-on-surface-variant flex items-center justify-center gap-1.5">
+<span class="material-symbols-outlined text-[14px]">info</span>
+                        具体章节落点由章节规划结果产生，故事线页面仅展示实际关联统计
+                    </p>
+</div>
+</div>
+</div>
+</main>
+</body></html>

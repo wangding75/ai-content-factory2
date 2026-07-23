@@ -242,3 +242,27 @@ docs/development-inputs/p1/ui-master-manifest.json
 docs/development-inputs/p1/iterations/*/ui-manifest.json
 docs/development-inputs/p1/iterations/*/ui/frames/
 ```
+
+
+## 9. Iteration 15 UI 基线覆盖（2026-07-23）
+
+Iteration 15 不再使用早期的：
+
+- `C1_CHAPTER_PLANNING_V2`
+- `C2_GENERATE_CHAPTER_PLAN_DRAWER_V2`
+- `STATE_TASK_RUNNING_BAR`
+- `STATE_TASK_FAILED_NOTICE`
+- `STATE_NOT_CONFIGURED_EMPTY`
+
+作为直接开发输入。
+
+当前唯一开发基线为：
+
+```text
+iterations/iteration-15-real-chapter-planning/ui-manifest.json
+iterations/iteration-15-real-chapter-planning/ui/frames/P15_*/
+```
+
+来源为 Stitch Project `10082349329835651109` 的 `full exact shell migration`，共 21 个 Frame。业务内容、抽屉/弹窗类型、表格列、树结构、警告与操作位置以新版 Frame 为准；应用外壳必须复用仓库现有 ACF Shell。
+
+旧版 Frame 只保留在 Git 历史和源压缩包中，不得继续作为 Iteration 15 页面选择候选。

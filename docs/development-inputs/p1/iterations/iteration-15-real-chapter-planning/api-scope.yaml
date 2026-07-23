@@ -1,11 +1,181 @@
 iteration: iteration-15-real-chapter-planning
-status: planned
-apis:
-  - "POST /api/v1/projects/{projectId}/chapter-plan-runs"
-  - "复用 ChapterPlan 编辑/删除/确认 API"
-common_requirements:
-  - OpenAPI is the single contract source
-  - all commands use Idempotency-Key where applicable
-  - errors use the shared error envelope
-  - secrets and raw upstream responses are never returned
-  - optimistic locking is required for mutable configuration
+status: draft_for_contract_freeze
+contract_source_after_freeze: packages/contracts/openapi/openapi.yaml
+
+principles:
+  - Preflight is side-effect free and never creates a WorkflowRun.
+  - Chapter-planning run creation delegates to the Iteration 14 WorkflowRun application service.
+  - stage and manual triggerSource are server-managed.
+  - Generated output creates a candidate batch and never directly overwrites current ChapterPlan records.
+  - Candidate adoption creates or replaces current chapters as pending_confirmation.
+  - Confirmation continues to use the P0 ChapterPlan confirmation API.
+  - All mutable writes use optimistic locking and Idempotency-Key where applicable.
+  - Errors use the shared ErrorEnvelope with request_id.
+  - Secrets, raw upstream responses, raw idempotency keys, SQL and stack traces are never returned.
+
+planned_endpoints:
+  - operation: preflightChapterPlanRun
+    method: POST
+    path: /api/v1/projects/{projectId}/chapter-plan-runs/preflight
+    side_effect: none
+    request:
+      - generationMode
+      - target
+      - storylineSelection
+      - contextOptions
+      - additionalInstructions
+    response:
+      - preflightToken
+      - expiresAt
+      - inputSummary
+      - executionConfigurationSummary
+      - checks
+      - blockers
+      - warnings
+
+  - operation: createChapterPlanRun
+    method: POST
+    path: /api/v1/projects/{projectId}/chapter-plan-runs
+    headers:
+      - Idempotency-Key
+    request:
+      - preflightToken
+    server_managed:
+      stage: chapter_planning
+      triggerSource: manual
+    response:
+      - workflowRun
+
+  - operation: listChapterPlanCandidateBatches
+    method: GET
+    path: /api/v1/projects/{projectId}/chapter-plan-candidate-batches
+    filters:
+      - status
+      - source
+      - createdAtFrom
+      - createdAtTo
+      - limit
+      - offset
+
+  - operation: getChapterPlanCandidateBatch
+    method: GET
+    path: /api/v1/chapter-plan-candidate-batches/{batchId}
+
+  - operation: listChapterPlanCandidates
+    method: GET
+    path: /api/v1/chapter-plan-candidate-batches/{batchId}/candidates
+    filters:
+      - status
+      - diffType
+      - storylineId
+      - q
+      - limit
+      - offset
+
+  - operation: getChapterPlanCandidate
+    method: GET
+    path: /api/v1/chapter-plan-candidates/{candidateId}
+
+  - operation: updateChapterPlanCandidate
+    method: PATCH
+    path: /api/v1/chapter-plan-candidates/{candidateId}
+    request:
+      - expectedVersion
+      - editableCandidateFields
+
+  - operation: recompareChapterPlanCandidate
+    method: POST
+    path: /api/v1/chapter-plan-candidates/{candidateId}/recompare
+    request:
+      - expectedVersion
+    response:
+      - currentChapter
+      - candidate
+      - diff
+      - conflict
+
+  - operation: adoptChapterPlanCandidate
+    method: POST
+    path: /api/v1/chapter-plan-candidates/{candidateId}/adopt
+    headers:
+      - Idempotency-Key
+    request:
+      - expectedCandidateVersion
+      - expectedChapterPlanVersion
+    response:
+      - candidate
+      - chapterPlan
+      - revision
+      - batchSummary
+
+  - operation: discardChapterPlanCandidate
+    method: POST
+    path: /api/v1/chapter-plan-candidates/{candidateId}/discard
+    headers:
+      - Idempotency-Key
+    request:
+      - expectedVersion
+      - reason
+
+  - operation: adoptChapterPlanCandidates
+    method: POST
+    path: /api/v1/chapter-plan-candidate-batches/{batchId}/adoptions
+    headers:
+      - Idempotency-Key
+    request:
+      - expectedBatchVersion
+      - candidates
+    response:
+      - adopted
+      - skippedNoChange
+      - conflicts
+      - failures
+      - batchSummary
+
+  - operation: abandonChapterPlanCandidateBatch
+    method: POST
+    path: /api/v1/chapter-plan-candidate-batches/{batchId}/abandon
+    headers:
+      - Idempotency-Key
+    request:
+      - expectedVersion
+      - reason
+      - acknowledgeAdoptedChaptersRemain
+    response:
+      - batchSummary
+
+  - operation: getProjectChapterPlanningSummary
+    method: GET
+    path: /api/v1/projects/{projectId}/chapter-planning-summary
+
+reused_endpoints:
+  - GET /api/v1/projects/{projectId}/chapter-plans
+  - GET /api/v1/chapter-plans/{chapterPlanId}
+  - PATCH /api/v1/chapter-plans/{chapterPlanId}
+  - DELETE /api/v1/chapter-plans/{chapterPlanId}
+  - POST /api/v1/projects/{projectId}/chapter-plans/confirm
+  - GET /api/v1/workflow-runs
+  - GET /api/v1/workflow-runs/{runId}
+  - GET /api/v1/workflow-runs/{runId}/events
+  - POST /api/v1/workflow-runs/{runId}/cancel
+  - POST /api/v1/workflow-runs/{runId}/retries
+
+internal_application_contract:
+  name: ChapterPlanResultIngestor
+  input:
+    - workflowRunId
+    - normalizedChapterPlanningOutput
+  guarantees:
+    - validates the complete output before persistence
+    - creates at most one batch per workflowRunId
+    - writes the batch and all candidates atomically
+    - never exposes provider-specific payloads to the web API
+
+decisions_to_freeze:
+  - exact generation target schema for full, append and range modes
+  - one-active-run rule and conflict error
+  - preflightToken storage or signature strategy and TTL
+  - batch and candidate status enums
+  - bulk-adoption transaction and partial-result semantics
+  - chapter revision persistence shape
+  - execution-availability semantics after CF-14-N8N-Integration

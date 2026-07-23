@@ -1,0 +1,333 @@
+﻿<!DOCTYPE html>
+
+<html lang="zh-CN"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>C9 放弃候选批次确认弹窗 - AI Content Factory</title>
+<!-- Tailwind CSS with Forms and Container Queries Plugins -->
+<!-- Material Symbols -->
+<!-- Theme Configuration -->
+<script id="tailwind-config">
+        window.tailwind = window.tailwind || {}; tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "on-tertiary-container": "#ffffff",
+                        "background": "#f8f9fd",
+                        "tertiary-container": "#8342f4",
+                        "on-error": "#fff7f7",
+                        "on-secondary-fixed-variant": "#4d5d73",
+                        "secondary-dim": "#44546a",
+                        "surface-bright": "#f8f9fd",
+                        "inverse-on-surface": "#9b9da1",
+                        "error-container": "#ff8b9a",
+                        "surface-tint": "#4d44e3",
+                        "error-dim": "#4f0116",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-container-highest": "#dbe3ee",
+                        "tertiary-fixed-dim": "#7632e7",
+                        "surface-variant": "#dbe3ee",
+                        "on-primary-container": "#3f33d6",
+                        "on-surface": "#2b333b",
+                        "on-primary-fixed-variant": "#4a40e0",
+                        "secondary-fixed": "#d3e4fe",
+                        "surface-container-high": "#e2e9f2",
+                        "primary-container": "#e2dfff",
+                        "on-error-container": "#782232",
+                        "on-tertiary-fixed": "#ffffff",
+                        "error": "#9e3f4e",
+                        "primary-dim": "#4034d7",
+                        "on-background": "#2b333b",
+                        "surface-container-low": "#f1f4f9",
+                        "on-primary-fixed": "#2a13c5",
+                        "on-tertiary": "#fdf7ff",
+                        "on-secondary-container": "#435368",
+                        "on-surface-variant": "#576069",
+                        "surface": "#f8f9fd",
+                        "on-primary": "#faf6ff",
+                        "secondary-container": "#d3e4fe",
+                        "on-secondary-fixed": "#314055",
+                        "tertiary-fixed": "#8342f4",
+                        "secondary": "#506076",
+                        "on-secondary": "#f7f9ff",
+                        "inverse-surface": "#0c0e11",
+                        "surface-dim": "#d0dbe7",
+                        "on-tertiary-fixed-variant": "#e5d5ff",
+                        "primary-fixed": "#e2dfff",
+                        "outline-variant": "#aab3bd",
+                        "outline": "#737c85",
+                        "tertiary-dim": "#681ad9",
+                        "inverse-primary": "#8582ff",
+                        "tertiary": "#742fe5",
+                        "secondary-fixed-dim": "#c5d6f0",
+                        "primary": "#4d44e3",
+                        "surface-container": "#e9eef5",
+                        "primary-fixed-dim": "#d2d0ff"
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    fontFamily: {
+                        "headline": ["Inter", "sans-serif"],
+                        "display": ["Inter", "sans-serif"],
+                        "body": ["Inter", "sans-serif"],
+                        "label": ["Inter", "sans-serif"]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .material-symbols-outlined[data-weight="fill"] {
+            font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        /* Custom scrollbar for textarea */
+        textarea::-webkit-scrollbar {
+            width: 6px;
+        }
+        textarea::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        textarea::-webkit-scrollbar-thumb {
+            background-color: #aab3bd;
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body class="bg-surface text-on-surface font-body overflow-hidden h-screen w-screen flex antialiased">
+<!-- Sidebar Navigation Shell (Fixed 274px light sidebar) -->
+<aside class="fixed left-0 top-0 h-full w-[274px] border-r border-outline-variant bg-surface-container-lowest flex flex-col z-20">
+<!-- Brand Header -->
+<div class="h-32 p-6 flex flex-col justify-center border-b border-transparent">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-lg bg-primary-container text-primary flex items-center justify-center flex-shrink-0">
+<span class="material-symbols-outlined text-2xl" data-weight="fill">smart_toy</span>
+</div>
+<div>
+<h1 class="text-headline-sm font-black text-on-surface tracking-tight">AI Content Factory</h1>
+<p class="text-label-sm text-on-surface-variant">Creator SaaS</p>
+</div>
+</div>
+</div>
+<!-- Navigation Links -->
+<nav class="flex-1 py-4 flex flex-col gap-1 overflow-y-auto">
+<a class="flex items-center gap-3 px-6 py-3 text-on-surface-variant hover:bg-surface-container-low transition-colors cursor-pointer active:opacity-80" href="#">
+<span class="material-symbols-outlined">home</span>
+<span class="font-body text-label-sm">首页</span>
+</a>
+<!-- Active Tab: 项目 -->
+<a class="flex items-center gap-3 px-6 py-3 bg-secondary-container text-on-primary-container border-l-4 border-primary font-bold cursor-pointer active:opacity-80" href="#">
+<span class="material-symbols-outlined">folder_open</span>
+<span class="font-body text-label-sm">项目</span>
+</a>
+<a class="flex items-center gap-3 px-6 py-3 text-on-surface-variant hover:bg-surface-container-low transition-colors cursor-pointer active:opacity-80" href="#">
+<span class="material-symbols-outlined">category</span>
+<span class="font-body text-label-sm">素材</span>
+</a>
+<a class="flex items-center gap-3 px-6 py-3 text-on-surface-variant hover:bg-surface-container-low transition-colors cursor-pointer active:opacity-80" href="#">
+<span class="material-symbols-outlined">movie_filter</span>
+<span class="font-body text-label-sm">作品</span>
+</a>
+<a class="flex items-center gap-3 px-6 py-3 text-on-surface-variant hover:bg-surface-container-low transition-colors cursor-pointer active:opacity-80" href="#">
+<span class="material-symbols-outlined">account_tree</span>
+<span class="font-body text-label-sm">流程</span>
+</a>
+<a class="flex items-center gap-3 px-6 py-3 text-on-surface-variant hover:bg-surface-container-low transition-colors cursor-pointer active:opacity-80" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span class="font-body text-label-sm">设置</span>
+</a>
+</nav>
+<!-- Bottom User Plan Card -->
+<div class="p-6 mt-auto">
+<div class="bg-surface-container-high rounded-xl p-4 border border-outline-variant/30 flex items-center justify-between cursor-pointer hover:bg-surface-variant transition-colors">
+<div class="flex items-center gap-3">
+<img class="w-9 h-9 rounded-full object-cover" data-alt="A small, professional user avatar portrait of an Asian male creator with subtle rim lighting against a neutral grey background, high resolution." src="data:image/svg+xml,%3Csvg viewBox=%220 0 64 64%22%3E%3Crect width=%2264%22 height=%2264%22 fill=%22%23dbe3ee%22/%3E%3Ccircle cx=%2232%22 cy=%2224%22 r=%2212%22 fill=%22%23576069%22/%3E%3Cpath d=%22M8 64c3-16 13-24 24-24s21 8 24 24%22 fill=%22%23576069%22/%3E%3C/svg%3E"/>
+<div class="flex flex-col">
+<span class="text-sm font-bold text-on-surface">高级创作者 / Pro Plan</span>
+</div>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant text-sm">unfold_more</span>
+</div>
+</div>
+</aside>
+<!-- Main Application Area -->
+<main class="ml-[274px] flex-1 flex flex-col h-screen relative">
+<!-- Top Navigation Bar -->
+<header class="fixed top-0 right-0 left-[274px] h-32 border-b border-outline-variant z-10 bg-surface flex flex-col justify-between px-8 py-4 w-auto">
+<!-- Top Row: Breadcrumb, Search, Utilities -->
+<div class="flex items-center justify-between w-full mt-2">
+<div class="flex items-center gap-2">
+<span class="text-body font-bold text-on-surface">项目 &gt; 末世求生</span>
+<span class="px-2 py-0.5 bg-surface-container-high text-xs text-on-surface-variant rounded-md ml-2">小说</span>
+<span class="px-2 py-0.5 border border-primary/30 text-primary text-xs rounded-md">策划中</span>
+</div>
+<div class="flex items-center gap-6">
+<!-- Search Bar -->
+<div class="relative flex items-center">
+<span class="material-symbols-outlined absolute left-3 text-on-surface-variant text-sm">search</span>
+<input class="pl-9 pr-4 py-1.5 bg-surface-container-low border border-outline-variant/50 rounded-full text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary w-64 text-on-surface placeholder-on-surface-variant transition-all" placeholder="搜索资源..." type="text"/>
+</div>
+<!-- Trailing Icons -->
+<div class="flex items-center gap-4 text-on-surface-variant">
+<button class="hover:text-primary transition-all cursor-pointer"><span class="material-symbols-outlined">help</span></button>
+<button class="hover:text-primary transition-all cursor-pointer relative">
+<span class="material-symbols-outlined">notifications</span>
+<span class="absolute top-0 right-0 w-2 h-2 bg-error rounded-full"></span>
+</button>
+</div>
+</div>
+</div>
+<!-- Bottom Row: Section Tabs -->
+<div class="flex gap-8 font-headline text-on-surface mt-auto">
+<a class="text-on-surface-variant hover:text-on-surface pb-2 transition-all cursor-pointer" href="#">概览</a>
+<a class="text-on-surface-variant hover:text-on-surface pb-2 transition-all cursor-pointer" href="#">策划</a>
+<a class="text-on-surface-variant hover:text-on-surface pb-2 transition-all cursor-pointer" href="#">素材</a>
+<a class="text-on-surface-variant hover:text-on-surface pb-2 transition-all cursor-pointer" href="#">故事线</a>
+<!-- Active Tab: 章节 -->
+<a class="text-primary border-b-2 border-primary font-bold pb-2 cursor-pointer" href="#">章节</a>
+<a class="text-on-surface-variant hover:text-on-surface pb-2 transition-all cursor-pointer" href="#">审核</a>
+<a class="text-on-surface-variant hover:text-on-surface pb-2 transition-all cursor-pointer" href="#">作品</a>
+<a class="text-on-surface-variant hover:text-on-surface pb-2 transition-all cursor-pointer" href="#">设置</a>
+</div>
+</header>
+<!-- Background Content (Blurred slightly to emphasize modal) -->
+<div class="mt-32 p-8 overflow-y-auto h-full flex-1 bg-surface-bright select-none pointer-events-none filter blur-[2px] opacity-60">
+<!-- Mock visual structure of "Candidate Batch Details" to fulfill layout requirement -->
+<div class="max-w-6xl mx-auto space-y-6">
+<div class="flex justify-between items-center">
+<div>
+<h2 class="text-2xl font-bold text-on-surface">候选批次详情: 局部章节规划</h2>
+<p class="text-on-surface-variant mt-1 text-sm">Run ID: RUN-20260722-020 • 运行时间: 2026-07-22 14:30</p>
+</div>
+<div class="flex gap-3">
+<button class="px-4 py-2 border border-outline-variant rounded-lg text-sm font-medium">导出记录</button>
+<button class="px-4 py-2 bg-primary text-on-primary rounded-lg text-sm font-medium">应用选定项</button>
+</div>
+</div>
+<div class="grid grid-cols-4 gap-4">
+<div class="col-span-1 bg-surface-container-lowest p-4 rounded-xl border border-outline-variant shadow-sm h-[600px]">
+<div class="font-bold mb-4">候选列表 (20)</div>
+<!-- Mock list items -->
+<div class="space-y-2">
+<div class="p-3 bg-secondary-container/50 border border-primary/20 rounded-lg"><span class="text-sm">候选 01 - 第21章扩展</span></div>
+<div class="p-3 bg-surface-container-low rounded-lg"><span class="text-sm">候选 02 - 第22章重构</span></div>
+<div class="p-3 bg-surface-container-low rounded-lg"><span class="text-sm">候选 03 - 第23章人物对话</span></div>
+</div>
+</div>
+<div class="col-span-3 bg-surface-container-lowest p-6 rounded-xl border border-outline-variant shadow-sm">
+<div class="font-bold text-lg mb-4">内容预览与对比</div>
+<div class="h-64 bg-surface-container-low rounded-lg border border-dashed border-outline-variant mb-4 flex items-center justify-center text-on-surface-variant">原始内容区域</div>
+<div class="h-64 bg-primary-container/20 rounded-lg border border-dashed border-primary/40 flex items-center justify-center text-primary-dim">生成内容区域</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- Modal Overlay -->
+<div class="fixed inset-0 z-50 flex items-center justify-center bg-inverse-surface/60 backdrop-blur-sm transition-opacity duration-200">
+<!-- Modal Container (Width: 620px) -->
+<div aria-labelledby="modal-title" aria-modal="true" class="w-[620px] bg-surface-container-lowest rounded-xl shadow-2xl flex flex-col overflow-hidden transform scale-100 transition-transform duration-200" role="dialog">
+<!-- Modal Header -->
+<div class="px-6 py-5 border-b border-outline-variant flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-error-container/50 flex items-center justify-center text-error">
+<span class="material-symbols-outlined text-2xl">warning</span>
+</div>
+<h2 class="text-xl font-headline font-bold text-on-surface" id="modal-title">放弃候选批次</h2>
+<!-- Close icon (optional top right, good practice) -->
+<button class="ml-auto text-on-surface-variant hover:text-on-surface transition-colors">
+<span class="material-symbols-outlined">close</span>
+</button>
+</div>
+<!-- Modal Body -->
+<div class="p-6 flex flex-col gap-6">
+<!-- Batch Summary Card -->
+<div class="bg-surface-bright border border-outline-variant rounded-lg p-5 flex flex-col gap-2">
+<div class="flex justify-between items-start">
+<h3 class="font-bold text-on-surface text-base">局部章节规划 · 第21—40章</h3>
+<span class="text-xs font-mono text-on-surface-variant bg-surface-container-high px-2 py-1 rounded">RUN-20260722-020</span>
+</div>
+<div class="flex items-center gap-2 mt-2">
+<span class="text-sm font-medium text-on-surface bg-surface-container px-2.5 py-1 rounded-md">20个候选</span>
+<span class="text-sm text-outline">•</span>
+<span class="text-sm font-medium text-primary bg-primary-container/50 px-2.5 py-1 rounded-md">已采用8</span>
+<span class="text-sm text-outline">•</span>
+<span class="text-sm font-medium text-on-surface-variant bg-surface-container px-2.5 py-1 rounded-md">待处理12</span>
+</div>
+</div>
+<!-- Warning Box (Light Red Background) -->
+<div class="bg-[#fef0f0] border border-[#fbc4c4] rounded-lg p-5">
+<div class="flex items-start gap-3">
+<span class="material-symbols-outlined text-error mt-0.5 text-lg">info</span>
+<div class="flex flex-col gap-2">
+<p class="text-sm font-bold text-error">请注意，此操作将产生以下影响：</p>
+<ul class="list-decimal list-inside text-sm text-on-surface space-y-1.5 ml-1">
+<li>放弃后<strong class="text-error font-medium px-1">12个尚未采用</strong>的候选不再可处理；</li>
+<li>已采用<strong class="font-medium px-1">8个章节</strong>不会回滚且保留在当前章节；</li>
+<li>运行记录和来源追溯仍保留在流程中心。</li>
+</ul>
+</div>
+</div>
+</div>
+<!-- Reason Input -->
+<div class="flex flex-col gap-2">
+<label class="text-sm font-medium text-on-surface" for="abandon-reason">放弃原因（可选）</label>
+<textarea class="w-full bg-surface-container-low border border-outline-variant rounded-lg p-3 text-sm text-on-surface placeholder:text-on-surface-variant/70 focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-shadow resize-none" id="abandon-reason" placeholder="请输入放弃此批次候选的原因..." rows="3"></textarea>
+</div>
+<!-- Confirmation Checkbox -->
+<div class="flex items-center gap-3 mt-2 bg-surface-container-lowest">
+<div class="relative flex items-center">
+<input class="peer h-5 w-5 cursor-pointer appearance-none rounded border-2 border-outline-variant checked:border-error checked:bg-error transition-all focus:outline-none focus:ring-2 focus:ring-error/20 focus:ring-offset-1" id="confirm-check" type="checkbox"/>
+<span class="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-white opacity-0 peer-checked:opacity-100 transition-opacity">
+<span class="material-symbols-outlined text-[16px] font-bold">check</span>
+</span>
+</div>
+<label class="text-sm font-medium text-on-surface cursor-pointer select-none hover:text-error transition-colors" for="confirm-check">
+                        我已了解已采用章节不会撤销
+                    </label>
+</div>
+</div>
+<!-- Bottom Bar / Footer -->
+<div class="px-6 py-4 bg-surface-container-low border-t border-outline-variant flex justify-end gap-3 items-center">
+<!-- Helper text for disabled state -->
+<span class="text-xs text-error mr-auto transition-opacity duration-200" id="hint-text">请先勾选确认条款</span>
+<button class="px-5 py-2.5 rounded-lg border border-outline-variant text-on-surface hover:bg-surface-container-highest font-medium text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-outline-variant/50">
+                    取消
+                </button>
+<!-- Destructive Primary Button (Initially Disabled) -->
+<button class="px-5 py-2.5 rounded-lg bg-error text-on-error font-medium text-sm transition-all focus:outline-none focus:ring-2 focus:ring-error/50 opacity-50 cursor-not-allowed flex items-center gap-2" disabled="" id="confirm-btn">
+<span class="material-symbols-outlined text-sm">delete_forever</span>
+                    确认放弃批次
+                </button>
+</div>
+</div>
+</div>
+<!-- Minimal JS to handle the mandatory checkbox logic for prototype realism -->
+<script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const checkbox = document.getElementById('confirm-check');
+            const confirmBtn = document.getElementById('confirm-btn');
+            const hintText = document.getElementById('hint-text');
+
+            checkbox.addEventListener('change', (e) => {
+                if (e.target.checked) {
+                    confirmBtn.disabled = false;
+                    confirmBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                    confirmBtn.classList.add('hover:bg-error-dim', 'shadow-sm', 'active:scale-95');
+                    hintText.classList.add('opacity-0');
+                } else {
+                    confirmBtn.disabled = true;
+                    confirmBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                    confirmBtn.classList.remove('hover:bg-error-dim', 'shadow-sm', 'active:scale-95');
+                    hintText.classList.remove('opacity-0');
+                }
+            });
+        });
+    </script>
+</body></html>

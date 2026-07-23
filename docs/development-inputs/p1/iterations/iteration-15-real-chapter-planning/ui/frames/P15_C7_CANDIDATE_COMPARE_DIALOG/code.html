@@ -1,0 +1,266 @@
+﻿<!DOCTYPE html>
+
+<html lang="zh-CN"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>第22章候选对比 - AI Content Factory</title>
+<script id="tailwind-config">
+      window.tailwind = window.tailwind || {}; tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "on-primary": "#faf6ff",
+                    "on-tertiary-container": "#ffffff",
+                    "secondary-fixed": "#d3e4fe",
+                    "surface-variant": "#dbe3ee",
+                    "on-secondary": "#f7f9ff",
+                    "inverse-surface": "#0c0e11",
+                    "on-tertiary-fixed-variant": "#e5d5ff",
+                    "on-primary-container": "#3f33d6",
+                    "primary-dim": "#4034d7",
+                    "on-tertiary-fixed": "#ffffff",
+                    "on-error": "#fff7f7",
+                    "on-secondary-fixed-variant": "#4d5d73",
+                    "tertiary-fixed-dim": "#7632e7",
+                    "inverse-primary": "#8582ff",
+                    "error": "#9e3f4e",
+                    "secondary-fixed-dim": "#c5d6f0",
+                    "tertiary-container": "#8342f4",
+                    "on-error-container": "#782232",
+                    "on-secondary-container": "#435368",
+                    "primary-fixed-dim": "#d2d0ff",
+                    "outline-variant": "#aab3bd",
+                    "surface-container-highest": "#dbe3ee",
+                    "background": "#f8f9fd",
+                    "tertiary-fixed": "#8342f4",
+                    "on-primary-fixed-variant": "#4a40e0",
+                    "secondary": "#506076",
+                    "outline": "#737c85",
+                    "surface-container-low": "#f1f4f9",
+                    "surface-container-high": "#e2e9f2",
+                    "surface-tint": "#4d44e3",
+                    "surface-container-lowest": "#ffffff",
+                    "surface-bright": "#f8f9fd",
+                    "secondary-dim": "#44546a",
+                    "inverse-on-surface": "#9b9da1",
+                    "on-secondary-fixed": "#314055",
+                    "on-primary-fixed": "#2a13c5",
+                    "on-tertiary": "#fdf7ff",
+                    "tertiary": "#742fe5",
+                    "secondary-container": "#d3e4fe",
+                    "on-background": "#2b333b",
+                    "surface-container": "#e9eef5",
+                    "surface": "#f8f9fd",
+                    "primary-container": "#e2dfff",
+                    "error-dim": "#4f0116",
+                    "primary-fixed": "#e2dfff",
+                    "surface-dim": "#d0dbe7",
+                    "primary": "#4d44e3",
+                    "error-container": "#ff8b9a",
+                    "on-surface": "#2b333b",
+                    "tertiary-dim": "#681ad9",
+                    "on-surface-variant": "#576069"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {},
+            "fontFamily": {
+                    "headline": [
+                            "Inter"
+                    ],
+                    "display": [
+                            "Inter"
+                    ],
+                    "body": [
+                            "Inter"
+                    ],
+                    "label": [
+                            "Inter"
+                    ]
+            },
+            "fontSize": {}
+    },
+        },
+      }
+    </script>
+<style>
+        .diff-added { background-color: #dcfce7; color: #166534; padding: 2px 4px; border-radius: 2px; }
+        .diff-deleted { background-color: #fee2e2; color: #991b1b; text-decoration: line-through; padding: 2px 4px; border-radius: 2px; }
+        .diff-modified-old { background-color: #ffedd5; color: #9a3412; text-decoration: line-through; padding: 2px 4px; border-radius: 2px; }
+        .diff-modified-new { background-color: #dbeafe; color: #1e40af; padding: 2px 4px; border-radius: 2px; }
+        .diff-unchanged { color: #6b7280; }
+    </style>
+</head>
+<body class="font-body bg-surface text-on-surface antialiased h-screen w-full overflow-hidden flex">
+<!-- Screen Background (Placeholder for C5) -->
+<div class="absolute inset-0 bg-background/50 z-0 flex items-center justify-center">
+<img alt="Background screen context" class="opacity-30 object-cover w-full h-full" src="data:image/svg+xml,%3Csvg viewBox=%220 0 64 64%22%3E%3Crect width=%2264%22 height=%2264%22 fill=%22%23dbe3ee%22/%3E%3Ccircle cx=%2232%22 cy=%2224%22 r=%2212%22 fill=%22%23576069%22/%3E%3Cpath d=%22M8 64c3-16 13-24 24-24s21 8 24 24%22 fill=%22%23576069%22/%3E%3C/svg%3E"/>
+</div>
+<!-- Modal Overlay -->
+<div class="fixed inset-0 bg-inverse-surface/40 z-50 flex items-center justify-center p-4">
+<!-- Modal Container -->
+<div class="bg-surface-container-lowest rounded-xl shadow-2xl w-full max-w-[1050px] max-h-[921px] flex flex-col overflow-hidden border border-outline-variant relative z-10">
+<!-- Header -->
+<div class="px-6 py-4 border-b border-surface-variant flex items-center justify-between bg-surface-container-lowest shrink-0">
+<h2 class="text-xl font-bold font-headline text-on-surface">第22章候选对比</h2>
+<button aria-label="Close modal" class="text-on-surface-variant hover:text-on-surface transition-colors p-1 rounded-full hover:bg-surface-container-low">
+<span class="material-symbols-outlined text-[24px]">close</span>
+</button>
+</div>
+<!-- Scrollable Content -->
+<div class="flex-1 overflow-y-auto p-6 flex flex-col gap-6 bg-surface">
+<!-- Metadata Row -->
+<div class="flex flex-wrap items-center gap-6 text-sm text-on-surface-variant">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[16px]">id_card</span>
+<span class="font-medium">来源批次:</span>
+<span class="font-mono bg-surface-container py-0.5 px-1.5 rounded">RUN-20260722-020</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[16px]">category</span>
+<span class="font-medium">任务类型:</span>
+<span>局部章节规划（第21—40章）</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[16px]">schedule</span>
+<span class="font-medium">生成时间:</span>
+<span>2026-07-22 19:10</span>
+</div>
+</div>
+<!-- Alert Banner -->
+<div class="bg-orange-50 border border-orange-200 text-orange-800 rounded-lg p-3 flex items-start gap-3 shadow-sm">
+<span class="material-symbols-outlined text-orange-600 mt-0.5">warning</span>
+<div>
+<p class="font-medium text-sm">当前章节在候选生成后发生过修改，请重新确认差异</p>
+</div>
+</div>
+<!-- Comparison Table -->
+<div class="border border-outline-variant rounded-lg overflow-hidden bg-surface-container-lowest shadow-sm">
+<table class="w-full text-left border-collapse table-fixed">
+<colgroup>
+<col class="w-32"/>
+<col class="w-[calc(50%-64px)]"/>
+<col class="w-[calc(50%-64px)]"/>
+</colgroup>
+<thead class="bg-surface-container-low border-b border-outline-variant">
+<tr>
+<th class="py-3 px-4 text-xs font-semibold text-on-surface uppercase tracking-wider border-r border-outline-variant/50">对比项</th>
+<th class="py-3 px-4 text-xs font-semibold text-on-surface uppercase tracking-wider border-r border-outline-variant/50">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-secondary"></span>
+                                        当前章节 (已采用)
+                                    </div>
+</th>
+<th class="py-3 px-4 text-xs font-semibold text-on-surface uppercase tracking-wider">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-primary"></span>
+                                        新候选 (待处理)
+                                    </div>
+</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-surface-variant text-sm text-on-surface align-top">
+<!-- Row 1: Title -->
+<tr class="hover:bg-surface-container-lowest/50 transition-colors">
+<td class="py-4 px-4 font-medium text-on-surface-variant border-r border-outline-variant/50 bg-surface/30">章节标题</td>
+<td class="py-4 px-4 border-r border-outline-variant/50 pr-8">
+                                    第22章：<span class="diff-modified-old">风暴前夕</span>
+</td>
+<td class="py-4 px-4">
+                                    第22章：<span class="diff-modified-new">暗流涌动</span>
+</td>
+</tr>
+<!-- Row 2: Summary -->
+<tr class="hover:bg-surface-container-lowest/50 transition-colors">
+<td class="py-4 px-4 font-medium text-on-surface-variant border-r border-outline-variant/50 bg-surface/30">章节摘要</td>
+<td class="py-4 px-4 border-r border-outline-variant/50 leading-relaxed pr-8">
+<span class="diff-unchanged">主角回到营地，发现气氛异常。</span><span class="diff-deleted">老村长试图隐瞒粮仓失窃的消息。</span>主角决定暗中调查<span class="diff-modified-old">张三</span>的行踪。
+                                </td>
+<td class="py-4 px-4 leading-relaxed">
+<span class="diff-unchanged">主角回到营地，发现气氛异常。</span>主角决定暗中调查<span class="diff-modified-new">巡逻队长</span>的行踪，<span class="diff-added">并在后山发现了可疑的脚印，预示着更大的阴谋。</span>
+</td>
+</tr>
+<!-- Row 3: Purpose -->
+<tr class="hover:bg-surface-container-lowest/50 transition-colors">
+<td class="py-4 px-4 font-medium text-on-surface-variant border-r border-outline-variant/50 bg-surface/30">本章作用</td>
+<td class="py-4 px-4 border-r border-outline-variant/50 pr-8">
+<ul class="list-disc list-inside space-y-1">
+<li class="diff-unchanged">铺垫营地内部的信任危机</li>
+<li class="diff-deleted">引出老村长的隐藏支线</li>
+</ul>
+</td>
+<td class="py-4 px-4">
+<ul class="list-disc list-inside space-y-1">
+<li class="diff-unchanged">铺垫营地内部的信任危机</li>
+<li class="diff-added">引入外部势力的渗透线索</li>
+</ul>
+</td>
+</tr>
+<!-- Row 4: Storyline -->
+<tr class="hover:bg-surface-container-lowest/50 transition-colors">
+<td class="py-4 px-4 font-medium text-on-surface-variant border-r border-outline-variant/50 bg-surface/30">故事线关联</td>
+<td class="py-4 px-4 border-r border-outline-variant/50 pr-8 flex flex-wrap gap-2">
+<span class="inline-flex items-center gap-1 bg-surface-container px-2 py-1 rounded text-xs border border-outline-variant diff-unchanged">
+                                        王国政变 › 权力博弈
+                                    </span>
+</td>
+<td class="py-4 px-4 flex flex-wrap gap-2">
+<span class="inline-flex items-center gap-1 bg-surface-container px-2 py-1 rounded text-xs border border-outline-variant diff-unchanged">
+                                        王国政变 › 权力博弈
+                                    </span>
+<span class="inline-flex items-center gap-1 bg-green-50 text-green-700 px-2 py-1 rounded text-xs border border-green-200">
+                                        主角成长 › 能力觉醒
+                                    </span>
+</td>
+</tr>
+<!-- Row 5: Assets -->
+<tr class="hover:bg-surface-container-lowest/50 transition-colors">
+<td class="py-4 px-4 font-medium text-on-surface-variant border-r border-outline-variant/50 bg-surface/30">素材关联</td>
+<td class="py-4 px-4 border-r border-outline-variant/50 pr-8 flex flex-wrap gap-2">
+<span class="px-2 py-1 bg-surface-container rounded text-xs diff-unchanged">废弃营地</span>
+<span class="px-2 py-1 bg-surface-container rounded text-xs diff-deleted">老旧猎枪</span>
+</td>
+<td class="py-4 px-4 flex flex-wrap gap-2">
+<span class="px-2 py-1 bg-surface-container rounded text-xs diff-unchanged">废弃营地</span>
+<span class="px-2 py-1 bg-blue-50 text-blue-700 border border-blue-200 rounded text-xs">神秘通讯器 (新)</span>
+</td>
+</tr>
+<!-- Row 6: Foreshadowing -->
+<tr class="hover:bg-surface-container-lowest/50 transition-colors">
+<td class="py-4 px-4 font-medium text-on-surface-variant border-r border-outline-variant/50 bg-surface/30 border-b-0">伏笔关联</td>
+<td class="py-4 px-4 border-r border-outline-variant/50 pr-8 border-b-0 text-on-surface-variant italic">
+                                    无
+                                </td>
+<td class="py-4 px-4 border-b-0">
+<div class="diff-added inline-block">后山脚印（指向第25章的袭击）</div>
+</td>
+</tr>
+</tbody>
+</table>
+<!-- Legend -->
+<div class="bg-surface-container-lowest px-4 py-3 border-t border-outline-variant flex items-center gap-6 text-xs text-on-surface-variant">
+<span class="font-medium mr-2">图例说明：</span>
+<div class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-sm bg-green-100 border border-green-200"></span>新增内容</div>
+<div class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-sm bg-red-100 border border-red-200"></span>删除内容</div>
+<div class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-sm bg-orange-100 border border-orange-200"></span>修改前</div>
+<div class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-sm bg-blue-100 border border-blue-200"></span>修改后</div>
+</div>
+</div>
+</div>
+<!-- Sticky Footer -->
+<div class="px-6 py-4 bg-surface-container-lowest border-t border-outline-variant flex items-center justify-end gap-3 shrink-0">
+<button class="px-5 py-2 rounded border border-outline text-on-surface font-medium hover:bg-surface-container-low transition-colors text-sm">保留当前</button>
+<button class="px-5 py-2 rounded border border-primary text-primary font-medium hover:bg-primary/5 transition-colors text-sm">编辑新候选</button>
+<button class="px-5 py-2 rounded bg-primary text-on-primary font-medium hover:bg-primary-dim transition-colors text-sm shadow-sm flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px]">check_circle</span>
+                    采用新候选
+                </button>
+</div>
+</div>
+</div>
+</body></html>

@@ -1,0 +1,412 @@
+﻿<!DOCTYPE html>
+
+<html lang="zh-CN"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>C3-A 章节规划预检结果报告｜正常 - AI Content Factory</title>
+<!-- Tailwind CSS -->
+<!-- Material Symbols -->
+<style>
+        .material-symbols-outlined {
+            font-family: 'Material Symbols Outlined';
+            font-weight: normal;
+            font-style: normal;
+            font-size: 24px;
+            line-height: 1;
+            letter-spacing: normal;
+            text-transform: none;
+            display: inline-block;
+            white-space: nowrap;
+            word-wrap: normal;
+            direction: ltr;
+            -webkit-font-feature-settings: 'liga';
+            -webkit-font-smoothing: antialiased;
+        }
+    </style>
+<!-- Tailwind Config -->
+<script id="tailwind-config">
+        window.tailwind = window.tailwind || {}; tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "tertiary-dim": "#681ad9",
+                        "primary-container": "#e2dfff",
+                        "surface": "#f8f9fd",
+                        "secondary": "#506076",
+                        "outline": "#737c85",
+                        "secondary-fixed": "#d3e4fe",
+                        "on-primary": "#faf6ff",
+                        "on-secondary-fixed": "#314055",
+                        "on-surface": "#2b333b",
+                        "tertiary-fixed": "#8342f4",
+                        "on-tertiary-container": "#ffffff",
+                        "primary": "#4d44e3",
+                        "on-error": "#fff7f7",
+                        "surface-variant": "#dbe3ee",
+                        "tertiary-container": "#8342f4",
+                        "secondary-fixed-dim": "#c5d6f0",
+                        "background": "#f8f9fd",
+                        "on-secondary-fixed-variant": "#4d5d73",
+                        "surface-container-lowest": "#ffffff",
+                        "on-error-container": "#782232",
+                        "on-secondary": "#f7f9ff",
+                        "surface-container-highest": "#dbe3ee",
+                        "primary-fixed": "#e2dfff",
+                        "on-tertiary-fixed": "#ffffff",
+                        "on-primary-fixed": "#2a13c5",
+                        "primary-fixed-dim": "#d2d0ff",
+                        "surface-container-low": "#f1f4f9",
+                        "error-dim": "#4f0116",
+                        "on-surface-variant": "#576069",
+                        "tertiary": "#742fe5",
+                        "inverse-on-surface": "#9b9da1",
+                        "surface-dim": "#d0dbe7",
+                        "error-container": "#ff8b9a",
+                        "tertiary-fixed-dim": "#7632e7",
+                        "surface-container-high": "#e2e9f2",
+                        "surface-container": "#e9eef5",
+                        "on-primary-container": "#3f33d6",
+                        "on-tertiary": "#fdf7ff",
+                        "outline-variant": "#aab3bd",
+                        "surface-tint": "#4d44e3",
+                        "inverse-surface": "#0c0e11",
+                        "error": "#9e3f4e",
+                        "inverse-primary": "#8582ff",
+                        "on-primary-fixed-variant": "#4a40e0",
+                        "on-background": "#2b333b",
+                        "secondary-dim": "#44546a",
+                        "secondary-container": "#d3e4fe",
+                        "on-tertiary-fixed-variant": "#e5d5ff",
+                        "on-secondary-container": "#435368",
+                        "surface-bright": "#f8f9fd",
+                        "primary-dim": "#4034d7"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "fontFamily": {
+                        "headline": ["Inter", "sans-serif"],
+                        "display": ["Inter", "sans-serif"],
+                        "body": ["Inter", "sans-serif"],
+                        "label": ["Inter", "sans-serif"]
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-surface font-body text-on-surface overflow-hidden h-screen w-screen flex relative">
+<!-- JSON Component: SideNavBar -->
+<nav class="fixed left-0 top-0 h-full w-[274px] border-r border-outline-variant bg-surface-container-lowest flex flex-col z-10">
+<!-- Brand Header -->
+<div class="px-6 py-8 flex flex-col gap-1">
+<h1 class="text-headline-sm font-black text-on-surface font-headline tracking-tight text-xl">AI Content Factory</h1>
+<p class="text-on-surface-variant text-label-sm font-label text-sm">Creator SaaS</p>
+</div>
+<!-- Navigation Tabs -->
+<div class="flex-1 flex flex-col gap-1 px-3 mt-4">
+<!-- 首页 - Inactive -->
+<a class="flex items-center gap-3 px-6 py-3 text-on-surface-variant hover:bg-surface-container-high transition-colors rounded-lg cursor-pointer active:opacity-80" href="#">
+<span class="material-symbols-outlined text-[20px]" data-icon="home">home</span>
+<span class="font-label text-sm">首页</span>
+</a>
+<!-- 项目 - Active (Exact Match based on context) -->
+<a class="flex items-center gap-3 px-6 py-3 bg-secondary-container text-on-primary-container border-l-4 border-primary font-bold rounded-r-lg cursor-pointer active:opacity-80 transition-colors" href="#">
+<span class="material-symbols-outlined text-[20px]" data-icon="folder_open" style="font-variation-settings: 'FILL' 1;">folder_open</span>
+<span class="font-label text-sm">项目</span>
+</a>
+<!-- 素材 - Inactive -->
+<a class="flex items-center gap-3 px-6 py-3 text-on-surface-variant hover:bg-surface-container-high transition-colors rounded-lg cursor-pointer active:opacity-80" href="#">
+<span class="material-symbols-outlined text-[20px]" data-icon="category">category</span>
+<span class="font-label text-sm">素材</span>
+</a>
+<!-- 作品 - Inactive -->
+<a class="flex items-center gap-3 px-6 py-3 text-on-surface-variant hover:bg-surface-container-high transition-colors rounded-lg cursor-pointer active:opacity-80" href="#">
+<span class="material-symbols-outlined text-[20px]" data-icon="movie_filter">movie_filter</span>
+<span class="font-label text-sm">作品</span>
+</a>
+<!-- 流程 - Inactive -->
+<a class="flex items-center gap-3 px-6 py-3 text-on-surface-variant hover:bg-surface-container-high transition-colors rounded-lg cursor-pointer active:opacity-80" href="#">
+<span class="material-symbols-outlined text-[20px]" data-icon="account_tree">account_tree</span>
+<span class="font-label text-sm">流程</span>
+</a>
+<!-- 设置 - Inactive -->
+<a class="flex items-center gap-3 px-6 py-3 text-on-surface-variant hover:bg-surface-container-high transition-colors rounded-lg cursor-pointer active:opacity-80" href="#">
+<span class="material-symbols-outlined text-[20px]" data-icon="settings">settings</span>
+<span class="font-label text-sm">设置</span>
+</a>
+</div>
+<!-- User Plan / CTA Footer -->
+<div class="p-6 mt-auto border-t border-outline-variant/30">
+<div class="bg-surface-container-low rounded-lg p-4 flex items-center justify-between shadow-sm border border-outline-variant/20 cursor-pointer hover:bg-surface-container-high transition-colors">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-full bg-primary-container flex items-center justify-center">
+<span class="material-symbols-outlined text-primary text-[18px]">person</span>
+</div>
+<span class="text-sm font-bold text-on-surface">高级创作者 / Pro Plan</span>
+</div>
+</div>
+</div>
+</nav>
+<!-- Main Content Wrapper -->
+<div class="flex-1 flex flex-col ml-[274px] h-full w-[calc(100%-274px)] relative">
+<!-- JSON Component: TopNavBar -->
+<header class="fixed top-0 right-0 left-[274px] h-32 border-b border-outline-variant bg-surface z-10 flex flex-col justify-between px-8 py-4 w-[calc(100%-274px)]">
+<!-- Top Utility Row -->
+<div class="flex items-center justify-between w-full">
+<!-- Breadcrumb / Product Name -->
+<div class="flex items-center gap-2 text-sm text-on-surface-variant font-label">
+<span class="font-bold text-on-surface text-body">项目 &gt; 末世求生</span>
+</div>
+<!-- Utilities (Search & Icons) -->
+<div class="flex items-center gap-6">
+<div class="relative">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-[18px]">search</span>
+<input class="w-64 pl-9 pr-4 py-1.5 bg-surface-container-lowest border border-outline-variant rounded-full text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all" placeholder="搜索资源..." type="text"/>
+</div>
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-on-surface-variant hover:text-primary transition-all cursor-pointer" data-icon="help">help</span>
+<span class="material-symbols-outlined text-on-surface-variant hover:text-primary transition-all cursor-pointer" data-icon="notifications">notifications</span>
+<img alt="User Avatar" class="w-8 h-8 rounded-full border border-outline-variant ml-2 object-cover" data-alt="A small circular user avatar showing a generic minimalist face profile illustration in professional blue tones." src="data:image/svg+xml,%3Csvg viewBox=%220 0 64 64%22%3E%3Crect width=%2264%22 height=%2264%22 fill=%22%23dbe3ee%22/%3E%3Ccircle cx=%2232%22 cy=%2224%22 r=%2212%22 fill=%22%23576069%22/%3E%3Cpath d=%22M8 64c3-16 13-24 24-24s21 8 24 24%22 fill=%22%23576069%22/%3E%3C/svg%3E"/>
+</div>
+</div>
+</div>
+<!-- Context/Project Header details would normally go here based on ACF rules, but JSON only provided links -->
+<!-- Navigation Links -->
+<div class="flex items-end gap-8 h-full mt-6">
+<!-- 概览 - Inactive -->
+<a class="text-on-surface-variant hover:text-on-surface pb-2 text-sm font-label cursor-pointer hover:text-primary transition-all" href="#">概览</a>
+<!-- 策划 - Active based on context -->
+<a class="text-primary border-b-2 border-primary font-bold pb-2 text-sm font-label cursor-pointer hover:text-primary transition-all" href="#">策划</a>
+<!-- 素材 - Inactive -->
+<a class="text-on-surface-variant hover:text-on-surface pb-2 text-sm font-label cursor-pointer hover:text-primary transition-all" href="#">素材</a>
+<!-- 故事线 - Inactive -->
+<a class="text-on-surface-variant hover:text-on-surface pb-2 text-sm font-label cursor-pointer hover:text-primary transition-all" href="#">故事线</a>
+<!-- 章节 - Inactive -->
+<a class="text-on-surface-variant hover:text-on-surface pb-2 text-sm font-label cursor-pointer hover:text-primary transition-all" href="#">章节</a>
+<!-- 审核 - Inactive -->
+<a class="text-on-surface-variant hover:text-on-surface pb-2 text-sm font-label cursor-pointer hover:text-primary transition-all" href="#">审核</a>
+<!-- 作品 - Inactive -->
+<a class="text-on-surface-variant hover:text-on-surface pb-2 text-sm font-label cursor-pointer hover:text-primary transition-all" href="#">作品</a>
+<!-- 设置 - Inactive -->
+<a class="text-on-surface-variant hover:text-on-surface pb-2 text-sm font-label cursor-pointer hover:text-primary transition-all" href="#">设置</a>
+</div>
+</header>
+<!-- Dummy Canvas Content under modal -->
+<main class="flex-1 mt-32 p-8 overflow-auto">
+<!-- Background content hidden by modal -->
+</main>
+</div>
+<!-- Backdrop Overlay -->
+<div class="fixed inset-0 z-40 bg-inverse-surface/60 backdrop-blur-[2px]"></div>
+<!-- Modal Container -->
+<div class="fixed inset-0 z-50 flex items-center justify-center pl-[274px] p-8">
+<!-- Modal Dialog -->
+<div class="w-[980px] bg-surface-container-lowest rounded-xl shadow-2xl flex flex-col max-h-[921px] overflow-hidden border border-outline-variant/30">
+<!-- Header -->
+<div class="flex items-center justify-between px-6 py-4 border-b border-outline-variant bg-surface-container-lowest">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-primary text-[24px]" style="font-variation-settings: 'FILL' 1;">check_box</span>
+<h2 class="text-lg font-headline font-bold text-on-surface">确认章节规划任务</h2>
+</div>
+<button class="text-on-surface-variant hover:text-on-surface transition-colors">
+<span class="material-symbols-outlined">close</span>
+</button>
+</div>
+<!-- Success Banner -->
+<div class="bg-green-50 px-6 py-3 flex items-center gap-3 border-b border-green-100">
+<span class="material-symbols-outlined text-green-600 text-[20px]" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+<span class="text-green-700 text-sm font-medium">预检通过，所有检查项已通过，可以创建任务</span>
+</div>
+<!-- Modal Body (Two Columns) -->
+<div class="flex-1 overflow-y-auto p-6 bg-surface grid grid-cols-2 gap-8">
+<!-- Left Column -->
+<div class="flex flex-col gap-6">
+<!-- Section 1: 任务概览 -->
+<section>
+<div class="flex items-center gap-2 mb-3">
+<span class="w-5 h-5 rounded-full bg-secondary-container text-on-secondary-container text-xs flex items-center justify-center font-bold">1</span>
+<h3 class="font-headline font-bold text-on-surface">任务概览</h3>
+</div>
+<div class="border border-outline-variant rounded-lg p-4 bg-surface-container-lowest flex flex-col gap-3 shadow-sm">
+<div class="flex justify-between items-center text-sm">
+<span class="text-on-surface-variant">生成模式</span>
+<span class="font-medium text-on-surface">生成完整章节规划</span>
+</div>
+<div class="h-px w-full bg-outline-variant/30"></div>
+<div class="flex justify-between items-center text-sm">
+<span class="text-on-surface-variant">目标章节</span>
+<span class="font-medium text-on-surface">100章</span>
+</div>
+<div class="h-px w-full bg-outline-variant/30"></div>
+<div class="flex justify-between items-center text-sm">
+<span class="text-on-surface-variant">预期结果</span>
+<span class="bg-tertiary text-on-tertiary px-2 py-0.5 rounded text-xs font-medium">新的待确认章节候选批次</span>
+</div>
+</div>
+</section>
+<!-- Section 2: 输入摘要 -->
+<section>
+<div class="flex items-center gap-2 mb-3">
+<span class="w-5 h-5 rounded-full bg-secondary-container text-on-secondary-container text-xs flex items-center justify-center font-bold">2</span>
+<h3 class="font-headline font-bold text-on-surface">输入摘要</h3>
+</div>
+<div class="grid grid-cols-2 gap-3">
+<div class="border border-outline-variant rounded p-3 bg-surface-container-lowest shadow-sm flex flex-col gap-1">
+<span class="text-xs text-on-surface-variant">故事线</span>
+<span class="text-sm font-bold text-on-surface">3主 / 12子</span>
+</div>
+<div class="border border-outline-variant rounded p-3 bg-surface-container-lowest shadow-sm flex flex-col gap-1">
+<span class="text-xs text-on-surface-variant">角色</span>
+<span class="text-sm font-bold text-on-surface">8个</span>
+</div>
+<div class="border border-outline-variant rounded p-3 bg-surface-container-lowest shadow-sm flex flex-col gap-1">
+<span class="text-xs text-on-surface-variant">素材</span>
+<span class="text-sm font-bold text-on-surface">36项</span>
+</div>
+<div class="border border-outline-variant rounded p-3 bg-surface-container-lowest shadow-sm flex flex-col gap-1">
+<span class="text-xs text-on-surface-variant">伏笔</span>
+<span class="text-sm font-bold text-on-surface">21条</span>
+</div>
+<div class="border border-outline-variant rounded p-3 bg-surface-container-lowest shadow-sm flex flex-col gap-1 col-span-2">
+<span class="text-xs text-on-surface-variant">前序章节摘要</span>
+<span class="text-sm font-bold text-on-surface">包含前28章</span>
+</div>
+</div>
+</section>
+<!-- Section 3: 故事线结构摘要 -->
+<section>
+<div class="flex items-center gap-2 mb-3">
+<span class="w-5 h-5 rounded-full bg-secondary-container text-on-secondary-container text-xs flex items-center justify-center font-bold">3</span>
+<h3 class="font-headline font-bold text-on-surface">故事线结构摘要</h3>
+</div>
+<div class="border border-outline-variant rounded-lg p-4 bg-surface-container-lowest shadow-sm max-h-48 overflow-y-auto text-sm text-on-surface">
+<div class="flex flex-col gap-2">
+<!-- Tree Item 1 -->
+<div>
+<div class="flex items-center gap-1 font-medium">
+<span class="material-symbols-outlined text-[16px] text-primary">arrow_drop_down</span>
+                                        星辰纪元
+                                    </div>
+<div class="ml-6 pl-2 border-l border-outline-variant/30 flex flex-col gap-1 mt-1 text-on-surface-variant">
+<div class="flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px]">arrow_right</span>
+                                            王国政变
+                                        </div>
+<div class="ml-5 flex flex-col gap-1 text-xs">
+<div class="flex items-center gap-1"><span class="material-symbols-outlined text-[14px]">subdirectory_arrow_right</span>失踪密使</div>
+<div class="flex items-center gap-1"><span class="material-symbols-outlined text-[14px]">subdirectory_arrow_right</span>贵族议会</div>
+</div>
+</div>
+</div>
+<!-- Tree Item 2 -->
+<div class="mt-2">
+<div class="flex items-center gap-1 font-medium">
+<span class="material-symbols-outlined text-[16px] text-primary">arrow_drop_down</span>
+                                        主角身世
+                                    </div>
+<div class="ml-6 pl-2 border-l border-outline-variant/30 flex flex-col gap-1 mt-1 text-on-surface-variant text-xs">
+<div class="flex items-center gap-1"><span class="material-symbols-outlined text-[14px]">subdirectory_arrow_right</span>身份之谜</div>
+<div class="flex items-center gap-1"><span class="material-symbols-outlined text-[14px]">subdirectory_arrow_right</span>能力觉醒</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+</div>
+<!-- Right Column -->
+<div class="flex flex-col gap-6">
+<!-- Section 4: 执行配置 -->
+<section>
+<div class="flex items-center gap-2 mb-3">
+<span class="w-5 h-5 rounded-full bg-secondary-container text-on-secondary-container text-xs flex items-center justify-center font-bold">4</span>
+<h3 class="font-headline font-bold text-on-surface">执行配置</h3>
+</div>
+<div class="border border-outline-variant rounded-lg p-4 bg-surface-container-lowest shadow-sm flex flex-col gap-3">
+<div class="flex justify-between items-center text-sm">
+<span class="text-on-surface-variant">工作流</span>
+<span class="font-medium text-on-surface">章节规划生成v2</span>
+</div>
+<div class="h-px w-full bg-outline-variant/30"></div>
+<div class="flex justify-between items-center text-sm">
+<span class="text-on-surface-variant">连接</span>
+<span class="font-medium text-on-surface">n8n生产环境</span>
+</div>
+<div class="h-px w-full bg-outline-variant/30"></div>
+<div class="flex justify-between items-center text-sm">
+<span class="text-on-surface-variant">配置版本</span>
+<span class="font-medium text-on-surface bg-surface-container-high px-2 py-0.5 rounded text-xs">v3</span>
+</div>
+<div class="h-px w-full bg-outline-variant/30"></div>
+<div class="flex justify-between items-center text-sm">
+<span class="text-on-surface-variant">状态</span>
+<div class="flex items-center gap-1.5 font-medium text-green-700">
+<span class="w-2 h-2 rounded-full bg-green-500"></span>
+                                    正常
+                                </div>
+</div>
+</div>
+</section>
+<!-- Section 5: 影响说明 -->
+<section>
+<div class="flex items-center gap-2 mb-3">
+<span class="w-5 h-5 rounded-full bg-secondary-container text-on-secondary-container text-xs flex items-center justify-center font-bold">5</span>
+<h3 class="font-headline font-bold text-on-surface">影响说明</h3>
+</div>
+<div class="bg-secondary-fixed/50 text-on-secondary-fixed p-4 rounded-lg flex items-start gap-3 shadow-sm border border-secondary-fixed-dim">
+<span class="material-symbols-outlined text-primary mt-0.5">info</span>
+<p class="text-sm leading-relaxed">本次结果将保存为新的待确认候选批次，不直接覆盖或修改已确认章节。您可以在生成完成后进入批次视图进行对比和采用。</p>
+</div>
+</section>
+<!-- Section 6: 预检结果详情 -->
+<section>
+<div class="flex items-center gap-2 mb-3">
+<span class="w-5 h-5 rounded-full bg-secondary-container text-on-secondary-container text-xs flex items-center justify-center font-bold">6</span>
+<h3 class="font-headline font-bold text-on-surface">预检结果详情</h3>
+</div>
+<div class="border border-outline-variant rounded-lg p-4 bg-surface-container-lowest shadow-sm">
+<ul class="flex flex-col gap-3 text-sm text-on-surface">
+<li class="flex items-center gap-2">
+<span class="material-symbols-outlined text-green-600 text-[18px]" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+                                    工作流配置连通性正常
+                                </li>
+<li class="flex items-center gap-2">
+<span class="material-symbols-outlined text-green-600 text-[18px]" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+                                    必填输入项完整性检查通过
+                                </li>
+<li class="flex items-center gap-2">
+<span class="material-symbols-outlined text-green-600 text-[18px]" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+                                    字段与约束类型匹配
+                                </li>
+<li class="flex items-center gap-2">
+<span class="material-symbols-outlined text-green-600 text-[18px]" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+                                    目标章节数量合理 (100章)
+                                </li>
+</ul>
+<!-- Orange Warning Card -->
+<div class="mt-5 bg-orange-50 border border-orange-200 text-orange-800 p-3 rounded-lg flex items-start gap-3">
+<span class="material-symbols-outlined text-orange-600 mt-0.5" style="font-variation-settings: 'FILL' 1;">warning</span>
+<div>
+<h4 class="font-bold text-sm mb-1">部分故事线未绑定伏笔</h4>
+<p class="text-xs text-orange-700/80 leading-relaxed">系统检测到少数次要故事线暂无直接伏笔关联。生成引擎将在上下文中尝试自动补全逻辑关联。您可以继续生成，或返回修改。</p>
+</div>
+</div>
+</div>
+</section>
+</div>
+</div>
+<!-- Footer -->
+<div class="px-6 py-4 border-t border-outline-variant bg-surface-container-lowest flex justify-between items-center">
+<button class="px-4 py-2 rounded-lg text-on-surface hover:bg-surface-container-low transition-colors font-medium text-sm">返回修改</button>
+<button class="px-5 py-2.5 rounded-lg bg-primary text-on-primary hover:bg-primary-dim transition-colors font-bold flex items-center gap-2 text-sm shadow-sm">
+<span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
+                    确认并开始生成
+                </button>
+</div>
+</div>
+</div>
+</body></html>

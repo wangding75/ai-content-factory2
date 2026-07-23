@@ -1,73 +1,374 @@
 {
   "iteration": "iteration-15-real-chapter-planning",
-  "uiAcceptance": "CONDITIONAL_PASS",
-  "knownIssues": [
-    "Some Stitch user-visible copy is English; development must use Chinese locale resources."
+  "status": "PREPARED_FOR_CONTRACT_FREEZE",
+  "uiAcceptance": "APPROVED_SOURCE_FOR_DEVELOPMENT",
+  "sourceArchive": "stitch_acf_iteration_15_full_exact_shell_migration.zip",
+  "sourceProjectId": "10082349329835651109",
+  "shellPolicy": "REUSE_CURRENT_ACF_SHELL",
+  "frameCount": 21,
+  "replaces": [
+    "C1_CHAPTER_PLANNING_V2",
+    "C2_GENERATE_CHAPTER_PLAN_DRAWER_V2",
+    "STATE_TASK_RUNNING_BAR",
+    "STATE_TASK_FAILED_NOTICE",
+    "STATE_NOT_CONFIGURED_EMPTY"
   ],
   "frames": [
     {
-      "frameId": "C1_CHAPTER_PLANNING_V2",
-      "area": "章节规划",
-      "purpose": "真实候选列表与运行状态",
-      "sourceFolder": "chapter_planning_console_v2.0",
-      "screen": "ui/frames/C1_CHAPTER_PLANNING_V2/screen.png",
-      "html": "ui/frames/C1_CHAPTER_PLANNING_V2/code.html",
-      "acceptance": "CONDITIONAL_PASS",
+      "frameId": "P15_C1_RUNNING_MAINLINE_EXPANSION",
+      "area": "章节规划工作区",
+      "purpose": "主线剧情扩展运行中",
+      "kind": "page_state",
+      "canonical": false,
+      "sourceFolder": "c1_1",
+      "screen": "ui/frames/P15_C1_RUNNING_MAINLINE_EXPANSION/screen.png",
+      "html": "ui/frames/P15_C1_RUNNING_MAINLINE_EXPANSION/code.html",
+      "acceptance": "APPROVED_SOURCE",
       "developmentCorrections": [
-        "replace user-visible English copy with Chinese locale resources",
-        "preserve technical identifiers only when appropriate"
+        "reuse the current ACF application shell",
+        "use Chinese locale resources for user-visible business copy",
+        "preserve candidate-batch and current-chapter separation",
+        "do not infer fake workflow execution states"
       ]
     },
     {
-      "frameId": "C2_GENERATE_CHAPTER_PLAN_DRAWER_V2",
-      "area": "章节规划",
-      "purpose": "发起真实章节规划",
-      "sourceFolder": "generate_chapter_plan_drawer",
-      "screen": "ui/frames/C2_GENERATE_CHAPTER_PLAN_DRAWER_V2/screen.png",
-      "html": "ui/frames/C2_GENERATE_CHAPTER_PLAN_DRAWER_V2/code.html",
-      "acceptance": "CONDITIONAL_PASS",
+      "frameId": "P15_C1_RUNNING_PARTIAL_RANGE",
+      "area": "章节规划工作区",
+      "purpose": "局部范围生成运行中（数据样例 A）",
+      "kind": "page_state",
+      "canonical": true,
+      "sourceFolder": "c1_2",
+      "screen": "ui/frames/P15_C1_RUNNING_PARTIAL_RANGE/screen.png",
+      "html": "ui/frames/P15_C1_RUNNING_PARTIAL_RANGE/code.html",
+      "acceptance": "APPROVED_SOURCE",
       "developmentCorrections": [
-        "replace user-visible English copy with Chinese locale resources",
-        "preserve technical identifiers only when appropriate"
+        "reuse the current ACF application shell",
+        "use Chinese locale resources for user-visible business copy",
+        "preserve candidate-batch and current-chapter separation",
+        "do not infer fake workflow execution states"
       ]
     },
     {
-      "frameId": "STATE_TASK_RUNNING_BAR",
-      "area": "共享组件",
-      "purpose": "异步运行状态条",
-      "sourceFolder": "component_spec_state_task_running_bar",
-      "screen": "ui/frames/STATE_TASK_RUNNING_BAR/screen.png",
-      "html": "ui/frames/STATE_TASK_RUNNING_BAR/code.html",
-      "acceptance": "CONDITIONAL_PASS",
+      "frameId": "P15_C1_RUNNING_FULL_PLAN",
+      "area": "章节规划工作区",
+      "purpose": "完整章节规划运行中",
+      "kind": "page_state",
+      "canonical": false,
+      "sourceFolder": "c1_3",
+      "screen": "ui/frames/P15_C1_RUNNING_FULL_PLAN/screen.png",
+      "html": "ui/frames/P15_C1_RUNNING_FULL_PLAN/code.html",
+      "acceptance": "APPROVED_SOURCE",
       "developmentCorrections": [
-        "replace user-visible English copy with Chinese locale resources",
-        "preserve technical identifiers only when appropriate"
+        "reuse the current ACF application shell",
+        "use Chinese locale resources for user-visible business copy",
+        "preserve candidate-batch and current-chapter separation",
+        "do not infer fake workflow execution states"
       ]
     },
     {
-      "frameId": "STATE_TASK_FAILED_NOTICE",
-      "area": "共享组件",
-      "purpose": "安全错误通知与恢复动作",
-      "sourceFolder": "component_spec_state_task_failed_notice",
-      "screen": "ui/frames/STATE_TASK_FAILED_NOTICE/screen.png",
-      "html": "ui/frames/STATE_TASK_FAILED_NOTICE/code.html",
-      "acceptance": "CONDITIONAL_PASS",
+      "frameId": "P15_C1_RUNNING_PARTIAL_ETA",
+      "area": "章节规划工作区",
+      "purpose": "局部范围生成中（剩余时间）",
+      "kind": "page_state",
+      "canonical": false,
+      "sourceFolder": "c1_4",
+      "screen": "ui/frames/P15_C1_RUNNING_PARTIAL_ETA/screen.png",
+      "html": "ui/frames/P15_C1_RUNNING_PARTIAL_ETA/code.html",
+      "acceptance": "APPROVED_SOURCE",
       "developmentCorrections": [
-        "replace user-visible English copy with Chinese locale resources",
-        "preserve technical identifiers only when appropriate"
+        "reuse the current ACF application shell",
+        "use Chinese locale resources for user-visible business copy",
+        "preserve candidate-batch and current-chapter separation",
+        "do not infer fake workflow execution states"
       ]
     },
     {
-      "frameId": "STATE_NOT_CONFIGURED_EMPTY",
-      "area": "共享组件",
-      "purpose": "未配置、失效与空结果状态",
-      "sourceFolder": "component_spec_state_not_configured_empty",
-      "screen": "ui/frames/STATE_NOT_CONFIGURED_EMPTY/screen.png",
-      "html": "ui/frames/STATE_NOT_CONFIGURED_EMPTY/code.html",
-      "acceptance": "CONDITIONAL_PASS",
+      "frameId": "P15_C1_RUNNING_PARTIAL_VALIDATING",
+      "area": "章节规划工作区",
+      "purpose": "局部范围生成中（结果校验）",
+      "kind": "page_state",
+      "canonical": false,
+      "sourceFolder": "c1_5",
+      "screen": "ui/frames/P15_C1_RUNNING_PARTIAL_VALIDATING/screen.png",
+      "html": "ui/frames/P15_C1_RUNNING_PARTIAL_VALIDATING/code.html",
+      "acceptance": "APPROVED_SOURCE",
       "developmentCorrections": [
-        "replace user-visible English copy with Chinese locale resources",
-        "preserve technical identifiers only when appropriate"
+        "reuse the current ACF application shell",
+        "use Chinese locale resources for user-visible business copy",
+        "preserve candidate-batch and current-chapter separation",
+        "do not infer fake workflow execution states"
+      ]
+    },
+    {
+      "frameId": "P15_C1_RUNNING_DATA_VARIANT",
+      "area": "章节规划工作区",
+      "purpose": "不同章节状态与统计数据样例",
+      "kind": "fixture_variant",
+      "canonical": false,
+      "sourceFolder": "c1_6",
+      "screen": "ui/frames/P15_C1_RUNNING_DATA_VARIANT/screen.png",
+      "html": "ui/frames/P15_C1_RUNNING_DATA_VARIANT/code.html",
+      "acceptance": "APPROVED_SOURCE",
+      "developmentCorrections": [
+        "reuse the current ACF application shell",
+        "use Chinese locale resources for user-visible business copy",
+        "preserve candidate-batch and current-chapter separation",
+        "do not infer fake workflow execution states"
+      ]
+    },
+    {
+      "frameId": "P15_C1_FAILED_ATOMIC",
+      "area": "章节规划工作区",
+      "purpose": "生成失败且候选零写入",
+      "kind": "page_state",
+      "canonical": false,
+      "sourceFolder": "c1_f",
+      "screen": "ui/frames/P15_C1_FAILED_ATOMIC/screen.png",
+      "html": "ui/frames/P15_C1_FAILED_ATOMIC/code.html",
+      "acceptance": "APPROVED_SOURCE",
+      "developmentCorrections": [
+        "reuse the current ACF application shell",
+        "use Chinese locale resources for user-visible business copy",
+        "preserve candidate-batch and current-chapter separation",
+        "do not infer fake workflow execution states"
+      ]
+    },
+    {
+      "frameId": "P15_C1_NOT_CONFIGURED",
+      "area": "章节规划工作区",
+      "purpose": "未配置工作流状态",
+      "kind": "page_state",
+      "canonical": false,
+      "sourceFolder": "c1_n",
+      "screen": "ui/frames/P15_C1_NOT_CONFIGURED/screen.png",
+      "html": "ui/frames/P15_C1_NOT_CONFIGURED/code.html",
+      "acceptance": "APPROVED_SOURCE",
+      "developmentCorrections": [
+        "reuse the current ACF application shell",
+        "use Chinese locale resources for user-visible business copy",
+        "preserve candidate-batch and current-chapter separation",
+        "do not infer fake workflow execution states"
+      ]
+    },
+    {
+      "frameId": "P15_C2_GENERATION_SETTINGS",
+      "area": "生成章节规划",
+      "purpose": "生成参数抽屉",
+      "kind": "drawer",
+      "canonical": true,
+      "sourceFolder": "c2",
+      "screen": "ui/frames/P15_C2_GENERATION_SETTINGS/screen.png",
+      "html": "ui/frames/P15_C2_GENERATION_SETTINGS/code.html",
+      "acceptance": "APPROVED_SOURCE",
+      "developmentCorrections": [
+        "reuse the current ACF application shell",
+        "use Chinese locale resources for user-visible business copy",
+        "preserve candidate-batch and current-chapter separation",
+        "do not infer fake workflow execution states"
+      ]
+    },
+    {
+      "frameId": "P15_C2_PREFLIGHT_PROGRESS",
+      "area": "生成章节规划",
+      "purpose": "预检进度弹窗",
+      "kind": "dialog",
+      "canonical": false,
+      "sourceFolder": "c2_p",
+      "screen": "ui/frames/P15_C2_PREFLIGHT_PROGRESS/screen.png",
+      "html": "ui/frames/P15_C2_PREFLIGHT_PROGRESS/code.html",
+      "acceptance": "APPROVED_SOURCE",
+      "developmentCorrections": [
+        "reuse the current ACF application shell",
+        "use Chinese locale resources for user-visible business copy",
+        "preserve candidate-batch and current-chapter separation",
+        "do not infer fake workflow execution states"
+      ]
+    },
+    {
+      "frameId": "P15_C3_PREFLIGHT_PASS",
+      "area": "生成章节规划",
+      "purpose": "预检通过报告",
+      "kind": "dialog",
+      "canonical": true,
+      "sourceFolder": "c3_a",
+      "screen": "ui/frames/P15_C3_PREFLIGHT_PASS/screen.png",
+      "html": "ui/frames/P15_C3_PREFLIGHT_PASS/code.html",
+      "acceptance": "APPROVED_SOURCE",
+      "developmentCorrections": [
+        "reuse the current ACF application shell",
+        "use Chinese locale resources for user-visible business copy",
+        "preserve candidate-batch and current-chapter separation",
+        "do not infer fake workflow execution states"
+      ]
+    },
+    {
+      "frameId": "P15_C3_PREFLIGHT_BLOCKED",
+      "area": "生成章节规划",
+      "purpose": "预检阻断报告",
+      "kind": "dialog",
+      "canonical": true,
+      "sourceFolder": "c3_b",
+      "screen": "ui/frames/P15_C3_PREFLIGHT_BLOCKED/screen.png",
+      "html": "ui/frames/P15_C3_PREFLIGHT_BLOCKED/code.html",
+      "acceptance": "APPROVED_SOURCE",
+      "developmentCorrections": [
+        "reuse the current ACF application shell",
+        "use Chinese locale resources for user-visible business copy",
+        "preserve candidate-batch and current-chapter separation",
+        "do not infer fake workflow execution states"
+      ]
+    },
+    {
+      "frameId": "P15_C3_RUN_CREATED",
+      "area": "生成章节规划",
+      "purpose": "任务创建成功",
+      "kind": "dialog",
+      "canonical": true,
+      "sourceFolder": "c3_c",
+      "screen": "ui/frames/P15_C3_RUN_CREATED/screen.png",
+      "html": "ui/frames/P15_C3_RUN_CREATED/code.html",
+      "acceptance": "APPROVED_SOURCE",
+      "developmentCorrections": [
+        "reuse the current ACF application shell",
+        "use Chinese locale resources for user-visible business copy",
+        "preserve candidate-batch and current-chapter separation",
+        "do not infer fake workflow execution states"
+      ]
+    },
+    {
+      "frameId": "P15_C4_CANDIDATE_BATCH_LIST",
+      "area": "候选批次",
+      "purpose": "候选批次列表",
+      "kind": "page",
+      "canonical": true,
+      "sourceFolder": "c4",
+      "screen": "ui/frames/P15_C4_CANDIDATE_BATCH_LIST/screen.png",
+      "html": "ui/frames/P15_C4_CANDIDATE_BATCH_LIST/code.html",
+      "acceptance": "APPROVED_SOURCE",
+      "developmentCorrections": [
+        "reuse the current ACF application shell",
+        "use Chinese locale resources for user-visible business copy",
+        "preserve candidate-batch and current-chapter separation",
+        "do not infer fake workflow execution states"
+      ]
+    },
+    {
+      "frameId": "P15_C5_CANDIDATE_BATCH_DETAIL",
+      "area": "候选批次",
+      "purpose": "候选批次详情与候选列表",
+      "kind": "page",
+      "canonical": true,
+      "sourceFolder": "c5",
+      "screen": "ui/frames/P15_C5_CANDIDATE_BATCH_DETAIL/screen.png",
+      "html": "ui/frames/P15_C5_CANDIDATE_BATCH_DETAIL/code.html",
+      "acceptance": "APPROVED_SOURCE",
+      "developmentCorrections": [
+        "reuse the current ACF application shell",
+        "use Chinese locale resources for user-visible business copy",
+        "preserve candidate-batch and current-chapter separation",
+        "do not infer fake workflow execution states"
+      ]
+    },
+    {
+      "frameId": "P15_C6_CANDIDATE_EDIT_DRAWER",
+      "area": "候选批次",
+      "purpose": "编辑章节候选",
+      "kind": "drawer",
+      "canonical": true,
+      "sourceFolder": "c6",
+      "screen": "ui/frames/P15_C6_CANDIDATE_EDIT_DRAWER/screen.png",
+      "html": "ui/frames/P15_C6_CANDIDATE_EDIT_DRAWER/code.html",
+      "acceptance": "APPROVED_SOURCE",
+      "developmentCorrections": [
+        "reuse the current ACF application shell",
+        "use Chinese locale resources for user-visible business copy",
+        "preserve candidate-batch and current-chapter separation",
+        "do not infer fake workflow execution states"
+      ]
+    },
+    {
+      "frameId": "P15_C7_CANDIDATE_COMPARE_DIALOG",
+      "area": "候选批次",
+      "purpose": "当前章节与新候选差异对比",
+      "kind": "dialog",
+      "canonical": true,
+      "sourceFolder": "c7",
+      "screen": "ui/frames/P15_C7_CANDIDATE_COMPARE_DIALOG/screen.png",
+      "html": "ui/frames/P15_C7_CANDIDATE_COMPARE_DIALOG/code.html",
+      "acceptance": "APPROVED_SOURCE",
+      "developmentCorrections": [
+        "reuse the current ACF application shell",
+        "use Chinese locale resources for user-visible business copy",
+        "preserve candidate-batch and current-chapter separation",
+        "do not infer fake workflow execution states"
+      ]
+    },
+    {
+      "frameId": "P15_C8_BATCH_ADOPT_DIALOG",
+      "area": "候选批次",
+      "purpose": "批量采用候选确认",
+      "kind": "dialog",
+      "canonical": true,
+      "sourceFolder": "c8",
+      "screen": "ui/frames/P15_C8_BATCH_ADOPT_DIALOG/screen.png",
+      "html": "ui/frames/P15_C8_BATCH_ADOPT_DIALOG/code.html",
+      "acceptance": "APPROVED_SOURCE",
+      "developmentCorrections": [
+        "reuse the current ACF application shell",
+        "use Chinese locale resources for user-visible business copy",
+        "preserve candidate-batch and current-chapter separation",
+        "do not infer fake workflow execution states"
+      ]
+    },
+    {
+      "frameId": "P15_C9_BATCH_ABANDON_DIALOG",
+      "area": "候选批次",
+      "purpose": "放弃候选批次确认",
+      "kind": "dialog",
+      "canonical": true,
+      "sourceFolder": "c9",
+      "screen": "ui/frames/P15_C9_BATCH_ABANDON_DIALOG/screen.png",
+      "html": "ui/frames/P15_C9_BATCH_ABANDON_DIALOG/code.html",
+      "acceptance": "APPROVED_SOURCE",
+      "developmentCorrections": [
+        "reuse the current ACF application shell",
+        "use Chinese locale resources for user-visible business copy",
+        "preserve candidate-batch and current-chapter separation",
+        "do not infer fake workflow execution states"
+      ]
+    },
+    {
+      "frameId": "P15_C10_STALE_CONFLICT_DIALOG",
+      "area": "候选批次",
+      "purpose": "候选基线过期冲突处理",
+      "kind": "dialog",
+      "canonical": true,
+      "sourceFolder": "c10",
+      "screen": "ui/frames/P15_C10_STALE_CONFLICT_DIALOG/screen.png",
+      "html": "ui/frames/P15_C10_STALE_CONFLICT_DIALOG/code.html",
+      "acceptance": "APPROVED_SOURCE",
+      "developmentCorrections": [
+        "reuse the current ACF application shell",
+        "use Chinese locale resources for user-visible business copy",
+        "preserve candidate-batch and current-chapter separation",
+        "do not infer fake workflow execution states"
+      ]
+    },
+    {
+      "frameId": "P15_S1_STORYLINE_RELATION_READONLY",
+      "area": "故事线",
+      "purpose": "章节关联统计只读修正版",
+      "kind": "page",
+      "canonical": true,
+      "sourceFolder": "s1",
+      "screen": "ui/frames/P15_S1_STORYLINE_RELATION_READONLY/screen.png",
+      "html": "ui/frames/P15_S1_STORYLINE_RELATION_READONLY/code.html",
+      "acceptance": "APPROVED_SOURCE",
+      "developmentCorrections": [
+        "reuse the current ACF application shell",
+        "use Chinese locale resources for user-visible business copy",
+        "preserve candidate-batch and current-chapter separation",
+        "do not infer fake workflow execution states"
       ]
     }
   ]
