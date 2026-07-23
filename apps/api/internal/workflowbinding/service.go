@@ -150,9 +150,6 @@ func (s *Service) Put(ctx context.Context, projectID uuid.UUID, stage WorkflowBi
 	if err != nil {
 		return PutResult{}, err
 	}
-	if !wf.Enabled {
-		return PutResult{}, ErrDisabledWorkflow
-	}
 	if !stageApplicable(stage, wf.ApplicableStages) {
 		return PutResult{}, ErrNotApplicable
 	}
@@ -309,9 +306,6 @@ func (s *Service) putTx(ctx context.Context, tx pgx.Tx, projectID uuid.UUID, sta
 	wf, err := s.workflows.GetWorkflow(ctx, req.WorkflowConfigurationID)
 	if err != nil {
 		return PutResult{}, err
-	}
-	if !wf.Enabled {
-		return PutResult{}, ErrDisabledWorkflow
 	}
 	if !stageApplicable(stage, wf.ApplicableStages) {
 		return PutResult{}, ErrNotApplicable

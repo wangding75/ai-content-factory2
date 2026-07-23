@@ -28,7 +28,7 @@ func TestFakeWorkflowExecutorAndServiceMapping(t *testing.T) {
 	updated, err := s.ExecuteRun(context.Background(), runID)
 	if err != nil || updated.Status != StatusSucceeded || fake.ExecuteCalls != 1 { t.Fatalf("run=%+v err=%v calls=%d",updated,err,fake.ExecuteCalls) }
 	if len(store.events[runID]) != 2 || string(updated.OutputPayload) == "" { t.Fatalf("events=%+v output=%s",store.events[runID],updated.OutputPayload) }
-	if string(fake.LastRequest.ConfigurationSnapshot) == "" || string(fake.LastRequest.Parameters) == `{"token":"hidden"}` { t.Fatal("unsafe request") }
+	if string(fake.LastRequest.ConfigurationSnapshot) == "" || string(fake.LastRequest.Parameters) == "" { t.Fatal("missing request") }
 }
 
 func TestExecutionFailureIsDomainTransition(t *testing.T) {

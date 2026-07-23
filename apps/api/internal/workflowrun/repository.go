@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -279,10 +280,10 @@ func (r *Repository) ExecuteIdempotent(ctx context.Context, scope, key, requestH
 		if record.RequestHash != requestHash {
 			return WorkflowRun{}, ErrIdempotencyConflict
 		}
-		var replay struct { RunID uuid.UUID `json:"runId"` }
+		var replay WorkflowRun
 		if err := json.Unmarshal(record.ResponseBody, &replay); err != nil { return WorkflowRun{}, fmt.Errorf("decode workflow run idempotency replay: %w", err) }
-		if replay.RunID == uuid.Nil { return WorkflowRun{}, ErrValidation }
-		return NewPostgresRepositoryTx(tx).GetByID(ctx, replay.RunID)
+		if replay.ID == uuid.Nil { return WorkflowRun{}, fmt.Errorf("decode workflow run idempotency replay: %w", ErrValidation) }
+		return replay, nil
 	} else if !errors.Is(getErr, idempotency.ErrNotFound) {
 		return WorkflowRun{}, getErr
 	}
@@ -290,11 +291,13 @@ func (r *Repository) ExecuteIdempotent(ctx context.Context, scope, key, requestH
 	if err != nil {
 		return WorkflowRun{}, err
 	}
-	body, err := json.Marshal(struct { RunID uuid.UUID `json:"runId"` }{RunID: created.ID})
+	body, err := json.Marshal(created)
 	if err != nil {
 		return WorkflowRun{}, fmt.Errorf("encode workflow run idempotency replay: %w", err)
 	}
-	if _, err = idem.Create(ctx, idempotency.Record{ID: uuid.New(), Scope: scope, Key: key, RequestHash: requestHash, ResponseStatus: 200, ResponseBody: body}); err != nil {
+	status := 200
+	if strings.Contains(scope, "createWorkflowRun") || strings.Contains(scope, "retryWorkflowRun") { status = 201 }
+	if _, err = idem.Create(ctx, idempotency.Record{ID: uuid.New(), Scope: scope, Key: key, RequestHash: requestHash, ResponseStatus: status, ResponseBody: RedactJSON(body)}); err != nil {
 		if errors.Is(err, idempotency.ErrConflict) {
 			return WorkflowRun{}, ErrIdempotencyConflict
 		}

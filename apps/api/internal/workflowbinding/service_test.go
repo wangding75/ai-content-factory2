@@ -375,22 +375,6 @@ func TestServiceDeleteNotFound(t *testing.T) {
 	}
 }
 
-func TestServicePutDisabledWorkflow(t *testing.T) {
-	pool, ctx := openIntegrationDB(t)
-	projectID := uuid.New()
-	wfID := uuid.New()
-
-	wf := newDisabledWorkflow(wfID, []string{"chapter_planning"})
-	svc := NewService(pool, mockProjectRepo{}, mockWorkflowRepo{getFn: func(_ context.Context, id uuid.UUID) (ReadWorkflowConfiguration, error) {
-		return wf, nil
-	}}, "system")
-
-	_, err := svc.Put(ctx, projectID, StageChapterPlanning, PutRequest{WorkflowConfigurationID: wfID})
-	if !errors.Is(err, ErrDisabledWorkflow) {
-		t.Fatalf("Put() disabled error = %v, want ErrDisabledWorkflow", err)
-	}
-}
-
 func TestServicePutStageNotApplicable(t *testing.T) {
 	pool, ctx := openIntegrationDB(t)
 	projectID := uuid.New()

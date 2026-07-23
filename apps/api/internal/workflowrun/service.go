@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/url"
 	"strings"
 	"time"
 
@@ -197,14 +198,16 @@ func (s *Service) runnableConfiguration(ctx context.Context, id uuid.UUID, stage
 	if err != nil { return globalconfig.Workflow{}, globalconfig.Connection{}, mapConfigurationError(err) }
 	connection, err := s.connections.GetConnection(ctx, configuration.ConnectionID)
 	if err != nil { return globalconfig.Workflow{}, globalconfig.Connection{}, mapConnectionError(err) }
-	if !configuration.Enabled || configuration.IntegrationStatus != "verified" || !connection.Enabled || connection.IntegrationStatus != "verified" || !contains(configuration.ApplicableStages, stage.String()) { return globalconfig.Workflow{}, globalconfig.Connection{}, ErrNotRunnable }
+	if !contains(configuration.ApplicableStages, stage.String()) { return globalconfig.Workflow{}, globalconfig.Connection{}, ErrNotRunnable }
 	return configuration, connection, nil
 }
 
 func configurationSnapshot(binding workflowbinding.ProjectWorkflowBinding, configuration globalconfig.Workflow, connection globalconfig.Connection, createdAt time.Time) (json.RawMessage, error) {
-	v := map[string]any{"projectId": binding.ProjectID, "stage": binding.Stage.String(), "binding": map[string]any{"id": binding.ID, "version": binding.Version}, "workflowConfiguration": map[string]any{"id": configuration.ID, "version": configuration.Version, "typeConfig": configuration.TypeConfig, "inputContractVersion": configuration.InputContractVersion, "outputContractVersion": configuration.OutputContractVersion, "defaultParameters": configuration.DefaultParameters}, "workflowConnection": map[string]any{"id": connection.ID, "type": connection.ConnectionType, "baseUrl": connection.BaseURL, "timeoutSeconds": connection.TimeoutSeconds, "typeConfig": connection.TypeConfig}, "createdAt": createdAt.UTC()}
+	v := map[string]any{"projectId": binding.ProjectID, "stage": binding.Stage.String(), "binding": map[string]any{"id": binding.ID, "version": binding.Version}, "workflowConfiguration": map[string]any{"id": configuration.ID, "version": configuration.Version, "typeConfig": configuration.TypeConfig, "inputContractVersion": configuration.InputContractVersion, "outputContractVersion": configuration.OutputContractVersion, "defaultParameters": configuration.DefaultParameters}, "workflowConnection": map[string]any{"id": connection.ID, "version": connection.Version, "type": connection.ConnectionType, "baseUrl": safeBaseURL(connection.BaseURL), "timeoutSeconds": connection.TimeoutSeconds, "typeConfig": connection.TypeConfig}, "createdAt": createdAt.UTC()}
 	b, err := json.Marshal(v); if err != nil { return nil, err }; return RedactJSON(b), nil
 }
+
+func safeBaseURL(raw string) string { u, err := url.Parse(raw); if err != nil || u.Scheme == "" || u.Host == "" { return "" }; u.User = nil; u.RawQuery = ""; u.Fragment = ""; return u.String() }
 
 func contains(values []string, value string) bool { for _, item := range values { if item == value { return true } }; return false }
 func validListFilter(f ListFilter) bool {

@@ -5,7 +5,6 @@ import (
 	"errors"
 	"strings"
 	"time"
-	"unicode"
 
 	"github.com/google/uuid"
 )
@@ -34,26 +33,9 @@ type Failure struct {
 }
 
 type WorkflowRun struct {
-	ID                      uuid.UUID
-	RunNumber               string
-	ProjectID               uuid.UUID
-	Stage                   string
-	WorkflowConfigurationID uuid.UUID
-	TriggerSource           string
-	Status                  Status
-	ConfigurationSnapshot   json.RawMessage
-	InputPayload            json.RawMessage
-	OutputPayload           json.RawMessage
-	ErrorCode               *string
-	ErrorMessage            *string
-	ErrorDetails            json.RawMessage
-	RetryOfRunID            *uuid.UUID
-	StartedAt               *time.Time
-	FinishedAt              *time.Time
-	CancelledAt             *time.Time
-	CreatedAt               time.Time
-	UpdatedAt               time.Time
-	Version                 int
+	ID uuid.UUID `json:"id"`; RunNumber string `json:"runNumber"`; ProjectID uuid.UUID `json:"projectId"`; Stage string `json:"stage"`; WorkflowConfigurationID uuid.UUID `json:"workflowConfigurationId"`; TriggerSource string `json:"triggerSource"`; Status Status `json:"status"`
+	ConfigurationSnapshot json.RawMessage `json:"configurationSnapshot"`; InputPayload json.RawMessage `json:"inputPayload"`; OutputPayload json.RawMessage `json:"outputPayload"`; ErrorCode *string `json:"errorCode"`; ErrorMessage *string `json:"errorMessage"`; ErrorDetails json.RawMessage `json:"errorDetails"`; RetryOfRunID *uuid.UUID `json:"retryOfRunId"`
+	StartedAt *time.Time `json:"startedAt"`; FinishedAt *time.Time `json:"finishedAt"`; CancelledAt *time.Time `json:"cancelledAt"`; CreatedAt time.Time `json:"createdAt"`; UpdatedAt time.Time `json:"updatedAt"`; Version int `json:"version"`
 }
 
 type Event struct {
@@ -179,6 +161,9 @@ func redactValue(value any) {
 	}
 }
 func isSensitiveKey(key string) bool {
-	normalized := strings.Map(func(r rune) rune { if unicode.IsLetter(r) || unicode.IsDigit(r) { return unicode.ToLower(r) }; return -1 }, key)
-	return strings.Contains(normalized, "secret") || strings.Contains(normalized, "credential") || strings.Contains(normalized, "password") || strings.Contains(normalized, "apikey") || strings.Contains(normalized, "authorization") || strings.Contains(normalized, "token") || strings.Contains(normalized, "cookie") || strings.Contains(normalized, "idempotency")
+	normalized := strings.ToLower(strings.NewReplacer("_", "", "-", "", " ", "").Replace(key))
+	_, sensitive := map[string]struct{}{
+		"password": {}, "secret": {}, "clientsecret": {}, "apikey": {}, "accesstoken": {}, "refreshtoken": {}, "authtoken": {}, "authorization": {}, "credential": {}, "credentials": {}, "privatekey": {}, "webhooksecret": {}, "cookie": {}, "setcookie": {}, "xapikey": {}, "idempotencykey": {},
+	}[normalized]
+	return sensitive
 }
