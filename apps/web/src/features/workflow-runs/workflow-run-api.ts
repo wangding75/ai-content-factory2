@@ -68,3 +68,31 @@ export const getWorkflowRun = async (runId: string, init?: ApiRequestInit) => ma
 export const listWorkflowRunEvents = async (runId: string, init?: ApiRequestInit) => (await apiRequest<{ items: WorkflowRunEventDto[] }>(`${runPath(runId)}/events`, init)).items.map(mapWorkflowRunEvent);
 export const cancelWorkflowRun = async (runId: string, expectedVersion: number, key: string) => mapWorkflowRunDetail(await apiRequest<WorkflowRunDto>(`${runPath(runId)}/cancel`, { method: "POST", headers: { "Content-Type": "application/json", "Idempotency-Key": key }, body: JSON.stringify({ expectedVersion }) }));
 export const retryWorkflowRun = async (runId: string, expectedVersion: number, key: string, inputOverride?: Record<string, unknown>) => mapWorkflowRunDetail(await apiRequest<WorkflowRunDto>(`${runPath(runId)}/retries`, { method: "POST", headers: { "Content-Type": "application/json", "Idempotency-Key": key }, body: JSON.stringify({ expectedVersion, useCurrentConfiguration: false, ...(inputOverride ? { inputOverride } : {}) }) }));
+
+export type ProjectWorkflowRunSummaryDto = {
+  totalRuns: number;
+  activeRuns: number;
+  recentFailedRuns: number;
+  lastRunAt: string | null;
+  recentRuns: WorkflowRunDto[];
+};
+export type ProjectWorkflowRunSummaryVm = {
+  totalRuns: number;
+  activeRuns: number;
+  recentFailedRuns: number;
+  lastRunAtLabel: string;
+  recentRuns: WorkflowRunVm[];
+};
+
+const safeCount = (value: number) => Number.isFinite(value) && value >= 0 ? value : 0;
+export const mapProjectWorkflowRunSummary = (summary: ProjectWorkflowRunSummaryDto): ProjectWorkflowRunSummaryVm => ({
+  totalRuns: safeCount(summary.totalRuns),
+  activeRuns: safeCount(summary.activeRuns),
+  recentFailedRuns: safeCount(summary.recentFailedRuns),
+  lastRunAtLabel: formatWorkflowRunTime(summary.lastRunAt),
+  recentRuns: Array.isArray(summary.recentRuns) ? summary.recentRuns.slice(0, 3).map(mapWorkflowRun) : [],
+});
+export const getProjectWorkflowRunSummary = async (projectId: string, init?: ApiRequestInit) =>
+  mapProjectWorkflowRunSummary(await apiRequest<ProjectWorkflowRunSummaryDto>(`/projects/${encodeURIComponent(projectId)}/workflow-run-summary`, init));
+export const createWorkflowRun = async (projectId: string, stage: WorkflowStage, inputPayload: Record<string, unknown>, key: string) =>
+  mapWorkflowRunDetail(await apiRequest<WorkflowRunDto>(`/workflow-runs`, { method: "POST", headers: { "Content-Type": "application/json", "Idempotency-Key": key }, body: JSON.stringify({ projectId, stage, inputPayload }) }));

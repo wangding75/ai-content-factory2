@@ -11,6 +11,7 @@ import {
 import { ProjectWorkspaceFrame } from "@/features/planning-materials/components/project-workspace-frame";
 import { getProjectPlanningFromApi } from "@/features/planning-materials/api/planning-http-api";
 import { listProjectWorkflowBindings } from "@/features/workflow-bindings/workflow-binding-api";
+import { ProjectWorkflowRunsPanel } from "@/features/workflow-runs/project-workflow-runs-panel";
 const stages: Record<ProjectStage, string> = {
   project_setup: "项目准备",
   project_planning: "项目策划",
@@ -161,6 +162,7 @@ export default async function ProjectOverviewPage({
                   ))}
                 </div>
               </section>
+              <ProjectWorkflowRunsPanel projectId={id} />
               <section className="overview-visual-empty">
                 <span>
                   <Icon name="image" size={32} />

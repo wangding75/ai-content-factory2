@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 import { ApiError } from "../../lib/api.ts";
-import { cancelWorkflowRun, formatWorkflowRunTime, getWorkflowRun, listWorkflowRunEvents, retryWorkflowRun } from "./workflow-run-api.ts";
+import { cancelWorkflowRun, createWorkflowRun, formatWorkflowRunTime, getProjectWorkflowRunSummary, getWorkflowRun, listWorkflowRunEvents, retryWorkflowRun } from "./workflow-run-api.ts";
 
 const source = readFileSync(new URL("./workflow-run-api.ts", import.meta.url), "utf8");
 const page = readFileSync(new URL("./workflow-runs-page.tsx", import.meta.url), "utf8");
@@ -32,3 +32,21 @@ test("Runtime detail API functions send the frozen paths, versions, keys, and co
   assert.equal(detail.createdAtLabel, "—"); assert.equal(events[0].title, "已创建运行"); assert.match(calls[0].url, /run%2Fid/); assert.equal((calls[2].init?.headers as Record<string,string>)["Idempotency-Key"], "cancel-key"); assert.deepEqual(JSON.parse(String(calls[3].init?.body)), { expectedVersion: 3, useCurrentConfiguration: false, inputOverride: { replacement: true } }); assert.equal(formatWorkflowRunTime("bad"), "—");
 });
 test("Runtime detail API functions preserve ErrorEnvelope failures", async () => { global.fetch = async () => new Response(JSON.stringify({ error: { code: "version_conflict", message: "changed", details: {} }, request_id: "req" }), { status: 409 }); await assert.rejects(getWorkflowRun("run"), (error: unknown) => error instanceof ApiError && error.code === "version_conflict"); });
+
+test("Project summary and CreateRun use the real frozen endpoints, map safe fallbacks, and preserve ErrorEnvelope failures", async () => {
+  const calls: Array<{ url: string; init?: RequestInit }> = [];
+  global.fetch = async (url, init) => {
+    calls.push({ url: String(url), init });
+    if (String(url).includes("summary")) return new Response(JSON.stringify({ data: { totalRuns: -2, activeRuns: 2, recentFailedRuns: Number.NaN, lastRunAt: "bad", recentRuns: [run, { ...run, id: "two" }, { ...run, id: "three" }, { ...run, id: "four" }] }, request_id: "req" }), { status: 200 });
+    return new Response(JSON.stringify({ data: { ...run, id: "new-run", status: "queued" }, request_id: "req" }), { status: 201 });
+  };
+  const summary = await getProjectWorkflowRunSummary("project/id");
+  const created = await createWorkflowRun("project/id", "review", { contentId: "content-1" }, "create-key");
+  assert.match(calls[0].url, /projects\/project%2Fid\/workflow-run-summary/);
+  assert.deepEqual({ total: summary.totalRuns, active: summary.activeRuns, failed: summary.recentFailedRuns, last: summary.lastRunAtLabel, items: summary.recentRuns.length }, { total: 0, active: 2, failed: 0, last: "—", items: 3 });
+  assert.equal((calls[1].init?.headers as Record<string, string>)["Idempotency-Key"], "create-key");
+  assert.deepEqual(JSON.parse(String(calls[1].init?.body)), { projectId: "project/id", stage: "review", inputPayload: { contentId: "content-1" } });
+  assert.equal(created.id, "new-run");
+  global.fetch = async () => new Response(JSON.stringify({ error: { code: "workflow_binding_not_found", message: "gone", details: {} }, request_id: "req" }), { status: 404 });
+  await assert.rejects(createWorkflowRun("project", "review", {}, "error-key"), (error: unknown) => error instanceof ApiError && error.code === "workflow_binding_not_found");
+});
