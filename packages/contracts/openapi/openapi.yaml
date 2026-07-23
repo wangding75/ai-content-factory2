@@ -813,14 +813,32 @@ paths:
     parameters: [{$ref: "#/components/parameters/Iteration14WorkflowRunId"}]
     get:
       operationId: getWorkflowRunDetail
-      description: >
-        Returns one project-isolated WorkflowRun. A rewrite run includes provider mock, workflow key content_mock_rewrite, source ContentItem/v1/ReviewReport, nullable target v2, summaries, safe error information, idempotency key, fingerprint, and lifecycle timestamps. A run is created for each new-key attempt and transitions running to succeeded or failed. Failed runs are retained with null target v2 and never expose SQL, connection strings, stacks, service paths, or repository details. Error codes: 400 invalid_uuid; 404 workflow_run_not_found; 500 internal_error.
+      description: Returns one Runtime WorkflowRun with a redacted configuration snapshot, validated input and output, and safe error information. Credentials, authorization material, raw upstream responses, SQL, stacks, and internal paths are never returned.
       responses:
         "200":
           description: WorkflowRun detail.
           content:
             application/json:
               schema: {$ref: "#/components/schemas/Iteration14WorkflowRunEnvelope"}
+        "400": {$ref: "#/components/responses/BadRequest"}
+        "404": {$ref: "#/components/responses/NotFound"}
+        "500": {$ref: "#/components/responses/InternalServerError"}
+  /api/v1/content-workflow-runs:
+    get:
+      operationId: listContentWorkflowRuns
+      description: Lists legacy content-production WorkflowRuns. This content-domain route preserves the existing snake_case DTO semantics and limit/offset pagination.
+      parameters: [{$ref: "#/components/parameters/LimitQuery"}, {$ref: "#/components/parameters/OffsetQuery"}]
+      responses:
+        "200": {description: Legacy content workflow run list., content: {application/json: {schema: {$ref: "#/components/schemas/GlobalWorkflowRunListEnvelope"}}}}
+        "400": {$ref: "#/components/responses/BadRequest"}
+        "500": {$ref: "#/components/responses/InternalServerError"}
+  /api/v1/content-workflow-runs/{workflowRunId}:
+    parameters: [{$ref: "#/components/parameters/WorkflowRunId"}]
+    get:
+      operationId: getContentWorkflowRun
+      description: Returns one legacy content-rewrite WorkflowRun using the existing snake_case content-domain DTO.
+      responses:
+        "200": {description: Legacy content workflow run detail., content: {application/json: {schema: {$ref: "#/components/schemas/WorkflowRunDetailEnvelope"}}}}
         "400": {$ref: "#/components/responses/BadRequest"}
         "404": {$ref: "#/components/responses/NotFound"}
         "500": {$ref: "#/components/responses/InternalServerError"}
@@ -959,30 +977,6 @@ paths:
         "404": {$ref: "#/components/responses/NotFound"}
         "409": {$ref: "#/components/responses/Conflict"}
         "422": {$ref: "#/components/responses/UnprocessableEntity"}
-  /api/v1/workflow-connections/{connectionId}/verify:
-    parameters: [{$ref: "#/components/parameters/ConnectionId"}]
-    post:
-      operationId: verifyWorkflowConnection
-      description: Verifies a saved n8n connection through the adapter. expectedVersion targets connectionId WorkflowConnection.version. Credential material and upstream response bodies are never returned.
-      parameters: [{$ref: "#/components/parameters/IdempotencyKey"}]
-      requestBody: {required: true, content: {application/json: {schema: {$ref: "#/components/schemas/WorkflowRunCommandRequest"}}}}
-      responses: {"200": {description: Verified connection., content: {application/json: {schema: {$ref: "#/components/schemas/WorkflowConnectionEnvelope"}}}}, "400": {$ref: "#/components/responses/BadRequest"}, "404": {$ref: "#/components/responses/NotFound"}, "409": {$ref: "#/components/responses/Conflict"}, "422": {$ref: "#/components/responses/UnprocessableEntity"}}
-  /api/v1/workflow-connections/{connectionId}/enable:
-    parameters: [{$ref: "#/components/parameters/ConnectionId"}]
-    post:
-      operationId: enableWorkflowConnection
-      description: Enables a verified connection and atomically disables the existing enabled connection. expectedVersion targets connectionId WorkflowConnection.version.
-      parameters: [{$ref: "#/components/parameters/IdempotencyKey"}]
-      requestBody: {required: true, content: {application/json: {schema: {$ref: "#/components/schemas/WorkflowRunCommandRequest"}}}}
-      responses: {"200": {description: Enabled connection., content: {application/json: {schema: {$ref: "#/components/schemas/WorkflowConnectionEnvelope"}}}}, "400": {$ref: "#/components/responses/BadRequest"}, "404": {$ref: "#/components/responses/NotFound"}, "409": {$ref: "#/components/responses/Conflict"}, "422": {$ref: "#/components/responses/UnprocessableEntity"}}
-  /api/v1/workflow-connections/{connectionId}/disable:
-    parameters: [{$ref: "#/components/parameters/ConnectionId"}]
-    post:
-      operationId: disableWorkflowConnection
-      description: Disables a connection without deleting it. expectedVersion targets connectionId WorkflowConnection.version.
-      parameters: [{$ref: "#/components/parameters/IdempotencyKey"}]
-      requestBody: {required: true, content: {application/json: {schema: {$ref: "#/components/schemas/WorkflowRunCommandRequest"}}}}
-      responses: {"200": {description: Disabled connection., content: {application/json: {schema: {$ref: "#/components/schemas/WorkflowConnectionEnvelope"}}}}, "400": {$ref: "#/components/responses/BadRequest"}, "404": {$ref: "#/components/responses/NotFound"}, "409": {$ref: "#/components/responses/Conflict"}, "422": {$ref: "#/components/responses/UnprocessableEntity"}}
   /api/v1/workflow-configurations:
     get:
       operationId: listWorkflowConfigurations
@@ -1022,30 +1016,6 @@ paths:
         "404": {$ref: "#/components/responses/NotFound"}
         "409": {$ref: "#/components/responses/Conflict"}
         "422": {$ref: "#/components/responses/UnprocessableEntity"}
-  /api/v1/workflow-configurations/{workflowConfigurationId}/verify:
-    parameters: [{$ref: "#/components/parameters/Iteration14WorkflowConfigurationId"}]
-    post:
-      operationId: verifyWorkflowConfiguration
-      description: Verifies the Workflow ID or Webhook Path through its bound connection. expectedVersion targets workflowConfigurationId WorkflowConfiguration.version.
-      parameters: [{$ref: "#/components/parameters/IdempotencyKey"}]
-      requestBody: {required: true, content: {application/json: {schema: {$ref: "#/components/schemas/WorkflowRunCommandRequest"}}}}
-      responses: {"200": {description: Verified workflow configuration., content: {application/json: {schema: {$ref: "#/components/schemas/WorkflowConfigurationEnvelope"}}}}, "400": {$ref: "#/components/responses/BadRequest"}, "404": {$ref: "#/components/responses/NotFound"}, "409": {$ref: "#/components/responses/Conflict"}, "422": {$ref: "#/components/responses/UnprocessableEntity"}}
-  /api/v1/workflow-configurations/{workflowConfigurationId}/enable:
-    parameters: [{$ref: "#/components/parameters/Iteration14WorkflowConfigurationId"}]
-    post:
-      operationId: enableWorkflowConfiguration
-      description: Enables a verified workflow configuration only when its connection is verified and enabled. expectedVersion targets workflowConfigurationId WorkflowConfiguration.version.
-      parameters: [{$ref: "#/components/parameters/IdempotencyKey"}]
-      requestBody: {required: true, content: {application/json: {schema: {$ref: "#/components/schemas/WorkflowRunCommandRequest"}}}}
-      responses: {"200": {description: Enabled workflow configuration., content: {application/json: {schema: {$ref: "#/components/schemas/WorkflowConfigurationEnvelope"}}}}, "400": {$ref: "#/components/responses/BadRequest"}, "404": {$ref: "#/components/responses/NotFound"}, "409": {$ref: "#/components/responses/Conflict"}, "422": {$ref: "#/components/responses/UnprocessableEntity"}}
-  /api/v1/workflow-configurations/{workflowConfigurationId}/disable:
-    parameters: [{$ref: "#/components/parameters/Iteration14WorkflowConfigurationId"}]
-    post:
-      operationId: disableWorkflowConfiguration
-      description: Disables a workflow configuration without deleting it. expectedVersion targets workflowConfigurationId WorkflowConfiguration.version.
-      parameters: [{$ref: "#/components/parameters/IdempotencyKey"}]
-      requestBody: {required: true, content: {application/json: {schema: {$ref: "#/components/schemas/WorkflowRunCommandRequest"}}}}
-      responses: {"200": {description: Disabled workflow configuration., content: {application/json: {schema: {$ref: "#/components/schemas/WorkflowConfigurationEnvelope"}}}}, "400": {$ref: "#/components/responses/BadRequest"}, "404": {$ref: "#/components/responses/NotFound"}, "409": {$ref: "#/components/responses/Conflict"}, "422": {$ref: "#/components/responses/UnprocessableEntity"}}
   /api/v1/projects/{projectId}/workflow-run-summary:
     parameters: [{$ref: "#/components/parameters/ProjectId"}]
     get:
@@ -1421,11 +1391,6 @@ components:
         default: 0
     Iteration14WorkflowRunId:
       name: runId
-      in: path
-      required: true
-      schema: {type: string, format: uuid}
-    Iteration14WorkflowConfigurationId:
-      name: workflowConfigurationId
       in: path
       required: true
       schema: {type: string, format: uuid}
