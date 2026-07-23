@@ -1,6 +1,12 @@
 iteration: iteration-14-workflow-run-runtime
 title: WorkflowRun Runtime 与执行器抽象
-status: frozen_cf_14_01_r2
+status: frozen_cf_14_01_r3
+
+configuration_records:
+  WorkflowConnection: Internal configuration record only; not a connected, authenticated, verified, or enabled external integration.
+  WorkflowConfiguration: Internal configuration record only; not a verified callable workflow or enabled executor.
+  binding_eligibility: WorkflowConfiguration and its referenced WorkflowConnection must exist; enabled and integrationStatus are not gates.
+  create_run_eligibility: Project, stage binding, referenced WorkflowConfiguration, and referenced WorkflowConnection must exist; enabled and integrationStatus are not gates.
 
 runtime:
   owner: apps/api/internal/workflowrun
@@ -15,22 +21,20 @@ runtime:
     - [POST, /api/v1/workflow-runs/{runId}/cancel]
     - [GET, /api/v1/projects/{projectId}/workflow-run-summary]
   trigger_sources: [manual, retry, system, api]
-  execution: UnavailableWorkflowExecutor creates queued records and initial events only; FakeWorkflowExecutor is test-only.
+  execution: UnavailableWorkflowExecutor creates queued records and initial events only; FakeWorkflowExecutor is test-only; no external execution is triggered.
 
 legacy_content:
   owner: apps/api/internal/contentitem
   table: workflow_runs
   dto_style: snake_case
-  routes:
-    - [GET, /api/v1/content-workflow-runs]
-    - [GET, /api/v1/content-workflow-runs/{workflowRunId}]
+  routes: [[GET, /api/v1/content-workflow-runs], [GET, /api/v1/content-workflow-runs/{workflowRunId}]]
   consumers: [global-lite, project-works, content-rewrite-detail]
   migration: No legacy data migration to workflow_run_records.
 
 deferred:
-  - real n8n Adapter
-  - Worker and queue consumption
-  - callback server and external execution
-  - WorkflowConnection verify/enable/disable
-  - WorkflowConfiguration verify/enable/disable
+  - real n8n Adapter and authentication
+  - connection and workflow verification
+  - verify, enable, and disable commands
+  - Worker, queue consumption, callback server, and external execution
+  - external status writeback and lifecycle integration
   - CF-14-N8N-Integration

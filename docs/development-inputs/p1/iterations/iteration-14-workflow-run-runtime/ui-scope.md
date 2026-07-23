@@ -1,38 +1,19 @@
 # Iteration 14 — WorkflowRun 异步运行 — UI Scope
 
+**状态：`frozen_cf_14_01_r3`。**
+
 ## UI 验收结论
 
-**PASS。** P14_01～P14_10 是人工验收通过的唯一 UI 基线。Stitch HTML 仅作为结构和视觉参考；开发必须复用现有产品壳层，不直接将其作为生产页面。
+**PASS。** P14_01～P14_10 是唯一 UI 基线；保留既有 P14 页面结构，不重新设计 UI。Stitch HTML 仅为结构和视觉参考。
 
-## 原型映射
+## 路由与展示
 
-| Frame | 用途 | 路由或入口 |
-|---|---|---|
-| `P14_01_WORKFLOW_RUN_LIST` | 全局运行记录列表 | `/workflow-runs` |
-| `P14_02_WORKFLOW_RUN_LIST_PROJECT_FILTERED` | 项目筛选后的列表 | `/workflow-runs?projectId={projectId}` |
-| `P14_03_WORKFLOW_RUN_LIST_EMPTY` | 运行记录空状态 | `/workflow-runs` |
-| `P14_04_WORKFLOW_RUN_LIST_ERROR` | 运行记录错误和恢复 | `/workflow-runs` |
-| `P14_05_WORKFLOW_RUN_DETAIL_SUCCEEDED` | 成功运行详情 | `/workflow-runs/{runId}` |
-| `P14_06_WORKFLOW_RUN_DETAIL_RUNNING` | 运行中详情与取消 | `/workflow-runs/{runId}` |
-| `P14_07_WORKFLOW_RUN_DETAIL_FAILED` | 失败详情与完整重试 | `/workflow-runs/{runId}` |
-| `P14_08_RUN_CONFIRM_DIALOG` | 已绑定、可运行时的确认弹窗 | 项目业务页覆盖层 |
-| `P14_09_WORKFLOW_NOT_BOUND_DIALOG` | 未绑定时的提示弹窗 | 项目业务页覆盖层，非独立页面 |
-| `P14_10_PROJECT_WORKFLOW_RUN_SUMMARY` | 项目运行摘要与最近运行 | 项目概览 |
+- 流程中心共享列表：`/workflow-runs`；项目入口只使用 `?projectId={projectId}` 和 `?projectId={projectId}&stage={stage}` 过滤。
+- 详情使用 `/workflow-runs/{runId}`；项目摘要使用冻结的摘要接口。
+- 列表、详情、loading、empty、error/retry、确认弹窗、未绑定提示和项目摘要继续对应 P14_01～P14_10。
 
-## 路由与展示规则
+## 当前范围
 
-- 流程中心没有任何 Tab，直接展示全局运行记录；列表主路由仅为 `/workflow-runs`。
-- 详情属于流程中心，统一使用 `/workflow-runs/{runId}`；面包屑为“流程中心 / 运行记录 / 运行编号”。
-- 项目名称是详情字段和可点击链接，不是详情父级路由；不得新增项目级重复运行列表路由。
-- 项目概览只提供摘要、最近运行列表及两个筛选入口：`/workflow-runs?projectId={projectId}` 与 `/workflow-runs?projectId={projectId}&stage={stage}`。
-- 已绑定且可运行时“运行工作流”打开 P14_08；未绑定时打开 P14_09；创建成功后直接进入运行详情。
+UI 消费内部 Connection、WorkflowConfiguration 记录和 Runtime Run 数据。当前不激活真实 n8n、连接验证、工作流验证、verify、enable、disable、Worker 或外部执行；UI 不得要求展示或实现这些操作。
 
-## 范围边界
-
-本迭代激活 n8n 连接和工作流的验证、启用、停用，以及运行记录闭环；不激活 LLM Provider、分发平台、OAuth 或发布执行。运行状态与错误必须使用中文资源和脱敏 ViewModel。
-
-## 字段契约与资料存在性
-
-列表与详情使用 `runNumber` 作为用户可见编号；`status` 使用固定运行状态；`projectId` 只用于链接和筛选；`stage`、`workflowConfigurationId`、`triggerSource` 为筛选语义；`inputPayload`、`outputPayload`、`errorDetails` 仅展示 API 已脱敏且允许展示的内容；`version` 仅用于命令并发控制，不直接展示。时间字段为 `startedAt`、`finishedAt`、`cancelledAt`、`createdAt`、`updatedAt`。项目摘要为查询聚合，不对应新业务表。
-
-P14_01～P14_10 的 `code.html` 与 `screen.png` 均存在于 `ui/frames/{frameId}/`；设计基线为 `ui/design-system/DESIGN.md`。
+项目环节可绑定存在的 WorkflowConfiguration（及其存在的 Connection）。`enabled` 与 `integrationStatus` 是未来集成预留元数据，不得被 UI 解释为当前绑定或创建 queued Run 的资格条件。运行状态与错误使用中文资源及脱敏 ViewModel。

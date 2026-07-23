@@ -779,7 +779,7 @@ paths:
         "500": {$ref: "#/components/responses/InternalServerError"}
     post:
       operationId: createWorkflowRun
-      description: Creates an idempotent queued run from the current executable project-stage binding, captures actual resource versions in a redacted configuration snapshot, and returns the new run. Creation has no expectedVersion because no WorkflowRun exists yet.
+      description: Creates an idempotent queued run when the project, stage binding, referenced WorkflowConfiguration, and its WorkflowConnection exist; captures their current resource versions in a redacted configuration snapshot and returns the new run. enabled and integrationStatus are reserved future-integration metadata and are not prerequisites. Creation does not trigger external execution and has no expectedVersion because no WorkflowRun exists yet.
       parameters: [{$ref: "#/components/parameters/IdempotencyKey"}]
       requestBody: {required: true, content: {application/json: {schema: {$ref: "#/components/schemas/CreateWorkflowRunRequest"}}}}
       responses:
@@ -855,7 +855,7 @@ paths:
     parameters: [{$ref: "#/components/parameters/Iteration14WorkflowRunId"}]
     post:
       operationId: retryWorkflowRun
-      description: Creates a new queued WorkflowRun from a failed or cancelled source. expectedVersion targets the original runId WorkflowRun.version. By default it reuses the original snapshot and input; useCurrentConfiguration=true reads the current runnable binding/configuration/connection, and inputOverride fully replaces the input. The original run, snapshot and events remain immutable.
+      description: Creates a new queued WorkflowRun from a failed or cancelled source. expectedVersion targets the original runId WorkflowRun.version. By default it reuses the original snapshot and input; useCurrentConfiguration=true reads the current binding, configuration, and connection when those referenced records exist, and inputOverride fully replaces the input. enabled and integrationStatus are not prerequisites; external execution is not triggered. The original run, snapshot and events remain immutable.
       parameters: [{$ref: "#/components/parameters/IdempotencyKey"}]
       requestBody: {required: true, content: {application/json: {schema: {$ref: "#/components/schemas/WorkflowRunRetryRequest"}}}}
       responses:
@@ -950,7 +950,7 @@ paths:
         "500": {$ref: "#/components/responses/InternalServerError"}
     post:
       operationId: createWorkflowConnection
-      description: Creates a workflow connection without contacting n8n. connectionType is required and currently must be n8n. Idempotency-Key is required and operation-scoped. The returned configuration always has integrationStatus=not_connected and enabled=false.
+      description: Creates an internal workflow connection configuration record without contacting n8n. connectionType is required and currently must be n8n. Idempotency-Key is required and operation-scoped. The returned integrationStatus=not_connected and enabled=false values are reserved future-integration metadata and do not prevent project binding or queued WorkflowRun creation.
       parameters: [{$ref: "#/components/parameters/IdempotencyKey"}]
       requestBody: {required: true, content: {application/json: {schema: {$ref: "#/components/schemas/CreateWorkflowConnectionRequest"}}}}
       responses:
@@ -988,7 +988,7 @@ paths:
         "500": {$ref: "#/components/responses/InternalServerError"}
     post:
       operationId: createWorkflowConfiguration
-      description: Creates a workflow bound to an existing connection. connectionId is required; workflowType is derived server-side and clients must not submit it. Idempotency-Key is required and operation-scoped. The returned configuration always has integrationStatus=not_connected and enabled=false.
+      description: Creates an internal workflow configuration record bound to an existing connection. connectionId is required; workflowType is derived server-side and clients must not submit it. Idempotency-Key is required and operation-scoped. The returned integrationStatus=not_connected and enabled=false values are reserved future-integration metadata and do not prevent project binding or queued WorkflowRun creation.
       parameters: [{$ref: "#/components/parameters/IdempotencyKey"}]
       requestBody: {required: true, content: {application/json: {schema: {$ref: "#/components/schemas/CreateWorkflowConfigurationRequest"}}}}
       responses:
@@ -1615,8 +1615,8 @@ components:
         typeConfig: {$ref: "#/components/schemas/N8nTypeConfig"}
         hasCredential: {type: boolean, readOnly: true}
         credentialFingerprint: {type: [string, "null"], maxLength: 32, readOnly: true, description: Non-reversible safe identifier; plaintext and ciphertext are never returned.}
-        integrationStatus: {allOf: [{$ref: "#/components/schemas/IntegrationStatus"}], readOnly: true}
-        enabled: {type: boolean, readOnly: true}
+        integrationStatus: {allOf: [{$ref: "#/components/schemas/IntegrationStatus"}], readOnly: true, description: Reserved future-integration metadata; it does not prove a real verified connection and is not a project-binding or WorkflowRun-creation gate.}
+        enabled: {type: boolean, readOnly: true, description: Reserved future-integration metadata; it is not a project-binding or WorkflowRun-creation gate.}
         lastVerifiedAt: {type: [string, "null"], format: date-time, readOnly: true}
         lastErrorCode: {type: [string, "null"], maxLength: 80, readOnly: true}
         lastErrorMessage: {type: [string, "null"], maxLength: 300, readOnly: true}
@@ -1688,8 +1688,8 @@ components:
         outputContractVersion: {type: string, minLength: 1, maxLength: 40}
         defaultParameters: {type: object, additionalProperties: true}
         note: {type: [string, "null"], maxLength: 5000}
-        integrationStatus: {allOf: [{$ref: "#/components/schemas/IntegrationStatus"}], readOnly: true}
-        enabled: {type: boolean, readOnly: true}
+        integrationStatus: {allOf: [{$ref: "#/components/schemas/IntegrationStatus"}], readOnly: true, description: Reserved future-execution metadata; it is not a verified callable workflow and is not a project-binding or WorkflowRun-creation gate.}
+        enabled: {type: boolean, readOnly: true, description: Reserved future-execution metadata; it is not a project-binding or WorkflowRun-creation gate.}
         lastVerifiedAt: {type: [string, "null"], format: date-time, readOnly: true}
         lastErrorCode: {type: [string, "null"], maxLength: 80, readOnly: true}
         lastErrorMessage: {type: [string, "null"], maxLength: 300, readOnly: true}

@@ -2,31 +2,24 @@
 
 ## 当前状态
 
-`frozen_cf_14_01_r2`。本迭代当前范围只交付通用 WorkflowRun Runtime、平台无关的执行器抽象及其 HTTP/UI 闭环；不因延后的真实 n8n 集成而阻塞。
+`frozen_cf_14_01_r3`。本迭代冻结“配置记录不等于真实集成”的终态契约。
 
-## 当前目标
+## 当前目标与配置语义
 
-- WorkflowRun、WorkflowRunEvent、Repository、Application Service 与安全快照；
-- `WorkflowExecutor`、FakeWorkflowExecutor 与生产默认的 UnavailableWorkflowExecutor；
-- Runtime HTTP API、流程中心 UI、项目摘要、当前数据库终态和真实 API 联调；
-- 运行创建只写入 queued 记录和初始事件，不启动 Worker、不直接调用外部平台，也不伪造 succeeded。
+- `WorkflowConnection` 和 `WorkflowConfiguration` 仅为平台内部创建的配置记录，为项目绑定和 WorkflowRun 脱敏快照提供数据。
+- 它们不表示已连接 n8n、已完成鉴权、已验证可调用或已启用真实执行能力。
+- `enabled` 与 `integrationStatus` 为未来真实集成预留元数据，当前不参与绑定或创建 Run 的资格判断。
+- 合法闭环：创建 Connection → 创建 WorkflowConfiguration → 绑定到项目环节 → 创建 queued WorkflowRun → 查询、取消、重试、摘要。
+- 绑定只要求 WorkflowConfiguration 及其引用的 WorkflowConnection 存在；创建 Run 还要求 Project 与对应 stage Binding 存在，并满足冻结的参数、版本和幂等要求。
 
-## 路由与领域边界
+## 当前 Run 行为
 
-| 领域 | 表/DTO | 路由所有权 | 消费者 |
-|---|---|---|---|
-| Runtime | `workflow_run_records`、`workflow_run_events`、camelCase Runtime DTO | `/api/v1/workflow-runs`、`/{runId}`、事件、重试、取消及项目摘要 | Runtime API、流程中心、项目摘要 |
-| 内容生产旧闭环 | `workflow_runs`、既有 snake_case DTO | `/api/v1/content-workflow-runs`、`/{workflowRunId}` | global-lite、project-works、内容改写详情 |
-
-旧数据不迁移到 Runtime 新表；不提供旧 `/api/v1/workflow-runs` 的兼容别名或按字段/ID 分流。历史 Migration 不要求回滚。
+生产默认 `UnavailableWorkflowExecutor` 只创建 `queued` WorkflowRun、初始 Event 和脱敏配置快照；不调用 `WorkflowExecutor.Execute`、不启动 Worker、不调用 n8n、不伪造 `running` 或 `succeeded`。`FakeWorkflowExecutor` 仅用于测试。
 
 ## 延后范围
 
-真实 n8n Adapter、Worker、队列、callback server、外部工作流执行以及 WorkflowConnection/WorkflowConfiguration 的 verify、enable、disable 归入独立任务 `CF-14-N8N-Integration`，不是当前完成门槛。
+真实 n8n Adapter、鉴权、连接/工作流可调用性验证、verify、enable、disable、Worker、队列消费、callback server、外部状态回写及外部成功/失败/超时/取消联调均延后至 `CF-14-N8N-Integration`，不构成当前验收门槛。
 
 ## 后续顺序
 
-1. CF-14-02B-R1：修复 `triggerSource` 与持久化幂等。
-2. CF-14-02D-R1：迁移旧路由、主程序装配、完整 Server 测试和真实 HTTP 冒烟。
-3. 恢复 CF-14-03A；随后 CF-14-03B/C；最后联调。
-4. `CF-14-N8N-Integration` 独立开发。
+CF-14-01-R3 → CF-14-02-R2 → CF-14-03A-R1 → CF-14-03B/C → Iteration 14 最终联调 → CF-14-N8N-Integration 后续独立开发。

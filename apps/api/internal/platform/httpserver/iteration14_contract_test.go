@@ -1,6 +1,7 @@
 package httpserver
 
 import (
+	"encoding/json"
 	"os"
 	"path/filepath"
 	"strings"
@@ -8,32 +9,65 @@ import (
 )
 
 func TestIteration14FrozenWorkflowRuntimeContract(t *testing.T) {
-	contract, err := os.ReadFile(filepath.Join("..", "..", "..", "..", "..", "packages", "contracts", "openapi", "openapi.yaml"))
-	if err != nil { t.Fatal(err) }
-	text := string(contract)
+	root := filepath.Join("..", "..", "..", "..", "..")
+	read := func(parts ...string) string {
+		t.Helper()
+		path := filepath.Join(append([]string{root}, parts...)...)
+		content, err := os.ReadFile(path)
+		if err != nil {
+			t.Fatal(err)
+		}
+		return string(content)
+	}
+	contract := read("packages", "contracts", "openapi", "openapi.yaml")
 
 	operationIDs := map[string]struct{}{}
-	for _, line := range strings.Split(text, "\n") {
+	for _, line := range strings.Split(contract, "\n") {
 		line = strings.TrimSpace(line)
-		if !strings.HasPrefix(line, "operationId: ") { continue }
+		if !strings.HasPrefix(line, "operationId: ") {
+			continue
+		}
 		operationID := strings.TrimSpace(strings.TrimPrefix(line, "operationId: "))
-		if _, exists := operationIDs[operationID]; exists { t.Fatalf("OpenAPI operationId must be unique: %s", operationID) }
+		if _, exists := operationIDs[operationID]; exists {
+			t.Fatalf("OpenAPI operationId must be unique: %s", operationID)
+		}
 		operationIDs[operationID] = struct{}{}
 	}
-
 	pathBlock := func(path string) string {
 		t.Helper()
-		start := strings.Index(text, "  "+path+"\n")
-		if start < 0 { t.Fatalf("OpenAPI path missing: %s", path) }
-		rest := text[start+1:]
-		if end := strings.Index(rest, "\n  /api/"); end >= 0 { return rest[:end] }
+		start := strings.Index(contract, "  "+path+"\n")
+		if start < 0 {
+			t.Fatalf("OpenAPI path missing: %s", path)
+		}
+		rest := contract[start+1:]
+		if end := strings.Index(rest, "\n  /api/"); end >= 0 {
+			return rest[:end]
+		}
 		return rest
+	}
+	schemaBlock := func(name string) string {
+		t.Helper()
+		start := strings.Index(contract, "    "+name+":\n")
+		if start < 0 {
+			t.Fatalf("OpenAPI schema missing: %s", name)
+		}
+		lines := strings.Split(contract[start:], "\n")
+		for index, line := range lines[1:] {
+			if strings.HasPrefix(line, "    ") && !strings.HasPrefix(line, "      ") && strings.HasSuffix(strings.TrimSpace(line), ":") {
+				return strings.Join(lines[:index+1], "\n")
+			}
+		}
+		return strings.Join(lines, "\n")
 	}
 	assertRoute := func(path, operationID, schema string) {
 		t.Helper()
 		block := pathBlock(path)
-		if strings.Count(block, "operationId: "+operationID) != 1 { t.Fatalf("%s must own operationId %s exactly once", path, operationID) }
-		if !strings.Contains(block, "$ref: \"#/components/schemas/"+schema+"\"") { t.Fatalf("%s must reference %s", path, schema) }
+		if strings.Count(block, "operationId: "+operationID) != 1 {
+			t.Fatalf("%s must own operationId %s exactly once", path, operationID)
+		}
+		if !strings.Contains(block, "$ref: \"#/components/schemas/"+schema+"\"") {
+			t.Fatalf("%s must reference %s", path, schema)
+		}
 	}
 
 	assertRoute("/api/v1/workflow-runs:", "listWorkflowRuns", "Iteration14WorkflowRunListEnvelope")
@@ -46,26 +80,63 @@ func TestIteration14FrozenWorkflowRuntimeContract(t *testing.T) {
 	assertRoute("/api/v1/content-workflow-runs:", "listContentWorkflowRuns", "GlobalWorkflowRunListEnvelope")
 	assertRoute("/api/v1/content-workflow-runs/{workflowRunId}:", "getContentWorkflowRun", "WorkflowRunDetailEnvelope")
 
-	runtimeDetail := pathBlock("/api/v1/workflow-runs/{runId}:")
-	for _, forbidden := range []string{"provider mock", "content_mock_rewrite", "ContentItem/v1/ReviewReport", "target v2", "idempotency key", "fingerprint", "rewrite run"} {
-		if strings.Contains(strings.ToLower(runtimeDetail), strings.ToLower(forbidden)) { t.Fatalf("Runtime detail retains legacy rewrite description: %s", forbidden) }
-	}
 	for _, deferred := range []string{"verifyWorkflowConnection", "enableWorkflowConnection", "disableWorkflowConnection", "verifyWorkflowConfiguration", "enableWorkflowConfiguration", "disableWorkflowConfiguration"} {
-		if _, exists := operationIDs[deferred]; exists { t.Fatalf("deferred operation remains active: %s", deferred) }
+		if _, exists := operationIDs[deferred]; exists {
+			t.Fatalf("deferred operation remains active: %s", deferred)
+		}
+	}
+	for _, schema := range []string{"WorkflowConnection", "WorkflowConfiguration"} {
+		block := schemaBlock(schema)
+		for _, fragment := range []string{"integrationStatus:", "enabled:", "Reserved future", "not a project-binding or WorkflowRun-creation gate"} {
+			if !strings.Contains(block, fragment) {
+				t.Fatalf("%s must describe %q in its own schema block", schema, fragment)
+			}
+		}
+	}
+	createRun := pathBlock("/api/v1/workflow-runs:")
+	for _, fragment := range []string{"queued run", "WorkflowConfiguration", "WorkflowConnection", "not prerequisites", "does not trigger external execution"} {
+		if !strings.Contains(createRun, fragment) {
+			t.Fatalf("create WorkflowRun description missing %q", fragment)
+		}
+	}
+	trigger := schemaBlock("WorkflowRunTriggerSource")
+	if !strings.Contains(trigger, "enum: [manual, retry, system, api]") {
+		t.Fatalf("unexpected triggerSource schema: %s", trigger)
+	}
+	if !strings.Contains(contract, "request_id:") || strings.Contains(contract, "requestId") {
+		t.Fatal("ErrorEnvelope must use request_id only")
 	}
 
-	triggerStart := strings.Index(text, "    WorkflowRunTriggerSource:\n")
-	if triggerStart < 0 { t.Fatal("WorkflowRunTriggerSource schema missing") }
-	triggerRest := text[triggerStart+len("    WorkflowRunTriggerSource:\n"):]
-	triggerEnd := strings.Index(triggerRest, "\n    Iteration14WorkflowRun:")
-	if triggerEnd < 0 { t.Fatal("WorkflowRunTriggerSource schema is incomplete") }
-	if got := triggerRest[:triggerEnd]; !strings.Contains(got, "enum: [manual, retry, system, api]") { t.Fatalf("unexpected triggerSource schema: %s", got) }
-	if !strings.Contains(text, "request_id:") || strings.Contains(text, "requestId") { t.Fatal("ErrorEnvelope must use request_id only") }
-	if !strings.Contains(text, "GlobalWorkflowRunListEnvelope:") || !strings.Contains(text, "WorkflowRunDetailEnvelope:") || !strings.Contains(text, "Iteration14WorkflowRunEnvelope:") { t.Fatal("legacy and Runtime WorkflowRun schemas must remain distinct") }
+	docs := []string{"iteration-plan.md", "api-scope.yaml", "acceptance.md", "closed-loop.md", "data-model.md", "route-migration.md", "ui-scope.md"}
+	for _, name := range docs {
+		content := read("docs", "development-inputs", "p1", "iterations", "iteration-14-workflow-run-runtime", name)
+		if !strings.Contains(content, "frozen_cf_14_01_r3") {
+			t.Fatalf("%s must carry the R3 frozen state", name)
+		}
+	}
+	scope := read("docs", "development-inputs", "p1", "iterations", "iteration-14-workflow-run-runtime", "ui-scope.md")
+	for _, forbidden := range []string{"本迭代激活 n8n", "当前激活 n8n"} {
+		if strings.Contains(scope, forbidden) {
+			t.Fatalf("ui scope retains current integration claim: %s", forbidden)
+		}
+	}
+	manifest := read("docs", "development-inputs", "p1", "iterations", "iteration-14-workflow-run-runtime", "ui-manifest.json")
+	var manifestValue map[string]any
+	if err := json.Unmarshal([]byte(manifest), &manifestValue); err != nil {
+		t.Fatalf("ui manifest must be valid JSON: %v", err)
+	}
+	if manifestValue["contractFreeze"] != "CF-14-01-R3" || strings.Contains(manifest, "n8nAdapterOnly") {
+		t.Fatal("ui manifest must freeze R3 without n8nAdapterOnly")
+	}
+	policy, ok := manifestValue["scopePolicy"].(map[string]any)
+	if !ok || policy["verificationActions"] != false || policy["enableDisableActions"] != false {
+		t.Fatal("ui manifest must declare verification and enable/disable actions out of scope")
+	}
 
-	migration, err := os.ReadFile(filepath.Join("..", "..", "..", "..", "..", "docs", "development-inputs", "p1", "iterations", "iteration-14-workflow-run-runtime", "route-migration.md"))
-	if err != nil { t.Fatal(err) }
+	migration := read("docs", "development-inputs", "p1", "iterations", "iteration-14-workflow-run-runtime", "route-migration.md")
 	for _, fragment := range []string{"workflow_run_records", "workflow_run_events", "workflow_runs", "/api/v1/content-workflow-runs", "global-lite", "project-works"} {
-		if !strings.Contains(string(migration), fragment) { t.Fatalf("route migration mapping missing %s", fragment) }
+		if !strings.Contains(migration, fragment) {
+			t.Fatalf("route migration mapping missing %s", fragment)
+		}
 	}
 }

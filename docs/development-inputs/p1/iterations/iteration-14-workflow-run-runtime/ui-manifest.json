@@ -3,7 +3,7 @@
   "uiAcceptance": "PASS",
   "primaryRoute": "/workflow-runs",
   "detailRoute": "/workflow-runs/{runId}",
-  "contractFreeze": "CF-14-01",
+  "contractFreeze": "CF-14-01-R3",
   "frameAssetsRequired": ["code.html", "screen.png"],
   "noWorkflowConfigurationTab": true,
   "projectEntryRoutes": {
@@ -27,7 +27,9 @@
     { "frameId": "P14_10_PROJECT_WORKFLOW_RUN_SUMMARY", "area": "项目概览", "purpose": "项目运行摘要、最近运行和筛选入口", "screen": "ui/frames/P14_10_PROJECT_WORKFLOW_RUN_SUMMARY/screen.png", "html": "ui/frames/P14_10_PROJECT_WORKFLOW_RUN_SUMMARY/code.html" }
   ],
   "scopePolicy": {
-    "n8nAdapterOnly": true,
+    "realN8nIntegration": false,
+    "verificationActions": false,
+    "enableDisableActions": false,
     "callbackServer": false,
     "llmDirectIntegration": false,
     "distributionIntegration": false,
