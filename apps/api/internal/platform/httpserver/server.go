@@ -98,6 +98,10 @@ func New(address string, projects *project.Service, services ...any) *Server {
 			if value != nil {
 				registerWorkflowBindingRoutes(mux, value.Service)
 			}
+		case workflowRunApplication:
+			if value != nil {
+				registerWorkflowRunRoutes(mux, value)
+			}
 		}
 	}
 	return &Server{httpServer: &http.Server{Addr: address, Handler: withRequestID(mux), ReadHeaderTimeout: 5 * time.Second, ReadTimeout: 15 * time.Second, WriteTimeout: 30 * time.Second, IdleTimeout: 60 * time.Second}}
