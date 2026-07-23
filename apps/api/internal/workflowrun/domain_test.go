@@ -11,7 +11,7 @@ import (
 
 func testRun(t *testing.T) WorkflowRun {
 	t.Helper()
-	value, err := New(uuid.New(), uuid.New(), uuid.New(), "WR-20260722-001", "review", "project", json.RawMessage(`{"workflowConfiguration":{"id":"safe"}}`), json.RawMessage(`{"subject":"safe"}`))
+	value, err := New(uuid.New(), uuid.New(), uuid.New(), "WR-20260722-001", "review", "manual", json.RawMessage(`{"workflowConfiguration":{"id":"safe"}}`), json.RawMessage(`{"subject":"safe"}`))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -68,7 +68,7 @@ func TestWorkflowRunRejectsIllegalTransitionAndInvalidFailure(t *testing.T) {
 	}
 }
 func TestWorkflowRunRedactsSensitivePayloadFields(t *testing.T) {
-	run, err := New(uuid.New(), uuid.New(), uuid.New(), "WR-20260722-002", "review", "project", json.RawMessage(`{"authorization":"Bearer secret","nested":{"api_key":"secret"}}`), json.RawMessage(`{"content":"safe","idempotencyKey":"must-not-persist"}`))
+	run, err := New(uuid.New(), uuid.New(), uuid.New(), "WR-20260722-002", "review", "manual", json.RawMessage(`{"authorization":"Bearer secret","nested":{"api_key":"secret"}}`), json.RawMessage(`{"content":"safe","idempotencyKey":"must-not-persist"}`))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -76,4 +76,12 @@ func TestWorkflowRunRedactsSensitivePayloadFields(t *testing.T) {
 		t.Fatalf("snapshot=%s", run.ConfigurationSnapshot)
 	}
 	if string(run.InputPayload) != `{"content":"safe","idempotencyKey":"[REDACTED]"}` { t.Fatalf("input=%s", run.InputPayload) }
+}
+func TestWorkflowRunTriggerSourcesAreFrozen(t *testing.T) {
+	for _, source := range []string{"manual", "retry", "system", "api"} {
+		if _, err := New(uuid.New(), uuid.New(), uuid.New(), "WR-"+source, "review", source, json.RawMessage(`{}`), json.RawMessage(`{}`)); err != nil { t.Fatalf("%s: %v", source, err) }
+	}
+	for _, source := range []string{"project", "workflow_center", "other"} {
+		if _, err := New(uuid.New(), uuid.New(), uuid.New(), "WR-"+source, "review", source, json.RawMessage(`{}`), json.RawMessage(`{}`)); !errors.Is(err, ErrValidation) { t.Fatalf("%s: %v", source, err) }
+	}
 }

@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/local/ai-content-factory/apps/api/internal/idempotency"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -215,8 +216,14 @@ func (r *Repository) ListEvents(ctx context.Context, runID uuid.UUID) ([]Event, 
 	return events, nil
 }
 func (r *Repository) CreateWithInitialEvent(ctx context.Context, value WorkflowRun, event Event) (WorkflowRun, Event, error) {
-	if r.pool == nil || event.RunID != value.ID || event.Status != StatusQueued {
+	if event.RunID != value.ID || event.Status != StatusQueued {
 		return WorkflowRun{}, Event{}, ErrValidation
+	}
+	if r.pool == nil {
+		created, err := r.Create(ctx, value)
+		if err != nil { return WorkflowRun{}, Event{}, err }
+		createdEvent, err := r.AddEvent(ctx, event)
+		return created, createdEvent, err
 	}
 	tx, err := r.pool.Begin(ctx)
 	if err != nil { return WorkflowRun{}, Event{}, fmt.Errorf("begin workflow run creation transaction: %w", err) }
@@ -230,10 +237,16 @@ func (r *Repository) CreateWithInitialEvent(ctx context.Context, value WorkflowR
 	return created, createdEvent, nil
 }
 func (r *Repository) UpdateStatusWithEvent(ctx context.Context, current, next WorkflowRun, event Event) (WorkflowRun, Event, error) {
-	if r.pool == nil || current.ID != next.ID || next.Version != current.Version+1 || !canTransition(current.Status, next.Status) || event.RunID != current.ID || event.Status != next.Status {
+	if current.ID != next.ID || next.Version != current.Version+1 || !canTransition(current.Status, next.Status) || event.RunID != current.ID || event.Status != next.Status {
 		return WorkflowRun{}, Event{}, ErrInvalidTransition
 	}
 	if _, err := NewFromDB(next); err != nil { return WorkflowRun{}, Event{}, err }
+	if r.pool == nil {
+		updated, err := r.UpdateStatus(ctx, next)
+		if err != nil { return WorkflowRun{}, Event{}, err }
+		createdEvent, err := r.AddEvent(ctx, event)
+		return updated, createdEvent, err
+	}
 	tx, err := r.pool.Begin(ctx)
 	if err != nil { return WorkflowRun{}, Event{}, fmt.Errorf("begin workflow run status transaction: %w", err) }
 	defer tx.Rollback(ctx)
@@ -244,6 +257,53 @@ func (r *Repository) UpdateStatusWithEvent(ctx context.Context, current, next Wo
 	if err != nil { return WorkflowRun{}, Event{}, err }
 	if err = tx.Commit(ctx); err != nil { return WorkflowRun{}, Event{}, fmt.Errorf("commit workflow run status transaction: %w", err) }
 	return updated, createdEvent, nil
+}
+
+// ExecuteIdempotent serializes an operation/key pair and writes the business
+// result and its replay record in one database transaction.  The shared
+// idempotency table is therefore the sole durable source of replay state.
+func (r *Repository) ExecuteIdempotent(ctx context.Context, scope, key, requestHash string, fn func(Store) (WorkflowRun, error)) (WorkflowRun, error) {
+	if r.pool == nil || scope == "" || key == "" || requestHash == "" {
+		return WorkflowRun{}, ErrValidation
+	}
+	tx, err := r.pool.Begin(ctx)
+	if err != nil {
+		return WorkflowRun{}, fmt.Errorf("begin workflow run idempotency transaction: %w", err)
+	}
+	defer tx.Rollback(ctx)
+	if _, err = tx.Exec(ctx, "SELECT pg_advisory_xact_lock(hashtextextended($1, 0))", scope+":"+key); err != nil {
+		return WorkflowRun{}, fmt.Errorf("lock workflow run idempotency request: %w", err)
+	}
+	idem := idempotency.NewPostgresRepositoryTx(tx)
+	if record, getErr := idem.Get(ctx, scope, key); getErr == nil {
+		if record.RequestHash != requestHash {
+			return WorkflowRun{}, ErrIdempotencyConflict
+		}
+		var replay struct { RunID uuid.UUID `json:"runId"` }
+		if err := json.Unmarshal(record.ResponseBody, &replay); err != nil { return WorkflowRun{}, fmt.Errorf("decode workflow run idempotency replay: %w", err) }
+		if replay.RunID == uuid.Nil { return WorkflowRun{}, ErrValidation }
+		return NewPostgresRepositoryTx(tx).GetByID(ctx, replay.RunID)
+	} else if !errors.Is(getErr, idempotency.ErrNotFound) {
+		return WorkflowRun{}, getErr
+	}
+	created, err := fn(NewPostgresRepositoryTx(tx))
+	if err != nil {
+		return WorkflowRun{}, err
+	}
+	body, err := json.Marshal(struct { RunID uuid.UUID `json:"runId"` }{RunID: created.ID})
+	if err != nil {
+		return WorkflowRun{}, fmt.Errorf("encode workflow run idempotency replay: %w", err)
+	}
+	if _, err = idem.Create(ctx, idempotency.Record{ID: uuid.New(), Scope: scope, Key: key, RequestHash: requestHash, ResponseStatus: 200, ResponseBody: body}); err != nil {
+		if errors.Is(err, idempotency.ErrConflict) {
+			return WorkflowRun{}, ErrIdempotencyConflict
+		}
+		return WorkflowRun{}, err
+	}
+	if err = tx.Commit(ctx); err != nil {
+		return WorkflowRun{}, fmt.Errorf("commit workflow run idempotency transaction: %w", err)
+	}
+	return created, nil
 }
 func (r *Repository) QuerySummary(ctx context.Context, projectID uuid.UUID, recentLimit int) (Summary, error) {
 	if recentLimit <= 0 || recentLimit > 3 {

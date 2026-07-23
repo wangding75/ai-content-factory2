@@ -77,6 +77,21 @@ func TestWorkflowRunHTTPListParsesFrozenFilters(t *testing.T) {
 	if w.Code != http.StatusBadRequest { t.Fatalf("invalid time range = %d", w.Code) }
 }
 
+func TestWorkflowRunHTTPListAcceptsFrozenTriggerSources(t *testing.T) {
+	app := &fakeWorkflowRunApplication{}
+	handler := workflowRunHTTPHandler(app)
+	for _, source := range []string{"manual", "system", "api", "retry"} {
+		w := workflowRunHTTPRequest(handler, http.MethodGet, "/api/v1/workflow-runs?triggerSource="+source, "", "")
+		if w.Code != http.StatusOK || app.listQuery.TriggerSource != source { t.Fatalf("%s = %d %#v", source, w.Code, app.listQuery) }
+	}
+	w := workflowRunHTTPRequest(handler, http.MethodGet, "/api/v1/workflow-runs", "", "")
+	if w.Code != http.StatusOK || app.listQuery.TriggerSource != "" { t.Fatalf("empty filter = %d %#v", w.Code, app.listQuery) }
+	for _, source := range []string{"project", "workflow_center", "other"} {
+		w = workflowRunHTTPRequest(handler, http.MethodGet, "/api/v1/workflow-runs?triggerSource="+source, "", "")
+		if w.Code != http.StatusBadRequest || !strings.Contains(w.Body.String(), "validation_error") { t.Fatalf("%s = %d %s", source, w.Code, w.Body.String()) }
+	}
+}
+
 func TestWorkflowRunHTTPCommandsAndErrors(t *testing.T) {
 	run := workflowRunHTTPFixture(); app := &fakeWorkflowRunApplication{run: run}; handler := workflowRunHTTPHandler(app)
 	w := workflowRunHTTPRequest(handler, http.MethodPost, "/api/v1/workflow-runs/"+run.ID.String()+"/cancel", `{"expectedVersion":1}`, "cancel-key")

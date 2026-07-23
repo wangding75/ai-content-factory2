@@ -14,6 +14,7 @@ import (
 )
 
 type serviceStore struct { runs map[uuid.UUID]WorkflowRun; events map[uuid.UUID][]Event }
+func (s *serviceStore) ExecuteIdempotent(_ context.Context, _ string, _ string, _ string, fn func(Store) (WorkflowRun, error)) (WorkflowRun, error) { return fn(s) }
 func (s *serviceStore) CreateWithInitialEvent(_ context.Context, run WorkflowRun, event Event) (WorkflowRun, Event, error) { s.runs[run.ID]=run; s.events[run.ID]=append(s.events[run.ID],event); return run,event,nil }
 func (s *serviceStore) GetByID(_ context.Context, id uuid.UUID) (WorkflowRun,error) { r,ok:=s.runs[id]; if !ok{return WorkflowRun{},ErrNotFound}; return r,nil }
 func (s *serviceStore) List(_ context.Context, _ ListFilter) ([]WorkflowRun,error) { out:=[]WorkflowRun{};for _,r:=range s.runs{out=append(out,r)};return out,nil }

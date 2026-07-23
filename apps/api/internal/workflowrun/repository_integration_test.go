@@ -5,11 +5,15 @@ import (
 	"encoding/json"
 	"errors"
 	"os"
+	"sync"
 	"testing"
 	"time"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/local/ai-content-factory/apps/api/internal/globalconfig"
+	"github.com/local/ai-content-factory/apps/api/internal/project"
+	"github.com/local/ai-content-factory/apps/api/internal/workflowbinding"
 )
 
 func openDB(t *testing.T) (*pgxpool.Pool, context.Context) {
@@ -51,7 +55,7 @@ func fixture(t *testing.T, ctx context.Context, db *pgxpool.Pool) (uuid.UUID, uu
 }
 func newRun(t *testing.T, p, w uuid.UUID, n string) WorkflowRun {
 	t.Helper()
-	v, err := New(uuid.New(), p, w, n, "review", "project", json.RawMessage(`{"connection":{"type":"n8n"}}`), json.RawMessage(`{"content":"safe"}`))
+	v, err := New(uuid.New(), p, w, n, "review", "manual", json.RawMessage(`{"connection":{"type":"n8n"}}`), json.RawMessage(`{"content":"safe"}`))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -199,4 +203,41 @@ func TestRepositoryListEventsHasStableCreatedAtIDOrder(t *testing.T) {
 	if _, err = repo.AddEvent(ctx, Event{ID: firstID, RunID: run.ID, EventType: "queued", Status: StatusQueued, Payload: json.RawMessage(`{}`), CreatedAt: at}); err != nil { t.Fatal(err) }
 	events, err := repo.ListEvents(ctx, run.ID)
 	if err != nil || len(events) != 2 || events[0].ID != firstID { t.Fatalf("events=%+v err=%v", events, err) }
+}
+
+func TestWorkflowRunPersistentIdempotencyReplayConcurrencyAndRestart(t *testing.T) {
+	db, ctx := openDB(t)
+	p, w := fixture(t, ctx, db)
+	newService := func() *Service {
+		connectionID := uuid.New()
+		return NewService(NewPostgresRepository(db), serviceProjects{p: project.Project{ID: p}}, serviceBindings{b: workflowbinding.ProjectWorkflowBinding{ID: uuid.New(), ProjectID: p, Stage: workflowbinding.StageReview, WorkflowConfigurationID: w, Version: 1}}, serviceConfigs{w: globalconfig.Workflow{Common: globalconfig.Common{ID: w, Version: 1, Enabled: true, IntegrationStatus: "verified"}, ConnectionID: connectionID, ApplicableStages: []string{"review"}, TypeConfig: json.RawMessage(`{}`), DefaultParameters: json.RawMessage(`{}`)}}, serviceConnections{c: globalconfig.Connection{Common: globalconfig.Common{ID: connectionID, Version: 1, Enabled: true, IntegrationStatus: "verified"}, ConnectionType: "n8n", TypeConfig: json.RawMessage(`{}`)}})
+	}
+	first := newService()
+	command := CreateRunCommand{ProjectID: p, Stage: "review", InputPayload: json.RawMessage(`{"z":1,"a":{"b":2}}`), TriggerSource: "api", IdempotencyKey: "workflow-run-replay"}
+	created, err := first.CreateRun(ctx, command)
+	if err != nil { t.Fatal(err) }
+	replayed, err := newService().CreateRun(ctx, CreateRunCommand{ProjectID: p, Stage: "review", InputPayload: json.RawMessage(` { "a" : { "b" : 2 }, "z" : 1 } `), TriggerSource: "api", IdempotencyKey: "workflow-run-replay"})
+	if err != nil || replayed.ID != created.ID { t.Fatalf("restart replay=%+v err=%v", replayed, err) }
+	if _, err = newService().CreateRun(ctx, CreateRunCommand{ProjectID: p, Stage: "review", InputPayload: json.RawMessage(`{"z":2}`), TriggerSource: "api", IdempotencyKey: "workflow-run-replay"}); !errors.Is(err, ErrIdempotencyConflict) { t.Fatalf("conflict=%v", err) }
+	var wg sync.WaitGroup
+	results := make([]WorkflowRun, 2)
+	errs := make([]error, 2)
+	for i := range results { wg.Add(1); go func(i int) { defer wg.Done(); results[i], errs[i] = newService().CreateRun(context.Background(), CreateRunCommand{ProjectID: p, Stage: "review", InputPayload: json.RawMessage(`{"concurrent":true}`), TriggerSource: "system", IdempotencyKey: "workflow-run-concurrent"}) }(i) }
+	wg.Wait()
+	if errs[0] != nil || errs[1] != nil || results[0].ID != results[1].ID { t.Fatalf("concurrent results=%+v errors=%v", results, errs) }
+	var runs, events int
+	if err = db.QueryRow(ctx, "SELECT COUNT(*) FROM workflow_run_records WHERE project_id=$1", p).Scan(&runs); err != nil { t.Fatal(err) }
+	if err = db.QueryRow(ctx, "SELECT COUNT(*) FROM workflow_run_events WHERE run_id=$1", results[0].ID).Scan(&events); err != nil { t.Fatal(err) }
+	if runs != 2 || events != 1 { t.Fatalf("runs=%d events=%d", runs, events) }
+	if _, err = first.CancelRun(ctx, RunCommand{RunID: created.ID, ExpectedVersion: created.Version, IdempotencyKey: "workflow-run-cancel"}); err != nil { t.Fatal(err) }
+	cancelReplay, err := newService().CancelRun(ctx, RunCommand{RunID: created.ID, ExpectedVersion: created.Version, IdempotencyKey: "workflow-run-cancel"})
+	if err != nil || cancelReplay.Status != StatusCancelled { t.Fatalf("cancel replay=%+v err=%v", cancelReplay, err) }
+	if _, err = newService().CancelRun(ctx, RunCommand{RunID: created.ID, ExpectedVersion: created.Version + 1, IdempotencyKey: "workflow-run-cancel"}); !errors.Is(err, ErrIdempotencyConflict) { t.Fatalf("cancel conflict=%v", err) }
+	retried, err := first.RetryRun(ctx, RetryCommand{RunID: created.ID, ExpectedVersion: cancelReplay.Version, UseCurrentConfiguration: false, InputOverride: json.RawMessage(`{"override":true}`), IdempotencyKey: "workflow-run-retry"})
+	if err != nil { t.Fatal(err) }
+	retryReplay, err := newService().RetryRun(ctx, RetryCommand{RunID: created.ID, ExpectedVersion: cancelReplay.Version, UseCurrentConfiguration: false, InputOverride: json.RawMessage(`{"override":true}`), IdempotencyKey: "workflow-run-retry"})
+	if err != nil || retryReplay.ID != retried.ID { t.Fatalf("retry replay=%+v err=%v", retryReplay, err) }
+	if _, err = newService().RetryRun(ctx, RetryCommand{RunID: created.ID, ExpectedVersion: cancelReplay.Version, UseCurrentConfiguration: true, InputOverride: json.RawMessage(`{"override":true}`), IdempotencyKey: "workflow-run-retry"}); !errors.Is(err, ErrIdempotencyConflict) { t.Fatalf("retry conflict=%v", err) }
+	if err = db.QueryRow(ctx, "SELECT COUNT(*) FROM workflow_run_events WHERE run_id=$1", retried.ID).Scan(&events); err != nil { t.Fatal(err) }
+	if events != 1 { t.Fatalf("retry events=%d", events) }
 }

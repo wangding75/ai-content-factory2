@@ -124,7 +124,7 @@ func canTransition(from, to Status) bool {
 }
 
 func (r WorkflowRun) validate() error {
-	if r.ID == uuid.Nil || r.ProjectID == uuid.Nil || r.WorkflowConfigurationID == uuid.Nil || strings.TrimSpace(r.RunNumber) == "" || strings.TrimSpace(r.Stage) == "" || strings.TrimSpace(r.TriggerSource) == "" || r.Version < 1 || !validJSONObject(r.ConfigurationSnapshot) || !validJSONObject(r.InputPayload) {
+	if r.ID == uuid.Nil || r.ProjectID == uuid.Nil || r.WorkflowConfigurationID == uuid.Nil || strings.TrimSpace(r.RunNumber) == "" || strings.TrimSpace(r.Stage) == "" || !validTriggerSource(r.TriggerSource) || r.Version < 1 || !validJSONObject(r.ConfigurationSnapshot) || !validJSONObject(r.InputPayload) {
 		return ErrValidation
 	}
 	if r.OutputPayload != nil && !validJSONObject(r.OutputPayload) || r.ErrorDetails != nil && !validJSONObject(r.ErrorDetails) {
@@ -137,6 +137,10 @@ func (r WorkflowRun) validate() error {
 		return ErrValidation
 	}
 	return nil
+}
+
+func validTriggerSource(value string) bool {
+	return value == "manual" || value == "retry" || value == "system" || value == "api"
 }
 
 func validJSONObject(value json.RawMessage) bool {

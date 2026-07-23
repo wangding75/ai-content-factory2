@@ -21,10 +21,12 @@ func NewPostgresRepository(pool *pgxpool.Pool) *PostgresRepository {
 func NewPostgresRepositoryTx(tx pgx.Tx) *PostgresRepository { return &PostgresRepository{db: tx} }
 func scan(row pgx.Row) (Record, error) {
 	var value Record
-	err := row.Scan(&value.ID, &value.Scope, &value.Key, &value.RequestHash, &value.ResponseStatus, &value.ResponseBody, &value.CreatedAt, &value.ExpiresAt)
+	var responseBody []byte
+	err := row.Scan(&value.ID, &value.Scope, &value.Key, &value.RequestHash, &value.ResponseStatus, &responseBody, &value.CreatedAt, &value.ExpiresAt)
 	if err != nil {
 		return Record{}, err
 	}
+	value.ResponseBody = json.RawMessage(responseBody)
 	if !json.Valid(value.ResponseBody) {
 		return Record{}, fmt.Errorf("invalid idempotency response: %w", ErrConflict)
 	}

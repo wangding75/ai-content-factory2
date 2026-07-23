@@ -8,7 +8,6 @@ import (
 	"errors"
 	"fmt"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/google/uuid"
@@ -41,6 +40,7 @@ type Store interface {
 	UpdateStatusWithEvent(context.Context, WorkflowRun, WorkflowRun, Event) (WorkflowRun, Event, error)
 	QuerySummary(context.Context, uuid.UUID, int) (Summary, error)
 	Count(context.Context, ListFilter) (int, error)
+	ExecuteIdempotent(context.Context, string, string, string, func(Store) (WorkflowRun, error)) (WorkflowRun, error)
 }
 
 type CreateRunCommand struct {
@@ -65,13 +65,10 @@ type Service struct {
 	newID func() uuid.UUID
 	newRunNumber func() string
 	executor WorkflowExecutor
-	idempotencyMu sync.Mutex
-	idempotency map[string]idempotentRun
 }
-type idempotentRun struct { fingerprint string; run WorkflowRun }
 
 func NewService(store Store, projects ProjectReader, bindings BindingReader, configurations ConfigurationReader, connections ConnectionReader) *Service {
-	return &Service{store: store, projects: projects, bindings: bindings, configurations: configurations, connections: connections, now: func() time.Time { return time.Now().UTC() }, newID: uuid.New, newRunNumber: func() string { return "WR-" + strings.ToUpper(uuid.NewString()[:8]) }, executor: UnavailableWorkflowExecutor{}, idempotency: map[string]idempotentRun{}}
+	return &Service{store: store, projects: projects, bindings: bindings, configurations: configurations, connections: connections, now: func() time.Time { return time.Now().UTC() }, newID: uuid.New, newRunNumber: func() string { return "WR-" + strings.ToUpper(uuid.NewString()[:8]) }, executor: UnavailableWorkflowExecutor{}}
 }
 
 func (s *Service) SetWorkflowExecutor(executor WorkflowExecutor) { if executor == nil { s.executor = UnavailableWorkflowExecutor{}; return }; s.executor = executor }
@@ -114,23 +111,23 @@ func (s *Service) CreateRun(ctx context.Context, command CreateRunCommand) (Work
 	if command.ProjectID == uuid.Nil || !validJSONObject(command.InputPayload) || strings.TrimSpace(command.IdempotencyKey) == "" { return WorkflowRun{}, ErrValidation }
 	if command.TriggerSource == "" { command.TriggerSource = "manual" }
 	if !validTriggerSource(command.TriggerSource) { return WorkflowRun{}, ErrValidation }
-	scope, fingerprint := commandScope("createWorkflowRun", command.ProjectID.String()+":"+command.Stage, command.IdempotencyKey, struct { ProjectID uuid.UUID; Stage string; Input json.RawMessage; Trigger string }{command.ProjectID, command.Stage, command.InputPayload, command.TriggerSource})
-	if replay, ok, err := s.replay(scope, fingerprint); ok || err != nil { return replay, err }
-	stage, err := workflowbinding.ParseStage(command.Stage)
-	if err != nil { return WorkflowRun{}, ErrValidation }
-	if _, err = s.projects.Get(ctx, command.ProjectID); err != nil { return WorkflowRun{}, mapProjectError(err) }
-	binding, err := s.bindings.GetByProjectAndStage(ctx, command.ProjectID, stage)
-	if err != nil { return WorkflowRun{}, mapBindingError(err) }
-	configuration, connection, err := s.runnableConfiguration(ctx, binding.WorkflowConfigurationID, stage)
-	if err != nil { return WorkflowRun{}, err }
-	snapshot, err := configurationSnapshot(binding, configuration, connection, s.now())
-	if err != nil { return WorkflowRun{}, fmt.Errorf("build workflow run snapshot: %w", err) }
-	run, err := New(s.newID(), command.ProjectID, configuration.ID, s.newRunNumber(), stage.String(), command.TriggerSource, snapshot, command.InputPayload)
-	if err != nil { return WorkflowRun{}, err }
-	now := s.now(); run.CreatedAt, run.UpdatedAt = now, now
-	event := Event{ID: s.newID(), RunID: run.ID, EventType: "queued", Status: StatusQueued, Payload: json.RawMessage(`{}`), CreatedAt: now}
-	created, _, err := s.store.CreateWithInitialEvent(ctx, run, event)
-	if err != nil { return WorkflowRun{}, mapStoreError(err) }; s.saveReplay(scope, fingerprint, created); return created, nil
+	scope, fingerprint := commandScope("createWorkflowRun", command.ProjectID.String(), struct { ProjectID uuid.UUID; Stage string; Input json.RawMessage; Trigger string }{command.ProjectID, command.Stage, canonicalJSON(command.InputPayload), command.TriggerSource})
+	return s.store.ExecuteIdempotent(ctx, scope, command.IdempotencyKey, fingerprint, func(store Store) (WorkflowRun, error) {
+		stage, err := workflowbinding.ParseStage(command.Stage)
+		if err != nil { return WorkflowRun{}, ErrValidation }
+		if _, err = s.projects.Get(ctx, command.ProjectID); err != nil { return WorkflowRun{}, mapProjectError(err) }
+		binding, err := s.bindings.GetByProjectAndStage(ctx, command.ProjectID, stage)
+		if err != nil { return WorkflowRun{}, mapBindingError(err) }
+		configuration, connection, err := s.runnableConfiguration(ctx, binding.WorkflowConfigurationID, stage)
+		if err != nil { return WorkflowRun{}, err }
+		snapshot, err := configurationSnapshot(binding, configuration, connection, s.now())
+		if err != nil { return WorkflowRun{}, fmt.Errorf("build workflow run snapshot: %w", err) }
+		run, err := New(s.newID(), command.ProjectID, configuration.ID, s.newRunNumber(), stage.String(), command.TriggerSource, snapshot, command.InputPayload)
+		if err != nil { return WorkflowRun{}, err }
+		now := s.now(); run.CreatedAt, run.UpdatedAt = now, now
+		created, _, err := store.CreateWithInitialEvent(ctx, run, Event{ID: s.newID(), RunID: run.ID, EventType: "queued", Status: StatusQueued, Payload: json.RawMessage(`{}`), CreatedAt: now})
+		return created, mapStoreError(err)
+	})
 }
 
 func (s *Service) ListRuns(ctx context.Context, query ListRunsQuery) (RunList, error) {
@@ -154,39 +151,39 @@ func (s *Service) ListRunEvents(ctx context.Context, id uuid.UUID) ([]Event, err
 
 func (s *Service) CancelRun(ctx context.Context, command RunCommand) (WorkflowRun, error) {
 	if command.RunID == uuid.Nil || command.ExpectedVersion < 1 || strings.TrimSpace(command.IdempotencyKey) == "" { return WorkflowRun{}, ErrValidation }
-	scope, fingerprint := commandScope("cancelWorkflowRun", command.RunID.String(), command.IdempotencyKey, struct { ID uuid.UUID; Version int }{command.RunID, command.ExpectedVersion})
-	if replay, ok, err := s.replay(scope, fingerprint); ok || err != nil { return replay, err }
-	current, err := s.GetRun(ctx, command.RunID); if err != nil { return WorkflowRun{}, err }
-	if current.Version != command.ExpectedVersion { return WorkflowRun{}, ErrVersionConflict }
-	next, err := current.Cancel(s.now()); if errors.Is(err, ErrInvalidTransition) { return WorkflowRun{}, ErrNotCancellable }; if err != nil { return WorkflowRun{}, err }
-	event := Event{ID: s.newID(), RunID: next.ID, EventType: "cancelled", Status: StatusCancelled, Payload: json.RawMessage(`{}`), CreatedAt: next.UpdatedAt}
-	updated, _, err := s.store.UpdateStatusWithEvent(ctx, current, next, event)
-	if err != nil { return WorkflowRun{}, mapStoreError(err) }; s.saveReplay(scope, fingerprint, updated); return updated, nil
+	scope, fingerprint := commandScope("cancelWorkflowRun", command.RunID.String(), struct { ID uuid.UUID; Version int }{command.RunID, command.ExpectedVersion})
+	return s.store.ExecuteIdempotent(ctx, scope, command.IdempotencyKey, fingerprint, func(store Store) (WorkflowRun, error) {
+		current, err := store.GetByID(ctx, command.RunID); if err != nil { return WorkflowRun{}, mapStoreError(err) }
+		if current.Version != command.ExpectedVersion { return WorkflowRun{}, ErrVersionConflict }
+		next, err := current.Cancel(s.now()); if errors.Is(err, ErrInvalidTransition) { return WorkflowRun{}, ErrNotCancellable }; if err != nil { return WorkflowRun{}, err }
+		updated, _, err := store.UpdateStatusWithEvent(ctx, current, next, Event{ID: s.newID(), RunID: next.ID, EventType: "cancelled", Status: StatusCancelled, Payload: json.RawMessage(`{}`), CreatedAt: next.UpdatedAt})
+		return updated, mapStoreError(err)
+	})
 }
 
 func (s *Service) RetryRun(ctx context.Context, command RetryCommand) (WorkflowRun, error) {
 	if command.RunID == uuid.Nil || command.ExpectedVersion < 1 || strings.TrimSpace(command.IdempotencyKey) == "" { return WorkflowRun{}, ErrValidation }
-	scope, fingerprint := commandScope("retryWorkflowRun", command.RunID.String(), command.IdempotencyKey, struct { ID uuid.UUID; Version int; Current bool; Input json.RawMessage }{command.RunID, command.ExpectedVersion, command.UseCurrentConfiguration, command.InputOverride})
-	if replay, ok, err := s.replay(scope, fingerprint); ok || err != nil { return replay, err }
-	original, err := s.GetRun(ctx, command.RunID); if err != nil { return WorkflowRun{}, err }
-	if original.Version != command.ExpectedVersion { return WorkflowRun{}, ErrVersionConflict }
-	if original.Status != StatusFailed && original.Status != StatusCancelled { return WorkflowRun{}, ErrNotRetryable }
-	input := original.InputPayload
-	if command.InputOverride != nil { if !validJSONObject(command.InputOverride) { return WorkflowRun{}, ErrValidation }; input = command.InputOverride }
-	snapshot, configurationID := original.ConfigurationSnapshot, original.WorkflowConfigurationID
-	if command.UseCurrentConfiguration {
-		stage, parseErr := workflowbinding.ParseStage(original.Stage); if parseErr != nil { return WorkflowRun{}, ErrValidation }
-		binding, bindErr := s.bindings.GetByProjectAndStage(ctx, original.ProjectID, stage); if bindErr != nil { return WorkflowRun{}, mapBindingError(bindErr) }
-		configuration, connection, configErr := s.runnableConfiguration(ctx, binding.WorkflowConfigurationID, stage); if configErr != nil { return WorkflowRun{}, configErr }
-		snapshot, configErr = configurationSnapshot(binding, configuration, connection, s.now()); if configErr != nil { return WorkflowRun{}, fmt.Errorf("build workflow run snapshot: %w", configErr) }
-		configurationID = configuration.ID
-	}
-	run, err := New(s.newID(), original.ProjectID, configurationID, s.newRunNumber(), original.Stage, "retry", snapshot, input)
-	if err != nil { return WorkflowRun{}, err }
-	now := s.now(); run.CreatedAt, run.UpdatedAt, run.RetryOfRunID = now, now, &original.ID
-	event := Event{ID: s.newID(), RunID: run.ID, EventType: "queued", Status: StatusQueued, Payload: json.RawMessage(`{}`), CreatedAt: now}
-	created, _, err := s.store.CreateWithInitialEvent(ctx, run, event)
-	if err != nil { return WorkflowRun{}, mapStoreError(err) }; s.saveReplay(scope, fingerprint, created); return created, nil
+	scope, fingerprint := commandScope("retryWorkflowRun", command.RunID.String(), struct { ID uuid.UUID; Version int; Current bool; Input json.RawMessage }{command.RunID, command.ExpectedVersion, command.UseCurrentConfiguration, canonicalJSON(command.InputOverride)})
+	return s.store.ExecuteIdempotent(ctx, scope, command.IdempotencyKey, fingerprint, func(store Store) (WorkflowRun, error) {
+		original, err := store.GetByID(ctx, command.RunID); if err != nil { return WorkflowRun{}, mapStoreError(err) }
+		if original.Version != command.ExpectedVersion { return WorkflowRun{}, ErrVersionConflict }
+		if original.Status != StatusFailed && original.Status != StatusCancelled { return WorkflowRun{}, ErrNotRetryable }
+		input := original.InputPayload
+		if command.InputOverride != nil { if !validJSONObject(command.InputOverride) { return WorkflowRun{}, ErrValidation }; input = command.InputOverride }
+		snapshot, configurationID := original.ConfigurationSnapshot, original.WorkflowConfigurationID
+		if command.UseCurrentConfiguration {
+			stage, parseErr := workflowbinding.ParseStage(original.Stage); if parseErr != nil { return WorkflowRun{}, ErrValidation }
+			binding, bindErr := s.bindings.GetByProjectAndStage(ctx, original.ProjectID, stage); if bindErr != nil { return WorkflowRun{}, mapBindingError(bindErr) }
+			configuration, connection, configErr := s.runnableConfiguration(ctx, binding.WorkflowConfigurationID, stage); if configErr != nil { return WorkflowRun{}, configErr }
+			snapshot, configErr = configurationSnapshot(binding, configuration, connection, s.now()); if configErr != nil { return WorkflowRun{}, fmt.Errorf("build workflow run snapshot: %w", configErr) }
+			configurationID = configuration.ID
+		}
+		run, err := New(s.newID(), original.ProjectID, configurationID, s.newRunNumber(), original.Stage, "retry", snapshot, input)
+		if err != nil { return WorkflowRun{}, err }
+		now := s.now(); run.CreatedAt, run.UpdatedAt, run.RetryOfRunID = now, now, &original.ID
+		created, _, err := store.CreateWithInitialEvent(ctx, run, Event{ID: s.newID(), RunID: run.ID, EventType: "queued", Status: StatusQueued, Payload: json.RawMessage(`{}`), CreatedAt: now})
+		return created, mapStoreError(err)
+	})
 }
 
 func (s *Service) GetProjectRunSummary(ctx context.Context, projectID uuid.UUID) (Summary, error) {
@@ -210,12 +207,11 @@ func configurationSnapshot(binding workflowbinding.ProjectWorkflowBinding, confi
 }
 
 func contains(values []string, value string) bool { for _, item := range values { if item == value { return true } }; return false }
-func validTriggerSource(value string) bool { return value == "manual" || value == "retry" || value == "system" || value == "api" }
 func validListFilter(f ListFilter) bool {
 	if f.ProjectID != nil && *f.ProjectID == uuid.Nil || f.Limit < 0 || f.Limit > 100 || f.Offset < 0 || len(f.RunNumber) > 80 || len(f.Query) > 160 || f.StartTime != nil && f.EndTime != nil && f.StartTime.After(*f.EndTime) { return false }
 	if f.Stage != "" { if _, err := workflowbinding.ParseStage(f.Stage); err != nil { return false } }
 	if f.Status != "" && f.Status != string(StatusQueued) && f.Status != string(StatusRunning) && f.Status != string(StatusSucceeded) && f.Status != string(StatusFailed) && f.Status != string(StatusCancelled) { return false }
-	return f.TriggerSource == "" || f.TriggerSource == "project" || f.TriggerSource == "workflow_center" || f.TriggerSource == "retry"
+	return f.TriggerSource == "" || validTriggerSource(f.TriggerSource)
 }
 func mapProjectError(err error) error { if errors.Is(err, project.ErrNotFound) { return ErrProjectNotFound }; return err }
 func mapBindingError(err error) error { if errors.Is(err, workflowbinding.ErrNotFound) { return ErrBindingNotFound }; return err }
@@ -223,6 +219,5 @@ func mapConfigurationError(err error) error { if errors.Is(err, globalconfig.Err
 func mapConnectionError(err error) error { if errors.Is(err, globalconfig.ErrNotFound) { return ErrConnectionNotFound }; return err }
 func mapStoreError(err error) error { if errors.Is(err, ErrNotFound) { return ErrNotFound }; return err }
 func Fingerprint(command any) string { b, _ := json.Marshal(command); sum := sha256.Sum256(b); return hex.EncodeToString(sum[:]) }
-func commandScope(operation, target, key string, payload any) (string, string) { keyHash:=Fingerprint(key); return operation+":"+target+":"+keyHash, Fingerprint(payload) }
-func (s *Service) replay(scope, fingerprint string) (WorkflowRun, bool, error) { s.idempotencyMu.Lock(); defer s.idempotencyMu.Unlock(); entry, ok:=s.idempotency[scope]; if !ok{return WorkflowRun{},false,nil}; if entry.fingerprint!=fingerprint{return WorkflowRun{},true,ErrIdempotencyConflict};return entry.run,true,nil }
-func (s *Service) saveReplay(scope, fingerprint string, run WorkflowRun) { s.idempotencyMu.Lock(); defer s.idempotencyMu.Unlock(); s.idempotency[scope]=idempotentRun{fingerprint,run} }
+func canonicalJSON(value json.RawMessage) json.RawMessage { if value == nil { return nil }; var decoded any; if json.Unmarshal(value, &decoded) != nil { return value }; normalized, err := json.Marshal(decoded); if err != nil { return value }; return normalized }
+func commandScope(operation, target string, payload any) (string, string) { return "workflow-run:"+operation+":system:"+target, Fingerprint(payload) }
