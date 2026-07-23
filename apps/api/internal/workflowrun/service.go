@@ -37,6 +37,7 @@ type Store interface {
 	GetByID(context.Context, uuid.UUID) (WorkflowRun, error)
 	List(context.Context, ListFilter) ([]WorkflowRun, error)
 	ListEvents(context.Context, uuid.UUID) ([]Event, error)
+	AddEvent(context.Context, Event) (Event, error)
 	UpdateStatusWithEvent(context.Context, WorkflowRun, WorkflowRun, Event) (WorkflowRun, Event, error)
 	QuerySummary(context.Context, uuid.UUID, int) (Summary, error)
 	Count(context.Context, ListFilter) (int, error)
@@ -63,14 +64,51 @@ type Service struct {
 	now func() time.Time
 	newID func() uuid.UUID
 	newRunNumber func() string
+	executor WorkflowExecutor
 	idempotencyMu sync.Mutex
 	idempotency map[string]idempotentRun
 }
 type idempotentRun struct { fingerprint string; run WorkflowRun }
 
 func NewService(store Store, projects ProjectReader, bindings BindingReader, configurations ConfigurationReader, connections ConnectionReader) *Service {
-	return &Service{store: store, projects: projects, bindings: bindings, configurations: configurations, connections: connections, now: func() time.Time { return time.Now().UTC() }, newID: uuid.New, newRunNumber: func() string { return "WR-" + strings.ToUpper(uuid.NewString()[:8]) }, idempotency: map[string]idempotentRun{}}
+	return &Service{store: store, projects: projects, bindings: bindings, configurations: configurations, connections: connections, now: func() time.Time { return time.Now().UTC() }, newID: uuid.New, newRunNumber: func() string { return "WR-" + strings.ToUpper(uuid.NewString()[:8]) }, executor: UnavailableWorkflowExecutor{}, idempotency: map[string]idempotentRun{}}
 }
+
+func (s *Service) SetWorkflowExecutor(executor WorkflowExecutor) { if executor == nil { s.executor = UnavailableWorkflowExecutor{}; return }; s.executor = executor }
+
+// ExecuteRun is an explicit application boundary. It never polls or schedules work.
+func (s *Service) ExecuteRun(ctx context.Context, runID uuid.UUID) (WorkflowRun, error) {
+	run, err := s.GetRun(ctx, runID); if err != nil { return WorkflowRun{}, err }
+	request, err := executionRequest(run); if err != nil { return WorkflowRun{}, ErrValidation }
+	result, err := s.executor.Execute(ctx, request)
+	if err != nil { return s.failExecution(ctx, run, executionErrorCode(err), "workflow execution failed") }
+	if !validExecutionResult(result) { return s.failExecution(ctx, run, "invalid_response", "workflow execution returned an invalid result") }
+	return s.applyExecutionResult(ctx, run, result)
+}
+
+func (s *Service) applyExecutionResult(ctx context.Context, run WorkflowRun, result ExecutionResult) (WorkflowRun, error) {
+	if result.Status == ExecutionAccepted { return run, nil }
+	if run.Status == StatusQueued {
+		next, err := run.Start(s.now()); if err != nil { return WorkflowRun{}, err }
+		started := Event{ID:s.newID(),RunID:run.ID,EventType:"worker_started",Status:StatusRunning,Payload:json.RawMessage(`{}`),CreatedAt:next.UpdatedAt}
+		run, _, err = s.store.UpdateStatusWithEvent(ctx, run, next, started); if err != nil { return WorkflowRun{}, mapStoreError(err) }
+	}
+	if result.Status == ExecutionRunning { return run, nil }
+	if result.Status == ExecutionSucceeded { next, err := run.Succeed(s.now(), RedactJSON(result.Output)); if err != nil { return WorkflowRun{}, err }; event:=Event{ID:s.newID(),RunID:run.ID,EventType:"succeeded",Status:StatusSucceeded,Payload:executionEventPayload(result),CreatedAt:next.UpdatedAt}; updated,_,err:=s.store.UpdateStatusWithEvent(ctx,run,next,event);return updated,mapStoreError(err) }
+	if result.Status == ExecutionCancelled { next, err:=run.Cancel(s.now());if err!=nil{return WorkflowRun{},err};event:=Event{ID:s.newID(),RunID:run.ID,EventType:"cancelled",Status:StatusCancelled,Payload:executionEventPayload(result),CreatedAt:next.UpdatedAt};updated,_,err:=s.store.UpdateStatusWithEvent(ctx,run,next,event);return updated,mapStoreError(err) }
+	return s.failExecution(ctx, run, result.ErrorCode, result.ErrorMessage)
+}
+
+func (s *Service) failExecution(ctx context.Context, run WorkflowRun, code, message string) (WorkflowRun, error) {
+	if run.Status == StatusQueued { next,err:=run.Start(s.now());if err!=nil{return WorkflowRun{},err};event:=Event{ID:s.newID(),RunID:run.ID,EventType:"worker_started",Status:StatusRunning,Payload:json.RawMessage(`{}`),CreatedAt:next.UpdatedAt};run,_,err=s.store.UpdateStatusWithEvent(ctx,run,next,event);if err!=nil{return WorkflowRun{},mapStoreError(err)} }
+	next,err:=run.Fail(s.now(),Failure{Code:safeExecutionCode(code),Message:safeExecutionMessage(message),Details:json.RawMessage(`{}`)});if err!=nil{return WorkflowRun{},err};event:=Event{ID:s.newID(),RunID:run.ID,EventType:"failed",Status:StatusFailed,Payload:json.RawMessage(`{}`),CreatedAt:next.UpdatedAt};updated,_,err:=s.store.UpdateStatusWithEvent(ctx,run,next,event);return updated,mapStoreError(err)
+}
+
+func executionRequest(run WorkflowRun) (ExecutionRequest, error) { var snapshot struct { WorkflowConnection struct { ID uuid.UUID `json:"id"` } `json:"workflowConnection"`; WorkflowConfiguration struct { DefaultParameters json.RawMessage `json:"defaultParameters"` } `json:"workflowConfiguration"` }; if json.Unmarshal(run.ConfigurationSnapshot,&snapshot)!=nil || snapshot.WorkflowConnection.ID==uuid.Nil{return ExecutionRequest{},ErrValidation};return ExecutionRequest{RunID:run.ID,ProjectID:run.ProjectID,Stage:run.Stage,WorkflowConfigurationID:run.WorkflowConfigurationID,WorkflowConnectionID:snapshot.WorkflowConnection.ID,ConfigurationSnapshot:RedactJSON(run.ConfigurationSnapshot),Input:RedactJSON(run.InputPayload),Parameters:RedactJSON(snapshot.WorkflowConfiguration.DefaultParameters),Metadata:map[string]string{},CorrelationID:run.ID.String()},nil }
+func executionEventPayload(result ExecutionResult) json.RawMessage { b,_:=json.Marshal(map[string]any{"externalExecutionId":result.ExternalExecutionID,"metadata":result.Metadata});return RedactJSON(b) }
+func executionErrorCode(err error) string { if errors.Is(err,ErrExecutorUnavailable){return "executor_unavailable"};if errors.Is(err,ErrExecutionTimeout){return "timeout"};return "execution_failed" }
+func safeExecutionCode(code string) string { if strings.TrimSpace(code)=="" { return "execution_failed" }; return strings.TrimSpace(code) }
+func safeExecutionMessage(message string) string { if strings.TrimSpace(message)=="" { return "workflow execution failed" }; return "workflow execution failed" }
 
 func (s *Service) CreateRun(ctx context.Context, command CreateRunCommand) (WorkflowRun, error) {
 	if command.ProjectID == uuid.Nil || !validJSONObject(command.InputPayload) || strings.TrimSpace(command.IdempotencyKey) == "" { return WorkflowRun{}, ErrValidation }

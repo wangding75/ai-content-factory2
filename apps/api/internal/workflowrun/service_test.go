@@ -19,6 +19,7 @@ func (s *serviceStore) GetByID(_ context.Context, id uuid.UUID) (WorkflowRun,err
 func (s *serviceStore) List(_ context.Context, _ ListFilter) ([]WorkflowRun,error) { out:=[]WorkflowRun{};for _,r:=range s.runs{out=append(out,r)};return out,nil }
 func (s *serviceStore) Count(_ context.Context, _ ListFilter)(int,error){return len(s.runs),nil}
 func (s *serviceStore) ListEvents(_ context.Context,id uuid.UUID)([]Event,error){return s.events[id],nil}
+func (s *serviceStore) AddEvent(_ context.Context,event Event)(Event,error){s.events[event.RunID]=append(s.events[event.RunID],event);return event,nil}
 func (s *serviceStore) UpdateStatusWithEvent(_ context.Context,current,next WorkflowRun,event Event)(WorkflowRun,Event,error){ if s.runs[current.ID].Version!=current.Version{return WorkflowRun{},Event{},ErrVersionConflict};s.runs[next.ID]=next;s.events[next.ID]=append(s.events[next.ID],event);return next,event,nil }
 func (s *serviceStore) QuerySummary(_ context.Context,_ uuid.UUID,_ int)(Summary,error){return Summary{},nil}
 type serviceProjects struct{ p project.Project; err error };func(s serviceProjects)Get(context.Context,uuid.UUID)(project.Project,error){return s.p,s.err}
