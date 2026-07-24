@@ -410,6 +410,114 @@ trace_frames = set(re.findall(r"^\| (P15_[A-Z0-9_]+) \|", traceability, re.MULTI
 manifest_frames = {frame["frameId"] for frame in manifest["frames"]}
 assert manifest["frameCount"] == 21 and len(manifest_frames) == 21 and trace_frames == manifest_frames, "Iteration 15 UI traceability must be 21/21"
 assert len({operation for operation in expected_operations if operation not in {"listChapterPlanRevisions"}}) < 21, "Frames are UI states/components, not routes"
+
+failed_atomic_file = "docs/development-inputs/p1/iterations/iteration-15-real-chapter-planning/ui-contract-traceability.md"
+openapi_file = "packages/contracts/openapi/openapi.yaml"
+failed_atomic_lines = [line for line in traceability.splitlines() if line.startswith("| P15_C1_FAILED_ATOMIC |")]
+failed_atomic_line = failed_atomic_lines[0] if len(failed_atomic_lines) == 1 else "\\n".join(failed_atomic_lines)
+failed_atomic_failures = []
+def failed_atomic_check(item, passed, file, expected, actual):
+    if not passed:
+        failed_atomic_failures.append(
+            f"[FAIL] {item}\\n"
+            f"  file: {file}\\n"
+            f"  expected: {expected}\\n"
+            f"  actual: {actual}"
+        )
+
+failed_atomic_check(
+    "P15_C1_FAILED_ATOMIC entry exists exactly once",
+    len(failed_atomic_lines) == 1,
+    failed_atomic_file,
+    "exactly one P15_C1_FAILED_ATOMIC traceability row",
+    f"{len(failed_atomic_lines)} matching rows",
+)
+failed_atomic_check(
+    "P15_C1_FAILED_ATOMIC names both ownership APIs",
+    "getWorkflowRunDetail" in failed_atomic_line and "listWorkflowRunEvents" in failed_atomic_line and "getProjectChapterPlanningSummary" in failed_atomic_line,
+    failed_atomic_file,
+    "Runtime getWorkflowRunDetail/listWorkflowRunEvents and getProjectChapterPlanningSummary",
+    failed_atomic_line or "missing row",
+)
+failed_atomic_check(
+    "P15_C1_FAILED_ATOMIC assigns failed to Runtime status",
+    "`status=failed`" in failed_atomic_line and "`failed` is Runtime status" in failed_atomic_line,
+    failed_atomic_file,
+    "failed explicitly belongs to Runtime status",
+    failed_atomic_line or "missing row",
+)
+failed_atomic_check(
+    "P15_C1_FAILED_ATOMIC assigns output_validation_failed to Summary HTTP 422",
+    "`output_validation_failed` is Summary HTTP 422 ErrorEnvelope only" in failed_atomic_line,
+    failed_atomic_file,
+    "output_validation_failed only as getProjectChapterPlanningSummary HTTP 422",
+    failed_atomic_line or "missing row",
+)
+failed_atomic_check(
+    "P15_C1_FAILED_ATOMIC assigns result_consumption_failed to Summary HTTP 500",
+    "`result_consumption_failed` is Summary HTTP 500 ErrorEnvelope only" in failed_atomic_line,
+    failed_atomic_file,
+    "result_consumption_failed only as getProjectChapterPlanningSummary HTTP 500",
+    failed_atomic_line or "missing row",
+)
+failed_atomic_check(
+    "P15_C1_FAILED_ATOMIC rejects Runtime HTTP ownership for Summary errors",
+    "neither is a Runtime HTTP error" in failed_atomic_line and not re.search(r"Runtime(?: detail/events)? HTTP (?:422|500).*(?:output_validation_failed|result_consumption_failed)", failed_atomic_line),
+    failed_atomic_file,
+    "output_validation_failed and result_consumption_failed are not Runtime HTTP errors",
+    failed_atomic_line or "missing row",
+)
+failed_atomic_check(
+    "P15_C1_FAILED_ATOMIC documents Runtime then Summary handling",
+    "Runtime detail/events first return" in failed_atomic_line and "The page then refreshes Summary" in failed_atomic_line,
+    failed_atomic_file,
+    "Runtime failed state is handled before the Summary refresh/error handling",
+    failed_atomic_line or "missing row",
+)
+
+summary_path = "/api/v1/projects/{projectId}/chapter-planning-summary"
+summary_operation = paths.get(summary_path, {}).get("get", {})
+summary_response_actual = {}
+for status in ("422", "500"):
+    schema = summary_operation.get("responses", {}).get(status, {}).get("content", {}).get("application/json", {}).get("schema", {})
+    envelope_name = schema.get("$ref", "").rsplit("/", 1)[-1]
+    try:
+        codes = sorted(codes_for_error_envelope(envelope_name)) if envelope_name else []
+    except (KeyError, IndexError, TypeError, AssertionError):
+        codes = []
+    summary_response_actual[status] = {"envelope": envelope_name or "missing", "codes": codes}
+failed_atomic_check(
+    "OpenAPI Summary operation ownership",
+    summary_operation.get("operationId") == "getProjectChapterPlanningSummary",
+    openapi_file,
+    "GET chapter-planning-summary operationId=getProjectChapterPlanningSummary",
+    summary_operation.get("operationId", "missing"),
+)
+failed_atomic_check(
+    "OpenAPI Summary HTTP 422 ownership",
+    summary_response_actual["422"] == {"envelope": "ChapterPlanningOutputValidationErrorEnvelope", "codes": ["output_validation_failed"]},
+    openapi_file,
+    "HTTP 422 ChapterPlanningOutputValidationErrorEnvelope with output_validation_failed",
+    summary_response_actual["422"],
+)
+failed_atomic_check(
+    "OpenAPI Summary HTTP 500 ownership",
+    summary_response_actual["500"] == {"envelope": "ChapterPlanningResultConsumptionErrorEnvelope", "codes": ["result_consumption_failed"]},
+    openapi_file,
+    "HTTP 500 ChapterPlanningResultConsumptionErrorEnvelope with result_consumption_failed",
+    summary_response_actual["500"],
+)
+failed_atomic_check(
+    "Iteration 15 UI Frame traceability remains 21/21",
+    manifest["frameCount"] == 21 and len(manifest_frames) == 21 and trace_frames == manifest_frames,
+    failed_atomic_file,
+    "21 manifest frames and the same 21 traceability frame IDs",
+    f"manifest frameCount={manifest['frameCount']}, manifest IDs={len(manifest_frames)}, trace IDs={len(trace_frames)}",
+)
+if failed_atomic_failures:
+    raise AssertionError("CF-15 Failed Atomic ownership validation failed:\\n" + "\\n".join(failed_atomic_failures))
+print("[PASS] CF-15 Failed Atomic UI/API ownership validation completed.")
+
 blocked_trace_line = next(line for line in traceability.splitlines() if line.startswith("| P15_C3_PREFLIGHT_BLOCKED |"))
 assert "preflight_blocked" not in blocked_trace_line and "UI state=`blocked`" in blocked_trace_line and "ChapterPlanningBlockerCode" in blocked_trace_line
 assert "active_run_conflict" in blocked_trace_line and "ChapterPlanningBlockerCode" in blocked_trace_line

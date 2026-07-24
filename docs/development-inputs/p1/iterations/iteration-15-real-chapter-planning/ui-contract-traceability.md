@@ -10,7 +10,7 @@
 | P15_C1_RUNNING_PARTIAL_ETA | 同上 | 同上 | running；03A |
 | P15_C1_RUNNING_PARTIAL_VALIDATING | 同上 | Runtime detail/events | validating；03A |
 | P15_C1_RUNNING_DATA_VARIANT | 同上状态变体 | summary、chapter plans | success；03A |
-| P15_C1_FAILED_ATOMIC | 同上状态变体 | Runtime detail/events | failed/output_validation_failed/result_consumption_failed；03A |
+| P15_C1_FAILED_ATOMIC | 同上状态变体 | Runtime `getWorkflowRunDetail` / `listWorkflowRunEvents`（detail/events）→ `getProjectChapterPlanningSummary` | Runtime detail/events first return `status=failed`, safe failure summary, stage, timestamps and events; `failed` is Runtime status, not a Runtime HTTP error. The page then refreshes Summary: `output_validation_failed` is Summary HTTP 422 ErrorEnvelope only; `result_consumption_failed` is Summary HTTP 500 ErrorEnvelope only; neither is a Runtime HTTP error. The page uses the Summary error code to show normalized-validation or atomic-consumption failure and recovery actions; 03A |
 | P15_C1_NOT_CONFIGURED | 同上状态变体 | preflight | empty/workflow_not_configured；03A |
 | P15_C2_GENERATION_SETTINGS | 生成抽屉 | `preflightChapterPlanRun` | input/loading；03A |
 | P15_C2_PREFLIGHT_PROGRESS | 预检弹窗 | `preflightChapterPlanRun` | loading；03A |
