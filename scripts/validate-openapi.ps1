@@ -40,6 +40,7 @@ $schemaPaths = @(
     "packages/contracts/content-packs/novel/content-version-query.schema.json",
     "packages/contracts/content-packs/novel/project-work.schema.json"
     ,"packages/contracts/content-packs/novel/global-lite.schema.json"
+    ,"packages/contracts/content-packs/novel/chapter-planning-output.schema.json"
 )
 
 foreach ($schemaPath in $schemaPaths) {
@@ -134,7 +135,7 @@ $chapterPlanFields = @("chapter_no", "title", "summary", "storyline_refs_json", 
 if (($chapterPlanSchema.required -join ',') -ne ($chapterPlanFields -join ',')) {
     throw "Chapter-plan JSON Schema required fields do not match the frozen editable model."
 }
-if ($openApiText -notmatch [regex]::Escape('required: [id, project_id, chapter_no, title, summary, status, source, storyline_refs_json, material_refs_json, foreshadowing_refs_json, chapter_goal, creation_notes, confirmed_at, version, created_at, updated_at]')) {
+if ($openApiText -notmatch [regex]::Escape('required: [id, project_id, chapter_no, title, summary, status, source, storyline_refs_json, material_refs_json, foreshadowing_refs_json, chapter_goal, creation_notes, confirmed_at, currentRevisionId, sourceCandidateId, sourceCandidateBatchId, sourceWorkflowRunId, version, created_at, updated_at]')) {
     throw "Chapter-plan OpenAPI response required fields do not match the frozen model."
 }
 foreach ($field in $chapterPlanFields) {
@@ -217,6 +218,153 @@ foreach ($fragment in @("GlobalWorkListEnvelope", "BuiltinWorkflowListEnvelope",
 }
 $globalLiteSchema = Get-Content -Raw "packages/contracts/content-packs/novel/global-lite.schema.json" | ConvertFrom-Json
 if ($globalLiteSchema.additionalProperties -ne $false -or $globalLiteSchema.'$defs'.builtin_workflow.properties.provider_key.const -ne "mock") { throw "Iteration 08 Global Lite JSON Schema drift." }
+
+# CF-15 contract checks intentionally parse the OpenAPI and JSON Schema documents;
+# they do not rely on text fragments because the contract uses discriminated unions.
+@'
+import json
+from pathlib import Path
+import re
+import yaml
+
+root = Path.cwd()
+document = yaml.safe_load((root / "packages/contracts/openapi/openapi.yaml").read_text(encoding="utf-8"))
+schemas = document["components"]["schemas"]
+paths = document["paths"]
+
+expected_operations = {
+    "preflightChapterPlanRun", "createChapterPlanRun", "getProjectChapterPlanningSummary",
+    "listChapterPlanCandidateBatches", "getChapterPlanCandidateBatch", "listChapterPlanCandidates",
+    "getChapterPlanCandidate", "updateChapterPlanCandidate", "compareChapterPlanCandidate",
+    "recompareChapterPlanCandidate", "adoptChapterPlanCandidate", "discardChapterPlanCandidate",
+    "adoptChapterPlanCandidates", "abandonChapterPlanCandidateBatch", "listChapterPlanRevisions",
+}
+operation_ids = []
+for path, path_item in paths.items():
+    for method, operation in path_item.items():
+        if method in {"get", "post", "patch", "put", "delete"}:
+            operation_ids.append(operation.get("operationId"))
+assert expected_operations <= set(operation_ids), "CF-15 operationId missing"
+assert len(operation_ids) == len(set(operation_ids)), "OpenAPI operationId must be globally unique"
+
+def resolve(ref):
+    assert ref.startswith("#/"), f"external ref is not allowed in CF-15: {ref}"
+    node = document
+    for part in ref[2:].split("/"):
+        node = node[part]
+    return node
+
+def check_refs(node):
+    if isinstance(node, dict):
+        if "$ref" in node:
+            resolve(node["$ref"])
+        for value in node.values():
+            check_refs(value)
+    elif isinstance(node, list):
+        for value in node:
+            check_refs(value)
+check_refs(document)
+
+request = schemas["ChapterPlanningPreflightRequest"]
+assert request["additionalProperties"] is False and len(request["oneOf"]) == 3
+for mode, target in (("full", "ChapterPlanningFullTarget"), ("append", "ChapterPlanningAppendTarget"), ("range", "ChapterPlanningRangeTarget")):
+    assert any(branch["properties"]["generationMode"].get("const") == mode and branch["properties"]["target"]["$ref"].endswith(target) for branch in request["oneOf"])
+assert schemas["ChapterPlanningRangeTarget"]["additionalProperties"] is False
+assert schemas["ChapterPlanningFullTarget"]["properties"]["targetTotalChapters"]["maximum"] == 100
+assert schemas["ChapterPlanningAppendTarget"]["properties"]["chapterCount"]["maximum"] == 100
+def valid_preflight_input(payload):
+    if set(payload) != {"generationMode", "target", "storylineSelection", "contextOptions", "additionalInstructions"}:
+        return False
+    mode, target = payload["generationMode"], payload["target"]
+    expected_target = {"full": {"targetTotalChapters"}, "append": {"chapterCount"}, "range": {"startChapterNo", "endChapterNo"}}
+    if mode not in expected_target or set(target) != expected_target[mode] or any(not isinstance(value, int) or value < 1 or value > 100 for value in target.values()):
+        return False
+    if mode == "range" and target["startChapterNo"] > target["endChapterNo"]:
+        return False
+    selection = payload["storylineSelection"]
+    if selection.get("mode") == "auto_balanced":
+        return set(selection) == {"mode"}
+    if selection.get("mode") == "specified":
+        return set(selection) == {"mode", "storylineIds"} and bool(selection["storylineIds"])
+    return False
+base_input = {"storylineSelection": {"mode": "auto_balanced"}, "contextOptions": {"includeProjectMaterials": True, "includeUnpaidForeshadowings": True, "includePriorChapterSummaries": True, "coreSettingsOnly": False}, "additionalInstructions": None}
+for mode, target in (("full", {"targetTotalChapters": 100}), ("append", {"chapterCount": 1}), ("range", {"startChapterNo": 2, "endChapterNo": 3})):
+    payload = dict(base_input, generationMode=mode, target=target)
+    assert valid_preflight_input(payload)
+for mode, target in (("full", {"chapterCount": 1}), ("append", {"targetTotalChapters": 1}), ("range", {"startChapterNo": 3, "endChapterNo": 2}), ("unknown", {"chapterCount": 1})):
+    payload = dict(base_input, generationMode=mode, target=target)
+    assert not valid_preflight_input(payload)
+
+report = schemas["ChapterPlanningPreflightReport"]
+assert len(report["oneOf"]) == 2
+passed = schemas["ChapterPlanningPreflightPassed"]
+blocked = schemas["ChapterPlanningPreflightBlocked"]
+assert "preflightToken" in passed["required"] and "preflightToken" not in blocked["properties"]
+assert passed["properties"]["blockers"]["maxItems"] == 0 and blocked["properties"]["blockers"]["minItems"] == 1
+
+for name in ["ChapterPlanCandidateSnapshot", "ChapterPlanCandidate", "ChapterPlanCandidateBatch", "ChapterPlanCandidateDiff", "ChapterPlanRevision", "ChapterPlanningSummary", "ChapterPlanRevisionList"]:
+    assert schemas[name]["additionalProperties"] is False, f"CF-15 schema must be strict: {name}"
+for name in ["currentRevisionId", "sourceCandidateId", "sourceCandidateBatchId", "sourceWorkflowRunId"]:
+    assert name in schemas["ChapterPlan"]["required"], f"ChapterPlan source field missing: {name}"
+
+batch_parameters = paths["/api/v1/projects/{projectId}/chapter-plan-candidate-batches"]["get"]["parameters"]
+assert {resolve(x["$ref"])["name"] for x in batch_parameters} >= {"status", "generationMode", "sourceWorkflowRunId", "createdAtFrom", "createdAtTo", "limit", "offset"}
+bulk = schemas["BulkAdoptChapterPlanCandidateItem"]
+assert {"candidateId", "expectedCandidateVersion", "expectedChapterPlanVersion"} <= set(bulk["required"])
+assert "no_change" in schemas["AdoptChapterPlanCandidateResult"]["properties"]["outcome"]["enum"]
+
+for path, method, request_schema, expected_version in [
+    ("/api/v1/projects/{projectId}/chapter-plan-runs", "post", "CreateChapterPlanRunRequest", None),
+    ("/api/v1/chapter-plan-candidates/{candidateId}", "patch", "UpdateChapterPlanCandidateRequest", "expectedCandidateVersion"),
+    ("/api/v1/chapter-plan-candidates/{candidateId}/recompare", "post", "RecompareChapterPlanCandidateRequest", "expectedCandidateVersion"),
+    ("/api/v1/chapter-plan-candidates/{candidateId}/adopt", "post", "AdoptChapterPlanCandidateRequest", "expectedCandidateVersion"),
+    ("/api/v1/chapter-plan-candidates/{candidateId}/discard", "post", "DiscardChapterPlanCandidateRequest", "expectedCandidateVersion"),
+    ("/api/v1/chapter-plan-candidate-batches/{batchId}/adoptions", "post", "BulkAdoptChapterPlanCandidatesRequest", "expectedBatchVersion"),
+    ("/api/v1/chapter-plan-candidate-batches/{batchId}/abandon", "post", "AbandonChapterPlanCandidateBatchRequest", "expectedBatchVersion"),
+]:
+    operation = paths[path][method]
+    assert any(resolve(x["$ref"])["name"] == "Idempotency-Key" and resolve(x["$ref"])["required"] for x in operation.get("parameters", []) + paths[path].get("parameters", [])), f"Idempotency-Key missing: {path}"
+    assert operation["requestBody"]["content"]["application/json"]["schema"]["$ref"].endswith(request_schema)
+    if expected_version:
+        assert expected_version in schemas[request_schema]["required"], f"expected version missing: {request_schema}"
+
+expected_error_codes = {"workflow_not_configured", "preflight_token_invalid", "preflight_token_expired", "preflight_input_changed", "active_run_conflict", "invalid_candidate_state", "stale_candidate", "version_conflict", "batch_already_finalized", "run_already_consumed", "chapter_no_conflict", "revision_sequence_conflict", "output_validation_failed", "result_consumption_failed", "idempotency_key_reused_with_different_payload"}
+assert expected_error_codes == set(schemas["ChapterPlanningErrorCode"]["enum"])
+assert {"project_binding_missing", "execution_integration_unavailable", "active_run_conflict", "storyline_reference_invalid", "generation_input_invalid"} == set(schemas["ChapterPlanningBlockerCode"]["enum"])
+
+iteration15 = root / "docs/development-inputs/p1/iterations/iteration-15-real-chapter-planning"
+manifest = json.loads((iteration15 / "ui-manifest.json").read_text(encoding="utf-8"))
+traceability = (iteration15 / "ui-contract-traceability.md").read_text(encoding="utf-8")
+trace_frames = set(re.findall(r"^\| (P15_[A-Z0-9_]+) \|", traceability, re.MULTILINE))
+manifest_frames = {frame["frameId"] for frame in manifest["frames"]}
+assert manifest["frameCount"] == 21 and len(manifest_frames) == 21 and trace_frames == manifest_frames, "Iteration 15 UI traceability must be 21/21"
+assert len({operation for operation in expected_operations if operation not in {"listChapterPlanRevisions"}}) < 21, "Frames are UI states/components, not routes"
+
+output_schema = json.loads((root / "packages/contracts/content-packs/novel/chapter-planning-output.schema.json").read_text(encoding="utf-8"))
+assert output_schema["$id"] == "https://ai-content-factory.local/schemas/content-packs/novel/chapter-planning-output.schema.json"
+assert output_schema["additionalProperties"] is False and output_schema["$defs"]["candidate"]["additionalProperties"] is False
+valid = json.loads((root / "packages/contracts/content-packs/novel/fixtures/chapter-planning-output.valid.json").read_text(encoding="utf-8"))
+def semantic_valid(payload):
+    target = payload["target"]
+    candidates = payload["candidates"]
+    chapter_numbers = [candidate["chapterNo"] for candidate in candidates]
+    if len(chapter_numbers) != len(set(chapter_numbers)) or len(candidates) != target["requestedChapterCount"]:
+        return False
+    if target["startChapterNo"] > target["endChapterNo"] or any(no < target["startChapterNo"] or no > target["endChapterNo"] for no in chapter_numbers):
+        return False
+    return all(ref["projectId"] == payload["projectId"] for candidate in candidates for key in ("storylineRefs", "materialRefs", "foreshadowingRefs") for ref in candidate[key])
+assert semantic_valid(valid)
+for fixture_name in ("chapter-planning-output.duplicate-chapter.json", "chapter-planning-output.out-of-target.json", "chapter-planning-output.cross-project-reference.json"):
+    invalid = json.loads((root / "packages/contracts/content-packs/novel/fixtures" / fixture_name).read_text(encoding="utf-8"))
+    assert not semantic_valid(invalid), f"CF-15 semantic fixture unexpectedly passed: {fixture_name}"
+print("[PASS] CF-15 structured OpenAPI and normalized-output semantic validation completed.")
+'@ | python -
+if ($LASTEXITCODE -ne 0) { throw "CF-15 structured contract validation failed." }
+
+npx.cmd --yes ajv-cli@5.0.0 --spec=draft2020 --validate-formats=false -s packages/contracts/content-packs/novel/chapter-planning-output.schema.json -d packages/contracts/content-packs/novel/fixtures/chapter-planning-output.valid.json
+if ($LASTEXITCODE -ne 0) { throw "CF-15 normalized output valid fixture failed." }
+npx.cmd --yes ajv-cli@5.0.0 --spec=draft2020 --validate-formats=false -s packages/contracts/content-packs/novel/chapter-planning-output.schema.json -d packages/contracts/content-packs/novel/fixtures/chapter-planning-output.unknown-field.json
+if ($LASTEXITCODE -eq 0) { throw "CF-15 normalized output unknown-field fixture unexpectedly passed." }
 
 Write-Host "[PASS] OpenAPI and Novel JSON Schema validation completed." -ForegroundColor Green
 

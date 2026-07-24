@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ai-content-factory.local/schemas/content-packs/novel/chapter-planning-output.schema.json",
+  "title": "Novel Chapter Planning Normalized Output",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["projectId", "generationMode", "target", "sourceWorkflowRunId", "candidates", "metadata"],
+  "properties": {
+    "projectId": {"type": "string", "format": "uuid"},
+    "generationMode": {"type": "string", "enum": ["full", "append", "range"]},
+    "target": {"type": "object", "additionalProperties": false, "required": ["startChapterNo", "endChapterNo", "requestedChapterCount"], "properties": {"startChapterNo": {"type": "integer", "minimum": 1, "maximum": 100}, "endChapterNo": {"type": "integer", "minimum": 1, "maximum": 100}, "requestedChapterCount": {"type": "integer", "minimum": 1, "maximum": 100}}},
+    "sourceWorkflowRunId": {"type": "string", "format": "uuid"},
+    "candidates": {"type": "array", "minItems": 1, "maxItems": 100, "items": {"$ref": "#/$defs/candidate"}},
+    "metadata": {"type": "object", "additionalProperties": false, "required": ["inputDigest", "generatedAt", "safeProviderSummary"], "properties": {"inputDigest": {"type": "string", "pattern": "^[a-f0-9]{64}$"}, "generatedAt": {"type": "string", "format": "date-time"}, "safeProviderSummary": {"type": "string", "minLength": 1, "maxLength": 300}}}
+  },
+  "$defs": {
+    "reference": {"type": "object", "additionalProperties": false, "required": ["id", "projectId", "label", "relation", "position", "version"], "properties": {"id": {"type": "string", "format": "uuid"}, "projectId": {"type": "string", "format": "uuid"}, "label": {"type": "string", "minLength": 1, "maxLength": 160}, "relation": {"type": "string", "maxLength": 40}, "position": {"type": "integer", "minimum": 0}, "version": {"type": "integer", "minimum": 1}}},
+    "candidate": {"type": "object", "additionalProperties": false, "required": ["chapterNo", "title", "summary", "chapterPurpose", "storylineRefs", "materialRefs", "foreshadowingRefs", "generationBasis"], "properties": {"chapterNo": {"type": "integer", "minimum": 1, "maximum": 100}, "title": {"type": "string", "minLength": 1, "maxLength": 120}, "summary": {"type": "string", "maxLength": 5000}, "chapterPurpose": {"type": "string", "enum": ["information_reveal", "plot_advance", "conflict_escalation", "transition", "atmosphere", "other"]}, "storylineRefs": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/reference"}}, "materialRefs": {"type": "array", "items": {"$ref": "#/$defs/reference"}}, "foreshadowingRefs": {"type": "array", "items": {"$ref": "#/$defs/reference"}}, "generationBasis": {"type": "object", "additionalProperties": false, "required": ["contextSummary", "additionalInstructions"], "properties": {"contextSummary": {"type": "string", "maxLength": 5000}, "additionalInstructions": {"type": ["string", "null"], "maxLength": 2000}}}}}
+  },
+  "description": "Schema validation enforces strict shape. Result ingestion additionally rejects duplicate chapter numbers, target/count mismatch, out-of-target chapters, and references whose projectId differs from the output projectId."
+}

@@ -9,7 +9,7 @@ principles:
   - Generated output creates a candidate batch and never directly overwrites current ChapterPlan records.
   - Candidate adoption creates or replaces current chapters as pending_confirmation.
   - Confirmation continues to use the P0 ChapterPlan confirmation API.
-  - All mutable writes use optimistic locking and Idempotency-Key where applicable.
+  - All mutable writes use optimistic locking and a required Idempotency-Key with persistent replay semantics.
   - Errors use the shared ErrorEnvelope with request_id.
   - Secrets, raw upstream responses, raw idempotency keys, SQL and stack traces are never returned.
   - Candidate statuses are pending, stale, adopted and discarded; edited is not a status.
@@ -55,7 +55,8 @@ planned_endpoints:
     path: /api/v1/projects/{projectId}/chapter-plan-candidate-batches
     filters:
       - status
-      - source
+      - generationMode
+      - sourceWorkflowRunId
       - createdAtFrom
       - createdAtTo
       - limit
@@ -84,14 +85,18 @@ planned_endpoints:
     method: PATCH
     path: /api/v1/chapter-plan-candidates/{candidateId}
     request:
-      - expectedVersion
-      - editableCandidateFields
+      - expectedCandidateVersion
+      - currentSnapshot
+    headers:
+      - Idempotency-Key
 
   - operation: recompareChapterPlanCandidate
     method: POST
     path: /api/v1/chapter-plan-candidates/{candidateId}/recompare
     request:
-      - expectedVersion
+      - expectedCandidateVersion
+    headers:
+      - Idempotency-Key
     response:
       - currentChapter
       - candidate
@@ -118,7 +123,7 @@ planned_endpoints:
     headers:
       - Idempotency-Key
     request:
-      - expectedVersion
+      - expectedCandidateVersion
       - reason
 
   - operation: adoptChapterPlanCandidates
@@ -169,6 +174,10 @@ internal_application_contract:
   input:
     - workflowRunId
     - normalizedChapterPlanningOutput
+  normalized_output_schema:
+    file: packages/contracts/content-packs/novel/chapter-planning-output.schema.json
+    id: https://ai-content-factory.local/schemas/content-packs/novel/chapter-planning-output.schema.json
+    draft: "2020-12"
   guarantees:
     - validates the complete output before persistence
     - creates at most one batch per workflowRunId
@@ -179,3 +188,24 @@ decisions_to_freeze:
   - Complete OpenAPI field schemas and error codes are frozen in packages/contracts/openapi/openapi.yaml.
   - Token implementation is the CF-15-01B stateless signed-token design; no preflight persistence.
   - Runtime list/detail/event/cancel/retry reuse Iteration 14 routes without aliases.
+  - All CF-15 write commands persist Idempotency-Key replay semantics; expected versions are Candidate, Batch or ChapterPlan-specific.
+  - Preflight blocker codes are project_binding_missing, execution_integration_unavailable, active_run_conflict, storyline_reference_invalid and generation_input_invalid.
+
+error_contracts:
+  details: [resourceId, expectedVersion, currentVersion, retryAction, safeReason]
+  codes:
+    workflow_not_configured: {http: 422, operations: [preflightChapterPlanRun, createChapterPlanRun]}
+    preflight_token_invalid: {http: 422, operations: [createChapterPlanRun]}
+    preflight_token_expired: {http: 422, operations: [createChapterPlanRun]}
+    preflight_input_changed: {http: 409, operations: [createChapterPlanRun]}
+    active_run_conflict: {http: 409, operations: [preflightChapterPlanRun, createChapterPlanRun]}
+    invalid_candidate_state: {http: 409, operations: [updateChapterPlanCandidate, recompareChapterPlanCandidate, adoptChapterPlanCandidate, discardChapterPlanCandidate, adoptChapterPlanCandidates, abandonChapterPlanCandidateBatch]}
+    stale_candidate: {http: 409, operations: [adoptChapterPlanCandidate, adoptChapterPlanCandidates]}
+    version_conflict: {http: 409, operations: [updateChapterPlanCandidate, recompareChapterPlanCandidate, adoptChapterPlanCandidate, discardChapterPlanCandidate, adoptChapterPlanCandidates, abandonChapterPlanCandidateBatch]}
+    batch_already_finalized: {http: 409, operations: [adoptChapterPlanCandidates, abandonChapterPlanCandidateBatch]}
+    run_already_consumed: {http: 409, operations: [createChapterPlanRun]}
+    chapter_no_conflict: {http: 409, operations: [adoptChapterPlanCandidate, adoptChapterPlanCandidates]}
+    revision_sequence_conflict: {http: 409, operations: [adoptChapterPlanCandidate, adoptChapterPlanCandidates]}
+    output_validation_failed: {http: 422, operations: [getWorkflowRunDetail]}
+    result_consumption_failed: {http: 500, operations: [getWorkflowRunDetail]}
+    idempotency_key_reused_with_different_payload: {http: 409, operations: [createChapterPlanRun, updateChapterPlanCandidate, recompareChapterPlanCandidate, adoptChapterPlanCandidate, discardChapterPlanCandidate, adoptChapterPlanCandidates, abandonChapterPlanCandidateBatch]}
