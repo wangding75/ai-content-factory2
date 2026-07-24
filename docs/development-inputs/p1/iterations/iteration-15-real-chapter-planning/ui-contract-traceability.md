@@ -15,7 +15,7 @@
 | P15_C2_GENERATION_SETTINGS | 生成抽屉 | `preflightChapterPlanRun` | input/loading；03A |
 | P15_C2_PREFLIGHT_PROGRESS | 预检弹窗 | `preflightChapterPlanRun` | loading；03A |
 | P15_C3_PREFLIGHT_PASS | 预检报告弹窗 | preflight → `createChapterPlanRun` | success/warnings；preflight_token_*；03A |
-| P15_C3_PREFLIGHT_BLOCKED | 预检报告弹窗 | preflight | blocked/preflight_blocked/active_run_conflict；03A |
+| P15_C3_PREFLIGHT_BLOCKED | 预检报告弹窗 | preflight | UI state=`blocked`；阻断原因仅为 `ChapterPlanningBlockerCode`。稳定读取到活跃 Run 时 `active_run_conflict` 是 blocker，不是 HTTP ErrorEnvelope；仅请求期间发生并发状态漂移时才接收 HTTP 409 同名错误；03A |
 | P15_C3_RUN_CREATED | 创建成功弹窗 | `createChapterPlanRun` | queued/success；03A |
 | P15_C4_CANDIDATE_BATCH_LIST | 页面 `/projects/{projectId}/chapter-plan-candidate-batches` | `listChapterPlanCandidateBatches` | loading/empty/error；03B |
 | P15_C5_CANDIDATE_BATCH_DETAIL | 页面 `/chapter-plan-candidate-batches/{batchId}` | get Batch、list Candidates | loading/empty/error；03B |
@@ -26,4 +26,4 @@
 | P15_C10_STALE_CONFLICT_DIALOG | stale 弹窗 | compare/recompare/discard Candidate | stale_candidate；禁止强制覆盖；03C |
 | P15_S1_STORYLINE_RELATION_READONLY | 故事线 `/projects/{projectId}/storylines` | listStorylines + chapter-planning summary 聚合 | loading/empty/error/read-only；03D |
 
-Candidate Batch 列表与详情是正式页面；编辑是抽屉；比较、采用、放弃和 stale 是弹窗。章节确认继续使用 `confirmProjectChapterPlans`，其每项 `expected_version` 指向 ChapterPlan；不新增 Confirm API。Adopt 同时提交 Candidate 与当前 ChapterPlan 的 expected version；Batch 操作提交 Batch version；Candidate 编辑、Recompare、Discard 使用 Candidate expected version；所有 CF-15 写命令要求 `Idempotency-Key` 并持久化可重放。Runtime 的列表、详情、Event、Cancel、Retry 均复用 Iteration 14 `/api/v1/workflow-runs` 接口。预检通过和阻断分别由 `result/status=passed|blocked` 严格判别，阻断项使用 `project_binding_missing`、`execution_integration_unavailable`、`active_run_conflict`、`storyline_reference_invalid` 或 `generation_input_invalid`；阻断报告不是 ErrorEnvelope。
+Candidate Batch 列表与详情是正式页面；编辑是抽屉；比较、采用、放弃和 stale 是弹窗。章节确认继续使用 `confirmProjectChapterPlans`，其每项 `expected_version` 指向 ChapterPlan；不新增 Confirm API。Adopt 同时提交 Candidate 与当前 ChapterPlan 的 expected version；Batch 操作提交 Batch version；Candidate 编辑、Recompare、Discard 使用 Candidate expected version；所有 CF-15 写命令要求 `Idempotency-Key` 并持久化可重放。Runtime 的列表、详情、Event、Cancel、Retry 均复用 Iteration 14 `/api/v1/workflow-runs` 接口。预检 `passed` / `blocked` 是 HTTP 200 的正常业务结果；`blocked` 仅为 UI state，绝不是 ErrorEnvelope code。阻断原因仅使用 `project_binding_missing`、`execution_integration_unavailable`、`active_run_conflict`、`storyline_reference_invalid` 或 `generation_input_invalid`。HTTP ErrorEnvelope 仅用于协议或系统失败，并使用 OpenAPI 受限的 `ChapterPlanningErrorCode`；稳定读取到活跃 Run 产生 blocker，而请求中并发状态漂移产生 HTTP 409 `active_run_conflict`，两者不会在同一预检结果中重复表达。

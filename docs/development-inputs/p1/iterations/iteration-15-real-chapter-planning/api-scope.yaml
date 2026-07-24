@@ -76,6 +76,10 @@ planned_endpoints:
       - q
       - limit
       - offset
+    filter_semantics:
+      diffType: new, replace, no_change or stale_conflict
+      storylineId: Candidate storyline reference UUID
+      q: Candidate title, summary, chapter-purpose and generation-basis text only; not unbounded full-text search
 
   - operation: getChapterPlanCandidate
     method: GET
@@ -112,10 +116,8 @@ planned_endpoints:
       - expectedCandidateVersion
       - expectedChapterPlanVersion
     response:
-      - candidate
-      - chapterPlan
-      - revision
-      - batchSummary
+      adopted: [candidate_adopted, chapterPlan, revision_non_null, batchSummary]
+      no_change: [candidate_not_adopted, chapterPlan, revision_null, batchSummary]
 
   - operation: discardChapterPlanCandidate
     method: POST
@@ -135,11 +137,12 @@ planned_endpoints:
       - expectedBatchVersion
       - candidates
     response:
-      - adopted
-      - skippedNoChange
-      - conflicts
-      - failures
-      - batchSummary
+      adopted: [candidate_adopted, chapterPlan, revision_non_null]
+      no_change: [candidate_not_adopted, chapterPlan, revision_null]
+      stale: [candidate_stale, structured_error]
+      conflict: [candidate, structured_error]
+      failed: [structured_error]
+      batchSummary: true
 
   - operation: abandonChapterPlanCandidateBatch
     method: POST
@@ -147,7 +150,7 @@ planned_endpoints:
     headers:
       - Idempotency-Key
     request:
-      - expectedVersion
+      - expectedBatchVersion
       - reason
       - acknowledgeAdoptedChaptersRemain
     response:
@@ -198,7 +201,7 @@ error_contracts:
     preflight_token_invalid: {http: 422, operations: [createChapterPlanRun]}
     preflight_token_expired: {http: 422, operations: [createChapterPlanRun]}
     preflight_input_changed: {http: 409, operations: [createChapterPlanRun]}
-    active_run_conflict: {http: 409, operations: [preflightChapterPlanRun, createChapterPlanRun]}
+    active_run_conflict: {http: 409, operations: [preflightChapterPlanRun, createChapterPlanRun], note: "Preflight HTTP 409 is a concurrent state-drift failure; a stable active run is returned in the HTTP 200 blocked report as ChapterPlanningBlockerCode."}
     invalid_candidate_state: {http: 409, operations: [updateChapterPlanCandidate, recompareChapterPlanCandidate, adoptChapterPlanCandidate, discardChapterPlanCandidate, adoptChapterPlanCandidates, abandonChapterPlanCandidateBatch]}
     stale_candidate: {http: 409, operations: [adoptChapterPlanCandidate, adoptChapterPlanCandidates]}
     version_conflict: {http: 409, operations: [updateChapterPlanCandidate, recompareChapterPlanCandidate, adoptChapterPlanCandidate, discardChapterPlanCandidate, adoptChapterPlanCandidates, abandonChapterPlanCandidateBatch]}
@@ -206,6 +209,6 @@ error_contracts:
     run_already_consumed: {http: 409, operations: [createChapterPlanRun]}
     chapter_no_conflict: {http: 409, operations: [adoptChapterPlanCandidate, adoptChapterPlanCandidates]}
     revision_sequence_conflict: {http: 409, operations: [adoptChapterPlanCandidate, adoptChapterPlanCandidates]}
-    output_validation_failed: {http: 422, operations: [getWorkflowRunDetail]}
-    result_consumption_failed: {http: 500, operations: [getWorkflowRunDetail]}
+    output_validation_failed: {http: 422, operations: [getProjectChapterPlanningSummary]}
+    result_consumption_failed: {http: 500, operations: [getProjectChapterPlanningSummary]}
     idempotency_key_reused_with_different_payload: {http: 409, operations: [createChapterPlanRun, updateChapterPlanCandidate, recompareChapterPlanCandidate, adoptChapterPlanCandidate, discardChapterPlanCandidate, adoptChapterPlanCandidates, abandonChapterPlanCandidateBatch]}

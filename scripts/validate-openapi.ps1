@@ -311,7 +311,47 @@ batch_parameters = paths["/api/v1/projects/{projectId}/chapter-plan-candidate-ba
 assert {resolve(x["$ref"])["name"] for x in batch_parameters} >= {"status", "generationMode", "sourceWorkflowRunId", "createdAtFrom", "createdAtTo", "limit", "offset"}
 bulk = schemas["BulkAdoptChapterPlanCandidateItem"]
 assert {"candidateId", "expectedCandidateVersion", "expectedChapterPlanVersion"} <= set(bulk["required"])
-assert "no_change" in schemas["AdoptChapterPlanCandidateResult"]["properties"]["outcome"]["enum"]
+candidate_list_parameters = paths["/api/v1/chapter-plan-candidate-batches/{batchId}/candidates"]["get"]["parameters"]
+assert {resolve(x["$ref"])["name"] for x in candidate_list_parameters} == {"status", "diffType", "storylineId", "q", "limit", "offset"}
+assert resolve(candidate_list_parameters[1]["$ref"])["schema"]["$ref"].endswith("ChapterPlanCandidateDiffType")
+assert resolve(candidate_list_parameters[2]["$ref"])["schema"]["format"] == "uuid"
+assert "not unbounded full-text search" in resolve(candidate_list_parameters[3]["$ref"])["description"]
+
+def one_of_refs(schema_name):
+    return [branch["$ref"].rsplit("/", 1)[-1] for branch in schemas[schema_name]["oneOf"]]
+
+assert one_of_refs("AdoptChapterPlanCandidateResult") == ["AdoptChapterPlanCandidateAdoptedResult", "AdoptChapterPlanCandidateNoChangeResult"]
+adopted = schemas["AdoptChapterPlanCandidateAdoptedResult"]
+no_change = schemas["AdoptChapterPlanCandidateNoChangeResult"]
+assert adopted["properties"]["outcome"]["const"] == "adopted" and adopted["properties"]["revision"]["$ref"].endswith("ChapterPlanRevision")
+assert adopted["properties"]["candidate"]["$ref"].endswith("AdoptedChapterPlanCandidate")
+assert no_change["properties"]["outcome"]["const"] == "no_change" and no_change["properties"]["revision"]["type"] == "null"
+assert no_change["properties"]["candidate"]["$ref"].endswith("NonAdoptedChapterPlanCandidate")
+
+assert one_of_refs("BulkAdoptChapterPlanCandidateResult") == ["BulkAdoptChapterPlanCandidateAdoptedResult", "BulkAdoptChapterPlanCandidateNoChangeResult", "BulkAdoptChapterPlanCandidateStaleResult", "BulkAdoptChapterPlanCandidateConflictResult", "BulkAdoptChapterPlanCandidateFailedResult"]
+for branch_name, outcome in zip(one_of_refs("BulkAdoptChapterPlanCandidateResult"), ["adopted", "no_change", "stale", "conflict", "failed"]):
+    branch = schemas[branch_name]
+    assert branch["properties"]["outcome"]["const"] == outcome and "candidateId" in branch["required"]
+assert schemas["BulkAdoptChapterPlanCandidateAdoptedResult"]["properties"]["revision"]["$ref"].endswith("ChapterPlanRevision")
+assert schemas["BulkAdoptChapterPlanCandidateNoChangeResult"]["properties"]["revision"]["type"] == "null"
+for branch_name in ["BulkAdoptChapterPlanCandidateStaleResult", "BulkAdoptChapterPlanCandidateConflictResult", "BulkAdoptChapterPlanCandidateFailedResult"]:
+    branch = schemas[branch_name]
+    assert "error" in branch["required"] and "revision" not in branch["properties"]
+
+summary = schemas["ChapterPlanningInputSummary"]
+assert summary["additionalProperties"] is False and set(summary["required"]) == {"generationMode", "target", "storylineSelection", "contextOptions"}
+target_summary = schemas["ChapterPlanningNormalizedTargetSummary"]
+assert target_summary["additionalProperties"] is False and set(target_summary["required"]) == {"startChapterNo", "endChapterNo", "requestedChapterCount"}
+assert all(target_summary["properties"][field]["minimum"] == 1 and target_summary["properties"][field]["maximum"] == 100 for field in target_summary["required"])
+
+def summary_valid(value):
+    required = set(target_summary["required"])
+    target = value.get("target", {})
+    return set(value) == set(summary["required"]) and set(target) == required and all(isinstance(target[field], int) and 1 <= target[field] <= 100 for field in required) and target["endChapterNo"] - target["startChapterNo"] + 1 == target["requestedChapterCount"]
+valid_summary = {"generationMode": "range", "target": {"startChapterNo": 2, "endChapterNo": 3, "requestedChapterCount": 2}, "storylineSelection": {"mode": "auto_balanced"}, "contextOptions": base_input["contextOptions"]}
+assert summary_valid(valid_summary)
+for missing in ["startChapterNo", "endChapterNo", "requestedChapterCount"]:
+    invalid_summary = json.loads(json.dumps(valid_summary)); del invalid_summary["target"][missing]; assert not summary_valid(invalid_summary)
 
 for path, method, request_schema, expected_version in [
     ("/api/v1/projects/{projectId}/chapter-plan-runs", "post", "CreateChapterPlanRunRequest", None),
@@ -332,6 +372,37 @@ expected_error_codes = {"workflow_not_configured", "preflight_token_invalid", "p
 assert expected_error_codes == set(schemas["ChapterPlanningErrorCode"]["enum"])
 assert {"project_binding_missing", "execution_integration_unavailable", "active_run_conflict", "storyline_reference_invalid", "generation_input_invalid"} == set(schemas["ChapterPlanningBlockerCode"]["enum"])
 
+details = schemas["ChapterPlanningErrorDetails"]
+assert details["additionalProperties"] is False and {"retryAction", "safeReason"} <= set(details["required"])
+def response_schema(path, method, status):
+    return paths[path][method]["responses"][str(status)]["content"]["application/json"]["schema"]["$ref"].rsplit("/", 1)[-1]
+def codes_for_error_envelope(envelope_name):
+    envelope = schemas[envelope_name]
+    assert envelope["allOf"][0]["$ref"].endswith("ErrorEnvelope"), f"CF-15 response must refine ErrorEnvelope: {envelope_name}"
+    error_name = envelope["allOf"][1]["properties"]["error"]["$ref"].rsplit("/", 1)[-1]
+    error = schemas[error_name]
+    code = error["allOf"][1]["properties"]["code"]
+    return {code["const"]} if "const" in code else set(code["enum"])
+error_response_expectations = {
+    ("/api/v1/projects/{projectId}/chapter-plan-runs/preflight", "post", 409): ({"active_run_conflict"}, "ChapterPlanningPreflightConflictErrorEnvelope"),
+    ("/api/v1/projects/{projectId}/chapter-plan-runs/preflight", "post", 422): ({"workflow_not_configured"}, "ChapterPlanningWorkflowNotConfiguredErrorEnvelope"),
+    ("/api/v1/projects/{projectId}/chapter-plan-runs", "post", 409): ({"preflight_input_changed", "active_run_conflict", "run_already_consumed", "idempotency_key_reused_with_different_payload"}, "ChapterPlanningCreateRunConflictErrorEnvelope"),
+    ("/api/v1/projects/{projectId}/chapter-plan-runs", "post", 422): ({"workflow_not_configured", "preflight_token_invalid", "preflight_token_expired"}, "ChapterPlanningCreateRunPreconditionErrorEnvelope"),
+    ("/api/v1/chapter-plan-candidates/{candidateId}/adopt", "post", 409): ({"invalid_candidate_state", "stale_candidate", "version_conflict", "chapter_no_conflict", "revision_sequence_conflict", "idempotency_key_reused_with_different_payload"}, "ChapterPlanningSingleAdoptConflictErrorEnvelope"),
+    ("/api/v1/chapter-plan-candidate-batches/{batchId}/adoptions", "post", 409): ({"batch_already_finalized", "version_conflict", "idempotency_key_reused_with_different_payload"}, "ChapterPlanningBulkAdoptConflictErrorEnvelope"),
+    ("/api/v1/chapter-plan-candidate-batches/{batchId}/abandon", "post", 409): ({"invalid_candidate_state", "batch_already_finalized", "version_conflict", "idempotency_key_reused_with_different_payload"}, "ChapterPlanningBatchConflictErrorEnvelope"),
+    ("/api/v1/projects/{projectId}/chapter-planning-summary", "get", 422): ({"output_validation_failed"}, "ChapterPlanningOutputValidationErrorEnvelope"),
+    ("/api/v1/projects/{projectId}/chapter-planning-summary", "get", 500): ({"result_consumption_failed"}, "ChapterPlanningResultConsumptionErrorEnvelope"),
+}
+all_bound_error_codes = set()
+for (path, method, status), (expected_codes, expected_envelope) in error_response_expectations.items():
+    envelope_name = response_schema(path, method, status)
+    assert envelope_name == expected_envelope and codes_for_error_envelope(envelope_name) == expected_codes
+    all_bound_error_codes |= expected_codes
+assert all_bound_error_codes == expected_error_codes
+for example_name in ["ChapterPlanningPreflightTokenExpiredError", "ChapterPlanningActiveRunConflictError", "ChapterPlanningStaleCandidateError", "ChapterPlanningBatchAlreadyFinalizedError", "ChapterPlanningOutputValidationFailedError"]:
+    assert example_name in document["components"]["examples"], f"CF-15 error example missing: {example_name}"
+
 iteration15 = root / "docs/development-inputs/p1/iterations/iteration-15-real-chapter-planning"
 manifest = json.loads((iteration15 / "ui-manifest.json").read_text(encoding="utf-8"))
 traceability = (iteration15 / "ui-contract-traceability.md").read_text(encoding="utf-8")
@@ -339,6 +410,9 @@ trace_frames = set(re.findall(r"^\| (P15_[A-Z0-9_]+) \|", traceability, re.MULTI
 manifest_frames = {frame["frameId"] for frame in manifest["frames"]}
 assert manifest["frameCount"] == 21 and len(manifest_frames) == 21 and trace_frames == manifest_frames, "Iteration 15 UI traceability must be 21/21"
 assert len({operation for operation in expected_operations if operation not in {"listChapterPlanRevisions"}}) < 21, "Frames are UI states/components, not routes"
+blocked_trace_line = next(line for line in traceability.splitlines() if line.startswith("| P15_C3_PREFLIGHT_BLOCKED |"))
+assert "preflight_blocked" not in blocked_trace_line and "UI state=`blocked`" in blocked_trace_line and "ChapterPlanningBlockerCode" in blocked_trace_line
+assert "active_run_conflict" in blocked_trace_line and "ChapterPlanningBlockerCode" in blocked_trace_line
 
 output_schema = json.loads((root / "packages/contracts/content-packs/novel/chapter-planning-output.schema.json").read_text(encoding="utf-8"))
 assert output_schema["$id"] == "https://ai-content-factory.local/schemas/content-packs/novel/chapter-planning-output.schema.json"
@@ -363,8 +437,15 @@ if ($LASTEXITCODE -ne 0) { throw "CF-15 structured contract validation failed." 
 
 npx.cmd --yes ajv-cli@5.0.0 --spec=draft2020 --validate-formats=false -s packages/contracts/content-packs/novel/chapter-planning-output.schema.json -d packages/contracts/content-packs/novel/fixtures/chapter-planning-output.valid.json
 if ($LASTEXITCODE -ne 0) { throw "CF-15 normalized output valid fixture failed." }
-npx.cmd --yes ajv-cli@5.0.0 --spec=draft2020 --validate-formats=false -s packages/contracts/content-packs/novel/chapter-planning-output.schema.json -d packages/contracts/content-packs/novel/fixtures/chapter-planning-output.unknown-field.json
-if ($LASTEXITCODE -eq 0) { throw "CF-15 normalized output unknown-field fixture unexpectedly passed." }
+$savedErrorActionPreference = $ErrorActionPreference
+$ErrorActionPreference = "Continue"
+$topUnknownOutput = (& npx.cmd --yes ajv-cli@5.0.0 --spec=draft2020 --validate-formats=false -s packages/contracts/content-packs/novel/chapter-planning-output.schema.json -d packages/contracts/content-packs/novel/fixtures/chapter-planning-output.unknown-field.json 2>&1 | Out-String)
+ $topUnknownExitCode = $LASTEXITCODE
+$candidateUnknownOutput = (& npx.cmd --yes ajv-cli@5.0.0 --spec=draft2020 --validate-formats=false -s packages/contracts/content-packs/novel/chapter-planning-output.schema.json -d packages/contracts/content-packs/novel/fixtures/chapter-planning-output.candidate-unknown-field.json 2>&1 | Out-String)
+$candidateUnknownExitCode = $LASTEXITCODE
+$ErrorActionPreference = $savedErrorActionPreference
+if ($topUnknownExitCode -eq 0 -or $topUnknownOutput -notmatch "additionalProperty: 'unexpected'" -or $topUnknownOutput -match "minItems|required") { throw "CF-15 top-level unknown-field fixture did not fail only for unexpected." }
+if ($candidateUnknownExitCode -eq 0 -or $candidateUnknownOutput -notmatch "additionalProperty: 'unexpectedCandidate'" -or $candidateUnknownOutput -match "minItems|required") { throw "CF-15 candidate unknown-field fixture did not fail only for unexpectedCandidate." }
 
 Write-Host "[PASS] OpenAPI and Novel JSON Schema validation completed." -ForegroundColor Green
 
