@@ -2,7 +2,7 @@
 
 ## 1. 状态
 
-- 当前状态：`business_rules_frozen_cf_15_01a`
+- 当前状态：`data_model_frozen_cf_15_01b`
 - UI 基线：2026-07-23 上传的 `stitch_acf_iteration_15_full_exact_shell_migration`
 - P0 继承基线：`development-inputs/p0/iterations/iteration-05-chapter-planning`
 - 前置完成：Iteration 13 项目工作流绑定、Iteration 14 WorkflowRun Runtime
@@ -23,7 +23,7 @@
 
 ## 3. 核心业务原则
 
-本节及本文件的详细状态机以 `business-rules.md`（`frozen_cf_15_01a`）为准；字段、索引、完整 Schema 与错误码不在本任务冻结。
+本节及本文件的详细状态机以 `business-rules.md`（`frozen_cf_15_01a`）为准；实体、索引、Migration 终态和事务边界以 `data-model.md`、`transaction-and-migration-design.md`（`frozen_cf_15_01b`）为准；完整 Schema 与错误码留给 01C。
 
 ### 3.1 当前章节与候选批次分离
 

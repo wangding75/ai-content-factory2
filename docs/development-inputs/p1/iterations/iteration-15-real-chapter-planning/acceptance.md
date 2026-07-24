@@ -1,6 +1,7 @@
 # Iteration 15 — 验收标准
 
 > 业务语义验收以 `business-rules.md`（`frozen_cf_15_01a`）为准。
+> 数据结构、Migration 终态和事务边界以 `data-model.md`、`transaction-and-migration-design.md`（`frozen_cf_15_01b`）为准。
 
 ## 1. 契约与边界
 
@@ -41,6 +42,7 @@
 | I15-AC17 | 来源追溯 | 批次和候选可追溯至 WorkflowRun、绑定快照、生成输入和基线版本。 |
 | I15-AC18 | 安全 | 不保存或返回密钥、原始上游响应、内部 URL、堆栈或原始幂等键。 |
 | I15-AC18A | 消费幂等 | 同一 Run 重复消费不会创建第二个 Batch；Run succeeded 不等于消费成功。 |
+| I15-AC18B | 数据终态 | Batch/Candidate/Revision 的来源、完整快照、版本、索引、保留和 Migration 设计符合 CF-15-01B；本任务不创建 Migration。 |
 
 ## 5. 候选批次
 
@@ -64,6 +66,7 @@
 | I15-AC29 | 放弃候选 | 放弃后不可采用，保留审计和来源。 |
 | I15-AC30 | 放弃批次 | 未采用候选被放弃；已采用章节不回滚；操作幂等。 |
 | I15-AC30A | 批量采用事务 | 每个 Candidate 独立事务并逐项返回；不得整批回滚、静默跳过或强制覆盖 stale。 |
+| I15-AC30B | 数据库并发保证 | 活跃 Run、source Run Batch、Batch chapterNo、Revision 顺序和当前章节号均有数据库最终约束。 |
 
 ## 7. 当前章节和故事线回归
 
