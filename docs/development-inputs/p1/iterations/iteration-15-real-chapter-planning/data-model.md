@@ -1,6 +1,6 @@
 # Iteration 15 — 数据模型草案
 
-> 状态：`draft_for_contract_freeze`。本文件定义业务边界和不变量；具体字段、索引和表名在 CF-15-01 写入主 OpenAPI 与 Migration 设计后冻结。
+> 状态：`business_semantics_frozen_cf_15_01a`。业务状态机以 `business-rules.md` 为准；具体字段、索引和表名留给 CF-15-01B，完整 API Schema 留给 CF-15-01C。
 
 ## 1. 复用模型
 
@@ -95,7 +95,7 @@
 - `foreshadowingRefs`
 - `generationContextSummary`
 - `diffType`: `new | replace | no_change | stale_conflict`
-- `status`: `pending | adopted | discarded | conflict`
+- `status`: `pending | stale | adopted | discarded`
 - `adoptedChapterPlanId`，可空
 - `adoptedRevisionId`，可空
 - `adoptedAt`，可空
@@ -108,9 +108,9 @@
 约束：
 
 - `UNIQUE(batchId, chapterNo)`；
-- 只有 pending/conflict 可编辑；
+- 只有 pending/stale 可编辑；
 - 只有 pending 且基线未过期可采用；
-- conflict 不得直接采用；
+- stale 不得直接采用，且不存在强制覆盖；
 - adopted/discarded 为终态。
 
 ### 2.3 ChapterPlanRevision
@@ -171,7 +171,7 @@ WorkflowRun queued → running → succeeded
 WorkflowRun succeeded
 → validate normalized output
 → create CandidateBatch ready
-→ candidates pending/conflict
+→ candidates pending/stale
 → partial adoption
 → CandidateBatch partially_adopted
 → all candidates adopted/discarded
@@ -211,10 +211,10 @@ CandidateBatch ready/partially_adopted
 
 ### 5.3 批量采用
 
-- 冲突候选必须在执行前排除并返回。
-- 非冲突候选的事务策略在契约冻结阶段明确。
+- 每个 Candidate 独立事务；一个失败不得回滚其他已提交 Candidate。
+- stale/冲突项返回逐项结果，绝不写入当前章节。
 - UI 已允许“采用无冲突项”，因此不得要求整批候选全部无冲突。
-- 响应必须逐项返回结果，不能静默丢失。
+- 响应必须逐项返回 adopted、no_change、stale/conflict 或 failed，不能静默丢失。
 
 ## 6. 索引建议
 

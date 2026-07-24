@@ -1,5 +1,5 @@
 iteration: iteration-15-real-chapter-planning
-status: draft_for_contract_freeze
+status: business_semantics_frozen_cf_15_01a
 contract_source_after_freeze: packages/contracts/openapi/openapi.yaml
 
 principles:
@@ -12,6 +12,10 @@ principles:
   - All mutable writes use optimistic locking and Idempotency-Key where applicable.
   - Errors use the shared ErrorEnvelope with request_id.
   - Secrets, raw upstream responses, raw idempotency keys, SQL and stack traces are never returned.
+  - Candidate statuses are pending, stale, adopted and discarded; edited is not a status.
+  - A stale candidate has no force-overwrite path.
+  - Bulk adoption uses one transaction per candidate and returns an itemized result.
+  - WorkflowRun succeeded and candidate-result consumption succeeded are independent outcomes.
 
 planned_endpoints:
   - operation: preflightChapterPlanRun
@@ -172,10 +176,7 @@ internal_application_contract:
     - never exposes provider-specific payloads to the web API
 
 decisions_to_freeze:
-  - exact generation target schema for full, append and range modes
-  - one-active-run rule and conflict error
-  - preflightToken storage or signature strategy and TTL
-  - batch and candidate status enums
-  - bulk-adoption transaction and partial-result semantics
-  - chapter revision persistence shape
-  - execution-availability semantics after CF-14-N8N-Integration
+  - exact request/response field schema and error-code names
+  - token storage or signature implementation (business TTL is frozen at 10 minutes)
+  - chapter revision persistence fields and indexes
+  - execution-availability response fields after CF-14-N8N-Integration
