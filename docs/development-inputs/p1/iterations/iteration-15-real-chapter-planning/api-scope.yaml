@@ -1,5 +1,5 @@
 iteration: iteration-15-real-chapter-planning
-status: business_semantics_frozen_cf_15_01a
+status: frozen_cf_15_01c
 contract_source_after_freeze: packages/contracts/openapi/openapi.yaml
 
 principles:
@@ -176,7 +176,6 @@ internal_application_contract:
     - never exposes provider-specific payloads to the web API
 
 decisions_to_freeze:
-  - exact request/response field schema and error-code names
-  - token storage or signature implementation (business TTL is frozen at 10 minutes)
-  - chapter revision persistence fields and indexes
-  - execution-availability response fields after CF-14-N8N-Integration
+  - Complete OpenAPI field schemas and error codes are frozen in packages/contracts/openapi/openapi.yaml.
+  - Token implementation is the CF-15-01B stateless signed-token design; no preflight persistence.
+  - Runtime list/detail/event/cancel/retry reuse Iteration 14 routes without aliases.

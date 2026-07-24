@@ -538,6 +538,87 @@ paths:
         "400": {$ref: "#/components/responses/BadRequest"}
         "404": {$ref: "#/components/responses/NotFound"}
         "409": {$ref: "#/components/responses/Conflict"}
+  /api/v1/projects/{projectId}/chapter-plan-runs/preflight:
+    parameters: [{$ref: "#/components/parameters/ProjectId"}]
+    post:
+      operationId: preflightChapterPlanRun
+      description: Read-only chapter-planning preflight. It creates no Run, Batch, Candidate, ChapterPlan or external execution. A pass token is actor/project/input-bound and expires after 10 minutes.
+      requestBody: {required: true, content: {application/json: {schema: {$ref: "#/components/schemas/ChapterPlanningPreflightRequest"}}}}
+      responses: {"200": {description: Preflight report., content: {application/json: {schema: {$ref: "#/components/schemas/ChapterPlanningPreflightEnvelope"}}}}, "400": {$ref: "#/components/responses/BadRequest"}, "404": {$ref: "#/components/responses/NotFound"}, "409": {$ref: "#/components/responses/Conflict"}, "422": {$ref: "#/components/responses/UnprocessableEntity"}}
+  /api/v1/projects/{projectId}/chapter-plan-runs:
+    parameters: [{$ref: "#/components/parameters/ProjectId"}, {$ref: "#/components/parameters/IdempotencyKey"}]
+    post:
+      operationId: createChapterPlanRun
+      description: Validates the preflight token, builds the safe input and delegates to the Iteration 14 Runtime. stage=chapter_planning and triggerSource=manual are server-managed; clients must not call generic createWorkflowRun for this action.
+      requestBody: {required: true, content: {application/json: {schema: {$ref: "#/components/schemas/CreateChapterPlanRunRequest"}}}}
+      responses: {"201": {description: Queued Runtime WorkflowRun., content: {application/json: {schema: {$ref: "#/components/schemas/Iteration14WorkflowRunEnvelope"}}}}, "400": {$ref: "#/components/responses/BadRequest"}, "404": {$ref: "#/components/responses/NotFound"}, "409": {$ref: "#/components/responses/Conflict"}, "422": {$ref: "#/components/responses/UnprocessableEntity"}}
+  /api/v1/projects/{projectId}/chapter-planning-summary:
+    parameters: [{$ref: "#/components/parameters/ProjectId"}]
+    get:
+      operationId: getProjectChapterPlanningSummary
+      description: Read-only workspace aggregation, including the current active chapter_planning Runtime run when present.
+      responses: {"200": {description: Chapter planning summary., content: {application/json: {schema: {$ref: "#/components/schemas/ChapterPlanningSummaryEnvelope"}}}}, "400": {$ref: "#/components/responses/BadRequest"}, "404": {$ref: "#/components/responses/NotFound"}}
+  /api/v1/projects/{projectId}/chapter-plan-candidate-batches:
+    parameters: [{$ref: "#/components/parameters/ProjectId"}]
+    get:
+      operationId: listChapterPlanCandidateBatches
+      parameters: [{$ref: "#/components/parameters/ChapterPlanCandidateBatchStatusQuery"}, {$ref: "#/components/parameters/LimitQuery"}, {$ref: "#/components/parameters/OffsetQuery"}]
+      responses: {"200": {description: "Batches ordered by createdAt DESC, id DESC.", content: {application/json: {schema: {$ref: "#/components/schemas/ChapterPlanCandidateBatchListEnvelope"}}}}, "400": {$ref: "#/components/responses/BadRequest"}, "404": {$ref: "#/components/responses/NotFound"}}
+  /api/v1/chapter-plan-candidate-batches/{batchId}:
+    parameters: [{$ref: "#/components/parameters/ChapterPlanCandidateBatchId"}]
+    get:
+      operationId: getChapterPlanCandidateBatch
+      responses: {"200": {description: Candidate batch detail., content: {application/json: {schema: {$ref: "#/components/schemas/ChapterPlanCandidateBatchEnvelope"}}}}, "400": {$ref: "#/components/responses/BadRequest"}, "404": {$ref: "#/components/responses/NotFound"}}
+  /api/v1/chapter-plan-candidate-batches/{batchId}/candidates:
+    parameters: [{$ref: "#/components/parameters/ChapterPlanCandidateBatchId"}]
+    get:
+      operationId: listChapterPlanCandidates
+      parameters: [{$ref: "#/components/parameters/ChapterPlanCandidateStatusQuery"}, {$ref: "#/components/parameters/LimitQuery"}, {$ref: "#/components/parameters/OffsetQuery"}]
+      responses: {"200": {description: "Candidates ordered by chapterNo ASC, sortOrder ASC, id ASC.", content: {application/json: {schema: {$ref: "#/components/schemas/ChapterPlanCandidateListEnvelope"}}}}, "400": {$ref: "#/components/responses/BadRequest"}, "404": {$ref: "#/components/responses/NotFound"}}
+  /api/v1/chapter-plan-candidates/{candidateId}:
+    parameters: [{$ref: "#/components/parameters/ChapterPlanCandidateId"}]
+    get:
+      operationId: getChapterPlanCandidate
+      responses: {"200": {description: Candidate detail., content: {application/json: {schema: {$ref: "#/components/schemas/ChapterPlanCandidateEnvelope"}}}}, "400": {$ref: "#/components/responses/BadRequest"}, "404": {$ref: "#/components/responses/NotFound"}}
+    patch:
+      operationId: updateChapterPlanCandidate
+      requestBody: {required: true, content: {application/json: {schema: {$ref: "#/components/schemas/UpdateChapterPlanCandidateRequest"}}}}
+      responses: {"200": {description: Edited Candidate., content: {application/json: {schema: {$ref: "#/components/schemas/ChapterPlanCandidateEnvelope"}}}}, "400": {$ref: "#/components/responses/BadRequest"}, "404": {$ref: "#/components/responses/NotFound"}, "409": {$ref: "#/components/responses/Conflict"}}
+  /api/v1/chapter-plan-candidates/{candidateId}/compare:
+    parameters: [{$ref: "#/components/parameters/ChapterPlanCandidateId"}]
+    get:
+      operationId: compareChapterPlanCandidate
+      responses: {"200": {description: Current comparison., content: {application/json: {schema: {$ref: "#/components/schemas/ChapterPlanCandidateComparisonEnvelope"}}}}, "400": {$ref: "#/components/responses/BadRequest"}, "404": {$ref: "#/components/responses/NotFound"}}
+  /api/v1/chapter-plan-candidates/{candidateId}/recompare:
+    parameters: [{$ref: "#/components/parameters/ChapterPlanCandidateId"}]
+    post:
+      operationId: recompareChapterPlanCandidate
+      requestBody: {required: true, content: {application/json: {schema: {$ref: "#/components/schemas/ExpectedVersionRequest"}}}}
+      responses: {"200": {description: Recompared candidate., content: {application/json: {schema: {$ref: "#/components/schemas/ChapterPlanCandidateComparisonEnvelope"}}}}, "400": {$ref: "#/components/responses/BadRequest"}, "404": {$ref: "#/components/responses/NotFound"}, "409": {$ref: "#/components/responses/Conflict"}}
+  /api/v1/chapter-plan-candidates/{candidateId}/adopt:
+    parameters: [{$ref: "#/components/parameters/ChapterPlanCandidateId"}, {$ref: "#/components/parameters/IdempotencyKey"}]
+    post:
+      operationId: adoptChapterPlanCandidate
+      requestBody: {required: true, content: {application/json: {schema: {$ref: "#/components/schemas/AdoptChapterPlanCandidateRequest"}}}}
+      responses: {"200": {description: Candidate adopted; ChapterPlan is pending_confirmation., content: {application/json: {schema: {$ref: "#/components/schemas/AdoptChapterPlanCandidateEnvelope"}}}}, "400": {$ref: "#/components/responses/BadRequest"}, "404": {$ref: "#/components/responses/NotFound"}, "409": {$ref: "#/components/responses/Conflict"}}
+  /api/v1/chapter-plan-candidates/{candidateId}/discard:
+    parameters: [{$ref: "#/components/parameters/ChapterPlanCandidateId"}, {$ref: "#/components/parameters/IdempotencyKey"}]
+    post:
+      operationId: discardChapterPlanCandidate
+      requestBody: {required: true, content: {application/json: {schema: {$ref: "#/components/schemas/DiscardChapterPlanCandidateRequest"}}}}
+      responses: {"200": {description: Candidate discarded., content: {application/json: {schema: {$ref: "#/components/schemas/ChapterPlanCandidateEnvelope"}}}}, "400": {$ref: "#/components/responses/BadRequest"}, "404": {$ref: "#/components/responses/NotFound"}, "409": {$ref: "#/components/responses/Conflict"}}
+  /api/v1/chapter-plan-candidate-batches/{batchId}/adoptions:
+    parameters: [{$ref: "#/components/parameters/ChapterPlanCandidateBatchId"}, {$ref: "#/components/parameters/IdempotencyKey"}]
+    post:
+      operationId: adoptChapterPlanCandidates
+      requestBody: {required: true, content: {application/json: {schema: {$ref: "#/components/schemas/BulkAdoptChapterPlanCandidatesRequest"}}}}
+      responses: {"200": {description: Itemized independent adoption result; partial success is normal., content: {application/json: {schema: {$ref: "#/components/schemas/BulkAdoptChapterPlanCandidatesEnvelope"}}}}, "400": {$ref: "#/components/responses/BadRequest"}, "404": {$ref: "#/components/responses/NotFound"}, "409": {$ref: "#/components/responses/Conflict"}}
+  /api/v1/chapter-plan-candidate-batches/{batchId}/abandon:
+    parameters: [{$ref: "#/components/parameters/ChapterPlanCandidateBatchId"}, {$ref: "#/components/parameters/IdempotencyKey"}]
+    post:
+      operationId: abandonChapterPlanCandidateBatch
+      requestBody: {required: true, content: {application/json: {schema: {$ref: "#/components/schemas/AbandonChapterPlanCandidateBatchRequest"}}}}
+      responses: {"200": {description: Batch abandoned without rolling back adopted revisions., content: {application/json: {schema: {$ref: "#/components/schemas/ChapterPlanCandidateBatchEnvelope"}}}}, "400": {$ref: "#/components/responses/BadRequest"}, "404": {$ref: "#/components/responses/NotFound"}, "409": {$ref: "#/components/responses/Conflict"}}
   /api/v1/chapter-plans/{chapterPlanId}:
     parameters:
       - $ref: "#/components/parameters/ChapterPlanId"
@@ -1266,6 +1347,10 @@ components:
       name: status
       in: query
       schema: {$ref: "#/components/schemas/ChapterPlanStatus"}
+    ChapterPlanCandidateBatchId: {name: batchId, in: path, required: true, schema: {type: string, format: uuid}}
+    ChapterPlanCandidateId: {name: candidateId, in: path, required: true, schema: {type: string, format: uuid}}
+    ChapterPlanCandidateBatchStatusQuery: {name: status, in: query, schema: {$ref: "#/components/schemas/ChapterPlanCandidateBatchStatus"}}
+    ChapterPlanCandidateStatusQuery: {name: status, in: query, schema: {$ref: "#/components/schemas/ChapterPlanCandidateStatus"}}
     ExpectedChapterPlanVersionQuery:
       name: expected_version
       in: query
@@ -3237,7 +3322,7 @@ components:
       enum: [pending_confirmation, confirmed]
     ChapterPlanSource:
       type: string
-      enum: [mock_generated]
+      enum: [mock_generated, candidate_adopted]
     ChapterPlanRelation:
       type: string
       enum: [primary, secondary]
@@ -3561,10 +3646,49 @@ components:
         totalRuns: {type: integer, minimum: 0, description: All WorkflowRuns for the project.}
         activeRuns: {type: integer, minimum: 0, description: Runs whose status is queued or running.}
         recentFailedRuns: {type: integer, minimum: 0, description: Failed runs with createdAt in the preceding 7x24 hours.}
-        lastRunAt: {type: [string, "null"], format: date-time, description: createdAt of the latest run, or null.}
-        recentRuns: {type: array, maxItems: 3, items: {$ref: "#/components/schemas/Iteration14WorkflowRun"}, description: At most 3 runs ordered by createdAt DESC, id DESC.}
+        lastRunAt: {type: [string, "null"], format: date-time, description: "createdAt of the latest run, or null."}
+        recentRuns: {type: array, maxItems: 3, items: {$ref: "#/components/schemas/Iteration14WorkflowRun"}, description: "At most 3 runs ordered by createdAt DESC, id DESC."}
     ProjectWorkflowRunSummaryEnvelope:
       type: object
       additionalProperties: false
       required: [data, request_id]
       properties: {data: {$ref: "#/components/schemas/ProjectWorkflowRunSummary"}, request_id: {type: string}}
+    ChapterPlanningGenerationMode: {type: string, enum: [full, append, range]}
+    ChapterPlanCandidateStatus: {type: string, enum: [pending, stale, adopted, discarded]}
+    ChapterPlanCandidateBatchStatus: {type: string, enum: [ready, partially_adopted, adopted, abandoned]}
+    ChapterPlanningPreflightRequest:
+      type: object
+      additionalProperties: false
+      required: [generationMode, target, storylineSelection, contextOptions, additionalInstructions]
+      properties: {generationMode: {$ref: "#/components/schemas/ChapterPlanningGenerationMode"}, target: {type: object, additionalProperties: true}, storylineSelection: {type: array, items: {type: string, format: uuid}}, contextOptions: {type: object, additionalProperties: true}, additionalInstructions: {type: [string, "null"], maxLength: 2000}}
+    ChapterPlanningPreflightReport:
+      type: object
+      additionalProperties: false
+      required: [preflightToken, expiresAt, inputDigest, checks, blockers, warnings]
+      properties: {preflightToken: {type: string, minLength: 1}, expiresAt: {type: string, format: date-time}, inputDigest: {type: string, pattern: '^[a-f0-9]{64}$'}, checks: {type: array, items: {type: object, additionalProperties: true}}, blockers: {type: array, items: {type: object, additionalProperties: true}}, warnings: {type: array, items: {type: object, additionalProperties: true}}}
+    ChapterPlanningPreflightEnvelope: {type: object, additionalProperties: false, required: [data, request_id], properties: {data: {$ref: "#/components/schemas/ChapterPlanningPreflightReport"}, request_id: {type: string}}}
+    CreateChapterPlanRunRequest: {type: object, additionalProperties: false, required: [preflightToken], properties: {preflightToken: {type: string, minLength: 1}}}
+    ChapterPlanCandidateBatch:
+      type: object
+      additionalProperties: false
+      required: [id, projectId, sourceWorkflowRunId, generationMode, status, candidateCount, pendingCount, staleCount, adoptedCount, discardedCount, version, createdAt, updatedAt]
+      properties: {id: {type: string, format: uuid}, projectId: {type: string, format: uuid}, sourceWorkflowRunId: {type: string, format: uuid}, generationMode: {$ref: "#/components/schemas/ChapterPlanningGenerationMode"}, status: {$ref: "#/components/schemas/ChapterPlanCandidateBatchStatus"}, candidateCount: {type: integer, minimum: 0}, pendingCount: {type: integer, minimum: 0}, staleCount: {type: integer, minimum: 0}, adoptedCount: {type: integer, minimum: 0}, discardedCount: {type: integer, minimum: 0}, version: {type: integer, minimum: 1}, createdAt: {type: string, format: date-time}, updatedAt: {type: string, format: date-time}}
+    ChapterPlanCandidate:
+      type: object
+      additionalProperties: false
+      required: [id, batchId, projectId, chapterNo, sortOrder, currentSnapshot, diffType, status, version, createdAt, updatedAt]
+      properties: {id: {type: string, format: uuid}, batchId: {type: string, format: uuid}, projectId: {type: string, format: uuid}, chapterNo: {type: integer, minimum: 1}, sortOrder: {type: integer, minimum: 0}, currentSnapshot: {type: object, additionalProperties: true}, diffType: {type: string, enum: [new, replace, no_change, stale_conflict]}, status: {$ref: "#/components/schemas/ChapterPlanCandidateStatus"}, baseChapterPlanId: {type: [string, "null"], format: uuid}, baseChapterVersion: {type: [integer, "null"], minimum: 1}, version: {type: integer, minimum: 1}, createdAt: {type: string, format: date-time}, updatedAt: {type: string, format: date-time}}
+    ChapterPlanCandidateEnvelope: {type: object, additionalProperties: false, required: [data, request_id], properties: {data: {$ref: "#/components/schemas/ChapterPlanCandidate"}, request_id: {type: string}}}
+    ChapterPlanCandidateBatchEnvelope: {type: object, additionalProperties: false, required: [data, request_id], properties: {data: {$ref: "#/components/schemas/ChapterPlanCandidateBatch"}, request_id: {type: string}}}
+    ChapterPlanCandidateBatchListEnvelope: {type: object, additionalProperties: false, required: [data, request_id], properties: {data: {type: object, required: [items, total, limit, offset], properties: {items: {type: array, items: {$ref: "#/components/schemas/ChapterPlanCandidateBatch"}}, total: {type: integer}, limit: {type: integer}, offset: {type: integer}}}, request_id: {type: string}}}
+    ChapterPlanCandidateListEnvelope: {type: object, additionalProperties: false, required: [data, request_id], properties: {data: {type: object, required: [items, total, limit, offset], properties: {items: {type: array, items: {$ref: "#/components/schemas/ChapterPlanCandidate"}}, total: {type: integer}, limit: {type: integer}, offset: {type: integer}}}, request_id: {type: string}}}
+    UpdateChapterPlanCandidateRequest: {type: object, additionalProperties: false, required: [expectedVersion, currentSnapshot], properties: {expectedVersion: {type: integer, minimum: 1}, currentSnapshot: {type: object, additionalProperties: true}}}
+    ExpectedVersionRequest: {type: object, additionalProperties: false, required: [expectedVersion], properties: {expectedVersion: {type: integer, minimum: 1}}}
+    ChapterPlanCandidateComparisonEnvelope: {type: object, additionalProperties: false, required: [data, request_id], properties: {data: {type: object, required: [candidate, currentChapter, diff], properties: {candidate: {$ref: "#/components/schemas/ChapterPlanCandidate"}, currentChapter: {type: [object, "null"]}, diff: {type: object, additionalProperties: true}}}, request_id: {type: string}}}
+    AdoptChapterPlanCandidateRequest: {type: object, additionalProperties: false, required: [expectedCandidateVersion, expectedChapterPlanVersion], properties: {expectedCandidateVersion: {type: integer, minimum: 1}, expectedChapterPlanVersion: {type: [integer, "null"], minimum: 1}}}
+    AdoptChapterPlanCandidateEnvelope: {type: object, additionalProperties: false, required: [data, request_id], properties: {data: {type: object, required: [candidate, chapterPlan, revision, batch], properties: {candidate: {$ref: "#/components/schemas/ChapterPlanCandidate"}, chapterPlan: {$ref: "#/components/schemas/ChapterPlan"}, revision: {type: object, additionalProperties: true}, batch: {$ref: "#/components/schemas/ChapterPlanCandidateBatch"}}}, request_id: {type: string}}}
+    DiscardChapterPlanCandidateRequest: {type: object, additionalProperties: false, required: [expectedVersion], properties: {expectedVersion: {type: integer, minimum: 1}, reason: {type: [string, "null"], maxLength: 500}}}
+    BulkAdoptChapterPlanCandidatesRequest: {type: object, additionalProperties: false, required: [expectedBatchVersion, candidates], properties: {expectedBatchVersion: {type: integer, minimum: 1}, candidates: {type: array, minItems: 1, items: {$ref: "#/components/schemas/AdoptChapterPlanCandidateRequest"}}}}
+    BulkAdoptChapterPlanCandidatesEnvelope: {type: object, additionalProperties: false, required: [data, request_id], properties: {data: {type: object, required: [items, batch], properties: {items: {type: array, items: {type: object, required: [candidateId, outcome], properties: {candidateId: {type: string, format: uuid}, outcome: {type: string, enum: [adopted, no_change, stale, conflict, failed]}}}}, batch: {$ref: "#/components/schemas/ChapterPlanCandidateBatch"}}}, request_id: {type: string}}}
+    AbandonChapterPlanCandidateBatchRequest: {type: object, additionalProperties: false, required: [expectedVersion, acknowledgeAdoptedChaptersRemain], properties: {expectedVersion: {type: integer, minimum: 1}, reason: {type: [string, "null"], maxLength: 500}, acknowledgeAdoptedChaptersRemain: {type: boolean, const: true}}}
+    ChapterPlanningSummaryEnvelope: {type: object, additionalProperties: false, required: [data, request_id], properties: {data: {type: object, additionalProperties: true}, request_id: {type: string}}}

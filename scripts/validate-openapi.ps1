@@ -159,7 +159,7 @@ if ($openApiText -notmatch 'enum: \[primary, secondary\]') {
     throw "Chapter-plan OpenAPI relation enum mismatch."
 }
 if ($openApiText -notmatch 'enum: \[pending_confirmation, confirmed\]' -or
-    $openApiText -notmatch 'enum: \[mock_generated\]') {
+    $openApiText -notmatch 'enum: \[mock_generated, candidate_adopted\]') {
     throw "Chapter-plan OpenAPI status/source enum mismatch."
 }
 
@@ -178,11 +178,11 @@ foreach ($schemaPath in $schemaPaths | Where-Object { $_ -match "(content-item|c
     if ($schema.additionalProperties -ne $false) { throw "Iteration 06 schema must set additionalProperties=false: $schemaPath" }
 }
 
-$iteration071AOperations = @("mockRewriteContentItem", "getWorkflowRun")
+$iteration071AOperations = @("mockRewriteContentItem", "getWorkflowRunDetail")
 foreach ($operationId in $iteration071AOperations) {
     if ($openApiText -notmatch ("(?m)^\s*operationId:\s*" + [regex]::Escape($operationId) + "\s*$")) { throw "Iteration 07.1A OpenAPI operation is missing: $operationId" }
 }
-foreach ($path in @("/api/v1/content-items/{contentItemId}/rewrites/mock", "/api/v1/workflow-runs/{workflowRunId}")) {
+foreach ($path in @("/api/v1/content-items/{contentItemId}/rewrites/mock", "/api/v1/workflow-runs/{runId}")) {
     if ($openApiText -notmatch ("(?m)^  " + [regex]::Escape($path) + ":\s*$")) { throw "Iteration 07.1A OpenAPI path is missing: $path" }
 }
 foreach ($fragment in @("MockRewriteRequest", "MockRewriteParameters", "MockRewriteResult", "WorkflowRunDetail", "content_mock_rewrite", "mock_rewrite", "idempotency_key_reused_with_different_payload")) {
@@ -205,7 +205,7 @@ foreach ($operationId in $iteration071COperations) { if ($openApiText -notmatch 
 foreach ($path in @("/api/v1/projects/{projectId}/works", "/api/v1/works/{workId}")) { if ($openApiText -notmatch ("(?m)^  " + [regex]::Escape($path) + ":\s*$")) { throw "Iteration 07.1C OpenAPI path is missing: $path" } }
 foreach ($fragment in @("ProjectWorkReadModel", "ProjectWorkListEnvelope", "ProjectWorkDetailEnvelope", "Stable read-only alias of content_item.id", "chapter_plan.chapter_no ASC, content_item.id ASC")) { if ($openApiText -notmatch [regex]::Escape($fragment)) { throw "Iteration 07.1C required contract fragment is missing: $fragment" } }
 
-$iteration08Operations = @("listMaterials", "listGlobalWorks", "listBuiltinWorkflows", "listGlobalWorkflowRuns", "listCapabilities", "listIntegrations")
+$iteration08Operations = @("listMaterials", "listGlobalWorks", "listBuiltinWorkflows", "listWorkflowRuns", "listCapabilities", "listIntegrations")
 foreach ($operationId in $iteration08Operations) {
     if ([regex]::Matches($openApiText, "(?m)^\s*operationId:\s*" + [regex]::Escape($operationId) + "\s*$").Count -ne 1) { throw "Iteration 08 OpenAPI operation must exist exactly once: $operationId" }
 }
