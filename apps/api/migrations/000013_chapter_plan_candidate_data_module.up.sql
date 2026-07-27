@@ -73,7 +73,7 @@ CREATE TABLE chapter_plan_candidates (
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     CONSTRAINT chapter_plan_candidates_batch_fk FOREIGN KEY (project_id, batch_id) REFERENCES chapter_plan_candidate_batches(project_id, id) ON DELETE CASCADE,
-    CONSTRAINT chapter_plan_candidates_base_plan_fk FOREIGN KEY (project_id, base_chapter_plan_id) REFERENCES chapter_plans(project_id, id) ON DELETE SET NULL,
+    CONSTRAINT chapter_plan_candidates_base_plan_fk FOREIGN KEY (project_id, base_chapter_plan_id) REFERENCES chapter_plans(project_id, id) ON DELETE RESTRICT,
     CONSTRAINT chapter_plan_candidates_batch_chapter_no_unique UNIQUE (batch_id, chapter_no),
     CONSTRAINT chapter_plan_candidates_batch_sort_order_unique UNIQUE (batch_id, sort_order),
     CONSTRAINT chapter_plan_candidates_project_id_id_unique UNIQUE (project_id, id),

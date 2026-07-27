@@ -30,12 +30,12 @@ ALTER TABLE chapter_plans
 ALTER TABLE chapter_plan_candidates DROP CONSTRAINT IF EXISTS chapter_plan_candidates_base_plan_fk;
 ALTER TABLE chapter_plan_candidates
     ADD CONSTRAINT chapter_plan_candidates_base_plan_fk
-    FOREIGN KEY (project_id, base_chapter_plan_id) REFERENCES chapter_plans(project_id, id) ON DELETE SET NULL;
+    FOREIGN KEY (project_id, base_chapter_plan_id) REFERENCES chapter_plans(project_id, id) ON DELETE RESTRICT;
 
 ALTER TABLE chapter_plan_candidates DROP CONSTRAINT IF EXISTS chapter_plan_candidates_base_revision_fk;
 ALTER TABLE chapter_plan_candidates
     ADD CONSTRAINT chapter_plan_candidates_base_revision_fk
-    FOREIGN KEY (project_id, base_revision_id) REFERENCES chapter_plan_revisions(project_id, id) ON DELETE SET NULL;
+    FOREIGN KEY (project_id, base_revision_id) REFERENCES chapter_plan_revisions(project_id, id) ON DELETE RESTRICT;
 
 CREATE INDEX IF NOT EXISTS chapter_plan_candidate_batches_source_run_idx ON chapter_plan_candidate_batches (project_id, source_workflow_run_id);
 CREATE INDEX IF NOT EXISTS chapter_plan_revisions_source_run_idx ON chapter_plan_revisions (project_id, source_workflow_run_id);

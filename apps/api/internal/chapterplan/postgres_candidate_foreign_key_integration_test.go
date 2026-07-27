@@ -44,6 +44,31 @@ func TestPostgresCandidateBaseRevisionCompositeForeignKey(t *testing.T) {
 	assertForeignCandidateReferenceRollsBack(t, ctx, db, candidate.ID, "base_revision_id", foreignRevision, "chapter_plan_candidates_base_revision_fk")
 }
 
+func TestPostgresCandidateBasePlanDeleteIsRestricted(t *testing.T) {
+	db, ctx := openIntegrationDB(t)
+	_, candidate := newCandidateForeignKeyFixture(t, ctx, db)
+	samePlan, _ := seedCandidateForeignKeyPlans(t, ctx, db, candidate.ProjectID)
+	if _, err := db.Exec(ctx, "UPDATE chapter_plan_candidates SET base_chapter_plan_id=$2 WHERE id=$1", candidate.ID, samePlan.ID); err != nil {
+		t.Fatal(err)
+	}
+
+	assertDeleteIsRestricted(t, ctx, db, "DELETE FROM chapter_plans WHERE id=$1", samePlan.ID, "chapter_plan_candidates_base_plan_fk")
+	assertCandidateAndBaseRemain(t, ctx, db, candidate.ID, "base_chapter_plan_id", "chapter_plans", samePlan.ID)
+}
+
+func TestPostgresCandidateBaseRevisionDeleteIsRestricted(t *testing.T) {
+	db, ctx := openIntegrationDB(t)
+	_, candidate := newCandidateForeignKeyFixture(t, ctx, db)
+	samePlan, _ := seedCandidateForeignKeyPlans(t, ctx, db, candidate.ProjectID)
+	revisionID := seedCandidateForeignKeyRevision(t, ctx, db, samePlan)
+	if _, err := db.Exec(ctx, "UPDATE chapter_plan_candidates SET base_revision_id=$2 WHERE id=$1", candidate.ID, revisionID); err != nil {
+		t.Fatal(err)
+	}
+
+	assertDeleteIsRestricted(t, ctx, db, "DELETE FROM chapter_plan_revisions WHERE id=$1", revisionID, "chapter_plan_candidates_base_revision_fk")
+	assertCandidateAndBaseRemain(t, ctx, db, candidate.ID, "base_revision_id", "chapter_plan_revisions", revisionID)
+}
+
 func TestCandidateForeignKeyErrorsAreSafelyMapped(t *testing.T) {
 	raw := &pgconn.PgError{Code: "23503", ConstraintName: "chapter_plan_candidates_base_revision_fk", Message: "insert or update on table chapter_plan_candidates violates foreign key constraint"}
 	if got := classify(raw); !errors.Is(got, ErrInvalidReference) {
@@ -51,6 +76,33 @@ func TestCandidateForeignKeyErrorsAreSafelyMapped(t *testing.T) {
 	}
 	if got := mapError(classify(raw)); !errors.Is(got, ErrValidation) {
 		t.Fatalf("application foreign-key error=%v, want ErrValidation", got)
+	}
+}
+
+func assertDeleteIsRestricted(t *testing.T, ctx context.Context, db *pgxpool.Pool, query string, id uuid.UUID, constraint string) {
+	t.Helper()
+	_, err := db.Exec(ctx, query, id)
+	var pgErr *pgconn.PgError
+	if !errors.As(err, &pgErr) || pgErr.Code != "23503" || pgErr.ConstraintName != constraint {
+		t.Fatalf("delete error=%v, want PostgreSQL 23503/%s", err, constraint)
+	}
+}
+
+func assertCandidateAndBaseRemain(t *testing.T, ctx context.Context, db *pgxpool.Pool, candidateID uuid.UUID, candidateColumn string, baseTable string, baseID uuid.UUID) {
+	t.Helper()
+	var candidateBaseID uuid.UUID
+	if err := db.QueryRow(ctx, "SELECT "+candidateColumn+" FROM chapter_plan_candidates WHERE id=$1", candidateID).Scan(&candidateBaseID); err != nil {
+		t.Fatal(err)
+	}
+	if candidateBaseID != baseID {
+		t.Fatalf("candidate %s=%s, want %s", candidateColumn, candidateBaseID, baseID)
+	}
+	var count int
+	if err := db.QueryRow(ctx, "SELECT COUNT(*) FROM "+baseTable+" WHERE id=$1", baseID).Scan(&count); err != nil {
+		t.Fatal(err)
+	}
+	if count != 1 {
+		t.Fatalf("base %s id=%s count=%d, want 1", baseTable, baseID, count)
 	}
 }
 

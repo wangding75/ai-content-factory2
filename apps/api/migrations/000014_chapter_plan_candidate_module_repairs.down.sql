@@ -11,12 +11,12 @@ DROP INDEX IF EXISTS chapter_plan_candidate_batches_source_run_idx;
 ALTER TABLE chapter_plan_candidates DROP CONSTRAINT IF EXISTS chapter_plan_candidates_base_revision_fk;
 ALTER TABLE chapter_plan_candidates
     ADD CONSTRAINT chapter_plan_candidates_base_revision_fk
-    FOREIGN KEY (base_revision_id) REFERENCES chapter_plan_revisions(id) ON DELETE SET NULL;
+    FOREIGN KEY (project_id, base_revision_id) REFERENCES chapter_plan_revisions(project_id, id) ON DELETE RESTRICT;
 
 ALTER TABLE chapter_plan_candidates DROP CONSTRAINT IF EXISTS chapter_plan_candidates_base_plan_fk;
 ALTER TABLE chapter_plan_candidates
     ADD CONSTRAINT chapter_plan_candidates_base_plan_fk
-    FOREIGN KEY (project_id, base_chapter_plan_id) REFERENCES chapter_plans(project_id, id) ON DELETE SET NULL;
+    FOREIGN KEY (project_id, base_chapter_plan_id) REFERENCES chapter_plans(project_id, id) ON DELETE RESTRICT;
 
 ALTER TABLE chapter_plans DROP CONSTRAINT IF EXISTS chapter_plans_source_run_fk;
 ALTER TABLE chapter_plans
