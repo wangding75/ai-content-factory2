@@ -407,7 +407,7 @@ func (ing *ResultIngestor) Ingest(ctx context.Context, input IngestInput) (Candi
 			baseVer = &bcp.Version
 			baseSnap = bcp.Snapshot
 
-			if isSameSnapshot(candSnapJSON, bcp.Snapshot) {
+			if isSameChapterPlanContent(c, bcp.Snapshot) {
 				diffType = "no_change"
 			} else {
 				diffType = "replace"
@@ -443,13 +443,96 @@ func (ing *ResultIngestor) Ingest(ctx context.Context, input IngestInput) (Candi
 	return scanBatch(ing.pool.QueryRow(ctx, fmt.Sprintf("SELECT %s FROM chapter_plan_candidate_batches WHERE id = $1", candidateBatchCols), batchID))
 }
 
-func isSameSnapshot(candJSON, baseJSON []byte) bool {
-	if len(candJSON) == 0 || len(baseJSON) == 0 {
+type chapterPlanComparisonValue struct {
+	ChapterNo        int
+	Title            string
+	Summary          string
+	ChapterPurpose   string
+	StorylineRefIDs  []string
+	MaterialRefIDs   []string
+	ForeshadowingIDs []string
+	GenerationBasis  generationBasisComparisonValue
+}
+
+type generationBasisComparisonValue struct {
+	ContextSummary         string
+	AdditionalInstructions *string
+}
+
+func isSameChapterPlanContent(candidate NormalizedCandidate, baseSnapshot []byte) bool {
+	if len(baseSnapshot) == 0 {
 		return false
 	}
-	var o1, o2 map[string]any
-	if json.Unmarshal(candJSON, &o1) != nil || json.Unmarshal(baseJSON, &o2) != nil {
+
+	var base candidateSnapshotStruct
+	if err := json.Unmarshal(baseSnapshot, &base); err != nil {
 		return false
 	}
-	return reflect.DeepEqual(o1, o2)
+
+	return reflect.DeepEqual(chapterPlanValueFromCandidate(candidate), chapterPlanValueFromSnapshot(base))
+}
+
+func isSameSnapshot(candidateSnapshot, baseSnapshot []byte) bool {
+	if len(candidateSnapshot) == 0 || len(baseSnapshot) == 0 {
+		return false
+	}
+	var candidate, base candidateSnapshotStruct
+	if json.Unmarshal(candidateSnapshot, &candidate) != nil || json.Unmarshal(baseSnapshot, &base) != nil {
+		return false
+	}
+	return reflect.DeepEqual(chapterPlanValueFromSnapshot(candidate), chapterPlanValueFromSnapshot(base))
+}
+
+func chapterPlanValueFromCandidate(candidate NormalizedCandidate) chapterPlanComparisonValue {
+	return chapterPlanComparisonValue{
+		ChapterNo:        candidate.ChapterNo,
+		Title:            candidate.Title,
+		Summary:          candidate.Summary,
+		ChapterPurpose:   candidate.ChapterPurpose,
+		StorylineRefIDs:  normalizedReferenceIDs(candidate.StorylineRefs),
+		MaterialRefIDs:   normalizedReferenceIDs(candidate.MaterialRefs),
+		ForeshadowingIDs: normalizedReferenceIDs(candidate.ForeshadowingRefs),
+		GenerationBasis: generationBasisComparisonValue{
+			ContextSummary:         candidate.GenerationBasis.ContextSummary,
+			AdditionalInstructions: candidate.GenerationBasis.AdditionalInstructions,
+		},
+	}
+}
+
+func chapterPlanValueFromSnapshot(snapshot candidateSnapshotStruct) chapterPlanComparisonValue {
+	return chapterPlanComparisonValue{
+		ChapterNo:        snapshot.ChapterNo,
+		Title:            snapshot.Title,
+		Summary:          snapshot.Summary,
+		ChapterPurpose:   snapshot.ChapterPurpose,
+		StorylineRefIDs:  normalizedReferenceIDs(snapshot.StorylineRefs),
+		MaterialRefIDs:   normalizedReferenceIDs(snapshot.MaterialRefs),
+		ForeshadowingIDs: normalizedReferenceIDs(snapshot.ForeshadowingRefs),
+		GenerationBasis: generationBasisComparisonValue{
+			ContextSummary:         snapshot.GenerationBasis.ContextSummary,
+			AdditionalInstructions: snapshot.GenerationBasis.AdditionalInstructions,
+		},
+	}
+}
+
+func normalizedReferenceIDs(refs []NormalizedReference) []string {
+	ids := make([]string, 0, len(refs))
+	for _, ref := range refs {
+		ids = append(ids, ref.ID.String())
+	}
+	sort.Strings(ids)
+	return compactStrings(ids)
+}
+
+func compactStrings(values []string) []string {
+	if len(values) == 0 {
+		return nil
+	}
+	compact := values[:1]
+	for _, value := range values[1:] {
+		if value != compact[len(compact)-1] {
+			compact = append(compact, value)
+		}
+	}
+	return compact
 }
