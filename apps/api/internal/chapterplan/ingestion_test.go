@@ -1,12 +1,22 @@
 package chapterplan_test
 
 import (
+	"context"
 	"encoding/json"
+	"errors"
 	"testing"
 
 	"github.com/google/uuid"
 	"github.com/local/ai-content-factory/apps/api/internal/chapterplan"
+	"github.com/local/ai-content-factory/apps/api/internal/workflowrun"
 )
+
+type recordingIngestor struct{ calls int }
+
+func (i *recordingIngestor) Ingest(context.Context, chapterplan.IngestInput) (chapterplan.CandidateBatch, error) {
+	i.calls++
+	return chapterplan.CandidateBatch{}, nil
+}
 
 func TestSchemaAndSemanticValidation(t *testing.T) {
 	projectID := uuid.New()
@@ -108,6 +118,46 @@ func TestSchemaAndSemanticValidation(t *testing.T) {
 	}
 }
 
+func TestValidateNormalizedOutputRejectsUnfrozenEmptyReferenceKinds(t *testing.T) {
+	projectID, runID := uuid.New(), uuid.New()
+	digest := "a1b2c3d4e5f60123456789abcdef0123456789abcdef0123456789abcdef0123"
+	storylineID := uuid.New()
+	input := chapterplan.IngestInput{
+		Run: chapterplan.RunReference{RunID: runID, ProjectID: projectID},
+		Context: chapterplan.GenerationContextSnapshot{
+			InputDigest:       digest,
+			InputSnapshot:     json.RawMessage(`{"generationMode":"range","target":{"startChapterNo":1,"endChapterNo":1,"requestedChapterCount":1}}`),
+			StorylineSnapshot: json.RawMessage(`{"available":[{"id":"` + storylineID.String() + `"}],"materials":[],"foreshadowings":[]}`),
+		},
+		NormalizedOutput: chapterplan.NormalizedChapterPlanOutput{
+			ProjectID: projectID, GenerationMode: "range", Target: chapterplan.BatchTarget{StartChapterNo: 1, EndChapterNo: 1, RequestedChapterCount: 1}, SourceWorkflowRunID: runID,
+			Candidates: []chapterplan.NormalizedCandidate{{ChapterNo: 1, Title: "One", Summary: "", ChapterPurpose: "plot_advance", StorylineRefs: []chapterplan.NormalizedReference{{ID: storylineID, ProjectID: projectID, Label: "Story", Relation: "primary", Version: 1}}, MaterialRefs: []chapterplan.NormalizedReference{{ID: uuid.New(), ProjectID: projectID, Label: "Unfrozen", Version: 1}}, GenerationBasis: chapterplan.GenerationBasis{}}},
+			Metadata:   chapterplan.OutputMetadata{InputDigest: digest, GeneratedAt: "2026-07-27T10:00:00Z", SafeProviderSummary: "provider"},
+		},
+	}
+	if err := chapterplan.ValidateNormalizedOutput(input); !errors.Is(err, chapterplan.ErrOutputValidationFailed) {
+		t.Fatalf("unfrozen material from an empty frozen collection was accepted: %v", err)
+	}
+}
+
+func TestRuntimeConsumerRejectsTrailingJSONWithoutWriting(t *testing.T) {
+	projectID, runID := uuid.New(), uuid.New()
+	digest := "a1b2c3d4e5f60123456789abcdef0123456789abcdef0123456789abcdef0123"
+	payload, err := json.Marshal(map[string]any{"generationContext": chapterplan.GenerationContextSnapshot{InputDigest: digest}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	ingestor := &recordingIngestor{}
+	consumer := chapterplan.NewRuntimeConsumer(ingestor)
+	run := workflowrun.WorkflowRun{ID: runID, ProjectID: projectID, Stage: "chapter_planning", Status: workflowrun.StatusSucceeded, InputPayload: payload, OutputPayload: []byte(`{} {}`)}
+	if err := consumer.ConsumeSucceededRun(context.Background(), run); !errors.Is(err, chapterplan.ErrOutputValidationFailed) {
+		t.Fatalf("trailing JSON error=%v, want output validation failure", err)
+	}
+	if ingestor.calls != 0 {
+		t.Fatalf("ingestor was called %d times for invalid trailing JSON", ingestor.calls)
+	}
+}
+
 func TestSnapshotMappingAndDiffTypeLogic(t *testing.T) {
 	projectID := uuid.New()
 	runID := uuid.New()
@@ -127,9 +177,11 @@ func TestSnapshotMappingAndDiffTypeLogic(t *testing.T) {
 		},
 	})
 
+	firstStorylineID, secondStorylineID := uuid.New(), uuid.New()
 	ctxSnap := chapterplan.GenerationContextSnapshot{
-		InputDigest:   digest,
-		InputSnapshot: json.RawMessage(`{"generationMode":"full","target":{"startChapterNo":1,"endChapterNo":2,"requestedChapterCount":2}}`),
+		InputDigest:       digest,
+		InputSnapshot:     json.RawMessage(`{"generationMode":"full","target":{"startChapterNo":1,"endChapterNo":2,"requestedChapterCount":2}}`),
+		StorylineSnapshot: json.RawMessage(`{"available":[{"id":"` + firstStorylineID.String() + `"},{"id":"` + secondStorylineID.String() + `"}],"materials":[],"foreshadowings":[]}`),
 		BaseChapterPlans: []chapterplan.BaseChapterPlanContext{
 			{
 				ID:        planID,
@@ -158,7 +210,7 @@ func TestSnapshotMappingAndDiffTypeLogic(t *testing.T) {
 					Summary:        "Base Summary 1",
 					ChapterPurpose: "plot_advance",
 					StorylineRefs: []chapterplan.NormalizedReference{
-						{ID: uuid.New(), ProjectID: projectID, Label: "Storyline 1", Relation: "primary", Position: 0, Version: 1},
+						{ID: firstStorylineID, ProjectID: projectID, Label: "Storyline 1", Relation: "primary", Position: 0, Version: 1},
 					},
 					MaterialRefs:      []chapterplan.NormalizedReference{},
 					ForeshadowingRefs: []chapterplan.NormalizedReference{},
@@ -170,7 +222,7 @@ func TestSnapshotMappingAndDiffTypeLogic(t *testing.T) {
 					Summary:        "Summary 2",
 					ChapterPurpose: "transition",
 					StorylineRefs: []chapterplan.NormalizedReference{
-						{ID: uuid.New(), ProjectID: projectID, Label: "Storyline 1", Relation: "primary", Position: 0, Version: 1},
+						{ID: secondStorylineID, ProjectID: projectID, Label: "Storyline 1", Relation: "primary", Position: 0, Version: 1},
 					},
 					MaterialRefs:      []chapterplan.NormalizedReference{},
 					ForeshadowingRefs: []chapterplan.NormalizedReference{},

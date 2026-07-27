@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"io"
 
 	"github.com/local/ai-content-factory/apps/api/internal/workflowrun"
 )
@@ -41,7 +42,7 @@ func (c *RuntimeConsumer) ConsumeSucceededRun(ctx context.Context, run workflowr
 	var output NormalizedChapterPlanOutput
 	decoder := json.NewDecoder(bytes.NewReader(run.OutputPayload))
 	decoder.DisallowUnknownFields()
-	if decoder.Decode(&output) != nil || decoder.More() {
+	if decoder.Decode(&output) != nil || decoder.Decode(&struct{}{}) != io.EOF {
 		c.recordFailure(ctx, run, ConsumptionOutputValidationFailed, "output_validation_failed", "The runtime output is invalid.", "retry_run")
 		return ErrOutputValidationFailed
 	}

@@ -73,6 +73,8 @@ func TestPostgresCandidateIntegration(t *testing.T) {
 		Context: GenerationContextSnapshot{
 			InputDigest:   digest,
 			InputSnapshot: json.RawMessage(`{"generationMode":"full","target":{"startChapterNo":1,"endChapterNo":2,"requestedChapterCount":2}}`),
+			StorylineSnapshot: json.RawMessage(fmt.Sprintf(`{"available":[{"id":%q}],"materials":[{"materialId":%q}],"foreshadowings":[{"id":%q}]}`,
+				stID.String(), matID.String(), foreID.String())),
 		},
 		NormalizedOutput: NormalizedChapterPlanOutput{
 			ProjectID:           projectID,

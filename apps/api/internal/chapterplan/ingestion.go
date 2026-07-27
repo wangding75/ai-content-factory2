@@ -204,7 +204,11 @@ func ValidateNormalizedOutput(input IngestInput) error {
 				if ref.ProjectID != run.ProjectID {
 					return fmt.Errorf("%w: candidate %d reference projectId mismatch", ErrOutputValidationFailed, i)
 				}
-				if len(allowed[kind]) > 0 && !allowed[kind][ref.ID] {
+				// An empty frozen collection means that no references of this kind
+				// were approved for this run.  It must not become an implicit
+				// wildcard, otherwise a provider can introduce a current (but not
+				// frozen) material or foreshadowing after preflight.
+				if !allowed[kind][ref.ID] {
 					return fmt.Errorf("%w: candidate %d %s reference is not frozen", ErrOutputValidationFailed, i, kind)
 				}
 				if len(ref.Label) < 1 || len(ref.Label) > 160 {
