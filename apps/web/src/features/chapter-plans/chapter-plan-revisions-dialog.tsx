@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Icon } from "@/components/ui/icons";
 import { ApiError } from "@/lib/api";
 import {
@@ -40,32 +40,35 @@ export function ChapterPlanRevisionsDialog({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<ApiError | null>(null);
 
-  const loadRevisions = useCallback(async (signal?: AbortSignal) => {
-    setLoading(true);
-    setError(null);
-    try {
-      const envelope = await listChapterPlanRevisions(chapterPlanId, { limit: 50 }, { signal });
-      setRevisions(envelope.data.items);
-    } catch (cause) {
-      if (!signal?.aborted) {
-        setError(
-          cause instanceof ApiError
-            ? cause
-            : new ApiError("加载修订历史失败", 500),
-        );
-      }
-    } finally {
-      if (!signal?.aborted) {
-        setLoading(false);
-      }
-    }
+  useEffect(() => {
+    let cancelled = false;
+    const controller = new AbortController();
+
+    listChapterPlanRevisions(chapterPlanId, { limit: 50 }, { signal: controller.signal })
+      .then((envelope) => {
+        if (!cancelled) {
+          setRevisions(envelope.data.items);
+          setError(null);
+          setLoading(false);
+        }
+      })
+      .catch((cause) => {
+        if (!cancelled && !controller.signal.aborted) {
+          setError(
+            cause instanceof ApiError
+              ? cause
+              : new ApiError("加载修订历史失败", 500),
+          );
+          setLoading(false);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+      controller.abort();
+    };
   }, [chapterPlanId]);
 
-  useEffect(() => {
-    const controller = new AbortController();
-    void loadRevisions(controller.signal);
-    return () => controller.abort();
-  }, [loadRevisions]);
 
   return (
     <div

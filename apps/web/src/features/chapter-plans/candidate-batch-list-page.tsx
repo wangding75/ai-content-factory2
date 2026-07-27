@@ -86,10 +86,44 @@ export function CandidateBatchListPage({ projectId }: { projectId: string }) {
   );
 
   useEffect(() => {
+    let cancelled = false;
     const controller = new AbortController();
-    void loadBatches(controller.signal);
-    return () => controller.abort();
-  }, [loadBatches]);
+
+    const query: ListCandidateBatchesQuery = {
+      status: statusParam || undefined,
+      generationMode: modeParam || undefined,
+      sourceWorkflowRunId: sourceRunIdParam || undefined,
+      createdAtFrom: fromParam || undefined,
+      createdAtTo: toParam || undefined,
+      limit: limitParam,
+      offset: offsetParam,
+    };
+
+    listChapterPlanCandidateBatches(projectId, query, { signal: controller.signal })
+      .then((envelope) => {
+        if (!cancelled) {
+          setBatches(envelope.data.items);
+          setTotal(envelope.data.total);
+          setError(null);
+          setLoading(false);
+        }
+      })
+      .catch((cause) => {
+        if (!cancelled && !controller.signal.aborted) {
+          setError(
+            cause instanceof ApiError
+              ? cause
+              : new ApiError("加载候选批次列表失败", 500),
+          );
+          setLoading(false);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+      controller.abort();
+    };
+  }, [projectId, statusParam, modeParam, sourceRunIdParam, fromParam, toParam, limitParam, offsetParam]);
 
   return (
     <div className="chapter-plan-batch-list-page">
