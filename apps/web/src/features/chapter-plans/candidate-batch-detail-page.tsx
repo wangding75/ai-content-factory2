@@ -6,6 +6,8 @@ import { useCallback, useEffect, useState } from "react";
 import { Icon } from "@/components/ui/icons";
 import { ApiError } from "@/lib/api";
 import {
+  adoptChapterPlanCandidate,
+  discardChapterPlanCandidate,
   getChapterPlanCandidateBatch,
   listChapterPlanCandidates,
   type ChapterPlanCandidate,
@@ -22,8 +24,11 @@ import {
 } from "./chapter-plan-presentation";
 import { CandidateEditDrawer } from "./candidate-edit-drawer";
 import { CandidateCompareDialog } from "./candidate-compare-dialog";
-
-
+import {
+  BatchAbandonDialog,
+  BatchAdoptDialog,
+  StaleConflictDialog,
+} from "./candidate-action-dialogs";
 
 export function CandidateBatchDetailPage({ batchId }: { batchId: string }) {
   const router = useRouter();
@@ -41,9 +46,18 @@ export function CandidateBatchDetailPage({ batchId }: { batchId: string }) {
   const [batch, setBatch] = useState<ChapterPlanCandidateBatch | null>(null);
   const [candidates, setCandidates] = useState<ChapterPlanCandidate[]>([]);
   const [total, setTotal] = useState(0);
+  const [selected, setSelected] = useState<Record<string, ChapterPlanCandidate>>({});
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<ApiError | null>(null);
+  const [actionNotice, setActionNotice] = useState<string | null>(null);
+
+  // Modals & Drawers
+  const [editingCandidate, setEditingCandidate] = useState<ChapterPlanCandidate | null>(null);
+  const [comparingCandidateId, setComparingCandidateId] = useState<string | null>(null);
+  const [staleCandidate, setStaleCandidate] = useState<ChapterPlanCandidate | null>(null);
+  const [batchAdoptOpen, setBatchAdoptOpen] = useState(false);
+  const [batchAbandonOpen, setBatchAbandonOpen] = useState(false);
 
   const syncUrl = (newQuery: Record<string, string | number | undefined>) => {
     const params = new URLSearchParams(searchParams.toString());
@@ -103,6 +117,80 @@ export function CandidateBatchDetailPage({ batchId }: { batchId: string }) {
     return () => controller.abort();
   }, [loadData]);
 
+  const toggleSelect = (cand: ChapterPlanCandidate) => {
+    setSelected((prev) => {
+      const next = { ...prev };
+      if (next[cand.id]) {
+        delete next[cand.id];
+      } else {
+        next[cand.id] = cand;
+      }
+      return next;
+    });
+  };
+
+  // Single Candidate Adopt
+  const handleAdoptCandidate = async (cand: ChapterPlanCandidate) => {
+    setError(null);
+    setActionNotice(null);
+    try {
+      const idempotencyKey = `single-adopt-${cand.id}-${Date.now()}`;
+      const envelope = await adoptChapterPlanCandidate(
+        cand.id,
+        {
+          expectedCandidateVersion: cand.version,
+          expectedChapterPlanVersion: cand.baseChapterPlanVersion ?? null,
+        },
+        idempotencyKey,
+      );
+
+      if (envelope.data.outcome === "no_change") {
+        setActionNotice(`第 ${cand.chapterNo} 章候选与线上内容一致 (no_change)，未产生新 Revision。`);
+      } else {
+        setActionNotice(`第 ${cand.chapterNo} 章候选采用成功 (Revision r${envelope.data.revision.revisionNo})。`);
+      }
+
+      await loadData();
+    } catch (cause) {
+      if (cause instanceof ApiError) {
+        if (
+          cause.status === 409 ||
+          cause.message?.includes("stale") ||
+          cause.message?.includes("conflict")
+        ) {
+          setStaleCandidate(cand);
+        } else {
+          setError(cause);
+        }
+      } else {
+        setError(new ApiError("采用候选失败，请重试。", 500));
+      }
+    }
+  };
+
+  // Single Candidate Discard
+  const handleDiscardCandidate = async (cand: ChapterPlanCandidate) => {
+    setError(null);
+    setActionNotice(null);
+    try {
+      const idempotencyKey = `discard-${cand.id}-${Date.now()}`;
+      await discardChapterPlanCandidate(
+        cand.id,
+        { expectedCandidateVersion: cand.version },
+        idempotencyKey,
+      );
+
+      setActionNotice(`第 ${cand.chapterNo} 章候选已丢弃。`);
+      await loadData();
+    } catch (cause) {
+      if (cause instanceof ApiError) {
+        setError(cause);
+      } else {
+        setError(new ApiError("丢弃候选失败，请重试。", 500));
+      }
+    }
+  };
+
   if (loading && !batch) {
     return <div className="chapter-plans-skeleton card" />;
   }
@@ -120,8 +208,10 @@ export function CandidateBatchDetailPage({ batchId }: { batchId: string }) {
     );
   }
 
-  const [editingCandidate, setEditingCandidate] = useState<ChapterPlanCandidate | null>(null);
-  const [comparingCandidateId, setComparingCandidateId] = useState<string | null>(null);
+  const isBatchFinalized = batch?.status === "abandoned" || batch?.status === "adopted";
+  const selectedList = Object.values(selected).filter(
+    (cand) => cand.status === "pending" || cand.status === "stale",
+  );
 
   return (
     <div className="chapter-plan-batch-detail-page">
@@ -134,6 +224,26 @@ export function CandidateBatchDetailPage({ batchId }: { batchId: string }) {
           </p>
         </div>
         <div className="chapter-plans-actions">
+          {batch && !isBatchFinalized && (
+            <>
+              <button
+                type="button"
+                className="chapter-plan-button primary"
+                onClick={() => setBatchAdoptOpen(true)}
+                disabled={selectedList.length === 0}
+              >
+                批量采用已选候选 ({selectedList.length})
+              </button>
+              <button
+                type="button"
+                className="chapter-plan-button secondary"
+                onClick={() => setBatchAbandonOpen(true)}
+              >
+                放弃本批次
+              </button>
+            </>
+          )}
+
           {batch?.projectId ? (
             <Link
               className="chapter-plan-button secondary"
@@ -183,6 +293,20 @@ export function CandidateBatchDetailPage({ batchId }: { batchId: string }) {
             <b className="muted">{batch.discardedCount}</b>
           </article>
         </section>
+      )}
+
+      {/* Action Feedback Notice */}
+      {actionNotice && (
+        <div className="chapter-plan-status-banner success" style={{ marginBottom: 16 }}>
+          <Icon name="sparkles" size={18} />
+          <div>{actionNotice}</div>
+        </div>
+      )}
+
+      {error && (
+        <div className="chapter-plans-form-error" role="alert" style={{ marginBottom: 16 }}>
+          {error.message}
+        </div>
       )}
 
       {/* 6 项 Candidate 筛选与搜索 */}
@@ -241,12 +365,6 @@ export function CandidateBatchDetailPage({ batchId }: { batchId: string }) {
         </button>
       </section>
 
-      {error && (
-        <div className="chapter-plans-form-error" role="alert">
-          {error.message}
-        </div>
-      )}
-
       {/* Candidates List Table */}
       {!candidates.length ? (
         <section className="chapter-plans-empty">
@@ -257,6 +375,7 @@ export function CandidateBatchDetailPage({ batchId }: { batchId: string }) {
       ) : (
         <div className="chapter-plans-table" aria-live="polite">
           <div className="chapter-plan-row header">
+            <span>选择</span>
             <span>章节</span>
             <span>候选标题与摘要</span>
             <span>差异类型</span>
@@ -269,9 +388,21 @@ export function CandidateBatchDetailPage({ batchId }: { batchId: string }) {
           {candidates.map((cand) => {
             const snap = cand.currentSnapshot;
             const storylineNames = snap.storylineRefs.map((r) => r.label).join("、") || "—";
+            const isSelectable =
+              !isBatchFinalized && (cand.status === "pending" || cand.status === "stale");
+            const isFinalized = cand.status === "adopted" || cand.status === "discarded";
 
             return (
               <article key={cand.id} className="chapter-plan-row">
+                <span>
+                  <input
+                    type="checkbox"
+                    aria-label={`选择第 ${cand.chapterNo} 章候选`}
+                    checked={Boolean(selected[cand.id])}
+                    onChange={() => toggleSelect(cand)}
+                    disabled={!isSelectable}
+                  />
+                </span>
                 <b>第 {cand.chapterNo} 章</b>
                 <div>
                   <strong>{snap.title}</strong>
@@ -287,19 +418,38 @@ export function CandidateBatchDetailPage({ batchId }: { batchId: string }) {
                 <span>v{cand.version}</span>
                 <span>{storylineNames}</span>
                 <div className="candidate-action-buttons">
+                  {!isFinalized && !isBatchFinalized && (
+                    <>
+                      <button
+                        type="button"
+                        className="chapter-plan-edit-button primary"
+                        onClick={() => void handleAdoptCandidate(cand)}
+                      >
+                        采用
+                      </button>
+                      <button
+                        type="button"
+                        className="chapter-plan-edit-button secondary"
+                        onClick={() => void handleDiscardCandidate(cand)}
+                      >
+                        丢弃
+                      </button>
+                    </>
+                  )}
                   <button
                     type="button"
                     className="chapter-plan-edit-button"
                     onClick={() => setEditingCandidate(cand)}
+                    disabled={isFinalized}
                   >
-                    编辑候选
+                    编辑
                   </button>
                   <button
                     type="button"
                     className="chapter-plan-edit-button"
                     onClick={() => setComparingCandidateId(cand.id)}
                   >
-                    差异对比
+                    对比
                   </button>
                 </div>
               </article>
@@ -307,26 +457,6 @@ export function CandidateBatchDetailPage({ batchId }: { batchId: string }) {
           })}
         </div>
       )}
-
-      {editingCandidate && (
-        <CandidateEditDrawer
-          candidate={editingCandidate}
-          onClose={() => setEditingCandidate(null)}
-          onSaved={async () => {
-            setEditingCandidate(null);
-            await loadData();
-          }}
-          onRefreshCandidate={() => void loadData()}
-        />
-      )}
-
-      {comparingCandidateId && (
-        <CandidateCompareDialog
-          candidateId={comparingCandidateId}
-          onClose={() => setComparingCandidateId(null)}
-        />
-      )}
-
 
       {/* Pagination */}
       {total > limitParam && (
@@ -349,6 +479,62 @@ export function CandidateBatchDetailPage({ batchId }: { batchId: string }) {
             下一页
           </button>
         </footer>
+      )}
+
+      {/* Modals & Drawers */}
+      {editingCandidate && (
+        <CandidateEditDrawer
+          candidate={editingCandidate}
+          onClose={() => setEditingCandidate(null)}
+          onSaved={async () => {
+            setEditingCandidate(null);
+            await loadData();
+          }}
+          onRefreshCandidate={() => void loadData()}
+        />
+      )}
+
+      {comparingCandidateId && (
+        <CandidateCompareDialog
+          candidateId={comparingCandidateId}
+          onClose={() => setComparingCandidateId(null)}
+        />
+      )}
+
+      {batchAdoptOpen && batch && (
+        <BatchAdoptDialog
+          batch={batch}
+          selectedCandidates={selectedList}
+          onClose={() => setBatchAdoptOpen(false)}
+          onCompleted={() => {
+            setSelected({});
+            void loadData();
+          }}
+        />
+      )}
+
+      {batchAbandonOpen && batch && (
+        <BatchAbandonDialog
+          batch={batch}
+          onClose={() => setBatchAbandonOpen(false)}
+          onAbandoned={() => void loadData()}
+        />
+      )}
+
+      {staleCandidate && (
+        <StaleConflictDialog
+          candidate={staleCandidate}
+          onClose={() => setStaleCandidate(null)}
+          onRecompare={() => {
+            const candId = staleCandidate.id;
+            setStaleCandidate(null);
+            setComparingCandidateId(candId);
+          }}
+          onRefresh={() => {
+            setStaleCandidate(null);
+            void loadData();
+          }}
+        />
       )}
     </div>
   );

@@ -564,3 +564,194 @@ export function listChapterPlanRevisions(
     init,
   );
 }
+
+// --- FE-F4 Candidate Adoption & Lifecycle Contracts ---
+
+export interface AdoptChapterPlanCandidateRequest {
+  expectedCandidateVersion: number;
+  expectedChapterPlanVersion: number | null;
+}
+
+export interface AdoptChapterPlanCandidateAdoptedResult {
+  outcome: "adopted";
+  candidate: ChapterPlanCandidate;
+  chapterPlan: ChapterPlan;
+  revision: ChapterPlanRevision;
+  batch: ChapterPlanCandidateBatch;
+}
+
+export interface AdoptChapterPlanCandidateNoChangeResult {
+  outcome: "no_change";
+  candidate: ChapterPlanCandidate;
+  chapterPlan: ChapterPlan;
+  revision: null;
+  batch: ChapterPlanCandidateBatch;
+}
+
+export type AdoptChapterPlanCandidateResult =
+  | AdoptChapterPlanCandidateAdoptedResult
+  | AdoptChapterPlanCandidateNoChangeResult;
+
+export interface AdoptChapterPlanCandidateEnvelope {
+  data: AdoptChapterPlanCandidateResult;
+  request_id: string;
+}
+
+export interface DiscardChapterPlanCandidateRequest {
+  expectedCandidateVersion: number;
+  reason?: string | null;
+}
+
+export interface BulkAdoptChapterPlanCandidateItem {
+  candidateId: string;
+  expectedCandidateVersion: number;
+  expectedChapterPlanVersion: number | null;
+}
+
+export interface BulkAdoptChapterPlanCandidatesRequest {
+  expectedBatchVersion: number;
+  candidates: BulkAdoptChapterPlanCandidateItem[];
+}
+
+export interface BulkAdoptChapterPlanCandidateAdoptedResult {
+  candidateId: string;
+  outcome: "adopted";
+  candidate: ChapterPlanCandidate;
+  chapterPlan: ChapterPlan;
+  revision: ChapterPlanRevision;
+}
+
+export interface BulkAdoptChapterPlanCandidateNoChangeResult {
+  candidateId: string;
+  outcome: "no_change";
+  candidate: ChapterPlanCandidate;
+  chapterPlan: ChapterPlan;
+  revision: null;
+}
+
+export interface BulkAdoptChapterPlanCandidateStaleResult {
+  candidateId: string;
+  outcome: "stale";
+  candidate: ChapterPlanCandidate;
+  error: unknown;
+}
+
+export interface BulkAdoptChapterPlanCandidateConflictResult {
+  candidateId: string;
+  outcome: "conflict";
+  candidate: ChapterPlanCandidate;
+  error: unknown;
+}
+
+export interface BulkAdoptChapterPlanCandidateFailedResult {
+  candidateId: string;
+  outcome: "failed";
+  error: unknown;
+}
+
+export type BulkAdoptChapterPlanCandidateResult =
+  | BulkAdoptChapterPlanCandidateAdoptedResult
+  | BulkAdoptChapterPlanCandidateNoChangeResult
+  | BulkAdoptChapterPlanCandidateStaleResult
+  | BulkAdoptChapterPlanCandidateConflictResult
+  | BulkAdoptChapterPlanCandidateFailedResult;
+
+export interface BulkAdoptChapterPlanCandidatesResult {
+  items: BulkAdoptChapterPlanCandidateResult[];
+  batch: ChapterPlanCandidateBatch;
+}
+
+export interface BulkAdoptChapterPlanCandidatesEnvelope {
+  data: BulkAdoptChapterPlanCandidatesResult;
+  request_id: string;
+}
+
+export interface AbandonChapterPlanCandidateBatchRequest {
+  expectedBatchVersion: number;
+  reason?: string | null;
+  acknowledgeAdoptedChaptersRemain: true;
+}
+
+export function adoptChapterPlanCandidate(
+  candidateId: string,
+  payload: AdoptChapterPlanCandidateRequest,
+  idempotencyKey: string,
+  init?: ApiRequestInit,
+): Promise<AdoptChapterPlanCandidateEnvelope> {
+  return apiRequest<AdoptChapterPlanCandidateEnvelope>(
+    `/chapter-plan-candidates/${encodeURIComponent(candidateId)}/adopt`,
+    {
+      ...init,
+      method: "POST",
+      headers: {
+        ...init?.headers,
+        "Content-Type": "application/json",
+        "Idempotency-Key": idempotencyKey,
+      },
+      body: JSON.stringify(payload),
+    },
+  );
+}
+
+export function discardChapterPlanCandidate(
+  candidateId: string,
+  payload: DiscardChapterPlanCandidateRequest,
+  idempotencyKey: string,
+  init?: ApiRequestInit,
+): Promise<ChapterPlanCandidateEnvelope> {
+  return apiRequest<ChapterPlanCandidateEnvelope>(
+    `/chapter-plan-candidates/${encodeURIComponent(candidateId)}/discard`,
+    {
+      ...init,
+      method: "POST",
+      headers: {
+        ...init?.headers,
+        "Content-Type": "application/json",
+        "Idempotency-Key": idempotencyKey,
+      },
+      body: JSON.stringify(payload),
+    },
+  );
+}
+
+export function adoptChapterPlanCandidates(
+  batchId: string,
+  payload: BulkAdoptChapterPlanCandidatesRequest,
+  idempotencyKey: string,
+  init?: ApiRequestInit,
+): Promise<BulkAdoptChapterPlanCandidatesEnvelope> {
+  return apiRequest<BulkAdoptChapterPlanCandidatesEnvelope>(
+    `/chapter-plan-candidate-batches/${encodeURIComponent(batchId)}/adoptions`,
+    {
+      ...init,
+      method: "POST",
+      headers: {
+        ...init?.headers,
+        "Content-Type": "application/json",
+        "Idempotency-Key": idempotencyKey,
+      },
+      body: JSON.stringify(payload),
+    },
+  );
+}
+
+export function abandonChapterPlanCandidateBatch(
+  batchId: string,
+  payload: AbandonChapterPlanCandidateBatchRequest,
+  idempotencyKey: string,
+  init?: ApiRequestInit,
+): Promise<ChapterPlanCandidateBatchEnvelope> {
+  return apiRequest<ChapterPlanCandidateBatchEnvelope>(
+    `/chapter-plan-candidate-batches/${encodeURIComponent(batchId)}/abandon`,
+    {
+      ...init,
+      method: "POST",
+      headers: {
+        ...init?.headers,
+        "Content-Type": "application/json",
+        "Idempotency-Key": idempotencyKey,
+      },
+      body: JSON.stringify(payload),
+    },
+  );
+}
