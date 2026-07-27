@@ -406,3 +406,186 @@ func TestSummaryChangesToConsumedAfterRetry(t *testing.T) {
 		t.Fatalf("consumed retry summary error=%v", err)
 	}
 }
+
+func TestRuntimeConsumerRejectsTargetDriftWithoutWriting(t *testing.T) {
+	db, ctx := openIntegrationDB(t)
+	fixture := newFixture(t, ctx, db)
+	base := newRuntimeValidationInput(t, ctx, db, fixture)
+
+	cases := []struct {
+		name   string
+		mutate func(*NormalizedChapterPlanOutput)
+	}{
+		{"generation_mode", func(output *NormalizedChapterPlanOutput) { output.GenerationMode = "range" }},
+		{"start_chapter_no", func(output *NormalizedChapterPlanOutput) { output.Target.StartChapterNo = 2 }},
+		{"end_chapter_no", func(output *NormalizedChapterPlanOutput) { output.Target.EndChapterNo = 3 }},
+		{"requested_chapter_count", func(output *NormalizedChapterPlanOutput) { output.Target.RequestedChapterCount = 1 }},
+		{"chapter_number_outside_frozen_range", func(output *NormalizedChapterPlanOutput) { output.Candidates[0].ChapterNo = 3 }},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			input := base
+			input.Run.RunID = uuid.New()
+			input.NormalizedOutput.SourceWorkflowRunID = input.Run.RunID
+			tc.mutate(&input.NormalizedOutput)
+			run := seedRuntimeValidationRun(t, ctx, db, input)
+			assertRuntimeValidationFailureZeroWrites(t, ctx, db, run)
+		})
+	}
+}
+
+func TestRuntimeConsumerRejectsUnfrozenReferencesWithoutWriting(t *testing.T) {
+	db, ctx := openIntegrationDB(t)
+	fixture := newFixture(t, ctx, db)
+	base := newRuntimeValidationInput(t, ctx, db, fixture)
+
+	cases := []struct {
+		name   string
+		mutate func(*NormalizedChapterPlanOutput)
+	}{
+		{"storyline", func(output *NormalizedChapterPlanOutput) {
+			output.Candidates[0].StorylineRefs[0].ID = fixture.storylines[1]
+		}},
+		{"material", func(output *NormalizedChapterPlanOutput) {
+			output.Candidates[0].MaterialRefs[0].ID = fixture.materials[1]
+		}},
+		{"foreshadowing", func(output *NormalizedChapterPlanOutput) {
+			output.Candidates[0].ForeshadowingRefs[0].ID = fixture.foreshadowings[1]
+		}},
+		{"one_of_multiple_references", func(output *NormalizedChapterPlanOutput) {
+			output.Candidates[0].StorylineRefs = append(output.Candidates[0].StorylineRefs, NormalizedReference{ID: fixture.storylines[1], ProjectID: fixture.project, Label: "unfrozen", Relation: "secondary", Position: 1, Version: 1})
+		}},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			input := base
+			input.Run.RunID = uuid.New()
+			input.NormalizedOutput.SourceWorkflowRunID = input.Run.RunID
+			tc.mutate(&input.NormalizedOutput)
+			run := seedRuntimeValidationRun(t, ctx, db, input)
+			assertRuntimeValidationFailureZeroWrites(t, ctx, db, run)
+		})
+	}
+}
+
+func TestRuntimeConsumerRejectsCrossProjectReferencesWithoutWriting(t *testing.T) {
+	db, ctx := openIntegrationDB(t)
+	fixture := newFixture(t, ctx, db)
+	base := newRuntimeValidationInput(t, ctx, db, fixture)
+	foreignStoryline, foreignMaterial, foreignForeshadowing := seedForeignReferences(t, ctx, db, fixture.otherProject)
+
+	cases := []struct {
+		name   string
+		mutate func(*NormalizedChapterPlanOutput)
+	}{
+		{"storyline", func(output *NormalizedChapterPlanOutput) {
+			output.Candidates[0].StorylineRefs[0] = NormalizedReference{ID: foreignStoryline, ProjectID: fixture.otherProject, Label: "foreign", Relation: "primary", Position: 0, Version: 1}
+		}},
+		{"material", func(output *NormalizedChapterPlanOutput) {
+			output.Candidates[0].MaterialRefs[0] = NormalizedReference{ID: foreignMaterial, ProjectID: fixture.otherProject, Label: "foreign", Relation: "material_ref", Position: 0, Version: 1}
+		}},
+		{"foreshadowing", func(output *NormalizedChapterPlanOutput) {
+			output.Candidates[0].ForeshadowingRefs[0] = NormalizedReference{ID: foreignForeshadowing, ProjectID: fixture.otherProject, Label: "foreign", Relation: "foreshadowing_ref", Position: 0, Version: 1}
+		}},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			input := base
+			input.Run.RunID = uuid.New()
+			input.NormalizedOutput.SourceWorkflowRunID = input.Run.RunID
+			tc.mutate(&input.NormalizedOutput)
+			run := seedRuntimeValidationRun(t, ctx, db, input)
+			assertRuntimeValidationFailureZeroWrites(t, ctx, db, run)
+		})
+	}
+}
+
+func newRuntimeValidationInput(t *testing.T, ctx context.Context, db *pgxpool.Pool, fixture fixture) IngestInput {
+	t.Helper()
+	digest := "abcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcd"
+	return IngestInput{
+		Run: RunReference{ProjectID: fixture.project},
+		Context: GenerationContextSnapshot{
+			InputDigest:       digest,
+			InputSnapshot:     json.RawMessage(`{"generationMode":"full","target":{"startChapterNo":1,"endChapterNo":2,"requestedChapterCount":2}}`),
+			StorylineSnapshot: json.RawMessage(fmt.Sprintf(`{"available":[{"id":%q}],"materials":[{"materialId":%q}],"foreshadowings":[{"id":%q}]}`, fixture.storylines[0].String(), fixture.materials[0].String(), fixture.foreshadowings[0].String())),
+		},
+		NormalizedOutput: NormalizedChapterPlanOutput{
+			ProjectID: fixture.project, GenerationMode: "full", Target: BatchTarget{StartChapterNo: 1, EndChapterNo: 2, RequestedChapterCount: 2},
+			Candidates: []NormalizedCandidate{
+				{ChapterNo: 1, Title: "One", Summary: "one", ChapterPurpose: "plot_advance", StorylineRefs: []NormalizedReference{{ID: fixture.storylines[0], ProjectID: fixture.project, Label: "story", Relation: "primary", Version: 1}}, MaterialRefs: []NormalizedReference{{ID: fixture.materials[0], ProjectID: fixture.project, Label: "material", Relation: "material_ref", Version: 1}}, ForeshadowingRefs: []NormalizedReference{{ID: fixture.foreshadowings[0], ProjectID: fixture.project, Label: "foreshadowing", Relation: "foreshadowing_ref", Version: 1}}},
+				{ChapterNo: 2, Title: "Two", Summary: "two", ChapterPurpose: "transition", StorylineRefs: []NormalizedReference{{ID: fixture.storylines[0], ProjectID: fixture.project, Label: "story", Relation: "primary", Version: 1}}},
+			},
+			Metadata: OutputMetadata{InputDigest: digest, GeneratedAt: time.Now().UTC().Format(time.RFC3339), SafeProviderSummary: "safe provider summary"},
+		},
+	}
+}
+
+func seedRuntimeValidationRun(t *testing.T, ctx context.Context, db *pgxpool.Pool, input IngestInput) workflowrun.WorkflowRun {
+	t.Helper()
+	connectionID, configurationID := uuid.New(), uuid.New()
+	if _, err := db.Exec(ctx, "INSERT INTO workflow_connections(id,name,connection_type,base_url,auth_type,timeout_seconds,type_config) VALUES($1,$2,'n8n','http://localhost:5678','api_key',30,'{}')", connectionID, "runtime validation connection "+connectionID.String()); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := db.Exec(ctx, "INSERT INTO workflow_configurations(id,name,connection_id,applicable_stages,type_config,input_contract_version,output_contract_version) VALUES($1,$2,$3,'[\"chapter_planning\"]','{}','v1','v1')", configurationID, "runtime validation configuration "+configurationID.String(), connectionID); err != nil {
+		t.Fatal(err)
+	}
+	payload, err := json.Marshal(map[string]any{"generationContext": input.Context})
+	if err != nil {
+		t.Fatal(err)
+	}
+	output, err := json.Marshal(input.NormalizedOutput)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := db.Exec(ctx, `INSERT INTO workflow_run_records(id,run_number,project_id,stage,workflow_configuration_id,trigger_source,status,configuration_snapshot,input_payload,output_payload,started_at,finished_at,created_at,updated_at) VALUES($1,$2,$3,'chapter_planning',$4,'manual','succeeded','{}',$5,$6,NOW(),NOW(),NOW(),NOW())`, input.Run.RunID, "runtime-validation-"+input.Run.RunID.String(), input.Run.ProjectID, configurationID, payload, output); err != nil {
+		t.Fatal(err)
+	}
+	return workflowrun.WorkflowRun{ID: input.Run.RunID, ProjectID: input.Run.ProjectID, Stage: "chapter_planning", Status: workflowrun.StatusSucceeded, InputPayload: payload, OutputPayload: output}
+}
+
+func assertRuntimeValidationFailureZeroWrites(t *testing.T, ctx context.Context, db *pgxpool.Pool, run workflowrun.WorkflowRun) {
+	t.Helper()
+	consumer := NewRuntimeConsumer(NewResultIngestor(db), NewConsumptionRepository(db))
+	if err := consumer.ConsumeSucceededRun(ctx, run); !errors.Is(err, ErrOutputValidationFailed) {
+		t.Fatalf("ConsumeSucceededRun error=%v, want output validation failure", err)
+	}
+	consumption, err := NewConsumptionRepository(db).Get(ctx, run.ID)
+	if err != nil || consumption.Status != ConsumptionOutputValidationFailed || consumption.CandidateBatchID != nil {
+		t.Fatalf("consumption=%+v err=%v", consumption, err)
+	}
+	var batches, candidates, revisions int
+	if err := db.QueryRow(ctx, "SELECT COUNT(*) FROM chapter_plan_candidate_batches WHERE project_id=$1", run.ProjectID).Scan(&batches); err != nil {
+		t.Fatal(err)
+	}
+	if err := db.QueryRow(ctx, "SELECT COUNT(*) FROM chapter_plan_candidates WHERE project_id=$1", run.ProjectID).Scan(&candidates); err != nil {
+		t.Fatal(err)
+	}
+	if err := db.QueryRow(ctx, "SELECT COUNT(*) FROM chapter_plan_revisions WHERE project_id=$1", run.ProjectID).Scan(&revisions); err != nil {
+		t.Fatal(err)
+	}
+	if batches != 0 || candidates != 0 || revisions != 0 {
+		t.Fatalf("validation failure wrote batches=%d candidates=%d revisions=%d", batches, candidates, revisions)
+	}
+}
+
+func seedForeignReferences(t *testing.T, ctx context.Context, db *pgxpool.Pool, projectID uuid.UUID) (uuid.UUID, uuid.UUID, uuid.UUID) {
+	t.Helper()
+	storylineID, materialID, foreshadowingID := uuid.New(), uuid.New(), uuid.New()
+	if _, err := db.Exec(ctx, "INSERT INTO storylines(id,project_id,type,relation,name,status,sort_order,created_by) VALUES($1,$2,'main','root','foreign','active',0,'test')", storylineID, projectID); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := db.Exec(ctx, "INSERT INTO materials(id,type,name,created_by) VALUES($1,'reference','foreign','test')", materialID); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := db.Exec(ctx, "INSERT INTO project_material_usages(id,project_id,material_id,usage_type,created_by) VALUES($1,$2,$3,'reference','test')", uuid.New(), projectID, materialID); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := db.Exec(ctx, "INSERT INTO foreshadowings(id,project_id,title,priority,status,created_by) VALUES($1,$2,'foreign','medium','planned','test')", foreshadowingID, projectID); err != nil {
+		t.Fatal(err)
+	}
+	return storylineID, materialID, foreshadowingID
+}
