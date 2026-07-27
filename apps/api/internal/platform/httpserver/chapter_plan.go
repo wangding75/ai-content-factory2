@@ -33,6 +33,10 @@ type chapterPlanApplication interface {
 	UpdateCandidate(context.Context, chapterplan.UpdateCandidateCommand) (chapterplan.Candidate, error)
 	CompareCandidate(context.Context, uuid.UUID) (chapterplan.CandidateComparison, error)
 	RecompareCandidate(context.Context, chapterplan.RecompareCandidateCommand) (chapterplan.CandidateComparison, error)
+	AdoptCandidate(context.Context, chapterplan.AdoptCandidateCommand) (chapterplan.AdoptCandidateResult, error)
+	BulkAdoptCandidates(context.Context, chapterplan.BulkAdoptCommand) (chapterplan.BulkAdoptResult, error)
+	DiscardCandidate(context.Context, chapterplan.DiscardCandidateCommand) (chapterplan.Candidate, error)
+	AbandonBatch(context.Context, chapterplan.AbandonBatchCommand) (chapterplan.CandidateBatch, error)
 }
 
 type chapterPlanStorylineRefResponse struct {
@@ -98,6 +102,10 @@ func registerChapterPlanRoutes(mux *http.ServeMux, service chapterPlanApplicatio
 	mux.HandleFunc("PATCH /api/v1/chapter-plan-candidates/{candidateId}", updateCandidateHandler(service))
 	mux.HandleFunc("GET /api/v1/chapter-plan-candidates/{candidateId}/compare", compareCandidateHandler(service))
 	mux.HandleFunc("POST /api/v1/chapter-plan-candidates/{candidateId}/recompare", recompareCandidateHandler(service))
+	mux.HandleFunc("POST /api/v1/chapter-plan-candidates/{candidateId}/adopt", adoptCandidateHandler(service))
+	mux.HandleFunc("POST /api/v1/chapter-plan-candidate-batches/{batchId}/adoptions", bulkAdoptCandidatesHandler(service))
+	mux.HandleFunc("POST /api/v1/chapter-plan-candidates/{candidateId}/discard", discardCandidateHandler(service))
+	mux.HandleFunc("POST /api/v1/chapter-plan-candidate-batches/{batchId}/abandon", abandonBatchHandler(service))
 }
 
 func listChapterPlansHandler(service chapterPlanApplication) http.HandlerFunc {
@@ -257,6 +265,12 @@ func chapterPlanServiceError(w http.ResponseWriter, r *http.Request, err error) 
 		writeError(w, r, 409, "invalid_candidate_state", "candidate state is invalid for mutation", map[string]any{})
 	case errors.Is(err, chapterplan.ErrStaleCandidate):
 		writeError(w, r, 409, "stale_candidate", "candidate baseline is stale", map[string]any{})
+	case errors.Is(err, chapterplan.ErrBatchAlreadyFinalized):
+		writeError(w, r, 409, "batch_already_finalized", "batch is already finalized", map[string]any{})
+	case errors.Is(err, chapterplan.ErrIdempotencyKeyReused):
+		writeError(w, r, 409, "idempotency_key_reused_with_different_payload", "idempotency key reused with different payload", map[string]any{})
+	case errors.Is(err, chapterplan.ErrRevisionSequenceConflict):
+		writeError(w, r, 409, "revision_sequence_conflict", "revision sequence conflict", map[string]any{})
 	case errors.Is(err, chapterplan.ErrInvalidState), errors.Is(err, chapterplan.ErrVersionConflict):
 		writeError(w, r, 409, "version_conflict", "chapter plan version conflict", map[string]any{})
 	case errors.Is(err, chapterplan.ErrValidation), errors.Is(err, chapterplan.ErrProjectMismatch), errors.Is(err, chapterplan.ErrInvalidReference):
@@ -511,6 +525,166 @@ func recompareCandidateHandler(service chapterPlanApplication) http.HandlerFunc 
 			CandidateID:              candidateID,
 			ExpectedCandidateVersion: req.ExpectedCandidateVersion,
 			ActorID:                  "system",
+		})
+		if err != nil {
+			chapterPlanServiceError(w, r, err)
+			return
+		}
+		writeJSON(w, r, http.StatusOK, res)
+	}
+}
+
+type adoptCandidateRequest struct {
+	ExpectedCandidateVersion   int  `json:"expectedCandidateVersion"`
+	ExpectedChapterPlanVersion *int `json:"expectedChapterPlanVersion"`
+}
+
+type discardCandidateRequest struct {
+	ExpectedCandidateVersion int     `json:"expectedCandidateVersion"`
+	Reason                   *string `json:"reason"`
+}
+
+type bulkAdoptCandidateItemRequest struct {
+	CandidateID                uuid.UUID `json:"candidateId"`
+	ExpectedCandidateVersion   int       `json:"expectedCandidateVersion"`
+	ExpectedChapterPlanVersion *int      `json:"expectedChapterPlanVersion"`
+}
+
+type bulkAdoptRequest struct {
+	ExpectedBatchVersion int                             `json:"expectedBatchVersion"`
+	Candidates           []bulkAdoptCandidateItemRequest `json:"candidates"`
+}
+
+type abandonBatchRequest struct {
+	ExpectedBatchVersion             int     `json:"expectedBatchVersion"`
+	Reason                           *string `json:"reason"`
+	AcknowledgeAdoptedChaptersRemain bool    `json:"acknowledgeAdoptedChaptersRemain"`
+}
+
+func adoptCandidateHandler(service chapterPlanApplication) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		candidateID, err := uuid.Parse(r.PathValue("candidateId"))
+		if err != nil {
+			writeError(w, r, http.StatusBadRequest, "invalid_uuid", "candidateId must be a UUID", map[string]any{})
+			return
+		}
+		var req adoptCandidateRequest
+		if err := decodeBody(r, &req); err != nil || req.ExpectedCandidateVersion <= 0 {
+			writeError(w, r, http.StatusBadRequest, "validation_error", "expectedCandidateVersion is required", map[string]any{})
+			return
+		}
+		key := r.Header.Get("Idempotency-Key")
+		if key == "" {
+			key = "default-key"
+		}
+		res, err := service.AdoptCandidate(r.Context(), chapterplan.AdoptCandidateCommand{
+			CandidateID:                candidateID,
+			ExpectedCandidateVersion:   req.ExpectedCandidateVersion,
+			ExpectedChapterPlanVersion: req.ExpectedChapterPlanVersion,
+			IdempotencyKey:             key,
+			ActorID:                    "system",
+		})
+		if err != nil {
+			chapterPlanServiceError(w, r, err)
+			return
+		}
+		writeJSON(w, r, http.StatusOK, res)
+	}
+}
+
+func bulkAdoptCandidatesHandler(service chapterPlanApplication) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		batchID, err := uuid.Parse(r.PathValue("batchId"))
+		if err != nil {
+			writeError(w, r, http.StatusBadRequest, "invalid_uuid", "batchId must be a UUID", map[string]any{})
+			return
+		}
+		var req bulkAdoptRequest
+		if err := decodeBody(r, &req); err != nil || req.ExpectedBatchVersion <= 0 || len(req.Candidates) == 0 {
+			writeError(w, r, http.StatusBadRequest, "validation_error", "expectedBatchVersion and candidates are required", map[string]any{})
+			return
+		}
+		key := r.Header.Get("Idempotency-Key")
+		if key == "" {
+			key = "default-key"
+		}
+		items := make([]chapterplan.BulkAdoptCandidateItemCommand, len(req.Candidates))
+		for i, c := range req.Candidates {
+			items[i] = chapterplan.BulkAdoptCandidateItemCommand{
+				CandidateID:                c.CandidateID,
+				ExpectedCandidateVersion:   c.ExpectedCandidateVersion,
+				ExpectedChapterPlanVersion: c.ExpectedChapterPlanVersion,
+			}
+		}
+		res, err := service.BulkAdoptCandidates(r.Context(), chapterplan.BulkAdoptCommand{
+			BatchID:              batchID,
+			ExpectedBatchVersion: req.ExpectedBatchVersion,
+			Candidates:           items,
+			IdempotencyKey:       key,
+			ActorID:              "system",
+		})
+		if err != nil {
+			chapterPlanServiceError(w, r, err)
+			return
+		}
+		writeJSON(w, r, http.StatusOK, res)
+	}
+}
+
+func discardCandidateHandler(service chapterPlanApplication) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		candidateID, err := uuid.Parse(r.PathValue("candidateId"))
+		if err != nil {
+			writeError(w, r, http.StatusBadRequest, "invalid_uuid", "candidateId must be a UUID", map[string]any{})
+			return
+		}
+		var req discardCandidateRequest
+		if err := decodeBody(r, &req); err != nil || req.ExpectedCandidateVersion <= 0 {
+			writeError(w, r, http.StatusBadRequest, "validation_error", "expectedCandidateVersion is required", map[string]any{})
+			return
+		}
+		key := r.Header.Get("Idempotency-Key")
+		if key == "" {
+			key = "default-key"
+		}
+		res, err := service.DiscardCandidate(r.Context(), chapterplan.DiscardCandidateCommand{
+			CandidateID:              candidateID,
+			ExpectedCandidateVersion: req.ExpectedCandidateVersion,
+			Reason:                   req.Reason,
+			IdempotencyKey:           key,
+			ActorID:                  "system",
+		})
+		if err != nil {
+			chapterPlanServiceError(w, r, err)
+			return
+		}
+		writeJSON(w, r, http.StatusOK, res)
+	}
+}
+
+func abandonBatchHandler(service chapterPlanApplication) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		batchID, err := uuid.Parse(r.PathValue("batchId"))
+		if err != nil {
+			writeError(w, r, http.StatusBadRequest, "invalid_uuid", "batchId must be a UUID", map[string]any{})
+			return
+		}
+		var req abandonBatchRequest
+		if err := decodeBody(r, &req); err != nil || req.ExpectedBatchVersion <= 0 || !req.AcknowledgeAdoptedChaptersRemain {
+			writeError(w, r, http.StatusBadRequest, "validation_error", "expectedBatchVersion and acknowledgeAdoptedChaptersRemain=true are required", map[string]any{})
+			return
+		}
+		key := r.Header.Get("Idempotency-Key")
+		if key == "" {
+			key = "default-key"
+		}
+		res, err := service.AbandonBatch(r.Context(), chapterplan.AbandonBatchCommand{
+			BatchID:                          batchID,
+			ExpectedBatchVersion:             req.ExpectedBatchVersion,
+			Reason:                           req.Reason,
+			AcknowledgeAdoptedChaptersRemain: req.AcknowledgeAdoptedChaptersRemain,
+			IdempotencyKey:                   key,
+			ActorID:                          "system",
 		})
 		if err != nil {
 			chapterPlanServiceError(w, r, err)

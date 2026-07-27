@@ -103,6 +103,18 @@ func (f *fakeStore) CompareCandidate(_ context.Context, _ uuid.UUID) (CandidateC
 func (f *fakeStore) RecompareCandidate(_ context.Context, _ RecompareCandidateCommand) (CandidateComparison, error) {
 	return CandidateComparison{}, nil
 }
+func (f *fakeStore) AdoptCandidate(_ context.Context, _ AdoptCandidateCommand) (AdoptCandidateResult, error) {
+	return AdoptCandidateResult{}, nil
+}
+func (f *fakeStore) BulkAdoptCandidates(_ context.Context, _ BulkAdoptCommand) (BulkAdoptResult, error) {
+	return BulkAdoptResult{}, nil
+}
+func (f *fakeStore) DiscardCandidate(_ context.Context, _ DiscardCandidateCommand) (Candidate, error) {
+	return Candidate{}, nil
+}
+func (f *fakeStore) AbandonBatch(_ context.Context, _ AbandonBatchCommand) (CandidateBatch, error) {
+	return CandidateBatch{}, nil
+}
 func (f *fakeStore) Confirm(_ context.Context, s []Selection) ([]Plan, error) {
 	f.confirms++
 	f.confirmed = slices.Clone(s)

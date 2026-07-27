@@ -131,6 +131,43 @@ func (m *candidateMockApp) RecompareCandidate(ctx context.Context, cmd chapterpl
 	return chapterplan.CandidateComparison{}, chapterplan.ErrCandidateNotFound
 }
 
+func (m *candidateMockApp) AdoptCandidate(ctx context.Context, cmd chapterplan.AdoptCandidateCommand) (chapterplan.AdoptCandidateResult, error) {
+	for i := range m.candidates {
+		if m.candidates[i].ID == cmd.CandidateID {
+			m.candidates[i].Status = "adopted"
+			m.candidates[i].Version++
+			return chapterplan.AdoptCandidateResult{Outcome: "adopted", Candidate: m.candidates[i]}, nil
+		}
+	}
+	return chapterplan.AdoptCandidateResult{}, chapterplan.ErrCandidateNotFound
+}
+
+func (m *candidateMockApp) BulkAdoptCandidates(ctx context.Context, cmd chapterplan.BulkAdoptCommand) (chapterplan.BulkAdoptResult, error) {
+	return chapterplan.BulkAdoptResult{}, nil
+}
+
+func (m *candidateMockApp) DiscardCandidate(ctx context.Context, cmd chapterplan.DiscardCandidateCommand) (chapterplan.Candidate, error) {
+	for i := range m.candidates {
+		if m.candidates[i].ID == cmd.CandidateID {
+			m.candidates[i].Status = "discarded"
+			m.candidates[i].Version++
+			return m.candidates[i], nil
+		}
+	}
+	return chapterplan.Candidate{}, chapterplan.ErrCandidateNotFound
+}
+
+func (m *candidateMockApp) AbandonBatch(ctx context.Context, cmd chapterplan.AbandonBatchCommand) (chapterplan.CandidateBatch, error) {
+	for i := range m.batches {
+		if m.batches[i].ID == cmd.BatchID {
+			m.batches[i].Status = "abandoned"
+			m.batches[i].Version++
+			return m.batches[i], nil
+		}
+	}
+	return chapterplan.CandidateBatch{}, chapterplan.ErrBatchNotFound
+}
+
 func TestChapterPlanCandidateHTTPContract(t *testing.T) {
 	projectID := uuid.New()
 	batchID := uuid.New()
@@ -146,6 +183,7 @@ func TestChapterPlanCandidateHTTPContract(t *testing.T) {
 				GenerationMode:      "full",
 				Status:              "ready",
 				CandidateCount:      1,
+				Version:             1,
 				CreatedAt:           time.Now(),
 				UpdatedAt:           time.Now(),
 			},
@@ -237,7 +275,29 @@ func TestChapterPlanCandidateHTTPContract(t *testing.T) {
 		t.Errorf("expected 200 for recompare candidate, got %d: %s", w.Code, w.Body.String())
 	}
 
-	// 8. List Revisions
+	// 8. Adopt Candidate
+	adoptBody := `{"expectedCandidateVersion":3}`
+	req = httptest.NewRequest("POST", "/api/v1/chapter-plan-candidates/"+candidateID.String()+"/adopt", strings.NewReader(adoptBody))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Idempotency-Key", "test-adopt-key")
+	w = httptest.NewRecorder()
+	server.Handler().ServeHTTP(w, req)
+	if w.Code != http.StatusOK {
+		t.Errorf("expected 200 for adopt candidate, got %d: %s", w.Code, w.Body.String())
+	}
+
+	// 9. Abandon Batch
+	abandonBody := `{"expectedBatchVersion":1,"acknowledgeAdoptedChaptersRemain":true}`
+	req = httptest.NewRequest("POST", "/api/v1/chapter-plan-candidate-batches/"+batchID.String()+"/abandon", strings.NewReader(abandonBody))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Idempotency-Key", "test-abandon-key")
+	w = httptest.NewRecorder()
+	server.Handler().ServeHTTP(w, req)
+	if w.Code != http.StatusOK {
+		t.Errorf("expected 200 for abandon batch, got %d: %s", w.Code, w.Body.String())
+	}
+
+	// 10. List Revisions
 	req = httptest.NewRequest("GET", "/api/v1/chapter-plans/"+planID.String()+"/revisions", nil)
 	w = httptest.NewRecorder()
 	server.Handler().ServeHTTP(w, req)
@@ -245,7 +305,7 @@ func TestChapterPlanCandidateHTTPContract(t *testing.T) {
 		t.Errorf("expected 200 for list revisions, got %d: %s", w.Code, w.Body.String())
 	}
 
-	// 9. Get Summary
+	// 11. Get Summary
 	req = httptest.NewRequest("GET", "/api/v1/projects/"+projectID.String()+"/chapter-planning-summary", nil)
 	w = httptest.NewRecorder()
 	server.Handler().ServeHTTP(w, req)

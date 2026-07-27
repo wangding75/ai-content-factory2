@@ -82,6 +82,18 @@ func (f *fakeChapterPlanApplication) CompareCandidate(_ context.Context, _ uuid.
 func (f *fakeChapterPlanApplication) RecompareCandidate(_ context.Context, _ chapterplan.RecompareCandidateCommand) (chapterplan.CandidateComparison, error) {
 	return chapterplan.CandidateComparison{}, nil
 }
+func (f *fakeChapterPlanApplication) AdoptCandidate(_ context.Context, _ chapterplan.AdoptCandidateCommand) (chapterplan.AdoptCandidateResult, error) {
+	return chapterplan.AdoptCandidateResult{}, nil
+}
+func (f *fakeChapterPlanApplication) BulkAdoptCandidates(_ context.Context, _ chapterplan.BulkAdoptCommand) (chapterplan.BulkAdoptResult, error) {
+	return chapterplan.BulkAdoptResult{}, nil
+}
+func (f *fakeChapterPlanApplication) DiscardCandidate(_ context.Context, _ chapterplan.DiscardCandidateCommand) (chapterplan.Candidate, error) {
+	return chapterplan.Candidate{}, nil
+}
+func (f *fakeChapterPlanApplication) AbandonBatch(_ context.Context, _ chapterplan.AbandonBatchCommand) (chapterplan.CandidateBatch, error) {
+	return chapterplan.CandidateBatch{}, nil
+}
 
 func chapterPlanHTTPValue(projectID uuid.UUID) chapterplan.Plan {
 	now := time.Date(2026, 7, 15, 1, 2, 3, 456000000, time.UTC)

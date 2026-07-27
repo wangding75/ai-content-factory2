@@ -45,6 +45,10 @@ type store interface {
 	UpdateCandidate(context.Context, UpdateCandidateCommand) (Candidate, error)
 	CompareCandidate(context.Context, uuid.UUID) (CandidateComparison, error)
 	RecompareCandidate(context.Context, RecompareCandidateCommand) (CandidateComparison, error)
+	AdoptCandidate(context.Context, AdoptCandidateCommand) (AdoptCandidateResult, error)
+	BulkAdoptCandidates(context.Context, BulkAdoptCommand) (BulkAdoptResult, error)
+	DiscardCandidate(context.Context, DiscardCandidateCommand) (Candidate, error)
+	AbandonBatch(context.Context, AbandonBatchCommand) (CandidateBatch, error)
 }
 type projectReader interface {
 	Get(context.Context, uuid.UUID) (project.Project, error)
@@ -589,6 +593,38 @@ func (s *Service) RecompareCandidate(ctx context.Context, cmd RecompareCandidate
 	return cmp, nil
 }
 
+func (s *Service) AdoptCandidate(ctx context.Context, cmd AdoptCandidateCommand) (AdoptCandidateResult, error) {
+	res, err := s.plans.AdoptCandidate(ctx, cmd)
+	if err != nil {
+		return AdoptCandidateResult{}, mapError(err)
+	}
+	return res, nil
+}
+
+func (s *Service) BulkAdoptCandidates(ctx context.Context, cmd BulkAdoptCommand) (BulkAdoptResult, error) {
+	res, err := s.plans.BulkAdoptCandidates(ctx, cmd)
+	if err != nil {
+		return BulkAdoptResult{}, mapError(err)
+	}
+	return res, nil
+}
+
+func (s *Service) DiscardCandidate(ctx context.Context, cmd DiscardCandidateCommand) (Candidate, error) {
+	c, err := s.plans.DiscardCandidate(ctx, cmd)
+	if err != nil {
+		return Candidate{}, mapError(err)
+	}
+	return c, nil
+}
+
+func (s *Service) AbandonBatch(ctx context.Context, cmd AbandonBatchCommand) (CandidateBatch, error) {
+	b, err := s.plans.AbandonBatch(ctx, cmd)
+	if err != nil {
+		return CandidateBatch{}, mapError(err)
+	}
+	return b, nil
+}
+
 func mapError(err error) error {
 	if err == nil {
 		return nil
@@ -606,6 +642,12 @@ func mapError(err error) error {
 		return ErrInvalidCandidateState
 	case errors.Is(err, ErrStaleCandidate):
 		return ErrStaleCandidate
+	case errors.Is(err, ErrBatchAlreadyFinalized):
+		return ErrBatchAlreadyFinalized
+	case errors.Is(err, ErrIdempotencyKeyReused):
+		return ErrIdempotencyKeyReused
+	case errors.Is(err, ErrRevisionSequenceConflict):
+		return ErrRevisionSequenceConflict
 	case errors.Is(err, ErrVersionConflict):
 		return ErrVersionConflict
 	case errors.Is(err, ErrChapterNoConflict):
