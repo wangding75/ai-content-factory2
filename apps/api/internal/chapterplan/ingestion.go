@@ -226,23 +226,52 @@ func validPurpose(p string) bool {
 }
 
 func (ing *ResultIngestor) Ingest(ctx context.Context, input IngestInput) (CandidateBatch, error) {
-	if err := ValidateNormalizedOutput(input); err != nil {
-		return CandidateBatch{}, err
-	}
-
 	tx, err := ing.pool.Begin(ctx)
 	if err != nil {
 		return CandidateBatch{}, fmt.Errorf("%w: begin tx failed: %v", ErrIngestionTransaction, err)
 	}
 	defer tx.Rollback(ctx)
 
+	// Acquire advisory transaction lock on RunID to serialize concurrent ingestion requests
+	runLockID := advisoryLockID("workflow_run", input.Run.RunID.String())
+	if _, err := tx.Exec(ctx, "SELECT pg_advisory_xact_lock($1)", runLockID); err != nil {
+		return CandidateBatch{}, fmt.Errorf("%w: acquire run lock failed: %v", ErrIngestionTransaction, err)
+	}
+
+	// Verify workflow run status and project ID in DB
+	var projID uuid.UUID
+	var runStage, runStatus string
+	err = tx.QueryRow(ctx, "SELECT project_id, stage, status FROM workflow_run_records WHERE id = $1 FOR UPDATE", input.Run.RunID).Scan(&projID, &runStage, &runStatus)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return CandidateBatch{}, fmt.Errorf("%w: workflow run not found", ErrOutputValidationFailed)
+	}
+	if err != nil {
+		return CandidateBatch{}, fmt.Errorf("%w: query workflow run failed: %v", ErrIngestionTransaction, err)
+	}
+	if projID != input.Run.ProjectID {
+		return CandidateBatch{}, fmt.Errorf("%w: workflow run project mismatch", ErrOutputValidationFailed)
+	}
+	if runStatus != "succeeded" {
+		return CandidateBatch{}, fmt.Errorf("%w: workflow run is not succeeded", ErrOutputValidationFailed)
+	}
+	if runStage != "chapter_planning" {
+		return CandidateBatch{}, fmt.Errorf("%w: workflow run stage mismatch", ErrOutputValidationFailed)
+	}
+
+	// Check if already consumed by a batch
 	queryExisting := fmt.Sprintf("SELECT %s FROM chapter_plan_candidate_batches WHERE source_workflow_run_id = $1 FOR UPDATE", candidateBatchCols)
 	existingBatch, err := scanBatch(tx.QueryRow(ctx, queryExisting, input.Run.RunID))
 	if err == nil {
-		_ = tx.Commit(ctx)
+		if err := tx.Commit(ctx); err != nil {
+			return CandidateBatch{}, fmt.Errorf("%w: commit replay failed: %v", ErrIngestionTransaction, err)
+		}
 		return existingBatch, nil
 	} else if !errors.Is(err, pgx.ErrNoRows) {
 		return CandidateBatch{}, fmt.Errorf("%w: query existing batch failed: %v", ErrIngestionTransaction, err)
+	}
+
+	if err := ValidateNormalizedOutput(input); err != nil {
+		return CandidateBatch{}, err
 	}
 
 	batchID := uuid.New()
