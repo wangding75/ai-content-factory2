@@ -31,6 +31,7 @@ import {
 } from "./candidate-action-dialogs";
 
 import { useIdempotency } from "./use-idempotency";
+import { invalidateChapterPlanViews } from "./chapter-plan-cache";
 
 export function CandidateBatchDetailPage({ batchId }: { batchId: string }) {
   const router = useRouter();
@@ -183,6 +184,7 @@ export function CandidateBatchDetailPage({ batchId }: { batchId: string }) {
       const envelope = await adoptChapterPlanCandidate(cand.id, payload, idempotencyKey);
 
       clearKey(scope);
+      invalidateChapterPlanViews(cand.projectId);
 
       if (envelope.data.outcome === "no_change") {
         setActionNotice(`第 ${cand.chapterNo} 章候选与线上内容一致 (no_change)，未产生新 Revision。`);
@@ -225,6 +227,7 @@ export function CandidateBatchDetailPage({ batchId }: { batchId: string }) {
       await discardChapterPlanCandidate(cand.id, payload, idempotencyKey);
 
       clearKey(scope);
+      invalidateChapterPlanViews(cand.projectId);
 
       setActionNotice(`第 ${cand.chapterNo} 章候选已丢弃。`);
       await loadData();
@@ -541,6 +544,7 @@ export function CandidateBatchDetailPage({ batchId }: { batchId: string }) {
           onClose={() => setEditingCandidate(null)}
           onSaved={async () => {
             setEditingCandidate(null);
+            invalidateChapterPlanViews(editingCandidate.projectId);
             await loadData();
           }}
           onRefreshCandidate={() => void loadData()}
@@ -561,6 +565,7 @@ export function CandidateBatchDetailPage({ batchId }: { batchId: string }) {
           onClose={() => setBatchAdoptOpen(false)}
           onCompleted={() => {
             setSelected({});
+            invalidateChapterPlanViews(batch.projectId);
             void loadData();
           }}
         />
@@ -570,7 +575,10 @@ export function CandidateBatchDetailPage({ batchId }: { batchId: string }) {
         <BatchAbandonDialog
           batch={batch}
           onClose={() => setBatchAbandonOpen(false)}
-          onAbandoned={() => void loadData()}
+          onAbandoned={() => {
+            invalidateChapterPlanViews(batch.projectId);
+            void loadData();
+          }}
         />
       )}
 

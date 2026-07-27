@@ -10,6 +10,7 @@ import {
 } from "./chapter-plan-http-api";
 
 import { useIdempotency } from "./use-idempotency";
+import { invalidateChapterPlanViews } from "./chapter-plan-cache";
 
 export interface CandidateCompareDialogProps {
   candidateId: string;
@@ -71,6 +72,7 @@ export function CandidateCompareDialog({
       );
       clearKey(scope);
       setComparison(envelope.data);
+      invalidateChapterPlanViews(envelope.data.candidate.projectId);
     } catch (cause) {
       if (
         cause instanceof ApiError &&

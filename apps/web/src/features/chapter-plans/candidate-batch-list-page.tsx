@@ -16,6 +16,7 @@ import {
   candidateBatchModeLabel,
   candidateBatchStatusLabel,
 } from "./chapter-plan-presentation";
+import { chapterPlanCacheEvent } from "./chapter-plan-cache";
 
 
 export function CandidateBatchListPage({ projectId }: { projectId: string }) {
@@ -124,6 +125,16 @@ export function CandidateBatchListPage({ projectId }: { projectId: string }) {
       controller.abort();
     };
   }, [projectId, statusParam, modeParam, sourceRunIdParam, fromParam, toParam, limitParam, offsetParam]);
+
+  useEffect(() => {
+    const refreshAfterMutation = (event: Event) => {
+      if ((event as CustomEvent<{ projectId?: string }>).detail?.projectId === projectId) {
+        void loadBatches();
+      }
+    };
+    window.addEventListener(chapterPlanCacheEvent, refreshAfterMutation);
+    return () => window.removeEventListener(chapterPlanCacheEvent, refreshAfterMutation);
+  }, [loadBatches, projectId]);
 
   return (
     <div className="chapter-plan-batch-list-page">
