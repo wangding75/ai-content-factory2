@@ -20,6 +20,9 @@ import {
   candidateDiffTypeLabel,
   candidateStatusLabel,
 } from "./chapter-plan-presentation";
+import { CandidateEditDrawer } from "./candidate-edit-drawer";
+import { CandidateCompareDialog } from "./candidate-compare-dialog";
+
 
 
 export function CandidateBatchDetailPage({ batchId }: { batchId: string }) {
@@ -116,6 +119,9 @@ export function CandidateBatchDetailPage({ batchId }: { batchId: string }) {
       </div>
     );
   }
+
+  const [editingCandidate, setEditingCandidate] = useState<ChapterPlanCandidate | null>(null);
+  const [comparingCandidateId, setComparingCandidateId] = useState<string | null>(null);
 
   return (
     <div className="chapter-plan-batch-detail-page">
@@ -281,13 +287,46 @@ export function CandidateBatchDetailPage({ batchId }: { batchId: string }) {
                 <span>v{cand.version}</span>
                 <span>{storylineNames}</span>
                 <div className="candidate-action-buttons">
-                  <span className="chapter-plan-edit-button">查看详情</span>
+                  <button
+                    type="button"
+                    className="chapter-plan-edit-button"
+                    onClick={() => setEditingCandidate(cand)}
+                  >
+                    编辑候选
+                  </button>
+                  <button
+                    type="button"
+                    className="chapter-plan-edit-button"
+                    onClick={() => setComparingCandidateId(cand.id)}
+                  >
+                    差异对比
+                  </button>
                 </div>
               </article>
             );
           })}
         </div>
       )}
+
+      {editingCandidate && (
+        <CandidateEditDrawer
+          candidate={editingCandidate}
+          onClose={() => setEditingCandidate(null)}
+          onSaved={async () => {
+            setEditingCandidate(null);
+            await loadData();
+          }}
+          onRefreshCandidate={() => void loadData()}
+        />
+      )}
+
+      {comparingCandidateId && (
+        <CandidateCompareDialog
+          candidateId={comparingCandidateId}
+          onClose={() => setComparingCandidateId(null)}
+        />
+      )}
+
 
       {/* Pagination */}
       {total > limitParam && (

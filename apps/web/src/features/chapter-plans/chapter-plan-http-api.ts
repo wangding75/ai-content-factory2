@@ -434,3 +434,133 @@ export function getChapterPlanCandidate(
     init,
   );
 }
+
+// --- FE-F3 Candidate Edit, Compare, Recompare & Revision Contracts ---
+
+export interface UpdateChapterPlanCandidateRequest {
+  expectedCandidateVersion: number;
+  currentSnapshot: ChapterPlanCandidateSnapshot;
+}
+
+export interface RecompareChapterPlanCandidateRequest {
+  expectedCandidateVersion: number;
+}
+
+export interface ChapterPlanDiffEntry {
+  path: string;
+  changeType: "added" | "removed" | "changed" | "unchanged";
+  before: string | null;
+  after: string | null;
+}
+
+export interface ChapterPlanCandidateDiff {
+  baseRevisionId: string | null;
+  candidateVersion: number;
+  entries: ChapterPlanDiffEntry[];
+  stale: boolean;
+}
+
+export interface ChapterPlanCandidateComparison {
+  candidate: ChapterPlanCandidate;
+  currentChapter: ChapterPlan | null;
+  diff: ChapterPlanCandidateDiff;
+}
+
+export interface ChapterPlanCandidateComparisonEnvelope {
+  data: ChapterPlanCandidateComparison;
+  request_id: string;
+}
+
+export interface ChapterPlanRevision {
+  id: string;
+  chapterPlanId: string;
+  projectId: string;
+  revisionNo: number;
+  snapshot: ChapterPlanCandidateSnapshot;
+  changeType: "manual_create" | "manual_edit" | "candidate_adopt" | "confirm" | "legacy_backfill";
+  sourceCandidateId: string | null;
+  sourceCandidateBatchId: string | null;
+  sourceWorkflowRunId: string | null;
+  createdAt: string;
+}
+
+export interface ChapterPlanRevisionList {
+  items: ChapterPlanRevision[];
+  total: number;
+  limit: number;
+  offset: number;
+}
+
+export interface ChapterPlanRevisionListEnvelope {
+  data: ChapterPlanRevisionList;
+  request_id: string;
+}
+
+export function updateChapterPlanCandidate(
+  candidateId: string,
+  payload: UpdateChapterPlanCandidateRequest,
+  idempotencyKey: string,
+  init?: ApiRequestInit,
+): Promise<ChapterPlanCandidateEnvelope> {
+  return apiRequest<ChapterPlanCandidateEnvelope>(
+    `/chapter-plan-candidates/${encodeURIComponent(candidateId)}`,
+    {
+      ...init,
+      method: "PATCH",
+      headers: {
+        ...init?.headers,
+        "Content-Type": "application/json",
+        "Idempotency-Key": idempotencyKey,
+      },
+      body: JSON.stringify(payload),
+    },
+  );
+}
+
+export function compareChapterPlanCandidate(
+  candidateId: string,
+  init?: ApiRequestInit,
+): Promise<ChapterPlanCandidateComparisonEnvelope> {
+  return apiRequest<ChapterPlanCandidateComparisonEnvelope>(
+    `/chapter-plan-candidates/${encodeURIComponent(candidateId)}/compare`,
+    init,
+  );
+}
+
+export function recompareChapterPlanCandidate(
+  candidateId: string,
+  payload: RecompareChapterPlanCandidateRequest,
+  idempotencyKey: string,
+  init?: ApiRequestInit,
+): Promise<ChapterPlanCandidateComparisonEnvelope> {
+  return apiRequest<ChapterPlanCandidateComparisonEnvelope>(
+    `/chapter-plan-candidates/${encodeURIComponent(candidateId)}/recompare`,
+    {
+      ...init,
+      method: "POST",
+      headers: {
+        ...init?.headers,
+        "Content-Type": "application/json",
+        "Idempotency-Key": idempotencyKey,
+      },
+      body: JSON.stringify(payload),
+    },
+  );
+}
+
+export function listChapterPlanRevisions(
+  chapterPlanId: string,
+  query: { limit?: number; offset?: number } = {},
+  init?: ApiRequestInit,
+): Promise<ChapterPlanRevisionListEnvelope> {
+  const params = new URLSearchParams();
+  if (query.limit !== undefined) params.set("limit", String(query.limit));
+  if (query.offset !== undefined) params.set("offset", String(query.offset));
+  const val = params.toString();
+  const qStr = val ? `?${val}` : "";
+
+  return apiRequest<ChapterPlanRevisionListEnvelope>(
+    `/chapter-plans/${encodeURIComponent(chapterPlanId)}/revisions${qStr}`,
+    init,
+  );
+}
