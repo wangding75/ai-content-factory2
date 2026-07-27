@@ -76,6 +76,24 @@ func (f *fakeStore) Delete(_ context.Context, id uuid.UUID, e int) error {
 	delete(f.plans, id)
 	return nil
 }
+func (f *fakeStore) ListCandidateBatches(_ context.Context, _ uuid.UUID, _ BatchFilter) (BatchListResult, error) {
+	return BatchListResult{}, nil
+}
+func (f *fakeStore) GetCandidateBatchByID(_ context.Context, _ uuid.UUID) (CandidateBatch, error) {
+	return CandidateBatch{}, ErrBatchNotFound
+}
+func (f *fakeStore) ListCandidates(_ context.Context, _ uuid.UUID, _ CandidateFilter) (CandidateListResult, error) {
+	return CandidateListResult{}, nil
+}
+func (f *fakeStore) GetCandidateByID(_ context.Context, _ uuid.UUID) (Candidate, error) {
+	return Candidate{}, ErrCandidateNotFound
+}
+func (f *fakeStore) ListRevisions(_ context.Context, _ uuid.UUID, _, _ int) (RevisionListResult, error) {
+	return RevisionListResult{}, nil
+}
+func (f *fakeStore) GetChapterPlanningSummary(_ context.Context, _ uuid.UUID) (Summary, error) {
+	return Summary{}, nil
+}
 func (f *fakeStore) Confirm(_ context.Context, s []Selection) ([]Plan, error) {
 	f.confirms++
 	f.confirmed = slices.Clone(s)

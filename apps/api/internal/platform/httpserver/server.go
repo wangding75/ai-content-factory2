@@ -108,6 +108,7 @@ func New(address string, projects *project.Service, services ...any) *Server {
 }
 func (s *Server) ListenAndServe() error { return s.httpServer.ListenAndServe() }
 func (s *Server) Shutdown() error       { return s.httpServer.Close() }
+func (s *Server) Handler() http.Handler { return s.httpServer.Handler }
 func healthHandler(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, r, http.StatusOK, map[string]any{"status": "ok", "service": "api"})
 }

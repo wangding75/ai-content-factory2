@@ -55,6 +55,25 @@ func (f *fakeChapterPlanApplication) GenerateMock(_ context.Context, id uuid.UUI
 	return f.generated, f.err
 }
 
+func (f *fakeChapterPlanApplication) ListCandidateBatches(_ context.Context, _ uuid.UUID, _ chapterplan.BatchFilter) (chapterplan.BatchListResult, error) {
+	return chapterplan.BatchListResult{}, nil
+}
+func (f *fakeChapterPlanApplication) GetCandidateBatchByID(_ context.Context, _ uuid.UUID) (chapterplan.CandidateBatch, error) {
+	return chapterplan.CandidateBatch{}, chapterplan.ErrBatchNotFound
+}
+func (f *fakeChapterPlanApplication) ListCandidates(_ context.Context, _ uuid.UUID, _ chapterplan.CandidateFilter) (chapterplan.CandidateListResult, error) {
+	return chapterplan.CandidateListResult{}, nil
+}
+func (f *fakeChapterPlanApplication) GetCandidateByID(_ context.Context, _ uuid.UUID) (chapterplan.Candidate, error) {
+	return chapterplan.Candidate{}, chapterplan.ErrCandidateNotFound
+}
+func (f *fakeChapterPlanApplication) ListRevisions(_ context.Context, _ uuid.UUID, _, _ int) (chapterplan.RevisionListResult, error) {
+	return chapterplan.RevisionListResult{}, nil
+}
+func (f *fakeChapterPlanApplication) GetChapterPlanningSummary(_ context.Context, _ uuid.UUID) (chapterplan.Summary, error) {
+	return chapterplan.Summary{}, nil
+}
+
 func chapterPlanHTTPValue(projectID uuid.UUID) chapterplan.Plan {
 	now := time.Date(2026, 7, 15, 1, 2, 3, 456000000, time.UTC)
 	goal := "goal"

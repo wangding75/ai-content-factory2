@@ -35,6 +35,13 @@ type store interface {
 	Update(context.Context, Plan, int) (Plan, error)
 	Delete(context.Context, uuid.UUID, int) error
 	Confirm(context.Context, []Selection) ([]Plan, error)
+
+	ListCandidateBatches(context.Context, uuid.UUID, BatchFilter) (BatchListResult, error)
+	GetCandidateBatchByID(context.Context, uuid.UUID) (CandidateBatch, error)
+	ListCandidates(context.Context, uuid.UUID, CandidateFilter) (CandidateListResult, error)
+	GetCandidateByID(context.Context, uuid.UUID) (Candidate, error)
+	ListRevisions(context.Context, uuid.UUID, int, int) (RevisionListResult, error)
+	GetChapterPlanningSummary(context.Context, uuid.UUID) (Summary, error)
 }
 type projectReader interface {
 	Get(context.Context, uuid.UUID) (project.Project, error)
@@ -501,6 +508,60 @@ func mapReferenceError(err, errorKind error) error {
 	}
 	return ErrInternal
 }
+func (s *Service) ListCandidateBatches(ctx context.Context, projectID uuid.UUID, f BatchFilter) (BatchListResult, error) {
+	if err := s.projectExists(ctx, projectID); err != nil {
+		return BatchListResult{}, err
+	}
+	res, err := s.plans.ListCandidateBatches(ctx, projectID, f)
+	if err != nil {
+		return BatchListResult{}, mapError(err)
+	}
+	return res, nil
+}
+
+func (s *Service) GetCandidateBatchByID(ctx context.Context, batchID uuid.UUID) (CandidateBatch, error) {
+	b, err := s.plans.GetCandidateBatchByID(ctx, batchID)
+	if err != nil {
+		return CandidateBatch{}, mapError(err)
+	}
+	return b, nil
+}
+
+func (s *Service) ListCandidates(ctx context.Context, batchID uuid.UUID, f CandidateFilter) (CandidateListResult, error) {
+	res, err := s.plans.ListCandidates(ctx, batchID, f)
+	if err != nil {
+		return CandidateListResult{}, mapError(err)
+	}
+	return res, nil
+}
+
+func (s *Service) GetCandidateByID(ctx context.Context, candidateID uuid.UUID) (Candidate, error) {
+	c, err := s.plans.GetCandidateByID(ctx, candidateID)
+	if err != nil {
+		return Candidate{}, mapError(err)
+	}
+	return c, nil
+}
+
+func (s *Service) ListRevisions(ctx context.Context, chapterPlanID uuid.UUID, limit, offset int) (RevisionListResult, error) {
+	res, err := s.plans.ListRevisions(ctx, chapterPlanID, limit, offset)
+	if err != nil {
+		return RevisionListResult{}, mapError(err)
+	}
+	return res, nil
+}
+
+func (s *Service) GetChapterPlanningSummary(ctx context.Context, projectID uuid.UUID) (Summary, error) {
+	if err := s.projectExists(ctx, projectID); err != nil {
+		return Summary{}, err
+	}
+	sum, err := s.plans.GetChapterPlanningSummary(ctx, projectID)
+	if err != nil {
+		return Summary{}, mapError(err)
+	}
+	return sum, nil
+}
+
 func mapError(err error) error {
 	if err == nil {
 		return nil
@@ -508,6 +569,12 @@ func mapError(err error) error {
 	switch {
 	case errors.Is(err, ErrNotFound):
 		return ErrChapterPlanNotFound
+	case errors.Is(err, ErrBatchNotFound):
+		return ErrBatchNotFound
+	case errors.Is(err, ErrCandidateNotFound):
+		return ErrCandidateNotFound
+	case errors.Is(err, ErrRevisionNotFound):
+		return ErrRevisionNotFound
 	case errors.Is(err, ErrVersionConflict):
 		return ErrVersionConflict
 	case errors.Is(err, ErrChapterNoConflict):

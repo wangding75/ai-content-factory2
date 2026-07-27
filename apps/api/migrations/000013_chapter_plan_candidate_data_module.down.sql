@@ -1,0 +1,16 @@
+DROP TRIGGER IF EXISTS chapter_plans_check_current_revision_id ON chapter_plans;
+DROP FUNCTION IF EXISTS check_chapter_plan_current_revision_id();
+ALTER TABLE chapter_plans DROP CONSTRAINT IF EXISTS chapter_plans_current_revision_fk;
+ALTER TABLE chapter_plans DROP CONSTRAINT IF EXISTS chapter_plans_source_candidate_fk;
+ALTER TABLE chapter_plans DROP CONSTRAINT IF EXISTS chapter_plans_source_batch_fk;
+ALTER TABLE chapter_plans DROP CONSTRAINT IF EXISTS chapter_plans_source_workflow_run_id_fkey;
+ALTER TABLE chapter_plans DROP COLUMN IF EXISTS current_revision_id;
+ALTER TABLE chapter_plans DROP COLUMN IF EXISTS source_candidate_id;
+ALTER TABLE chapter_plans DROP COLUMN IF EXISTS source_candidate_batch_id;
+ALTER TABLE chapter_plans DROP COLUMN IF EXISTS source_workflow_run_id;
+ALTER TABLE chapter_plan_candidates DROP CONSTRAINT IF EXISTS chapter_plan_candidates_adopted_plan_fk;
+ALTER TABLE chapter_plan_candidates DROP CONSTRAINT IF EXISTS chapter_plan_candidates_adopted_revision_fk;
+DROP TABLE IF EXISTS chapter_plan_revisions;
+DROP TABLE IF EXISTS chapter_plan_candidates;
+DROP TABLE IF EXISTS chapter_plan_candidate_batches;
+ALTER TABLE chapter_plans DROP CONSTRAINT IF EXISTS chapter_plans_project_id_id_unique;

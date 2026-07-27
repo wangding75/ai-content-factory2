@@ -23,6 +23,13 @@ type chapterPlanApplication interface {
 	Update(context.Context, uuid.UUID, chapterplan.UpdateCommand) (chapterplan.Plan, error)
 	Delete(context.Context, uuid.UUID, int) error
 	Confirm(context.Context, uuid.UUID, []chapterplan.Selection) ([]chapterplan.Plan, error)
+
+	ListCandidateBatches(context.Context, uuid.UUID, chapterplan.BatchFilter) (chapterplan.BatchListResult, error)
+	GetCandidateBatchByID(context.Context, uuid.UUID) (chapterplan.CandidateBatch, error)
+	ListCandidates(context.Context, uuid.UUID, chapterplan.CandidateFilter) (chapterplan.CandidateListResult, error)
+	GetCandidateByID(context.Context, uuid.UUID) (chapterplan.Candidate, error)
+	ListRevisions(context.Context, uuid.UUID, int, int) (chapterplan.RevisionListResult, error)
+	GetChapterPlanningSummary(context.Context, uuid.UUID) (chapterplan.Summary, error)
 }
 
 type chapterPlanStorylineRefResponse struct {
@@ -78,6 +85,13 @@ func registerChapterPlanRoutes(mux *http.ServeMux, service chapterPlanApplicatio
 	mux.HandleFunc("PATCH /api/v1/chapter-plans/{chapterPlanId}", updateChapterPlanHandler(service))
 	mux.HandleFunc("DELETE /api/v1/chapter-plans/{chapterPlanId}", deleteChapterPlanHandler(service))
 	mux.HandleFunc("POST /api/v1/projects/{projectId}/chapter-plans/confirm", confirmChapterPlansHandler(service))
+
+	mux.HandleFunc("GET /api/v1/projects/{projectId}/chapter-plan-candidate-batches", listCandidateBatchesHandler(service))
+	mux.HandleFunc("GET /api/v1/chapter-plan-candidate-batches/{batchId}", getCandidateBatchHandler(service))
+	mux.HandleFunc("GET /api/v1/chapter-plan-candidate-batches/{batchId}/candidates", listCandidatesHandler(service))
+	mux.HandleFunc("GET /api/v1/chapter-plan-candidates/{candidateId}", getCandidateHandler(service))
+	mux.HandleFunc("GET /api/v1/chapter-plans/{chapterPlanId}/revisions", listRevisionsHandler(service))
+	mux.HandleFunc("GET /api/v1/projects/{projectId}/chapter-planning-summary", getChapterPlanningSummaryHandler(service))
 }
 
 func listChapterPlansHandler(service chapterPlanApplication) http.HandlerFunc {
@@ -219,6 +233,12 @@ func chapterPlanServiceError(w http.ResponseWriter, r *http.Request, err error) 
 		writeError(w, r, 404, "project_not_found", "project not found", map[string]any{})
 	case errors.Is(err, chapterplan.ErrChapterPlanNotFound), errors.Is(err, chapterplan.ErrNotFound):
 		writeError(w, r, 404, "chapter_plan_not_found", "chapter plan not found", map[string]any{})
+	case errors.Is(err, chapterplan.ErrBatchNotFound):
+		writeError(w, r, 404, "candidate_batch_not_found", "candidate batch not found", map[string]any{})
+	case errors.Is(err, chapterplan.ErrCandidateNotFound):
+		writeError(w, r, 404, "candidate_not_found", "candidate not found", map[string]any{})
+	case errors.Is(err, chapterplan.ErrRevisionNotFound):
+		writeError(w, r, 404, "revision_not_found", "revision not found", map[string]any{})
 	case errors.Is(err, chapterplan.ErrStorylineReferenceInvalid):
 		writeError(w, r, 404, "storyline_not_found", "storyline not found", map[string]any{})
 	case errors.Is(err, chapterplan.ErrMaterialReferenceInvalid):
@@ -233,6 +253,184 @@ func chapterPlanServiceError(w http.ResponseWriter, r *http.Request, err error) 
 		writeError(w, r, 400, "validation_error", "invalid chapter plan request", map[string]any{})
 	default:
 		writeError(w, r, 500, "internal_error", "internal server error", map[string]any{})
+	}
+}
+
+func listCandidateBatchesHandler(service chapterPlanApplication) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		id, ok := projectID(r)
+		if !ok {
+			writeError(w, r, http.StatusBadRequest, "invalid_uuid", "projectId must be a UUID", map[string]any{})
+			return
+		}
+		var f chapterplan.BatchFilter
+		status := r.URL.Query().Get("status")
+		if status != "" {
+			f.Status = &status
+		}
+		genMode := r.URL.Query().Get("generationMode")
+		if genMode == "" {
+			genMode = r.URL.Query().Get("generation_mode")
+		}
+		if genMode != "" {
+			f.GenerationMode = &genMode
+		}
+		runIDStr := r.URL.Query().Get("sourceWorkflowRunId")
+		if runIDStr == "" {
+			runIDStr = r.URL.Query().Get("source_workflow_run_id")
+		}
+		if runIDStr != "" {
+			runID, err := uuid.Parse(runIDStr)
+			if err != nil {
+				writeError(w, r, http.StatusBadRequest, "invalid_uuid", "sourceWorkflowRunId must be a UUID", map[string]any{})
+				return
+			}
+			f.SourceWorkflowRunID = &runID
+		}
+		if fromStr := r.URL.Query().Get("createdAtFrom"); fromStr != "" {
+			if t, err := time.Parse(time.RFC3339, fromStr); err == nil {
+				f.CreatedAtFrom = &t
+			}
+		}
+		if toStr := r.URL.Query().Get("createdAtTo"); toStr != "" {
+			if t, err := time.Parse(time.RFC3339, toStr); err == nil {
+				f.CreatedAtTo = &t
+			}
+		}
+		limit, offset, ok := listPagination(r)
+		if !ok {
+			writeError(w, r, 400, "validation_error", "invalid pagination", map[string]any{})
+			return
+		}
+		f.Limit = limit
+		f.Offset = offset
+
+		res, err := service.ListCandidateBatches(r.Context(), id, f)
+		if err != nil {
+			chapterPlanServiceError(w, r, err)
+			return
+		}
+		writeJSON(w, r, http.StatusOK, res)
+	}
+}
+
+func getCandidateBatchHandler(service chapterPlanApplication) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		batchID, err := uuid.Parse(r.PathValue("batchId"))
+		if err != nil {
+			writeError(w, r, http.StatusBadRequest, "invalid_uuid", "batchId must be a UUID", map[string]any{})
+			return
+		}
+		res, err := service.GetCandidateBatchByID(r.Context(), batchID)
+		if err != nil {
+			chapterPlanServiceError(w, r, err)
+			return
+		}
+		writeJSON(w, r, http.StatusOK, res)
+	}
+}
+
+func listCandidatesHandler(service chapterPlanApplication) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		batchID, err := uuid.Parse(r.PathValue("batchId"))
+		if err != nil {
+			writeError(w, r, http.StatusBadRequest, "invalid_uuid", "batchId must be a UUID", map[string]any{})
+			return
+		}
+		var f chapterplan.CandidateFilter
+		status := r.URL.Query().Get("status")
+		if status != "" {
+			f.Status = &status
+		}
+		diffType := r.URL.Query().Get("diffType")
+		if diffType == "" {
+			diffType = r.URL.Query().Get("diff_type")
+		}
+		if diffType != "" {
+			f.DiffType = &diffType
+		}
+		stIDStr := r.URL.Query().Get("storylineId")
+		if stIDStr == "" {
+			stIDStr = r.URL.Query().Get("storyline_id")
+		}
+		if stIDStr != "" {
+			stID, err := uuid.Parse(stIDStr)
+			if err != nil {
+				writeError(w, r, http.StatusBadRequest, "invalid_uuid", "storylineId must be a UUID", map[string]any{})
+				return
+			}
+			f.StorylineID = &stID
+		}
+		if q := r.URL.Query().Get("q"); q != "" {
+			f.Q = &q
+		}
+		limit, offset, ok := listPagination(r)
+		if !ok {
+			writeError(w, r, 400, "validation_error", "invalid pagination", map[string]any{})
+			return
+		}
+		f.Limit = limit
+		f.Offset = offset
+
+		res, err := service.ListCandidates(r.Context(), batchID, f)
+		if err != nil {
+			chapterPlanServiceError(w, r, err)
+			return
+		}
+		writeJSON(w, r, http.StatusOK, res)
+	}
+}
+
+func getCandidateHandler(service chapterPlanApplication) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		candidateID, err := uuid.Parse(r.PathValue("candidateId"))
+		if err != nil {
+			writeError(w, r, http.StatusBadRequest, "invalid_uuid", "candidateId must be a UUID", map[string]any{})
+			return
+		}
+		res, err := service.GetCandidateByID(r.Context(), candidateID)
+		if err != nil {
+			chapterPlanServiceError(w, r, err)
+			return
+		}
+		writeJSON(w, r, http.StatusOK, res)
+	}
+}
+
+func listRevisionsHandler(service chapterPlanApplication) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		chapterPlanID, err := uuid.Parse(r.PathValue("chapterPlanId"))
+		if err != nil {
+			writeError(w, r, http.StatusBadRequest, "invalid_uuid", "chapterPlanId must be a UUID", map[string]any{})
+			return
+		}
+		limit, offset, ok := listPagination(r)
+		if !ok {
+			writeError(w, r, 400, "validation_error", "invalid pagination", map[string]any{})
+			return
+		}
+		res, err := service.ListRevisions(r.Context(), chapterPlanID, limit, offset)
+		if err != nil {
+			chapterPlanServiceError(w, r, err)
+			return
+		}
+		writeJSON(w, r, http.StatusOK, res)
+	}
+}
+
+func getChapterPlanningSummaryHandler(service chapterPlanApplication) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		id, ok := projectID(r)
+		if !ok {
+			writeError(w, r, http.StatusBadRequest, "invalid_uuid", "projectId must be a UUID", map[string]any{})
+			return
+		}
+		res, err := service.GetChapterPlanningSummary(r.Context(), id)
+		if err != nil {
+			chapterPlanServiceError(w, r, err)
+			return
+		}
+		writeJSON(w, r, http.StatusOK, res)
 	}
 }
 
