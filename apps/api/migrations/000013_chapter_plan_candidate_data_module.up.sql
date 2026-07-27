@@ -156,11 +156,11 @@ BEGIN
             ))
             INTO mat_json
             FROM chapter_plan_materials pm
-            JOIN planning_materials m ON m.id = pm.material_id WHERE pm.chapter_plan_id = cp.id;
+            JOIN materials m ON m.id = pm.material_id WHERE pm.chapter_plan_id = cp.id;
 
             SELECT jsonb_agg(jsonb_build_object(
                 'id', pf.foreshadowing_id,
-                'label', f.name,
+                'label', f.title,
                 'relation', 'foreshadowing_ref',
                 'position', pf.position,
                 'version', f.version
