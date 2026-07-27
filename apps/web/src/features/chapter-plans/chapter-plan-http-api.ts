@@ -153,13 +153,13 @@ export type ChapterPlanningPreflightReport =
   | ChapterPlanningPreflightPassed
   | ChapterPlanningPreflightBlocked;
 
-export interface ChapterPlanningPreflightEnvelope {
-  data: ChapterPlanningPreflightReport;
-  request_id: string;
-}
-
 export interface CreateChapterPlanRunRequest {
   preflightToken: string;
+}
+
+export interface ChapterPlanningWorkflowRun {
+  id: string;
+  status: string;
 }
 
 export interface ChapterPlanningSummary {
@@ -184,11 +184,6 @@ export interface ChapterPlanningSummary {
   } | null;
 }
 
-export interface ChapterPlanningSummaryEnvelope {
-  data: ChapterPlanningSummary;
-  request_id: string;
-}
-
 export type ChapterPlanningErrorCode =
   | "workflow_not_configured"
   | "preflight_token_invalid"
@@ -209,8 +204,8 @@ export type ChapterPlanningErrorCode =
 export function getProjectChapterPlanningSummary(
   projectId: string,
   init?: ApiRequestInit,
-): Promise<ChapterPlanningSummaryEnvelope> {
-  return apiRequest<ChapterPlanningSummaryEnvelope>(
+): Promise<ChapterPlanningSummary> {
+  return apiRequest<ChapterPlanningSummary>(
     `/projects/${encodeURIComponent(projectId)}/chapter-planning-summary`,
     init,
   );
@@ -220,8 +215,8 @@ export function preflightChapterPlanRun(
   projectId: string,
   payload: ChapterPlanningPreflightRequest,
   init?: ApiRequestInit,
-): Promise<ChapterPlanningPreflightEnvelope> {
-  return apiRequest<ChapterPlanningPreflightEnvelope>(
+): Promise<ChapterPlanningPreflightReport> {
+  return apiRequest<ChapterPlanningPreflightReport>(
     `/projects/${encodeURIComponent(projectId)}/chapter-plan-runs/preflight`,
     {
       ...init,
@@ -237,8 +232,8 @@ export function createChapterPlanRun(
   payload: CreateChapterPlanRunRequest,
   idempotencyKey: string,
   init?: ApiRequestInit,
-): Promise<unknown> {
-  return apiRequest(
+): Promise<ChapterPlanningWorkflowRun> {
+  return apiRequest<ChapterPlanningWorkflowRun>(
     `/projects/${encodeURIComponent(projectId)}/chapter-plan-runs`,
     {
       ...init,
@@ -353,26 +348,6 @@ export interface ChapterPlanCandidateList {
   offset: number;
 }
 
-export interface ChapterPlanCandidateBatchListEnvelope {
-  data: ChapterPlanCandidateBatchList;
-  request_id: string;
-}
-
-export interface ChapterPlanCandidateBatchEnvelope {
-  data: ChapterPlanCandidateBatch;
-  request_id: string;
-}
-
-export interface ChapterPlanCandidateListEnvelope {
-  data: ChapterPlanCandidateList;
-  request_id: string;
-}
-
-export interface ChapterPlanCandidateEnvelope {
-  data: ChapterPlanCandidate;
-  request_id: string;
-}
-
 export interface ListCandidateBatchesQuery {
   status?: ChapterPlanCandidateBatchStatus;
   generationMode?: ChapterPlanningGenerationMode;
@@ -421,8 +396,8 @@ export function listChapterPlanCandidateBatches(
   projectId: string,
   query: ListCandidateBatchesQuery = {},
   init?: ApiRequestInit,
-): Promise<ChapterPlanCandidateBatchListEnvelope> {
-  return apiRequest<ChapterPlanCandidateBatchListEnvelope>(
+): Promise<ChapterPlanCandidateBatchList> {
+  return apiRequest<ChapterPlanCandidateBatchList>(
     `/projects/${encodeURIComponent(projectId)}/chapter-plan-candidate-batches${candidateBatchQuery(query)}`,
     init,
   );
@@ -431,8 +406,8 @@ export function listChapterPlanCandidateBatches(
 export function getChapterPlanCandidateBatch(
   batchId: string,
   init?: ApiRequestInit,
-): Promise<ChapterPlanCandidateBatchEnvelope> {
-  return apiRequest<ChapterPlanCandidateBatchEnvelope>(
+): Promise<ChapterPlanCandidateBatch> {
+  return apiRequest<ChapterPlanCandidateBatch>(
     `/chapter-plan-candidate-batches/${encodeURIComponent(batchId)}`,
     init,
   );
@@ -442,8 +417,8 @@ export function listChapterPlanCandidates(
   batchId: string,
   query: ListCandidatesQuery = {},
   init?: ApiRequestInit,
-): Promise<ChapterPlanCandidateListEnvelope> {
-  return apiRequest<ChapterPlanCandidateListEnvelope>(
+): Promise<ChapterPlanCandidateList> {
+  return apiRequest<ChapterPlanCandidateList>(
     `/chapter-plan-candidate-batches/${encodeURIComponent(batchId)}/candidates${candidateQuery(query)}`,
     init,
   );
@@ -452,8 +427,8 @@ export function listChapterPlanCandidates(
 export function getChapterPlanCandidate(
   candidateId: string,
   init?: ApiRequestInit,
-): Promise<ChapterPlanCandidateEnvelope> {
-  return apiRequest<ChapterPlanCandidateEnvelope>(
+): Promise<ChapterPlanCandidate> {
+  return apiRequest<ChapterPlanCandidate>(
     `/chapter-plan-candidates/${encodeURIComponent(candidateId)}`,
     init,
   );
@@ -490,11 +465,6 @@ export interface ChapterPlanCandidateComparison {
   diff: ChapterPlanCandidateDiff;
 }
 
-export interface ChapterPlanCandidateComparisonEnvelope {
-  data: ChapterPlanCandidateComparison;
-  request_id: string;
-}
-
 export interface ChapterPlanRevision {
   id: string;
   chapterPlanId: string;
@@ -515,18 +485,13 @@ export interface ChapterPlanRevisionList {
   offset: number;
 }
 
-export interface ChapterPlanRevisionListEnvelope {
-  data: ChapterPlanRevisionList;
-  request_id: string;
-}
-
 export function updateChapterPlanCandidate(
   candidateId: string,
   payload: UpdateChapterPlanCandidateRequest,
   idempotencyKey: string,
   init?: ApiRequestInit,
-): Promise<ChapterPlanCandidateEnvelope> {
-  return apiRequest<ChapterPlanCandidateEnvelope>(
+): Promise<ChapterPlanCandidate> {
+  return apiRequest<ChapterPlanCandidate>(
     `/chapter-plan-candidates/${encodeURIComponent(candidateId)}`,
     {
       ...init,
@@ -544,8 +509,8 @@ export function updateChapterPlanCandidate(
 export function compareChapterPlanCandidate(
   candidateId: string,
   init?: ApiRequestInit,
-): Promise<ChapterPlanCandidateComparisonEnvelope> {
-  return apiRequest<ChapterPlanCandidateComparisonEnvelope>(
+): Promise<ChapterPlanCandidateComparison> {
+  return apiRequest<ChapterPlanCandidateComparison>(
     `/chapter-plan-candidates/${encodeURIComponent(candidateId)}/compare`,
     init,
   );
@@ -556,8 +521,8 @@ export function recompareChapterPlanCandidate(
   payload: RecompareChapterPlanCandidateRequest,
   idempotencyKey: string,
   init?: ApiRequestInit,
-): Promise<ChapterPlanCandidateComparisonEnvelope> {
-  return apiRequest<ChapterPlanCandidateComparisonEnvelope>(
+): Promise<ChapterPlanCandidateComparison> {
+  return apiRequest<ChapterPlanCandidateComparison>(
     `/chapter-plan-candidates/${encodeURIComponent(candidateId)}/recompare`,
     {
       ...init,
@@ -576,14 +541,14 @@ export function listChapterPlanRevisions(
   chapterPlanId: string,
   query: { limit?: number; offset?: number } = {},
   init?: ApiRequestInit,
-): Promise<ChapterPlanRevisionListEnvelope> {
+): Promise<ChapterPlanRevisionList> {
   const params = new URLSearchParams();
   if (query.limit !== undefined) params.set("limit", String(query.limit));
   if (query.offset !== undefined) params.set("offset", String(query.offset));
   const val = params.toString();
   const qStr = val ? `?${val}` : "";
 
-  return apiRequest<ChapterPlanRevisionListEnvelope>(
+  return apiRequest<ChapterPlanRevisionList>(
     `/chapter-plans/${encodeURIComponent(chapterPlanId)}/revisions${qStr}`,
     init,
   );
@@ -615,11 +580,6 @@ export interface AdoptChapterPlanCandidateNoChangeResult {
 export type AdoptChapterPlanCandidateResult =
   | AdoptChapterPlanCandidateAdoptedResult
   | AdoptChapterPlanCandidateNoChangeResult;
-
-export interface AdoptChapterPlanCandidateEnvelope {
-  data: AdoptChapterPlanCandidateResult;
-  request_id: string;
-}
 
 export interface DiscardChapterPlanCandidateRequest {
   expectedCandidateVersion: number;
@@ -685,11 +645,6 @@ export interface BulkAdoptChapterPlanCandidatesResult {
   batch: ChapterPlanCandidateBatch;
 }
 
-export interface BulkAdoptChapterPlanCandidatesEnvelope {
-  data: BulkAdoptChapterPlanCandidatesResult;
-  request_id: string;
-}
-
 export interface AbandonChapterPlanCandidateBatchRequest {
   expectedBatchVersion: number;
   reason?: string | null;
@@ -701,8 +656,8 @@ export function adoptChapterPlanCandidate(
   payload: AdoptChapterPlanCandidateRequest,
   idempotencyKey: string,
   init?: ApiRequestInit,
-): Promise<AdoptChapterPlanCandidateEnvelope> {
-  return apiRequest<AdoptChapterPlanCandidateEnvelope>(
+): Promise<AdoptChapterPlanCandidateResult> {
+  return apiRequest<AdoptChapterPlanCandidateResult>(
     `/chapter-plan-candidates/${encodeURIComponent(candidateId)}/adopt`,
     {
       ...init,
@@ -722,8 +677,8 @@ export function discardChapterPlanCandidate(
   payload: DiscardChapterPlanCandidateRequest,
   idempotencyKey: string,
   init?: ApiRequestInit,
-): Promise<ChapterPlanCandidateEnvelope> {
-  return apiRequest<ChapterPlanCandidateEnvelope>(
+): Promise<ChapterPlanCandidate> {
+  return apiRequest<ChapterPlanCandidate>(
     `/chapter-plan-candidates/${encodeURIComponent(candidateId)}/discard`,
     {
       ...init,
@@ -743,8 +698,8 @@ export function adoptChapterPlanCandidates(
   payload: BulkAdoptChapterPlanCandidatesRequest,
   idempotencyKey: string,
   init?: ApiRequestInit,
-): Promise<BulkAdoptChapterPlanCandidatesEnvelope> {
-  return apiRequest<BulkAdoptChapterPlanCandidatesEnvelope>(
+): Promise<BulkAdoptChapterPlanCandidatesResult> {
+  return apiRequest<BulkAdoptChapterPlanCandidatesResult>(
     `/chapter-plan-candidate-batches/${encodeURIComponent(batchId)}/adoptions`,
     {
       ...init,
@@ -764,8 +719,8 @@ export function abandonChapterPlanCandidateBatch(
   payload: AbandonChapterPlanCandidateBatchRequest,
   idempotencyKey: string,
   init?: ApiRequestInit,
-): Promise<ChapterPlanCandidateBatchEnvelope> {
-  return apiRequest<ChapterPlanCandidateBatchEnvelope>(
+): Promise<ChapterPlanCandidateBatch> {
+  return apiRequest<ChapterPlanCandidateBatch>(
     `/chapter-plan-candidate-batches/${encodeURIComponent(batchId)}/abandon`,
     {
       ...init,

@@ -58,7 +58,7 @@ export function CandidateEditDrawer({
         idempotencyKey,
       );
       clearKey(scope);
-      onSaved(envelope.data);
+      onSaved(envelope);
     } catch (cause) {
       if (
         cause instanceof ApiError &&

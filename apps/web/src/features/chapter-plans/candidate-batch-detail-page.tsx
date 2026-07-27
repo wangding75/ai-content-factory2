@@ -95,9 +95,9 @@ export function CandidateBatchDetailPage({ batchId }: { batchId: string }) {
           listChapterPlanCandidates(batchId, query, { signal }),
         ]);
 
-        setBatch(batchEnvelope.data);
-        setCandidates(candidatesEnvelope.data.items);
-        setTotal(candidatesEnvelope.data.total);
+        setBatch(batchEnvelope);
+        setCandidates(candidatesEnvelope.items);
+        setTotal(candidatesEnvelope.total);
       } catch (cause) {
         if (!signal?.aborted) {
           setError(
@@ -134,9 +134,9 @@ export function CandidateBatchDetailPage({ batchId }: { batchId: string }) {
     ])
       .then(([batchEnvelope, candidatesEnvelope]) => {
         if (!cancelled) {
-          setBatch(batchEnvelope.data);
-          setCandidates(candidatesEnvelope.data.items);
-          setTotal(candidatesEnvelope.data.total);
+          setBatch(batchEnvelope);
+          setCandidates(candidatesEnvelope.items);
+          setTotal(candidatesEnvelope.total);
           setError(null);
           setLoading(false);
         }
@@ -186,10 +186,10 @@ export function CandidateBatchDetailPage({ batchId }: { batchId: string }) {
       clearKey(scope);
       invalidateChapterPlanViews(cand.projectId);
 
-      if (envelope.data.outcome === "no_change") {
+      if (envelope.outcome === "no_change") {
         setActionNotice(`第 ${cand.chapterNo} 章候选与线上内容一致 (no_change)，未产生新 Revision。`);
       } else {
-        setActionNotice(`第 ${cand.chapterNo} 章候选采用成功 (Revision r${envelope.data.revision.revisionNo})。`);
+        setActionNotice(`第 ${cand.chapterNo} 章候选采用成功 (Revision r${envelope.revision.revisionNo})。`);
       }
 
       await loadData();

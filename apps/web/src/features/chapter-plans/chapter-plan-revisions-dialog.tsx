@@ -47,7 +47,7 @@ export function ChapterPlanRevisionsDialog({
     listChapterPlanRevisions(chapterPlanId, { limit: 50 }, { signal: controller.signal })
       .then((envelope) => {
         if (!cancelled) {
-          setRevisions(envelope.data.items);
+          setRevisions(envelope.items);
           setError(null);
           setLoading(false);
         }

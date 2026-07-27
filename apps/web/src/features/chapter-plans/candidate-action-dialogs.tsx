@@ -57,7 +57,7 @@ export function BatchAdoptDialog({
       );
 
       clearKey(scope);
-      setResult(envelope.data);
+      setResult(envelope);
     } catch (cause) {
       if (
         cause instanceof ApiError &&
@@ -264,7 +264,7 @@ export function BatchAbandonDialog({
       );
 
       clearKey(scope);
-      onAbandoned(envelope.data);
+      onAbandoned(envelope);
       onClose();
     } catch (cause) {
       if (

@@ -35,7 +35,7 @@ export function CandidateCompareDialog({
     compareChapterPlanCandidate(candidateId, { signal: controller.signal })
       .then((envelope) => {
         if (!cancelled) {
-          setComparison(envelope.data);
+          setComparison(envelope);
           setError(null);
           setLoading(false);
         }
@@ -71,8 +71,8 @@ export function CandidateCompareDialog({
         idempotencyKey,
       );
       clearKey(scope);
-      setComparison(envelope.data);
-      invalidateChapterPlanViews(envelope.data.candidate.projectId);
+      setComparison(envelope);
+      invalidateChapterPlanViews(envelope.candidate.projectId);
     } catch (cause) {
       if (
         cause instanceof ApiError &&

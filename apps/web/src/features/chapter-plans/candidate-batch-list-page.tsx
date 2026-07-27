@@ -67,8 +67,8 @@ export function CandidateBatchListPage({ projectId }: { projectId: string }) {
 
       try {
         const envelope = await listChapterPlanCandidateBatches(projectId, query, { signal });
-        setBatches(envelope.data.items);
-        setTotal(envelope.data.total);
+        setBatches(envelope.items);
+        setTotal(envelope.total);
       } catch (cause) {
         if (!signal?.aborted) {
           setError(
@@ -103,8 +103,8 @@ export function CandidateBatchListPage({ projectId }: { projectId: string }) {
     listChapterPlanCandidateBatches(projectId, query, { signal: controller.signal })
       .then((envelope) => {
         if (!cancelled) {
-          setBatches(envelope.data.items);
-          setTotal(envelope.data.total);
+          setBatches(envelope.items);
+          setTotal(envelope.total);
           setError(null);
           setLoading(false);
         }

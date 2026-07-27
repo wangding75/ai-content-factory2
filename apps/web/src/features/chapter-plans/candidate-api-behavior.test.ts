@@ -7,6 +7,14 @@ import {
   adoptChapterPlanCandidate,
   adoptChapterPlanCandidates,
   createChapterPlanRun,
+  compareChapterPlanCandidate,
+  discardChapterPlanCandidate,
+  getChapterPlanCandidate,
+  getChapterPlanCandidateBatch,
+  getProjectChapterPlanningSummary,
+  listChapterPlanCandidateBatches,
+  listChapterPlanCandidates,
+  listChapterPlanRevisions,
   preflightChapterPlanRun,
   recompareChapterPlanCandidate,
   updateChapterPlanCandidate,
@@ -25,11 +33,40 @@ test("preflight sends frozen full, append, and range targets without legacy fiel
   }) as typeof fetch;
   const base = { storylineSelection: { mode: "auto_balanced" as const }, contextOptions: { includeProjectMaterials: true, includeUnpaidForeshadowings: true, includePriorChapterSummaries: true, coreSettingsOnly: false }, additionalInstructions: null };
   try {
-    await preflightChapterPlanRun("project", { ...base, generationMode: "full", target: { targetTotalChapters: 12 } });
+    const fullReport = await preflightChapterPlanRun("project", { ...base, generationMode: "full", target: { targetTotalChapters: 12 } });
     await preflightChapterPlanRun("project", { ...base, generationMode: "append", target: { chapterCount: 3 } });
     await preflightChapterPlanRun("project", { ...base, generationMode: "range", target: { startChapterNo: 2, endChapterNo: 4 } });
     assert.deepEqual(bodies.map((body) => body.target), [{ targetTotalChapters: 12 }, { chapterCount: 3 }, { startChapterNo: 2, endChapterNo: 4 }]);
+    assert.equal(fullReport.status, "blocked");
     for (const body of bodies) assert.equal("requestedChapterCount" in (body.target as object), false);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test("CF15 helpers unwrap a real single Envelope for summary, batches, candidates, comparison, revisions, and discard", async () => {
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = (async (input: RequestInfo | URL) => {
+    const path = String(input);
+    const data = path.includes("chapter-planning-summary") ? { currentChapterCount: 1 }
+      : path.includes("/revisions") ? { items: [{ id: "revision-1" }], total: 1, limit: 50, offset: 0 }
+      : path.includes("/compare") ? { candidate: { id: "candidate-1" }, currentChapter: null, diff: { entries: [] } }
+      : path.includes("/discard") ? { id: "candidate-1", status: "discarded" }
+      : path.includes("/chapter-plan-candidates/candidate-1") ? { id: "candidate-1" }
+      : path.includes("/candidates") ? { items: [{ id: "candidate-1" }], total: 1, limit: 20, offset: 0 }
+      : path.includes("/chapter-plan-candidate-batches/batch-1") ? { id: "batch-1" }
+      : { items: [{ id: "batch-1" }], total: 1, limit: 20, offset: 0 };
+    return new Response(JSON.stringify({ data, request_id: "single-envelope" }), { status: 200, headers: { "Content-Type": "application/json" } });
+  }) as typeof fetch;
+  try {
+    assert.equal((await getProjectChapterPlanningSummary("project")).currentChapterCount, 1);
+    assert.equal((await listChapterPlanCandidateBatches("project")).items[0].id, "batch-1");
+    assert.equal((await getChapterPlanCandidateBatch("batch-1")).id, "batch-1");
+    assert.equal((await listChapterPlanCandidates("batch-1")).items[0].id, "candidate-1");
+    assert.equal((await getChapterPlanCandidate("candidate-1")).id, "candidate-1");
+    assert.equal((await compareChapterPlanCandidate("candidate-1")).candidate.id, "candidate-1");
+    assert.equal((await listChapterPlanRevisions("chapter-1")).items[0].id, "revision-1");
+    assert.equal((await discardChapterPlanCandidate("candidate-1", { expectedCandidateVersion: 1 }, "key-discard")).status, "discarded");
   } finally {
     globalThis.fetch = originalFetch;
   }
@@ -49,11 +86,8 @@ test("candidate edit sends expectedCandidateVersion, currentSnapshot, and Idempo
     capturedBody = JSON.parse(String(init?.body || "{}")) as Record<string, unknown>;
     return new Response(
       JSON.stringify({
-        data: {
-          data: { id: "cand-1", version: 2, currentSnapshot: capturedBody.currentSnapshot },
-          request_id: "req-1",
-        },
-        request_id: "env-1",
+        data: { id: "cand-1", version: 2, currentSnapshot: capturedBody.currentSnapshot },
+        request_id: "req-1",
       }),
       { status: 200, headers: { "Content-Type": "application/json" } },
     );
@@ -89,7 +123,7 @@ test("candidate edit sends expectedCandidateVersion, currentSnapshot, and Idempo
     assert.equal(capturedHeaders["Idempotency-Key"], "key-edit-123");
     assert.equal(capturedBody.expectedCandidateVersion, 1);
     assert.equal(bodySnapshot.title, "Updated Title");
-    assert.equal(res.data.id, "cand-1");
+    assert.equal(res.id, "cand-1");
   } finally {
     globalThis.fetch = originalFetch;
   }
@@ -145,14 +179,11 @@ test("recompare sends POST to /recompare with expectedCandidateVersion and does 
     return new Response(
       JSON.stringify({
         data: {
-          data: {
-            candidate: { id: "cand-1", version: 2 },
-            currentChapter: null,
-            diff: { baseRevisionId: null, candidateVersion: 2, entries: [], stale: false },
-          },
-          request_id: "req-rec",
+          candidate: { id: "cand-1", version: 2 },
+          currentChapter: null,
+          diff: { baseRevisionId: null, candidateVersion: 2, entries: [], stale: false },
         },
-        request_id: "env-rec",
+        request_id: "req-rec",
       }),
       { status: 200, headers: { "Content-Type": "application/json" } },
     );
@@ -169,7 +200,7 @@ test("recompare sends POST to /recompare with expectedCandidateVersion and does 
     assert.doesNotMatch(capturedUrl, /\/adopt/);
     assert.equal(capturedMethod, "POST");
     assert.equal(capturedBody.expectedCandidateVersion, 1);
-    assert.equal(res.data.candidate.id, "cand-1");
+    assert.equal(res.candidate.id, "cand-1");
   } finally {
     globalThis.fetch = originalFetch;
   }
@@ -188,15 +219,12 @@ test("single adopt sends expectedCandidateVersion, expectedChapterPlanVersion, a
     return new Response(
       JSON.stringify({
         data: {
-          data: {
-            outcome: "adopted",
-            candidate: { id: "cand-1", status: "adopted" },
-            chapterPlan: { id: "cp-1" },
-            revision: { revisionNo: 1 },
-          },
-          request_id: "req-adopt",
+          outcome: "adopted",
+          candidate: { id: "cand-1", status: "adopted" },
+          chapterPlan: { id: "cp-1" },
+          revision: { revisionNo: 1 },
         },
-        request_id: "env-adopt",
+        request_id: "req-adopt",
       }),
       { status: 200, headers: { "Content-Type": "application/json" } },
     );
@@ -213,7 +241,7 @@ test("single adopt sends expectedCandidateVersion, expectedChapterPlanVersion, a
     assert.equal(capturedHeaders["Idempotency-Key"], "key-adopt-1");
     assert.equal(capturedBody.expectedCandidateVersion, 1);
     assert.equal(capturedBody.expectedChapterPlanVersion, 3);
-    assert.equal((res.data as unknown as { outcome: string }).outcome, "adopted");
+    assert.equal((res as unknown as { outcome: string }).outcome, "adopted");
   } finally {
     globalThis.fetch = originalFetch;
   }
@@ -230,19 +258,16 @@ test("bulk adopt preserves itemized outcomes (adopted, no_change, stale, conflic
     return new Response(
       JSON.stringify({
         data: {
-          data: {
-            batch: { id: "batch-1", status: "partially_adopted" },
-            items: [
-              { candidateId: "c1", outcome: "adopted" },
-              { candidateId: "c2", outcome: "no_change" },
-              { candidateId: "c3", outcome: "stale" },
-              { candidateId: "c4", outcome: "conflict" },
-              { candidateId: "c5", outcome: "failed" },
-            ],
-          },
-          request_id: "req-bulk",
+          batch: { id: "batch-1", status: "partially_adopted" },
+          items: [
+            { candidateId: "c1", outcome: "adopted" },
+            { candidateId: "c2", outcome: "no_change" },
+            { candidateId: "c3", outcome: "stale" },
+            { candidateId: "c4", outcome: "conflict" },
+            { candidateId: "c5", outcome: "failed" },
+          ],
         },
-        request_id: "env-bulk",
+        request_id: "req-bulk",
       }),
       { status: 200, headers: { "Content-Type": "application/json" } },
     );
@@ -266,12 +291,12 @@ test("bulk adopt preserves itemized outcomes (adopted, no_change, stale, conflic
 
     assert.match(capturedUrl, /\/chapter-plan-candidate-batches\/batch-1\/adoptions$/);
     assert.equal(capturedBody.expectedBatchVersion, 1);
-    assert.equal(res.data.items.length, 5);
-    assert.equal(res.data.items[0].outcome, "adopted");
-    assert.equal(res.data.items[1].outcome, "no_change");
-    assert.equal(res.data.items[2].outcome, "stale");
-    assert.equal(res.data.items[3].outcome, "conflict");
-    assert.equal(res.data.items[4].outcome, "failed");
+    assert.equal(res.items.length, 5);
+    assert.equal(res.items[0].outcome, "adopted");
+    assert.equal(res.items[1].outcome, "no_change");
+    assert.equal(res.items[2].outcome, "stale");
+    assert.equal(res.items[3].outcome, "conflict");
+    assert.equal(res.items[4].outcome, "failed");
   } finally {
     globalThis.fetch = originalFetch;
   }
@@ -287,11 +312,8 @@ test("abandon batch explicitly carries acknowledgeAdoptedChaptersRemain: true", 
     capturedBody = JSON.parse(String(init?.body || "{}")) as Record<string, unknown>;
     return new Response(
       JSON.stringify({
-        data: {
-          data: { id: "batch-1", status: "abandoned" } as ChapterPlanCandidateBatch,
-          request_id: "req-abandon",
-        },
-        request_id: "env-abandon",
+        data: { id: "batch-1", status: "abandoned" } as ChapterPlanCandidateBatch,
+        request_id: "req-abandon",
       }),
       { status: 200, headers: { "Content-Type": "application/json" } },
     );
@@ -311,7 +333,7 @@ test("abandon batch explicitly carries acknowledgeAdoptedChaptersRemain: true", 
     assert.match(capturedUrl, /\/chapter-plan-candidate-batches\/batch-1\/abandon$/);
     assert.equal(capturedBody.expectedBatchVersion, 2);
     assert.equal(capturedBody.acknowledgeAdoptedChaptersRemain, true);
-    assert.equal(res.data.status, "abandoned");
+    assert.equal(res.status, "abandoned");
   } finally {
     globalThis.fetch = originalFetch;
   }
@@ -329,11 +351,8 @@ test("create chapter plan run sends preflightToken and Idempotency-Key", async (
     capturedBody = JSON.parse(String(init?.body || "{}")) as Record<string, unknown>;
     return new Response(
       JSON.stringify({
-        data: {
-          data: { id: "run-100", status: "running" },
-          request_id: "req-create-run",
-        },
-        request_id: "env-run",
+        data: { id: "run-100", status: "running" },
+        request_id: "req-create-run",
       }),
       { status: 200, headers: { "Content-Type": "application/json" } },
     );
@@ -349,7 +368,7 @@ test("create chapter plan run sends preflightToken and Idempotency-Key", async (
     assert.match(capturedUrl, /\/projects\/proj-1\/chapter-plan-runs$/);
     assert.equal(capturedHeaders["Idempotency-Key"], "key-run-1");
     assert.equal(capturedBody.preflightToken, "token-abc-123");
-    assert.equal((res as { data?: { id?: string } }).data?.id, "run-100");
+    assert.equal(res.id, "run-100");
   } finally {
     globalThis.fetch = originalFetch;
   }

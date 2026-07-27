@@ -129,7 +129,7 @@ export function ChapterPlansWorkspace({
         }
 
         if (summaryRes.status === "fulfilled") {
-          setSummary(summaryRes.value.data);
+          setSummary(summaryRes.value);
         } else if (summaryRes.reason instanceof ApiError) {
           setSummaryError(summaryRes.reason);
         }
@@ -249,9 +249,9 @@ export function ChapterPlansWorkspace({
     setPreflighting(true);
     setError(null);
     try {
-      const envelope = await preflightChapterPlanRun(projectId, requestPayload);
+      const report = await preflightChapterPlanRun(projectId, requestPayload);
       setSettingsOpen(false);
-      setPreflightReport(envelope.data);
+      setPreflightReport(report);
     } catch (cause) {
       if (cause instanceof ApiError) {
         setError(cause);
@@ -270,15 +270,15 @@ export function ChapterPlansWorkspace({
     const payload = { preflightToken };
     try {
       const idempotencyKey = await getOrCreateKey(scope, payload);
-      const result = (await createChapterPlanRun(
+      const result = await createChapterPlanRun(
         projectId,
         payload,
         idempotencyKey,
-      )) as { data?: { id?: string }; id?: string };
+      );
 
       clearKey(scope);
       invalidateChapterPlanViews(projectId);
-      const runId = result?.data?.id || result?.id || "run-created";
+      const runId = result?.id || "run-created";
       setPreflightReport(null);
       setCreatedRunId(runId);
       await refresh();
