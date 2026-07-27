@@ -2,9 +2,7 @@ package chapterplan
 
 import (
 	"context"
-	"crypto/hmac"
 	"crypto/sha256"
-	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -19,8 +17,6 @@ var (
 	ErrBatchAlreadyFinalized    = errors.New("batch is already finalized")
 	ErrIdempotencyKeyReused     = errors.New("idempotency key reused with different payload")
 	ErrRevisionSequenceConflict = errors.New("revision sequence conflict")
-
-	hmacSecretKey = []byte("cf15-chapter-planning-idempotency-secret-v1")
 )
 
 type AdoptCandidateCommand struct {
@@ -76,24 +72,21 @@ type BulkAdoptResult struct {
 }
 
 type AbandonBatchCommand struct {
-	BatchID                            uuid.UUID `json:"batchId"`
-	ExpectedBatchVersion               int       `json:"expectedBatchVersion"`
-	Reason                             *string   `json:"reason"`
-	AcknowledgeAdoptedChaptersRemain   bool      `json:"acknowledgeAdoptedChaptersRemain"`
-	IdempotencyKey                     string    `json:"idempotencyKey"`
-	ActorID                            string    `json:"actorId"`
+	BatchID                          uuid.UUID `json:"batchId"`
+	ExpectedBatchVersion             int       `json:"expectedBatchVersion"`
+	Reason                           *string   `json:"reason"`
+	AcknowledgeAdoptedChaptersRemain bool      `json:"acknowledgeAdoptedChaptersRemain"`
+	IdempotencyKey                   string    `json:"idempotencyKey"`
+	ActorID                          string    `json:"actorId"`
 }
 
-func deriveKeyFingerprint(rawKey string) string {
-	mac := hmac.New(sha256.New, hmacSecretKey)
-	mac.Write([]byte(rawKey))
-	return hex.EncodeToString(mac.Sum(nil))
-}
-
-func hashPayload(v any) string {
-	b, _ := json.Marshal(v)
+func hashPayload(v any) (string, error) {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return "", fmt.Errorf("marshal idempotency payload: %w", err)
+	}
 	sum := sha256.Sum256(b)
-	return hex.EncodeToString(sum[:])
+	return fmt.Sprintf("%x", sum[:]), nil
 }
 
 func acquireAdvisoryLock(ctx context.Context, tx pgx.Tx, scope, key string) error {
@@ -149,9 +142,12 @@ func recordAuditLog(ctx context.Context, tx pgx.Tx, actor, action, subjectType s
 		}
 		cleanPayload[k] = v
 	}
-	pBytes, _ := json.Marshal(cleanPayload)
+	pBytes, err := json.Marshal(cleanPayload)
+	if err != nil {
+		return fmt.Errorf("marshal audit payload: %w", err)
+	}
 	id := uuid.New()
-	_, err := tx.Exec(ctx, `
+	_, err = tx.Exec(ctx, `
 		INSERT INTO audit_logs (id, actor_id, action, subject_type, subject_id, payload, created_at)
 		VALUES ($1, $2, $3, $4, $5, $6, NOW())
 	`, id, actor, action, subjectType, subjectID.String(), pBytes)
@@ -206,11 +202,13 @@ func replaceChapterPlanRelations(ctx context.Context, tx pgx.Tx, planID, project
 		if pos < 0 {
 			pos = i
 		}
-		_, _ = tx.Exec(ctx, `
+		if _, err := tx.Exec(ctx, `
 			INSERT INTO project_material_usages (id, project_id, material_id, usage_type, created_by)
 			VALUES ($1, $2, $3, 'reference', 'system')
 			ON CONFLICT (project_id, material_id) DO NOTHING
-		`, uuid.New(), projectID, ref.ID)
+		`, uuid.New(), projectID, ref.ID); err != nil {
+			return fmt.Errorf("ensure project material usage: %w", err)
+		}
 
 		_, err := tx.Exec(ctx, `
 			INSERT INTO chapter_plan_materials (chapter_plan_id, project_id, material_id, position)
@@ -257,7 +255,10 @@ func (r *Repository) AdoptCandidate(ctx context.Context, cmd AdoptCandidateComma
 	}
 	keyFp := r.computeHMACKeyFingerprint(cmd.IdempotencyKey)
 	scope := fmt.Sprintf("chapter_plan_candidate:%s", cmd.CandidateID)
-	reqHash := hashPayload(cmd)
+	reqHash, err := hashPayload(cmd)
+	if err != nil {
+		return AdoptCandidateResult{}, err
+	}
 
 	tx, err := r.db.Begin(ctx)
 	if err != nil {
@@ -356,7 +357,9 @@ func (r *Repository) AdoptCandidate(ctx context.Context, cmd AdoptCandidateComma
 	}
 
 	var snapObj candidateSnapshotStruct
-	_ = json.Unmarshal(currSnap, &snapObj)
+	if err := json.Unmarshal(currSnap, &snapObj); err != nil {
+		return AdoptCandidateResult{}, fmt.Errorf("unmarshal candidate snapshot: %w", err)
+	}
 
 	title := snapObj.Title
 	if title == "" {
@@ -388,7 +391,9 @@ func (r *Repository) AdoptCandidate(ctx context.Context, cmd AdoptCandidateComma
 	} else {
 		planID = targetPlan.ID
 		var maxRev int
-		_ = tx.QueryRow(ctx, "SELECT COALESCE(MAX(revision_no), 0) FROM chapter_plan_revisions WHERE chapter_plan_id = $1", planID).Scan(&maxRev)
+		if err := tx.QueryRow(ctx, "SELECT COALESCE(MAX(revision_no), 0) FROM chapter_plan_revisions WHERE chapter_plan_id = $1", planID).Scan(&maxRev); err != nil {
+			return AdoptCandidateResult{}, fmt.Errorf("read current revision number: %w", err)
+		}
 		revNo = maxRev + 1
 	}
 
@@ -437,7 +442,9 @@ func (r *Repository) AdoptCandidate(ctx context.Context, cmd AdoptCandidateComma
 			return AdoptCandidateResult{}, classifyAdoptErr(err)
 		}
 	}
-	_ = r.loadRefs(ctx, &committedPlan)
+	if err := r.loadRefs(ctx, &committedPlan); err != nil {
+		return AdoptCandidateResult{}, fmt.Errorf("load adopted chapter references: %w", err)
+	}
 
 	// 5. Update Candidate
 	now := time.Now()
@@ -516,7 +523,9 @@ func (r *Repository) recalculateBatchInTx(ctx context.Context, tx pgx.Tx, batchI
 
 	newStatus := "ready"
 	var currentStatus string
-	_ = tx.QueryRow(ctx, "SELECT status FROM chapter_plan_candidate_batches WHERE id = $1", batchID).Scan(&currentStatus)
+	if err := tx.QueryRow(ctx, "SELECT status FROM chapter_plan_candidate_batches WHERE id = $1", batchID).Scan(&currentStatus); err != nil {
+		return CandidateBatch{}, fmt.Errorf("read current batch status: %w", err)
+	}
 	if currentStatus == "abandoned" {
 		newStatus = "abandoned"
 	} else if adoptedCount > 0 && (pendingCount > 0 || staleCount > 0) {
@@ -545,7 +554,10 @@ func (r *Repository) BulkAdoptCandidates(ctx context.Context, cmd BulkAdoptComma
 	}
 	keyFp := r.computeHMACKeyFingerprint(cmd.IdempotencyKey)
 	scope := fmt.Sprintf("chapter_plan_bulk_adopt:%s", cmd.BatchID)
-	reqHash := hashPayload(cmd)
+	reqHash, err := hashPayload(cmd)
+	if err != nil {
+		return BulkAdoptResult{}, err
+	}
 
 	conn, err := r.db.Acquire(ctx)
 	if err != nil {
@@ -689,7 +701,10 @@ func (r *Repository) DiscardCandidate(ctx context.Context, cmd DiscardCandidateC
 	}
 	keyFp := r.computeHMACKeyFingerprint(cmd.IdempotencyKey)
 	scope := fmt.Sprintf("chapter_plan_candidate:%s", cmd.CandidateID)
-	reqHash := hashPayload(cmd)
+	reqHash, err := hashPayload(cmd)
+	if err != nil {
+		return Candidate{}, err
+	}
 
 	tx, err := r.db.Begin(ctx)
 	if err != nil {
@@ -774,7 +789,10 @@ func (r *Repository) AbandonBatch(ctx context.Context, cmd AbandonBatchCommand) 
 	}
 	keyFp := r.computeHMACKeyFingerprint(cmd.IdempotencyKey)
 	scope := fmt.Sprintf("chapter_plan_batch:%s", cmd.BatchID)
-	reqHash := hashPayload(cmd)
+	reqHash, err := hashPayload(cmd)
+	if err != nil {
+		return CandidateBatch{}, err
+	}
 
 	tx, err := r.db.Begin(ctx)
 	if err != nil {

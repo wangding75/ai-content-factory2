@@ -31,9 +31,9 @@ type CandidateDiff struct {
 }
 
 type CandidateComparison struct {
-	Candidate      Candidate      `json:"candidate"`
-	CurrentChapter *Plan          `json:"currentChapter"`
-	Diff           CandidateDiff  `json:"diff"`
+	Candidate      Candidate     `json:"candidate"`
+	CurrentChapter *Plan         `json:"currentChapter"`
+	Diff           CandidateDiff `json:"diff"`
 }
 
 type UpdateCandidateCommand struct {
@@ -52,9 +52,15 @@ type RecompareCandidateCommand struct {
 }
 
 func (r *Repository) UpdateCandidate(ctx context.Context, cmd UpdateCandidateCommand) (Candidate, error) {
-	keyFp := deriveKeyFingerprint(cmd.IdempotencyKey)
+	if len(cmd.IdempotencyKey) == 0 {
+		return Candidate{}, fmt.Errorf("%w: idempotency key is required", ErrInvalidCandidateState)
+	}
+	keyFp := r.computeHMACKeyFingerprint(cmd.IdempotencyKey)
 	scope := fmt.Sprintf("chapter-plan-candidate-update:%s", cmd.CandidateID)
-	reqHash := hashPayload(cmd)
+	reqHash, err := hashPayload(cmd)
+	if err != nil {
+		return Candidate{}, err
+	}
 
 	tx, err := r.db.Begin(ctx)
 	if err != nil {
@@ -183,11 +189,14 @@ func (r *Repository) RecompareCandidate(ctx context.Context, cmd RecompareCandid
 	}
 	keyFp := r.computeHMACKeyFingerprint(cmd.IdempotencyKey)
 	scope := fmt.Sprintf("chapter_plan_candidate:%s", cmd.CandidateID)
-	reqHash := hashPayload(map[string]any{
-		"op":              "recompare",
-		"candidate_id":    cmd.CandidateID,
-		"expected_ver":    cmd.ExpectedCandidateVersion,
+	reqHash, err := hashPayload(map[string]any{
+		"op":           "recompare",
+		"candidate_id": cmd.CandidateID,
+		"expected_ver": cmd.ExpectedCandidateVersion,
 	})
+	if err != nil {
+		return CandidateComparison{}, err
+	}
 
 	tx, err := r.db.Begin(ctx)
 	if err != nil {
@@ -332,12 +341,12 @@ func (r *Repository) getPlanSnapshotJSON(ctx context.Context, tx pgx.Tx, plan *P
 		return revSnap
 	}
 	snapMap := map[string]any{
-		"chapterNo":      plan.ChapterNo,
-		"title":          plan.Title,
-		"summary":        plan.Summary,
-		"chapterPurpose": "other",
-		"storylineRefs":  plan.Storylines,
-		"materialRefs":   plan.Materials,
+		"chapterNo":         plan.ChapterNo,
+		"title":             plan.Title,
+		"summary":           plan.Summary,
+		"chapterPurpose":    "other",
+		"storylineRefs":     plan.Storylines,
+		"materialRefs":      plan.Materials,
 		"foreshadowingRefs": plan.Foreshadowings,
 		"generationBasis": map[string]any{
 			"contextSummary": "",

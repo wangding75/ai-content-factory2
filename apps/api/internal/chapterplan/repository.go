@@ -17,13 +17,13 @@ import (
 )
 
 var (
-	ErrNotFound              = errors.New("chapter plan not found")
-	ErrVersionConflict       = errors.New("chapter plan version conflict")
-	ErrChapterNoConflict     = errors.New("chapter plan chapter number conflict")
-	ErrInvalidReference      = errors.New("chapter plan invalid reference")
-	ErrProjectMismatch       = errors.New("chapter plan project mismatch")
-	ErrHMACSecretRequired    = errors.New("chapter plan idempotency hmac secret is required")
-	ErrIdempotencyConflict   = errors.New("idempotency key reused with different payload")
+	ErrNotFound            = errors.New("chapter plan not found")
+	ErrVersionConflict     = errors.New("chapter plan version conflict")
+	ErrChapterNoConflict   = errors.New("chapter plan chapter number conflict")
+	ErrInvalidReference    = errors.New("chapter plan invalid reference")
+	ErrProjectMismatch     = errors.New("chapter plan project mismatch")
+	ErrHMACSecretRequired  = errors.New("chapter plan idempotency hmac secret is required")
+	ErrIdempotencyConflict = errors.New("idempotency key reused with different payload")
 )
 
 type StorylineRef struct {
@@ -70,10 +70,6 @@ func (r *Repository) HMACSecret() []byte {
 }
 
 func (r *Repository) computeHMACKeyFingerprint(rawKey string) string {
-	if len(r.hmacSecret) == 0 {
-		h := sha256.Sum256([]byte(rawKey))
-		return hex.EncodeToString(h[:])
-	}
 	mac := hmac.New(sha256.New, r.hmacSecret)
 	mac.Write([]byte(rawKey))
 	return hex.EncodeToString(mac.Sum(nil))
