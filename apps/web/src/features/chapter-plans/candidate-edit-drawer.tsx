@@ -24,7 +24,7 @@ export function CandidateEditDrawer({
   onSaved,
   onRefreshCandidate,
 }: CandidateEditDrawerProps) {
-  const { getOrCreateKey, clearKey } = useIdempotency();
+  const { getOrCreateKey, clearKey, markUnknown } = useIdempotency();
   const [activeTab, setActiveTab] = useState<"current" | "generated" | "base">(
     "current",
   );
@@ -44,7 +44,7 @@ export function CandidateEditDrawer({
     setError(null);
     setVersionConflict(false);
 
-    const scope = `edit-candidate-${candidate.id}`;
+    const scope = `candidate:edit:${candidate.id}`;
     const payload = {
       expectedCandidateVersion: candidate.version,
       currentSnapshot,
@@ -60,12 +60,17 @@ export function CandidateEditDrawer({
       clearKey(scope);
       onSaved(envelope.data);
     } catch (cause) {
+      if (
+        cause instanceof ApiError &&
+        (cause.status === 0 || cause.status >= 500 || cause.code === "timeout")
+      ) {
+        markUnknown(scope, payload);
+      }
       if (cause instanceof ApiError) {
         setError(cause);
         if (
           cause.status === 409 ||
           cause.message?.includes("version_conflict") ||
-
           cause.message?.includes("invalid_candidate_state")
         ) {
           setVersionConflict(true);

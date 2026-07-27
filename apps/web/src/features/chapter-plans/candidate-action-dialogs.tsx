@@ -29,7 +29,7 @@ export function BatchAdoptDialog({
   onClose,
   onCompleted,
 }: BatchAdoptDialogProps) {
-  const { getOrCreateKey, clearKey } = useIdempotency();
+  const { getOrCreateKey, clearKey, markUnknown } = useIdempotency();
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<ApiError | null>(null);
   const [result, setResult] = useState<BulkAdoptChapterPlanCandidatesResult | null>(null);
@@ -37,7 +37,7 @@ export function BatchAdoptDialog({
   const handleSubmit = async () => {
     setSubmitting(true);
     setError(null);
-    const scope = `bulk-adopt-${batch.id}`;
+    const scope = `batch:bulk-adopt:${batch.id}`;
     const payloadCandidates = selectedCandidates.map((cand) => ({
       candidateId: cand.id,
       expectedCandidateVersion: cand.version,
@@ -59,6 +59,12 @@ export function BatchAdoptDialog({
       clearKey(scope);
       setResult(envelope.data);
     } catch (cause) {
+      if (
+        cause instanceof ApiError &&
+        (cause.status === 0 || cause.status >= 500 || cause.code === "timeout")
+      ) {
+        markUnknown(scope, payload);
+      }
       if (cause instanceof ApiError) {
         setError(cause);
       } else {
@@ -68,6 +74,7 @@ export function BatchAdoptDialog({
       setSubmitting(false);
     }
   };
+
 
 
   return (
@@ -229,17 +236,19 @@ export function BatchAbandonDialog({
   onClose,
   onAbandoned,
 }: BatchAbandonDialogProps) {
-  const { getOrCreateKey, clearKey } = useIdempotency();
+  const { getOrCreateKey, clearKey, markUnknown } = useIdempotency();
   const [reason, setReason] = useState("");
+  const [acknowledged, setAcknowledged] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<ApiError | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!acknowledged) return;
     setSubmitting(true);
     setError(null);
 
-    const scope = `abandon-batch-${batch.id}`;
+    const scope = `batch:abandon:${batch.id}`;
     const payload = {
       expectedBatchVersion: batch.version,
       reason: reason.trim() || null,
@@ -258,6 +267,12 @@ export function BatchAbandonDialog({
       onAbandoned(envelope.data);
       onClose();
     } catch (cause) {
+      if (
+        cause instanceof ApiError &&
+        (cause.status === 0 || cause.status >= 500 || cause.code === "timeout")
+      ) {
+        markUnknown(scope, payload);
+      }
       if (cause instanceof ApiError) {
         setError(cause);
       } else {
@@ -267,7 +282,6 @@ export function BatchAbandonDialog({
       setSubmitting(false);
     }
   };
-
 
   return (
     <div
@@ -307,6 +321,18 @@ export function BatchAbandonDialog({
           </div>
 
           <div className="chapter-plan-form-group" style={{ marginTop: 16 }}>
+            <label className="chapter-plan-form-label">
+              <input
+                type="checkbox"
+                checked={acknowledged}
+                onChange={(e) => setAcknowledged(e.target.checked)}
+                style={{ marginRight: 8 }}
+              />
+              我已知晓并确认：已采用的章节将保留线上 Revision，不会发生回滚。
+            </label>
+          </div>
+
+          <div className="chapter-plan-form-group" style={{ marginTop: 16 }}>
             <label htmlFor="abandonReason" className="chapter-plan-form-label">
               放弃原因 (可选)
             </label>
@@ -332,7 +358,7 @@ export function BatchAbandonDialog({
             <button
               type="submit"
               className="chapter-plan-button primary"
-              disabled={submitting}
+              disabled={submitting || !acknowledged}
             >
               {submitting ? "正在放弃..." : "确认放弃本批次"}
             </button>

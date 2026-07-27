@@ -36,7 +36,7 @@ export function CandidateBatchDetailPage({ batchId }: { batchId: string }) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const { getOrCreateKey, clearKey } = useIdempotency();
+  const { getOrCreateKey, clearKey, markUnknown } = useIdempotency();
 
   // Read initial query parameters from URL
   const statusParam = (searchParams.get("status") as ChapterPlanCandidateStatus) || "";
@@ -173,7 +173,7 @@ export function CandidateBatchDetailPage({ batchId }: { batchId: string }) {
   const handleAdoptCandidate = async (cand: ChapterPlanCandidate) => {
     setError(null);
     setActionNotice(null);
-    const scope = `single-adopt-${cand.id}`;
+    const scope = `candidate:adopt:${cand.id}`;
     const payload = {
       expectedCandidateVersion: cand.version,
       expectedChapterPlanVersion: cand.baseChapterPlanVersion ?? null,
@@ -192,6 +192,12 @@ export function CandidateBatchDetailPage({ batchId }: { batchId: string }) {
 
       await loadData();
     } catch (cause) {
+      if (
+        cause instanceof ApiError &&
+        (cause.status === 0 || cause.status >= 500 || cause.code === "timeout")
+      ) {
+        markUnknown(scope, payload);
+      }
       if (cause instanceof ApiError) {
         if (
           cause.status === 409 ||
@@ -212,7 +218,7 @@ export function CandidateBatchDetailPage({ batchId }: { batchId: string }) {
   const handleDiscardCandidate = async (cand: ChapterPlanCandidate) => {
     setError(null);
     setActionNotice(null);
-    const scope = `discard-${cand.id}`;
+    const scope = `candidate:discard:${cand.id}`;
     const payload = { expectedCandidateVersion: cand.version };
     try {
       const idempotencyKey = getOrCreateKey(scope, payload);
@@ -223,6 +229,12 @@ export function CandidateBatchDetailPage({ batchId }: { batchId: string }) {
       setActionNotice(`第 ${cand.chapterNo} 章候选已丢弃。`);
       await loadData();
     } catch (cause) {
+      if (
+        cause instanceof ApiError &&
+        (cause.status === 0 || cause.status >= 500 || cause.code === "timeout")
+      ) {
+        markUnknown(scope, payload);
+      }
       if (cause instanceof ApiError) {
         setError(cause);
       } else {

@@ -20,7 +20,7 @@ export function CandidateCompareDialog({
   candidateId,
   onClose,
 }: CandidateCompareDialogProps) {
-  const { getOrCreateKey, clearKey } = useIdempotency();
+  const { getOrCreateKey, clearKey, markUnknown } = useIdempotency();
   const [comparison, setComparison] =
     useState<ChapterPlanCandidateComparison | null>(null);
   const [loading, setLoading] = useState(true);
@@ -60,7 +60,7 @@ export function CandidateCompareDialog({
     if (!comparison) return;
     setRecomparing(true);
     setError(null);
-    const scope = `recompare-${candidateId}`;
+    const scope = `candidate:recompare:${candidateId}`;
     const payload = { expectedCandidateVersion: comparison.candidate.version };
     try {
       const idempotencyKey = getOrCreateKey(scope, payload);
@@ -72,6 +72,12 @@ export function CandidateCompareDialog({
       clearKey(scope);
       setComparison(envelope.data);
     } catch (cause) {
+      if (
+        cause instanceof ApiError &&
+        (cause.status === 0 || cause.status >= 500 || cause.code === "timeout")
+      ) {
+        markUnknown(scope, payload);
+      }
       if (cause instanceof ApiError) {
         setError(cause);
       } else {

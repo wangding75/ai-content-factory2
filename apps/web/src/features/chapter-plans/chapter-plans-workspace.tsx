@@ -66,7 +66,7 @@ export function ChapterPlansWorkspace({
   projectId: string;
   project: Project;
 }) {
-  const { getOrCreateKey, clearKey } = useIdempotency();
+  const { getOrCreateKey, clearKey, markUnknown } = useIdempotency();
   const [plans, setPlans] = useState<ChapterPlan[] | null>(null);
   const [summary, setSummary] = useState<ChapterPlanningSummary | null>(null);
   const [summaryError, setSummaryError] = useState<ApiError | null>(null);
@@ -255,7 +255,7 @@ export function ChapterPlansWorkspace({
   // Create Run Handler
   const handleCreateRun = async (preflightToken: string) => {
     setCreatingRun(true);
-    const scope = `create-run-${projectId}`;
+    const scope = `chapter-plan-run:create:${projectId}`;
     const payload = { preflightToken };
     try {
       const idempotencyKey = getOrCreateKey(scope, payload);
@@ -271,7 +271,12 @@ export function ChapterPlansWorkspace({
       setCreatedRunId(runId);
       await refresh();
     } catch (cause) {
-
+      if (
+        cause instanceof ApiError &&
+        (cause.status === 0 || cause.status >= 500 || cause.code === "timeout")
+      ) {
+        markUnknown(scope, payload);
+      }
       if (cause instanceof ApiError) {
         setError(cause);
       } else {
