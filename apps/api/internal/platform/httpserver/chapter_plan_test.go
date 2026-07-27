@@ -13,6 +13,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/local/ai-content-factory/apps/api/internal/chapterplan"
 	"github.com/local/ai-content-factory/apps/api/internal/project"
+	"github.com/local/ai-content-factory/apps/api/internal/workflowrun"
 )
 
 type fakeChapterPlanApplication struct {
@@ -36,6 +37,25 @@ type fakeChapterPlanApplication struct {
 	confirmProjectID  uuid.UUID
 	selections        []chapterplan.Selection
 	confirmCalls      int
+}
+
+type fakeChapterPlanRunApplication struct {
+	result    chapterplan.PreflightResult
+	err       error
+	projectID uuid.UUID
+	request   chapterplan.PreflightRequest
+	calls     int
+}
+
+func (f *fakeChapterPlanRunApplication) Preflight(_ context.Context, projectID uuid.UUID, request chapterplan.PreflightRequest) (chapterplan.PreflightResult, error) {
+	f.calls++
+	f.projectID = projectID
+	f.request = request
+	return f.result, f.err
+}
+
+func (f *fakeChapterPlanRunApplication) CreateChapterPlanningRun(context.Context, uuid.UUID, string, string, string) (workflowrun.WorkflowRun, error) {
+	return workflowrun.WorkflowRun{}, nil
 }
 
 func (f *fakeChapterPlanApplication) List(_ context.Context, id uuid.UUID) ([]chapterplan.Plan, error) {
@@ -117,6 +137,86 @@ func chapterPlanRequest(handler http.Handler, method, path, body string) *httpte
 }
 func mockGenerateBody(targetID uuid.UUID) string {
 	return `{"target_storyline_id":"` + targetID.String() + `","start_chapter_no":1,"end_chapter_no":2,"chapter_count":2,"include_main_storyline":true,"include_child_storylines":false,"include_project_materials":true,"include_unpaid_foreshadowings":false,"include_prior_chapter_summaries":true,"summary_length":"medium","chapter_pace":"balanced","generation_notes":null}`
+}
+
+func chapterPlanPreflightBody() string {
+	return `{"generationMode":"full","target":{"targetTotalChapters":2},"storylineSelection":{"mode":"auto_balanced","storylineIds":[]},"contextOptions":{"includeProjectMaterials":true,"includeUnpaidForeshadowings":true,"includePriorChapterSummaries":true,"coreSettingsOnly":false},"additionalInstructions":null}`
+}
+
+type chapterPlanPreflightHTTPResponse struct {
+	Data struct {
+		Result         string          `json:"result"`
+		Status         string          `json:"status"`
+		PreflightToken *string         `json:"preflightToken"`
+		Checks         json.RawMessage `json:"checks"`
+		Warnings       json.RawMessage `json:"warnings"`
+		Blockers       []struct {
+			Code    string `json:"code"`
+			Details struct {
+				RetryAction string `json:"action"`
+				SafeReason  string `json:"safeSummary"`
+			} `json:"details"`
+		} `json:"blockers"`
+	} `json:"data"`
+}
+
+func decodeChapterPlanPreflightHTTPResponse(t *testing.T, response *httptest.ResponseRecorder) chapterPlanPreflightHTTPResponse {
+	t.Helper()
+	var payload chapterPlanPreflightHTTPResponse
+	if err := json.Unmarshal(response.Body.Bytes(), &payload); err != nil {
+		t.Fatalf("decode preflight response: %v; body=%s", err, response.Body.String())
+	}
+	return payload
+}
+
+func TestChapterPlanPreflightHandlerReturnsPassedHTTP200WithToken(t *testing.T) {
+	projectID := uuid.New()
+	token := "preflight-token"
+	fake := &fakeChapterPlanRunApplication{result: chapterplan.PreflightResult{
+		Passed:         true,
+		Token:          token,
+		ExpiresAt:      time.Date(2026, 7, 27, 1, 2, 3, 0, time.UTC),
+		InputDigest:    strings.Repeat("a", 64),
+		Target:         chapterplan.BatchTarget{StartChapterNo: 1, EndChapterNo: 2, RequestedChapterCount: 2},
+		BindingID:      uuid.New(),
+		BindingVersion: 1,
+	}}
+
+	response := chapterPlanRequest(chapterPlanPreflightHandler(fake), http.MethodPost, "/api/v1/projects/"+projectID.String()+"/chapter-plan-runs/preflight", chapterPlanPreflightBody())
+	payload := decodeChapterPlanPreflightHTTPResponse(t, response)
+	if response.Code != http.StatusOK || !strings.HasPrefix(response.Header().Get("Content-Type"), "application/json") || fake.calls != 1 || fake.projectID != projectID || fake.request.ActorID != "system" || payload.Data.Result != "passed" || payload.Data.Status != "passed" || payload.Data.PreflightToken == nil || *payload.Data.PreflightToken != token {
+		t.Fatalf("preflight=%d body=%s fake=%#v", response.Code, response.Body.String(), fake)
+	}
+	if len(payload.Data.Blockers) != 0 || string(payload.Data.Checks) == "" || string(payload.Data.Warnings) == "" {
+		t.Fatalf("passed report is incomplete: %s", response.Body.String())
+	}
+}
+
+func TestChapterPlanPreflightHandlerReturnsBlockedHTTP200ForEachBlocker(t *testing.T) {
+	projectID := uuid.New()
+	for _, blocker := range []chapterplan.PreflightBlocker{
+		{Code: "project_binding_missing", RetryAction: "configure_workflow", SafeReason: "A workflow binding is required."},
+		{Code: "execution_integration_unavailable", RetryAction: "enable_workflow", SafeReason: "The workflow connection is unavailable."},
+		{Code: "active_run_conflict", RetryAction: "wait_for_active_run", SafeReason: "Only one active run is allowed."},
+		{Code: "storyline_reference_invalid", RetryAction: "review_storyline_selection", SafeReason: "Choose valid project storylines."},
+		{Code: "generation_input_invalid", RetryAction: "review_generation_input", SafeReason: "All generation options must be provided."},
+	} {
+		t.Run(blocker.Code, func(t *testing.T) {
+			fake := &fakeChapterPlanRunApplication{result: chapterplan.PreflightResult{
+				InputDigest: strings.Repeat("b", 64),
+				Blockers:    []chapterplan.PreflightBlocker{blocker},
+			}}
+			response := chapterPlanRequest(chapterPlanPreflightHandler(fake), http.MethodPost, "/api/v1/projects/"+projectID.String()+"/chapter-plan-runs/preflight", chapterPlanPreflightBody())
+			payload := decodeChapterPlanPreflightHTTPResponse(t, response)
+			if response.Code != http.StatusOK || fake.calls != 1 || payload.Data.Result != "blocked" || payload.Data.Status != "blocked" || payload.Data.PreflightToken != nil || string(payload.Data.Checks) == "" || string(payload.Data.Warnings) == "" || len(payload.Data.Blockers) != 1 {
+				t.Fatalf("blocked preflight=%d body=%s fake=%#v", response.Code, response.Body.String(), fake)
+			}
+			got := payload.Data.Blockers[0]
+			if got.Code != blocker.Code || got.Details.SafeReason != blocker.SafeReason || got.Details.RetryAction != blocker.RetryAction {
+				t.Fatalf("blocker mapping=%#v body=%s", got, response.Body.String())
+			}
+		})
+	}
 }
 
 func TestChapterPlanListHandler(t *testing.T) {
