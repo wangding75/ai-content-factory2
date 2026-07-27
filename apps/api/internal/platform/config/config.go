@@ -5,20 +5,22 @@ import (
 )
 
 type Config struct {
-	Environment                string
-	APIAddress                 string
-	DatabaseURL                string
-	RedisURL                   string
-	ConfigurationEncryptionKey string
+	Environment                      string
+	APIAddress                       string
+	DatabaseURL                      string
+	RedisURL                         string
+	ConfigurationEncryptionKey       string
+	ChapterPlanIdempotencyHMACSecret string
 }
 
 func Load() Config {
 	return Config{
-		Environment:                envOrDefault("APP_ENV", "development"),
-		APIAddress:                 ":" + envOrDefault("API_PORT", "8080"),
-		DatabaseURL:                envOrDefault("DATABASE_URL", "postgres://acf:acf@localhost:5432/acf?sslmode=disable"),
-		RedisURL:                   envOrDefault("REDIS_URL", "redis://localhost:6379/0"),
-		ConfigurationEncryptionKey: os.Getenv("CONFIGURATION_ENCRYPTION_KEY"),
+		Environment:                      envOrDefault("APP_ENV", "development"),
+		APIAddress:                       ":" + envOrDefault("API_PORT", "8080"),
+		DatabaseURL:                      envOrDefault("DATABASE_URL", "postgres://acf:acf@localhost:5432/acf?sslmode=disable"),
+		RedisURL:                         envOrDefault("REDIS_URL", "redis://localhost:6379/0"),
+		ConfigurationEncryptionKey:       os.Getenv("CONFIGURATION_ENCRYPTION_KEY"),
+		ChapterPlanIdempotencyHMACSecret: os.Getenv("CHAPTER_PLAN_IDEMPOTENCY_HMAC_SECRET"),
 	}
 }
 

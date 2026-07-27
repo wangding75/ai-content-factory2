@@ -118,10 +118,19 @@ func requireStringPtr(t *testing.T, label string, got *string, want *string) {
 	}
 }
 
+func mustNewRepo(t *testing.T, db *pgxpool.Pool) *Repository {
+	t.Helper()
+	repo, err := NewPostgresRepository(db, "test-hmac-secret-1234567890")
+	if err != nil {
+		t.Fatalf("failed to create repo: %v", err)
+	}
+	return repo
+}
+
 func TestPostgresRepositoryNullableTriState(t *testing.T) {
 	db, ctx := openIntegrationDB(t)
 	f := newFixture(t, ctx, db)
-	r := NewPostgresRepository(db)
+	r := mustNewRepo(t, db)
 	text := "ordinary text"
 	empty := ""
 	cases := []struct {
@@ -179,6 +188,27 @@ func TestPostgresRepositoryNullableTriState(t *testing.T) {
 	requireStringPtr(t, "null database notes", rawNotes, nil)
 }
 
+func TestRepositorySafelyMapsLegacyManualSource(t *testing.T) {
+	db, ctx := openIntegrationDB(t)
+	f := newFixture(t, ctx, db)
+	id := uuid.New()
+	if _, err := db.Exec(ctx, "INSERT INTO chapter_plans(id,project_id,chapter_no,title,summary,status,source,created_by) VALUES($1,$2,1,'legacy chapter','legacy summary','pending_confirmation','manual','legacy-importer')", id, f.project); err != nil {
+		t.Fatal(err)
+	}
+	repo := mustNewRepo(t, db)
+	got, err := repo.GetByID(ctx, id)
+	if err != nil {
+		t.Fatalf("read legacy chapter plan: %v", err)
+	}
+	if got.ID != id || got.ProjectID != f.project || got.Source != "manual" || got.Status != "pending_confirmation" {
+		t.Fatalf("legacy plan=%+v", got)
+	}
+	items, err := repo.ListByProject(ctx, f.project)
+	if err != nil || len(items) != 1 || items[0].ID != id || items[0].Source != "manual" {
+		t.Fatalf("legacy list=%+v err=%v", items, err)
+	}
+}
+
 func associationIDs(t *testing.T, ctx context.Context, db *pgxpool.Pool, table, column string, planID uuid.UUID) []uuid.UUID {
 	t.Helper()
 	rows, err := db.Query(ctx, "SELECT "+column+" FROM "+table+" WHERE chapter_plan_id=$1 ORDER BY position", planID)
@@ -203,7 +233,7 @@ func associationIDs(t *testing.T, ctx context.Context, db *pgxpool.Pool, table, 
 func TestPostgresRepositoryAssociationsReplaceClearAndRejectCrossProject(t *testing.T) {
 	db, ctx := openIntegrationDB(t)
 	f := newFixture(t, ctx, db)
-	r := NewPostgresRepository(db)
+	r := mustNewRepo(t, db)
 	p := plan(f, 1)
 	p.Storylines = []StorylineRef{{ID: f.storylines[2], Relation: "secondary"}, {ID: f.storylines[0], Relation: "primary"}}
 	p.Materials = []uuid.UUID{f.materials[2], f.materials[0]}
@@ -292,7 +322,7 @@ func TestPostgresRepositoryAssociationsReplaceClearAndRejectCrossProject(t *test
 func TestPostgresRepositoryRejectsDuplicateAssociationsAtomically(t *testing.T) {
 	db, ctx := openIntegrationDB(t)
 	f := newFixture(t, ctx, db)
-	r := NewPostgresRepository(db)
+	r := mustNewRepo(t, db)
 	cases := []struct {
 		name string
 		set  func(*Plan)
@@ -321,7 +351,7 @@ func TestPostgresRepositoryRejectsDuplicateAssociationsAtomically(t *testing.T) 
 func TestPostgresRepositoryConfirmBatchRollsBackOnFailure(t *testing.T) {
 	db, ctx := openIntegrationDB(t)
 	f := newFixture(t, ctx, db)
-	r := NewPostgresRepository(db)
+	r := mustNewRepo(t, db)
 	for _, tc := range []struct {
 		name      string
 		selection func(Plan, Plan) []Selection
@@ -356,7 +386,7 @@ func TestPostgresRepositoryConfirmBatchRollsBackOnFailure(t *testing.T) {
 func TestPostgresRepositoryPersistsAcrossReconnect(t *testing.T) {
 	db, ctx := openIntegrationDB(t)
 	f := newFixture(t, ctx, db)
-	r := NewPostgresRepository(db)
+	r := mustNewRepo(t, db)
 	goal, notes := "goal", "notes"
 	p := plan(f, 1)
 	p.Goal, p.Notes = &goal, &notes
@@ -374,7 +404,7 @@ func TestPostgresRepositoryPersistsAcrossReconnect(t *testing.T) {
 		t.Fatal(err)
 	}
 	t.Cleanup(reconnected.Close)
-	got, err := NewPostgresRepository(reconnected).GetByID(ctx, p.ID)
+	got, err := mustNewRepo(t, reconnected).GetByID(ctx, p.ID)
 	if err != nil {
 		t.Fatal(err)
 	}

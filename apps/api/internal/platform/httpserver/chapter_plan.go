@@ -12,6 +12,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/local/ai-content-factory/apps/api/internal/chapterplan"
+	"github.com/local/ai-content-factory/apps/api/internal/workflowrun"
 )
 
 // chapterPlanApplication is the narrow HTTP-facing application contract. It deliberately
@@ -23,6 +24,25 @@ type chapterPlanApplication interface {
 	Update(context.Context, uuid.UUID, chapterplan.UpdateCommand) (chapterplan.Plan, error)
 	Delete(context.Context, uuid.UUID, int) error
 	Confirm(context.Context, uuid.UUID, []chapterplan.Selection) ([]chapterplan.Plan, error)
+
+	ListCandidateBatches(context.Context, uuid.UUID, chapterplan.BatchFilter) (chapterplan.BatchListResult, error)
+	GetCandidateBatchByID(context.Context, uuid.UUID) (chapterplan.CandidateBatch, error)
+	ListCandidates(context.Context, uuid.UUID, chapterplan.CandidateFilter) (chapterplan.CandidateListResult, error)
+	GetCandidateByID(context.Context, uuid.UUID) (chapterplan.Candidate, error)
+	ListRevisions(context.Context, uuid.UUID, int, int) (chapterplan.RevisionListResult, error)
+	GetChapterPlanningSummary(context.Context, uuid.UUID) (chapterplan.Summary, error)
+	UpdateCandidate(context.Context, chapterplan.UpdateCandidateCommand) (chapterplan.Candidate, error)
+	CompareCandidate(context.Context, uuid.UUID) (chapterplan.CandidateComparison, error)
+	RecompareCandidate(context.Context, chapterplan.RecompareCandidateCommand) (chapterplan.CandidateComparison, error)
+	AdoptCandidate(context.Context, chapterplan.AdoptCandidateCommand) (chapterplan.AdoptCandidateResult, error)
+	BulkAdoptCandidates(context.Context, chapterplan.BulkAdoptCommand) (chapterplan.BulkAdoptResult, error)
+	DiscardCandidate(context.Context, chapterplan.DiscardCandidateCommand) (chapterplan.Candidate, error)
+	AbandonBatch(context.Context, chapterplan.AbandonBatchCommand) (chapterplan.CandidateBatch, error)
+}
+
+type chapterPlanRunApplication interface {
+	Preflight(context.Context, uuid.UUID, chapterplan.PreflightRequest) (chapterplan.PreflightResult, error)
+	CreateChapterPlanningRun(context.Context, uuid.UUID, string, string, string) (workflowrun.WorkflowRun, error)
 }
 
 type chapterPlanStorylineRefResponse struct {
@@ -30,22 +50,26 @@ type chapterPlanStorylineRefResponse struct {
 	Relation    string    `json:"relation"`
 }
 type chapterPlanResponse struct {
-	ID                    uuid.UUID                         `json:"id"`
-	ProjectID             uuid.UUID                         `json:"project_id"`
-	ChapterNo             int                               `json:"chapter_no"`
-	Title                 string                            `json:"title"`
-	Summary               string                            `json:"summary"`
-	Status                string                            `json:"status"`
-	Source                string                            `json:"source"`
-	StorylineRefsJSON     []chapterPlanStorylineRefResponse `json:"storyline_refs_json"`
-	MaterialRefsJSON      []uuid.UUID                       `json:"material_refs_json"`
-	ForeshadowingRefsJSON []uuid.UUID                       `json:"foreshadowing_refs_json"`
-	ChapterGoal           *string                           `json:"chapter_goal"`
-	CreationNotes         *string                           `json:"creation_notes"`
-	ConfirmedAt           *string                           `json:"confirmed_at"`
-	Version               int                               `json:"version"`
-	CreatedAt             string                            `json:"created_at"`
-	UpdatedAt             string                            `json:"updated_at"`
+	ID                     uuid.UUID                         `json:"id"`
+	ProjectID              uuid.UUID                         `json:"project_id"`
+	ChapterNo              int                               `json:"chapter_no"`
+	Title                  string                            `json:"title"`
+	Summary                string                            `json:"summary"`
+	Status                 string                            `json:"status"`
+	Source                 string                            `json:"source"`
+	StorylineRefsJSON      []chapterPlanStorylineRefResponse `json:"storyline_refs_json"`
+	MaterialRefsJSON       []uuid.UUID                       `json:"material_refs_json"`
+	ForeshadowingRefsJSON  []uuid.UUID                       `json:"foreshadowing_refs_json"`
+	ChapterGoal            *string                           `json:"chapter_goal"`
+	CreationNotes          *string                           `json:"creation_notes"`
+	ConfirmedAt            *string                           `json:"confirmed_at"`
+	CurrentRevisionID      *uuid.UUID                        `json:"currentRevisionId"`
+	SourceCandidateID      *uuid.UUID                        `json:"sourceCandidateId"`
+	SourceCandidateBatchID *uuid.UUID                        `json:"sourceCandidateBatchId"`
+	SourceWorkflowRunID    *uuid.UUID                        `json:"sourceWorkflowRunId"`
+	Version                int                               `json:"version"`
+	CreatedAt              string                            `json:"created_at"`
+	UpdatedAt              string                            `json:"updated_at"`
 }
 type mockGenerationRunResponse struct {
 	ID          uuid.UUID `json:"id"`
@@ -72,12 +96,29 @@ type mockGenerateChapterPlansRequest struct {
 }
 
 func registerChapterPlanRoutes(mux *http.ServeMux, service chapterPlanApplication) {
+	if runs, ok := service.(chapterPlanRunApplication); ok {
+		registerChapterPlanRunRoutes(mux, runs)
+	}
 	mux.HandleFunc("GET /api/v1/projects/{projectId}/chapter-plans", listChapterPlansHandler(service))
 	mux.HandleFunc("POST /api/v1/projects/{projectId}/chapter-plans/mock-generate", generateMockChapterPlansHandler(service))
 	mux.HandleFunc("GET /api/v1/chapter-plans/{chapterPlanId}", getChapterPlanHandler(service))
 	mux.HandleFunc("PATCH /api/v1/chapter-plans/{chapterPlanId}", updateChapterPlanHandler(service))
 	mux.HandleFunc("DELETE /api/v1/chapter-plans/{chapterPlanId}", deleteChapterPlanHandler(service))
 	mux.HandleFunc("POST /api/v1/projects/{projectId}/chapter-plans/confirm", confirmChapterPlansHandler(service))
+
+	mux.HandleFunc("GET /api/v1/projects/{projectId}/chapter-plan-candidate-batches", listCandidateBatchesHandler(service))
+	mux.HandleFunc("GET /api/v1/chapter-plan-candidate-batches/{batchId}", getCandidateBatchHandler(service))
+	mux.HandleFunc("GET /api/v1/chapter-plan-candidate-batches/{batchId}/candidates", listCandidatesHandler(service))
+	mux.HandleFunc("GET /api/v1/chapter-plan-candidates/{candidateId}", getCandidateHandler(service))
+	mux.HandleFunc("GET /api/v1/chapter-plans/{chapterPlanId}/revisions", listRevisionsHandler(service))
+	mux.HandleFunc("GET /api/v1/projects/{projectId}/chapter-planning-summary", getChapterPlanningSummaryHandler(service))
+	mux.HandleFunc("PATCH /api/v1/chapter-plan-candidates/{candidateId}", updateCandidateHandler(service))
+	mux.HandleFunc("GET /api/v1/chapter-plan-candidates/{candidateId}/compare", compareCandidateHandler(service))
+	mux.HandleFunc("POST /api/v1/chapter-plan-candidates/{candidateId}/recompare", recompareCandidateHandler(service))
+	mux.HandleFunc("POST /api/v1/chapter-plan-candidates/{candidateId}/adopt", adoptCandidateHandler(service))
+	mux.HandleFunc("POST /api/v1/chapter-plan-candidate-batches/{batchId}/adoptions", bulkAdoptCandidatesHandler(service))
+	mux.HandleFunc("POST /api/v1/chapter-plan-candidates/{candidateId}/discard", discardCandidateHandler(service))
+	mux.HandleFunc("POST /api/v1/chapter-plan-candidate-batches/{batchId}/abandon", abandonBatchHandler(service))
 }
 
 func listChapterPlansHandler(service chapterPlanApplication) http.HandlerFunc {
@@ -190,7 +231,7 @@ func decodeMockGenerateChapterPlans(r *http.Request) (chapterplan.MockGenerateCo
 		}
 		notes = &note
 	}
-	return chapterplan.MockGenerateCommand{TargetStorylineID: target, StartChapterNo: *body.StartChapterNo, EndChapterNo: *body.EndChapterNo, ChapterCount: *body.ChapterCount, IncludeMainStoryline: *body.IncludeMainStoryline, IncludeChildStorylines: *body.IncludeChildStorylines, IncludeProjectMaterials: *body.IncludeProjectMaterials, IncludeUnpaidForeshadowings: *body.IncludeUnpaidForeshadowings, IncludePriorChapterSummaries: *body.IncludePriorChapterSummaries, SummaryLength: *body.SummaryLength, ChapterPace: *body.ChapterPace, GenerationNotes: notes, ActorID: "system"}, nil
+	return chapterplan.MockGenerateCommand{TargetStorylineID: target, StartChapterNo: *body.StartChapterNo, EndChapterNo: *body.EndChapterNo, ChapterCount: *body.ChapterCount, IncludeMainStoryline: *body.IncludeMainStoryline, IncludeChildStorylines: *body.IncludeChildStorylines, IncludeProjectMaterials: *body.IncludeProjectMaterials, IncludeUnpaidForeshadowings: *body.IncludeUnpaidForeshadowings, IncludePriorChapterSummaries: *body.IncludePriorChapterSummaries, SummaryLength: *body.SummaryLength, ChapterPace: *body.ChapterPace, GenerationNotes: notes, ActorID: requestActorID(r)}, nil
 }
 
 func chapterPlanResponseFrom(value chapterplan.Plan) chapterPlanResponse {
@@ -203,7 +244,40 @@ func chapterPlanResponseFrom(value chapterplan.Plan) chapterPlanResponse {
 		formatted := formatChapterPlanTime(*value.ConfirmedAt)
 		confirmedAt = &formatted
 	}
-	return chapterPlanResponse{ID: value.ID, ProjectID: value.ProjectID, ChapterNo: value.ChapterNo, Title: value.Title, Summary: value.Summary, Status: value.Status, Source: value.Source, StorylineRefsJSON: storylines, MaterialRefsJSON: nonNilUUIDs(value.Materials), ForeshadowingRefsJSON: nonNilUUIDs(value.Foreshadowings), ChapterGoal: value.Goal, CreationNotes: value.Notes, ConfirmedAt: confirmedAt, Version: value.Version, CreatedAt: formatChapterPlanTime(value.CreatedAt), UpdatedAt: formatChapterPlanTime(value.UpdatedAt)}
+	source := chapterPlanSourceResponse(value.Source)
+	return chapterPlanResponse{
+		ID:                     value.ID,
+		ProjectID:              value.ProjectID,
+		ChapterNo:              value.ChapterNo,
+		Title:                  value.Title,
+		Summary:                value.Summary,
+		Status:                 value.Status,
+		Source:                 source,
+		StorylineRefsJSON:      storylines,
+		MaterialRefsJSON:       nonNilUUIDs(value.Materials),
+		ForeshadowingRefsJSON:  nonNilUUIDs(value.Foreshadowings),
+		ChapterGoal:            value.Goal,
+		CreationNotes:          value.Notes,
+		ConfirmedAt:            confirmedAt,
+		CurrentRevisionID:      value.CurrentRevisionID,
+		SourceCandidateID:      value.SourceCandidateID,
+		SourceCandidateBatchID: value.SourceCandidateBatchID,
+		SourceWorkflowRunID:    value.SourceWorkflowRunID,
+		Version:                value.Version,
+		CreatedAt:              formatChapterPlanTime(value.CreatedAt),
+		UpdatedAt:              formatChapterPlanTime(value.UpdatedAt),
+	}
+}
+
+func chapterPlanSourceResponse(source string) string {
+	switch source {
+	case "mock_generated", "candidate_adopted":
+		return source
+	case "manual", "legacy_manual":
+		return "legacy_manual"
+	default:
+		return "legacy_manual"
+	}
 }
 func nonNilUUIDs(values []uuid.UUID) []uuid.UUID {
 	if values == nil {
@@ -213,26 +287,483 @@ func nonNilUUIDs(values []uuid.UUID) []uuid.UUID {
 }
 func formatChapterPlanTime(value time.Time) string { return value.UTC().Format(time.RFC3339Nano) }
 
+func chapterPlanningDetails(retryAction, safeReason string) map[string]any {
+	return map[string]any{
+		"retryAction": retryAction,
+		"safeReason":  safeReason,
+	}
+}
+
 func chapterPlanServiceError(w http.ResponseWriter, r *http.Request, err error) {
 	switch {
 	case errors.Is(err, chapterplan.ErrProjectNotFound):
-		writeError(w, r, 404, "project_not_found", "project not found", map[string]any{})
+		writeError(w, r, 404, "project_not_found", "project not found", chapterPlanningDetails("check_project_id", "The specified project was not found"))
 	case errors.Is(err, chapterplan.ErrChapterPlanNotFound), errors.Is(err, chapterplan.ErrNotFound):
-		writeError(w, r, 404, "chapter_plan_not_found", "chapter plan not found", map[string]any{})
+		writeError(w, r, 404, "chapter_plan_not_found", "chapter plan not found", chapterPlanningDetails("refresh_list", "The specified chapter plan was not found"))
+	case errors.Is(err, chapterplan.ErrBatchNotFound):
+		writeError(w, r, 404, "candidate_batch_not_found", "candidate batch not found", chapterPlanningDetails("refresh_list", "The specified candidate batch was not found"))
+	case errors.Is(err, chapterplan.ErrCandidateNotFound):
+		writeError(w, r, 404, "candidate_not_found", "candidate not found", chapterPlanningDetails("refresh_list", "The specified candidate was not found"))
+	case errors.Is(err, chapterplan.ErrRevisionNotFound):
+		writeError(w, r, 404, "revision_not_found", "revision not found", chapterPlanningDetails("refresh_list", "The specified revision was not found"))
 	case errors.Is(err, chapterplan.ErrStorylineReferenceInvalid):
-		writeError(w, r, 404, "storyline_not_found", "storyline not found", map[string]any{})
+		writeError(w, r, 404, "storyline_not_found", "storyline not found", chapterPlanningDetails("check_references", "One or more referenced storylines do not exist"))
 	case errors.Is(err, chapterplan.ErrMaterialReferenceInvalid):
-		writeError(w, r, 404, "material_not_found", "material not found", map[string]any{})
+		writeError(w, r, 404, "material_not_found", "material not found", chapterPlanningDetails("check_references", "One or more referenced materials do not exist"))
 	case errors.Is(err, chapterplan.ErrForeshadowingReferenceInvalid):
-		writeError(w, r, 404, "foreshadowing_not_found", "foreshadowing not found", map[string]any{})
+		writeError(w, r, 404, "foreshadowing_not_found", "foreshadowing not found", chapterPlanningDetails("check_references", "One or more referenced foreshadowings do not exist"))
 	case errors.Is(err, chapterplan.ErrChapterNoConflict):
-		writeError(w, r, 409, "chapter_no_conflict", "chapter number conflict", map[string]any{})
+		writeError(w, r, 409, "chapter_no_conflict", "chapter number conflict", chapterPlanningDetails("change_chapter_no", "Another chapter plan already uses this chapter number"))
+	case errors.Is(err, chapterplan.ErrInvalidCandidateState):
+		writeError(w, r, 409, "invalid_candidate_state", "candidate state is invalid for mutation", chapterPlanningDetails("re-fetch_summary", "Candidate status does not allow this operation"))
+	case errors.Is(err, chapterplan.ErrStaleCandidate):
+		writeError(w, r, 409, "stale_candidate", "candidate baseline is stale", chapterPlanningDetails("recompare_and_review", "Chapter plan baseline has been updated since candidate generation"))
+	case errors.Is(err, chapterplan.ErrBatchAlreadyFinalized):
+		writeError(w, r, 409, "batch_already_finalized", "batch is already finalized", chapterPlanningDetails("re-fetch_summary", "Batch has already been adopted or abandoned"))
+	case errors.Is(err, chapterplan.ErrIdempotencyKeyReused), errors.Is(err, chapterplan.ErrIdempotencyConflict):
+		writeError(w, r, 409, "idempotency_key_reused_with_different_payload", "idempotency key reused with different payload", chapterPlanningDetails("use_new_idempotency_key", "The idempotency key was previously used with a different payload"))
+	case errors.Is(err, chapterplan.ErrRevisionSequenceConflict):
+		writeError(w, r, 409, "revision_sequence_conflict", "revision sequence conflict", chapterPlanningDetails("refresh_and_retry", "Revision sequence mismatch"))
+	case errors.Is(err, chapterplan.ErrOutputValidationFailed):
+		writeError(w, r, 422, "output_validation_failed", "runtime output validation failed", chapterPlanningDetails("retry_run", "The runtime output does not match the frozen generation context."))
+	case errors.Is(err, chapterplan.ErrIngestionTransaction):
+		writeError(w, r, 500, "result_consumption_failed", "result consumption failed", chapterPlanningDetails("retry_run", "The generated result could not be stored safely."))
 	case errors.Is(err, chapterplan.ErrInvalidState), errors.Is(err, chapterplan.ErrVersionConflict):
-		writeError(w, r, 409, "version_conflict", "chapter plan version conflict", map[string]any{})
+		writeError(w, r, 409, "version_conflict", "chapter plan version conflict", chapterPlanningDetails("refresh_and_retry", "Target resource version changed since last fetch"))
 	case errors.Is(err, chapterplan.ErrValidation), errors.Is(err, chapterplan.ErrProjectMismatch), errors.Is(err, chapterplan.ErrInvalidReference):
-		writeError(w, r, 400, "validation_error", "invalid chapter plan request", map[string]any{})
+		writeError(w, r, 400, "validation_error", "invalid chapter plan request", chapterPlanningDetails("fix_payload", "Request payload validation failed"))
 	default:
-		writeError(w, r, 500, "internal_error", "internal server error", map[string]any{})
+		writeError(w, r, 500, "internal_error", "internal server error", chapterPlanningDetails("retry_later", "An internal error occurred"))
+	}
+}
+
+func listCandidateBatchesHandler(service chapterPlanApplication) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		id, ok := projectID(r)
+		if !ok {
+			writeError(w, r, http.StatusBadRequest, "invalid_uuid", "projectId must be a UUID", map[string]any{})
+			return
+		}
+		var f chapterplan.BatchFilter
+		status := r.URL.Query().Get("status")
+		if status != "" {
+			f.Status = &status
+		}
+		genMode := r.URL.Query().Get("generationMode")
+		if genMode == "" {
+			genMode = r.URL.Query().Get("generation_mode")
+		}
+		if genMode != "" {
+			f.GenerationMode = &genMode
+		}
+		runIDStr := r.URL.Query().Get("sourceWorkflowRunId")
+		if runIDStr == "" {
+			runIDStr = r.URL.Query().Get("source_workflow_run_id")
+		}
+		if runIDStr != "" {
+			runID, err := uuid.Parse(runIDStr)
+			if err != nil {
+				writeError(w, r, http.StatusBadRequest, "invalid_uuid", "sourceWorkflowRunId must be a UUID", map[string]any{})
+				return
+			}
+			f.SourceWorkflowRunID = &runID
+		}
+		if fromStr := r.URL.Query().Get("createdAtFrom"); fromStr != "" {
+			if t, err := time.Parse(time.RFC3339, fromStr); err == nil {
+				f.CreatedAtFrom = &t
+			}
+		}
+		if toStr := r.URL.Query().Get("createdAtTo"); toStr != "" {
+			if t, err := time.Parse(time.RFC3339, toStr); err == nil {
+				f.CreatedAtTo = &t
+			}
+		}
+		limit, offset, ok := listPagination(r)
+		if !ok {
+			writeError(w, r, 400, "validation_error", "invalid pagination", map[string]any{})
+			return
+		}
+		f.Limit = limit
+		f.Offset = offset
+
+		res, err := service.ListCandidateBatches(r.Context(), id, f)
+		if err != nil {
+			chapterPlanServiceError(w, r, err)
+			return
+		}
+		writeJSON(w, r, http.StatusOK, res)
+	}
+}
+
+func getCandidateBatchHandler(service chapterPlanApplication) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		batchID, err := uuid.Parse(r.PathValue("batchId"))
+		if err != nil {
+			writeError(w, r, http.StatusBadRequest, "invalid_uuid", "batchId must be a UUID", map[string]any{})
+			return
+		}
+		res, err := service.GetCandidateBatchByID(r.Context(), batchID)
+		if err != nil {
+			chapterPlanServiceError(w, r, err)
+			return
+		}
+		writeJSON(w, r, http.StatusOK, res)
+	}
+}
+
+func listCandidatesHandler(service chapterPlanApplication) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		batchID, err := uuid.Parse(r.PathValue("batchId"))
+		if err != nil {
+			writeError(w, r, http.StatusBadRequest, "invalid_uuid", "batchId must be a UUID", map[string]any{})
+			return
+		}
+		var f chapterplan.CandidateFilter
+		status := r.URL.Query().Get("status")
+		if status != "" {
+			f.Status = &status
+		}
+		diffType := r.URL.Query().Get("diffType")
+		if diffType == "" {
+			diffType = r.URL.Query().Get("diff_type")
+		}
+		if diffType != "" {
+			f.DiffType = &diffType
+		}
+		stIDStr := r.URL.Query().Get("storylineId")
+		if stIDStr == "" {
+			stIDStr = r.URL.Query().Get("storyline_id")
+		}
+		if stIDStr != "" {
+			stID, err := uuid.Parse(stIDStr)
+			if err != nil {
+				writeError(w, r, http.StatusBadRequest, "invalid_uuid", "storylineId must be a UUID", map[string]any{})
+				return
+			}
+			f.StorylineID = &stID
+		}
+		if q := r.URL.Query().Get("q"); q != "" {
+			f.Q = &q
+		}
+		limit, offset, ok := listPagination(r)
+		if !ok {
+			writeError(w, r, 400, "validation_error", "invalid pagination", map[string]any{})
+			return
+		}
+		f.Limit = limit
+		f.Offset = offset
+
+		res, err := service.ListCandidates(r.Context(), batchID, f)
+		if err != nil {
+			chapterPlanServiceError(w, r, err)
+			return
+		}
+		writeJSON(w, r, http.StatusOK, res)
+	}
+}
+
+func getCandidateHandler(service chapterPlanApplication) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		candidateID, err := uuid.Parse(r.PathValue("candidateId"))
+		if err != nil {
+			writeError(w, r, http.StatusBadRequest, "invalid_uuid", "candidateId must be a UUID", map[string]any{})
+			return
+		}
+		res, err := service.GetCandidateByID(r.Context(), candidateID)
+		if err != nil {
+			chapterPlanServiceError(w, r, err)
+			return
+		}
+		writeJSON(w, r, http.StatusOK, res)
+	}
+}
+
+func listRevisionsHandler(service chapterPlanApplication) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		chapterPlanID, err := uuid.Parse(r.PathValue("chapterPlanId"))
+		if err != nil {
+			writeError(w, r, http.StatusBadRequest, "invalid_uuid", "chapterPlanId must be a UUID", map[string]any{})
+			return
+		}
+		limit, offset, ok := listPagination(r)
+		if !ok {
+			writeError(w, r, 400, "validation_error", "invalid pagination", map[string]any{})
+			return
+		}
+		res, err := service.ListRevisions(r.Context(), chapterPlanID, limit, offset)
+		if err != nil {
+			chapterPlanServiceError(w, r, err)
+			return
+		}
+		writeJSON(w, r, http.StatusOK, res)
+	}
+}
+
+func getChapterPlanningSummaryHandler(service chapterPlanApplication) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		id, ok := projectID(r)
+		if !ok {
+			writeError(w, r, http.StatusBadRequest, "invalid_uuid", "projectId must be a UUID", map[string]any{})
+			return
+		}
+		res, err := service.GetChapterPlanningSummary(r.Context(), id)
+		if err != nil {
+			chapterPlanServiceError(w, r, err)
+			return
+		}
+		writeJSON(w, r, http.StatusOK, res)
+	}
+}
+
+type updateCandidateRequest struct {
+	ExpectedCandidateVersion int             `json:"expectedCandidateVersion"`
+	CurrentSnapshot          json.RawMessage `json:"currentSnapshot"`
+}
+
+type recompareCandidateRequest struct {
+	ExpectedCandidateVersion int `json:"expectedCandidateVersion"`
+}
+
+func updateCandidateHandler(service chapterPlanApplication) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		candidateID, err := uuid.Parse(r.PathValue("candidateId"))
+		if err != nil {
+			writeError(w, r, http.StatusBadRequest, "invalid_uuid", "candidateId must be a UUID", map[string]any{})
+			return
+		}
+		key := strings.TrimSpace(r.Header.Get("Idempotency-Key"))
+		if key == "" {
+			writeError(w, r, http.StatusBadRequest, "validation_error", "Idempotency-Key header is required", map[string]any{})
+			return
+		}
+		var req updateCandidateRequest
+		if err := decodeBody(r, &req); err != nil || req.ExpectedCandidateVersion <= 0 || len(req.CurrentSnapshot) == 0 {
+			writeError(w, r, http.StatusBadRequest, "validation_error", "expectedCandidateVersion and currentSnapshot are required", map[string]any{})
+			return
+		}
+		res, err := service.UpdateCandidate(r.Context(), chapterplan.UpdateCandidateCommand{
+			CandidateID:              candidateID,
+			ExpectedCandidateVersion: req.ExpectedCandidateVersion,
+			CurrentSnapshot:          req.CurrentSnapshot,
+			IdempotencyKey:           key,
+			ActorID:                  requestActorID(r),
+		})
+		if err != nil {
+			chapterPlanServiceError(w, r, err)
+			return
+		}
+		writeJSON(w, r, http.StatusOK, res)
+	}
+}
+
+func compareCandidateHandler(service chapterPlanApplication) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		candidateID, err := uuid.Parse(r.PathValue("candidateId"))
+		if err != nil {
+			writeError(w, r, http.StatusBadRequest, "invalid_uuid", "candidateId must be a UUID", map[string]any{})
+			return
+		}
+		res, err := service.CompareCandidate(r.Context(), candidateID)
+		if err != nil {
+			chapterPlanServiceError(w, r, err)
+			return
+		}
+		writeJSON(w, r, http.StatusOK, res)
+	}
+}
+
+func recompareCandidateHandler(service chapterPlanApplication) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		candidateID, err := uuid.Parse(r.PathValue("candidateId"))
+		if err != nil {
+			writeError(w, r, http.StatusBadRequest, "invalid_uuid", "candidateId must be a UUID", map[string]any{})
+			return
+		}
+		key := strings.TrimSpace(r.Header.Get("Idempotency-Key"))
+		if key == "" {
+			writeError(w, r, http.StatusBadRequest, "validation_error", "Idempotency-Key header is required", map[string]any{})
+			return
+		}
+		var req recompareCandidateRequest
+		if err := decodeBody(r, &req); err != nil || req.ExpectedCandidateVersion <= 0 {
+			writeError(w, r, http.StatusBadRequest, "validation_error", "expectedCandidateVersion is required", map[string]any{})
+			return
+		}
+		res, err := service.RecompareCandidate(r.Context(), chapterplan.RecompareCandidateCommand{
+			CandidateID:              candidateID,
+			ExpectedCandidateVersion: req.ExpectedCandidateVersion,
+			IdempotencyKey:           key,
+			ActorID:                  requestActorID(r),
+		})
+		if err != nil {
+			chapterPlanServiceError(w, r, err)
+			return
+		}
+		writeJSON(w, r, http.StatusOK, res)
+	}
+}
+
+type adoptCandidateRequest struct {
+	ExpectedCandidateVersion   int  `json:"expectedCandidateVersion"`
+	ExpectedChapterPlanVersion *int `json:"expectedChapterPlanVersion"`
+}
+
+type discardCandidateRequest struct {
+	ExpectedCandidateVersion int     `json:"expectedCandidateVersion"`
+	Reason                   *string `json:"reason"`
+}
+
+type bulkAdoptCandidateItemRequest struct {
+	CandidateID                uuid.UUID `json:"candidateId"`
+	ExpectedCandidateVersion   int       `json:"expectedCandidateVersion"`
+	ExpectedChapterPlanVersion *int      `json:"expectedChapterPlanVersion"`
+}
+
+type bulkAdoptRequest struct {
+	ExpectedBatchVersion int                             `json:"expectedBatchVersion"`
+	Candidates           []bulkAdoptCandidateItemRequest `json:"candidates"`
+}
+
+type abandonBatchRequest struct {
+	ExpectedBatchVersion             int     `json:"expectedBatchVersion"`
+	Reason                           *string `json:"reason"`
+	AcknowledgeAdoptedChaptersRemain bool    `json:"acknowledgeAdoptedChaptersRemain"`
+}
+
+func adoptCandidateHandler(service chapterPlanApplication) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		candidateID, err := uuid.Parse(r.PathValue("candidateId"))
+		if err != nil {
+			writeError(w, r, http.StatusBadRequest, "invalid_uuid", "candidateId must be a UUID", map[string]any{})
+			return
+		}
+		key := strings.TrimSpace(r.Header.Get("Idempotency-Key"))
+		if key == "" {
+			writeError(w, r, http.StatusBadRequest, "validation_error", "Idempotency-Key header is required", map[string]any{})
+			return
+		}
+		var req adoptCandidateRequest
+		if err := decodeBody(r, &req); err != nil || req.ExpectedCandidateVersion <= 0 {
+			writeError(w, r, http.StatusBadRequest, "validation_error", "expectedCandidateVersion is required", map[string]any{})
+			return
+		}
+		res, err := service.AdoptCandidate(r.Context(), chapterplan.AdoptCandidateCommand{
+			CandidateID:                candidateID,
+			ExpectedCandidateVersion:   req.ExpectedCandidateVersion,
+			ExpectedChapterPlanVersion: req.ExpectedChapterPlanVersion,
+			IdempotencyKey:             key,
+			ActorID:                    requestActorID(r),
+		})
+		if err != nil {
+			chapterPlanServiceError(w, r, err)
+			return
+		}
+		writeJSON(w, r, http.StatusOK, res)
+	}
+}
+
+func bulkAdoptCandidatesHandler(service chapterPlanApplication) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		batchID, err := uuid.Parse(r.PathValue("batchId"))
+		if err != nil {
+			writeError(w, r, http.StatusBadRequest, "invalid_uuid", "batchId must be a UUID", map[string]any{})
+			return
+		}
+		key := strings.TrimSpace(r.Header.Get("Idempotency-Key"))
+		if key == "" {
+			writeError(w, r, http.StatusBadRequest, "validation_error", "Idempotency-Key header is required", map[string]any{})
+			return
+		}
+		var req bulkAdoptRequest
+		if err := decodeBody(r, &req); err != nil || req.ExpectedBatchVersion <= 0 || len(req.Candidates) == 0 {
+			writeError(w, r, http.StatusBadRequest, "validation_error", "expectedBatchVersion and candidates are required", map[string]any{})
+			return
+		}
+		items := make([]chapterplan.BulkAdoptCandidateItemCommand, len(req.Candidates))
+		for i, c := range req.Candidates {
+			items[i] = chapterplan.BulkAdoptCandidateItemCommand{
+				CandidateID:                c.CandidateID,
+				ExpectedCandidateVersion:   c.ExpectedCandidateVersion,
+				ExpectedChapterPlanVersion: c.ExpectedChapterPlanVersion,
+			}
+		}
+		res, err := service.BulkAdoptCandidates(r.Context(), chapterplan.BulkAdoptCommand{
+			BatchID:              batchID,
+			ExpectedBatchVersion: req.ExpectedBatchVersion,
+			Candidates:           items,
+			IdempotencyKey:       key,
+			ActorID:              requestActorID(r),
+		})
+		if err != nil {
+			chapterPlanServiceError(w, r, err)
+			return
+		}
+		writeJSON(w, r, http.StatusOK, chapterplan.SanitizeBulkAdoptResult(res))
+	}
+}
+
+func discardCandidateHandler(service chapterPlanApplication) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		candidateID, err := uuid.Parse(r.PathValue("candidateId"))
+		if err != nil {
+			writeError(w, r, http.StatusBadRequest, "invalid_uuid", "candidateId must be a UUID", map[string]any{})
+			return
+		}
+		key := strings.TrimSpace(r.Header.Get("Idempotency-Key"))
+		if key == "" {
+			writeError(w, r, http.StatusBadRequest, "validation_error", "Idempotency-Key header is required", map[string]any{})
+			return
+		}
+		var req discardCandidateRequest
+		if err := decodeBody(r, &req); err != nil || req.ExpectedCandidateVersion <= 0 {
+			writeError(w, r, http.StatusBadRequest, "validation_error", "expectedCandidateVersion is required", map[string]any{})
+			return
+		}
+		res, err := service.DiscardCandidate(r.Context(), chapterplan.DiscardCandidateCommand{
+			CandidateID:              candidateID,
+			ExpectedCandidateVersion: req.ExpectedCandidateVersion,
+			Reason:                   req.Reason,
+			IdempotencyKey:           key,
+			ActorID:                  requestActorID(r),
+		})
+		if err != nil {
+			chapterPlanServiceError(w, r, err)
+			return
+		}
+		writeJSON(w, r, http.StatusOK, res)
+	}
+}
+
+func abandonBatchHandler(service chapterPlanApplication) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		batchID, err := uuid.Parse(r.PathValue("batchId"))
+		if err != nil {
+			writeError(w, r, http.StatusBadRequest, "invalid_uuid", "batchId must be a UUID", map[string]any{})
+			return
+		}
+		key := strings.TrimSpace(r.Header.Get("Idempotency-Key"))
+		if key == "" {
+			writeError(w, r, http.StatusBadRequest, "validation_error", "Idempotency-Key header is required", map[string]any{})
+			return
+		}
+		var req abandonBatchRequest
+		if err := decodeBody(r, &req); err != nil || req.ExpectedBatchVersion <= 0 || !req.AcknowledgeAdoptedChaptersRemain {
+			writeError(w, r, http.StatusBadRequest, "validation_error", "expectedBatchVersion and acknowledgeAdoptedChaptersRemain=true are required", map[string]any{})
+			return
+		}
+		res, err := service.AbandonBatch(r.Context(), chapterplan.AbandonBatchCommand{
+			BatchID:                          batchID,
+			ExpectedBatchVersion:             req.ExpectedBatchVersion,
+			Reason:                           req.Reason,
+			AcknowledgeAdoptedChaptersRemain: req.AcknowledgeAdoptedChaptersRemain,
+			IdempotencyKey:                   key,
+			ActorID:                          requestActorID(r),
+		})
+		if err != nil {
+			chapterPlanServiceError(w, r, err)
+			return
+		}
+		writeJSON(w, r, http.StatusOK, res)
 	}
 }
 

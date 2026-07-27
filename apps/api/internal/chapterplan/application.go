@@ -11,9 +11,12 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/local/ai-content-factory/apps/api/internal/foreshadowing"
+	"github.com/local/ai-content-factory/apps/api/internal/globalconfig"
 	"github.com/local/ai-content-factory/apps/api/internal/material"
 	"github.com/local/ai-content-factory/apps/api/internal/project"
 	"github.com/local/ai-content-factory/apps/api/internal/storyline"
+	"github.com/local/ai-content-factory/apps/api/internal/workflowbinding"
+	"github.com/local/ai-content-factory/apps/api/internal/workflowrun"
 )
 
 // Application errors are deliberately stable: callers never receive driver or SQL details.
@@ -35,6 +38,20 @@ type store interface {
 	Update(context.Context, Plan, int) (Plan, error)
 	Delete(context.Context, uuid.UUID, int) error
 	Confirm(context.Context, []Selection) ([]Plan, error)
+
+	ListCandidateBatches(context.Context, uuid.UUID, BatchFilter) (BatchListResult, error)
+	GetCandidateBatchByID(context.Context, uuid.UUID) (CandidateBatch, error)
+	ListCandidates(context.Context, uuid.UUID, CandidateFilter) (CandidateListResult, error)
+	GetCandidateByID(context.Context, uuid.UUID) (Candidate, error)
+	ListRevisions(context.Context, uuid.UUID, int, int) (RevisionListResult, error)
+	GetChapterPlanningSummary(context.Context, uuid.UUID) (Summary, error)
+	UpdateCandidate(context.Context, UpdateCandidateCommand) (Candidate, error)
+	CompareCandidate(context.Context, uuid.UUID) (CandidateComparison, error)
+	RecompareCandidate(context.Context, RecompareCandidateCommand) (CandidateComparison, error)
+	AdoptCandidate(context.Context, AdoptCandidateCommand) (AdoptCandidateResult, error)
+	BulkAdoptCandidates(context.Context, BulkAdoptCommand) (BulkAdoptResult, error)
+	DiscardCandidate(context.Context, DiscardCandidateCommand) (Candidate, error)
+	AbandonBatch(context.Context, AbandonBatchCommand) (CandidateBatch, error)
 }
 type projectReader interface {
 	Get(context.Context, uuid.UUID) (project.Project, error)
@@ -93,6 +110,18 @@ type Service struct {
 	materials      materialReader
 	foreshadowings foreshadowingReader
 	now            func() time.Time
+	bindingReader  interface {
+		GetByProjectAndStage(context.Context, uuid.UUID, workflowbinding.WorkflowBindingStage) (workflowbinding.ProjectWorkflowBinding, error)
+	}
+	workflowReader interface {
+		GetWorkflow(context.Context, uuid.UUID) (globalconfig.Workflow, error)
+	}
+	connectionReader interface {
+		GetConnection(context.Context, uuid.UUID) (globalconfig.Connection, error)
+	}
+	runCreator interface {
+		CreateRun(context.Context, workflowrun.CreateRunCommand) (workflowrun.WorkflowRun, error)
+	}
 }
 
 func NewService(projects projectReader, plans store, storylines storylineReader, materials materialReader, foreshadowings foreshadowingReader) *Service {
@@ -101,8 +130,27 @@ func NewService(projects projectReader, plans store, storylines storylineReader,
 
 // NewPostgresService keeps infrastructure construction at the composition edge while the
 // application itself depends only on the narrow reader/store interfaces above.
-func NewPostgresService(projects projectReader, pool *pgxpool.Pool) *Service {
-	return NewService(projects, NewPostgresRepository(pool), storyline.NewPostgresRepository(pool), material.NewPostgresRepository(pool), foreshadowing.NewPostgresRepository(pool))
+func NewPostgresService(projects projectReader, pool *pgxpool.Pool, hmacSecret string) (*Service, error) {
+	repo, err := NewPostgresRepository(pool, hmacSecret)
+	if err != nil {
+		return nil, err
+	}
+	return NewService(projects, repo, storyline.NewPostgresRepository(pool), material.NewPostgresRepository(pool), foreshadowing.NewPostgresRepository(pool)), nil
+}
+
+// ConfigureChapterPlanningRuntime wires the existing public runtime and binding
+// readers at the composition edge. It deliberately keeps chapterplan independent
+// from workflowrun persistence internals.
+func (s *Service) ConfigureChapterPlanningRuntime(bindings interface {
+	GetByProjectAndStage(context.Context, uuid.UUID, workflowbinding.WorkflowBindingStage) (workflowbinding.ProjectWorkflowBinding, error)
+}, workflows interface {
+	GetWorkflow(context.Context, uuid.UUID) (globalconfig.Workflow, error)
+}, connections interface {
+	GetConnection(context.Context, uuid.UUID) (globalconfig.Connection, error)
+}, runs interface {
+	CreateRun(context.Context, workflowrun.CreateRunCommand) (workflowrun.WorkflowRun, error)
+}) {
+	s.bindingReader, s.workflowReader, s.connectionReader, s.runCreator = bindings, workflows, connections, runs
 }
 
 func (s *Service) List(ctx context.Context, projectID uuid.UUID) ([]Plan, error) {
@@ -501,13 +549,167 @@ func mapReferenceError(err, errorKind error) error {
 	}
 	return ErrInternal
 }
+func (s *Service) ListCandidateBatches(ctx context.Context, projectID uuid.UUID, f BatchFilter) (BatchListResult, error) {
+	if err := s.projectExists(ctx, projectID); err != nil {
+		return BatchListResult{}, err
+	}
+	res, err := s.plans.ListCandidateBatches(ctx, projectID, f)
+	if err != nil {
+		return BatchListResult{}, mapError(err)
+	}
+	return res, nil
+}
+
+func (s *Service) GetCandidateBatchByID(ctx context.Context, batchID uuid.UUID) (CandidateBatch, error) {
+	b, err := s.plans.GetCandidateBatchByID(ctx, batchID)
+	if err != nil {
+		return CandidateBatch{}, mapError(err)
+	}
+	return b, nil
+}
+
+func (s *Service) ListCandidates(ctx context.Context, batchID uuid.UUID, f CandidateFilter) (CandidateListResult, error) {
+	res, err := s.plans.ListCandidates(ctx, batchID, f)
+	if err != nil {
+		return CandidateListResult{}, mapError(err)
+	}
+	return res, nil
+}
+
+func (s *Service) GetCandidateByID(ctx context.Context, candidateID uuid.UUID) (Candidate, error) {
+	c, err := s.plans.GetCandidateByID(ctx, candidateID)
+	if err != nil {
+		return Candidate{}, mapError(err)
+	}
+	return c, nil
+}
+
+func (s *Service) ListRevisions(ctx context.Context, chapterPlanID uuid.UUID, limit, offset int) (RevisionListResult, error) {
+	res, err := s.plans.ListRevisions(ctx, chapterPlanID, limit, offset)
+	if err != nil {
+		return RevisionListResult{}, mapError(err)
+	}
+	return res, nil
+}
+
+func (s *Service) GetChapterPlanningSummary(ctx context.Context, projectID uuid.UUID) (Summary, error) {
+	if err := s.projectExists(ctx, projectID); err != nil {
+		return Summary{}, err
+	}
+	sum, err := s.plans.GetChapterPlanningSummary(ctx, projectID)
+	if err != nil {
+		return Summary{}, mapError(err)
+	}
+	return sum, nil
+}
+
+func (s *Service) UpdateCandidate(ctx context.Context, cmd UpdateCandidateCommand) (Candidate, error) {
+	c, err := s.plans.UpdateCandidate(ctx, cmd)
+	if err != nil {
+		return Candidate{}, mapError(err)
+	}
+	return c, nil
+}
+
+func (s *Service) CompareCandidate(ctx context.Context, candidateID uuid.UUID) (CandidateComparison, error) {
+	cmp, err := s.plans.CompareCandidate(ctx, candidateID)
+	if err != nil {
+		return CandidateComparison{}, mapError(err)
+	}
+	return cmp, nil
+}
+
+func (s *Service) RecompareCandidate(ctx context.Context, cmd RecompareCandidateCommand) (CandidateComparison, error) {
+	cmp, err := s.plans.RecompareCandidate(ctx, cmd)
+	if err != nil {
+		return CandidateComparison{}, mapError(err)
+	}
+	return cmp, nil
+}
+
+func (s *Service) AdoptCandidate(ctx context.Context, cmd AdoptCandidateCommand) (AdoptCandidateResult, error) {
+	res, err := s.plans.AdoptCandidate(ctx, cmd)
+	if err != nil {
+		return AdoptCandidateResult{}, mapError(err)
+	}
+	return res, nil
+}
+
+func (s *Service) BulkAdoptCandidates(ctx context.Context, cmd BulkAdoptCommand) (BulkAdoptResult, error) {
+	res, err := s.plans.BulkAdoptCandidates(ctx, cmd)
+	if err != nil {
+		return BulkAdoptResult{}, mapError(err)
+	}
+	return SanitizeBulkAdoptResult(res), nil
+}
+
+// SanitizeBulkAdoptResult is a final boundary for per-item failures. A bulk
+// adoption has independently committed items, so it returns itemized errors in
+// a success response; those errors must remain as safe as top-level errors.
+func SanitizeBulkAdoptResult(res BulkAdoptResult) BulkAdoptResult {
+	for i := range res.Items {
+		if res.Items[i].Error == nil {
+			continue
+		}
+
+		code, _ := res.Items[i].Error["code"].(string)
+		switch code {
+		case "stale_candidate", "version_conflict":
+		default:
+			code = "failed"
+		}
+		res.Items[i].Error = map[string]any{
+			"code":        code,
+			"safeReason":  "The candidate could not be adopted safely.",
+			"retryAction": "review_candidate",
+		}
+	}
+	return res
+}
+
+func (s *Service) DiscardCandidate(ctx context.Context, cmd DiscardCandidateCommand) (Candidate, error) {
+	c, err := s.plans.DiscardCandidate(ctx, cmd)
+	if err != nil {
+		return Candidate{}, mapError(err)
+	}
+	return c, nil
+}
+
+func (s *Service) AbandonBatch(ctx context.Context, cmd AbandonBatchCommand) (CandidateBatch, error) {
+	b, err := s.plans.AbandonBatch(ctx, cmd)
+	if err != nil {
+		return CandidateBatch{}, mapError(err)
+	}
+	return b, nil
+}
+
 func mapError(err error) error {
 	if err == nil {
 		return nil
 	}
 	switch {
+	case errors.Is(err, ErrOutputValidationFailed):
+		return ErrOutputValidationFailed
+	case errors.Is(err, ErrIngestionTransaction):
+		return ErrIngestionTransaction
 	case errors.Is(err, ErrNotFound):
 		return ErrChapterPlanNotFound
+	case errors.Is(err, ErrBatchNotFound):
+		return ErrBatchNotFound
+	case errors.Is(err, ErrCandidateNotFound):
+		return ErrCandidateNotFound
+	case errors.Is(err, ErrRevisionNotFound):
+		return ErrRevisionNotFound
+	case errors.Is(err, ErrInvalidCandidateState):
+		return ErrInvalidCandidateState
+	case errors.Is(err, ErrStaleCandidate):
+		return ErrStaleCandidate
+	case errors.Is(err, ErrBatchAlreadyFinalized):
+		return ErrBatchAlreadyFinalized
+	case errors.Is(err, ErrIdempotencyKeyReused):
+		return ErrIdempotencyKeyReused
+	case errors.Is(err, ErrRevisionSequenceConflict):
+		return ErrRevisionSequenceConflict
 	case errors.Is(err, ErrVersionConflict):
 		return ErrVersionConflict
 	case errors.Is(err, ErrChapterNoConflict):

@@ -41,7 +41,14 @@ func main() {
 	projectMaterials := material.NewPostgresProjectMaterialService(projectRepository, pool)
 	storylines := storyline.NewPostgresService(projectRepository, pool)
 	foreshadowings := foreshadowing.NewPostgresService(projectRepository, pool)
-	chapterPlans := chapterplan.NewPostgresService(projectRepository, pool)
+	hmacSecret := cfg.ChapterPlanIdempotencyHMACSecret
+	if hmacSecret == "" {
+		log.Fatal("CHAPTER_PLAN_IDEMPOTENCY_HMAC_SECRET environment variable is required")
+	}
+	chapterPlans, err := chapterplan.NewPostgresService(projectRepository, pool, hmacSecret)
+	if err != nil {
+		log.Fatal(err)
+	}
 	contentRepository := contentitem.NewPostgresRepository(pool)
 	contentItems := contentitem.NewApplication(contentRepository, nil)
 	rewriteService := contentitem.NewMockRewriteService(contentRepository, contentitem.DeterministicMockRewriteProvider{}, contentitem.NewPgxRewriteTransactionRunner(pool))
@@ -58,6 +65,8 @@ func main() {
 		globalConfigurations,
 		globalConfigurations,
 	)
+	chapterPlans.ConfigureChapterPlanningRuntime(workflowbinding.NewPostgresRepository(pool), globalConfigurations, globalConfigurations, workflowRuns)
+	workflowRuns.SetSucceededConsumer(chapterplan.NewRuntimeConsumer(chapterplan.NewResultIngestor(pool), chapterplan.NewConsumptionRepository(pool)))
 	server := httpserver.New(cfg.APIAddress, projects, plannings, materials, projectMaterials, storylines, foreshadowings, chapterPlans, contentItems, iteration07, iteration08, globalConfigurations, workflowbinding.NewCloseLoop(pool, projectRepository, globalConfigurations), workflowRuns)
 	log.Printf("api listening on %s", cfg.APIAddress)
 	if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {

@@ -2,8 +2,10 @@ package chapterplan
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"slices"
+	"strings"
 	"testing"
 
 	"github.com/google/uuid"
@@ -24,6 +26,9 @@ type fakeStore struct {
 	deletedID                                       uuid.UUID
 	deletedExpected                                 int
 	confirmed                                       []Selection
+	summaryErr                                      error
+	bulkAdoptResult                                 BulkAdoptResult
+	bulkAdoptErr                                    error
 }
 
 func (f *fakeStore) ListByProject(_ context.Context, id uuid.UUID) ([]Plan, error) {
@@ -75,6 +80,70 @@ func (f *fakeStore) Delete(_ context.Context, id uuid.UUID, e int) error {
 	}
 	delete(f.plans, id)
 	return nil
+}
+func (f *fakeStore) ListCandidateBatches(_ context.Context, _ uuid.UUID, _ BatchFilter) (BatchListResult, error) {
+	return BatchListResult{}, nil
+}
+func (f *fakeStore) GetCandidateBatchByID(_ context.Context, _ uuid.UUID) (CandidateBatch, error) {
+	return CandidateBatch{}, ErrBatchNotFound
+}
+func (f *fakeStore) ListCandidates(_ context.Context, _ uuid.UUID, _ CandidateFilter) (CandidateListResult, error) {
+	return CandidateListResult{}, nil
+}
+func (f *fakeStore) GetCandidateByID(_ context.Context, _ uuid.UUID) (Candidate, error) {
+	return Candidate{}, ErrCandidateNotFound
+}
+func (f *fakeStore) ListRevisions(_ context.Context, _ uuid.UUID, _, _ int) (RevisionListResult, error) {
+	return RevisionListResult{}, nil
+}
+func (f *fakeStore) GetChapterPlanningSummary(_ context.Context, _ uuid.UUID) (Summary, error) {
+	return Summary{}, f.summaryErr
+}
+func (f *fakeStore) UpdateCandidate(_ context.Context, _ UpdateCandidateCommand) (Candidate, error) {
+	return Candidate{}, nil
+}
+func (f *fakeStore) CompareCandidate(_ context.Context, _ uuid.UUID) (CandidateComparison, error) {
+	return CandidateComparison{}, nil
+}
+func (f *fakeStore) RecompareCandidate(_ context.Context, _ RecompareCandidateCommand) (CandidateComparison, error) {
+	return CandidateComparison{}, nil
+}
+func (f *fakeStore) AdoptCandidate(_ context.Context, _ AdoptCandidateCommand) (AdoptCandidateResult, error) {
+	return AdoptCandidateResult{}, nil
+}
+func (f *fakeStore) BulkAdoptCandidates(_ context.Context, _ BulkAdoptCommand) (BulkAdoptResult, error) {
+	return f.bulkAdoptResult, f.bulkAdoptErr
+}
+
+func TestBulkAdoptErrorsDoNotExposeDatabaseDetails(t *testing.T) {
+	unsafe := "SQLSTATE 23503 chapter_plan_candidates_base_plan_fk relation chapter_plan_candidates pq pgx driver SELECT * FROM postgres://user:secret@db stack trace"
+	service := NewService(nil, &fakeStore{bulkAdoptResult: BulkAdoptResult{Items: []BulkAdoptItemResult{{
+		CandidateID: uuid.New(), Outcome: "failed", Error: map[string]any{"code": unsafe, "detail": unsafe},
+	}}}}, nil, nil, nil)
+
+	result, err := service.BulkAdoptCandidates(context.Background(), BulkAdoptCommand{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	body, err := json.Marshal(result)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, forbidden := range []string{"SQLSTATE", "chapter_plan_candidates_base_plan_fk", "relation", "chapter_plan_candidates", "pq", "pgx", "driver", "SELECT", "postgres://", "stack trace"} {
+		if strings.Contains(string(body), forbidden) {
+			t.Fatalf("bulk adoption response leaked %q: %s", forbidden, body)
+		}
+	}
+	itemError := result.Items[0].Error
+	if len(itemError) != 3 || itemError["code"] != "failed" || itemError["safeReason"] == "" || itemError["retryAction"] == "" {
+		t.Fatalf("unexpected safe item error: %#v", itemError)
+	}
+}
+func (f *fakeStore) DiscardCandidate(_ context.Context, _ DiscardCandidateCommand) (Candidate, error) {
+	return Candidate{}, nil
+}
+func (f *fakeStore) AbandonBatch(_ context.Context, _ AbandonBatchCommand) (CandidateBatch, error) {
+	return CandidateBatch{}, nil
 }
 func (f *fakeStore) Confirm(_ context.Context, s []Selection) ([]Plan, error) {
 	f.confirms++
@@ -219,6 +288,16 @@ func TestApplicationListGetAndNotFound(t *testing.T) {
 	}
 	if _, e = s.Get(context.Background(), uuid.New()); !errors.Is(e, ErrChapterPlanNotFound) {
 		t.Fatalf("%v", e)
+	}
+}
+
+func TestSummaryMapsConsumptionFailures(t *testing.T) {
+	service, store, projectID, _, _, _ := fixtureService()
+	for _, want := range []error{ErrOutputValidationFailed, ErrIngestionTransaction} {
+		store.summaryErr = want
+		if _, err := service.GetChapterPlanningSummary(context.Background(), projectID); !errors.Is(err, want) {
+			t.Fatalf("summary error=%v, want %v", err, want)
+		}
 	}
 }
 func TestApplicationMockGenerationDeterministicAndAtomicFailure(t *testing.T) {

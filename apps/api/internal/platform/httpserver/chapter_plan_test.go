@@ -6,6 +6,7 @@ import (
 	"errors"
 	"net/http"
 	"net/http/httptest"
+	"regexp"
 	"strings"
 	"testing"
 	"time"
@@ -13,6 +14,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/local/ai-content-factory/apps/api/internal/chapterplan"
 	"github.com/local/ai-content-factory/apps/api/internal/project"
+	"github.com/local/ai-content-factory/apps/api/internal/workflowrun"
 )
 
 type fakeChapterPlanApplication struct {
@@ -36,6 +38,35 @@ type fakeChapterPlanApplication struct {
 	confirmProjectID  uuid.UUID
 	selections        []chapterplan.Selection
 	confirmCalls      int
+	summaryErr        error
+	bulkAdoptResult   chapterplan.BulkAdoptResult
+	bulkAdoptErr      error
+}
+
+type fakeChapterPlanRunApplication struct {
+	result    chapterplan.PreflightResult
+	err       error
+	projectID uuid.UUID
+	request   chapterplan.PreflightRequest
+	calls     int
+}
+
+type testPrincipalProvider struct {
+	actor string
+	ok    bool
+}
+
+func (p testPrincipalProvider) ActorID(context.Context) (string, bool) { return p.actor, p.ok }
+
+func (f *fakeChapterPlanRunApplication) Preflight(_ context.Context, projectID uuid.UUID, request chapterplan.PreflightRequest) (chapterplan.PreflightResult, error) {
+	f.calls++
+	f.projectID = projectID
+	f.request = request
+	return f.result, f.err
+}
+
+func (f *fakeChapterPlanRunApplication) CreateChapterPlanningRun(context.Context, uuid.UUID, string, string, string) (workflowrun.WorkflowRun, error) {
+	return workflowrun.WorkflowRun{}, nil
 }
 
 func (f *fakeChapterPlanApplication) List(_ context.Context, id uuid.UUID) ([]chapterplan.Plan, error) {
@@ -55,10 +86,97 @@ func (f *fakeChapterPlanApplication) GenerateMock(_ context.Context, id uuid.UUI
 	return f.generated, f.err
 }
 
+func (f *fakeChapterPlanApplication) ListCandidateBatches(_ context.Context, _ uuid.UUID, _ chapterplan.BatchFilter) (chapterplan.BatchListResult, error) {
+	return chapterplan.BatchListResult{}, nil
+}
+func (f *fakeChapterPlanApplication) GetCandidateBatchByID(_ context.Context, _ uuid.UUID) (chapterplan.CandidateBatch, error) {
+	return chapterplan.CandidateBatch{}, chapterplan.ErrBatchNotFound
+}
+func (f *fakeChapterPlanApplication) ListCandidates(_ context.Context, _ uuid.UUID, _ chapterplan.CandidateFilter) (chapterplan.CandidateListResult, error) {
+	return chapterplan.CandidateListResult{}, nil
+}
+func (f *fakeChapterPlanApplication) GetCandidateByID(_ context.Context, _ uuid.UUID) (chapterplan.Candidate, error) {
+	return chapterplan.Candidate{}, chapterplan.ErrCandidateNotFound
+}
+func (f *fakeChapterPlanApplication) ListRevisions(_ context.Context, _ uuid.UUID, _, _ int) (chapterplan.RevisionListResult, error) {
+	return chapterplan.RevisionListResult{}, nil
+}
+func (f *fakeChapterPlanApplication) GetChapterPlanningSummary(_ context.Context, _ uuid.UUID) (chapterplan.Summary, error) {
+	return chapterplan.Summary{}, f.summaryErr
+}
+func (f *fakeChapterPlanApplication) UpdateCandidate(_ context.Context, _ chapterplan.UpdateCandidateCommand) (chapterplan.Candidate, error) {
+	return chapterplan.Candidate{}, nil
+}
+func (f *fakeChapterPlanApplication) CompareCandidate(_ context.Context, _ uuid.UUID) (chapterplan.CandidateComparison, error) {
+	return chapterplan.CandidateComparison{}, nil
+}
+func (f *fakeChapterPlanApplication) RecompareCandidate(_ context.Context, _ chapterplan.RecompareCandidateCommand) (chapterplan.CandidateComparison, error) {
+	return chapterplan.CandidateComparison{}, nil
+}
+func (f *fakeChapterPlanApplication) AdoptCandidate(_ context.Context, _ chapterplan.AdoptCandidateCommand) (chapterplan.AdoptCandidateResult, error) {
+	return chapterplan.AdoptCandidateResult{}, nil
+}
+func (f *fakeChapterPlanApplication) BulkAdoptCandidates(_ context.Context, _ chapterplan.BulkAdoptCommand) (chapterplan.BulkAdoptResult, error) {
+	return f.bulkAdoptResult, f.bulkAdoptErr
+}
+func (f *fakeChapterPlanApplication) DiscardCandidate(_ context.Context, _ chapterplan.DiscardCandidateCommand) (chapterplan.Candidate, error) {
+	return chapterplan.Candidate{}, nil
+}
+func (f *fakeChapterPlanApplication) AbandonBatch(_ context.Context, _ chapterplan.AbandonBatchCommand) (chapterplan.CandidateBatch, error) {
+	return chapterplan.CandidateBatch{}, nil
+}
+
 func chapterPlanHTTPValue(projectID uuid.UUID) chapterplan.Plan {
 	now := time.Date(2026, 7, 15, 1, 2, 3, 456000000, time.UTC)
 	goal := "goal"
 	return chapterplan.Plan{ID: uuid.New(), ProjectID: projectID, ChapterNo: 2, Title: "Title", Summary: "Summary", Status: "pending_confirmation", Source: "mock_generated", Goal: &goal, Version: 1, CreatedAt: now, UpdatedAt: now, Storylines: []chapterplan.StorylineRef{{ID: uuid.New(), Relation: "primary"}}, Materials: []uuid.UUID{}, Foreshadowings: []uuid.UUID{}}
+}
+
+func TestChapterPlanSummaryMapsOutputValidationFailure(t *testing.T) {
+	projectID := uuid.New()
+	server := New(":0", nil, &fakeChapterPlanApplication{summaryErr: chapterplan.ErrOutputValidationFailed})
+	request := httptest.NewRequest(http.MethodGet, "/api/v1/projects/"+projectID.String()+"/chapter-planning-summary", nil)
+	response := httptest.NewRecorder()
+	server.Handler().ServeHTTP(response, request)
+	if response.Code != http.StatusUnprocessableEntity || !strings.Contains(response.Body.String(), `"code":"output_validation_failed"`) || strings.Contains(response.Body.String(), "SQLSTATE") {
+		t.Fatalf("summary response=%d %s", response.Code, response.Body.String())
+	}
+}
+
+func TestChapterPlanSummaryMapsResultConsumptionFailure(t *testing.T) {
+	projectID := uuid.New()
+	server := New(":0", nil, &fakeChapterPlanApplication{summaryErr: chapterplan.ErrIngestionTransaction})
+	request := httptest.NewRequest(http.MethodGet, "/api/v1/projects/"+projectID.String()+"/chapter-planning-summary", nil)
+	response := httptest.NewRecorder()
+	server.Handler().ServeHTTP(response, request)
+	if response.Code != http.StatusInternalServerError || !strings.Contains(response.Body.String(), `"code":"result_consumption_failed"`) || strings.Contains(response.Body.String(), "SQLSTATE") {
+		t.Fatalf("summary response=%d %s", response.Code, response.Body.String())
+	}
+}
+
+func TestChapterPlanBulkAdoptHTTPReturnsSafeItemErrors(t *testing.T) {
+	projectID, batchID, candidateID := uuid.New(), uuid.New(), uuid.New()
+	unsafe := "SQLSTATE 23503 chapter_plan_candidates_base_revision_fk relation chapter_plan_candidates pq pgx driver INSERT INTO postgres://user:secret@db stack trace"
+	server := New(":0", nil, &fakeChapterPlanApplication{bulkAdoptResult: chapterplan.BulkAdoptResult{Items: []chapterplan.BulkAdoptItemResult{{
+		CandidateID: candidateID, Outcome: "failed", Error: map[string]any{"code": unsafe, "database": unsafe},
+	}}}})
+	request := httptest.NewRequest(http.MethodPost, "/api/v1/chapter-plan-candidate-batches/"+batchID.String()+"/adoptions", strings.NewReader(`{"expectedBatchVersion":1,"candidates":[{"candidateId":"`+candidateID.String()+`","expectedCandidateVersion":1}]}`))
+	request.Header.Set("Content-Type", "application/json")
+	request.Header.Set("Idempotency-Key", "bulk-adopt-safe-errors")
+	request.SetPathValue("projectId", projectID.String())
+	response := httptest.NewRecorder()
+	server.Handler().ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("status=%d body=%s", response.Code, response.Body.String())
+	}
+	for _, forbidden := range []string{"SQLSTATE", "chapter_plan_candidates_base_revision_fk", "relation", "chapter_plan_candidates", "pq", "pgx", "driver", "INSERT INTO", "postgres://", "stack trace"} {
+		if strings.Contains(response.Body.String(), forbidden) {
+			t.Fatalf("HTTP bulk adoption response leaked %q: %s", forbidden, response.Body.String())
+		}
+	}
+	if !strings.Contains(response.Body.String(), `"code":"failed"`) || !strings.Contains(response.Body.String(), `"safeReason"`) || !strings.Contains(response.Body.String(), `"retryAction"`) {
+		t.Fatalf("HTTP bulk adoption response missing safe item error: %s", response.Body.String())
+	}
 }
 func chapterPlanRequest(handler http.Handler, method, path, body string) *httptest.ResponseRecorder {
 	response := httptest.NewRecorder()
@@ -77,6 +195,124 @@ func chapterPlanRequest(handler http.Handler, method, path, body string) *httpte
 }
 func mockGenerateBody(targetID uuid.UUID) string {
 	return `{"target_storyline_id":"` + targetID.String() + `","start_chapter_no":1,"end_chapter_no":2,"chapter_count":2,"include_main_storyline":true,"include_child_storylines":false,"include_project_materials":true,"include_unpaid_foreshadowings":false,"include_prior_chapter_summaries":true,"summary_length":"medium","chapter_pace":"balanced","generation_notes":null}`
+}
+
+func chapterPlanPreflightBody() string {
+	return `{"generationMode":"full","target":{"targetTotalChapters":2},"storylineSelection":{"mode":"auto_balanced","storylineIds":[]},"contextOptions":{"includeProjectMaterials":true,"includeUnpaidForeshadowings":true,"includePriorChapterSummaries":true,"coreSettingsOnly":false},"additionalInstructions":null}`
+}
+
+type chapterPlanPreflightHTTPResponse struct {
+	Data struct {
+		Result         string          `json:"result"`
+		Status         string          `json:"status"`
+		InputDigest    string          `json:"inputDigest"`
+		InputSummary   json.RawMessage `json:"inputSummary"`
+		PreflightToken *string         `json:"preflightToken"`
+		Checks         json.RawMessage `json:"checks"`
+		Warnings       json.RawMessage `json:"warnings"`
+		Blockers       []struct {
+			Code        string `json:"code"`
+			RetryAction string `json:"retryAction"`
+			SafeReason  string `json:"safeReason"`
+		} `json:"blockers"`
+	} `json:"data"`
+}
+
+func decodeChapterPlanPreflightHTTPResponse(t *testing.T, response *httptest.ResponseRecorder) chapterPlanPreflightHTTPResponse {
+	t.Helper()
+	var payload chapterPlanPreflightHTTPResponse
+	if err := json.Unmarshal(response.Body.Bytes(), &payload); err != nil {
+		t.Fatalf("decode preflight response: %v; body=%s", err, response.Body.String())
+	}
+	return payload
+}
+
+func TestChapterPlanPreflightHandlerReturnsInvalidStorylineBlockedReport(t *testing.T) {
+	projectID := uuid.New()
+	fake := &fakeChapterPlanRunApplication{result: chapterplan.PreflightResult{
+		InputDigest: strings.Repeat("c", 64),
+		Blockers: []chapterplan.PreflightBlocker{{
+			Code:        "storyline_reference_invalid",
+			RetryAction: "review_storyline_selection",
+			SafeReason:  "Choose valid project storylines.",
+		}},
+	}}
+	body := `{"generationMode":"full","target":{"targetTotalChapters":2},"storylineSelection":{"mode":"specified","storylineIds":[]},"contextOptions":{"includeProjectMaterials":true,"includeUnpaidForeshadowings":true,"includePriorChapterSummaries":true,"coreSettingsOnly":false},"additionalInstructions":null}`
+	response := chapterPlanRequest(chapterPlanPreflightHandler(fake), http.MethodPost, "/api/v1/projects/"+projectID.String()+"/chapter-plan-runs/preflight", body)
+	payload := decodeChapterPlanPreflightHTTPResponse(t, response)
+	if response.Code != http.StatusOK || payload.Data.Result != "blocked" || payload.Data.Status != "blocked" || len(payload.Data.Blockers) != 1 || payload.Data.Blockers[0].Code != "storyline_reference_invalid" || payload.Data.PreflightToken != nil || string(payload.Data.InputSummary) != "null" {
+		t.Fatalf("invalid storyline blocked response=%d body=%s", response.Code, response.Body.String())
+	}
+	if !regexp.MustCompile(`^[a-f0-9]{64}$`).MatchString(payload.Data.InputDigest) || strings.Contains(response.Body.String(), `"preflightToken"`) {
+		t.Fatalf("invalid storyline digest or token response=%s", response.Body.String())
+	}
+}
+
+func TestChapterPlanPreflightHandlerReturnsPassedHTTP200WithToken(t *testing.T) {
+	projectID := uuid.New()
+	token := "preflight-token"
+	fake := &fakeChapterPlanRunApplication{result: chapterplan.PreflightResult{
+		Passed:         true,
+		Token:          token,
+		ExpiresAt:      time.Date(2026, 7, 27, 1, 2, 3, 0, time.UTC),
+		InputDigest:    strings.Repeat("a", 64),
+		Target:         chapterplan.BatchTarget{StartChapterNo: 1, EndChapterNo: 2, RequestedChapterCount: 2},
+		BindingID:      uuid.New(),
+		BindingVersion: 1,
+	}}
+
+	response := chapterPlanRequest(chapterPlanPreflightHandler(fake), http.MethodPost, "/api/v1/projects/"+projectID.String()+"/chapter-plan-runs/preflight", chapterPlanPreflightBody())
+	payload := decodeChapterPlanPreflightHTTPResponse(t, response)
+	if response.Code != http.StatusOK || !strings.HasPrefix(response.Header().Get("Content-Type"), "application/json") || fake.calls != 1 || fake.projectID != projectID || fake.request.ActorID != "system" || payload.Data.Result != "passed" || payload.Data.Status != "passed" || payload.Data.PreflightToken == nil || *payload.Data.PreflightToken != token {
+		t.Fatalf("preflight=%d body=%s fake=%#v", response.Code, response.Body.String(), fake)
+	}
+	if len(payload.Data.Blockers) != 0 || string(payload.Data.Checks) == "" || string(payload.Data.Warnings) == "" {
+		t.Fatalf("passed report is incomplete: %s", response.Body.String())
+	}
+}
+
+func TestChapterPlanHandlerUsesInjectedPrincipal(t *testing.T) {
+	previous := currentPrincipal
+	currentPrincipal = testPrincipalProvider{actor: "injected-actor", ok: true}
+	t.Cleanup(func() { currentPrincipal = previous })
+	projectID := uuid.New()
+	fake := &fakeChapterPlanRunApplication{result: chapterplan.PreflightResult{Passed: true, Token: "token", InputDigest: strings.Repeat("a", 64), Target: chapterplan.BatchTarget{StartChapterNo: 1, EndChapterNo: 2, RequestedChapterCount: 2}, BindingID: uuid.New(), BindingVersion: 1}}
+	response := chapterPlanRequest(chapterPlanPreflightHandler(fake), http.MethodPost, "/api/v1/projects/"+projectID.String()+"/chapter-plan-runs/preflight", chapterPlanPreflightBody())
+	if response.Code != http.StatusOK || fake.request.ActorID != "injected-actor" {
+		t.Fatalf("handler did not use injected principal: status=%d request=%+v", response.Code, fake.request)
+	}
+	currentPrincipal = testPrincipalProvider{ok: false}
+	response = chapterPlanRequest(chapterPlanPreflightHandler(fake), http.MethodPost, "/api/v1/projects/"+projectID.String()+"/chapter-plan-runs/preflight", chapterPlanPreflightBody())
+	if response.Code != http.StatusUnprocessableEntity || fake.calls != 1 || strings.Contains(response.Body.String(), "injected-actor") {
+		t.Fatalf("missing actor must return safe error: status=%d body=%s", response.Code, response.Body.String())
+	}
+}
+
+func TestChapterPlanPreflightHandlerReturnsBlockedHTTP200ForEachBlocker(t *testing.T) {
+	projectID := uuid.New()
+	for _, blocker := range []chapterplan.PreflightBlocker{
+		{Code: "project_binding_missing", RetryAction: "configure_workflow", SafeReason: "A workflow binding is required."},
+		{Code: "execution_integration_unavailable", RetryAction: "enable_workflow", SafeReason: "The workflow connection is unavailable."},
+		{Code: "active_run_conflict", RetryAction: "wait_for_active_run", SafeReason: "Only one active run is allowed."},
+		{Code: "storyline_reference_invalid", RetryAction: "review_storyline_selection", SafeReason: "Choose valid project storylines."},
+		{Code: "generation_input_invalid", RetryAction: "review_generation_input", SafeReason: "All generation options must be provided."},
+	} {
+		t.Run(blocker.Code, func(t *testing.T) {
+			fake := &fakeChapterPlanRunApplication{result: chapterplan.PreflightResult{
+				InputDigest: strings.Repeat("b", 64),
+				Blockers:    []chapterplan.PreflightBlocker{blocker},
+			}}
+			response := chapterPlanRequest(chapterPlanPreflightHandler(fake), http.MethodPost, "/api/v1/projects/"+projectID.String()+"/chapter-plan-runs/preflight", chapterPlanPreflightBody())
+			payload := decodeChapterPlanPreflightHTTPResponse(t, response)
+			if response.Code != http.StatusOK || fake.calls != 1 || payload.Data.Result != "blocked" || payload.Data.Status != "blocked" || payload.Data.PreflightToken != nil || string(payload.Data.Checks) == "" || string(payload.Data.Warnings) == "" || len(payload.Data.Blockers) != 1 {
+				t.Fatalf("blocked preflight=%d body=%s fake=%#v", response.Code, response.Body.String(), fake)
+			}
+			got := payload.Data.Blockers[0]
+			if got.Code != blocker.Code || got.SafeReason != blocker.SafeReason || got.RetryAction != blocker.RetryAction {
+				t.Fatalf("blocker mapping=%#v body=%s", got, response.Body.String())
+			}
+		})
+	}
 }
 
 func TestChapterPlanListHandler(t *testing.T) {
@@ -120,6 +356,22 @@ func TestChapterPlanGetHandler(t *testing.T) {
 	requireErrorEnvelope(t, response, 404)
 	response = chapterPlanRequest(getChapterPlanHandler(fake), http.MethodGet, "/api/v1/chapter-plans/nope", "")
 	requireErrorEnvelope(t, response, 400)
+}
+
+func TestChapterPlanHTTPMapsLegacyManualSource(t *testing.T) {
+	projectID := uuid.New()
+	legacy := chapterPlanHTTPValue(projectID)
+	legacy.Source = "manual"
+	legacy.CreatedBy = "legacy-importer"
+	response := chapterPlanRequest(getChapterPlanHandler(&fakeChapterPlanApplication{plan: legacy}), http.MethodGet, "/api/v1/chapter-plans/"+legacy.ID.String(), "")
+	if response.Code != http.StatusOK || !strings.Contains(response.Body.String(), `"source":"legacy_manual"`) {
+		t.Fatalf("legacy source must map to legacy_manual: status=%d body=%s", response.Code, response.Body.String())
+	}
+	for _, forbidden := range []string{`"source":"manual"`, "candidate_adopted", "mock_generated", "legacy-importer"} {
+		if strings.Contains(response.Body.String(), forbidden) {
+			t.Fatalf("legacy response exposed %q: %s", forbidden, response.Body.String())
+		}
+	}
 }
 
 func TestChapterPlanMockGenerateHandler(t *testing.T) {
