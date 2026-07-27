@@ -56,6 +56,7 @@ type PreflightTokenClaims struct {
 	ActorID                string          `json:"actorId"`
 	Stage                  string          `json:"stage"`
 	GenerationMode         string          `json:"generationMode,omitempty"`
+	StorylineSelectionMode string          `json:"storylineSelectionMode,omitempty"`
 	StorylineIDs           []uuid.UUID     `json:"storylineIds,omitempty"`
 	ContextOptions         json.RawMessage `json:"contextOptions,omitempty"`
 	AdditionalInstructions *string         `json:"additionalInstructions,omitempty"`

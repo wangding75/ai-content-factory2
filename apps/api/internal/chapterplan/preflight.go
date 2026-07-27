@@ -22,6 +22,7 @@ type PreflightRequest struct {
 	GenerationMode         string                  `json:"generationMode"`
 	Target                 GenerationTargetRequest `json:"target"`
 	StorylineIDs           []uuid.UUID             `json:"storylineIds"`
+	StorylineSelectionMode string                  `json:"storylineSelectionMode"`
 	ContextOptions         json.RawMessage         `json:"contextOptions"`
 	AdditionalInstructions *string                 `json:"additionalInstructions"`
 	ActorID                string                  `json:"-"`
@@ -86,7 +87,7 @@ func (s *Service) snapshot(ctx context.Context, projectID uuid.UUID, request Pre
 		return GenerationContextSnapshot{}, err
 	}
 	sort.Slice(foreshadowings, func(i, j int) bool { return foreshadowings[i].ID.String() < foreshadowings[j].ID.String() })
-	input, err := json.Marshal(map[string]any{"generationMode": request.GenerationMode, "target": target, "storylineIds": request.StorylineIDs, "contextOptions": json.RawMessage(defaultObject(request.ContextOptions)), "projectId": projectID})
+	input, err := json.Marshal(map[string]any{"generationMode": request.GenerationMode, "target": target, "storylineSelectionMode": request.StorylineSelectionMode, "storylineIds": request.StorylineIDs, "contextOptions": json.RawMessage(defaultObject(request.ContextOptions)), "projectId": projectID})
 	if err != nil {
 		return GenerationContextSnapshot{}, err
 	}
@@ -151,6 +152,9 @@ func (s *Service) Preflight(ctx context.Context, projectID uuid.UUID, request Pr
 			return PreflightResult{}, err
 		}
 		return blockedPreflight(PreflightResult{InputDigest: digest}, "generation_input_invalid", "generation input is invalid", "review_generation_input", "All generation options must be provided."), nil
+	}
+	if request.StorylineSelectionMode != "auto_balanced" && request.StorylineSelectionMode != "specified" || request.StorylineSelectionMode == "specified" && len(request.StorylineIDs) == 0 {
+		return blockedPreflight(PreflightResult{}, "storyline_reference_invalid", "storyline selection is invalid", "review_storyline_selection", "Choose valid project storylines."), nil
 	}
 	plans, err := s.plans.ListByProject(ctx, projectID)
 	if err != nil {
@@ -217,7 +221,7 @@ func (s *Service) Preflight(ctx context.Context, projectID uuid.UUID, request Pr
 		return result, ErrInternal
 	}
 	now := s.now().UTC()
-	claims := PreflightTokenClaims{ProjectID: projectID, ActorID: request.ActorID, Stage: "chapter_planning", GenerationMode: request.GenerationMode, StorylineIDs: request.StorylineIDs, ContextOptions: json.RawMessage(defaultObject(request.ContextOptions)), AdditionalInstructions: request.AdditionalInstructions, Target: target, InputDigest: digest, BindingID: binding.ID, BindingVersion: binding.Version, IssuedAt: now.Unix(), ExpiresAt: now.Add(10 * time.Minute).Unix(), Nonce: uuid.NewString()}
+	claims := PreflightTokenClaims{ProjectID: projectID, ActorID: request.ActorID, Stage: "chapter_planning", GenerationMode: request.GenerationMode, StorylineSelectionMode: request.StorylineSelectionMode, StorylineIDs: request.StorylineIDs, ContextOptions: json.RawMessage(defaultObject(request.ContextOptions)), AdditionalInstructions: request.AdditionalInstructions, Target: target, InputDigest: digest, BindingID: binding.ID, BindingVersion: binding.Version, IssuedAt: now.Unix(), ExpiresAt: now.Add(10 * time.Minute).Unix(), Nonce: uuid.NewString()}
 	token, err := SignPreflightToken(repo.HMACSecret(), claims)
 	if err != nil {
 		return result, err
@@ -250,7 +254,7 @@ func (s *Service) CreateChapterPlanningRun(ctx context.Context, projectID uuid.U
 	if claims.GenerationMode == "append" {
 		target.ChapterCount = claims.Target.RequestedChapterCount
 	}
-	request := PreflightRequest{GenerationMode: claims.GenerationMode, Target: target, StorylineIDs: claims.StorylineIDs, ContextOptions: claims.ContextOptions, AdditionalInstructions: claims.AdditionalInstructions, ActorID: actorID}
+	request := PreflightRequest{GenerationMode: claims.GenerationMode, Target: target, StorylineSelectionMode: claims.StorylineSelectionMode, StorylineIDs: claims.StorylineIDs, ContextOptions: claims.ContextOptions, AdditionalInstructions: claims.AdditionalInstructions, ActorID: actorID}
 	current, err := s.Preflight(ctx, projectID, request)
 	if err != nil {
 		return workflowrun.WorkflowRun{}, err

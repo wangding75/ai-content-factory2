@@ -157,6 +157,10 @@ func ValidateNormalizedOutput(input IngestInput) error {
 	if tgt != frozenInput.Target {
 		return fmt.Errorf("%w: output target does not match frozen target", ErrOutputValidationFailed)
 	}
+	allowed, err := frozenReferenceIDs(ctx.StorylineSnapshot)
+	if err != nil {
+		return fmt.Errorf("%w: frozen reference snapshot is invalid", ErrOutputValidationFailed)
+	}
 
 	if len(out.Candidates) == 0 || len(out.Candidates) > 100 {
 		return fmt.Errorf("%w: candidates array length %d out of bounds [1, 100]", ErrOutputValidationFailed, len(out.Candidates))
@@ -192,25 +196,26 @@ func ValidateNormalizedOutput(input IngestInput) error {
 			return fmt.Errorf("%w: candidate %d storylineRefs must contain at least 1 item", ErrOutputValidationFailed, i)
 		}
 
-		allRefs := append([]NormalizedReference{}, c.StorylineRefs...)
-		allRefs = append(allRefs, c.MaterialRefs...)
-		allRefs = append(allRefs, c.ForeshadowingRefs...)
-
-		for _, ref := range allRefs {
-			if ref.ID == uuid.Nil {
-				return fmt.Errorf("%w: candidate %d reference ID is nil", ErrOutputValidationFailed, i)
-			}
-			if ref.ProjectID != run.ProjectID {
-				return fmt.Errorf("%w: candidate %d reference projectId mismatch", ErrOutputValidationFailed, i)
-			}
-			if len(ref.Label) < 1 || len(ref.Label) > 160 {
-				return fmt.Errorf("%w: candidate %d reference label length invalid", ErrOutputValidationFailed, i)
-			}
-			if len(ref.Relation) > 40 {
-				return fmt.Errorf("%w: candidate %d reference relation length invalid", ErrOutputValidationFailed, i)
-			}
-			if ref.Position < 0 || ref.Version < 1 {
-				return fmt.Errorf("%w: candidate %d reference position/version invalid", ErrOutputValidationFailed, i)
+		for kind, refs := range map[string][]NormalizedReference{"storyline": c.StorylineRefs, "material": c.MaterialRefs, "foreshadowing": c.ForeshadowingRefs} {
+			for _, ref := range refs {
+				if ref.ID == uuid.Nil {
+					return fmt.Errorf("%w: candidate %d reference ID is nil", ErrOutputValidationFailed, i)
+				}
+				if ref.ProjectID != run.ProjectID {
+					return fmt.Errorf("%w: candidate %d reference projectId mismatch", ErrOutputValidationFailed, i)
+				}
+				if len(allowed[kind]) > 0 && !allowed[kind][ref.ID] {
+					return fmt.Errorf("%w: candidate %d %s reference is not frozen", ErrOutputValidationFailed, i, kind)
+				}
+				if len(ref.Label) < 1 || len(ref.Label) > 160 {
+					return fmt.Errorf("%w: candidate %d reference label length invalid", ErrOutputValidationFailed, i)
+				}
+				if len(ref.Relation) > 40 {
+					return fmt.Errorf("%w: candidate %d reference relation length invalid", ErrOutputValidationFailed, i)
+				}
+				if ref.Position < 0 || ref.Version < 1 {
+					return fmt.Errorf("%w: candidate %d reference position/version invalid", ErrOutputValidationFailed, i)
+				}
 			}
 		}
 
@@ -223,6 +228,32 @@ func ValidateNormalizedOutput(input IngestInput) error {
 	}
 
 	return nil
+}
+
+func frozenReferenceIDs(raw json.RawMessage) (map[string]map[uuid.UUID]bool, error) {
+	if len(raw) == 0 {
+		return map[string]map[uuid.UUID]bool{"storyline": {}, "material": {}, "foreshadowing": {}}, nil
+	}
+	var snapshot map[string]json.RawMessage
+	if err := json.Unmarshal(raw, &snapshot); err != nil {
+		return nil, err
+	}
+	out := map[string]map[uuid.UUID]bool{"storyline": {}, "material": {}, "foreshadowing": {}}
+	for key, kind := range map[string]string{"available": "storyline", "materials": "material", "foreshadowings": "foreshadowing"} {
+		var values []map[string]json.RawMessage
+		if err := json.Unmarshal(snapshot[key], &values); err != nil {
+			continue
+		}
+		for _, value := range values {
+			for _, idKey := range []string{"id", "materialId"} {
+				var id uuid.UUID
+				if rawID, ok := value[idKey]; ok && json.Unmarshal(rawID, &id) == nil && id != uuid.Nil {
+					out[kind][id] = true
+				}
+			}
+		}
+	}
+	return out, nil
 }
 
 func stringsTrimEmpty(s string) bool {

@@ -15,6 +15,7 @@ type chapterPlanPreflightRequest struct {
 	GenerationMode     string                              `json:"generationMode"`
 	Target             chapterplan.GenerationTargetRequest `json:"target"`
 	StorylineSelection struct {
+		Mode         string      `json:"mode"`
 		StorylineIDs []uuid.UUID `json:"storylineIds"`
 	} `json:"storylineSelection"`
 	ContextOptions         json.RawMessage `json:"contextOptions"`
@@ -45,7 +46,7 @@ func chapterPlanPreflightHandler(app chapterPlanRunApplication) http.HandlerFunc
 			writeError(w, r, 400, "validation_error", "invalid request body", map[string]any{})
 			return
 		}
-		result, err := app.Preflight(r.Context(), id, chapterplan.PreflightRequest{GenerationMode: body.GenerationMode, Target: body.Target, StorylineIDs: body.StorylineSelection.StorylineIDs, ContextOptions: body.ContextOptions, AdditionalInstructions: body.AdditionalInstructions, ActorID: actorID})
+		result, err := app.Preflight(r.Context(), id, chapterplan.PreflightRequest{GenerationMode: body.GenerationMode, Target: body.Target, StorylineSelectionMode: body.StorylineSelection.Mode, StorylineIDs: body.StorylineSelection.StorylineIDs, ContextOptions: body.ContextOptions, AdditionalInstructions: body.AdditionalInstructions, ActorID: actorID})
 		if err != nil {
 			chapterPlanRunError(w, r, err)
 			return
