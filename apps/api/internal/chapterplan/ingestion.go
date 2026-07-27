@@ -7,10 +7,13 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
+	"regexp"
 	"sort"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -18,6 +21,8 @@ var (
 	ErrOutputValidationFailed = errors.New("normalized output validation failed")
 	ErrRunAlreadyConsumed     = errors.New("run already consumed")
 	ErrIngestionTransaction   = errors.New("result ingestion transaction failed")
+
+	digestPattern = regexp.MustCompile("^[a-f0-9]{64}$")
 )
 
 type RunReference struct {
@@ -26,11 +31,11 @@ type RunReference struct {
 }
 
 type BaseChapterPlanContext struct {
-	ID        uuid.UUID       `json:"id"`
-	ChapterNo int             `json:"chapterNo"`
-	Version   int             `json:"version"`
-	RevisionID *uuid.UUID     `json:"revisionId"`
-	Snapshot  json.RawMessage `json:"snapshot"`
+	ID         uuid.UUID       `json:"id"`
+	ChapterNo  int             `json:"chapterNo"`
+	Version    int             `json:"version"`
+	RevisionID *uuid.UUID      `json:"revisionId"`
+	Snapshot   json.RawMessage `json:"snapshot"`
 }
 
 type GenerationContextSnapshot struct {
@@ -44,12 +49,12 @@ type GenerationContextSnapshot struct {
 }
 
 type NormalizedReference struct {
-	ID       uuid.UUID `json:"id"`
+	ID        uuid.UUID `json:"id"`
 	ProjectID uuid.UUID `json:"projectId"`
-	Label    string    `json:"label"`
-	Relation string    `json:"relation"`
-	Position int       `json:"position"`
-	Version  int       `json:"version"`
+	Label     string    `json:"label"`
+	Relation  string    `json:"relation"`
+	Position  int       `json:"position"`
+	Version   int       `json:"version"`
 }
 
 type GenerationBasis struct {
@@ -58,14 +63,14 @@ type GenerationBasis struct {
 }
 
 type NormalizedCandidate struct {
-	ChapterNo        int                   `json:"chapterNo"`
-	Title            string                `json:"title"`
-	Summary          string                `json:"summary"`
-	ChapterPurpose   string                `json:"chapterPurpose"`
-	StorylineRefs    []NormalizedReference `json:"storylineRefs"`
-	MaterialRefs     []NormalizedReference `json:"materialRefs"`
+	ChapterNo         int                   `json:"chapterNo"`
+	Title             string                `json:"title"`
+	Summary           string                `json:"summary"`
+	ChapterPurpose    string                `json:"chapterPurpose"`
+	StorylineRefs     []NormalizedReference `json:"storylineRefs"`
+	MaterialRefs      []NormalizedReference `json:"materialRefs"`
 	ForeshadowingRefs []NormalizedReference `json:"foreshadowingRefs"`
-	GenerationBasis  GenerationBasis       `json:"generationBasis"`
+	GenerationBasis   GenerationBasis       `json:"generationBasis"`
 }
 
 type OutputMetadata struct {
@@ -106,14 +111,28 @@ func ValidateNormalizedOutput(input IngestInput) error {
 	run := input.Run
 	ctx := input.Context
 
-	if out.ProjectID != run.ProjectID {
+	if out.ProjectID == uuid.Nil || run.ProjectID == uuid.Nil || out.ProjectID != run.ProjectID {
 		return fmt.Errorf("%w: output projectId %s does not match run projectId %s", ErrOutputValidationFailed, out.ProjectID, run.ProjectID)
 	}
-	if out.SourceWorkflowRunID != run.RunID {
+	if out.SourceWorkflowRunID == uuid.Nil || run.RunID == uuid.Nil || out.SourceWorkflowRunID != run.RunID {
 		return fmt.Errorf("%w: output sourceWorkflowRunId %s does not match runId %s", ErrOutputValidationFailed, out.SourceWorkflowRunID, run.RunID)
+	}
+
+	if !digestPattern.MatchString(out.Metadata.InputDigest) {
+		return fmt.Errorf("%w: invalid metadata inputDigest format %s", ErrOutputValidationFailed, out.Metadata.InputDigest)
 	}
 	if out.Metadata.InputDigest != ctx.InputDigest {
 		return fmt.Errorf("%w: metadata inputDigest %s does not match context inputDigest %s", ErrOutputValidationFailed, out.Metadata.InputDigest, ctx.InputDigest)
+	}
+
+	if _, err := time.Parse(time.RFC3339, out.Metadata.GeneratedAt); err != nil {
+		if _, err2 := time.Parse("2006-01-02T15:04:05Z07:00", out.Metadata.GeneratedAt); err2 != nil {
+			return fmt.Errorf("%w: invalid generatedAt format %s", ErrOutputValidationFailed, out.Metadata.GeneratedAt)
+		}
+	}
+
+	if len(out.Metadata.SafeProviderSummary) < 1 || len(out.Metadata.SafeProviderSummary) > 300 {
+		return fmt.Errorf("%w: safeProviderSummary length must be between 1 and 300", ErrOutputValidationFailed)
 	}
 
 	mode := out.GenerationMode
@@ -122,12 +141,12 @@ func ValidateNormalizedOutput(input IngestInput) error {
 	}
 
 	tgt := out.Target
-	if tgt.StartChapterNo < 1 || tgt.EndChapterNo < tgt.StartChapterNo || tgt.RequestedChapterCount < 1 {
+	if tgt.StartChapterNo < 1 || tgt.StartChapterNo > 100 || tgt.EndChapterNo < tgt.StartChapterNo || tgt.EndChapterNo > 100 || tgt.RequestedChapterCount < 1 || tgt.RequestedChapterCount > 100 {
 		return fmt.Errorf("%w: invalid target numbers start=%d end=%d count=%d", ErrOutputValidationFailed, tgt.StartChapterNo, tgt.EndChapterNo, tgt.RequestedChapterCount)
 	}
 
-	if len(out.Candidates) == 0 {
-		return fmt.Errorf("%w: candidates array is empty", ErrOutputValidationFailed)
+	if len(out.Candidates) == 0 || len(out.Candidates) > 100 {
+		return fmt.Errorf("%w: candidates array length %d out of bounds [1, 100]", ErrOutputValidationFailed, len(out.Candidates))
 	}
 	if len(out.Candidates) != tgt.RequestedChapterCount {
 		return fmt.Errorf("%w: candidates count %d does not match requested count %d", ErrOutputValidationFailed, len(out.Candidates), tgt.RequestedChapterCount)
@@ -146,27 +165,47 @@ func ValidateNormalizedOutput(input IngestInput) error {
 		}
 		seenChapters[c.ChapterNo] = true
 
-		if stringsTrimEmpty(c.Title) || stringsTrimEmpty(c.Summary) {
-			return fmt.Errorf("%w: candidate %d has empty title or summary", ErrOutputValidationFailed, i)
+		if stringsTrimEmpty(c.Title) || len(c.Title) > 120 {
+			return fmt.Errorf("%w: candidate %d title length must be between 1 and 120", ErrOutputValidationFailed, i)
+		}
+		if len(c.Summary) > 5000 {
+			return fmt.Errorf("%w: candidate %d summary length exceeds 5000", ErrOutputValidationFailed, i)
 		}
 		if !validPurpose(c.ChapterPurpose) {
 			return fmt.Errorf("%w: candidate %d invalid chapterPurpose %s", ErrOutputValidationFailed, i, c.ChapterPurpose)
 		}
 
-		for _, ref := range c.StorylineRefs {
+		if len(c.StorylineRefs) < 1 {
+			return fmt.Errorf("%w: candidate %d storylineRefs must contain at least 1 item", ErrOutputValidationFailed, i)
+		}
+
+		allRefs := append([]NormalizedReference{}, c.StorylineRefs...)
+		allRefs = append(allRefs, c.MaterialRefs...)
+		allRefs = append(allRefs, c.ForeshadowingRefs...)
+
+		for _, ref := range allRefs {
+			if ref.ID == uuid.Nil {
+				return fmt.Errorf("%w: candidate %d reference ID is nil", ErrOutputValidationFailed, i)
+			}
 			if ref.ProjectID != run.ProjectID {
-				return fmt.Errorf("%w: candidate %d storylineRef projectId mismatch", ErrOutputValidationFailed, i)
+				return fmt.Errorf("%w: candidate %d reference projectId mismatch", ErrOutputValidationFailed, i)
+			}
+			if len(ref.Label) < 1 || len(ref.Label) > 160 {
+				return fmt.Errorf("%w: candidate %d reference label length invalid", ErrOutputValidationFailed, i)
+			}
+			if len(ref.Relation) > 40 {
+				return fmt.Errorf("%w: candidate %d reference relation length invalid", ErrOutputValidationFailed, i)
+			}
+			if ref.Position < 0 || ref.Version < 1 {
+				return fmt.Errorf("%w: candidate %d reference position/version invalid", ErrOutputValidationFailed, i)
 			}
 		}
-		for _, ref := range c.MaterialRefs {
-			if ref.ProjectID != run.ProjectID {
-				return fmt.Errorf("%w: candidate %d materialRef projectId mismatch", ErrOutputValidationFailed, i)
-			}
+
+		if len(c.GenerationBasis.ContextSummary) > 5000 {
+			return fmt.Errorf("%w: candidate %d contextSummary length exceeds 5000", ErrOutputValidationFailed, i)
 		}
-		for _, ref := range c.ForeshadowingRefs {
-			if ref.ProjectID != run.ProjectID {
-				return fmt.Errorf("%w: candidate %d foreshadowingRef projectId mismatch", ErrOutputValidationFailed, i)
-			}
+		if c.GenerationBasis.AdditionalInstructions != nil && len(*c.GenerationBasis.AdditionalInstructions) > 2000 {
+			return fmt.Errorf("%w: candidate %d additionalInstructions length exceeds 2000", ErrOutputValidationFailed, i)
 		}
 	}
 
@@ -197,8 +236,7 @@ func (ing *ResultIngestor) Ingest(ctx context.Context, input IngestInput) (Candi
 	}
 	defer tx.Rollback(ctx)
 
-	// Idempotency check: if source_workflow_run_id already ingested, return existing batch
-	queryExisting := fmt.Sprintf("SELECT %s FROM chapter_plan_candidate_batches WHERE source_workflow_run_id = $1", candidateBatchCols)
+	queryExisting := fmt.Sprintf("SELECT %s FROM chapter_plan_candidate_batches WHERE source_workflow_run_id = $1 FOR UPDATE", candidateBatchCols)
 	existingBatch, err := scanBatch(tx.QueryRow(ctx, queryExisting, input.Run.RunID))
 	if err == nil {
 		_ = tx.Commit(ctx)
@@ -251,6 +289,14 @@ func (ing *ResultIngestor) Ingest(ctx context.Context, input IngestInput) (Candi
 		candCount,
 	)
 	if err != nil {
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) && pgErr.Code == "23505" {
+			// Concurrent insertion constraint hit -> query existing batch
+			existingBatch, queryErr := scanBatch(ing.pool.QueryRow(ctx, fmt.Sprintf("SELECT %s FROM chapter_plan_candidate_batches WHERE source_workflow_run_id = $1", candidateBatchCols), input.Run.RunID))
+			if queryErr == nil {
+				return existingBatch, nil
+			}
+		}
 		return CandidateBatch{}, fmt.Errorf("%w: insert batch failed: %v", ErrIngestionTransaction, err)
 	}
 
@@ -317,7 +363,6 @@ func (ing *ResultIngestor) Ingest(ctx context.Context, input IngestInput) (Candi
 		return CandidateBatch{}, fmt.Errorf("%w: commit tx failed: %v", ErrIngestionTransaction, err)
 	}
 
-	// Read and return newly created batch
 	return scanBatch(ing.pool.QueryRow(ctx, fmt.Sprintf("SELECT %s FROM chapter_plan_candidate_batches WHERE id = $1", candidateBatchCols), batchID))
 }
 
