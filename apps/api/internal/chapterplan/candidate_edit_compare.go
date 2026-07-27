@@ -178,9 +178,16 @@ func (r *Repository) CompareCandidate(ctx context.Context, candidateID uuid.UUID
 }
 
 func (r *Repository) RecompareCandidate(ctx context.Context, cmd RecompareCandidateCommand) (CandidateComparison, error) {
-	keyFp := deriveKeyFingerprint(cmd.IdempotencyKey)
-	scope := fmt.Sprintf("chapter-plan-candidate-recompare:%s", cmd.CandidateID)
-	reqHash := hashPayload(cmd)
+	if len(cmd.IdempotencyKey) == 0 {
+		return CandidateComparison{}, fmt.Errorf("%w: idempotency key is required", ErrInvalidCandidateState)
+	}
+	keyFp := r.computeHMACKeyFingerprint(cmd.IdempotencyKey)
+	scope := fmt.Sprintf("chapter_plan_candidate:%s", cmd.CandidateID)
+	reqHash := hashPayload(map[string]any{
+		"op":              "recompare",
+		"candidate_id":    cmd.CandidateID,
+		"expected_ver":    cmd.ExpectedCandidateVersion,
+	})
 
 	tx, err := r.db.Begin(ctx)
 	if err != nil {
@@ -228,41 +235,30 @@ func (r *Repository) RecompareCandidate(ctx context.Context, cmd RecompareCandid
 		return CandidateComparison{}, err
 	}
 
-	var basePlanID *uuid.UUID
-	var baseRevID *uuid.UUID
-	var baseVer *int
-	var baseSnap []byte
-
-	if targetPlan != nil {
-		basePlanID = &targetPlan.ID
-		baseRevID = targetRevID
-		baseVer = &targetPlan.Version
-		baseSnap = r.getPlanSnapshotJSON(ctx, tx, targetPlan)
-	}
-
-	diffType, _ := ComputeDiffTypeAndStale(cand.CurrentSnapshot, baseSnap, baseRevID, targetPlan, targetRevID)
+	diffType, isStale := ComputeDiffTypeAndStale(cand.CurrentSnapshot, cand.BaseSnapshot, cand.BaseRevisionID, targetPlan, targetRevID)
 	newStatus := "pending"
+	if isStale || cand.Status == "stale" {
+		newStatus = "stale"
+		diffType = "stale_conflict"
+	}
 
 	actor := cmd.ActorID
 	if actor == "" {
 		actor = "system"
 	}
 
+	// Recompare MUST NOT update base_chapter_plan_id, base_revision_id, base_chapter_version, base_snapshot, or generated_snapshot.
 	updateQuery := `
 		UPDATE chapter_plan_candidates
-		SET base_chapter_plan_id = $2,
-		    base_revision_id = $3,
-		    base_chapter_version = $4,
-		    base_snapshot = $5,
-		    diff_type = $6,
-		    status = $7,
+		SET diff_type = $2,
+		    status = $3,
 		    version = version + 1,
-		    updated_by = $8,
+		    updated_by = $4,
 		    updated_at = NOW()
-		WHERE id = $1 AND version = $9
+		WHERE id = $1 AND version = $5
 		RETURNING ` + candidateCols
 
-	updatedCand, err := scanCandidate(tx.QueryRow(ctx, updateQuery, cand.ID, basePlanID, baseRevID, baseVer, baseSnap, diffType, newStatus, actor, cmd.ExpectedCandidateVersion))
+	updatedCand, err := scanCandidate(tx.QueryRow(ctx, updateQuery, cand.ID, diffType, newStatus, actor, cmd.ExpectedCandidateVersion))
 	if errors.Is(err, pgx.ErrNoRows) {
 		return CandidateComparison{}, ErrVersionConflict
 	}
