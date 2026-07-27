@@ -1,7 +1,29 @@
 import { apiRequest, type ApiRequestInit } from "../../lib/api.ts";
-export type ChapterPlanStatus="pending_confirmation"|"confirmed";
-export interface ChapterPlanStorylineRef{storyline_id:string;relation:"primary"|"secondary"}
-export interface ChapterPlan{id:string;project_id:string;chapter_no:number;title:string;summary:string;status:ChapterPlanStatus;source:"mock_generated";storyline_refs_json:ChapterPlanStorylineRef[];material_refs_json:string[];foreshadowing_refs_json:string[];chapter_goal:string|null;creation_notes:string|null;confirmed_at:string|null;version:number;created_at:string;updated_at:string}
+export type ChapterPlanStatus = "pending_confirmation" | "confirmed";
+export interface ChapterPlanStorylineRef { storyline_id: string; relation: "primary" | "secondary"; }
+export type ChapterPlanSource = "mock_generated" | "candidate_adopted";
+export interface ChapterPlan {
+  id: string;
+  project_id: string;
+  chapter_no: number;
+  title: string;
+  summary: string;
+  status: ChapterPlanStatus;
+  source: ChapterPlanSource;
+  storyline_refs_json: ChapterPlanStorylineRef[];
+  material_refs_json: string[];
+  foreshadowing_refs_json: string[];
+  chapter_goal: string | null;
+  creation_notes: string | null;
+  confirmed_at: string | null;
+  currentRevisionId: string | null;
+  sourceCandidateId: string | null;
+  sourceCandidateBatchId: string | null;
+  sourceWorkflowRunId: string | null;
+  version: number;
+  created_at: string;
+  updated_at: string;
+}
 export interface ChapterPlanList{items:ChapterPlan[];total:number;limit:number;offset:number}
 export interface ConfirmChapterPlanSelection{chapter_plan_id:string;expected_version:number}
 export interface ConfirmChapterPlansRequest{selections:ConfirmChapterPlanSelection[]}
