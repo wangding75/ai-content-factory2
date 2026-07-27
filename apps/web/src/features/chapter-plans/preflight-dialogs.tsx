@@ -125,14 +125,15 @@ export function PreflightReportDialog({
                       <span className="badge blocker">阻断</span>
                       <strong>{item.message}</strong>
                     </div>
-                    {item.details?.safeSummary && (
+                    <p className="preflight-item-code">代码：{item.code}</p>
+                    {(item.details?.safeReason || item.details?.safeSummary) && (
                       <p className="preflight-item-detail">
-                        {item.details.safeSummary}
+                        {item.details.safeReason || item.details.safeSummary}
                       </p>
                     )}
-                    {item.details?.action && (
+                    {(item.details?.retryAction || item.details?.action) && (
                       <p className="preflight-item-action">
-                        建议操作：{item.details.action}
+                        建议操作：{item.details.retryAction || item.details.action}
                       </p>
                     )}
                   </li>

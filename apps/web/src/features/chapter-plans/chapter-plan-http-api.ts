@@ -89,6 +89,8 @@ export interface ChapterPlanningItemDetails {
   action?: string;
   field?: string;
   resourceId?: string;
+  retryAction?: string;
+  safeReason?: string;
   safeSummary?: string;
 }
 

@@ -48,4 +48,7 @@ test("preflight report dialog differentiates passed and blocked status", () => {
   assert.match(preflightSource, /预检阻断/);
   assert.match(preflightSource, /阻断原因列表/);
   assert.match(preflightSource, /确认发起生成/);
+  assert.match(preflightSource, /代码：\{item\.code\}/);
+  assert.match(preflightSource, /safeReason \|\| item\.details\.safeSummary/);
+  assert.match(preflightSource, /retryAction \|\| item\.details\.action/);
 });
