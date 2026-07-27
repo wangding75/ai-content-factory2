@@ -17,3 +17,214 @@ export function updateChapterPlan(chapterPlanId:string,payload:UpdateChapterPlan
 export function deleteChapterPlan(chapterPlanId:string,expectedVersion:number,init?:ApiRequestInit):Promise<void>{const query=new URLSearchParams({expected_version:String(expectedVersion)});return apiRequest<void>(`/chapter-plans/${encodeURIComponent(chapterPlanId)}?${query}`,{...init,method:"DELETE"})}
 export function mockGenerateChapterPlans(projectId:string,payload:MockGenerateChapterPlansRequest,init?:ApiRequestInit){return apiRequest<MockGenerateChapterPlansResult>(`/projects/${encodeURIComponent(projectId)}/chapter-plans/mock-generate`,{...init,method:"POST",headers:{...init?.headers,"Content-Type":"application/json"},body:JSON.stringify(payload)})}
 export function confirmChapterPlans(projectId:string,payload:ConfirmChapterPlansRequest,init?:ApiRequestInit){return apiRequest<ChapterPlanList>(`/projects/${encodeURIComponent(projectId)}/chapter-plans/confirm`,{...init,method:"POST",headers:{...init?.headers,"Content-Type":"application/json"},body:JSON.stringify(payload)})}
+
+// --- Iteration 15 Chapter Planning Contracts ---
+
+export type ChapterPlanningGenerationMode = "full" | "append" | "range";
+
+export type ChapterPlanningStorylineSelection =
+  | { mode: "auto_balanced" }
+  | { mode: "specified"; storylineIds: string[] };
+
+export interface ChapterPlanningContextOptions {
+  includeProjectMaterials: boolean;
+  includeUnpaidForeshadowings: boolean;
+  includePriorChapterSummaries: boolean;
+  coreSettingsOnly: boolean;
+}
+
+export interface ChapterPlanningFullTarget {
+  requestedChapterCount: number;
+}
+
+export interface ChapterPlanningAppendTarget {
+  requestedChapterCount: number;
+}
+
+export interface ChapterPlanningRangeTarget {
+  startChapterNo: number;
+  endChapterNo: number;
+}
+
+export interface ChapterPlanningPreflightRequest {
+  generationMode: ChapterPlanningGenerationMode;
+  target: ChapterPlanningFullTarget | ChapterPlanningAppendTarget | ChapterPlanningRangeTarget;
+  storylineSelection: ChapterPlanningStorylineSelection;
+  contextOptions: ChapterPlanningContextOptions;
+  additionalInstructions: string | null;
+}
+
+export type ChapterPlanningBlockerCode =
+  | "project_binding_missing"
+  | "execution_integration_unavailable"
+  | "active_run_conflict"
+  | "storyline_reference_invalid"
+  | "generation_input_invalid";
+
+export type ChapterPlanningItemSeverity = "info" | "warning" | "blocker";
+
+export interface ChapterPlanningItemDetails {
+  action?: string;
+  field?: string;
+  resourceId?: string;
+  safeSummary?: string;
+}
+
+export interface ChapterPlanningPreflightItem {
+  code: string;
+  message: string;
+  severity: ChapterPlanningItemSeverity;
+  details?: ChapterPlanningItemDetails;
+}
+
+export interface ChapterPlanningBlockerItem {
+  code: ChapterPlanningBlockerCode;
+  message: string;
+  severity: "blocker";
+  details?: ChapterPlanningItemDetails;
+}
+
+export interface ChapterPlanningInputSummary {
+  generationMode: ChapterPlanningGenerationMode;
+  target: {
+    startChapterNo: number;
+    endChapterNo: number;
+    requestedChapterCount: number;
+  };
+  storylineSelection: ChapterPlanningStorylineSelection;
+  contextOptions: ChapterPlanningContextOptions;
+}
+
+export interface ChapterPlanningExecutionConfigurationSummary {
+  stage: "chapter_planning";
+  workflowBindingId: string;
+  workflowBindingVersion: number;
+}
+
+export interface ChapterPlanningPreflightPassed {
+  result: "passed";
+  status: "passed";
+  preflightToken: string;
+  expiresAt: string;
+  inputDigest: string;
+  inputSummary: ChapterPlanningInputSummary;
+  executionConfigurationSummary: ChapterPlanningExecutionConfigurationSummary;
+  checks: ChapterPlanningPreflightItem[];
+  blockers: ChapterPlanningBlockerItem[];
+  warnings: ChapterPlanningPreflightItem[];
+}
+
+export interface ChapterPlanningPreflightBlocked {
+  result: "blocked";
+  status: "blocked";
+  inputDigest: string;
+  inputSummary: ChapterPlanningInputSummary;
+  executionConfigurationSummary: ChapterPlanningExecutionConfigurationSummary;
+  checks: ChapterPlanningPreflightItem[];
+  blockers: ChapterPlanningBlockerItem[];
+  warnings: ChapterPlanningPreflightItem[];
+}
+
+export type ChapterPlanningPreflightReport =
+  | ChapterPlanningPreflightPassed
+  | ChapterPlanningPreflightBlocked;
+
+export interface ChapterPlanningPreflightEnvelope {
+  data: ChapterPlanningPreflightReport;
+  request_id: string;
+}
+
+export interface CreateChapterPlanRunRequest {
+  preflightToken: string;
+}
+
+export interface ChapterPlanningSummary {
+  currentChapterCount: number;
+  pendingConfirmationCount: number;
+  confirmedChapterCount: number;
+  candidateBatchCounts: {
+    ready: number;
+    partiallyAdopted: number;
+    adopted: number;
+    abandoned: number;
+  };
+  activeRun: {
+    id: string;
+    runNumber?: string;
+    status: string;
+    stage?: string;
+    createdAt?: string;
+    finishedAt?: string;
+    inputPayload?: Record<string, unknown>;
+    outputPayload?: Record<string, unknown> | null;
+  } | null;
+}
+
+export interface ChapterPlanningSummaryEnvelope {
+  data: ChapterPlanningSummary;
+  request_id: string;
+}
+
+export type ChapterPlanningErrorCode =
+  | "workflow_not_configured"
+  | "preflight_token_invalid"
+  | "preflight_token_expired"
+  | "preflight_input_changed"
+  | "active_run_conflict"
+  | "invalid_candidate_state"
+  | "stale_candidate"
+  | "version_conflict"
+  | "batch_already_finalized"
+  | "run_already_consumed"
+  | "chapter_no_conflict"
+  | "revision_sequence_conflict"
+  | "output_validation_failed"
+  | "result_consumption_failed"
+  | "idempotency_key_reused_with_different_payload";
+
+export function getProjectChapterPlanningSummary(
+  projectId: string,
+  init?: ApiRequestInit,
+): Promise<ChapterPlanningSummaryEnvelope> {
+  return apiRequest<ChapterPlanningSummaryEnvelope>(
+    `/projects/${encodeURIComponent(projectId)}/chapter-planning-summary`,
+    init,
+  );
+}
+
+export function preflightChapterPlanRun(
+  projectId: string,
+  payload: ChapterPlanningPreflightRequest,
+  init?: ApiRequestInit,
+): Promise<ChapterPlanningPreflightEnvelope> {
+  return apiRequest<ChapterPlanningPreflightEnvelope>(
+    `/projects/${encodeURIComponent(projectId)}/chapter-plan-runs/preflight`,
+    {
+      ...init,
+      method: "POST",
+      headers: { ...init?.headers, "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    },
+  );
+}
+
+export function createChapterPlanRun(
+  projectId: string,
+  payload: CreateChapterPlanRunRequest,
+  idempotencyKey: string,
+  init?: ApiRequestInit,
+): Promise<unknown> {
+  return apiRequest(
+    `/projects/${encodeURIComponent(projectId)}/chapter-plan-runs`,
+    {
+      ...init,
+      method: "POST",
+      headers: {
+        ...init?.headers,
+        "Content-Type": "application/json",
+        "Idempotency-Key": idempotencyKey,
+      },
+      body: JSON.stringify(payload),
+    },
+  );
+}
