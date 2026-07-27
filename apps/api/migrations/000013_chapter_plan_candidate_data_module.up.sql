@@ -138,7 +138,7 @@ BEGIN
         IF cp.current_revision_id IS NULL THEN
             SELECT jsonb_agg(jsonb_build_object(
                 'id', st.storyline_id,
-                'label', s.title,
+                'label', s.name,
                 'relation', st.relation,
                 'position', st.position,
                 'version', s.version
