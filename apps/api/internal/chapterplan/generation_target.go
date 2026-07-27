@@ -52,16 +52,20 @@ func NormalizeGenerationTarget(mode string, target GenerationTargetRequest, curr
 }
 
 type PreflightTokenClaims struct {
-	ProjectID      uuid.UUID   `json:"projectId"`
-	ActorID        string      `json:"actorId"`
-	Stage          string      `json:"stage"`
-	Target         BatchTarget `json:"target"`
-	InputDigest    string      `json:"inputDigest"`
-	BindingID      uuid.UUID   `json:"bindingId"`
-	BindingVersion int         `json:"bindingVersion"`
-	IssuedAt       int64       `json:"iat"`
-	ExpiresAt      int64       `json:"exp"`
-	Nonce          string      `json:"jti"`
+	ProjectID              uuid.UUID       `json:"projectId"`
+	ActorID                string          `json:"actorId"`
+	Stage                  string          `json:"stage"`
+	GenerationMode         string          `json:"generationMode,omitempty"`
+	StorylineIDs           []uuid.UUID     `json:"storylineIds,omitempty"`
+	ContextOptions         json.RawMessage `json:"contextOptions,omitempty"`
+	AdditionalInstructions *string         `json:"additionalInstructions,omitempty"`
+	Target                 BatchTarget     `json:"target"`
+	InputDigest            string          `json:"inputDigest"`
+	BindingID              uuid.UUID       `json:"bindingId"`
+	BindingVersion         int             `json:"bindingVersion"`
+	IssuedAt               int64           `json:"iat"`
+	ExpiresAt              int64           `json:"exp"`
+	Nonce                  string          `json:"jti"`
 }
 
 func SignPreflightToken(secret []byte, claims PreflightTokenClaims) (string, error) {

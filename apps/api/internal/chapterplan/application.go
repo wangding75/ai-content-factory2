@@ -11,9 +11,12 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/local/ai-content-factory/apps/api/internal/foreshadowing"
+	"github.com/local/ai-content-factory/apps/api/internal/globalconfig"
 	"github.com/local/ai-content-factory/apps/api/internal/material"
 	"github.com/local/ai-content-factory/apps/api/internal/project"
 	"github.com/local/ai-content-factory/apps/api/internal/storyline"
+	"github.com/local/ai-content-factory/apps/api/internal/workflowbinding"
+	"github.com/local/ai-content-factory/apps/api/internal/workflowrun"
 )
 
 // Application errors are deliberately stable: callers never receive driver or SQL details.
@@ -107,6 +110,18 @@ type Service struct {
 	materials      materialReader
 	foreshadowings foreshadowingReader
 	now            func() time.Time
+	bindingReader  interface {
+		GetByProjectAndStage(context.Context, uuid.UUID, workflowbinding.WorkflowBindingStage) (workflowbinding.ProjectWorkflowBinding, error)
+	}
+	workflowReader interface {
+		GetWorkflow(context.Context, uuid.UUID) (globalconfig.Workflow, error)
+	}
+	connectionReader interface {
+		GetConnection(context.Context, uuid.UUID) (globalconfig.Connection, error)
+	}
+	runCreator interface {
+		CreateRun(context.Context, workflowrun.CreateRunCommand) (workflowrun.WorkflowRun, error)
+	}
 }
 
 func NewService(projects projectReader, plans store, storylines storylineReader, materials materialReader, foreshadowings foreshadowingReader) *Service {
@@ -121,6 +136,21 @@ func NewPostgresService(projects projectReader, pool *pgxpool.Pool, hmacSecret s
 		return nil, err
 	}
 	return NewService(projects, repo, storyline.NewPostgresRepository(pool), material.NewPostgresRepository(pool), foreshadowing.NewPostgresRepository(pool)), nil
+}
+
+// ConfigureChapterPlanningRuntime wires the existing public runtime and binding
+// readers at the composition edge. It deliberately keeps chapterplan independent
+// from workflowrun persistence internals.
+func (s *Service) ConfigureChapterPlanningRuntime(bindings interface {
+	GetByProjectAndStage(context.Context, uuid.UUID, workflowbinding.WorkflowBindingStage) (workflowbinding.ProjectWorkflowBinding, error)
+}, workflows interface {
+	GetWorkflow(context.Context, uuid.UUID) (globalconfig.Workflow, error)
+}, connections interface {
+	GetConnection(context.Context, uuid.UUID) (globalconfig.Connection, error)
+}, runs interface {
+	CreateRun(context.Context, workflowrun.CreateRunCommand) (workflowrun.WorkflowRun, error)
+}) {
+	s.bindingReader, s.workflowReader, s.connectionReader, s.runCreator = bindings, workflows, connections, runs
 }
 
 func (s *Service) List(ctx context.Context, projectID uuid.UUID) ([]Plan, error) {

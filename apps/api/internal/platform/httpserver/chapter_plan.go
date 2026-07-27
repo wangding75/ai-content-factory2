@@ -12,6 +12,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/local/ai-content-factory/apps/api/internal/chapterplan"
+	"github.com/local/ai-content-factory/apps/api/internal/workflowrun"
 )
 
 // chapterPlanApplication is the narrow HTTP-facing application contract. It deliberately
@@ -37,6 +38,11 @@ type chapterPlanApplication interface {
 	BulkAdoptCandidates(context.Context, chapterplan.BulkAdoptCommand) (chapterplan.BulkAdoptResult, error)
 	DiscardCandidate(context.Context, chapterplan.DiscardCandidateCommand) (chapterplan.Candidate, error)
 	AbandonBatch(context.Context, chapterplan.AbandonBatchCommand) (chapterplan.CandidateBatch, error)
+}
+
+type chapterPlanRunApplication interface {
+	Preflight(context.Context, uuid.UUID, chapterplan.PreflightRequest) (chapterplan.PreflightResult, error)
+	CreateChapterPlanningRun(context.Context, uuid.UUID, string, string, string) (workflowrun.WorkflowRun, error)
 }
 
 type chapterPlanStorylineRefResponse struct {
@@ -90,6 +96,9 @@ type mockGenerateChapterPlansRequest struct {
 }
 
 func registerChapterPlanRoutes(mux *http.ServeMux, service chapterPlanApplication) {
+	if runs, ok := service.(chapterPlanRunApplication); ok {
+		registerChapterPlanRunRoutes(mux, runs)
+	}
 	mux.HandleFunc("GET /api/v1/projects/{projectId}/chapter-plans", listChapterPlansHandler(service))
 	mux.HandleFunc("POST /api/v1/projects/{projectId}/chapter-plans/mock-generate", generateMockChapterPlansHandler(service))
 	mux.HandleFunc("GET /api/v1/chapter-plans/{chapterPlanId}", getChapterPlanHandler(service))
