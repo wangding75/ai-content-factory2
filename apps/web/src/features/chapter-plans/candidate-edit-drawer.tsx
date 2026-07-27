@@ -9,6 +9,8 @@ import {
   type ChapterPlanCandidateSnapshot,
 } from "./chapter-plan-http-api";
 
+import { useIdempotency } from "./use-idempotency";
+
 export interface CandidateEditDrawerProps {
   candidate: ChapterPlanCandidate;
   onClose: () => void;
@@ -22,6 +24,7 @@ export function CandidateEditDrawer({
   onSaved,
   onRefreshCandidate,
 }: CandidateEditDrawerProps) {
+  const { getOrCreateKey, clearKey } = useIdempotency();
   const [activeTab, setActiveTab] = useState<"current" | "generated" | "base">(
     "current",
   );
@@ -41,16 +44,20 @@ export function CandidateEditDrawer({
     setError(null);
     setVersionConflict(false);
 
+    const scope = `edit-candidate-${candidate.id}`;
+    const payload = {
+      expectedCandidateVersion: candidate.version,
+      currentSnapshot,
+    };
+
     try {
-      const idempotencyKey = `edit-candidate-${candidate.id}-${Date.now()}`;
+      const idempotencyKey = getOrCreateKey(scope, payload);
       const envelope = await updateChapterPlanCandidate(
         candidate.id,
-        {
-          expectedCandidateVersion: candidate.version,
-          currentSnapshot,
-        },
+        payload,
         idempotencyKey,
       );
+      clearKey(scope);
       onSaved(envelope.data);
     } catch (cause) {
       if (cause instanceof ApiError) {
@@ -58,6 +65,7 @@ export function CandidateEditDrawer({
         if (
           cause.status === 409 ||
           cause.message?.includes("version_conflict") ||
+
           cause.message?.includes("invalid_candidate_state")
         ) {
           setVersionConflict(true);

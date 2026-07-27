@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Icon } from "@/components/ui/icons";
 import { ApiError } from "@/lib/api";
 import {
@@ -8,6 +8,8 @@ import {
   recompareChapterPlanCandidate,
   type ChapterPlanCandidateComparison,
 } from "./chapter-plan-http-api";
+
+import { useIdempotency } from "./use-idempotency";
 
 export interface CandidateCompareDialogProps {
   candidateId: string;
@@ -18,50 +20,56 @@ export function CandidateCompareDialog({
   candidateId,
   onClose,
 }: CandidateCompareDialogProps) {
+  const { getOrCreateKey, clearKey } = useIdempotency();
   const [comparison, setComparison] =
     useState<ChapterPlanCandidateComparison | null>(null);
   const [loading, setLoading] = useState(true);
   const [recomparing, setRecomparing] = useState(false);
   const [error, setError] = useState<ApiError | null>(null);
 
-  const loadComparison = useCallback(async (signal?: AbortSignal) => {
-    setLoading(true);
-    setError(null);
-    try {
-      const envelope = await compareChapterPlanCandidate(candidateId, { signal });
-      setComparison(envelope.data);
-    } catch (cause) {
-      if (!signal?.aborted) {
-        setError(
-          cause instanceof ApiError
-            ? cause
-            : new ApiError("加载差异对比失败", 500),
-        );
-      }
-    } finally {
-      if (!signal?.aborted) {
-        setLoading(false);
-      }
-    }
-  }, [candidateId]);
-
   useEffect(() => {
+    let cancelled = false;
     const controller = new AbortController();
-    void loadComparison(controller.signal);
-    return () => controller.abort();
-  }, [loadComparison]);
+
+    compareChapterPlanCandidate(candidateId, { signal: controller.signal })
+      .then((envelope) => {
+        if (!cancelled) {
+          setComparison(envelope.data);
+          setError(null);
+          setLoading(false);
+        }
+      })
+      .catch((cause) => {
+        if (!cancelled && !controller.signal.aborted) {
+          setError(
+            cause instanceof ApiError
+              ? cause
+              : new ApiError("加载差异对比失败", 500),
+          );
+          setLoading(false);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+      controller.abort();
+    };
+  }, [candidateId]);
 
   const handleRecompare = async () => {
     if (!comparison) return;
     setRecomparing(true);
     setError(null);
+    const scope = `recompare-${candidateId}`;
+    const payload = { expectedCandidateVersion: comparison.candidate.version };
     try {
-      const idempotencyKey = `recompare-${candidateId}-${Date.now()}`;
+      const idempotencyKey = getOrCreateKey(scope, payload);
       const envelope = await recompareChapterPlanCandidate(
         candidateId,
-        { expectedCandidateVersion: comparison.candidate.version },
+        payload,
         idempotencyKey,
       );
+      clearKey(scope);
       setComparison(envelope.data);
     } catch (cause) {
       if (cause instanceof ApiError) {
@@ -73,6 +81,7 @@ export function CandidateCompareDialog({
       setRecomparing(false);
     }
   };
+
 
   const candidate = comparison?.candidate;
   const currentChapter = comparison?.currentChapter;

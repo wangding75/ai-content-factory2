@@ -30,10 +30,13 @@ import {
   StaleConflictDialog,
 } from "./candidate-action-dialogs";
 
+import { useIdempotency } from "./use-idempotency";
+
 export function CandidateBatchDetailPage({ batchId }: { batchId: string }) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const { getOrCreateKey, clearKey } = useIdempotency();
 
   // Read initial query parameters from URL
   const statusParam = (searchParams.get("status") as ChapterPlanCandidateStatus) || "";
@@ -112,10 +115,47 @@ export function CandidateBatchDetailPage({ batchId }: { batchId: string }) {
   );
 
   useEffect(() => {
+    let cancelled = false;
     const controller = new AbortController();
-    void loadData(controller.signal);
-    return () => controller.abort();
-  }, [loadData]);
+
+    const query: ListCandidatesQuery = {
+      status: statusParam || undefined,
+      diffType: diffTypeParam || undefined,
+      storylineId: storylineIdParam || undefined,
+      q: searchParam || undefined,
+      limit: limitParam,
+      offset: offsetParam,
+    };
+
+    Promise.all([
+      getChapterPlanCandidateBatch(batchId, { signal: controller.signal }),
+      listChapterPlanCandidates(batchId, query, { signal: controller.signal }),
+    ])
+      .then(([batchEnvelope, candidatesEnvelope]) => {
+        if (!cancelled) {
+          setBatch(batchEnvelope.data);
+          setCandidates(candidatesEnvelope.data.items);
+          setTotal(candidatesEnvelope.data.total);
+          setError(null);
+          setLoading(false);
+        }
+      })
+      .catch((cause) => {
+        if (!cancelled && !controller.signal.aborted) {
+          setError(
+            cause instanceof ApiError
+              ? cause
+              : new ApiError("加载候选批次详情失败", 500),
+          );
+          setLoading(false);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+      controller.abort();
+    };
+  }, [batchId, statusParam, diffTypeParam, storylineIdParam, searchParam, limitParam, offsetParam]);
 
   const toggleSelect = (cand: ChapterPlanCandidate) => {
     setSelected((prev) => {
@@ -133,16 +173,16 @@ export function CandidateBatchDetailPage({ batchId }: { batchId: string }) {
   const handleAdoptCandidate = async (cand: ChapterPlanCandidate) => {
     setError(null);
     setActionNotice(null);
+    const scope = `single-adopt-${cand.id}`;
+    const payload = {
+      expectedCandidateVersion: cand.version,
+      expectedChapterPlanVersion: cand.baseChapterPlanVersion ?? null,
+    };
     try {
-      const idempotencyKey = `single-adopt-${cand.id}-${Date.now()}`;
-      const envelope = await adoptChapterPlanCandidate(
-        cand.id,
-        {
-          expectedCandidateVersion: cand.version,
-          expectedChapterPlanVersion: cand.baseChapterPlanVersion ?? null,
-        },
-        idempotencyKey,
-      );
+      const idempotencyKey = getOrCreateKey(scope, payload);
+      const envelope = await adoptChapterPlanCandidate(cand.id, payload, idempotencyKey);
+
+      clearKey(scope);
 
       if (envelope.data.outcome === "no_change") {
         setActionNotice(`第 ${cand.chapterNo} 章候选与线上内容一致 (no_change)，未产生新 Revision。`);
@@ -172,13 +212,13 @@ export function CandidateBatchDetailPage({ batchId }: { batchId: string }) {
   const handleDiscardCandidate = async (cand: ChapterPlanCandidate) => {
     setError(null);
     setActionNotice(null);
+    const scope = `discard-${cand.id}`;
+    const payload = { expectedCandidateVersion: cand.version };
     try {
-      const idempotencyKey = `discard-${cand.id}-${Date.now()}`;
-      await discardChapterPlanCandidate(
-        cand.id,
-        { expectedCandidateVersion: cand.version },
-        idempotencyKey,
-      );
+      const idempotencyKey = getOrCreateKey(scope, payload);
+      await discardChapterPlanCandidate(cand.id, payload, idempotencyKey);
+
+      clearKey(scope);
 
       setActionNotice(`第 ${cand.chapterNo} 章候选已丢弃。`);
       await loadData();
@@ -190,6 +230,7 @@ export function CandidateBatchDetailPage({ batchId }: { batchId: string }) {
       }
     }
   };
+
 
   if (loading && !batch) {
     return <div className="chapter-plans-skeleton card" />;

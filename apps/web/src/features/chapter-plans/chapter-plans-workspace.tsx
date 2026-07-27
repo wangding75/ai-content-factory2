@@ -3,6 +3,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useIdempotency } from "./use-idempotency";
 import { Icon } from "@/components/ui/icons";
 import {
   ApiError,
@@ -65,6 +66,7 @@ export function ChapterPlansWorkspace({
   projectId: string;
   project: Project;
 }) {
+  const { getOrCreateKey, clearKey } = useIdempotency();
   const [plans, setPlans] = useState<ChapterPlan[] | null>(null);
   const [summary, setSummary] = useState<ChapterPlanningSummary | null>(null);
   const [summaryError, setSummaryError] = useState<ApiError | null>(null);
@@ -253,19 +255,23 @@ export function ChapterPlansWorkspace({
   // Create Run Handler
   const handleCreateRun = async (preflightToken: string) => {
     setCreatingRun(true);
+    const scope = `create-run-${projectId}`;
+    const payload = { preflightToken };
     try {
-      const idempotencyKey = `create-run-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+      const idempotencyKey = getOrCreateKey(scope, payload);
       const result = (await createChapterPlanRun(
         projectId,
-        { preflightToken },
+        payload,
         idempotencyKey,
       )) as { data?: { id?: string }; id?: string };
 
+      clearKey(scope);
       const runId = result?.data?.id || result?.id || "run-created";
       setPreflightReport(null);
       setCreatedRunId(runId);
       await refresh();
     } catch (cause) {
+
       if (cause instanceof ApiError) {
         setError(cause);
       } else {

@@ -12,6 +12,8 @@ import {
   type ChapterPlanCandidateBatch,
 } from "./chapter-plan-http-api";
 
+import { useIdempotency } from "./use-idempotency";
+
 // --- P15_C8_BATCH_ADOPT_DIALOG ---
 
 export interface BatchAdoptDialogProps {
@@ -27,6 +29,7 @@ export function BatchAdoptDialog({
   onClose,
   onCompleted,
 }: BatchAdoptDialogProps) {
+  const { getOrCreateKey, clearKey } = useIdempotency();
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<ApiError | null>(null);
   const [result, setResult] = useState<BulkAdoptChapterPlanCandidatesResult | null>(null);
@@ -34,23 +37,26 @@ export function BatchAdoptDialog({
   const handleSubmit = async () => {
     setSubmitting(true);
     setError(null);
-    try {
-      const idempotencyKey = `bulk-adopt-${batch.id}-${Date.now()}`;
-      const payloadCandidates = selectedCandidates.map((cand) => ({
-        candidateId: cand.id,
-        expectedCandidateVersion: cand.version,
-        expectedChapterPlanVersion: cand.baseChapterPlanVersion ?? null,
-      }));
+    const scope = `bulk-adopt-${batch.id}`;
+    const payloadCandidates = selectedCandidates.map((cand) => ({
+      candidateId: cand.id,
+      expectedCandidateVersion: cand.version,
+      expectedChapterPlanVersion: cand.baseChapterPlanVersion ?? null,
+    }));
+    const payload = {
+      expectedBatchVersion: batch.version,
+      candidates: payloadCandidates,
+    };
 
+    try {
+      const idempotencyKey = getOrCreateKey(scope, payload);
       const envelope = await adoptChapterPlanCandidates(
         batch.id,
-        {
-          expectedBatchVersion: batch.version,
-          candidates: payloadCandidates,
-        },
+        payload,
         idempotencyKey,
       );
 
+      clearKey(scope);
       setResult(envelope.data);
     } catch (cause) {
       if (cause instanceof ApiError) {
@@ -62,6 +68,7 @@ export function BatchAdoptDialog({
       setSubmitting(false);
     }
   };
+
 
   return (
     <div
@@ -222,6 +229,7 @@ export function BatchAbandonDialog({
   onClose,
   onAbandoned,
 }: BatchAbandonDialogProps) {
+  const { getOrCreateKey, clearKey } = useIdempotency();
   const [reason, setReason] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<ApiError | null>(null);
@@ -231,18 +239,22 @@ export function BatchAbandonDialog({
     setSubmitting(true);
     setError(null);
 
+    const scope = `abandon-batch-${batch.id}`;
+    const payload = {
+      expectedBatchVersion: batch.version,
+      reason: reason.trim() || null,
+      acknowledgeAdoptedChaptersRemain: true as const,
+    };
+
     try {
-      const idempotencyKey = `abandon-batch-${batch.id}-${Date.now()}`;
+      const idempotencyKey = getOrCreateKey(scope, payload);
       const envelope = await abandonChapterPlanCandidateBatch(
         batch.id,
-        {
-          expectedBatchVersion: batch.version,
-          reason: reason.trim() || null,
-          acknowledgeAdoptedChaptersRemain: true,
-        },
+        payload,
         idempotencyKey,
       );
 
+      clearKey(scope);
       onAbandoned(envelope.data);
       onClose();
     } catch (cause) {
@@ -255,6 +267,7 @@ export function BatchAbandonDialog({
       setSubmitting(false);
     }
   };
+
 
   return (
     <div
