@@ -9,6 +9,7 @@ import {
   createChapterPlanRun,
   recompareChapterPlanCandidate,
   updateChapterPlanCandidate,
+  type ChapterPlan,
   type ChapterPlanCandidateBatch,
   type ChapterPlanCandidateSnapshot,
 } from "./chapter-plan-http-api.ts";
@@ -341,4 +342,35 @@ test("production chapter-plans files do not import mock-only fixtures or modules
 
   assert.doesNotMatch(detailPageSource, /mock-data/i);
   assert.doesNotMatch(detailPageSource, /fixture/i);
+});
+
+test("ChapterPlan contract supports candidate_adopted source and nullable OpenAPI fields", () => {
+  const plan: ChapterPlan = {
+    id: "cp-1",
+    project_id: "p-1",
+    chapter_no: 1,
+    title: "Chapter 1",
+    summary: "Summary 1",
+    status: "confirmed",
+    source: "candidate_adopted",
+    storyline_refs_json: [{ storyline_id: "sl-1", relation: "primary" }],
+    material_refs_json: [],
+    foreshadowing_refs_json: [],
+    chapter_goal: null,
+    creation_notes: null,
+    confirmed_at: "2026-07-27T12:00:00Z",
+    currentRevisionId: "rev-1",
+    sourceCandidateId: "cand-1",
+    sourceCandidateBatchId: "batch-1",
+    sourceWorkflowRunId: "run-1",
+    version: 1,
+    created_at: "2026-07-27T12:00:00Z",
+    updated_at: "2026-07-27T12:00:00Z",
+  };
+
+  assert.equal(plan.source, "candidate_adopted");
+  assert.equal(plan.currentRevisionId, "rev-1");
+  assert.equal(plan.sourceCandidateId, "cand-1");
+  assert.equal(plan.sourceCandidateBatchId, "batch-1");
+  assert.equal(plan.sourceWorkflowRunId, "run-1");
 });
