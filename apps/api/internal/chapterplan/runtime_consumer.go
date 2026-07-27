@@ -33,7 +33,9 @@ func (c *RuntimeConsumer) ConsumeSucceededRun(ctx context.Context, run workflowr
 		GenerationContext GenerationContextSnapshot `json:"generationContext"`
 	}
 	if c.consumptions != nil {
-		_ = c.consumptions.Set(ctx, run.ID, run.ProjectID, ConsumptionConsuming, nil, nil, nil, nil)
+		if err := c.consumptions.Set(ctx, run.ID, run.ProjectID, ConsumptionConsuming, nil, nil, nil, nil); err != nil {
+			return ErrIngestionTransaction
+		}
 	}
 	if json.Unmarshal(run.InputPayload, &input) != nil || input.GenerationContext.InputDigest == "" {
 		c.recordFailure(ctx, run, ConsumptionOutputValidationFailed, "output_validation_failed", "The runtime output does not match the frozen generation context.", "retry_run")
@@ -56,7 +58,10 @@ func (c *RuntimeConsumer) ConsumeSucceededRun(ctx context.Context, run workflowr
 		return ErrIngestionTransaction
 	}
 	if c.consumptions != nil {
-		_ = c.consumptions.Set(ctx, run.ID, run.ProjectID, ConsumptionConsumed, &batch.ID, nil, nil, nil)
+		if err := c.consumptions.Set(ctx, run.ID, run.ProjectID, ConsumptionConsumed, &batch.ID, nil, nil, nil); err != nil {
+			c.recordFailure(ctx, run, ConsumptionResultConsumptionFailed, "result_consumption_failed", "The generated result could not be stored safely.", "retry_run")
+			return ErrIngestionTransaction
+		}
 	}
 	return nil
 }

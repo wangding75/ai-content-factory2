@@ -23,6 +23,20 @@ const (
 // remains successful even when normalized-output consumption fails.
 type ConsumptionRepository struct{ pool *pgxpool.Pool }
 
+// Consumption is the durable post-runtime outcome for one chapter-planning
+// run. It is intentionally separate from WorkflowRun so a succeeded runtime
+// is never rewritten when validation or persistence fails afterwards.
+type Consumption struct {
+	WorkflowRunID    uuid.UUID
+	ProjectID        uuid.UUID
+	Status           ConsumptionStatus
+	FailureCode      *string
+	SafeReason       *string
+	RetryAction      *string
+	CandidateBatchID *uuid.UUID
+	ConsumedAt       *time.Time
+}
+
 func NewConsumptionRepository(pool *pgxpool.Pool) *ConsumptionRepository {
 	return &ConsumptionRepository{pool: pool}
 }
@@ -44,4 +58,17 @@ func (r *ConsumptionRepository) Set(ctx context.Context, runID, projectID uuid.U
 			version=chapter_plan_result_consumptions.version+1, updated_at=NOW()
 	`, runID, projectID, status, failureCode, safeReason, retryAction, batchID, consumedAt)
 	return err
+}
+
+func (r *ConsumptionRepository) Get(ctx context.Context, runID uuid.UUID) (Consumption, error) {
+	var value Consumption
+	err := r.pool.QueryRow(ctx, `
+		SELECT workflow_run_id, project_id, status, failure_code, safe_reason,
+		       retry_action, candidate_batch_id, consumed_at
+		FROM chapter_plan_result_consumptions
+		WHERE workflow_run_id = $1`, runID).Scan(
+		&value.WorkflowRunID, &value.ProjectID, &value.Status, &value.FailureCode,
+		&value.SafeReason, &value.RetryAction, &value.CandidateBatchID, &value.ConsumedAt,
+	)
+	return value, err
 }

@@ -10,6 +10,8 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/local/ai-content-factory/apps/api/internal/workflowrun"
 )
 
 func TestPostgresCandidateIntegration(t *testing.T) {
@@ -265,5 +267,142 @@ func TestPostgresChapterPlanningConsumptionSummaryErrorsAreSafe(t *testing.T) {
 				t.Fatalf("summary error=%v, want %v", err, tc.want)
 			}
 		})
+	}
+}
+
+func seedConsumptionRun(t *testing.T, ctx context.Context, db *pgxpool.Pool, status string) (uuid.UUID, uuid.UUID) {
+	t.Helper()
+	projectID, connectionID, configurationID, runID := uuid.New(), uuid.New(), uuid.New(), uuid.New()
+	if _, err := db.Exec(ctx, "INSERT INTO projects(id,name,type,created_by) VALUES($1,$2,'novel','test')", projectID, "consumption-"+projectID.String()); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _, _ = db.Exec(context.Background(), "DELETE FROM projects WHERE id=$1", projectID) })
+	if _, err := db.Exec(ctx, "INSERT INTO workflow_connections(id,name,connection_type,base_url,auth_type,timeout_seconds,type_config) VALUES($1,$2,'n8n','http://localhost:5678','api_key',30,'{}')", connectionID, "consumption connection "+connectionID.String()); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := db.Exec(ctx, "INSERT INTO workflow_configurations(id,name,connection_id,applicable_stages,type_config,input_contract_version,output_contract_version) VALUES($1,$2,$3,'[\"chapter_planning\"]','{}','v1','v1')", configurationID, "consumption configuration "+configurationID.String(), connectionID); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := db.Exec(ctx, `INSERT INTO workflow_run_records(id,run_number,project_id,stage,workflow_configuration_id,trigger_source,status,configuration_snapshot,input_payload,output_payload,error_code,error_message,error_details,started_at,finished_at,cancelled_at,created_at,updated_at) VALUES($1,$2,$3,'chapter_planning',$4,'manual',$5::text,'{}','{}','{}',CASE WHEN $5::text='failed' THEN 'runtime_failed' END,CASE WHEN $5::text='failed' THEN 'The runtime failed safely.' END,CASE WHEN $5::text='failed' THEN '{}'::jsonb ELSE NULL END,NOW(),NOW(),CASE WHEN $5::text='cancelled' THEN NOW() END,NOW(),NOW())`, runID, "consumption-run-"+runID.String(), projectID, configurationID, status); err != nil {
+		t.Fatal(err)
+	}
+	return projectID, runID
+}
+
+func TestPostgresConsumptionStatePersistsAcrossRepositoryInstances(t *testing.T) {
+	db, ctx := openIntegrationDB(t)
+	projectID, runID := seedConsumptionRun(t, ctx, db, "succeeded")
+	batchID := uuid.New()
+	if _, err := db.Exec(ctx, `INSERT INTO chapter_plan_candidate_batches(id,project_id,source_workflow_run_id,generation_mode,range_start,range_end,requested_chapter_count,input_digest,input_snapshot,storyline_selection_snapshot,context_options,workflow_binding_snapshot) VALUES($1,$2,$3,'range',1,1,1,$4,'{}','{}','{}','{}')`, batchID, projectID, runID, "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"); err != nil {
+		t.Fatal(err)
+	}
+	first := NewConsumptionRepository(db)
+	code, reason, action := "result_consumption_failed", "The generated result could not be stored safely.", "retry_run"
+	if err := first.Set(ctx, runID, projectID, ConsumptionResultConsumptionFailed, nil, &code, &reason, &action); err != nil {
+		t.Fatal(err)
+	}
+	// A fresh repository proves the state comes only from PostgreSQL.
+	second := NewConsumptionRepository(db)
+	failed, err := second.Get(ctx, runID)
+	if err != nil || failed.Status != ConsumptionResultConsumptionFailed || failed.FailureCode == nil || *failed.FailureCode != code || failed.SafeReason == nil || *failed.SafeReason != reason || failed.RetryAction == nil || *failed.RetryAction != action || failed.CandidateBatchID != nil || failed.ConsumedAt != nil {
+		t.Fatalf("persisted failure=%+v err=%v", failed, err)
+	}
+	consumer := NewRuntimeConsumer(successfulConsumptionIngestor{batch: CandidateBatch{ID: batchID}}, second)
+	run := workflowrun.WorkflowRun{
+		ID:            runID,
+		ProjectID:     projectID,
+		Stage:         "chapter_planning",
+		Status:        workflowrun.StatusSucceeded,
+		InputPayload:  []byte(`{"generationContext":{"inputDigest":"a"}}`),
+		OutputPayload: []byte(`{"projectId":"` + projectID.String() + `","generationMode":"range","target":{"startChapterNo":1,"endChapterNo":1,"requestedChapterCount":1},"sourceWorkflowRunId":"` + runID.String() + `","candidates":[],"metadata":{"inputDigest":"a","generatedAt":"now","safeProviderSummary":"safe"}}`),
+	}
+	if err := consumer.ConsumeSucceededRun(ctx, run); err != nil {
+		t.Fatal(err)
+	}
+	third := NewConsumptionRepository(db)
+	consumed, err := third.Get(ctx, runID)
+	if err != nil || consumed.Status != ConsumptionConsumed || consumed.CandidateBatchID == nil || *consumed.CandidateBatchID != batchID || consumed.ConsumedAt == nil || consumed.FailureCode != nil || consumed.SafeReason != nil || consumed.RetryAction != nil {
+		t.Fatalf("persisted consumption=%+v err=%v", consumed, err)
+	}
+}
+
+type failingConsumptionIngestor struct{ err error }
+
+func (i failingConsumptionIngestor) Ingest(context.Context, IngestInput) (CandidateBatch, error) {
+	return CandidateBatch{}, i.err
+}
+
+type successfulConsumptionIngestor struct{ batch CandidateBatch }
+
+func (i successfulConsumptionIngestor) Ingest(context.Context, IngestInput) (CandidateBatch, error) {
+	return i.batch, nil
+}
+
+func TestPostgresConsumptionFailureCanRetryToConsumed(t *testing.T) {
+	db, ctx := openIntegrationDB(t)
+	projectID, runID := seedConsumptionRun(t, ctx, db, "succeeded")
+	consumer := NewRuntimeConsumer(failingConsumptionIngestor{err: errors.New("database unavailable")}, NewConsumptionRepository(db))
+	run := workflowrun.WorkflowRun{ID: runID, ProjectID: projectID, Stage: "chapter_planning", Status: workflowrun.StatusSucceeded, InputPayload: []byte(`{"generationContext":{"inputDigest":"a"}}`), OutputPayload: []byte(`{}`)}
+	if err := consumer.ConsumeSucceededRun(ctx, run); !errors.Is(err, ErrIngestionTransaction) {
+		t.Fatalf("failure consumption error=%v", err)
+	}
+	state, err := NewConsumptionRepository(db).Get(ctx, runID)
+	if err != nil || state.Status != ConsumptionResultConsumptionFailed || state.FailureCode == nil || *state.FailureCode != "result_consumption_failed" {
+		t.Fatalf("failure state=%+v err=%v", state, err)
+	}
+	batchID := uuid.New()
+	if _, err := db.Exec(ctx, `INSERT INTO chapter_plan_candidate_batches(id,project_id,source_workflow_run_id,generation_mode,range_start,range_end,requested_chapter_count,input_digest,input_snapshot,storyline_selection_snapshot,context_options,workflow_binding_snapshot) VALUES($1,$2,$3,'range',1,1,1,$4,'{}','{}','{}','{}')`, batchID, projectID, runID, "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"); err != nil {
+		t.Fatal(err)
+	}
+	if err := NewConsumptionRepository(db).Set(ctx, runID, projectID, ConsumptionConsumed, &batchID, nil, nil, nil); err != nil {
+		t.Fatal(err)
+	}
+	if summary, err := mustNewRepo(t, db).GetChapterPlanningSummary(ctx, projectID); err != nil || summary.ActiveRun == nil {
+		t.Fatalf("summary after retry=%+v err=%v", summary, err)
+	}
+	state, err = NewConsumptionRepository(db).Get(ctx, runID)
+	if err != nil || state.Status != ConsumptionConsumed || state.CandidateBatchID == nil || *state.CandidateBatchID != batchID || state.ConsumedAt == nil {
+		t.Fatalf("retried state=%+v err=%v", state, err)
+	}
+}
+
+func TestRuntimeFailureDoesNotTriggerChapterPlanConsumption(t *testing.T) {
+	db, ctx := openIntegrationDB(t)
+	for _, status := range []workflowrun.Status{workflowrun.StatusFailed, workflowrun.StatusCancelled} {
+		t.Run(string(status), func(t *testing.T) {
+			projectID, runID := seedConsumptionRun(t, ctx, db, string(status))
+			consumer := NewRuntimeConsumer(failingConsumptionIngestor{err: errors.New("must not run")}, NewConsumptionRepository(db))
+			run := workflowrun.WorkflowRun{ID: runID, ProjectID: projectID, Stage: "chapter_planning", Status: status}
+			if err := consumer.ConsumeSucceededRun(ctx, run); err != nil {
+				t.Fatal(err)
+			}
+			var count int
+			if err := db.QueryRow(ctx, "SELECT COUNT(*) FROM chapter_plan_result_consumptions WHERE workflow_run_id=$1", runID).Scan(&count); err != nil || count != 0 {
+				t.Fatalf("consumption rows=%d err=%v", count, err)
+			}
+			if _, err := mustNewRepo(t, db).GetChapterPlanningSummary(ctx, projectID); err != nil {
+				t.Fatalf("runtime %s was mapped as consumption failure: %v", status, err)
+			}
+		})
+	}
+}
+
+func TestSummaryChangesToConsumedAfterRetry(t *testing.T) {
+	db, ctx := openIntegrationDB(t)
+	projectID, runID := seedConsumptionRun(t, ctx, db, "succeeded")
+	consumptions := NewConsumptionRepository(db)
+	code, reason, action := "output_validation_failed", "The runtime output is invalid.", "retry_run"
+	if err := consumptions.Set(ctx, runID, projectID, ConsumptionOutputValidationFailed, nil, &code, &reason, &action); err != nil {
+		t.Fatal(err)
+	}
+	repo := mustNewRepo(t, db)
+	if _, err := repo.GetChapterPlanningSummary(ctx, projectID); !errors.Is(err, ErrOutputValidationFailed) {
+		t.Fatalf("output validation summary error=%v", err)
+	}
+	if err := consumptions.Set(ctx, runID, projectID, ConsumptionConsumed, nil, nil, nil, nil); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := repo.GetChapterPlanningSummary(ctx, projectID); err != nil {
+		t.Fatalf("consumed retry summary error=%v", err)
 	}
 }
