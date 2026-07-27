@@ -21,6 +21,8 @@ import {
   type ChapterPlan,
   type ChapterPlanCandidateBatch,
   type ChapterPlanCandidateSnapshot,
+  type ChapterPlanningPreflightBlocked,
+  type WritableChapterPlanSource,
 } from "./chapter-plan-http-api.ts";
 
 test("preflight sends frozen full, append, and range targets without legacy fields", async () => {
@@ -413,4 +415,40 @@ test("ChapterPlan contract supports candidate_adopted source and nullable OpenAP
   assert.equal(plan.sourceCandidateId, "cand-1");
   assert.equal(plan.sourceCandidateBatchId, "batch-1");
   assert.equal(plan.sourceWorkflowRunId, "run-1");
+});
+
+test("ChapterPlan contract reads legacy_manual but does not permit it as a writable source", () => {
+  const plan: Pick<ChapterPlan, "source"> = { source: "legacy_manual" };
+  const writableSource: WritableChapterPlanSource = "mock_generated";
+  // @ts-expect-error legacy_manual is a read-only historical source.
+  const forbiddenWritableSource: WritableChapterPlanSource = "legacy_manual";
+
+  assert.equal(plan.source, "legacy_manual");
+  assert.notEqual(writableSource, "legacy_manual");
+  assert.equal(forbiddenWritableSource, "legacy_manual");
+});
+
+test("blocked preflight reports support null summaries and no preflightToken", () => {
+  const blocked: ChapterPlanningPreflightBlocked = {
+    result: "blocked",
+    status: "blocked",
+    inputDigest: "digest",
+    inputSummary: null,
+    executionConfigurationSummary: null,
+    checks: [],
+    blockers: [{
+      code: "project_binding_missing",
+      message: "Workflow binding is required",
+      severity: "blocker",
+      details: { safeReason: "Please configure a workflow binding", retryAction: "Open project settings" },
+    }],
+    warnings: [],
+  };
+
+  assert.equal(blocked.inputSummary, null);
+  assert.equal(blocked.executionConfigurationSummary, null);
+  assert.equal("preflightToken" in blocked, false);
+  assert.equal(blocked.blockers[0].code, "project_binding_missing");
+  assert.equal(blocked.blockers[0].details?.safeReason, "Please configure a workflow binding");
+  assert.equal(blocked.blockers[0].details?.retryAction, "Open project settings");
 });

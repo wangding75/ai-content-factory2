@@ -59,17 +59,20 @@ export function PreflightReportDialog({
   const passedReport = isPassed ? (report as ChapterPlanningPreflightPassed) : null;
   const blockedReport = !isPassed ? (report as ChapterPlanningPreflightBlocked) : null;
 
-  const modeLabel =
-    report.inputSummary.generationMode === "full"
+  const inputSummary = report.inputSummary;
+  const modeLabel = inputSummary
+    ? inputSummary.generationMode === "full"
       ? "完整大纲"
-      : report.inputSummary.generationMode === "append"
+      : inputSummary.generationMode === "append"
         ? "追加后续"
-        : "局部范围";
+        : "局部范围"
+    : null;
 
-  const targetLabel =
-    report.inputSummary.generationMode === "range"
-      ? `第 ${report.inputSummary.target.startChapterNo}–${report.inputSummary.target.endChapterNo} 章`
-      : `${report.inputSummary.target.requestedChapterCount} 个章节`;
+  const targetLabel = inputSummary
+    ? inputSummary.generationMode === "range"
+      ? `第 ${inputSummary.target.startChapterNo}–${inputSummary.target.endChapterNo} 章`
+      : `${inputSummary.target.requestedChapterCount} 个章节`
+    : null;
 
   return (
     <div
@@ -108,9 +111,11 @@ export function PreflightReportDialog({
                     : "预检通过，具备生成条件"
                   : "预检阻断，暂时无法生成"}
               </strong>
-              <p>
-                模式：{modeLabel}（{targetLabel}）
-              </p>
+              {modeLabel && targetLabel && (
+                <p>
+                  模式：{modeLabel}（{targetLabel}）
+                </p>
+              )}
             </div>
           </div>
 

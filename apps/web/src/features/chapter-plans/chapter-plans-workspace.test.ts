@@ -52,3 +52,10 @@ test("preflight report dialog differentiates passed and blocked status", () => {
   assert.match(preflightSource, /safeReason \|\| item\.details\.safeSummary/);
   assert.match(preflightSource, /retryAction \|\| item\.details\.action/);
 });
+
+test("blocked preflight report omits unavailable summaries without dereferencing null", () => {
+  assert.match(preflightSource, /const inputSummary = report\.inputSummary/);
+  assert.match(preflightSource, /const modeLabel = inputSummary/);
+  assert.match(preflightSource, /\{modeLabel && targetLabel && \(/);
+  assert.doesNotMatch(preflightSource, /report\.inputSummary\.(generationMode|target)/);
+});

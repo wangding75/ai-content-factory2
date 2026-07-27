@@ -24,6 +24,8 @@ export function chapterPlanSourceLabel(source: string): string {
       return "模拟生成";
     case "candidate_adopted":
       return "候选采纳";
+    case "legacy_manual":
+      return "历史手工";
     default:
       return "来源未知";
   }

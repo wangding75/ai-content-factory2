@@ -1,7 +1,8 @@
 import { apiRequest, type ApiRequestInit } from "../../lib/api.ts";
 export type ChapterPlanStatus = "pending_confirmation" | "confirmed";
 export interface ChapterPlanStorylineRef { storyline_id: string; relation: "primary" | "secondary"; }
-export type ChapterPlanSource = "mock_generated" | "candidate_adopted";
+export type ChapterPlanSource = "mock_generated" | "candidate_adopted" | "legacy_manual";
+export type WritableChapterPlanSource = Exclude<ChapterPlanSource, "legacy_manual">;
 export interface ChapterPlan {
   id: string;
   project_id: string;
@@ -142,8 +143,8 @@ export interface ChapterPlanningPreflightBlocked {
   result: "blocked";
   status: "blocked";
   inputDigest: string;
-  inputSummary: ChapterPlanningInputSummary;
-  executionConfigurationSummary: ChapterPlanningExecutionConfigurationSummary;
+  inputSummary: ChapterPlanningInputSummary | null;
+  executionConfigurationSummary: ChapterPlanningExecutionConfigurationSummary | null;
   checks: ChapterPlanningPreflightItem[];
   blockers: ChapterPlanningBlockerItem[];
   warnings: ChapterPlanningPreflightItem[];

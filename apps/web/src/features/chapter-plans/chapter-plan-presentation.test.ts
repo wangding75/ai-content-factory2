@@ -5,6 +5,7 @@ import { chapterPlanDetail, chapterPlanSourceLabel, chapterPlanStatusLabel, chap
 test("chapter plan sources use safe Chinese labels", () => {
   assert.equal(chapterPlanSourceLabel("candidate_adopted"), "候选采纳");
   assert.equal(chapterPlanSourceLabel("mock_generated"), "模拟生成");
+  assert.equal(chapterPlanSourceLabel("legacy_manual"), "历史手工");
   assert.equal(chapterPlanSourceLabel("unexpected"), "来源未知");
   assert.equal(chapterPlanSourceLabel(""), "来源未知");
 });
