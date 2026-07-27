@@ -4,6 +4,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useIdempotency } from "./use-idempotency";
+import { chapterPlanCacheEvent, invalidateChapterPlanViews } from "./chapter-plan-cache";
 import { Icon } from "@/components/ui/icons";
 import {
   ApiError,
@@ -162,6 +163,16 @@ export function ChapterPlansWorkspace({
     return () => controller.abort();
   }, [load]);
 
+  useEffect(() => {
+    const refreshAfterMutation = (event: Event) => {
+      if ((event as CustomEvent<{ projectId?: string }>).detail?.projectId === projectId) {
+        void load();
+      }
+    };
+    window.addEventListener(chapterPlanCacheEvent, refreshAfterMutation);
+    return () => window.removeEventListener(chapterPlanCacheEvent, refreshAfterMutation);
+  }, [load, projectId]);
+
   const relationNames = useMemo(
     () =>
       relations &&
@@ -266,6 +277,7 @@ export function ChapterPlansWorkspace({
       )) as { data?: { id?: string }; id?: string };
 
       clearKey(scope);
+      invalidateChapterPlanViews(projectId);
       const runId = result?.data?.id || result?.id || "run-created";
       setPreflightReport(null);
       setCreatedRunId(runId);
@@ -301,6 +313,7 @@ export function ChapterPlansWorkspace({
           expected_version: plan.version,
         })),
       });
+      invalidateChapterPlanViews(projectId);
       await refresh();
     } catch (cause) {
       setConfirmError(
@@ -593,6 +606,7 @@ export function ChapterPlansWorkspace({
           onClose={() => setMockOpen(false)}
           onGenerated={async () => {
             setMockOpen(false);
+            invalidateChapterPlanViews(projectId);
             await refresh();
           }}
         />
@@ -603,7 +617,10 @@ export function ChapterPlansWorkspace({
           projectId={projectId}
           plan={editing}
           onClose={() => setEditing(null)}
-          onSaved={refresh}
+          onSaved={async () => {
+            invalidateChapterPlanViews(projectId);
+            await refresh();
+          }}
         />
       )}
 
