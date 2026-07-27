@@ -1,6 +1,14 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { chapterPlanDetail, chapterPlanStatusLabel, chapterPlanSummary, createChapterPlanStats, createConfirmationViewModel, relationValues } from "./chapter-plan-presentation.ts";
+import { chapterPlanDetail, chapterPlanSourceLabel, chapterPlanStatusLabel, chapterPlanSummary, createChapterPlanStats, createConfirmationViewModel, relationValues } from "./chapter-plan-presentation.ts";
+
+test("chapter plan sources use safe Chinese labels", () => {
+  assert.equal(chapterPlanSourceLabel("candidate_adopted"), "候选采纳");
+  assert.equal(chapterPlanSourceLabel("mock_generated"), "模拟生成");
+  assert.equal(chapterPlanSourceLabel("legacy_manual"), "历史手工");
+  assert.equal(chapterPlanSourceLabel("unexpected"), "来源未知");
+  assert.equal(chapterPlanSourceLabel(""), "来源未知");
+});
 
 test("chapter plan statuses are presented in Chinese with a safe fallback", () => {
   assert.equal(chapterPlanStatusLabel("pending_confirmation"), "待确认");

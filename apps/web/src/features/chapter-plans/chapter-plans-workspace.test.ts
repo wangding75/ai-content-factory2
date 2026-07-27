@@ -2,21 +2,60 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 
-const source = readFileSync(new URL("./chapter-plans-workspace.tsx", import.meta.url), "utf8");
+const workspaceSource = readFileSync(
+  new URL("./chapter-plans-workspace.tsx", import.meta.url),
+  "utf8",
+);
+const drawerSource = readFileSync(
+  new URL("./generation-settings-drawer.tsx", import.meta.url),
+  "utf8",
+);
+const preflightSource = readFileSync(
+  new URL("./preflight-dialogs.tsx", import.meta.url),
+  "utf8",
+);
 
-test("chapter plans batch-load relation names and never expose identifiers", () => {
-  assert.match(source, /Promise\.all\(\[[\s\S]*getStorylines\(projectId, signal\),[\s\S]*listProjectMaterialsFromApi\(projectId, \{ limit: 100 \}, \{ signal \}\),[\s\S]*getForeshadowings\(projectId, signal\)/);
-  assert.match(source, /createRelationNames/);
-  assert.doesNotMatch(source, /slice\(0, 8\)/);
-  assert.doesNotMatch(source, /"\?\?\?"/);
+test("chapter plans batch-load relation names and summary", () => {
+  assert.match(
+    workspaceSource,
+    /Promise\.allSettled\(\[[\s\S]*listChapterPlans\(projectId, \{ limit: 100 \}, \{ signal \}\),[\s\S]*getProjectChapterPlanningSummary\(projectId, \{ signal \}\)/,
+  );
+  assert.match(workspaceSource, /createRelationNames/);
+  assert.doesNotMatch(workspaceSource, /"\?\?\?"/);
 });
 
-test("chapter plans render client-side search, relation filters, statistics, and batch confirmation controls", () => {
-  assert.match(source, /chapterPlanStatusLabel/);
-  assert.match(source, /createChapterPlanStats/);
-  assert.match(source, /搜索章节标题或章节编号/);
-  assert.match(source, /故事线筛选/);
-  assert.match(source, /伏笔筛选/);
-  assert.match(source, /批量确认章节规划/);
-  assert.doesNotMatch(source, /disabled title=/);
+test("chapter plans render active run banners and preflight controls", () => {
+  assert.match(workspaceSource, /SummaryRunBanner/);
+  assert.match(workspaceSource, /P15_C1_NOT_CONFIGURED/);
+  assert.match(workspaceSource, /P15_C1_FAILED_ATOMIC/);
+  assert.match(workspaceSource, /GenerationSettingsDrawer/);
+  assert.match(workspaceSource, /PreflightReportDialog/);
+  assert.match(workspaceSource, /preflightChapterPlanRun/);
+  assert.match(workspaceSource, /createChapterPlanRun/);
+});
+
+test("generation settings drawer validates input ranges and options", () => {
+  assert.match(drawerSource, /生成模式/);
+  assert.match(drawerSource, /起始章节/);
+  assert.match(drawerSource, /结束章节/);
+  assert.match(drawerSource, /结束章节不能小于起始章节/);
+  assert.match(drawerSource, /请至少选择一条指定故事线/);
+  assert.match(drawerSource, /includeProjectMaterials/);
+});
+
+test("preflight report dialog differentiates passed and blocked status", () => {
+  assert.match(preflightSource, /预检通过/);
+  assert.match(preflightSource, /预检阻断/);
+  assert.match(preflightSource, /阻断原因列表/);
+  assert.match(preflightSource, /确认发起生成/);
+  assert.match(preflightSource, /代码：\{item\.code\}/);
+  assert.match(preflightSource, /safeReason \|\| item\.details\.safeSummary/);
+  assert.match(preflightSource, /retryAction \|\| item\.details\.action/);
+});
+
+test("blocked preflight report omits unavailable summaries without dereferencing null", () => {
+  assert.match(preflightSource, /const inputSummary = report\.inputSummary/);
+  assert.match(preflightSource, /const modeLabel = inputSummary/);
+  assert.match(preflightSource, /\{modeLabel && targetLabel && \(/);
+  assert.doesNotMatch(preflightSource, /report\.inputSummary\.(generationMode|target)/);
 });

@@ -3,6 +3,8 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useIdempotency } from "./use-idempotency";
+import { chapterPlanCacheEvent, invalidateChapterPlanViews } from "./chapter-plan-cache";
 import { Icon } from "@/components/ui/icons";
 import {
   ApiError,
@@ -16,12 +18,24 @@ import { listProjectMaterialsFromApi } from "@/features/planning-materials/api/p
 import type { ProjectMaterialItem } from "@/features/planning-materials/contracts/materials";
 import {
   confirmChapterPlans,
+  createChapterPlanRun,
+  getProjectChapterPlanningSummary,
   listChapterPlans,
+  preflightChapterPlanRun,
   type ChapterPlan,
+  type ChapterPlanningPreflightReport,
+  type ChapterPlanningPreflightRequest,
+  type ChapterPlanningSummary,
 } from "./chapter-plan-http-api";
 import { ConfirmChapterPlansDialog } from "./confirm-chapter-plans-dialog";
 import { EditChapterPlanDrawer } from "./edit-chapter-plan-drawer";
+import { GenerationSettingsDrawer } from "./generation-settings-drawer";
 import { MockGenerateDialog } from "./mock-generate-dialog";
+import {
+  PreflightProgressDialog,
+  PreflightReportDialog,
+  RunCreatedDialog,
+} from "./preflight-dialogs";
 import {
   chapterPlanDetail,
   chapterPlanSourceLabel,
@@ -39,6 +53,7 @@ type Relations = {
   materials: ProjectMaterialItem[];
   foreshadowings: Foreshadowing[];
 };
+
 const statuses: { value: ChapterPlanFilterStatus; label: string }[] = [
   { value: "all", label: "全部" },
   { value: "pending_confirmation", label: "待确认" },
@@ -52,61 +67,112 @@ export function ChapterPlansWorkspace({
   projectId: string;
   project: Project;
 }) {
+  const { getOrCreateKey, clearKey, markUnknown } = useIdempotency();
   const [plans, setPlans] = useState<ChapterPlan[] | null>(null);
+  const [summary, setSummary] = useState<ChapterPlanningSummary | null>(null);
+  const [summaryError, setSummaryError] = useState<ApiError | null>(null);
   const [relations, setRelations] = useState<Relations | null>(null);
+
   const [status, setStatus] = useState<ChapterPlanFilterStatus>("all");
   const [search, setSearch] = useState("");
   const [storylineId, setStorylineId] = useState("");
   const [foreshadowingId, setForeshadowingId] = useState("");
   const [selected, setSelected] = useState<Record<string, ChapterPlan>>({});
-  const [loading, setLoading] = useState(true),
-    [error, setError] = useState<ApiError | null>(null);
-  const [mockOpen, setMockOpen] = useState(false),
-    [editing, setEditing] = useState<ChapterPlan | null>(null),
-    [confirmOpen, setConfirmOpen] = useState(false),
-    [confirming, setConfirming] = useState(false),
-    [confirmError, setConfirmError] = useState<ApiError | null>(null);
+
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<ApiError | null>(null);
+
+  // Modals & Drawers
+  const [mockOpen, setMockOpen] = useState(false);
+  const [editing, setEditing] = useState<ChapterPlan | null>(null);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [confirming, setConfirming] = useState(false);
+  const [confirmError, setConfirmError] = useState<ApiError | null>(null);
+
+  // Preflight & Run Generation State
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [preflighting, setPreflighting] = useState(false);
+  const [preflightReport, setPreflightReport] =
+    useState<ChapterPlanningPreflightReport | null>(null);
+  const [creatingRun, setCreatingRun] = useState(false);
+  const [createdRunId, setCreatedRunId] = useState<string | null>(null);
+
   const requestRef = useRef(0);
+
   const load = useCallback(
     async (signal?: AbortSignal) => {
       const request = ++requestRef.current;
       setLoading(true);
       setError(null);
+      setSummaryError(null);
+
       try {
-        const [response, storylines, materials, foreshadowings] =
-          await Promise.all([
+        const [plansRes, summaryRes, storylinesRes, materialsRes, foreshadowingsRes] =
+          await Promise.allSettled([
             listChapterPlans(projectId, { limit: 100 }, { signal }),
+            getProjectChapterPlanningSummary(projectId, { signal }),
             getStorylines(projectId, signal),
             listProjectMaterialsFromApi(projectId, { limit: 100 }, { signal }),
             getForeshadowings(projectId, signal),
           ]);
+
         if (signal?.aborted || request !== requestRef.current) return;
-        setPlans(response.items);
+
+        if (plansRes.status === "fulfilled") {
+          setPlans(plansRes.value.items);
+        } else {
+          setError(
+            plansRes.reason instanceof ApiError
+              ? plansRes.reason
+              : new ApiError("Unable to load chapter plans.", 500),
+          );
+        }
+
+        if (summaryRes.status === "fulfilled") {
+          setSummary(summaryRes.value);
+        } else if (summaryRes.reason instanceof ApiError) {
+          setSummaryError(summaryRes.reason);
+        }
+
         setRelations({
-          storylines: storylines.items,
-          materials: materials.items,
-          foreshadowings: foreshadowings.items,
+          storylines: storylinesRes.status === "fulfilled" ? storylinesRes.value.items : [],
+          materials: materialsRes.status === "fulfilled" ? materialsRes.value.items : [],
+          foreshadowings: foreshadowingsRes.status === "fulfilled" ? foreshadowingsRes.value.items : [],
         });
       } catch (cause) {
-        if (!signal?.aborted && request === requestRef.current)
+        if (!signal?.aborted && request === requestRef.current) {
           setError(
             cause instanceof ApiError
               ? cause
               : new ApiError("Unable to load chapter plans.", 500),
           );
+        }
       } finally {
-        if (!signal?.aborted && request === requestRef.current)
+        if (!signal?.aborted && request === requestRef.current) {
           setLoading(false);
+        }
       }
     },
     [projectId],
   );
+
   useEffect(() => {
     const controller = new AbortController();
     setSelected({});
     void load(controller.signal);
     return () => controller.abort();
   }, [load]);
+
+  useEffect(() => {
+    const refreshAfterMutation = (event: Event) => {
+      if ((event as CustomEvent<{ projectId?: string }>).detail?.projectId === projectId) {
+        void load();
+      }
+    };
+    window.addEventListener(chapterPlanCacheEvent, refreshAfterMutation);
+    return () => window.removeEventListener(chapterPlanCacheEvent, refreshAfterMutation);
+  }, [load, projectId]);
+
   const relationNames = useMemo(
     () =>
       relations &&
@@ -117,6 +183,7 @@ export function ChapterPlansWorkspace({
       ),
     [relations],
   );
+
   const visible = useMemo(
     () =>
       (plans ?? []).filter((plan) => {
@@ -136,16 +203,21 @@ export function ChapterPlansWorkspace({
       }),
     [plans, status, search, storylineId, foreshadowingId],
   );
+
   const stats = useMemo(() => createChapterPlanStats(plans ?? []), [plans]);
+
   const pendingVisible = visible.filter(
     (plan) => plan.status === "pending_confirmation",
   );
+
   const selectedPlans = Object.values(selected);
+
   const clearSelection = () => {
     setSelected({});
     setConfirmOpen(false);
     setConfirmError(null);
   };
+
   const toggle = (plan: ChapterPlan) =>
     setSelected((current) => {
       const next = { ...current };
@@ -153,6 +225,7 @@ export function ChapterPlansWorkspace({
       else next[plan.id] = plan;
       return next;
     });
+
   const toggleAll = () =>
     setSelected((current) => {
       const next = { ...current };
@@ -165,10 +238,67 @@ export function ChapterPlansWorkspace({
       });
       return next;
     });
+
   const refresh = useCallback(async () => {
     clearSelection();
     await load();
   }, [load]);
+
+  // Preflight Flow Handler
+  const handlePreflightSubmit = async (requestPayload: ChapterPlanningPreflightRequest) => {
+    setPreflighting(true);
+    setError(null);
+    try {
+      const report = await preflightChapterPlanRun(projectId, requestPayload);
+      setSettingsOpen(false);
+      setPreflightReport(report);
+    } catch (cause) {
+      if (cause instanceof ApiError) {
+        setError(cause);
+      } else {
+        setError(new ApiError("预检发起失败，请稍后重试。", 500));
+      }
+    } finally {
+      setPreflighting(false);
+    }
+  };
+
+  // Create Run Handler
+  const handleCreateRun = async (preflightToken: string) => {
+    setCreatingRun(true);
+    const scope = `chapter-plan-run:create:${projectId}`;
+    const payload = { preflightToken };
+    try {
+      const idempotencyKey = await getOrCreateKey(scope, payload);
+      const result = await createChapterPlanRun(
+        projectId,
+        payload,
+        idempotencyKey,
+      );
+
+      clearKey(scope);
+      invalidateChapterPlanViews(projectId);
+      const runId = result?.id || "run-created";
+      setPreflightReport(null);
+      setCreatedRunId(runId);
+      await refresh();
+    } catch (cause) {
+      if (
+        cause instanceof ApiError &&
+        (cause.status === 0 || cause.status >= 500 || cause.code === "timeout")
+      ) {
+        await markUnknown(scope, payload);
+      }
+      if (cause instanceof ApiError) {
+        setError(cause);
+      } else {
+        setError(new ApiError("创建生成任务失败，请重试。", 500));
+      }
+    } finally {
+      setCreatingRun(false);
+    }
+  };
+
   const submitConfirm = async () => {
     const candidates = Object.values(selected).filter(
       (plan) => plan.status === "pending_confirmation",
@@ -183,6 +313,7 @@ export function ChapterPlansWorkspace({
           expected_version: plan.version,
         })),
       });
+      invalidateChapterPlanViews(projectId);
       await refresh();
     } catch (cause) {
       setConfirmError(
@@ -194,7 +325,9 @@ export function ChapterPlansWorkspace({
       setConfirming(false);
     }
   };
+
   if (loading && !plans) return <Loading />;
+
   if (error && !plans)
     return (
       <State
@@ -203,22 +336,72 @@ export function ChapterPlansWorkspace({
         retry={() => void load()}
       />
     );
+
   const storylines = relations ? flattenStorylines(relations.storylines) : [];
+
   return (
     <div className="chapter-plans-workspace">
       <main className="chapter-plans-main">
+        {/* Active Run / Summary Banner */}
+        <SummaryRunBanner
+          summary={summary}
+          summaryError={summaryError}
+          onConfigure={() => setSettingsOpen(true)}
+          onRetry={() => void load()}
+        />
+
         <section className="chapter-plans-heading">
           <div>
             <h2>章节规划</h2>
             <p>基于故事线、素材和伏笔生成并管理章节候选。</p>
           </div>
           <div className="chapter-plans-actions">
-            <button type="button" onClick={() => setMockOpen(true)}>
+            <button
+              type="button"
+              className="chapter-plan-button primary"
+              onClick={() => setSettingsOpen(true)}
+            >
               <Icon name="wand" size={17} />
-              模拟生成章节规划
+              生成章节规划
+            </button>
+            <button
+              type="button"
+              className="chapter-plan-button secondary"
+              onClick={() => setMockOpen(true)}
+            >
+              <Icon name="wand" size={17} />
+              模拟生成 (Mock)
             </button>
           </div>
         </section>
+
+        {/* Batch Counts & Summary Cards */}
+        {summary?.candidateBatchCounts && (
+          <section className="chapter-plan-batch-summary" aria-label="候选批次概览">
+            <div className="batch-summary-item">
+              <span>待处理批次</span>
+              <b>{summary.candidateBatchCounts.ready}</b>
+            </div>
+            <div className="batch-summary-item">
+              <span>部分采用</span>
+              <b>{summary.candidateBatchCounts.partiallyAdopted}</b>
+            </div>
+            <div className="batch-summary-item">
+              <span>已全部采用</span>
+              <b>{summary.candidateBatchCounts.adopted}</b>
+            </div>
+            <div className="batch-summary-item">
+              <span>已放弃批次</span>
+              <b>{summary.candidateBatchCounts.abandoned}</b>
+            </div>
+            <div className="batch-summary-link">
+              <Link href={`/projects/${projectId}/chapter-plan-candidate-batches`}>
+                查看全量候选批次 →
+              </Link>
+            </div>
+          </section>
+        )}
+
         <section className="chapter-plan-stats" aria-label="章节规划统计">
           {[
             ["全部章节", stats.all],
@@ -232,6 +415,7 @@ export function ChapterPlansWorkspace({
             </article>
           ))}
         </section>
+
         <nav className="chapter-plans-filters" aria-label="章节状态筛选">
           {statuses.map((item) => (
             <button
@@ -256,6 +440,7 @@ export function ChapterPlansWorkspace({
             </button>
           ))}
         </nav>
+
         <section
           className="chapter-plans-toolbar"
           aria-label="章节规划搜索与筛选"
@@ -303,11 +488,13 @@ export function ChapterPlansWorkspace({
             清除筛选
           </button>
         </section>
+
         {error && (
           <p className="chapter-plans-form-error" role="alert">
-            数据刷新失败，请重试。
+            {error.message || "数据刷新失败，请重试。"}
           </p>
         )}
+
         <div className="chapter-plan-select-all">
           <label>
             <input
@@ -323,6 +510,7 @@ export function ChapterPlansWorkspace({
           </label>
           <span>已选 {selectedPlans.length} 项</span>
         </div>
+
         {!visible.length ? (
           <section className="chapter-plans-empty">
             <Icon name="book" size={34} />
@@ -330,7 +518,7 @@ export function ChapterPlansWorkspace({
             <p>
               {plans?.length
                 ? "请调整搜索或筛选条件。"
-                : "请先模拟生成章节规划候选。"}
+                : "请先生成章节规划候选或模拟生成。"}
             </p>
           </section>
         ) : (
@@ -360,6 +548,7 @@ export function ChapterPlansWorkspace({
           </section>
         )}
       </main>
+
       {selectedPlans.length > 0 && (
         <footer className="chapter-plan-batch-bar">
           <div>
@@ -379,24 +568,62 @@ export function ChapterPlansWorkspace({
           </button>
         </footer>
       )}
+
+      {/* Generation Settings Drawer */}
+      {settingsOpen && (
+        <GenerationSettingsDrawer
+          storylines={relations?.storylines ?? []}
+          onClose={() => setSettingsOpen(false)}
+          onSubmit={(payload) => void handlePreflightSubmit(payload)}
+          submitting={preflighting}
+        />
+      )}
+
+      {/* Preflight Progress Modal */}
+      {preflighting && <PreflightProgressDialog />}
+
+      {/* Preflight Report Modal (Passed / Blocked) */}
+      {preflightReport && (
+        <PreflightReportDialog
+          report={preflightReport}
+          onClose={() => setPreflightReport(null)}
+          onCreateRun={(token) => void handleCreateRun(token)}
+          creatingRun={creatingRun}
+        />
+      )}
+
+      {/* Run Created Dialog */}
+      {createdRunId && (
+        <RunCreatedDialog
+          runId={createdRunId}
+          onClose={() => setCreatedRunId(null)}
+        />
+      )}
+
       {mockOpen && (
         <MockGenerateDialog
           projectId={projectId}
           onClose={() => setMockOpen(false)}
           onGenerated={async () => {
             setMockOpen(false);
+            invalidateChapterPlanViews(projectId);
             await refresh();
           }}
         />
       )}
+
       {editing && (
         <EditChapterPlanDrawer
           projectId={projectId}
           plan={editing}
           onClose={() => setEditing(null)}
-          onSaved={refresh}
+          onSaved={async () => {
+            invalidateChapterPlanViews(projectId);
+            await refresh();
+          }}
         />
       )}
+
       {confirmOpen && (
         <ConfirmChapterPlansDialog
           plans={selectedPlans}
@@ -410,6 +637,92 @@ export function ChapterPlansWorkspace({
     </div>
   );
 }
+
+function SummaryRunBanner({
+  summary,
+  summaryError,
+  onConfigure,
+  onRetry,
+}: {
+  summary: ChapterPlanningSummary | null;
+  summaryError: ApiError | null;
+  onConfigure: () => void;
+  onRetry: () => void;
+}) {
+  if (summaryError) {
+    const isNotConfigured =
+      summaryError.status === 422 ||
+      summaryError.message?.includes("workflow_not_configured");
+    const isAtomicFailed =
+      summaryError.status === 500 ||
+      summaryError.message?.includes("output_validation_failed") ||
+      summaryError.message?.includes("result_consumption_failed");
+
+    if (isNotConfigured) {
+      return (
+        <div className="chapter-plan-run-banner warning">
+          <Icon name="info" size={20} />
+          <div className="banner-content">
+            <strong>未配置章节规划工作流 (P15_C1_NOT_CONFIGURED)</strong>
+            <p>请先选择或配置可用的章节规划工作流绑定再发起生成。</p>
+          </div>
+          <button type="button" onClick={onConfigure}>
+            配置并生成
+          </button>
+        </div>
+      );
+    }
+
+    if (isAtomicFailed) {
+      return (
+        <div className="chapter-plan-run-banner error">
+          <Icon name="info" size={20} />
+          <div className="banner-content">
+            <strong>生成失败且零候选写入 (P15_C1_FAILED_ATOMIC)</strong>
+            <p>
+              {summaryError.message ||
+                "章节规划生成输出校验失败或数据入库失败，尚未写入候选。"}
+            </p>
+          </div>
+          <button type="button" onClick={onRetry}>
+            重试
+          </button>
+        </div>
+      );
+    }
+
+    return null;
+  }
+
+  if (!summary?.activeRun) return null;
+
+  const run = summary.activeRun;
+  const status = run.status;
+
+  const isRunning = status === "running" || status === "queued";
+  const isValidating = status === "validating";
+
+  return (
+    <div className={`chapter-plan-run-banner ${isRunning ? "info" : "warning"}`}>
+      <div className="chapter-plan-spinner" />
+      <div className="banner-content">
+        <strong>
+          {isValidating
+            ? "局部范围生成中（正在校验输出结果...）"
+            : `章节规划运行中 (Run: ${run.runNumber || run.id.slice(0, 8)})`}
+        </strong>
+        <p>
+          当前状态：{status === "queued" ? "等待执行" : status === "running" ? "运行中" : status}
+          {run.createdAt ? ` · 开始于 ${new Date(run.createdAt).toLocaleTimeString("zh-CN")}` : ""}
+        </p>
+      </div>
+      <button type="button" onClick={onRetry}>
+        刷新状态
+      </button>
+    </div>
+  );
+}
+
 function PlanRow({
   plan,
   selected,
@@ -430,6 +743,7 @@ function PlanRow({
   const children = refs
     .filter((ref) => ref.relation === "secondary")
     .map((ref) => ref.storyline_id);
+
   return (
     <article className="chapter-plan-row">
       <span>
@@ -498,6 +812,7 @@ function PlanRow({
     </article>
   );
 }
+
 function Badges({ values }: { values: string[] }) {
   return (
     <span className="chapter-plan-badges">
@@ -507,6 +822,7 @@ function Badges({ values }: { values: string[] }) {
     </span>
   );
 }
+
 function State({
   title,
   description,
@@ -527,6 +843,7 @@ function State({
     </main>
   );
 }
+
 function Loading() {
   return (
     <div className="chapter-plans-workspace">

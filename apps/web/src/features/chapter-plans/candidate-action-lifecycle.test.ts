@@ -1,0 +1,58 @@
+import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import test from "node:test";
+
+const actionDialogsSource = readFileSync(
+  new URL("./candidate-action-dialogs.tsx", import.meta.url),
+  "utf8",
+);
+
+const detailPageSource = readFileSync(
+  new URL("./candidate-batch-detail-page.tsx", import.meta.url),
+  "utf8",
+);
+
+const apiSource = readFileSync(
+  new URL("./chapter-plan-http-api.ts", import.meta.url),
+  "utf8",
+);
+
+test("batch adopt dialog handles itemized outcomes and partial success without compressing results", () => {
+  assert.match(actionDialogsSource, /adoptChapterPlanCandidates/);
+  assert.match(actionDialogsSource, /ItemizedOutcomeRow/);
+  assert.match(actionDialogsSource, /已采用 \(adopted\)/);
+  assert.match(actionDialogsSource, /无变化 \(no_change\)/);
+  assert.match(actionDialogsSource, /基线过期 \(stale\)/);
+  assert.match(actionDialogsSource, /版本冲突 \(conflict\)/);
+});
+
+test("batch abandon dialog requires acknowledgeAdoptedChaptersRemain: true and shows non-rollback notice", () => {
+  assert.match(actionDialogsSource, /abandonChapterPlanCandidateBatch/);
+  assert.match(actionDialogsSource, /acknowledgeAdoptedChaptersRemain: true/);
+  assert.match(actionDialogsSource, /已采用的章节及其 Revision 记录将被完整保留/);
+});
+
+test("stale conflict dialog offers recompare and refresh options without force adopt", () => {
+  assert.match(actionDialogsSource, /基线与版本冲突处理/);
+  assert.match(actionDialogsSource, /重新比较 \(Recompare\)/);
+  assert.match(actionDialogsSource, /刷新最新版本/);
+  assert.match(actionDialogsSource, /已禁止强制覆盖/);
+  assert.doesNotMatch(actionDialogsSource, /force adopt/i);
+});
+
+test("candidate batch detail page wires single adopt, discard, bulk adopt, and abandon actions with idempotency keys", () => {
+  assert.match(detailPageSource, /adoptChapterPlanCandidate/);
+  assert.match(detailPageSource, /discardChapterPlanCandidate/);
+  assert.match(detailPageSource, /BatchAdoptDialog/);
+  assert.match(detailPageSource, /BatchAbandonDialog/);
+  assert.match(detailPageSource, /idempotencyKey/i);
+  assert.match(detailPageSource, /expectedCandidateVersion/);
+  assert.match(apiSource, /Idempotency-Key/i);
+});
+
+test("FE-F4 API contracts export adopt, discard, bulk adopt, and abandon functions", () => {
+  assert.match(apiSource, /export function adoptChapterPlanCandidate/);
+  assert.match(apiSource, /export function discardChapterPlanCandidate/);
+  assert.match(apiSource, /export function adoptChapterPlanCandidates/);
+  assert.match(apiSource, /export function abandonChapterPlanCandidateBatch/);
+});
