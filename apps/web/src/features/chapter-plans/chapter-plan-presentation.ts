@@ -199,3 +199,61 @@ export function createConfirmationViewModel(
       selected.length > 0 && checks.every((check) => check.status !== "error"),
   };
 }
+
+export function candidateBatchStatusLabel(status: string): string {
+  switch (status) {
+    case "ready":
+      return "待处理";
+    case "partially_adopted":
+      return "部分采用";
+    case "adopted":
+      return "全量采用";
+    case "abandoned":
+      return "已放弃";
+    default:
+      return status;
+  }
+}
+
+export function candidateBatchModeLabel(mode: string): string {
+  switch (mode) {
+    case "full":
+      return "完整大纲";
+    case "append":
+      return "追加后续";
+    case "range":
+      return "局部范围";
+    default:
+      return mode;
+  }
+}
+
+export function candidateStatusLabel(status: string): string {
+  switch (status) {
+    case "pending":
+      return "待处理";
+    case "stale":
+      return "已过期";
+    case "adopted":
+      return "已采用";
+    case "discarded":
+      return "已丢弃";
+    default:
+      return status;
+  }
+}
+
+export function candidateDiffTypeLabel(diffType: string): string {
+  switch (diffType) {
+    case "new":
+      return "新设章节";
+    case "replace":
+      return "替换候选";
+    case "no_change":
+      return "无变化";
+    case "stale_conflict":
+      return "基线冲突";
+    default:
+      return diffType;
+  }
+}

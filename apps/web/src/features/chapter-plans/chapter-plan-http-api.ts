@@ -228,3 +228,209 @@ export function createChapterPlanRun(
     },
   );
 }
+
+// --- FE-F2 Candidate Batch & Candidate Contracts ---
+
+export type ChapterPlanCandidateBatchStatus =
+  | "ready"
+  | "partially_adopted"
+  | "adopted"
+  | "abandoned";
+
+export type ChapterPlanCandidateStatus =
+  | "pending"
+  | "stale"
+  | "adopted"
+  | "discarded";
+
+export type ChapterPlanCandidateDiffType =
+  | "new"
+  | "replace"
+  | "no_change"
+  | "stale_conflict";
+
+export interface ChapterPlanReferenceSnapshot {
+  id: string;
+  label: string;
+  relation: string;
+  position: number;
+  version: number;
+}
+
+export interface ChapterPlanCandidateSnapshot {
+  chapterNo: number;
+  title: string;
+  summary: string;
+  chapterPurpose: string;
+  storylineRefs: ChapterPlanReferenceSnapshot[];
+  materialRefs: ChapterPlanReferenceSnapshot[];
+  foreshadowingRefs: ChapterPlanReferenceSnapshot[];
+  generationBasis: {
+    contextSummary: string;
+    additionalInstructions: string | null;
+  };
+}
+
+export interface ChapterPlanCandidateBatch {
+  id: string;
+  projectId: string;
+  sourceWorkflowRunId: string;
+  generationMode: ChapterPlanningGenerationMode;
+  target: {
+    startChapterNo: number;
+    endChapterNo: number;
+    requestedChapterCount: number;
+  };
+  inputDigest: string;
+  inputSummary: ChapterPlanningInputSummary;
+  candidateCount: number;
+  pendingCount: number;
+  staleCount: number;
+  adoptedCount: number;
+  discardedCount: number;
+  status: ChapterPlanCandidateBatchStatus;
+  version: number;
+  completedAt: string | null;
+  abandonedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ChapterPlanCandidate {
+  id: string;
+  batchId: string;
+  projectId: string;
+  chapterNo: number;
+  sortOrder: number;
+  baseChapterPlanId: string | null;
+  baseRevisionId: string | null;
+  baseChapterPlanVersion: number | null;
+  baseSnapshot: ChapterPlanCandidateSnapshot | null;
+  generatedSnapshot: ChapterPlanCandidateSnapshot;
+  currentSnapshot: ChapterPlanCandidateSnapshot;
+  diffType: ChapterPlanCandidateDiffType;
+  status: ChapterPlanCandidateStatus;
+  version: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ChapterPlanCandidateBatchList {
+  items: ChapterPlanCandidateBatch[];
+  total: number;
+  limit: number;
+  offset: number;
+}
+
+export interface ChapterPlanCandidateList {
+  items: ChapterPlanCandidate[];
+  total: number;
+  limit: number;
+  offset: number;
+}
+
+export interface ChapterPlanCandidateBatchListEnvelope {
+  data: ChapterPlanCandidateBatchList;
+  request_id: string;
+}
+
+export interface ChapterPlanCandidateBatchEnvelope {
+  data: ChapterPlanCandidateBatch;
+  request_id: string;
+}
+
+export interface ChapterPlanCandidateListEnvelope {
+  data: ChapterPlanCandidateList;
+  request_id: string;
+}
+
+export interface ChapterPlanCandidateEnvelope {
+  data: ChapterPlanCandidate;
+  request_id: string;
+}
+
+export interface ListCandidateBatchesQuery {
+  status?: ChapterPlanCandidateBatchStatus;
+  generationMode?: ChapterPlanningGenerationMode;
+  sourceWorkflowRunId?: string;
+  createdAtFrom?: string;
+  createdAtTo?: string;
+  limit?: number;
+  offset?: number;
+}
+
+export interface ListCandidatesQuery {
+  status?: ChapterPlanCandidateStatus;
+  diffType?: ChapterPlanCandidateDiffType;
+  storylineId?: string;
+  q?: string;
+  limit?: number;
+  offset?: number;
+}
+
+export function candidateBatchQuery(query: ListCandidateBatchesQuery = {}) {
+  const params = new URLSearchParams();
+  if (query.status) params.set("status", query.status);
+  if (query.generationMode) params.set("generationMode", query.generationMode);
+  if (query.sourceWorkflowRunId) params.set("sourceWorkflowRunId", query.sourceWorkflowRunId);
+  if (query.createdAtFrom) params.set("createdAtFrom", query.createdAtFrom);
+  if (query.createdAtTo) params.set("createdAtTo", query.createdAtTo);
+  if (query.limit !== undefined) params.set("limit", String(query.limit));
+  if (query.offset !== undefined) params.set("offset", String(query.offset));
+  const val = params.toString();
+  return val ? `?${val}` : "";
+}
+
+export function candidateQuery(query: ListCandidatesQuery = {}) {
+  const params = new URLSearchParams();
+  if (query.status) params.set("status", query.status);
+  if (query.diffType) params.set("diffType", query.diffType);
+  if (query.storylineId) params.set("storylineId", query.storylineId);
+  if (query.q?.trim()) params.set("q", query.q.trim());
+  if (query.limit !== undefined) params.set("limit", String(query.limit));
+  if (query.offset !== undefined) params.set("offset", String(query.offset));
+  const val = params.toString();
+  return val ? `?${val}` : "";
+}
+
+export function listChapterPlanCandidateBatches(
+  projectId: string,
+  query: ListCandidateBatchesQuery = {},
+  init?: ApiRequestInit,
+): Promise<ChapterPlanCandidateBatchListEnvelope> {
+  return apiRequest<ChapterPlanCandidateBatchListEnvelope>(
+    `/projects/${encodeURIComponent(projectId)}/chapter-plan-candidate-batches${candidateBatchQuery(query)}`,
+    init,
+  );
+}
+
+export function getChapterPlanCandidateBatch(
+  batchId: string,
+  init?: ApiRequestInit,
+): Promise<ChapterPlanCandidateBatchEnvelope> {
+  return apiRequest<ChapterPlanCandidateBatchEnvelope>(
+    `/chapter-plan-candidate-batches/${encodeURIComponent(batchId)}`,
+    init,
+  );
+}
+
+export function listChapterPlanCandidates(
+  batchId: string,
+  query: ListCandidatesQuery = {},
+  init?: ApiRequestInit,
+): Promise<ChapterPlanCandidateListEnvelope> {
+  return apiRequest<ChapterPlanCandidateListEnvelope>(
+    `/chapter-plan-candidate-batches/${encodeURIComponent(batchId)}/candidates${candidateQuery(query)}`,
+    init,
+  );
+}
+
+export function getChapterPlanCandidate(
+  candidateId: string,
+  init?: ApiRequestInit,
+): Promise<ChapterPlanCandidateEnvelope> {
+  return apiRequest<ChapterPlanCandidateEnvelope>(
+    `/chapter-plan-candidates/${encodeURIComponent(candidateId)}`,
+    init,
+  );
+}
