@@ -37,24 +37,49 @@ type CandidateComparison struct {
 }
 
 type UpdateCandidateCommand struct {
-	CandidateID             uuid.UUID       `json:"candidateId"`
+	CandidateID              uuid.UUID       `json:"candidateId"`
 	ExpectedCandidateVersion int             `json:"expectedCandidateVersion"`
-	CurrentSnapshot         json.RawMessage `json:"currentSnapshot"`
-	ActorID                 string          `json:"actorId"`
+	CurrentSnapshot          json.RawMessage `json:"currentSnapshot"`
+	IdempotencyKey           string          `json:"idempotencyKey"`
+	ActorID                  string          `json:"actorId"`
 }
 
 type RecompareCandidateCommand struct {
-	CandidateID             uuid.UUID `json:"candidateId"`
+	CandidateID              uuid.UUID `json:"candidateId"`
 	ExpectedCandidateVersion int       `json:"expectedCandidateVersion"`
-	ActorID                 string    `json:"actorId"`
+	IdempotencyKey           string    `json:"idempotencyKey"`
+	ActorID                  string    `json:"actorId"`
 }
 
 func (r *Repository) UpdateCandidate(ctx context.Context, cmd UpdateCandidateCommand) (Candidate, error) {
+	keyFp := deriveKeyFingerprint(cmd.IdempotencyKey)
+	scope := fmt.Sprintf("chapter-plan-candidate-update:%s", cmd.CandidateID)
+	reqHash := hashPayload(cmd)
+
 	tx, err := r.db.Begin(ctx)
 	if err != nil {
 		return Candidate{}, err
 	}
 	defer tx.Rollback(ctx)
+
+	if err := acquireAdvisoryLock(ctx, tx, scope, keyFp); err != nil {
+		return Candidate{}, err
+	}
+
+	storedBody, _, found, err := checkIdempotency(ctx, tx, scope, keyFp, reqHash)
+	if err != nil {
+		return Candidate{}, err
+	}
+	if found {
+		var res Candidate
+		if err := json.Unmarshal(storedBody, &res); err != nil {
+			return Candidate{}, err
+		}
+		if err := tx.Commit(ctx); err != nil {
+			return Candidate{}, err
+		}
+		return res, nil
+	}
 
 	query := fmt.Sprintf("SELECT %s FROM chapter_plan_candidates WHERE id = $1 FOR UPDATE", candidateCols)
 	cand, err := scanCandidate(tx.QueryRow(ctx, query, cmd.CandidateID))
@@ -72,7 +97,6 @@ func (r *Repository) UpdateCandidate(ctx context.Context, cmd UpdateCandidateCom
 		return Candidate{}, ErrVersionConflict
 	}
 
-	// Read current target chapter plan (if exists)
 	targetPlan, targetRevID, err := r.findTargetChapterPlan(ctx, tx, cand.ProjectID, cand.ChapterNo)
 	if err != nil {
 		return Candidate{}, err
@@ -81,11 +105,7 @@ func (r *Repository) UpdateCandidate(ctx context.Context, cmd UpdateCandidateCom
 	diffType, isStale := ComputeDiffTypeAndStale(cmd.CurrentSnapshot, cand.BaseSnapshot, cand.BaseRevisionID, targetPlan, targetRevID)
 
 	newStatus := cand.Status
-	if isStale {
-		newStatus = "stale"
-		diffType = "stale_conflict"
-	} else if cand.Status == "stale" {
-		// keep stale unless recompared
+	if isStale || cand.Status == "stale" {
 		newStatus = "stale"
 		diffType = "stale_conflict"
 	} else {
@@ -115,6 +135,14 @@ func (r *Repository) UpdateCandidate(ctx context.Context, cmd UpdateCandidateCom
 		return Candidate{}, ErrVersionConflict
 	}
 	if err != nil {
+		return Candidate{}, err
+	}
+
+	if err := recordAuditLog(ctx, tx, actor, "candidate.updated", "chapter_plan_candidate", cand.ID, map[string]any{"candidate_id": cand.ID, "version": updatedCand.Version}); err != nil {
+		return Candidate{}, err
+	}
+
+	if err := recordIdempotency(ctx, tx, scope, keyFp, reqHash, 200, updatedCand); err != nil {
 		return Candidate{}, err
 	}
 
@@ -150,11 +178,34 @@ func (r *Repository) CompareCandidate(ctx context.Context, candidateID uuid.UUID
 }
 
 func (r *Repository) RecompareCandidate(ctx context.Context, cmd RecompareCandidateCommand) (CandidateComparison, error) {
+	keyFp := deriveKeyFingerprint(cmd.IdempotencyKey)
+	scope := fmt.Sprintf("chapter-plan-candidate-recompare:%s", cmd.CandidateID)
+	reqHash := hashPayload(cmd)
+
 	tx, err := r.db.Begin(ctx)
 	if err != nil {
 		return CandidateComparison{}, err
 	}
 	defer tx.Rollback(ctx)
+
+	if err := acquireAdvisoryLock(ctx, tx, scope, keyFp); err != nil {
+		return CandidateComparison{}, err
+	}
+
+	storedBody, _, found, err := checkIdempotency(ctx, tx, scope, keyFp, reqHash)
+	if err != nil {
+		return CandidateComparison{}, err
+	}
+	if found {
+		var res CandidateComparison
+		if err := json.Unmarshal(storedBody, &res); err != nil {
+			return CandidateComparison{}, err
+		}
+		if err := tx.Commit(ctx); err != nil {
+			return CandidateComparison{}, err
+		}
+		return res, nil
+	}
 
 	query := fmt.Sprintf("SELECT %s FROM chapter_plan_candidates WHERE id = $1 FOR UPDATE", candidateCols)
 	cand, err := scanCandidate(tx.QueryRow(ctx, query, cmd.CandidateID))
@@ -219,21 +270,31 @@ func (r *Repository) RecompareCandidate(ctx context.Context, cmd RecompareCandid
 		return CandidateComparison{}, err
 	}
 
-	if err := tx.Commit(ctx); err != nil {
-		return CandidateComparison{}, err
-	}
-
 	diff := CalculateCandidateDiff(updatedCand, targetPlan)
 	var currentChapterPtr *Plan
 	if targetPlan != nil {
 		currentChapterPtr = targetPlan
 	}
 
-	return CandidateComparison{
+	res := CandidateComparison{
 		Candidate:      updatedCand,
 		CurrentChapter: currentChapterPtr,
 		Diff:           diff,
-	}, nil
+	}
+
+	if err := recordAuditLog(ctx, tx, actor, "candidate.recompared", "chapter_plan_candidate", cand.ID, map[string]any{"candidate_id": cand.ID, "version": updatedCand.Version}); err != nil {
+		return CandidateComparison{}, err
+	}
+
+	if err := recordIdempotency(ctx, tx, scope, keyFp, reqHash, 200, res); err != nil {
+		return CandidateComparison{}, err
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		return CandidateComparison{}, err
+	}
+
+	return res, nil
 }
 
 func (r *Repository) GetChapterPlanByProjectAndNumber(ctx context.Context, projectID uuid.UUID, chapterNo int) (Plan, error) {
@@ -274,7 +335,6 @@ func (r *Repository) getPlanSnapshotJSON(ctx context.Context, tx pgx.Tx, plan *P
 	if err == nil && len(revSnap) > 0 {
 		return revSnap
 	}
-	// Fallback to building snapshot object
 	snapMap := map[string]any{
 		"chapterNo":      plan.ChapterNo,
 		"title":          plan.Title,

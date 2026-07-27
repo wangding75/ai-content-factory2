@@ -474,6 +474,11 @@ func updateCandidateHandler(service chapterPlanApplication) http.HandlerFunc {
 			writeError(w, r, http.StatusBadRequest, "invalid_uuid", "candidateId must be a UUID", map[string]any{})
 			return
 		}
+		key := strings.TrimSpace(r.Header.Get("Idempotency-Key"))
+		if key == "" {
+			writeError(w, r, http.StatusBadRequest, "validation_error", "Idempotency-Key header is required", map[string]any{})
+			return
+		}
 		var req updateCandidateRequest
 		if err := decodeBody(r, &req); err != nil || req.ExpectedCandidateVersion <= 0 || len(req.CurrentSnapshot) == 0 {
 			writeError(w, r, http.StatusBadRequest, "validation_error", "expectedCandidateVersion and currentSnapshot are required", map[string]any{})
@@ -483,6 +488,7 @@ func updateCandidateHandler(service chapterPlanApplication) http.HandlerFunc {
 			CandidateID:              candidateID,
 			ExpectedCandidateVersion: req.ExpectedCandidateVersion,
 			CurrentSnapshot:          req.CurrentSnapshot,
+			IdempotencyKey:           key,
 			ActorID:                  "system",
 		})
 		if err != nil {
@@ -516,6 +522,11 @@ func recompareCandidateHandler(service chapterPlanApplication) http.HandlerFunc 
 			writeError(w, r, http.StatusBadRequest, "invalid_uuid", "candidateId must be a UUID", map[string]any{})
 			return
 		}
+		key := strings.TrimSpace(r.Header.Get("Idempotency-Key"))
+		if key == "" {
+			writeError(w, r, http.StatusBadRequest, "validation_error", "Idempotency-Key header is required", map[string]any{})
+			return
+		}
 		var req recompareCandidateRequest
 		if err := decodeBody(r, &req); err != nil || req.ExpectedCandidateVersion <= 0 {
 			writeError(w, r, http.StatusBadRequest, "validation_error", "expectedCandidateVersion is required", map[string]any{})
@@ -524,6 +535,7 @@ func recompareCandidateHandler(service chapterPlanApplication) http.HandlerFunc 
 		res, err := service.RecompareCandidate(r.Context(), chapterplan.RecompareCandidateCommand{
 			CandidateID:              candidateID,
 			ExpectedCandidateVersion: req.ExpectedCandidateVersion,
+			IdempotencyKey:           key,
 			ActorID:                  "system",
 		})
 		if err != nil {
@@ -568,14 +580,15 @@ func adoptCandidateHandler(service chapterPlanApplication) http.HandlerFunc {
 			writeError(w, r, http.StatusBadRequest, "invalid_uuid", "candidateId must be a UUID", map[string]any{})
 			return
 		}
+		key := strings.TrimSpace(r.Header.Get("Idempotency-Key"))
+		if key == "" {
+			writeError(w, r, http.StatusBadRequest, "validation_error", "Idempotency-Key header is required", map[string]any{})
+			return
+		}
 		var req adoptCandidateRequest
 		if err := decodeBody(r, &req); err != nil || req.ExpectedCandidateVersion <= 0 {
 			writeError(w, r, http.StatusBadRequest, "validation_error", "expectedCandidateVersion is required", map[string]any{})
 			return
-		}
-		key := r.Header.Get("Idempotency-Key")
-		if key == "" {
-			key = "default-key"
 		}
 		res, err := service.AdoptCandidate(r.Context(), chapterplan.AdoptCandidateCommand{
 			CandidateID:                candidateID,
@@ -599,14 +612,15 @@ func bulkAdoptCandidatesHandler(service chapterPlanApplication) http.HandlerFunc
 			writeError(w, r, http.StatusBadRequest, "invalid_uuid", "batchId must be a UUID", map[string]any{})
 			return
 		}
+		key := strings.TrimSpace(r.Header.Get("Idempotency-Key"))
+		if key == "" {
+			writeError(w, r, http.StatusBadRequest, "validation_error", "Idempotency-Key header is required", map[string]any{})
+			return
+		}
 		var req bulkAdoptRequest
 		if err := decodeBody(r, &req); err != nil || req.ExpectedBatchVersion <= 0 || len(req.Candidates) == 0 {
 			writeError(w, r, http.StatusBadRequest, "validation_error", "expectedBatchVersion and candidates are required", map[string]any{})
 			return
-		}
-		key := r.Header.Get("Idempotency-Key")
-		if key == "" {
-			key = "default-key"
 		}
 		items := make([]chapterplan.BulkAdoptCandidateItemCommand, len(req.Candidates))
 		for i, c := range req.Candidates {
@@ -638,14 +652,15 @@ func discardCandidateHandler(service chapterPlanApplication) http.HandlerFunc {
 			writeError(w, r, http.StatusBadRequest, "invalid_uuid", "candidateId must be a UUID", map[string]any{})
 			return
 		}
+		key := strings.TrimSpace(r.Header.Get("Idempotency-Key"))
+		if key == "" {
+			writeError(w, r, http.StatusBadRequest, "validation_error", "Idempotency-Key header is required", map[string]any{})
+			return
+		}
 		var req discardCandidateRequest
 		if err := decodeBody(r, &req); err != nil || req.ExpectedCandidateVersion <= 0 {
 			writeError(w, r, http.StatusBadRequest, "validation_error", "expectedCandidateVersion is required", map[string]any{})
 			return
-		}
-		key := r.Header.Get("Idempotency-Key")
-		if key == "" {
-			key = "default-key"
 		}
 		res, err := service.DiscardCandidate(r.Context(), chapterplan.DiscardCandidateCommand{
 			CandidateID:              candidateID,
@@ -669,14 +684,15 @@ func abandonBatchHandler(service chapterPlanApplication) http.HandlerFunc {
 			writeError(w, r, http.StatusBadRequest, "invalid_uuid", "batchId must be a UUID", map[string]any{})
 			return
 		}
+		key := strings.TrimSpace(r.Header.Get("Idempotency-Key"))
+		if key == "" {
+			writeError(w, r, http.StatusBadRequest, "validation_error", "Idempotency-Key header is required", map[string]any{})
+			return
+		}
 		var req abandonBatchRequest
 		if err := decodeBody(r, &req); err != nil || req.ExpectedBatchVersion <= 0 || !req.AcknowledgeAdoptedChaptersRemain {
 			writeError(w, r, http.StatusBadRequest, "validation_error", "expectedBatchVersion and acknowledgeAdoptedChaptersRemain=true are required", map[string]any{})
 			return
-		}
-		key := r.Header.Get("Idempotency-Key")
-		if key == "" {
-			key = "default-key"
 		}
 		res, err := service.AbandonBatch(r.Context(), chapterplan.AbandonBatchCommand{
 			BatchID:                          batchID,
