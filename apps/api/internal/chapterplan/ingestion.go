@@ -1,0 +1,333 @@
+package chapterplan
+
+import (
+	"bytes"
+	"context"
+	"encoding/json"
+	"errors"
+	"fmt"
+	"reflect"
+	"sort"
+
+	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
+)
+
+var (
+	ErrOutputValidationFailed = errors.New("normalized output validation failed")
+	ErrRunAlreadyConsumed     = errors.New("run already consumed")
+	ErrIngestionTransaction   = errors.New("result ingestion transaction failed")
+)
+
+type RunReference struct {
+	RunID     uuid.UUID `json:"runId"`
+	ProjectID uuid.UUID `json:"projectId"`
+}
+
+type BaseChapterPlanContext struct {
+	ID        uuid.UUID       `json:"id"`
+	ChapterNo int             `json:"chapterNo"`
+	Version   int             `json:"version"`
+	RevisionID *uuid.UUID     `json:"revisionId"`
+	Snapshot  json.RawMessage `json:"snapshot"`
+}
+
+type GenerationContextSnapshot struct {
+	InputDigest             string                   `json:"inputDigest"`
+	InputSnapshot           json.RawMessage          `json:"inputSnapshot"`
+	StorylineSnapshot       json.RawMessage          `json:"storylineSnapshot"`
+	ContextOptions          json.RawMessage          `json:"contextOptions"`
+	AdditionalInstructions  *string                  `json:"additionalInstructions"`
+	WorkflowBindingSnapshot json.RawMessage          `json:"workflowBindingSnapshot"`
+	BaseChapterPlans        []BaseChapterPlanContext `json:"baseChapterPlans"`
+}
+
+type NormalizedReference struct {
+	ID       uuid.UUID `json:"id"`
+	ProjectID uuid.UUID `json:"projectId"`
+	Label    string    `json:"label"`
+	Relation string    `json:"relation"`
+	Position int       `json:"position"`
+	Version  int       `json:"version"`
+}
+
+type GenerationBasis struct {
+	ContextSummary         string  `json:"contextSummary"`
+	AdditionalInstructions *string `json:"additionalInstructions"`
+}
+
+type NormalizedCandidate struct {
+	ChapterNo        int                   `json:"chapterNo"`
+	Title            string                `json:"title"`
+	Summary          string                `json:"summary"`
+	ChapterPurpose   string                `json:"chapterPurpose"`
+	StorylineRefs    []NormalizedReference `json:"storylineRefs"`
+	MaterialRefs     []NormalizedReference `json:"materialRefs"`
+	ForeshadowingRefs []NormalizedReference `json:"foreshadowingRefs"`
+	GenerationBasis  GenerationBasis       `json:"generationBasis"`
+}
+
+type OutputMetadata struct {
+	InputDigest         string `json:"inputDigest"`
+	GeneratedAt         string `json:"generatedAt"`
+	SafeProviderSummary string `json:"safeProviderSummary"`
+}
+
+type NormalizedChapterPlanOutput struct {
+	ProjectID           uuid.UUID             `json:"projectId"`
+	GenerationMode      string                `json:"generationMode"`
+	Target              BatchTarget           `json:"target"`
+	SourceWorkflowRunID uuid.UUID             `json:"sourceWorkflowRunId"`
+	Candidates          []NormalizedCandidate `json:"candidates"`
+	Metadata            OutputMetadata        `json:"metadata"`
+}
+
+type IngestInput struct {
+	Run              RunReference               `json:"run"`
+	Context          GenerationContextSnapshot  `json:"context"`
+	NormalizedOutput NormalizedChapterPlanOutput `json:"normalizedOutput"`
+}
+
+type Ingestor interface {
+	Ingest(ctx context.Context, input IngestInput) (CandidateBatch, error)
+}
+
+type ResultIngestor struct {
+	pool *pgxpool.Pool
+}
+
+func NewResultIngestor(pool *pgxpool.Pool) *ResultIngestor {
+	return &ResultIngestor{pool: pool}
+}
+
+func ValidateNormalizedOutput(input IngestInput) error {
+	out := input.NormalizedOutput
+	run := input.Run
+	ctx := input.Context
+
+	if out.ProjectID != run.ProjectID {
+		return fmt.Errorf("%w: output projectId %s does not match run projectId %s", ErrOutputValidationFailed, out.ProjectID, run.ProjectID)
+	}
+	if out.SourceWorkflowRunID != run.RunID {
+		return fmt.Errorf("%w: output sourceWorkflowRunId %s does not match runId %s", ErrOutputValidationFailed, out.SourceWorkflowRunID, run.RunID)
+	}
+	if out.Metadata.InputDigest != ctx.InputDigest {
+		return fmt.Errorf("%w: metadata inputDigest %s does not match context inputDigest %s", ErrOutputValidationFailed, out.Metadata.InputDigest, ctx.InputDigest)
+	}
+
+	mode := out.GenerationMode
+	if mode != "full" && mode != "append" && mode != "range" {
+		return fmt.Errorf("%w: invalid generationMode %s", ErrOutputValidationFailed, mode)
+	}
+
+	tgt := out.Target
+	if tgt.StartChapterNo < 1 || tgt.EndChapterNo < tgt.StartChapterNo || tgt.RequestedChapterCount < 1 {
+		return fmt.Errorf("%w: invalid target numbers start=%d end=%d count=%d", ErrOutputValidationFailed, tgt.StartChapterNo, tgt.EndChapterNo, tgt.RequestedChapterCount)
+	}
+
+	if len(out.Candidates) == 0 {
+		return fmt.Errorf("%w: candidates array is empty", ErrOutputValidationFailed)
+	}
+	if len(out.Candidates) != tgt.RequestedChapterCount {
+		return fmt.Errorf("%w: candidates count %d does not match requested count %d", ErrOutputValidationFailed, len(out.Candidates), tgt.RequestedChapterCount)
+	}
+	if (tgt.EndChapterNo - tgt.StartChapterNo + 1) != tgt.RequestedChapterCount {
+		return fmt.Errorf("%w: target range [%d, %d] size does not match requested count %d", ErrOutputValidationFailed, tgt.StartChapterNo, tgt.EndChapterNo, tgt.RequestedChapterCount)
+	}
+
+	seenChapters := make(map[int]bool)
+	for i, c := range out.Candidates {
+		if c.ChapterNo < tgt.StartChapterNo || c.ChapterNo > tgt.EndChapterNo {
+			return fmt.Errorf("%w: candidate %d chapterNo %d out of range [%d, %d]", ErrOutputValidationFailed, i, c.ChapterNo, tgt.StartChapterNo, tgt.EndChapterNo)
+		}
+		if seenChapters[c.ChapterNo] {
+			return fmt.Errorf("%w: duplicate chapterNo %d in candidates", ErrOutputValidationFailed, c.ChapterNo)
+		}
+		seenChapters[c.ChapterNo] = true
+
+		if stringsTrimEmpty(c.Title) || stringsTrimEmpty(c.Summary) {
+			return fmt.Errorf("%w: candidate %d has empty title or summary", ErrOutputValidationFailed, i)
+		}
+		if !validPurpose(c.ChapterPurpose) {
+			return fmt.Errorf("%w: candidate %d invalid chapterPurpose %s", ErrOutputValidationFailed, i, c.ChapterPurpose)
+		}
+
+		for _, ref := range c.StorylineRefs {
+			if ref.ProjectID != run.ProjectID {
+				return fmt.Errorf("%w: candidate %d storylineRef projectId mismatch", ErrOutputValidationFailed, i)
+			}
+		}
+		for _, ref := range c.MaterialRefs {
+			if ref.ProjectID != run.ProjectID {
+				return fmt.Errorf("%w: candidate %d materialRef projectId mismatch", ErrOutputValidationFailed, i)
+			}
+		}
+		for _, ref := range c.ForeshadowingRefs {
+			if ref.ProjectID != run.ProjectID {
+				return fmt.Errorf("%w: candidate %d foreshadowingRef projectId mismatch", ErrOutputValidationFailed, i)
+			}
+		}
+	}
+
+	return nil
+}
+
+func stringsTrimEmpty(s string) bool {
+	return len(bytes.TrimSpace([]byte(s))) == 0
+}
+
+func validPurpose(p string) bool {
+	switch p {
+	case "information_reveal", "plot_advance", "conflict_escalation", "transition", "atmosphere", "other":
+		return true
+	default:
+		return false
+	}
+}
+
+func (ing *ResultIngestor) Ingest(ctx context.Context, input IngestInput) (CandidateBatch, error) {
+	if err := ValidateNormalizedOutput(input); err != nil {
+		return CandidateBatch{}, err
+	}
+
+	tx, err := ing.pool.Begin(ctx)
+	if err != nil {
+		return CandidateBatch{}, fmt.Errorf("%w: begin tx failed: %v", ErrIngestionTransaction, err)
+	}
+	defer tx.Rollback(ctx)
+
+	// Idempotency check: if source_workflow_run_id already ingested, return existing batch
+	queryExisting := fmt.Sprintf("SELECT %s FROM chapter_plan_candidate_batches WHERE source_workflow_run_id = $1", candidateBatchCols)
+	existingBatch, err := scanBatch(tx.QueryRow(ctx, queryExisting, input.Run.RunID))
+	if err == nil {
+		_ = tx.Commit(ctx)
+		return existingBatch, nil
+	} else if !errors.Is(err, pgx.ErrNoRows) {
+		return CandidateBatch{}, fmt.Errorf("%w: query existing batch failed: %v", ErrIngestionTransaction, err)
+	}
+
+	batchID := uuid.New()
+	out := input.NormalizedOutput
+	cSnapshot := input.Context
+
+	inputSnapJSON := cSnapshot.InputSnapshot
+	if len(inputSnapJSON) == 0 {
+		inputSnapJSON = []byte("{}")
+	}
+	stSnapJSON := cSnapshot.StorylineSnapshot
+	if len(stSnapJSON) == 0 {
+		stSnapJSON = []byte("{}")
+	}
+	ctxOptsJSON := cSnapshot.ContextOptions
+	if len(ctxOptsJSON) == 0 {
+		ctxOptsJSON = []byte("{}")
+	}
+	bindSnapJSON := cSnapshot.WorkflowBindingSnapshot
+	if len(bindSnapJSON) == 0 {
+		bindSnapJSON = []byte("{}")
+	}
+
+	candCount := len(out.Candidates)
+
+	_, err = tx.Exec(ctx, `
+		INSERT INTO chapter_plan_candidate_batches (
+			id, project_id, source_workflow_run_id, generation_mode, range_start, range_end,
+			requested_chapter_count, input_digest, input_snapshot, storyline_selection_snapshot,
+			context_options, additional_instructions, workflow_binding_snapshot, status,
+			candidate_count, pending_count, stale_count, adopted_count, discarded_count,
+			created_by, updated_by, version
+		) VALUES (
+			$1, $2, $3, $4, $5, $6,
+			$7, $8, $9, $10,
+			$11, $12, $13, 'ready',
+			$14, $14, 0, 0, 0,
+			'system', 'system', 1
+		)
+	`,
+		batchID, input.Run.ProjectID, input.Run.RunID, out.GenerationMode, out.Target.StartChapterNo, out.Target.EndChapterNo,
+		out.Target.RequestedChapterCount, out.Metadata.InputDigest, inputSnapJSON, stSnapJSON,
+		ctxOptsJSON, cSnapshot.AdditionalInstructions, bindSnapJSON,
+		candCount,
+	)
+	if err != nil {
+		return CandidateBatch{}, fmt.Errorf("%w: insert batch failed: %v", ErrIngestionTransaction, err)
+	}
+
+	baseMap := make(map[int]BaseChapterPlanContext)
+	for _, bcp := range cSnapshot.BaseChapterPlans {
+		baseMap[bcp.ChapterNo] = bcp
+	}
+
+	candidatesSorted := make([]NormalizedCandidate, len(out.Candidates))
+	copy(candidatesSorted, out.Candidates)
+	sort.SliceStable(candidatesSorted, func(i, j int) bool {
+		return candidatesSorted[i].ChapterNo < candidatesSorted[j].ChapterNo
+	})
+
+	for i, c := range candidatesSorted {
+		candID := uuid.New()
+		candSnapJSON, err := json.Marshal(c)
+		if err != nil {
+			return CandidateBatch{}, fmt.Errorf("%w: marshal candidate snapshot failed: %v", ErrIngestionTransaction, err)
+		}
+
+		diffType := "new"
+		var basePlanID *uuid.UUID
+		var baseRevID *uuid.UUID
+		var baseVer *int
+		var baseSnap []byte
+
+		if bcp, ok := baseMap[c.ChapterNo]; ok {
+			basePlanID = &bcp.ID
+			baseRevID = bcp.RevisionID
+			baseVer = &bcp.Version
+			baseSnap = bcp.Snapshot
+
+			if isSameSnapshot(candSnapJSON, bcp.Snapshot) {
+				diffType = "no_change"
+			} else {
+				diffType = "replace"
+			}
+		}
+
+		_, err = tx.Exec(ctx, `
+			INSERT INTO chapter_plan_candidates (
+				id, batch_id, project_id, chapter_no, sort_order,
+				base_chapter_plan_id, base_revision_id, base_chapter_version, base_snapshot,
+				generated_snapshot, current_snapshot, diff_type, status,
+				created_by, updated_by, version
+			) VALUES (
+				$1, $2, $3, $4, $5,
+				$6, $7, $8, $9,
+				$10, $10, $11, 'pending',
+				'system', 'system', 1
+			)
+		`,
+			candID, batchID, input.Run.ProjectID, c.ChapterNo, i,
+			basePlanID, baseRevID, baseVer, baseSnap,
+			candSnapJSON, diffType,
+		)
+		if err != nil {
+			return CandidateBatch{}, fmt.Errorf("%w: insert candidate failed: %v", ErrIngestionTransaction, err)
+		}
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		return CandidateBatch{}, fmt.Errorf("%w: commit tx failed: %v", ErrIngestionTransaction, err)
+	}
+
+	// Read and return newly created batch
+	return scanBatch(ing.pool.QueryRow(ctx, fmt.Sprintf("SELECT %s FROM chapter_plan_candidate_batches WHERE id = $1", candidateBatchCols), batchID))
+}
+
+func isSameSnapshot(candJSON, baseJSON []byte) bool {
+	if len(candJSON) == 0 || len(baseJSON) == 0 {
+		return false
+	}
+	var o1, o2 map[string]any
+	if json.Unmarshal(candJSON, &o1) != nil || json.Unmarshal(baseJSON, &o2) != nil {
+		return false
+	}
+	return reflect.DeepEqual(o1, o2)
+}
