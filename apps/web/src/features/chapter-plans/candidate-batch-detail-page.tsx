@@ -180,7 +180,7 @@ export function CandidateBatchDetailPage({ batchId }: { batchId: string }) {
       expectedChapterPlanVersion: cand.baseChapterPlanVersion ?? null,
     };
     try {
-      const idempotencyKey = getOrCreateKey(scope, payload);
+      const idempotencyKey = await getOrCreateKey(scope, payload);
       const envelope = await adoptChapterPlanCandidate(cand.id, payload, idempotencyKey);
 
       clearKey(scope);
@@ -198,7 +198,7 @@ export function CandidateBatchDetailPage({ batchId }: { batchId: string }) {
         cause instanceof ApiError &&
         (cause.status === 0 || cause.status >= 500 || cause.code === "timeout")
       ) {
-        markUnknown(scope, payload);
+        await markUnknown(scope, payload);
       }
       if (cause instanceof ApiError) {
         if (
@@ -223,7 +223,7 @@ export function CandidateBatchDetailPage({ batchId }: { batchId: string }) {
     const scope = `candidate:discard:${cand.id}`;
     const payload = { expectedCandidateVersion: cand.version };
     try {
-      const idempotencyKey = getOrCreateKey(scope, payload);
+      const idempotencyKey = await getOrCreateKey(scope, payload);
       await discardChapterPlanCandidate(cand.id, payload, idempotencyKey);
 
       clearKey(scope);
@@ -236,7 +236,7 @@ export function CandidateBatchDetailPage({ batchId }: { batchId: string }) {
         cause instanceof ApiError &&
         (cause.status === 0 || cause.status >= 500 || cause.code === "timeout")
       ) {
-        markUnknown(scope, payload);
+        await markUnknown(scope, payload);
       }
       if (cause instanceof ApiError) {
         setError(cause);

@@ -62,7 +62,8 @@ export function GenerationSettingsDrawer({
     setValidationError(null);
 
     let targetPayload:
-      | { requestedChapterCount: number }
+      | { targetTotalChapters: number }
+      | { chapterCount: number }
       | { startChapterNo: number; endChapterNo: number };
 
     if (generationMode === "full" || generationMode === "append") {
@@ -70,7 +71,9 @@ export function GenerationSettingsDrawer({
         setValidationError("生成章节数量必须在 1 至 100 之间");
         return;
       }
-      targetPayload = { requestedChapterCount: Math.round(chapterCount) };
+      targetPayload = generationMode === "full"
+        ? { targetTotalChapters: Math.round(chapterCount) }
+        : { chapterCount: Math.round(chapterCount) };
     } else {
       if (!startChapterNo || startChapterNo < 1) {
         setValidationError("起始章节必须大于等于 1");

@@ -7,12 +7,33 @@ import {
   adoptChapterPlanCandidate,
   adoptChapterPlanCandidates,
   createChapterPlanRun,
+  preflightChapterPlanRun,
   recompareChapterPlanCandidate,
   updateChapterPlanCandidate,
   type ChapterPlan,
   type ChapterPlanCandidateBatch,
   type ChapterPlanCandidateSnapshot,
 } from "./chapter-plan-http-api.ts";
+
+test("preflight sends frozen full, append, and range targets without legacy fields", async () => {
+  const originalFetch = globalThis.fetch;
+  const bodies: Record<string, unknown>[] = [];
+  globalThis.fetch = (async (_input: RequestInfo | URL, init?: RequestInit) => {
+    const body = JSON.parse(String(init?.body ?? "{}")) as Record<string, unknown>;
+    bodies.push(body);
+    return new Response(JSON.stringify({ data: { result: "blocked", status: "blocked", inputDigest: "digest", inputSummary: { generationMode: body.generationMode, target: { startChapterNo: 1, endChapterNo: 1, requestedChapterCount: 1 }, storylineSelection: { mode: "auto_balanced" }, contextOptions: {} }, executionConfigurationSummary: { stage: "chapter_planning", workflowBindingId: "binding", workflowBindingVersion: 1 }, checks: [], warnings: [], blockers: [{ code: "workflow_not_configured", message: "blocked", severity: "blocker", details: { safeSummary: "safe", action: "configure" } }] }, request_id: "req" }), { status: 200, headers: { "Content-Type": "application/json" } });
+  }) as typeof fetch;
+  const base = { storylineSelection: { mode: "auto_balanced" as const }, contextOptions: { includeProjectMaterials: true, includeUnpaidForeshadowings: true, includePriorChapterSummaries: true, coreSettingsOnly: false }, additionalInstructions: null };
+  try {
+    await preflightChapterPlanRun("project", { ...base, generationMode: "full", target: { targetTotalChapters: 12 } });
+    await preflightChapterPlanRun("project", { ...base, generationMode: "append", target: { chapterCount: 3 } });
+    await preflightChapterPlanRun("project", { ...base, generationMode: "range", target: { startChapterNo: 2, endChapterNo: 4 } });
+    assert.deepEqual(bodies.map((body) => body.target), [{ targetTotalChapters: 12 }, { chapterCount: 3 }, { startChapterNo: 2, endChapterNo: 4 }]);
+    for (const body of bodies) assert.equal("requestedChapterCount" in (body.target as object), false);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
 
 test("candidate edit sends expectedCandidateVersion, currentSnapshot, and Idempotency-Key", async () => {
   const originalFetch = globalThis.fetch;

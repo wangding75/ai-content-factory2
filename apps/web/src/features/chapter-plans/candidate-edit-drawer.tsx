@@ -51,7 +51,7 @@ export function CandidateEditDrawer({
     };
 
     try {
-      const idempotencyKey = getOrCreateKey(scope, payload);
+      const idempotencyKey = await getOrCreateKey(scope, payload);
       const envelope = await updateChapterPlanCandidate(
         candidate.id,
         payload,
@@ -64,7 +64,7 @@ export function CandidateEditDrawer({
         cause instanceof ApiError &&
         (cause.status === 0 || cause.status >= 500 || cause.code === "timeout")
       ) {
-        markUnknown(scope, payload);
+        await markUnknown(scope, payload);
       }
       if (cause instanceof ApiError) {
         setError(cause);

@@ -56,11 +56,11 @@ export interface ChapterPlanningContextOptions {
 }
 
 export interface ChapterPlanningFullTarget {
-  requestedChapterCount: number;
+  targetTotalChapters: number;
 }
 
 export interface ChapterPlanningAppendTarget {
-  requestedChapterCount: number;
+  chapterCount: number;
 }
 
 export interface ChapterPlanningRangeTarget {

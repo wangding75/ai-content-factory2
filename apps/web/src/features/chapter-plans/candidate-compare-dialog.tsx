@@ -64,7 +64,7 @@ export function CandidateCompareDialog({
     const scope = `candidate:recompare:${candidateId}`;
     const payload = { expectedCandidateVersion: comparison.candidate.version };
     try {
-      const idempotencyKey = getOrCreateKey(scope, payload);
+      const idempotencyKey = await getOrCreateKey(scope, payload);
       const envelope = await recompareChapterPlanCandidate(
         candidateId,
         payload,
@@ -78,7 +78,7 @@ export function CandidateCompareDialog({
         cause instanceof ApiError &&
         (cause.status === 0 || cause.status >= 500 || cause.code === "timeout")
       ) {
-        markUnknown(scope, payload);
+        await markUnknown(scope, payload);
       }
       if (cause instanceof ApiError) {
         setError(cause);

@@ -269,7 +269,7 @@ export function ChapterPlansWorkspace({
     const scope = `chapter-plan-run:create:${projectId}`;
     const payload = { preflightToken };
     try {
-      const idempotencyKey = getOrCreateKey(scope, payload);
+      const idempotencyKey = await getOrCreateKey(scope, payload);
       const result = (await createChapterPlanRun(
         projectId,
         payload,
@@ -287,7 +287,7 @@ export function ChapterPlansWorkspace({
         cause instanceof ApiError &&
         (cause.status === 0 || cause.status >= 500 || cause.code === "timeout")
       ) {
-        markUnknown(scope, payload);
+        await markUnknown(scope, payload);
       }
       if (cause instanceof ApiError) {
         setError(cause);

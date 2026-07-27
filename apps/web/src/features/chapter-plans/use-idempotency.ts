@@ -1,248 +1,165 @@
 import { useCallback } from "react";
 
 export interface PersistedOperation {
-  version: 1;
+  version: 2;
   scope: string;
-  payloadHash: string;
+  payloadDigest: string;
   idempotencyKey: string;
   status: "pending" | "unknown";
   createdAt: string;
   updatedAt: string;
 }
 
-const STORAGE_KEY = "acf:chapter-planning:idempotency:v1";
+export class IdempotencyStorageError extends Error {
+  constructor() {
+    super("无法安全保存请求重试标识，请恢复浏览器会话存储后重试。");
+    this.name = "IdempotencyStorageError";
+  }
+}
 
-// In-memory fallback if sessionStorage is disabled, quota exceeded, or SSR
+const STORAGE_KEY = "acf:chapter-planning:idempotency:v2";
 const memoryStore: Record<string, PersistedOperation> = {};
 
-function safeGetStorage(): Storage | null {
-  if (typeof window !== "undefined" && window.sessionStorage) {
-    try {
-      return window.sessionStorage;
-    } catch {
-      return null;
-    }
+function storageOrThrow(): Storage | null {
+  if (typeof window === "undefined") return null;
+  try {
+    return window.sessionStorage;
+  } catch {
+    throw new IdempotencyStorageError();
   }
-  return null;
 }
 
-export function canonicalizePayload(val: unknown): unknown {
-  if (val === null || val === undefined) {
-    return null;
+export function canonicalizePayload(value: unknown): unknown {
+  if (value === null || value === undefined) return null;
+  if (typeof value === "boolean" || typeof value === "number" || typeof value === "string") return value;
+  if (value instanceof Date) return value.toISOString();
+  if (typeof value === "function" || typeof value === "symbol") return undefined;
+  if (Array.isArray(value)) return value.map(canonicalizePayload);
+  if (typeof value === "object") {
+    if ("$$typeof" in value || ("nodeType" in value && typeof (value as Record<string, unknown>).nodeType === "number")) return undefined;
+    return Object.keys(value as Record<string, unknown>).sort().reduce<Record<string, unknown>>((result, key) => {
+      const input = (value as Record<string, unknown>)[key];
+      if (input === undefined || typeof input === "function" || typeof input === "symbol") return result;
+      const canonical = canonicalizePayload(input);
+      if (canonical !== undefined) result[key] = canonical;
+      return result;
+    }, {});
   }
-  if (typeof val === "boolean" || typeof val === "number" || typeof val === "string") {
-    return val;
-  }
-  if (val instanceof Date) {
-    return val.toISOString();
-  }
-  if (typeof val === "function" || typeof val === "symbol") {
-    return undefined;
-  }
-  if (Array.isArray(val)) {
-    return val.map((item) => canonicalizePayload(item));
-  }
-  if (typeof val === "object") {
-    // Exclude React elements or DOM nodes
-    if (
-      "$$typeof" in val ||
-      ("nodeType" in val && typeof (val as Record<string, unknown>).nodeType === "number")
-    ) {
-      return undefined;
-    }
-    const result: Record<string, unknown> = {};
-    const keys = Object.keys(val as Record<string, unknown>).sort();
-    for (const key of keys) {
-      const v = (val as Record<string, unknown>)[key];
-      if (v !== undefined && typeof v !== "function" && typeof v !== "symbol") {
-        const canonicalV = canonicalizePayload(v);
-        if (canonicalV !== undefined) {
-          result[key] = canonicalV;
-        }
-      }
-    }
-    return result;
-  }
-  return String(val);
+  return String(value);
 }
 
-export function hashCanonicalPayload(payload: unknown): string {
-  const canonical = canonicalizePayload(payload);
-  return JSON.stringify(canonical);
+function fallbackDigest(input: string): string {
+  let hash = 2166136261;
+  for (let index = 0; index < input.length; index += 1) {
+    hash ^= input.charCodeAt(index);
+    hash = Math.imul(hash, 16777619);
+  }
+  return `fnv1a:${(hash >>> 0).toString(16).padStart(8, "0")}`;
+}
+
+export async function hashCanonicalPayload(payload: unknown): Promise<string> {
+  const canonicalJson = JSON.stringify(canonicalizePayload(payload));
+  const subtle = globalThis.crypto?.subtle;
+  if (!subtle) return fallbackDigest(canonicalJson);
+  const bytes = await subtle.digest("SHA-256", new TextEncoder().encode(canonicalJson));
+  return `sha256:${Array.from(new Uint8Array(bytes), (byte) => byte.toString(16).padStart(2, "0")).join("")}`;
+}
+
+function isPersistedOperation(value: unknown): value is PersistedOperation {
+  if (!value || typeof value !== "object") return false;
+  const item = value as Partial<PersistedOperation>;
+  return item.version === 2 && typeof item.scope === "string" && typeof item.payloadDigest === "string" && typeof item.idempotencyKey === "string" && (item.status === "pending" || item.status === "unknown") && typeof item.createdAt === "string" && typeof item.updatedAt === "string";
 }
 
 export function loadPersistedOperations(): Record<string, PersistedOperation> {
-  const storage = safeGetStorage();
-  if (!storage) {
-    return { ...memoryStore };
-  }
+  const storage = storageOrThrow();
+  if (!storage) return { ...memoryStore };
   try {
     const raw = storage.getItem(STORAGE_KEY);
     if (!raw) return {};
-    const parsed = JSON.parse(raw) as Record<string, PersistedOperation>;
-    if (typeof parsed !== "object" || parsed === null) return {};
-    return parsed;
+    const parsed: unknown = JSON.parse(raw);
+    if (!parsed || typeof parsed !== "object") return {};
+    return Object.fromEntries(Object.entries(parsed).filter(([, value]) => isPersistedOperation(value))) as Record<string, PersistedOperation>;
   } catch {
-    return {};
+    throw new IdempotencyStorageError();
   }
 }
 
-function savePersistedOperations(ops: Record<string, PersistedOperation>): void {
-  const storage = safeGetStorage();
+function savePersistedOperations(operations: Record<string, PersistedOperation>): void {
+  const storage = storageOrThrow();
   if (!storage) {
     Object.keys(memoryStore).forEach((key) => delete memoryStore[key]);
-    Object.assign(memoryStore, ops);
+    Object.assign(memoryStore, operations);
     return;
   }
   try {
-    storage.setItem(STORAGE_KEY, JSON.stringify(ops));
+    storage.setItem(STORAGE_KEY, JSON.stringify(operations));
   } catch {
-    Object.keys(memoryStore).forEach((key) => delete memoryStore[key]);
-    Object.assign(memoryStore, ops);
+    throw new IdempotencyStorageError();
   }
 }
 
 function generateUUID(): string {
-  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
-    return crypto.randomUUID();
-  }
-  // Fallback UUID v4 generator
-  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
-    const r = (Math.random() * 16) | 0;
-    const v = c === "x" ? r : (r & 0x3) | 0x8;
-    return v.toString(16);
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") return crypto.randomUUID();
+  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (character) => {
+    const random = (Math.random() * 16) | 0;
+    return (character === "x" ? random : (random & 0x3) | 0x8).toString(16);
   });
 }
 
-export function getOrCreateOperation(scope: string, payload: unknown): string {
-  const ops = loadPersistedOperations();
-  const payloadHash = hashCanonicalPayload(payload);
-  const existing = ops[scope];
-
-  if (existing && existing.payloadHash === payloadHash) {
-    return existing.idempotencyKey;
-  }
-
+export async function getOrCreateOperation(scope: string, payload: unknown): Promise<string> {
+  const operations = loadPersistedOperations();
+  const payloadDigest = await hashCanonicalPayload(payload);
+  const existing = operations[scope];
+  if (existing?.payloadDigest === payloadDigest) return existing.idempotencyKey;
   const now = new Date().toISOString();
   const idempotencyKey = generateUUID();
-
-  ops[scope] = {
-    version: 1,
-    scope,
-    payloadHash,
-    idempotencyKey,
-    status: "pending",
-    createdAt: now,
-    updatedAt: now,
-  };
-
-  savePersistedOperations(ops);
+  operations[scope] = { version: 2, scope, payloadDigest, idempotencyKey, status: "pending", createdAt: now, updatedAt: now };
+  savePersistedOperations(operations);
   return idempotencyKey;
 }
 
-export function markUnknown(scope: string, payload: unknown): void {
-  const ops = loadPersistedOperations();
-  const payloadHash = hashCanonicalPayload(payload);
-  const existing = ops[scope];
-
+export async function markUnknown(scope: string, payload: unknown): Promise<void> {
+  const operations = loadPersistedOperations();
+  const payloadDigest = await hashCanonicalPayload(payload);
   const now = new Date().toISOString();
-  if (existing && existing.payloadHash === payloadHash) {
-    ops[scope] = {
-      ...existing,
-      status: "unknown",
-      updatedAt: now,
-    };
-  } else {
-    ops[scope] = {
-      version: 1,
-      scope,
-      payloadHash,
-      idempotencyKey: generateUUID(),
-      status: "unknown",
-      createdAt: now,
-      updatedAt: now,
-    };
-  }
-  savePersistedOperations(ops);
-}
-
-export function markSucceeded(scope: string, payload?: unknown): void {
-  void payload;
-  clearOperation(scope);
-}
-
-export function markDefinitelyNotExecuted(scope: string, payload?: unknown): void {
-  void payload;
-  clearOperation(scope);
+  const existing = operations[scope];
+  operations[scope] = existing?.payloadDigest === payloadDigest
+    ? { ...existing, status: "unknown", updatedAt: now }
+    : { version: 2, scope, payloadDigest, idempotencyKey: generateUUID(), status: "unknown", createdAt: now, updatedAt: now };
+  savePersistedOperations(operations);
 }
 
 export function clearOperation(scope: string): void {
-  const ops = loadPersistedOperations();
-  if (ops[scope]) {
-    delete ops[scope];
-    savePersistedOperations(ops);
+  const operations = loadPersistedOperations();
+  if (operations[scope]) {
+    delete operations[scope];
+    savePersistedOperations(operations);
   }
+}
+
+export function markSucceeded(scope: string, _payload?: unknown): void {
+  void _payload;
+  clearOperation(scope);
+}
+
+export function markDefinitelyNotExecuted(scope: string, _payload?: unknown): void {
+  void _payload;
+  clearOperation(scope);
 }
 
 export class IdempotencyManager {
-  getOrCreateKey(scope: string, payload: unknown): string {
-    return getOrCreateOperation(scope, payload);
-  }
-
-  markUnknown(scope: string, payload: unknown): void {
-    markUnknown(scope, payload);
-  }
-
-  markSucceeded(scope: string, ...args: unknown[]): void {
-    markSucceeded(scope, ...args);
-  }
-
-  markDefinitelyNotExecuted(scope: string, ...args: unknown[]): void {
-    markDefinitelyNotExecuted(scope, ...args);
-  }
-
-  clearKey(scope: string): void {
-    clearOperation(scope);
-  }
-
-  getKey(scope: string): string | undefined {
-    const ops = loadPersistedOperations();
-    return ops[scope]?.idempotencyKey;
-  }
+  getOrCreateKey(scope: string, payload: unknown): Promise<string> { return getOrCreateOperation(scope, payload); }
+  markUnknown(scope: string, payload: unknown): Promise<void> { return markUnknown(scope, payload); }
+  markSucceeded(scope: string): void { markSucceeded(scope); }
+  markDefinitelyNotExecuted(scope: string): void { markDefinitelyNotExecuted(scope); }
+  clearKey(scope: string): void { clearOperation(scope); }
+  getKey(scope: string): string | undefined { return loadPersistedOperations()[scope]?.idempotencyKey; }
 }
 
 export function useIdempotency() {
-  const getOrCreateKey = useCallback((scope: string, payload: unknown): string => {
-    return getOrCreateOperation(scope, payload);
-  }, []);
-
-  const clearKey = useCallback((scope: string) => {
-    clearOperation(scope);
-  }, []);
-
-  const handleMarkUnknown = useCallback((scope: string, payload: unknown) => {
-    markUnknown(scope, payload);
-  }, []);
-
-  const handleMarkSucceeded = useCallback((scope: string, ...args: unknown[]) => {
-    markSucceeded(scope, ...args);
-  }, []);
-
-  const handleMarkDefinitelyNotExecuted = useCallback((scope: string, ...args: unknown[]) => {
-    markDefinitelyNotExecuted(scope, ...args);
-  }, []);
-
-  const getKeyForScope = useCallback((scope: string): string | undefined => {
-    const ops = loadPersistedOperations();
-    return ops[scope]?.idempotencyKey;
-  }, []);
-
-  return {
-    getOrCreateKey,
-    clearKey,
-    markUnknown: handleMarkUnknown,
-    markSucceeded: handleMarkSucceeded,
-    markDefinitelyNotExecuted: handleMarkDefinitelyNotExecuted,
-    getKeyForScope,
-  };
+  const getOrCreateKey = useCallback((scope: string, payload: unknown) => getOrCreateOperation(scope, payload), []);
+  const clearKey = useCallback((scope: string) => clearOperation(scope), []);
+  const handleMarkUnknown = useCallback((scope: string, payload: unknown) => markUnknown(scope, payload), []);
+  return { getOrCreateKey, clearKey, markUnknown: handleMarkUnknown, markSucceeded: clearKey, markDefinitelyNotExecuted: clearKey, getKeyForScope: (scope: string) => loadPersistedOperations()[scope]?.idempotencyKey };
 }

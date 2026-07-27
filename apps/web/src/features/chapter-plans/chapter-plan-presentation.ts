@@ -19,7 +19,14 @@ export function chapterPlanStatusLabel(status: string): string {
   );
 }
 export function chapterPlanSourceLabel(source: string): string {
-  return source === "mock_generated" ? "模拟生成" : "手动创建";
+  switch (source) {
+    case "mock_generated":
+      return "模拟生成";
+    case "candidate_adopted":
+      return "候选采纳";
+    default:
+      return "来源未知";
+  }
 }
 export function chapterPlanSummary(value: string | null | undefined): string {
   const summary = value?.trim();
