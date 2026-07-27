@@ -25,6 +25,11 @@ func actorIDFromRequest(r *http.Request) (string, bool) {
 	return currentPrincipal.ActorID(r.Context())
 }
 
+func requestActorID(r *http.Request) string {
+	actorID, _ := actorIDFromRequest(r)
+	return actorID
+}
+
 type contextKey string
 
 const requestIDKey contextKey = "request_id"

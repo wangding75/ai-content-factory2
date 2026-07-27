@@ -231,7 +231,7 @@ func decodeMockGenerateChapterPlans(r *http.Request) (chapterplan.MockGenerateCo
 		}
 		notes = &note
 	}
-	return chapterplan.MockGenerateCommand{TargetStorylineID: target, StartChapterNo: *body.StartChapterNo, EndChapterNo: *body.EndChapterNo, ChapterCount: *body.ChapterCount, IncludeMainStoryline: *body.IncludeMainStoryline, IncludeChildStorylines: *body.IncludeChildStorylines, IncludeProjectMaterials: *body.IncludeProjectMaterials, IncludeUnpaidForeshadowings: *body.IncludeUnpaidForeshadowings, IncludePriorChapterSummaries: *body.IncludePriorChapterSummaries, SummaryLength: *body.SummaryLength, ChapterPace: *body.ChapterPace, GenerationNotes: notes, ActorID: "system"}, nil
+	return chapterplan.MockGenerateCommand{TargetStorylineID: target, StartChapterNo: *body.StartChapterNo, EndChapterNo: *body.EndChapterNo, ChapterCount: *body.ChapterCount, IncludeMainStoryline: *body.IncludeMainStoryline, IncludeChildStorylines: *body.IncludeChildStorylines, IncludeProjectMaterials: *body.IncludeProjectMaterials, IncludeUnpaidForeshadowings: *body.IncludeUnpaidForeshadowings, IncludePriorChapterSummaries: *body.IncludePriorChapterSummaries, SummaryLength: *body.SummaryLength, ChapterPace: *body.ChapterPace, GenerationNotes: notes, ActorID: requestActorID(r)}, nil
 }
 
 func chapterPlanResponseFrom(value chapterplan.Plan) chapterPlanResponse {
@@ -534,7 +534,7 @@ func updateCandidateHandler(service chapterPlanApplication) http.HandlerFunc {
 			ExpectedCandidateVersion: req.ExpectedCandidateVersion,
 			CurrentSnapshot:          req.CurrentSnapshot,
 			IdempotencyKey:           key,
-			ActorID:                  "system",
+			ActorID:                  requestActorID(r),
 		})
 		if err != nil {
 			chapterPlanServiceError(w, r, err)
@@ -581,7 +581,7 @@ func recompareCandidateHandler(service chapterPlanApplication) http.HandlerFunc 
 			CandidateID:              candidateID,
 			ExpectedCandidateVersion: req.ExpectedCandidateVersion,
 			IdempotencyKey:           key,
-			ActorID:                  "system",
+			ActorID:                  requestActorID(r),
 		})
 		if err != nil {
 			chapterPlanServiceError(w, r, err)
@@ -640,7 +640,7 @@ func adoptCandidateHandler(service chapterPlanApplication) http.HandlerFunc {
 			ExpectedCandidateVersion:   req.ExpectedCandidateVersion,
 			ExpectedChapterPlanVersion: req.ExpectedChapterPlanVersion,
 			IdempotencyKey:             key,
-			ActorID:                    "system",
+			ActorID:                    requestActorID(r),
 		})
 		if err != nil {
 			chapterPlanServiceError(w, r, err)
@@ -680,7 +680,7 @@ func bulkAdoptCandidatesHandler(service chapterPlanApplication) http.HandlerFunc
 			ExpectedBatchVersion: req.ExpectedBatchVersion,
 			Candidates:           items,
 			IdempotencyKey:       key,
-			ActorID:              "system",
+			ActorID:              requestActorID(r),
 		})
 		if err != nil {
 			chapterPlanServiceError(w, r, err)
@@ -712,7 +712,7 @@ func discardCandidateHandler(service chapterPlanApplication) http.HandlerFunc {
 			ExpectedCandidateVersion: req.ExpectedCandidateVersion,
 			Reason:                   req.Reason,
 			IdempotencyKey:           key,
-			ActorID:                  "system",
+			ActorID:                  requestActorID(r),
 		})
 		if err != nil {
 			chapterPlanServiceError(w, r, err)
@@ -745,7 +745,7 @@ func abandonBatchHandler(service chapterPlanApplication) http.HandlerFunc {
 			Reason:                           req.Reason,
 			AcknowledgeAdoptedChaptersRemain: req.AcknowledgeAdoptedChaptersRemain,
 			IdempotencyKey:                   key,
-			ActorID:                          "system",
+			ActorID:                          requestActorID(r),
 		})
 		if err != nil {
 			chapterPlanServiceError(w, r, err)
