@@ -45,3 +45,19 @@ func TestPreflightTokenRejectsTamperAndExpiry(t *testing.T) {
 		t.Fatalf("expiry err=%v", err)
 	}
 }
+
+func TestPreflightTokenUsesVerificationClockForExactTenMinuteBoundary(t *testing.T) {
+	issuedAt := time.Date(2026, 7, 27, 10, 0, 0, 0, time.UTC)
+	secret := []byte("injected-test-secret")
+	claims := PreflightTokenClaims{ProjectID: uuid.New(), ActorID: "actor", Stage: "chapter_planning", Target: BatchTarget{StartChapterNo: 1, EndChapterNo: 1, RequestedChapterCount: 1}, InputDigest: "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef", BindingID: uuid.New(), BindingVersion: 1, IssuedAt: issuedAt.Unix(), ExpiresAt: issuedAt.Add(10 * time.Minute).Unix(), Nonce: "nonce"}
+	token, err := SignPreflightToken(secret, claims)
+	if err != nil {
+		t.Fatalf("sign fixed-clock token: %v", err)
+	}
+	if _, err = VerifyPreflightToken(secret, token, issuedAt.Add(10*time.Minute-time.Second)); err != nil {
+		t.Fatalf("token must be valid immediately before expiry: %v", err)
+	}
+	if _, err = VerifyPreflightToken(secret, token, issuedAt.Add(10*time.Minute)); !errors.Is(err, ErrPreflightTokenExpired) {
+		t.Fatalf("token must expire exactly at the ten-minute boundary: %v", err)
+	}
+}

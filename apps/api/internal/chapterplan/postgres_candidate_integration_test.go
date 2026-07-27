@@ -1,6 +1,7 @@
 package chapterplan
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -225,5 +226,44 @@ func TestPostgresCandidateIntegration(t *testing.T) {
 	planCheck, err := repo.GetByID(ctx, adoptRes.ChapterPlan.ID)
 	if err != nil || planCheck.Status != "pending_confirmation" {
 		t.Errorf("adopted chapter plan deleted or rolled back improperly: %v", err)
+	}
+}
+
+func TestPostgresChapterPlanningConsumptionSummaryErrorsAreSafe(t *testing.T) {
+	db, ctx := openIntegrationDB(t)
+	repo, err := NewPostgresRepository(db, "test-hmac-secret-1234567890")
+	if err != nil {
+		t.Fatal(err)
+	}
+	projectID, connectionID, configurationID, runID := uuid.New(), uuid.New(), uuid.New(), uuid.New()
+	if _, err = db.Exec(ctx, "INSERT INTO projects(id,name,type,created_by) VALUES($1,$2,'novel','test')", projectID, "consumption summary"); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _, _ = db.Exec(context.Background(), "DELETE FROM projects WHERE id=$1", projectID) })
+	if _, err = db.Exec(ctx, "INSERT INTO workflow_connections(id,name,connection_type,base_url,auth_type,timeout_seconds,type_config) VALUES($1,$2,'n8n','http://localhost:5678','api_key',30,'{}')", connectionID, "summary connection "+connectionID.String()); err != nil {
+		t.Fatal(err)
+	}
+	if _, err = db.Exec(ctx, "INSERT INTO workflow_configurations(id,name,connection_id,applicable_stages,type_config,input_contract_version,output_contract_version) VALUES($1,$2,$3,'[\"chapter_planning\"]','{}','v1','v1')", configurationID, "summary config "+configurationID.String(), connectionID); err != nil {
+		t.Fatal(err)
+	}
+	if _, err = db.Exec(ctx, "INSERT INTO workflow_run_records(id,run_number,project_id,stage,workflow_configuration_id,trigger_source,status,configuration_snapshot,input_payload,started_at,finished_at,created_at,updated_at) VALUES($1,$2,$3,'chapter_planning',$4,'manual','succeeded','{}','{}',NOW(),NOW(),NOW(),NOW())", runID, "summary-"+runID.String(), projectID, configurationID); err != nil {
+		t.Fatal(err)
+	}
+	for _, tc := range []struct {
+		status ConsumptionStatus
+		want   error
+	}{
+		{ConsumptionOutputValidationFailed, ErrOutputValidationFailed},
+		{ConsumptionResultConsumptionFailed, ErrIngestionTransaction},
+	} {
+		t.Run(string(tc.status), func(t *testing.T) {
+			code, reason, action := string(tc.status), "safe reason", "retry_run"
+			if _, err := db.Exec(ctx, `INSERT INTO chapter_plan_result_consumptions(workflow_run_id,project_id,status,failure_code,safe_reason,retry_action) VALUES($1,$2,$3,$4,$5,$6) ON CONFLICT(workflow_run_id) DO UPDATE SET status=EXCLUDED.status,failure_code=EXCLUDED.failure_code,safe_reason=EXCLUDED.safe_reason,retry_action=EXCLUDED.retry_action,updated_at=NOW()`, runID, projectID, tc.status, code, reason, action); err != nil {
+				t.Fatal(err)
+			}
+			if _, err := repo.GetChapterPlanningSummary(ctx, projectID); !errors.Is(err, tc.want) {
+				t.Fatalf("summary error=%v, want %v", err, tc.want)
+			}
+		})
 	}
 }

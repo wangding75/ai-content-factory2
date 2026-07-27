@@ -312,6 +312,10 @@ func chapterPlanServiceError(w http.ResponseWriter, r *http.Request, err error) 
 		writeError(w, r, 409, "idempotency_key_reused_with_different_payload", "idempotency key reused with different payload", chapterPlanningDetails("use_new_idempotency_key", "The idempotency key was previously used with a different payload"))
 	case errors.Is(err, chapterplan.ErrRevisionSequenceConflict):
 		writeError(w, r, 409, "revision_sequence_conflict", "revision sequence conflict", chapterPlanningDetails("refresh_and_retry", "Revision sequence mismatch"))
+	case errors.Is(err, chapterplan.ErrOutputValidationFailed):
+		writeError(w, r, 422, "output_validation_failed", "runtime output validation failed", chapterPlanningDetails("retry_run", "The runtime output does not match the frozen generation context."))
+	case errors.Is(err, chapterplan.ErrIngestionTransaction):
+		writeError(w, r, 500, "result_consumption_failed", "result consumption failed", chapterPlanningDetails("retry_run", "The generated result could not be stored safely."))
 	case errors.Is(err, chapterplan.ErrInvalidState), errors.Is(err, chapterplan.ErrVersionConflict):
 		writeError(w, r, 409, "version_conflict", "chapter plan version conflict", chapterPlanningDetails("refresh_and_retry", "Target resource version changed since last fetch"))
 	case errors.Is(err, chapterplan.ErrValidation), errors.Is(err, chapterplan.ErrProjectMismatch), errors.Is(err, chapterplan.ErrInvalidReference):

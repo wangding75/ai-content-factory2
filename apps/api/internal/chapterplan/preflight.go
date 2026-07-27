@@ -205,6 +205,15 @@ func (s *Service) Preflight(ctx context.Context, projectID uuid.UUID, request Pr
 	if !workflow.Enabled || !connection.Enabled {
 		return blockedPreflight(result, "execution_integration_unavailable", "workflow execution is unavailable", "enable_workflow", "The configured workflow cannot execute."), nil
 	}
+	if repo, ok := s.plans.(*Repository); ok {
+		active, err := repo.ActiveChapterPlanningRun(ctx, projectID)
+		if err != nil {
+			return result, err
+		}
+		if active {
+			return blockedPreflight(result, "active_run_conflict", "a chapter-planning run is already active", "wait_for_active_run", "Only one queued or running chapter-planning run is allowed."), nil
+		}
+	}
 	bindingSnap, err := json.Marshal(map[string]any{"stage": "chapter_planning", "workflowBindingId": binding.ID, "workflowBindingVersion": binding.Version, "workflowConfigurationId": workflow.ID, "workflowConfigurationVersion": workflow.Version, "workflowConfigurationSource": workflow.WorkflowType})
 	if err != nil {
 		return result, err

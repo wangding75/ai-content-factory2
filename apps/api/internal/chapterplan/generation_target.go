@@ -73,7 +73,10 @@ func SignPreflightToken(secret []byte, claims PreflightTokenClaims) (string, err
 	if len(secret) == 0 || claims.ProjectID == uuid.Nil || claims.ActorID == "" || claims.Stage != "chapter_planning" || !digestPattern.MatchString(claims.InputDigest) || claims.BindingID == uuid.Nil || claims.BindingVersion < 1 {
 		return "", ErrPreflightTokenInvalid
 	}
-	if claims.ExpiresAt != claims.IssuedAt+int64((10*time.Minute).Seconds()) || claims.ExpiresAt <= time.Now().Unix() {
+	// Expiry is evaluated by VerifyPreflightToken against the injected clock.
+	// Signing must remain deterministic for a preflight whose clock is supplied
+	// by the application service, rather than consulting the wall clock again.
+	if claims.ExpiresAt != claims.IssuedAt+int64((10*time.Minute).Seconds()) {
 		return "", ErrPreflightTokenInvalid
 	}
 	payload, err := json.Marshal(claims)

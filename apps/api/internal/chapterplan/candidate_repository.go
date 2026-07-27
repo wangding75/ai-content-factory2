@@ -331,8 +331,26 @@ func (r *Repository) ListRevisions(ctx context.Context, chapterPlanID uuid.UUID,
 
 func (r *Repository) GetChapterPlanningSummary(ctx context.Context, projectID uuid.UUID) (Summary, error) {
 	var summary Summary
+	var consumptionStatus string
+	err := r.db.QueryRow(ctx, `
+		SELECT c.status
+		FROM chapter_plan_result_consumptions c
+		JOIN workflow_run_records r ON r.id = c.workflow_run_id
+		WHERE c.project_id = $1 AND r.stage = 'chapter_planning'
+		  AND c.status IN ('output_validation_failed', 'result_consumption_failed')
+		ORDER BY c.updated_at DESC, c.workflow_run_id DESC
+		LIMIT 1`, projectID).Scan(&consumptionStatus)
+	if err == nil {
+		if consumptionStatus == string(ConsumptionOutputValidationFailed) {
+			return summary, ErrOutputValidationFailed
+		}
+		return summary, ErrIngestionTransaction
+	}
+	if !errors.Is(err, pgx.ErrNoRows) {
+		return summary, fmt.Errorf("query chapter planning consumption: %w", err)
+	}
 
-	err := r.db.QueryRow(ctx, "SELECT COUNT(*) FROM chapter_plans WHERE project_id = $1", projectID).Scan(&summary.CurrentChapterCount)
+	err = r.db.QueryRow(ctx, "SELECT COUNT(*) FROM chapter_plans WHERE project_id = $1", projectID).Scan(&summary.CurrentChapterCount)
 	if err != nil {
 		return summary, err
 	}
@@ -393,4 +411,15 @@ func (r *Repository) GetChapterPlanningSummary(ctx context.Context, projectID uu
 	}
 
 	return summary, nil
+}
+
+// ActiveChapterPlanningRun is a read-only preflight guard.  The partial unique
+// index remains the final concurrent-write guarantee when a run is created.
+func (r *Repository) ActiveChapterPlanningRun(ctx context.Context, projectID uuid.UUID) (bool, error) {
+	var exists bool
+	err := r.db.QueryRow(ctx, `SELECT EXISTS(
+		SELECT 1 FROM workflow_run_records
+		WHERE project_id = $1 AND stage = 'chapter_planning' AND status IN ('queued', 'running')
+	)`, projectID).Scan(&exists)
+	return exists, err
 }
