@@ -47,6 +47,17 @@ func canonicalDigest(v any) (string, error) {
 	if err != nil {
 		return "", err
 	}
+	// JSONB normalizes object key order when the generation context is persisted.
+	// Normalize the complete value before hashing so the database representation can
+	// always be used to reproduce the digest.
+	var normalized any
+	if err := json.Unmarshal(b, &normalized); err != nil {
+		return "", err
+	}
+	b, err = json.Marshal(normalized)
+	if err != nil {
+		return "", err
+	}
 	sum := sha256.Sum256(b)
 	return hex.EncodeToString(sum[:]), nil
 }
@@ -59,6 +70,8 @@ func digestGenerationContext(snapshot GenerationContextSnapshot) (string, error)
 }
 
 func (s *Service) snapshot(ctx context.Context, projectID uuid.UUID, request PreflightRequest, target BatchTarget) (GenerationContextSnapshot, error) {
+	storylineIDs := append([]uuid.UUID(nil), request.StorylineIDs...)
+	sort.Slice(storylineIDs, func(i, j int) bool { return storylineIDs[i].String() < storylineIDs[j].String() })
 	plans, err := s.plans.ListByProject(ctx, projectID)
 	if err != nil {
 		return GenerationContextSnapshot{}, err
@@ -87,11 +100,11 @@ func (s *Service) snapshot(ctx context.Context, projectID uuid.UUID, request Pre
 		return GenerationContextSnapshot{}, err
 	}
 	sort.Slice(foreshadowings, func(i, j int) bool { return foreshadowings[i].ID.String() < foreshadowings[j].ID.String() })
-	input, err := json.Marshal(map[string]any{"generationMode": request.GenerationMode, "target": target, "storylineSelectionMode": request.StorylineSelectionMode, "storylineIds": request.StorylineIDs, "contextOptions": json.RawMessage(defaultObject(request.ContextOptions)), "projectId": projectID})
+	input, err := json.Marshal(map[string]any{"generationMode": request.GenerationMode, "target": target, "storylineSelectionMode": request.StorylineSelectionMode, "storylineIds": storylineIDs, "contextOptions": json.RawMessage(defaultObject(request.ContextOptions)), "projectId": projectID})
 	if err != nil {
 		return GenerationContextSnapshot{}, err
 	}
-	story, err := json.Marshal(map[string]any{"selected": request.StorylineIDs, "available": storylines, "materials": materials, "foreshadowings": foreshadowings})
+	story, err := json.Marshal(map[string]any{"selected": storylineIDs, "available": storylines, "materials": materials, "foreshadowings": foreshadowings})
 	if err != nil {
 		return GenerationContextSnapshot{}, err
 	}
