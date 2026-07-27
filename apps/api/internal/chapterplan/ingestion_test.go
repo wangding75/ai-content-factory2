@@ -20,6 +20,7 @@ func TestSchemaAndSemanticValidation(t *testing.T) {
 		},
 		Context: chapterplan.GenerationContextSnapshot{
 			InputDigest: digest,
+			InputSnapshot: json.RawMessage(`{"generationMode":"full","target":{"startChapterNo":1,"endChapterNo":2,"requestedChapterCount":2}}`),
 		},
 		NormalizedOutput: chapterplan.NormalizedChapterPlanOutput{
 			ProjectID:           projectID,
@@ -118,6 +119,7 @@ func TestSnapshotMappingAndDiffTypeLogic(t *testing.T) {
 
 	ctxSnap := chapterplan.GenerationContextSnapshot{
 		InputDigest: digest,
+		InputSnapshot: json.RawMessage(`{"generationMode":"full","target":{"startChapterNo":1,"endChapterNo":2,"requestedChapterCount":2}}`),
 		BaseChapterPlans: []chapterplan.BaseChapterPlanContext{
 			{
 				ID:        planID,

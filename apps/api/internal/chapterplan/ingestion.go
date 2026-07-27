@@ -89,8 +89,8 @@ type NormalizedChapterPlanOutput struct {
 }
 
 type IngestInput struct {
-	Run              RunReference               `json:"run"`
-	Context          GenerationContextSnapshot  `json:"context"`
+	Run              RunReference                `json:"run"`
+	Context          GenerationContextSnapshot   `json:"context"`
 	NormalizedOutput NormalizedChapterPlanOutput `json:"normalizedOutput"`
 }
 
@@ -124,6 +124,13 @@ func ValidateNormalizedOutput(input IngestInput) error {
 	if out.Metadata.InputDigest != ctx.InputDigest {
 		return fmt.Errorf("%w: metadata inputDigest %s does not match context inputDigest %s", ErrOutputValidationFailed, out.Metadata.InputDigest, ctx.InputDigest)
 	}
+	var frozenInput struct {
+		GenerationMode string      `json:"generationMode"`
+		Target         BatchTarget `json:"target"`
+	}
+	if err := json.Unmarshal(ctx.InputSnapshot, &frozenInput); err != nil || frozenInput.GenerationMode == "" {
+		return fmt.Errorf("%w: frozen generation input is invalid", ErrOutputValidationFailed)
+	}
 
 	if _, err := time.Parse(time.RFC3339, out.Metadata.GeneratedAt); err != nil {
 		if _, err2 := time.Parse("2006-01-02T15:04:05Z07:00", out.Metadata.GeneratedAt); err2 != nil {
@@ -139,10 +146,16 @@ func ValidateNormalizedOutput(input IngestInput) error {
 	if mode != "full" && mode != "append" && mode != "range" {
 		return fmt.Errorf("%w: invalid generationMode %s", ErrOutputValidationFailed, mode)
 	}
+	if mode != frozenInput.GenerationMode {
+		return fmt.Errorf("%w: output generationMode does not match frozen mode", ErrOutputValidationFailed)
+	}
 
 	tgt := out.Target
 	if tgt.StartChapterNo < 1 || tgt.StartChapterNo > 100 || tgt.EndChapterNo < tgt.StartChapterNo || tgt.EndChapterNo > 100 || tgt.RequestedChapterCount < 1 || tgt.RequestedChapterCount > 100 {
 		return fmt.Errorf("%w: invalid target numbers start=%d end=%d count=%d", ErrOutputValidationFailed, tgt.StartChapterNo, tgt.EndChapterNo, tgt.RequestedChapterCount)
+	}
+	if tgt != frozenInput.Target {
+		return fmt.Errorf("%w: output target does not match frozen target", ErrOutputValidationFailed)
 	}
 
 	if len(out.Candidates) == 0 || len(out.Candidates) > 100 {

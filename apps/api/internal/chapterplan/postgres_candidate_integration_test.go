@@ -1,6 +1,7 @@
 package chapterplan
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"sync"
@@ -70,7 +71,8 @@ func TestPostgresCandidateIntegration(t *testing.T) {
 			ProjectID: projectID,
 		},
 		Context: GenerationContextSnapshot{
-			InputDigest: digest,
+			InputDigest:   digest,
+			InputSnapshot: json.RawMessage(`{"generationMode":"full","target":{"startChapterNo":1,"endChapterNo":2,"requestedChapterCount":2}}`),
 		},
 		NormalizedOutput: NormalizedChapterPlanOutput{
 			ProjectID:           projectID,

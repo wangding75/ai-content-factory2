@@ -565,7 +565,9 @@ func (r *Repository) BulkAdoptCandidates(ctx context.Context, cmd BulkAdoptComma
 	}
 	defer conn.Release()
 
-	lockID := advisoryLockID(scope, keyFp)
+	// Serialize the stable business resource, not the replay key.  Different
+	// idempotency keys for the same batch must still be mutually exclusive.
+	lockID := advisoryLockID("chapter_plan_bulk_adopt_batch", cmd.BatchID.String())
 	if _, err := conn.Exec(ctx, "SELECT pg_advisory_lock($1)", lockID); err != nil {
 		return BulkAdoptResult{}, fmt.Errorf("acquire session lock: %w", err)
 	}
@@ -652,10 +654,7 @@ func (r *Repository) BulkAdoptCandidates(ctx context.Context, cmd BulkAdoptComma
 				CandidateID: item.CandidateID,
 				Outcome:     outcome,
 				Candidate:   candPtr,
-				Error: map[string]any{
-					"code":    errCode,
-					"message": err.Error(),
-				},
+				Error:       map[string]any{"code": errCode, "safeReason": "The candidate could not be adopted safely.", "retryAction": "review_candidate"},
 			})
 		}
 	}

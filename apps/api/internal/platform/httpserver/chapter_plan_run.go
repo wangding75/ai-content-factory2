@@ -30,6 +30,11 @@ func registerChapterPlanRunRoutes(mux *http.ServeMux, app chapterPlanRunApplicat
 }
 func chapterPlanPreflightHandler(app chapterPlanRunApplication) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		actorID, actorOK := actorIDFromRequest(r)
+		if !actorOK || strings.TrimSpace(actorID) == "" {
+			writeError(w, r, 422, "preflight_token_invalid", "request actor is unavailable", map[string]any{})
+			return
+		}
 		id, ok := projectID(r)
 		if !ok {
 			writeError(w, r, 400, "invalid_uuid", "projectId must be a UUID", map[string]any{})
@@ -40,16 +45,29 @@ func chapterPlanPreflightHandler(app chapterPlanRunApplication) http.HandlerFunc
 			writeError(w, r, 400, "validation_error", "invalid request body", map[string]any{})
 			return
 		}
-		result, err := app.Preflight(r.Context(), id, chapterplan.PreflightRequest{GenerationMode: body.GenerationMode, Target: body.Target, StorylineIDs: body.StorylineSelection.StorylineIDs, ContextOptions: body.ContextOptions, AdditionalInstructions: body.AdditionalInstructions, ActorID: "system"})
+		result, err := app.Preflight(r.Context(), id, chapterplan.PreflightRequest{GenerationMode: body.GenerationMode, Target: body.Target, StorylineIDs: body.StorylineSelection.StorylineIDs, ContextOptions: body.ContextOptions, AdditionalInstructions: body.AdditionalInstructions, ActorID: actorID})
 		if err != nil {
 			chapterPlanRunError(w, r, err)
 			return
 		}
-		writeJSON(w, r, 200, map[string]any{"result": "passed", "status": "passed", "preflightToken": result.Token, "expiresAt": result.ExpiresAt, "inputDigest": result.InputDigest, "inputSummary": map[string]any{"generationMode": body.GenerationMode, "target": result.Target, "storylineSelection": body.StorylineSelection, "contextOptions": json.RawMessage(body.ContextOptions)}, "executionConfigurationSummary": map[string]any{"stage": "chapter_planning", "workflowBindingId": result.BindingID, "workflowBindingVersion": result.BindingVersion}, "checks": []any{}, "blockers": []any{}, "warnings": []any{}})
+		blockers := make([]any, 0, len(result.Blockers))
+		for _, blocker := range result.Blockers {
+			blockers = append(blockers, map[string]any{"code": blocker.Code, "message": blocker.Message, "severity": "blocker", "details": map[string]any{"action": blocker.RetryAction, "safeSummary": blocker.SafeReason}})
+		}
+		response := map[string]any{"result": "blocked", "status": "blocked", "inputDigest": result.InputDigest, "inputSummary": map[string]any{"generationMode": body.GenerationMode, "target": result.Target, "storylineSelection": body.StorylineSelection, "contextOptions": json.RawMessage(body.ContextOptions)}, "executionConfigurationSummary": map[string]any{"stage": "chapter_planning", "workflowBindingId": result.BindingID, "workflowBindingVersion": result.BindingVersion}, "checks": []any{}, "blockers": blockers, "warnings": []any{}}
+		if result.Passed {
+			response["result"], response["status"], response["preflightToken"], response["expiresAt"] = "passed", "passed", result.Token, result.ExpiresAt
+		}
+		writeJSON(w, r, 200, response)
 	}
 }
 func createChapterPlanRunHandler(app chapterPlanRunApplication) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		actorID, actorOK := actorIDFromRequest(r)
+		if !actorOK || strings.TrimSpace(actorID) == "" {
+			writeError(w, r, 422, "preflight_token_invalid", "request actor is unavailable", map[string]any{})
+			return
+		}
 		id, ok := projectID(r)
 		if !ok {
 			writeError(w, r, 400, "invalid_uuid", "projectId must be a UUID", map[string]any{})
@@ -65,7 +83,7 @@ func createChapterPlanRunHandler(app chapterPlanRunApplication) http.HandlerFunc
 			writeError(w, r, 400, "validation_error", "invalid request body", map[string]any{})
 			return
 		}
-		run, err := app.CreateChapterPlanningRun(r.Context(), id, "system", body.PreflightToken, key)
+		run, err := app.CreateChapterPlanningRun(r.Context(), id, actorID, body.PreflightToken, key)
 		if err != nil {
 			chapterPlanRunError(w, r, err)
 			return

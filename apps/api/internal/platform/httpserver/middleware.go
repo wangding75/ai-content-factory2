@@ -8,6 +8,23 @@ import (
 	"time"
 )
 
+// PrincipalProvider is the application-boundary seam for the current
+// compatibility principal. Authentication can replace it without changing
+// chapter-planning domain logic or handlers.
+type PrincipalProvider interface {
+	ActorID(context.Context) (string, bool)
+}
+
+type systemPrincipalProvider struct{}
+
+func (systemPrincipalProvider) ActorID(context.Context) (string, bool) { return "system", true }
+
+var currentPrincipal PrincipalProvider = systemPrincipalProvider{}
+
+func actorIDFromRequest(r *http.Request) (string, bool) {
+	return currentPrincipal.ActorID(r.Context())
+}
+
 type contextKey string
 
 const requestIDKey contextKey = "request_id"

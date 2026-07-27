@@ -1,12 +1,17 @@
 -- 000014_chapter_plan_candidate_module_repairs.down.sql
 
 DROP INDEX IF EXISTS workflow_run_records_active_chapter_planning_idx;
+DROP INDEX IF EXISTS chapter_plan_result_consumptions_project_status_idx;
+DROP TABLE IF EXISTS chapter_plan_result_consumptions;
 DROP INDEX IF EXISTS chapter_plans_source_run_idx;
 DROP INDEX IF EXISTS chapter_plan_candidates_base_revision_idx;
 DROP INDEX IF EXISTS chapter_plan_revisions_source_run_idx;
 DROP INDEX IF EXISTS chapter_plan_candidate_batches_source_run_idx;
 
 ALTER TABLE chapter_plan_candidates DROP CONSTRAINT IF EXISTS chapter_plan_candidates_base_revision_fk;
+ALTER TABLE chapter_plan_candidates
+    ADD CONSTRAINT chapter_plan_candidates_base_revision_fk
+    FOREIGN KEY (base_revision_id) REFERENCES chapter_plan_revisions(id) ON DELETE SET NULL;
 
 ALTER TABLE chapter_plan_candidates DROP CONSTRAINT IF EXISTS chapter_plan_candidates_base_plan_fk;
 ALTER TABLE chapter_plan_candidates
