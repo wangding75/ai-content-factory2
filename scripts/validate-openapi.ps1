@@ -160,7 +160,7 @@ if ($openApiText -notmatch 'enum: \[primary, secondary\]') {
     throw "Chapter-plan OpenAPI relation enum mismatch."
 }
 if ($openApiText -notmatch 'enum: \[pending_confirmation, confirmed\]' -or
-    $openApiText -notmatch 'enum: \[mock_generated, candidate_adopted\]') {
+    $openApiText -notmatch 'enum: \[mock_generated, candidate_adopted, legacy_manual\]') {
     throw "Chapter-plan OpenAPI status/source enum mismatch."
 }
 

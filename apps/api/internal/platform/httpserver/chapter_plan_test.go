@@ -208,11 +208,9 @@ type chapterPlanPreflightHTTPResponse struct {
 		Checks         json.RawMessage `json:"checks"`
 		Warnings       json.RawMessage `json:"warnings"`
 		Blockers       []struct {
-			Code    string `json:"code"`
-			Details struct {
-				RetryAction string `json:"action"`
-				SafeReason  string `json:"safeSummary"`
-			} `json:"details"`
+			Code        string `json:"code"`
+			RetryAction string `json:"retryAction"`
+			SafeReason  string `json:"safeReason"`
 		} `json:"blockers"`
 	} `json:"data"`
 }
@@ -286,7 +284,7 @@ func TestChapterPlanPreflightHandlerReturnsBlockedHTTP200ForEachBlocker(t *testi
 				t.Fatalf("blocked preflight=%d body=%s fake=%#v", response.Code, response.Body.String(), fake)
 			}
 			got := payload.Data.Blockers[0]
-			if got.Code != blocker.Code || got.Details.SafeReason != blocker.SafeReason || got.Details.RetryAction != blocker.RetryAction {
+			if got.Code != blocker.Code || got.SafeReason != blocker.SafeReason || got.RetryAction != blocker.RetryAction {
 				t.Fatalf("blocker mapping=%#v body=%s", got, response.Body.String())
 			}
 		})
@@ -336,14 +334,14 @@ func TestChapterPlanGetHandler(t *testing.T) {
 	requireErrorEnvelope(t, response, 400)
 }
 
-func TestChapterPlanHTTPDoesNotExposeLegacyManualSource(t *testing.T) {
+func TestChapterPlanHTTPMapsLegacyManualSource(t *testing.T) {
 	projectID := uuid.New()
 	legacy := chapterPlanHTTPValue(projectID)
 	legacy.Source = "manual"
 	legacy.CreatedBy = "legacy-importer"
 	response := chapterPlanRequest(getChapterPlanHandler(&fakeChapterPlanApplication{plan: legacy}), http.MethodGet, "/api/v1/chapter-plans/"+legacy.ID.String(), "")
-	if response.Code != http.StatusOK || !strings.Contains(response.Body.String(), `"source":null`) {
-		t.Fatalf("legacy source must use nullable fallback: status=%d body=%s", response.Code, response.Body.String())
+	if response.Code != http.StatusOK || !strings.Contains(response.Body.String(), `"source":"legacy_manual"`) {
+		t.Fatalf("legacy source must map to legacy_manual: status=%d body=%s", response.Code, response.Body.String())
 	}
 	for _, forbidden := range []string{`"source":"manual"`, "candidate_adopted", "mock_generated", "legacy-importer"} {
 		if strings.Contains(response.Body.String(), forbidden) {

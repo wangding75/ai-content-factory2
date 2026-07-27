@@ -459,3 +459,109 @@ func sortedUUIDs(values []uuid.UUID) []uuid.UUID {
 	sort.Slice(ordered, func(i, j int) bool { return ordered[i].String() < ordered[j].String() })
 	return ordered
 }
+
+func TestPostgresPreflightCreateConsumeUsesFrozenBaseSnapshot(t *testing.T) {
+	db, ctx := openIntegrationDB(t)
+	f := newFixture(t, ctx, db)
+	seedPreflightPlan(t, ctx, db, f)
+	planID := mustExistingPlanID(t, ctx, db, f.project)
+	revisionID := uuid.New()
+	base := NormalizedCandidate{
+		ChapterNo: 1, Title: "One", Summary: "one", ChapterPurpose: "plot_advance",
+		StorylineRefs:     []NormalizedReference{{ID: f.storylines[0], ProjectID: f.project, Label: "story", Relation: "primary", Version: 1}, {ID: f.storylines[1], ProjectID: f.project, Label: "story two", Relation: "secondary", Position: 1, Version: 1}},
+		MaterialRefs:      []NormalizedReference{{ID: f.materials[0], ProjectID: f.project, Label: "material", Relation: "material_ref", Version: 1}, {ID: f.materials[1], ProjectID: f.project, Label: "material two", Relation: "material_ref", Position: 1, Version: 1}},
+		ForeshadowingRefs: []NormalizedReference{{ID: f.foreshadowings[0], ProjectID: f.project, Label: "foreshadowing", Relation: "foreshadowing_ref", Version: 1}, {ID: f.foreshadowings[1], ProjectID: f.project, Label: "foreshadowing two", Relation: "foreshadowing_ref", Position: 1, Version: 1}},
+	}
+	baseSnapshot, err := json.Marshal(base)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err = db.Exec(ctx, `INSERT INTO chapter_plan_revisions(id,chapter_plan_id,project_id,revision_no,snapshot,change_type,created_by) VALUES($1,$2,$3,1,$4,'legacy_backfill','cf15-r04')`, revisionID, planID, f.project, baseSnapshot); err != nil {
+		t.Fatal(err)
+	}
+	if _, err = db.Exec(ctx, "UPDATE chapter_plans SET current_revision_id=$2,title='current scalar must not replace revision' WHERE id=$1", planID, revisionID); err != nil {
+		t.Fatal(err)
+	}
+
+	connectionID, workflowID := uuid.New(), uuid.New()
+	if _, err = db.Exec(ctx, "INSERT INTO workflow_connections(id,name,connection_type,base_url,auth_type,timeout_seconds,type_config) VALUES($1,$2,'n8n','http://localhost:5678','api_key',30,'{}')", connectionID, "r04-connection-"+connectionID.String()); err != nil {
+		t.Fatal(err)
+	}
+	if _, err = db.Exec(ctx, "INSERT INTO workflow_configurations(id,name,connection_id,applicable_stages,type_config,input_contract_version,output_contract_version) VALUES($1,$2,$3,'[\"chapter_planning\"]','{}','v1','v1')", workflowID, "r04-workflow-"+workflowID.String(), connectionID); err != nil {
+		t.Fatal(err)
+	}
+	bindings := &mutablePreflightBindingReader{binding: workflowbinding.ProjectWorkflowBinding{ID: uuid.New(), ProjectID: f.project, Stage: workflowbinding.StageChapterPlanning, WorkflowConfigurationID: workflowID, Version: 4}}
+	workflows := &mutablePreflightWorkflowReader{workflow: globalconfig.Workflow{Common: globalconfig.Common{ID: workflowID, Enabled: true, Version: 5}, ConnectionID: connectionID, WorkflowType: "n8n", ApplicableStages: []string{"chapter_planning"}}}
+	connections := &mutablePreflightConnectionReader{connection: globalconfig.Connection{Common: globalconfig.Common{ID: connectionID, Enabled: true, Version: 6}}}
+	runtime := workflowrun.NewService(workflowrun.NewPostgresRepository(db), project.NewPostgresRepository(db), bindings, workflows, connections)
+	service, err := NewPostgresService(project.NewPostgresRepository(db), db, "test-hmac-secret-1234567890")
+	if err != nil {
+		t.Fatal(err)
+	}
+	service.ConfigureChapterPlanningRuntime(bindings, workflows, connections, runtime)
+	for _, tc := range []struct {
+		name, want string
+		mutate     func(*NormalizedCandidate)
+	}{
+		{"no_change", "no_change", func(c *NormalizedCandidate) {
+			c.StorylineRefs[0], c.StorylineRefs[1] = c.StorylineRefs[1], c.StorylineRefs[0]
+			c.MaterialRefs[0], c.MaterialRefs[1] = c.MaterialRefs[1], c.MaterialRefs[0]
+			c.ForeshadowingRefs[0], c.ForeshadowingRefs[1] = c.ForeshadowingRefs[1], c.ForeshadowingRefs[0]
+			c.StorylineRefs = append(c.StorylineRefs, c.StorylineRefs[0])
+			c.MaterialRefs = append(c.MaterialRefs, c.MaterialRefs[0])
+			c.ForeshadowingRefs = append(c.ForeshadowingRefs, c.ForeshadowingRefs[0])
+		}},
+		{"replace", "replace", func(c *NormalizedCandidate) { c.Summary = "changed" }},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			preflight, err := service.Preflight(ctx, f.project, postgresPreflightRequest())
+			if err != nil || !preflight.Passed {
+				t.Fatalf("Preflight result=%+v err=%v", preflight, err)
+			}
+			if len(preflight.Snapshot.BaseChapterPlans) != 1 || preflight.Snapshot.BaseChapterPlans[0].ID != planID || preflight.Snapshot.BaseChapterPlans[0].RevisionID == nil || *preflight.Snapshot.BaseChapterPlans[0].RevisionID != revisionID || preflight.Snapshot.BaseChapterPlans[0].Version != 1 || !isSameSnapshot(preflight.Snapshot.BaseChapterPlans[0].Snapshot, baseSnapshot) {
+				t.Fatalf("base snapshot was not the current revision: %+v", preflight.Snapshot.BaseChapterPlans)
+			}
+			run, err := service.CreateChapterPlanningRun(ctx, f.project, "preflight-postgres-test", preflight.Token, "r04-real-chain-"+tc.name)
+			if err != nil {
+				t.Fatal(err)
+			}
+			var persisted struct {
+				GenerationContext       GenerationContextSnapshot `json:"generationContext"`
+				GenerationContextDigest string                    `json:"generationContextDigest"`
+			}
+			if err = db.QueryRow(ctx, "SELECT input_payload FROM workflow_run_records WHERE id=$1", run.ID).Scan(&run.InputPayload); err != nil {
+				t.Fatal(err)
+			}
+			if err = json.Unmarshal(run.InputPayload, &persisted); err != nil {
+				t.Fatal(err)
+			}
+			if digest, err := digestGenerationContext(persisted.GenerationContext); err != nil || digest != persisted.GenerationContextDigest || digest != persisted.GenerationContext.InputDigest {
+				t.Fatalf("persisted input digest=%q recomputed=%q err=%v", persisted.GenerationContext.InputDigest, digest, err)
+			}
+			candidate := base
+			tc.mutate(&candidate)
+			output := NormalizedChapterPlanOutput{ProjectID: f.project, GenerationMode: "full", Target: preflight.Target, SourceWorkflowRunID: run.ID, Candidates: []NormalizedCandidate{candidate, NormalizedCandidate{ChapterNo: 2, Title: "Two", Summary: "two", ChapterPurpose: "transition", StorylineRefs: base.StorylineRefs}}, Metadata: OutputMetadata{InputDigest: persisted.GenerationContext.InputDigest, GeneratedAt: time.Now().UTC().Format(time.RFC3339), SafeProviderSummary: "safe"}}
+			raw, _ := json.Marshal(output)
+			if _, err := db.Exec(ctx, "UPDATE workflow_run_records SET status='succeeded',output_payload=$2,started_at=NOW(),finished_at=NOW() WHERE id=$1", run.ID, raw); err != nil {
+				t.Fatal(err)
+			}
+			stored, err := workflowrun.NewPostgresRepository(db).GetByID(ctx, run.ID)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if err = NewRuntimeConsumer(NewResultIngestor(db), NewConsumptionRepository(db)).ConsumeSucceededRun(ctx, stored); err != nil {
+				t.Fatal(err)
+			}
+			var got, newType string
+			if err = db.QueryRow(ctx, "SELECT diff_type FROM chapter_plan_candidates WHERE batch_id=(SELECT candidate_batch_id FROM chapter_plan_result_consumptions WHERE workflow_run_id=$1) AND chapter_no=1", run.ID).Scan(&got); err != nil {
+				t.Fatal(err)
+			}
+			if got != tc.want {
+				t.Fatalf("diff=%s want=%s", got, tc.want)
+			}
+			if err = db.QueryRow(ctx, "SELECT diff_type FROM chapter_plan_candidates WHERE batch_id=(SELECT candidate_batch_id FROM chapter_plan_result_consumptions WHERE workflow_run_id=$1) AND chapter_no=2", run.ID).Scan(&newType); err != nil || newType != "new" {
+				t.Fatalf("new diff=%s err=%v", newType, err)
+			}
+		})
+	}
+}

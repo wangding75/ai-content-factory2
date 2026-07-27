@@ -249,7 +249,7 @@ func frozenReferenceIDs(raw json.RawMessage) (map[string]map[uuid.UUID]bool, err
 			continue
 		}
 		for _, value := range values {
-			for _, idKey := range []string{"id", "materialId"} {
+			for _, idKey := range []string{"id", "ID", "materialId", "material_id", "MaterialID"} {
 				var id uuid.UUID
 				if rawID, ok := value[idKey]; ok && json.Unmarshal(rawID, &id) == nil && id != uuid.Nil {
 					out[kind][id] = true

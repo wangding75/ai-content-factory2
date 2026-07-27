@@ -56,7 +56,7 @@ type chapterPlanResponse struct {
 	Title                  string                            `json:"title"`
 	Summary                string                            `json:"summary"`
 	Status                 string                            `json:"status"`
-	Source                 *string                           `json:"source"`
+	Source                 string                            `json:"source"`
 	StorylineRefsJSON      []chapterPlanStorylineRefResponse `json:"storyline_refs_json"`
 	MaterialRefsJSON       []uuid.UUID                       `json:"material_refs_json"`
 	ForeshadowingRefsJSON  []uuid.UUID                       `json:"foreshadowing_refs_json"`
@@ -244,10 +244,7 @@ func chapterPlanResponseFrom(value chapterplan.Plan) chapterPlanResponse {
 		formatted := formatChapterPlanTime(*value.ConfirmedAt)
 		confirmedAt = &formatted
 	}
-	var source *string
-	if value.Source == "mock_generated" || value.Source == "candidate_adopted" {
-		source = &value.Source
-	}
+	source := chapterPlanSourceResponse(value.Source)
 	return chapterPlanResponse{
 		ID:                     value.ID,
 		ProjectID:              value.ProjectID,
@@ -269,6 +266,17 @@ func chapterPlanResponseFrom(value chapterplan.Plan) chapterPlanResponse {
 		Version:                value.Version,
 		CreatedAt:              formatChapterPlanTime(value.CreatedAt),
 		UpdatedAt:              formatChapterPlanTime(value.UpdatedAt),
+	}
+}
+
+func chapterPlanSourceResponse(source string) string {
+	switch source {
+	case "mock_generated", "candidate_adopted":
+		return source
+	case "manual", "legacy_manual":
+		return "legacy_manual"
+	default:
+		return "legacy_manual"
 	}
 }
 func nonNilUUIDs(values []uuid.UUID) []uuid.UUID {

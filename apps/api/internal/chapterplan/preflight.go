@@ -71,14 +71,18 @@ func digestGenerationContext(snapshot GenerationContextSnapshot) (string, error)
 
 func (s *Service) snapshot(ctx context.Context, projectID uuid.UUID, request PreflightRequest, target BatchTarget) (GenerationContextSnapshot, error) {
 	storylineIDs := append([]uuid.UUID(nil), request.StorylineIDs...)
+	if request.StorylineSelectionMode == "auto_balanced" {
+		storylineIDs = nil
+	}
 	sort.Slice(storylineIDs, func(i, j int) bool { return storylineIDs[i].String() < storylineIDs[j].String() })
+	storylineIDs = compactUUIDs(storylineIDs)
 	plans, err := s.plans.ListByProject(ctx, projectID)
 	if err != nil {
 		return GenerationContextSnapshot{}, err
 	}
 	base := make([]BaseChapterPlanContext, 0, len(plans))
 	for _, plan := range plans {
-		raw, err := json.Marshal(map[string]any{"id": plan.ID, "chapterNo": plan.ChapterNo, "title": plan.Title, "summary": plan.Summary, "version": plan.Version})
+		raw, err := s.baseChapterPlanSnapshot(ctx, projectID, plan)
 		if err != nil {
 			return GenerationContextSnapshot{}, err
 		}
@@ -109,6 +113,49 @@ func (s *Service) snapshot(ctx context.Context, projectID uuid.UUID, request Pre
 		return GenerationContextSnapshot{}, err
 	}
 	return GenerationContextSnapshot{InputSnapshot: input, StorylineSnapshot: story, ContextOptions: json.RawMessage(defaultObject(request.ContextOptions)), AdditionalInstructions: request.AdditionalInstructions, BaseChapterPlans: base}, nil
+}
+
+func compactUUIDs(values []uuid.UUID) []uuid.UUID {
+	if len(values) == 0 {
+		return nil
+	}
+	compact := values[:1]
+	for _, value := range values[1:] {
+		if value != compact[len(compact)-1] {
+			compact = append(compact, value)
+		}
+	}
+	return compact
+}
+
+// baseChapterPlanSnapshot preserves the precise current revision when one exists.
+// Historical plans without a revision deliberately contain only their actual current
+// fields; missing revision-only fields are not synthesized into a false frozen state.
+func (s *Service) baseChapterPlanSnapshot(ctx context.Context, projectID uuid.UUID, plan Plan) (json.RawMessage, error) {
+	if plan.CurrentRevisionID != nil {
+		repo, ok := s.plans.(*Repository)
+		if !ok {
+			return nil, ErrInternal
+		}
+		var raw json.RawMessage
+		err := repo.db.QueryRow(ctx, `SELECT snapshot FROM chapter_plan_revisions WHERE id=$1 AND chapter_plan_id=$2 AND project_id=$3`, *plan.CurrentRevisionID, plan.ID, projectID).Scan(&raw)
+		if err != nil {
+			return nil, err
+		}
+		var snapshot candidateSnapshotStruct
+		if !json.Valid(raw) || json.Unmarshal(raw, &snapshot) != nil {
+			return nil, ErrInvalidReference
+		}
+		return raw, nil
+	}
+	return json.Marshal(struct {
+		ChapterNo         int            `json:"chapterNo"`
+		Title             string         `json:"title"`
+		Summary           string         `json:"summary"`
+		StorylineRefs     []StorylineRef `json:"storylineRefs"`
+		MaterialRefs      []uuid.UUID    `json:"materialRefs"`
+		ForeshadowingRefs []uuid.UUID    `json:"foreshadowingRefs"`
+	}{plan.ChapterNo, plan.Title, plan.Summary, plan.Storylines, plan.Materials, plan.Foreshadowings})
 }
 func defaultObject(v json.RawMessage) []byte {
 	if len(v) == 0 || !json.Valid(v) || !strings.HasPrefix(strings.TrimSpace(string(v)), "{") {
@@ -265,6 +312,9 @@ func (s *Service) CreateChapterPlanningRun(ctx context.Context, projectID uuid.U
 		return workflowrun.WorkflowRun{}, err
 	}
 	if claims.ProjectID != projectID || claims.ActorID != actorID {
+		return workflowrun.WorkflowRun{}, ErrPreflightInputChanged
+	}
+	if claims.StorylineSelectionMode == "auto_balanced" && len(claims.StorylineIDs) != 0 {
 		return workflowrun.WorkflowRun{}, ErrPreflightInputChanged
 	}
 	// Rebuild the immutable snapshot facts before delegation; the token digest is the

@@ -53,14 +53,36 @@ func chapterPlanPreflightHandler(app chapterPlanRunApplication) http.HandlerFunc
 		}
 		blockers := make([]any, 0, len(result.Blockers))
 		for _, blocker := range result.Blockers {
-			blockers = append(blockers, map[string]any{"code": blocker.Code, "message": blocker.Message, "severity": "blocker", "details": map[string]any{"action": blocker.RetryAction, "safeSummary": blocker.SafeReason}})
+			blockers = append(blockers, map[string]any{"code": blocker.Code, "message": blocker.Message, "safeReason": blocker.SafeReason, "retryAction": blocker.RetryAction})
 		}
-		response := map[string]any{"result": "blocked", "status": "blocked", "inputDigest": result.InputDigest, "inputSummary": map[string]any{"generationMode": body.GenerationMode, "target": result.Target, "storylineSelection": body.StorylineSelection, "contextOptions": json.RawMessage(body.ContextOptions)}, "executionConfigurationSummary": map[string]any{"stage": "chapter_planning", "workflowBindingId": result.BindingID, "workflowBindingVersion": result.BindingVersion}, "checks": []any{}, "blockers": blockers, "warnings": []any{}}
+		var inputSummary any
+		if completePreflightInputSummary(body, result) {
+			selection := map[string]any{"mode": body.StorylineSelection.Mode}
+			if body.StorylineSelection.Mode == "specified" {
+				selection["storylineIds"] = body.StorylineSelection.StorylineIDs
+			}
+			inputSummary = map[string]any{"generationMode": body.GenerationMode, "target": result.Target, "storylineSelection": selection, "contextOptions": json.RawMessage(body.ContextOptions)}
+		}
+		var executionConfigurationSummary any
+		if result.BindingID != uuid.Nil && result.BindingVersion > 0 {
+			executionConfigurationSummary = map[string]any{"stage": "chapter_planning", "workflowBindingId": result.BindingID, "workflowBindingVersion": result.BindingVersion}
+		}
+		response := map[string]any{"result": "blocked", "status": "blocked", "inputDigest": result.InputDigest, "inputSummary": inputSummary, "executionConfigurationSummary": executionConfigurationSummary, "checks": []any{}, "blockers": blockers, "warnings": []any{}}
 		if result.Passed {
 			response["result"], response["status"], response["preflightToken"], response["expiresAt"] = "passed", "passed", result.Token, result.ExpiresAt
 		}
 		writeJSON(w, r, 200, response)
 	}
+}
+
+func completePreflightInputSummary(body chapterPlanPreflightRequest, result chapterplan.PreflightResult) bool {
+	if result.Target.StartChapterNo < 1 || result.Target.EndChapterNo < result.Target.StartChapterNo || result.Target.RequestedChapterCount < 1 || !json.Valid(body.ContextOptions) {
+		return false
+	}
+	if body.StorylineSelection.Mode == "auto_balanced" {
+		return true
+	}
+	return body.StorylineSelection.Mode == "specified" && len(body.StorylineSelection.StorylineIDs) > 0
 }
 func createChapterPlanRunHandler(app chapterPlanRunApplication) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
