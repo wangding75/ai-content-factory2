@@ -115,8 +115,12 @@ func NewService(projects projectReader, plans store, storylines storylineReader,
 
 // NewPostgresService keeps infrastructure construction at the composition edge while the
 // application itself depends only on the narrow reader/store interfaces above.
-func NewPostgresService(projects projectReader, pool *pgxpool.Pool) *Service {
-	return NewService(projects, NewPostgresRepository(pool), storyline.NewPostgresRepository(pool), material.NewPostgresRepository(pool), foreshadowing.NewPostgresRepository(pool))
+func NewPostgresService(projects projectReader, pool *pgxpool.Pool, hmacSecret string) (*Service, error) {
+	repo, err := NewPostgresRepository(pool, hmacSecret)
+	if err != nil {
+		return nil, err
+	}
+	return NewService(projects, repo, storyline.NewPostgresRepository(pool), material.NewPostgresRepository(pool), foreshadowing.NewPostgresRepository(pool)), nil
 }
 
 func (s *Service) List(ctx context.Context, projectID uuid.UUID) ([]Plan, error) {

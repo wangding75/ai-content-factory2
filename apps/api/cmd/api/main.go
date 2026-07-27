@@ -41,7 +41,14 @@ func main() {
 	projectMaterials := material.NewPostgresProjectMaterialService(projectRepository, pool)
 	storylines := storyline.NewPostgresService(projectRepository, pool)
 	foreshadowings := foreshadowing.NewPostgresService(projectRepository, pool)
-	chapterPlans := chapterplan.NewPostgresService(projectRepository, pool)
+	hmacSecret := cfg.ChapterPlanIdempotencyHMACSecret
+	if hmacSecret == "" {
+		log.Fatal("CHAPTER_PLAN_IDEMPOTENCY_HMAC_SECRET environment variable is required")
+	}
+	chapterPlans, err := chapterplan.NewPostgresService(projectRepository, pool, hmacSecret)
+	if err != nil {
+		log.Fatal(err)
+	}
 	contentRepository := contentitem.NewPostgresRepository(pool)
 	contentItems := contentitem.NewApplication(contentRepository, nil)
 	rewriteService := contentitem.NewMockRewriteService(contentRepository, contentitem.DeterministicMockRewriteProvider{}, contentitem.NewPgxRewriteTransactionRunner(pool))

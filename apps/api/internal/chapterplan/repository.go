@@ -2,21 +2,28 @@ package chapterplan
 
 import (
 	"context"
+	"crypto/hmac"
+	"crypto/sha256"
+	"encoding/binary"
+	"encoding/hex"
 	"errors"
 	"fmt"
+	"time"
+
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"time"
 )
 
 var (
-	ErrNotFound          = errors.New("chapter plan not found")
-	ErrVersionConflict   = errors.New("chapter plan version conflict")
-	ErrChapterNoConflict = errors.New("chapter plan chapter number conflict")
-	ErrInvalidReference  = errors.New("chapter plan invalid reference")
-	ErrProjectMismatch   = errors.New("chapter plan project mismatch")
+	ErrNotFound              = errors.New("chapter plan not found")
+	ErrVersionConflict       = errors.New("chapter plan version conflict")
+	ErrChapterNoConflict     = errors.New("chapter plan chapter number conflict")
+	ErrInvalidReference      = errors.New("chapter plan invalid reference")
+	ErrProjectMismatch       = errors.New("chapter plan project mismatch")
+	ErrHMACSecretRequired    = errors.New("chapter plan idempotency hmac secret is required")
+	ErrIdempotencyConflict   = errors.New("idempotency key reused with different payload")
 )
 
 type StorylineRef struct {
@@ -29,6 +36,10 @@ type Plan struct {
 	Title, Summary, Status, Source, CreatedBy string
 	Goal, Notes                               *string
 	ConfirmedAt                               *time.Time
+	CurrentRevisionID                         *uuid.UUID
+	SourceCandidateID                         *uuid.UUID
+	SourceCandidateBatchID                    *uuid.UUID
+	SourceWorkflowRunID                       *uuid.UUID
 	Version                                   int
 	CreatedAt, UpdatedAt                      time.Time
 	Storylines                                []StorylineRef
@@ -42,15 +53,42 @@ type Selection struct {
 	ID              uuid.UUID
 	ExpectedVersion int
 }
-type Repository struct{ db *pgxpool.Pool }
+type Repository struct {
+	db         *pgxpool.Pool
+	hmacSecret []byte
+}
 
-func NewPostgresRepository(db *pgxpool.Pool) *Repository { return &Repository{db} }
+func NewPostgresRepository(db *pgxpool.Pool, hmacSecret string) (*Repository, error) {
+	if len(hmacSecret) == 0 {
+		return nil, ErrHMACSecretRequired
+	}
+	return &Repository{db: db, hmacSecret: []byte(hmacSecret)}, nil
+}
 
-const cols = "id,project_id,COALESCE(mock_generation_run_id,'00000000-0000-0000-0000-000000000000'),chapter_no,title,summary,chapter_goal,creation_notes,status,source,created_by,confirmed_at,version,created_at,updated_at"
+func (r *Repository) HMACSecret() []byte {
+	return r.hmacSecret
+}
+
+func (r *Repository) computeHMACKeyFingerprint(rawKey string) string {
+	if len(r.hmacSecret) == 0 {
+		h := sha256.Sum256([]byte(rawKey))
+		return hex.EncodeToString(h[:])
+	}
+	mac := hmac.New(sha256.New, r.hmacSecret)
+	mac.Write([]byte(rawKey))
+	return hex.EncodeToString(mac.Sum(nil))
+}
+
+func advisoryLockID(scope, keyFp string) int64 {
+	h := sha256.Sum256([]byte(scope + ":" + keyFp))
+	return int64(binary.BigEndian.Uint64(h[:8]))
+}
+
+const cols = "id,project_id,COALESCE(mock_generation_run_id,'00000000-0000-0000-0000-000000000000'),chapter_no,title,summary,chapter_goal,creation_notes,status,source,created_by,confirmed_at,current_revision_id,source_candidate_id,source_candidate_batch_id,source_workflow_run_id,version,created_at,updated_at"
 
 func scan(r pgx.Row) (Plan, error) {
 	var p Plan
-	e := r.Scan(&p.ID, &p.ProjectID, &p.RunID, &p.ChapterNo, &p.Title, &p.Summary, &p.Goal, &p.Notes, &p.Status, &p.Source, &p.CreatedBy, &p.ConfirmedAt, &p.Version, &p.CreatedAt, &p.UpdatedAt)
+	e := r.Scan(&p.ID, &p.ProjectID, &p.RunID, &p.ChapterNo, &p.Title, &p.Summary, &p.Goal, &p.Notes, &p.Status, &p.Source, &p.CreatedBy, &p.ConfirmedAt, &p.CurrentRevisionID, &p.SourceCandidateID, &p.SourceCandidateBatchID, &p.SourceWorkflowRunID, &p.Version, &p.CreatedAt, &p.UpdatedAt)
 	return p, e
 }
 func (r *Repository) ListByProject(c context.Context, id uuid.UUID) ([]Plan, error) {
