@@ -331,23 +331,28 @@ func (r *Repository) ListRevisions(ctx context.Context, chapterPlanID uuid.UUID,
 
 func (r *Repository) GetChapterPlanningSummary(ctx context.Context, projectID uuid.UUID) (Summary, error) {
 	var summary Summary
-	var consumptionStatus string
+	// Summary is driven by the latest chapter-planning Runtime run. Runtime
+	// failures and cancellations remain Runtime outcomes; only a succeeded run
+	// can be surfaced as a post-runtime consumption failure.
+	var runtimeStatus string
+	var consumptionStatus *string
 	err := r.db.QueryRow(ctx, `
-		SELECT c.status
-		FROM chapter_plan_result_consumptions c
-		JOIN workflow_run_records r ON r.id = c.workflow_run_id
-		WHERE c.project_id = $1 AND r.stage = 'chapter_planning'
-		  AND c.status IN ('output_validation_failed', 'result_consumption_failed')
-		ORDER BY c.updated_at DESC, c.workflow_run_id DESC
-		LIMIT 1`, projectID).Scan(&consumptionStatus)
+		SELECT r.status, c.status
+		FROM workflow_run_records r
+		LEFT JOIN chapter_plan_result_consumptions c ON c.workflow_run_id = r.id
+		WHERE r.project_id = $1 AND r.stage = 'chapter_planning'
+		ORDER BY r.created_at DESC, r.id DESC
+		LIMIT 1`, projectID).Scan(&runtimeStatus, &consumptionStatus)
 	if err == nil {
-		if consumptionStatus == string(ConsumptionOutputValidationFailed) {
+		if runtimeStatus == "succeeded" && consumptionStatus != nil && *consumptionStatus == string(ConsumptionOutputValidationFailed) {
 			return summary, ErrOutputValidationFailed
 		}
-		return summary, ErrIngestionTransaction
+		if runtimeStatus == "succeeded" && consumptionStatus != nil && *consumptionStatus == string(ConsumptionResultConsumptionFailed) {
+			return summary, ErrIngestionTransaction
+		}
 	}
-	if !errors.Is(err, pgx.ErrNoRows) {
-		return summary, fmt.Errorf("query chapter planning consumption: %w", err)
+	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
+		return summary, fmt.Errorf("query latest chapter planning runtime: %w", err)
 	}
 
 	err = r.db.QueryRow(ctx, "SELECT COUNT(*) FROM chapter_plans WHERE project_id = $1", projectID).Scan(&summary.CurrentChapterCount)

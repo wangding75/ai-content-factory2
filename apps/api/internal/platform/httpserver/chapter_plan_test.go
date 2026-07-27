@@ -37,6 +37,7 @@ type fakeChapterPlanApplication struct {
 	confirmProjectID  uuid.UUID
 	selections        []chapterplan.Selection
 	confirmCalls      int
+	summaryErr        error
 }
 
 type fakeChapterPlanRunApplication struct {
@@ -91,7 +92,7 @@ func (f *fakeChapterPlanApplication) ListRevisions(_ context.Context, _ uuid.UUI
 	return chapterplan.RevisionListResult{}, nil
 }
 func (f *fakeChapterPlanApplication) GetChapterPlanningSummary(_ context.Context, _ uuid.UUID) (chapterplan.Summary, error) {
-	return chapterplan.Summary{}, nil
+	return chapterplan.Summary{}, f.summaryErr
 }
 func (f *fakeChapterPlanApplication) UpdateCandidate(_ context.Context, _ chapterplan.UpdateCandidateCommand) (chapterplan.Candidate, error) {
 	return chapterplan.Candidate{}, nil
@@ -119,6 +120,28 @@ func chapterPlanHTTPValue(projectID uuid.UUID) chapterplan.Plan {
 	now := time.Date(2026, 7, 15, 1, 2, 3, 456000000, time.UTC)
 	goal := "goal"
 	return chapterplan.Plan{ID: uuid.New(), ProjectID: projectID, ChapterNo: 2, Title: "Title", Summary: "Summary", Status: "pending_confirmation", Source: "mock_generated", Goal: &goal, Version: 1, CreatedAt: now, UpdatedAt: now, Storylines: []chapterplan.StorylineRef{{ID: uuid.New(), Relation: "primary"}}, Materials: []uuid.UUID{}, Foreshadowings: []uuid.UUID{}}
+}
+
+func TestChapterPlanSummaryMapsOutputValidationFailure(t *testing.T) {
+	projectID := uuid.New()
+	server := New(":0", nil, &fakeChapterPlanApplication{summaryErr: chapterplan.ErrOutputValidationFailed})
+	request := httptest.NewRequest(http.MethodGet, "/api/v1/projects/"+projectID.String()+"/chapter-planning-summary", nil)
+	response := httptest.NewRecorder()
+	server.Handler().ServeHTTP(response, request)
+	if response.Code != http.StatusUnprocessableEntity || !strings.Contains(response.Body.String(), `"code":"output_validation_failed"`) || strings.Contains(response.Body.String(), "SQLSTATE") {
+		t.Fatalf("summary response=%d %s", response.Code, response.Body.String())
+	}
+}
+
+func TestChapterPlanSummaryMapsResultConsumptionFailure(t *testing.T) {
+	projectID := uuid.New()
+	server := New(":0", nil, &fakeChapterPlanApplication{summaryErr: chapterplan.ErrIngestionTransaction})
+	request := httptest.NewRequest(http.MethodGet, "/api/v1/projects/"+projectID.String()+"/chapter-planning-summary", nil)
+	response := httptest.NewRecorder()
+	server.Handler().ServeHTTP(response, request)
+	if response.Code != http.StatusInternalServerError || !strings.Contains(response.Body.String(), `"code":"result_consumption_failed"`) || strings.Contains(response.Body.String(), "SQLSTATE") {
+		t.Fatalf("summary response=%d %s", response.Code, response.Body.String())
+	}
 }
 func chapterPlanRequest(handler http.Handler, method, path, body string) *httptest.ResponseRecorder {
 	response := httptest.NewRecorder()

@@ -24,6 +24,7 @@ type fakeStore struct {
 	deletedID                                       uuid.UUID
 	deletedExpected                                 int
 	confirmed                                       []Selection
+	summaryErr                                      error
 }
 
 func (f *fakeStore) ListByProject(_ context.Context, id uuid.UUID) ([]Plan, error) {
@@ -92,7 +93,7 @@ func (f *fakeStore) ListRevisions(_ context.Context, _ uuid.UUID, _, _ int) (Rev
 	return RevisionListResult{}, nil
 }
 func (f *fakeStore) GetChapterPlanningSummary(_ context.Context, _ uuid.UUID) (Summary, error) {
-	return Summary{}, nil
+	return Summary{}, f.summaryErr
 }
 func (f *fakeStore) UpdateCandidate(_ context.Context, _ UpdateCandidateCommand) (Candidate, error) {
 	return Candidate{}, nil
@@ -258,6 +259,16 @@ func TestApplicationListGetAndNotFound(t *testing.T) {
 	}
 	if _, e = s.Get(context.Background(), uuid.New()); !errors.Is(e, ErrChapterPlanNotFound) {
 		t.Fatalf("%v", e)
+	}
+}
+
+func TestSummaryMapsConsumptionFailures(t *testing.T) {
+	service, store, projectID, _, _, _ := fixtureService()
+	for _, want := range []error{ErrOutputValidationFailed, ErrIngestionTransaction} {
+		store.summaryErr = want
+		if _, err := service.GetChapterPlanningSummary(context.Background(), projectID); !errors.Is(err, want) {
+			t.Fatalf("summary error=%v, want %v", err, want)
+		}
 	}
 }
 func TestApplicationMockGenerationDeterministicAndAtomicFailure(t *testing.T) {

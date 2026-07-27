@@ -664,6 +664,10 @@ func mapError(err error) error {
 		return nil
 	}
 	switch {
+	case errors.Is(err, ErrOutputValidationFailed):
+		return ErrOutputValidationFailed
+	case errors.Is(err, ErrIngestionTransaction):
+		return ErrIngestionTransaction
 	case errors.Is(err, ErrNotFound):
 		return ErrChapterPlanNotFound
 	case errors.Is(err, ErrBatchNotFound):
