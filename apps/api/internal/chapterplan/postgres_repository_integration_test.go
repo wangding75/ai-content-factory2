@@ -188,6 +188,27 @@ func TestPostgresRepositoryNullableTriState(t *testing.T) {
 	requireStringPtr(t, "null database notes", rawNotes, nil)
 }
 
+func TestRepositorySafelyMapsLegacyManualSource(t *testing.T) {
+	db, ctx := openIntegrationDB(t)
+	f := newFixture(t, ctx, db)
+	id := uuid.New()
+	if _, err := db.Exec(ctx, "INSERT INTO chapter_plans(id,project_id,chapter_no,title,summary,status,source,created_by) VALUES($1,$2,1,'legacy chapter','legacy summary','pending_confirmation','manual','legacy-importer')", id, f.project); err != nil {
+		t.Fatal(err)
+	}
+	repo := mustNewRepo(t, db)
+	got, err := repo.GetByID(ctx, id)
+	if err != nil {
+		t.Fatalf("read legacy chapter plan: %v", err)
+	}
+	if got.ID != id || got.ProjectID != f.project || got.Source != "manual" || got.Status != "pending_confirmation" {
+		t.Fatalf("legacy plan=%+v", got)
+	}
+	items, err := repo.ListByProject(ctx, f.project)
+	if err != nil || len(items) != 1 || items[0].ID != id || items[0].Source != "manual" {
+		t.Fatalf("legacy list=%+v err=%v", items, err)
+	}
+}
+
 func associationIDs(t *testing.T, ctx context.Context, db *pgxpool.Pool, table, column string, planID uuid.UUID) []uuid.UUID {
 	t.Helper()
 	rows, err := db.Query(ctx, "SELECT "+column+" FROM "+table+" WHERE chapter_plan_id=$1 ORDER BY position", planID)

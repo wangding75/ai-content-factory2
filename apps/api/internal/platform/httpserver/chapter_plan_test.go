@@ -336,6 +336,22 @@ func TestChapterPlanGetHandler(t *testing.T) {
 	requireErrorEnvelope(t, response, 400)
 }
 
+func TestChapterPlanHTTPDoesNotExposeLegacyManualSource(t *testing.T) {
+	projectID := uuid.New()
+	legacy := chapterPlanHTTPValue(projectID)
+	legacy.Source = "manual"
+	legacy.CreatedBy = "legacy-importer"
+	response := chapterPlanRequest(getChapterPlanHandler(&fakeChapterPlanApplication{plan: legacy}), http.MethodGet, "/api/v1/chapter-plans/"+legacy.ID.String(), "")
+	if response.Code != http.StatusOK || !strings.Contains(response.Body.String(), `"source":null`) {
+		t.Fatalf("legacy source must use nullable fallback: status=%d body=%s", response.Code, response.Body.String())
+	}
+	for _, forbidden := range []string{`"source":"manual"`, "candidate_adopted", "mock_generated", "legacy-importer"} {
+		if strings.Contains(response.Body.String(), forbidden) {
+			t.Fatalf("legacy response exposed %q: %s", forbidden, response.Body.String())
+		}
+	}
+}
+
 func TestChapterPlanMockGenerateHandler(t *testing.T) {
 	projectID, targetID := uuid.New(), uuid.New()
 	value := chapterPlanHTTPValue(projectID)
