@@ -348,10 +348,18 @@ func (r *Repository) GetChapterPlanningSummary(ctx context.Context, projectID uu
 	}
 
 	var batchCounts CandidateBatchCounts
-	_ = r.db.QueryRow(ctx, "SELECT COUNT(*) FROM chapter_plan_candidate_batches WHERE project_id = $1 AND status = 'ready'", projectID).Scan(&batchCounts.Ready)
-	_ = r.db.QueryRow(ctx, "SELECT COUNT(*) FROM chapter_plan_candidate_batches WHERE project_id = $1 AND status = 'partially_adopted'", projectID).Scan(&batchCounts.PartiallyAdopted)
-	_ = r.db.QueryRow(ctx, "SELECT COUNT(*) FROM chapter_plan_candidate_batches WHERE project_id = $1 AND status = 'adopted'", projectID).Scan(&batchCounts.Adopted)
-	_ = r.db.QueryRow(ctx, "SELECT COUNT(*) FROM chapter_plan_candidate_batches WHERE project_id = $1 AND status = 'abandoned'", projectID).Scan(&batchCounts.Abandoned)
+	if err := r.db.QueryRow(ctx, "SELECT COUNT(*) FROM chapter_plan_candidate_batches WHERE project_id = $1 AND status = 'ready'", projectID).Scan(&batchCounts.Ready); err != nil {
+		return summary, fmt.Errorf("query ready batch count: %w", err)
+	}
+	if err := r.db.QueryRow(ctx, "SELECT COUNT(*) FROM chapter_plan_candidate_batches WHERE project_id = $1 AND status = 'partially_adopted'", projectID).Scan(&batchCounts.PartiallyAdopted); err != nil {
+		return summary, fmt.Errorf("query partially_adopted batch count: %w", err)
+	}
+	if err := r.db.QueryRow(ctx, "SELECT COUNT(*) FROM chapter_plan_candidate_batches WHERE project_id = $1 AND status = 'adopted'", projectID).Scan(&batchCounts.Adopted); err != nil {
+		return summary, fmt.Errorf("query adopted batch count: %w", err)
+	}
+	if err := r.db.QueryRow(ctx, "SELECT COUNT(*) FROM chapter_plan_candidate_batches WHERE project_id = $1 AND status = 'abandoned'", projectID).Scan(&batchCounts.Abandoned); err != nil {
+		return summary, fmt.Errorf("query abandoned batch count: %w", err)
+	}
 	summary.CandidateBatchCounts = batchCounts
 
 	var activeRunPayload []byte

@@ -252,8 +252,11 @@ type candidateSnapshotStruct struct {
 }
 
 func (r *Repository) AdoptCandidate(ctx context.Context, cmd AdoptCandidateCommand) (AdoptCandidateResult, error) {
-	keyFp := deriveKeyFingerprint(cmd.IdempotencyKey)
-	scope := fmt.Sprintf("chapter-plan-candidate-adopt:%s", cmd.CandidateID)
+	if len(cmd.IdempotencyKey) == 0 {
+		return AdoptCandidateResult{}, fmt.Errorf("%w: idempotency key is required", ErrInvalidCandidateState)
+	}
+	keyFp := r.computeHMACKeyFingerprint(cmd.IdempotencyKey)
+	scope := fmt.Sprintf("chapter_plan_candidate:%s", cmd.CandidateID)
 	reqHash := hashPayload(cmd)
 
 	tx, err := r.db.Begin(ctx)
@@ -537,37 +540,52 @@ func (r *Repository) recalculateBatchInTx(ctx context.Context, tx pgx.Tx, batchI
 }
 
 func (r *Repository) BulkAdoptCandidates(ctx context.Context, cmd BulkAdoptCommand) (BulkAdoptResult, error) {
-	keyFp := deriveKeyFingerprint(cmd.IdempotencyKey)
-	scope := fmt.Sprintf("chapter-plan-batch-adopt:%s", cmd.BatchID)
+	if len(cmd.IdempotencyKey) == 0 {
+		return BulkAdoptResult{}, fmt.Errorf("%w: idempotency key is required", ErrInvalidCandidateState)
+	}
+	keyFp := r.computeHMACKeyFingerprint(cmd.IdempotencyKey)
+	scope := fmt.Sprintf("chapter_plan_bulk_adopt:%s", cmd.BatchID)
 	reqHash := hashPayload(cmd)
 
-	outerTx, err := r.db.Begin(ctx)
+	conn, err := r.db.Acquire(ctx)
 	if err != nil {
-		return BulkAdoptResult{}, err
+		return BulkAdoptResult{}, fmt.Errorf("acquire connection: %w", err)
 	}
-	defer outerTx.Rollback(ctx)
+	defer conn.Release()
 
-	if err := acquireAdvisoryLock(ctx, outerTx, scope, keyFp); err != nil {
-		return BulkAdoptResult{}, err
+	lockID := advisoryLockID(scope, keyFp)
+	if _, err := conn.Exec(ctx, "SELECT pg_advisory_lock($1)", lockID); err != nil {
+		return BulkAdoptResult{}, fmt.Errorf("acquire session lock: %w", err)
 	}
+	defer func() {
+		_, _ = conn.Exec(context.Background(), "SELECT pg_advisory_unlock($1)", lockID)
+	}()
 
-	storedBody, _, found, err := checkIdempotency(ctx, outerTx, scope, keyFp, reqHash)
-	if err != nil {
-		return BulkAdoptResult{}, err
-	}
-	if found {
+	// Query existing idempotency record using dedicated conn
+	var storedBody []byte
+	var storedStatus int
+	var storedHash string
+	err = conn.QueryRow(ctx, `
+		SELECT response_body, response_status, request_hash
+		FROM idempotency_records
+		WHERE scope = $1 AND idempotency_key = $2
+	`, scope, keyFp).Scan(&storedBody, &storedStatus, &storedHash)
+
+	if err == nil {
+		if storedHash != reqHash {
+			return BulkAdoptResult{}, ErrIdempotencyConflict
+		}
 		var res BulkAdoptResult
 		if err := json.Unmarshal(storedBody, &res); err != nil {
 			return BulkAdoptResult{}, err
 		}
-		if err := outerTx.Commit(ctx); err != nil {
-			return BulkAdoptResult{}, err
-		}
 		return res, nil
+	} else if !errors.Is(err, pgx.ErrNoRows) {
+		return BulkAdoptResult{}, err
 	}
 
-	batch, err := scanBatch(outerTx.QueryRow(ctx, fmt.Sprintf("SELECT %s FROM chapter_plan_candidate_batches WHERE id = $1 FOR UPDATE", candidateBatchCols), cmd.BatchID))
-	if errors.Is(err, pgx.ErrNoRows) {
+	batch, err := r.GetCandidateBatchByID(ctx, cmd.BatchID)
+	if errors.Is(err, ErrNotFound) || errors.Is(err, pgx.ErrNoRows) {
 		return BulkAdoptResult{}, ErrBatchNotFound
 	}
 	if err != nil {
@@ -580,12 +598,11 @@ func (r *Repository) BulkAdoptCandidates(ctx context.Context, cmd BulkAdoptComma
 	if batch.Version != cmd.ExpectedBatchVersion {
 		return BulkAdoptResult{}, ErrVersionConflict
 	}
-	_ = outerTx.Commit(ctx)
 
 	itemResults := make([]BulkAdoptItemResult, 0, len(cmd.Candidates))
 
-	for _, item := range cmd.Candidates {
-		itemKey := fmt.Sprintf("%s:%s", cmd.IdempotencyKey, item.CandidateID)
+	for i, item := range cmd.Candidates {
+		itemKey := fmt.Sprintf("%s:item:%s:%d", keyFp, item.CandidateID, i)
 		itemRes, err := r.AdoptCandidate(ctx, AdoptCandidateCommand{
 			CandidateID:                item.CandidateID,
 			ExpectedCandidateVersion:   item.ExpectedCandidateVersion,
@@ -631,7 +648,10 @@ func (r *Repository) BulkAdoptCandidates(ctx context.Context, cmd BulkAdoptComma
 		}
 	}
 
-	finalBatch, _ := r.GetCandidateBatchByID(ctx, cmd.BatchID)
+	finalBatch, err := r.GetCandidateBatchByID(ctx, cmd.BatchID)
+	if err != nil {
+		return BulkAdoptResult{}, fmt.Errorf("query final batch: %w", err)
+	}
 	result := BulkAdoptResult{
 		Items: itemResults,
 		Batch: finalBatch,
@@ -639,23 +659,36 @@ func (r *Repository) BulkAdoptCandidates(ctx context.Context, cmd BulkAdoptComma
 
 	txFinal, err := r.db.Begin(ctx)
 	if err != nil {
-		return result, err
+		return result, fmt.Errorf("begin final tx: %w", err)
 	}
 	defer txFinal.Rollback(ctx)
 
-	if err := recordIdempotency(ctx, txFinal, scope, keyFp, reqHash, 200, result); err != nil {
-		return result, err
+	actor := cmd.ActorID
+	if actor == "" {
+		actor = "system"
 	}
+
+	if err := recordAuditLog(ctx, txFinal, actor, "candidate_batch.bulk_adopted", "chapter_plan_candidate_batch", cmd.BatchID, map[string]any{"batch_id": cmd.BatchID, "item_count": len(itemResults)}); err != nil {
+		return result, fmt.Errorf("record audit: %w", err)
+	}
+
+	if err := recordIdempotency(ctx, txFinal, scope, keyFp, reqHash, 200, result); err != nil {
+		return result, fmt.Errorf("record idempotency: %w", err)
+	}
+
 	if err := txFinal.Commit(ctx); err != nil {
-		return result, err
+		return result, fmt.Errorf("commit final tx: %w", err)
 	}
 
 	return result, nil
 }
 
 func (r *Repository) DiscardCandidate(ctx context.Context, cmd DiscardCandidateCommand) (Candidate, error) {
-	keyFp := deriveKeyFingerprint(cmd.IdempotencyKey)
-	scope := fmt.Sprintf("chapter-plan-candidate-discard:%s", cmd.CandidateID)
+	if len(cmd.IdempotencyKey) == 0 {
+		return Candidate{}, fmt.Errorf("%w: idempotency key is required", ErrInvalidCandidateState)
+	}
+	keyFp := r.computeHMACKeyFingerprint(cmd.IdempotencyKey)
+	scope := fmt.Sprintf("chapter_plan_candidate:%s", cmd.CandidateID)
 	reqHash := hashPayload(cmd)
 
 	tx, err := r.db.Begin(ctx)
@@ -736,8 +769,11 @@ func (r *Repository) DiscardCandidate(ctx context.Context, cmd DiscardCandidateC
 }
 
 func (r *Repository) AbandonBatch(ctx context.Context, cmd AbandonBatchCommand) (CandidateBatch, error) {
-	keyFp := deriveKeyFingerprint(cmd.IdempotencyKey)
-	scope := fmt.Sprintf("chapter-plan-batch-abandon:%s", cmd.BatchID)
+	if len(cmd.IdempotencyKey) == 0 {
+		return CandidateBatch{}, fmt.Errorf("%w: idempotency key is required", ErrInvalidCandidateState)
+	}
+	keyFp := r.computeHMACKeyFingerprint(cmd.IdempotencyKey)
+	scope := fmt.Sprintf("chapter_plan_batch:%s", cmd.BatchID)
 	reqHash := hashPayload(cmd)
 
 	tx, err := r.db.Begin(ctx)

@@ -13,14 +13,17 @@ import (
 func TestPostgresCandidateIntegration(t *testing.T) {
 	db, ctx := openIntegrationDB(t)
 
-	repo := NewPostgresRepository(db)
+	repo, err := NewPostgresRepository(db, "test-hmac-secret-1234567890")
+	if err != nil {
+		t.Fatalf("failed to create repo: %v", err)
+	}
 	ingestor := NewResultIngestor(db)
 
 	projectID := uuid.New()
 	runID := uuid.New()
 
 	// Seed Project and WorkflowRun
-	_, err := db.Exec(ctx, "INSERT INTO projects(id,name,type,created_by) VALUES($1,$2,'novel','test')", projectID, "Candidate Test Project")
+	_, err = db.Exec(ctx, "INSERT INTO projects(id,name,type,created_by) VALUES($1,$2,'novel','test')", projectID, "Candidate Test Project")
 	if err != nil {
 		t.Fatalf("failed to seed project: %v", err)
 	}

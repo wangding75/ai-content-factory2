@@ -118,10 +118,19 @@ func requireStringPtr(t *testing.T, label string, got *string, want *string) {
 	}
 }
 
+func mustNewRepo(t *testing.T, db *pgxpool.Pool) *Repository {
+	t.Helper()
+	repo, err := NewPostgresRepository(db, "test-hmac-secret-1234567890")
+	if err != nil {
+		t.Fatalf("failed to create repo: %v", err)
+	}
+	return repo
+}
+
 func TestPostgresRepositoryNullableTriState(t *testing.T) {
 	db, ctx := openIntegrationDB(t)
 	f := newFixture(t, ctx, db)
-	r := NewPostgresRepository(db)
+	r := mustNewRepo(t, db)
 	text := "ordinary text"
 	empty := ""
 	cases := []struct {
@@ -203,7 +212,7 @@ func associationIDs(t *testing.T, ctx context.Context, db *pgxpool.Pool, table, 
 func TestPostgresRepositoryAssociationsReplaceClearAndRejectCrossProject(t *testing.T) {
 	db, ctx := openIntegrationDB(t)
 	f := newFixture(t, ctx, db)
-	r := NewPostgresRepository(db)
+	r := mustNewRepo(t, db)
 	p := plan(f, 1)
 	p.Storylines = []StorylineRef{{ID: f.storylines[2], Relation: "secondary"}, {ID: f.storylines[0], Relation: "primary"}}
 	p.Materials = []uuid.UUID{f.materials[2], f.materials[0]}
@@ -292,7 +301,7 @@ func TestPostgresRepositoryAssociationsReplaceClearAndRejectCrossProject(t *test
 func TestPostgresRepositoryRejectsDuplicateAssociationsAtomically(t *testing.T) {
 	db, ctx := openIntegrationDB(t)
 	f := newFixture(t, ctx, db)
-	r := NewPostgresRepository(db)
+	r := mustNewRepo(t, db)
 	cases := []struct {
 		name string
 		set  func(*Plan)
@@ -321,7 +330,7 @@ func TestPostgresRepositoryRejectsDuplicateAssociationsAtomically(t *testing.T) 
 func TestPostgresRepositoryConfirmBatchRollsBackOnFailure(t *testing.T) {
 	db, ctx := openIntegrationDB(t)
 	f := newFixture(t, ctx, db)
-	r := NewPostgresRepository(db)
+	r := mustNewRepo(t, db)
 	for _, tc := range []struct {
 		name      string
 		selection func(Plan, Plan) []Selection
@@ -356,7 +365,7 @@ func TestPostgresRepositoryConfirmBatchRollsBackOnFailure(t *testing.T) {
 func TestPostgresRepositoryPersistsAcrossReconnect(t *testing.T) {
 	db, ctx := openIntegrationDB(t)
 	f := newFixture(t, ctx, db)
-	r := NewPostgresRepository(db)
+	r := mustNewRepo(t, db)
 	goal, notes := "goal", "notes"
 	p := plan(f, 1)
 	p.Goal, p.Notes = &goal, &notes
@@ -374,7 +383,7 @@ func TestPostgresRepositoryPersistsAcrossReconnect(t *testing.T) {
 		t.Fatal(err)
 	}
 	t.Cleanup(reconnected.Close)
-	got, err := NewPostgresRepository(reconnected).GetByID(ctx, p.ID)
+	got, err := mustNewRepo(t, reconnected).GetByID(ctx, p.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
