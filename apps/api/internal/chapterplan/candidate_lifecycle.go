@@ -2,6 +2,7 @@ package chapterplan
 
 import (
 	"context"
+	"crypto/hmac"
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
@@ -18,6 +19,8 @@ var (
 	ErrBatchAlreadyFinalized    = errors.New("batch is already finalized")
 	ErrIdempotencyKeyReused     = errors.New("idempotency key reused with different payload")
 	ErrRevisionSequenceConflict = errors.New("revision sequence conflict")
+
+	hmacSecretKey = []byte("cf15-chapter-planning-idempotency-secret-v1")
 )
 
 type AdoptCandidateCommand struct {
@@ -29,11 +32,11 @@ type AdoptCandidateCommand struct {
 }
 
 type AdoptCandidateResult struct {
-	Outcome     string          `json:"outcome"` // "adopted" or "no_change"
-	Candidate   Candidate       `json:"candidate"`
-	ChapterPlan *Plan           `json:"chapterPlan"`
-	Revision    *Revision       `json:"revision"`
-	Batch       CandidateBatch  `json:"batch"`
+	Outcome     string         `json:"outcome"` // "adopted" or "no_change"
+	Candidate   Candidate      `json:"candidate"`
+	ChapterPlan *Plan          `json:"chapterPlan"`
+	Revision    *Revision      `json:"revision"`
+	Batch       CandidateBatch `json:"batch"`
 }
 
 type DiscardCandidateCommand struct {
@@ -82,14 +85,22 @@ type AbandonBatchCommand struct {
 }
 
 func deriveKeyFingerprint(rawKey string) string {
-	sum := sha256.Sum256([]byte(rawKey))
-	return hex.EncodeToString(sum[:])
+	mac := hmac.New(sha256.New, hmacSecretKey)
+	mac.Write([]byte(rawKey))
+	return hex.EncodeToString(mac.Sum(nil))
 }
 
 func hashPayload(v any) string {
 	b, _ := json.Marshal(v)
 	sum := sha256.Sum256(b)
 	return hex.EncodeToString(sum[:])
+}
+
+func acquireAdvisoryLock(ctx context.Context, tx pgx.Tx, scope, key string) error {
+	sum := sha256.Sum256([]byte(scope + ":" + key))
+	lockKey := int64(uint64(sum[0])<<56 | uint64(sum[1])<<48 | uint64(sum[2])<<40 | uint64(sum[3])<<32 | uint64(sum[4])<<24 | uint64(sum[5])<<16 | uint64(sum[6])<<8 | uint64(sum[7]))
+	_, err := tx.Exec(ctx, "SELECT pg_advisory_xact_lock($1)", lockKey)
+	return err
 }
 
 func checkIdempotency(ctx context.Context, tx pgx.Tx, scope, key, reqHash string) ([]byte, int, bool, error) {
@@ -141,10 +152,103 @@ func recordAuditLog(ctx context.Context, tx pgx.Tx, actor, action, subjectType s
 	pBytes, _ := json.Marshal(cleanPayload)
 	id := uuid.New()
 	_, err := tx.Exec(ctx, `
-		INSERT INTO audit_logs (id, actor, action, subject_type, subject_id, payload, created_at)
+		INSERT INTO audit_logs (id, actor_id, action, subject_type, subject_id, payload, created_at)
 		VALUES ($1, $2, $3, $4, $5, $6, NOW())
-	`, id, actor, action, subjectType, subjectID, pBytes)
+	`, id, actor, action, subjectType, subjectID.String(), pBytes)
 	return err
+}
+
+func replaceChapterPlanRelations(ctx context.Context, tx pgx.Tx, planID, projectID uuid.UUID, candidateSnap []byte) error {
+	var snap candidateSnapshotStruct
+	if err := json.Unmarshal(candidateSnap, &snap); err != nil {
+		return fmt.Errorf("unmarshal candidate snapshot: %w", err)
+	}
+
+	if _, err := tx.Exec(ctx, "DELETE FROM chapter_plan_storylines WHERE chapter_plan_id = $1", planID); err != nil {
+		return fmt.Errorf("delete chapter_plan_storylines: %w", err)
+	}
+	if _, err := tx.Exec(ctx, "DELETE FROM chapter_plan_materials WHERE chapter_plan_id = $1", planID); err != nil {
+		return fmt.Errorf("delete chapter_plan_materials: %w", err)
+	}
+	if _, err := tx.Exec(ctx, "DELETE FROM chapter_plan_foreshadowings WHERE chapter_plan_id = $1", planID); err != nil {
+		return fmt.Errorf("delete chapter_plan_foreshadowings: %w", err)
+	}
+
+	hasPrimary := false
+	for i, ref := range snap.StorylineRefs {
+		rel := ref.Relation
+		if rel != "primary" && rel != "secondary" {
+			if !hasPrimary {
+				rel = "primary"
+			} else {
+				rel = "secondary"
+			}
+		}
+		if rel == "primary" {
+			hasPrimary = true
+		}
+		pos := ref.Position
+		if pos < 0 {
+			pos = i
+		}
+		_, err := tx.Exec(ctx, `
+			INSERT INTO chapter_plan_storylines (chapter_plan_id, project_id, storyline_id, relation, position)
+			VALUES ($1, $2, $3, $4, $5)
+			ON CONFLICT (chapter_plan_id, storyline_id) DO UPDATE SET relation = EXCLUDED.relation, position = EXCLUDED.position
+		`, planID, projectID, ref.ID, rel, pos)
+		if err != nil {
+			return fmt.Errorf("insert storyline relation: %w", err)
+		}
+	}
+
+	for i, ref := range snap.MaterialRefs {
+		pos := ref.Position
+		if pos < 0 {
+			pos = i
+		}
+		_, _ = tx.Exec(ctx, `
+			INSERT INTO project_material_usages (id, project_id, material_id, usage_type, created_by)
+			VALUES ($1, $2, $3, 'reference', 'system')
+			ON CONFLICT (project_id, material_id) DO NOTHING
+		`, uuid.New(), projectID, ref.ID)
+
+		_, err := tx.Exec(ctx, `
+			INSERT INTO chapter_plan_materials (chapter_plan_id, project_id, material_id, position)
+			VALUES ($1, $2, $3, $4)
+			ON CONFLICT (chapter_plan_id, material_id) DO UPDATE SET position = EXCLUDED.position
+		`, planID, projectID, ref.ID, pos)
+		if err != nil {
+			return fmt.Errorf("insert material relation: %w", err)
+		}
+	}
+
+	for i, ref := range snap.ForeshadowingRefs {
+		pos := ref.Position
+		if pos < 0 {
+			pos = i
+		}
+		_, err := tx.Exec(ctx, `
+			INSERT INTO chapter_plan_foreshadowings (chapter_plan_id, project_id, foreshadowing_id, position)
+			VALUES ($1, $2, $3, $4)
+			ON CONFLICT (chapter_plan_id, foreshadowing_id) DO UPDATE SET position = EXCLUDED.position
+		`, planID, projectID, ref.ID, pos)
+		if err != nil {
+			return fmt.Errorf("insert foreshadowing relation: %w", err)
+		}
+	}
+
+	return nil
+}
+
+type candidateSnapshotStruct struct {
+	ChapterNo         int                   `json:"chapterNo"`
+	Title             string                `json:"title"`
+	Summary           string                `json:"summary"`
+	ChapterPurpose    string                `json:"chapterPurpose"`
+	StorylineRefs     []NormalizedReference `json:"storylineRefs"`
+	MaterialRefs      []NormalizedReference `json:"materialRefs"`
+	ForeshadowingRefs []NormalizedReference `json:"foreshadowingRefs"`
+	GenerationBasis   GenerationBasis       `json:"generationBasis"`
 }
 
 func (r *Repository) AdoptCandidate(ctx context.Context, cmd AdoptCandidateCommand) (AdoptCandidateResult, error) {
@@ -158,7 +262,10 @@ func (r *Repository) AdoptCandidate(ctx context.Context, cmd AdoptCandidateComma
 	}
 	defer tx.Rollback(ctx)
 
-	// Check Idempotency
+	if err := acquireAdvisoryLock(ctx, tx, scope, keyFp); err != nil {
+		return AdoptCandidateResult{}, err
+	}
+
 	storedBody, _, found, err := checkIdempotency(ctx, tx, scope, keyFp, reqHash)
 	if err != nil {
 		return AdoptCandidateResult{}, err
@@ -168,11 +275,12 @@ func (r *Repository) AdoptCandidate(ctx context.Context, cmd AdoptCandidateComma
 		if err := json.Unmarshal(storedBody, &res); err != nil {
 			return AdoptCandidateResult{}, err
 		}
-		_ = tx.Commit(ctx)
+		if err := tx.Commit(ctx); err != nil {
+			return AdoptCandidateResult{}, err
+		}
 		return res, nil
 	}
 
-	// Lock candidate and batch
 	cand, err := scanCandidate(tx.QueryRow(ctx, fmt.Sprintf("SELECT %s FROM chapter_plan_candidates WHERE id = $1 FOR UPDATE", candidateCols), cmd.CandidateID))
 	if errors.Is(err, pgx.ErrNoRows) {
 		return AdoptCandidateResult{}, ErrCandidateNotFound
@@ -193,13 +301,11 @@ func (r *Repository) AdoptCandidate(ctx context.Context, cmd AdoptCandidateComma
 		return AdoptCandidateResult{}, err
 	}
 
-	// Read current target plan
 	targetPlan, targetRevID, err := r.findTargetChapterPlan(ctx, tx, cand.ProjectID, cand.ChapterNo)
 	if err != nil {
 		return AdoptCandidateResult{}, err
 	}
 
-	// Stale check
 	if cand.Status == "stale" || cand.DiffType == "stale_conflict" {
 		return AdoptCandidateResult{}, ErrStaleCandidate
 	}
@@ -207,7 +313,6 @@ func (r *Repository) AdoptCandidate(ctx context.Context, cmd AdoptCandidateComma
 		return AdoptCandidateResult{}, ErrStaleCandidate
 	}
 
-	// Expected ChapterPlan version check
 	if targetPlan != nil {
 		if cmd.ExpectedChapterPlanVersion == nil || *cmd.ExpectedChapterPlanVersion != targetPlan.Version {
 			return AdoptCandidateResult{}, ErrVersionConflict
@@ -218,7 +323,6 @@ func (r *Repository) AdoptCandidate(ctx context.Context, cmd AdoptCandidateComma
 		}
 	}
 
-	// Check if content changed
 	currSnap := cand.CurrentSnapshot
 	var targetSnap []byte
 	if targetPlan != nil {
@@ -226,7 +330,6 @@ func (r *Repository) AdoptCandidate(ctx context.Context, cmd AdoptCandidateComma
 	}
 
 	if targetPlan != nil && len(targetSnap) > 0 && isSameSnapshot(currSnap, targetSnap) {
-		// no_change outcome
 		batchSummary := batch
 		res := AdoptCandidateResult{
 			Outcome:     "no_change",
@@ -244,25 +347,49 @@ func (r *Repository) AdoptCandidate(ctx context.Context, cmd AdoptCandidateComma
 		return res, nil
 	}
 
-	// Candidate adoption writes new Revision and ChapterPlan
 	actor := cmd.ActorID
 	if actor == "" {
 		actor = "system"
 	}
 
+	var snapObj candidateSnapshotStruct
+	_ = json.Unmarshal(currSnap, &snapObj)
+
+	title := snapObj.Title
+	if title == "" {
+		title = fmt.Sprintf("Chapter %d", cand.ChapterNo)
+	}
+	summaryText := snapObj.Summary
+
 	var planID uuid.UUID
 	var revNo int
+	var committedPlan Plan
 
-	if targetPlan != nil {
+	if targetPlan == nil {
+		// 1. Create base ChapterPlan with current_revision_id = NULL
+		planID = uuid.New()
+		revNo = 1
+		createPlanQuery := `INSERT INTO chapter_plans (
+			id, project_id, chapter_no, title, summary,
+			status, source, current_revision_id, source_candidate_id, source_candidate_batch_id,
+			source_workflow_run_id, created_by, version, created_at, updated_at
+		) VALUES (
+			$1, $2, $3, $4, $5,
+			'pending_confirmation', 'candidate_adopted', NULL, $6, $7,
+			$8, $9, 1, NOW(), NOW()
+		)`
+		_, err := tx.Exec(ctx, createPlanQuery, planID, cand.ProjectID, cand.ChapterNo, title, summaryText, cand.ID, cand.BatchID, batch.SourceWorkflowRunID, actor)
+		if err != nil {
+			return AdoptCandidateResult{}, classifyAdoptErr(err)
+		}
+	} else {
 		planID = targetPlan.ID
 		var maxRev int
 		_ = tx.QueryRow(ctx, "SELECT COALESCE(MAX(revision_no), 0) FROM chapter_plan_revisions WHERE chapter_plan_id = $1", planID).Scan(&maxRev)
 		revNo = maxRev + 1
-	} else {
-		planID = uuid.New()
-		revNo = 1
 	}
 
+	// 2. Create Revision
 	revID := uuid.New()
 	_, err = tx.Exec(ctx, `
 		INSERT INTO chapter_plan_revisions (
@@ -275,57 +402,41 @@ func (r *Repository) AdoptCandidate(ctx context.Context, cmd AdoptCandidateComma
 			$9, NOW()
 		)
 	`, revID, planID, cand.ProjectID, revNo, currSnap, cand.ID, cand.BatchID, batch.SourceWorkflowRunID, actor)
-
 	if err != nil {
 		return AdoptCandidateResult{}, classifyAdoptErr(err)
 	}
 
-	// Parse candidate title, summary, etc. from current_snapshot
-	var snapMap map[string]any
-	_ = json.Unmarshal(currSnap, &snapMap)
-
-	title, _ := snapMap["title"].(string)
-	summaryText, _ := snapMap["summary"].(string)
-	var goalPtr, notesPtr *string
-	if g, ok := snapMap["chapterGoal"].(string); ok && g != "" {
-		goalPtr = &g
-	}
-	if n, ok := snapMap["creationNotes"].(string); ok && n != "" {
-		notesPtr = &n
+	// 3. Replace ChapterPlan relationship tables
+	if err := replaceChapterPlanRelations(ctx, tx, planID, cand.ProjectID, currSnap); err != nil {
+		return AdoptCandidateResult{}, err
 	}
 
-	var committedPlan Plan
-	if targetPlan != nil {
-		q := `UPDATE chapter_plans
-			SET title = $3, summary = $4, chapter_goal = $5, creation_notes = $6,
-			    status = 'pending_confirmation', source = 'candidate_adopted',
-			    current_revision_id = $7, source_candidate_id = $8, source_candidate_batch_id = $9,
-			    source_workflow_run_id = $10, version = version + 1, updated_at = NOW()
+	// 4. Update ChapterPlan current_revision_id and scalar fields
+	if targetPlan == nil {
+		upQuery := `UPDATE chapter_plans
+			SET current_revision_id = $2, updated_at = NOW()
+			WHERE id = $1 RETURNING ` + cols
+		committedPlan, err = scan(tx.QueryRow(ctx, upQuery, planID, revID))
+		if err != nil {
+			return AdoptCandidateResult{}, err
+		}
+	} else {
+		upQuery := `UPDATE chapter_plans
+			SET title = $3, summary = $4, status = 'pending_confirmation', source = 'candidate_adopted',
+			    current_revision_id = $5, source_candidate_id = $6, source_candidate_batch_id = $7,
+			    source_workflow_run_id = $8, version = version + 1, updated_at = NOW()
 			WHERE id = $1 AND version = $2 RETURNING ` + cols
-		committedPlan, err = scan(tx.QueryRow(ctx, q, planID, targetPlan.Version, title, summaryText, goalPtr, notesPtr, revID, cand.ID, cand.BatchID, batch.SourceWorkflowRunID))
+		committedPlan, err = scan(tx.QueryRow(ctx, upQuery, planID, targetPlan.Version, title, summaryText, revID, cand.ID, cand.BatchID, batch.SourceWorkflowRunID))
 		if errors.Is(err, pgx.ErrNoRows) {
 			return AdoptCandidateResult{}, ErrVersionConflict
 		}
 		if err != nil {
 			return AdoptCandidateResult{}, classifyAdoptErr(err)
 		}
-	} else {
-		q := `INSERT INTO chapter_plans (
-			id, project_id, chapter_no, title, summary, chapter_goal, creation_notes,
-			status, source, current_revision_id, source_candidate_id, source_candidate_batch_id,
-			source_workflow_run_id, created_by, version, created_at, updated_at
-		) VALUES (
-			$1, $2, $3, $4, $5, $6, $7,
-			'pending_confirmation', 'candidate_adopted', $8, $9, $10,
-			$11, $12, 1, NOW(), NOW()
-		) RETURNING ` + cols
-		committedPlan, err = scan(tx.QueryRow(ctx, q, planID, cand.ProjectID, cand.ChapterNo, title, summaryText, goalPtr, notesPtr, revID, cand.ID, cand.BatchID, batch.SourceWorkflowRunID, actor))
-		if err != nil {
-			return AdoptCandidateResult{}, classifyAdoptErr(err)
-		}
 	}
+	_ = r.loadRefs(ctx, &committedPlan)
 
-	// Update candidate status
+	// 5. Update Candidate
 	now := time.Now()
 	upCandQuery := `UPDATE chapter_plan_candidates
 		SET status = 'adopted', adopted_chapter_plan_id = $2, adopted_revision_id = $3, adopted_at = $4, version = version + 1, updated_at = NOW()
@@ -335,7 +446,7 @@ func (r *Repository) AdoptCandidate(ctx context.Context, cmd AdoptCandidateComma
 		return AdoptCandidateResult{}, err
 	}
 
-	// Recalculate Batch counts and status
+	// 6. Recalculate Batch
 	batch, err = r.recalculateBatchInTx(ctx, tx, batch.ID)
 	if err != nil {
 		return AdoptCandidateResult{}, err
@@ -354,7 +465,9 @@ func (r *Repository) AdoptCandidate(ctx context.Context, cmd AdoptCandidateComma
 		Batch:       batch,
 	}
 
-	_ = recordAuditLog(ctx, tx, actor, "candidate.adopted", "chapter_plan_candidate", cand.ID, map[string]any{"candidate_id": cand.ID, "chapter_plan_id": committedPlan.ID, "revision_id": rev.ID})
+	if err := recordAuditLog(ctx, tx, actor, "candidate.adopted", "chapter_plan_candidate", cand.ID, map[string]any{"candidate_id": cand.ID, "chapter_plan_id": committedPlan.ID, "revision_id": rev.ID}); err != nil {
+		return AdoptCandidateResult{}, err
+	}
 
 	if err := recordIdempotency(ctx, tx, scope, keyFp, reqHash, 200, res); err != nil {
 		return AdoptCandidateResult{}, err
@@ -399,7 +512,11 @@ func (r *Repository) recalculateBatchInTx(ctx context.Context, tx pgx.Tx, batchI
 	}
 
 	newStatus := "ready"
-	if adoptedCount > 0 && (pendingCount > 0 || staleCount > 0) {
+	var currentStatus string
+	_ = tx.QueryRow(ctx, "SELECT status FROM chapter_plan_candidate_batches WHERE id = $1", batchID).Scan(&currentStatus)
+	if currentStatus == "abandoned" {
+		newStatus = "abandoned"
+	} else if adoptedCount > 0 && (pendingCount > 0 || staleCount > 0) {
 		newStatus = "partially_adopted"
 	} else if (pendingCount == 0 && staleCount == 0) && adoptedCount > 0 {
 		newStatus = "adopted"
@@ -430,6 +547,10 @@ func (r *Repository) BulkAdoptCandidates(ctx context.Context, cmd BulkAdoptComma
 	}
 	defer outerTx.Rollback(ctx)
 
+	if err := acquireAdvisoryLock(ctx, outerTx, scope, keyFp); err != nil {
+		return BulkAdoptResult{}, err
+	}
+
 	storedBody, _, found, err := checkIdempotency(ctx, outerTx, scope, keyFp, reqHash)
 	if err != nil {
 		return BulkAdoptResult{}, err
@@ -439,7 +560,9 @@ func (r *Repository) BulkAdoptCandidates(ctx context.Context, cmd BulkAdoptComma
 		if err := json.Unmarshal(storedBody, &res); err != nil {
 			return BulkAdoptResult{}, err
 		}
-		_ = outerTx.Commit(ctx)
+		if err := outerTx.Commit(ctx); err != nil {
+			return BulkAdoptResult{}, err
+		}
 		return res, nil
 	}
 
@@ -514,11 +637,17 @@ func (r *Repository) BulkAdoptCandidates(ctx context.Context, cmd BulkAdoptComma
 		Batch: finalBatch,
 	}
 
-	// Write outer idempotency record
 	txFinal, err := r.db.Begin(ctx)
-	if err == nil {
-		_ = recordIdempotency(ctx, txFinal, scope, keyFp, reqHash, 200, result)
-		_ = txFinal.Commit(ctx)
+	if err != nil {
+		return result, err
+	}
+	defer txFinal.Rollback(ctx)
+
+	if err := recordIdempotency(ctx, txFinal, scope, keyFp, reqHash, 200, result); err != nil {
+		return result, err
+	}
+	if err := txFinal.Commit(ctx); err != nil {
+		return result, err
 	}
 
 	return result, nil
@@ -535,6 +664,10 @@ func (r *Repository) DiscardCandidate(ctx context.Context, cmd DiscardCandidateC
 	}
 	defer tx.Rollback(ctx)
 
+	if err := acquireAdvisoryLock(ctx, tx, scope, keyFp); err != nil {
+		return Candidate{}, err
+	}
+
 	storedBody, _, found, err := checkIdempotency(ctx, tx, scope, keyFp, reqHash)
 	if err != nil {
 		return Candidate{}, err
@@ -544,7 +677,9 @@ func (r *Repository) DiscardCandidate(ctx context.Context, cmd DiscardCandidateC
 		if err := json.Unmarshal(storedBody, &res); err != nil {
 			return Candidate{}, err
 		}
-		_ = tx.Commit(ctx)
+		if err := tx.Commit(ctx); err != nil {
+			return Candidate{}, err
+		}
 		return res, nil
 	}
 
@@ -586,7 +721,9 @@ func (r *Repository) DiscardCandidate(ctx context.Context, cmd DiscardCandidateC
 		return Candidate{}, err
 	}
 
-	_ = recordAuditLog(ctx, tx, actor, "candidate.discarded", "chapter_plan_candidate", cand.ID, map[string]any{"candidate_id": cand.ID, "reason": cmd.Reason})
+	if err := recordAuditLog(ctx, tx, actor, "candidate.discarded", "chapter_plan_candidate", cand.ID, map[string]any{"candidate_id": cand.ID, "reason": cmd.Reason}); err != nil {
+		return Candidate{}, err
+	}
 
 	if err := recordIdempotency(ctx, tx, scope, keyFp, reqHash, 200, updatedCand); err != nil {
 		return Candidate{}, err
@@ -609,6 +746,10 @@ func (r *Repository) AbandonBatch(ctx context.Context, cmd AbandonBatchCommand) 
 	}
 	defer tx.Rollback(ctx)
 
+	if err := acquireAdvisoryLock(ctx, tx, scope, keyFp); err != nil {
+		return CandidateBatch{}, err
+	}
+
 	storedBody, _, found, err := checkIdempotency(ctx, tx, scope, keyFp, reqHash)
 	if err != nil {
 		return CandidateBatch{}, err
@@ -618,7 +759,9 @@ func (r *Repository) AbandonBatch(ctx context.Context, cmd AbandonBatchCommand) 
 		if err := json.Unmarshal(storedBody, &res); err != nil {
 			return CandidateBatch{}, err
 		}
-		_ = tx.Commit(ctx)
+		if err := tx.Commit(ctx); err != nil {
+			return CandidateBatch{}, err
+		}
 		return res, nil
 	}
 
@@ -643,7 +786,6 @@ func (r *Repository) AbandonBatch(ctx context.Context, cmd AbandonBatchCommand) 
 	}
 	now := time.Now()
 
-	// Discard all pending / stale candidates in batch
 	_, err = tx.Exec(ctx, `
 		UPDATE chapter_plan_candidates
 		SET status = 'discarded', discarded_at = $2, discard_reason = $3, version = version + 1, updated_by = $4, updated_at = NOW()
@@ -653,7 +795,6 @@ func (r *Repository) AbandonBatch(ctx context.Context, cmd AbandonBatchCommand) 
 		return CandidateBatch{}, err
 	}
 
-	// Update Batch status to abandoned
 	upBatchQuery := `UPDATE chapter_plan_candidate_batches
 		SET status = 'abandoned', abandoned_at = $2, abandon_reason = $3, version = version + 1, updated_by = $4, updated_at = NOW()
 		WHERE id = $1 AND version = $5 RETURNING ` + candidateBatchCols
@@ -666,13 +807,14 @@ func (r *Repository) AbandonBatch(ctx context.Context, cmd AbandonBatchCommand) 
 		return CandidateBatch{}, err
 	}
 
-	// Recalculate counts
 	finalBatch, err := r.recalculateBatchInTx(ctx, tx, batch.ID)
 	if err == nil {
 		abandonedBatch = finalBatch
 	}
 
-	_ = recordAuditLog(ctx, tx, actor, "candidate_batch.abandoned", "chapter_plan_candidate_batch", batch.ID, map[string]any{"batch_id": batch.ID, "reason": cmd.Reason})
+	if err := recordAuditLog(ctx, tx, actor, "candidate_batch.abandoned", "chapter_plan_candidate_batch", batch.ID, map[string]any{"batch_id": batch.ID, "reason": cmd.Reason}); err != nil {
+		return CandidateBatch{}, err
+	}
 
 	if err := recordIdempotency(ctx, tx, scope, keyFp, reqHash, 200, abandonedBatch); err != nil {
 		return CandidateBatch{}, err

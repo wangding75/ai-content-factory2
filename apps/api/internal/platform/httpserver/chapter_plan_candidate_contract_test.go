@@ -251,6 +251,7 @@ func TestChapterPlanCandidateHTTPContract(t *testing.T) {
 	patchBody := `{"expectedCandidateVersion":1,"currentSnapshot":{"title":"Updated"}}`
 	req = httptest.NewRequest("PATCH", "/api/v1/chapter-plan-candidates/"+candidateID.String(), strings.NewReader(patchBody))
 	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Idempotency-Key", "test-update-key")
 	w = httptest.NewRecorder()
 	server.Handler().ServeHTTP(w, req)
 	if w.Code != http.StatusOK {
@@ -269,6 +270,7 @@ func TestChapterPlanCandidateHTTPContract(t *testing.T) {
 	recompareBody := `{"expectedCandidateVersion":2}`
 	req = httptest.NewRequest("POST", "/api/v1/chapter-plan-candidates/"+candidateID.String()+"/recompare", strings.NewReader(recompareBody))
 	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Idempotency-Key", "test-recompare-key")
 	w = httptest.NewRecorder()
 	server.Handler().ServeHTTP(w, req)
 	if w.Code != http.StatusOK {
