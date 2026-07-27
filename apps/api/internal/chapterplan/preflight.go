@@ -196,6 +196,16 @@ func blockedPreflight(result PreflightResult, code, message, retryAction, safeRe
 	return result
 }
 
+// invalidPreflightInputDigest uses the same normalized request representation for
+// every early invalid-input blocker. These branches cannot build a generation
+// snapshot, but must still return a stable digest for the exact request.
+func invalidPreflightInputDigest(projectID uuid.UUID, request PreflightRequest) (string, error) {
+	return canonicalDigest(struct {
+		ProjectID uuid.UUID
+		Request   PreflightRequest
+	}{projectID, request})
+}
+
 func (s *Service) Preflight(ctx context.Context, projectID uuid.UUID, request PreflightRequest) (PreflightResult, error) {
 	if projectID == uuid.Nil || strings.TrimSpace(request.ActorID) == "" {
 		return PreflightResult{}, ErrValidation
@@ -204,17 +214,18 @@ func (s *Service) Preflight(ctx context.Context, projectID uuid.UUID, request Pr
 		return PreflightResult{}, err
 	}
 	if !validContextOptions(request.ContextOptions) {
-		digest, err := canonicalDigest(struct {
-			ProjectID uuid.UUID
-			Request   PreflightRequest
-		}{projectID, request})
+		digest, err := invalidPreflightInputDigest(projectID, request)
 		if err != nil {
 			return PreflightResult{}, err
 		}
 		return blockedPreflight(PreflightResult{InputDigest: digest}, "generation_input_invalid", "generation input is invalid", "review_generation_input", "All generation options must be provided."), nil
 	}
 	if request.StorylineSelectionMode != "auto_balanced" && request.StorylineSelectionMode != "specified" || request.StorylineSelectionMode == "specified" && len(request.StorylineIDs) == 0 {
-		return blockedPreflight(PreflightResult{}, "storyline_reference_invalid", "storyline selection is invalid", "review_storyline_selection", "Choose valid project storylines."), nil
+		digest, err := invalidPreflightInputDigest(projectID, request)
+		if err != nil {
+			return PreflightResult{}, err
+		}
+		return blockedPreflight(PreflightResult{InputDigest: digest}, "storyline_reference_invalid", "storyline selection is invalid", "review_storyline_selection", "Choose valid project storylines."), nil
 	}
 	plans, err := s.plans.ListByProject(ctx, projectID)
 	if err != nil {
@@ -228,10 +239,7 @@ func (s *Service) Preflight(ctx context.Context, projectID uuid.UUID, request Pr
 	}
 	target, err := NormalizeGenerationTarget(request.GenerationMode, request.Target, max)
 	if err != nil {
-		digest, digestErr := canonicalDigest(struct {
-			ProjectID uuid.UUID
-			Request   PreflightRequest
-		}{projectID, request})
+		digest, digestErr := invalidPreflightInputDigest(projectID, request)
 		if digestErr != nil {
 			return PreflightResult{}, digestErr
 		}

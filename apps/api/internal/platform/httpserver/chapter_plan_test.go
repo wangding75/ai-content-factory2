@@ -6,6 +6,7 @@ import (
 	"errors"
 	"net/http"
 	"net/http/httptest"
+	"regexp"
 	"strings"
 	"testing"
 	"time"
@@ -204,6 +205,8 @@ type chapterPlanPreflightHTTPResponse struct {
 	Data struct {
 		Result         string          `json:"result"`
 		Status         string          `json:"status"`
+		InputDigest    string          `json:"inputDigest"`
+		InputSummary   json.RawMessage `json:"inputSummary"`
 		PreflightToken *string         `json:"preflightToken"`
 		Checks         json.RawMessage `json:"checks"`
 		Warnings       json.RawMessage `json:"warnings"`
@@ -222,6 +225,27 @@ func decodeChapterPlanPreflightHTTPResponse(t *testing.T, response *httptest.Res
 		t.Fatalf("decode preflight response: %v; body=%s", err, response.Body.String())
 	}
 	return payload
+}
+
+func TestChapterPlanPreflightHandlerReturnsInvalidStorylineBlockedReport(t *testing.T) {
+	projectID := uuid.New()
+	fake := &fakeChapterPlanRunApplication{result: chapterplan.PreflightResult{
+		InputDigest: strings.Repeat("c", 64),
+		Blockers: []chapterplan.PreflightBlocker{{
+			Code:        "storyline_reference_invalid",
+			RetryAction: "review_storyline_selection",
+			SafeReason:  "Choose valid project storylines.",
+		}},
+	}}
+	body := `{"generationMode":"full","target":{"targetTotalChapters":2},"storylineSelection":{"mode":"specified","storylineIds":[]},"contextOptions":{"includeProjectMaterials":true,"includeUnpaidForeshadowings":true,"includePriorChapterSummaries":true,"coreSettingsOnly":false},"additionalInstructions":null}`
+	response := chapterPlanRequest(chapterPlanPreflightHandler(fake), http.MethodPost, "/api/v1/projects/"+projectID.String()+"/chapter-plan-runs/preflight", body)
+	payload := decodeChapterPlanPreflightHTTPResponse(t, response)
+	if response.Code != http.StatusOK || payload.Data.Result != "blocked" || payload.Data.Status != "blocked" || len(payload.Data.Blockers) != 1 || payload.Data.Blockers[0].Code != "storyline_reference_invalid" || payload.Data.PreflightToken != nil || string(payload.Data.InputSummary) != "null" {
+		t.Fatalf("invalid storyline blocked response=%d body=%s", response.Code, response.Body.String())
+	}
+	if !regexp.MustCompile(`^[a-f0-9]{64}$`).MatchString(payload.Data.InputDigest) || strings.Contains(response.Body.String(), `"preflightToken"`) {
+		t.Fatalf("invalid storyline digest or token response=%s", response.Body.String())
+	}
 }
 
 func TestChapterPlanPreflightHandlerReturnsPassedHTTP200WithToken(t *testing.T) {

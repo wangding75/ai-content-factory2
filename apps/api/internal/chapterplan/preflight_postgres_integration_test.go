@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"regexp"
 	"slices"
 	"sort"
 	"strings"
@@ -269,6 +270,32 @@ func TestContextOptionsRequireAllStrictBooleanFields(t *testing.T) {
 		if validContextOptions(raw) {
 			t.Fatalf("context options must be rejected: %s", raw)
 		}
+	}
+}
+
+func TestPostgresPreflightStorylineReferenceInvalidReturnsStableDigest(t *testing.T) {
+	db, ctx := openIntegrationDB(t)
+	f := newFixture(t, ctx, db)
+	service, _ := newPostgresPreflightService(t, ctx, db, f, nil)
+	request := postgresPreflightRequest()
+	request.StorylineSelectionMode = "specified"
+
+	first, err := service.Preflight(ctx, f.project, request)
+	if err != nil {
+		t.Fatalf("first Preflight: %v", err)
+	}
+	second, err := service.Preflight(ctx, f.project, request)
+	if err != nil {
+		t.Fatalf("second Preflight: %v", err)
+	}
+	if first.Passed || first.Token != "" || first.Target != (BatchTarget{}) || first.BindingID != uuid.Nil || first.BindingVersion != 0 || len(first.Blockers) != 1 || first.Blockers[0].Code != "storyline_reference_invalid" {
+		t.Fatalf("unexpected invalid storyline result: %+v", first)
+	}
+	if !regexp.MustCompile(`^[a-f0-9]{64}$`).MatchString(first.InputDigest) {
+		t.Fatalf("invalid storyline digest=%q", first.InputDigest)
+	}
+	if first.InputDigest != second.InputDigest {
+		t.Fatalf("invalid storyline digest must be stable: first=%s second=%s", first.InputDigest, second.InputDigest)
 	}
 }
 
