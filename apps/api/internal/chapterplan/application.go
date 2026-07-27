@@ -42,6 +42,9 @@ type store interface {
 	GetCandidateByID(context.Context, uuid.UUID) (Candidate, error)
 	ListRevisions(context.Context, uuid.UUID, int, int) (RevisionListResult, error)
 	GetChapterPlanningSummary(context.Context, uuid.UUID) (Summary, error)
+	UpdateCandidate(context.Context, UpdateCandidateCommand) (Candidate, error)
+	CompareCandidate(context.Context, uuid.UUID) (CandidateComparison, error)
+	RecompareCandidate(context.Context, RecompareCandidateCommand) (CandidateComparison, error)
 }
 type projectReader interface {
 	Get(context.Context, uuid.UUID) (project.Project, error)
@@ -562,6 +565,30 @@ func (s *Service) GetChapterPlanningSummary(ctx context.Context, projectID uuid.
 	return sum, nil
 }
 
+func (s *Service) UpdateCandidate(ctx context.Context, cmd UpdateCandidateCommand) (Candidate, error) {
+	c, err := s.plans.UpdateCandidate(ctx, cmd)
+	if err != nil {
+		return Candidate{}, mapError(err)
+	}
+	return c, nil
+}
+
+func (s *Service) CompareCandidate(ctx context.Context, candidateID uuid.UUID) (CandidateComparison, error) {
+	cmp, err := s.plans.CompareCandidate(ctx, candidateID)
+	if err != nil {
+		return CandidateComparison{}, mapError(err)
+	}
+	return cmp, nil
+}
+
+func (s *Service) RecompareCandidate(ctx context.Context, cmd RecompareCandidateCommand) (CandidateComparison, error) {
+	cmp, err := s.plans.RecompareCandidate(ctx, cmd)
+	if err != nil {
+		return CandidateComparison{}, mapError(err)
+	}
+	return cmp, nil
+}
+
 func mapError(err error) error {
 	if err == nil {
 		return nil
@@ -575,6 +602,10 @@ func mapError(err error) error {
 		return ErrCandidateNotFound
 	case errors.Is(err, ErrRevisionNotFound):
 		return ErrRevisionNotFound
+	case errors.Is(err, ErrInvalidCandidateState):
+		return ErrInvalidCandidateState
+	case errors.Is(err, ErrStaleCandidate):
+		return ErrStaleCandidate
 	case errors.Is(err, ErrVersionConflict):
 		return ErrVersionConflict
 	case errors.Is(err, ErrChapterNoConflict):

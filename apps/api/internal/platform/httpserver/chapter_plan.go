@@ -30,6 +30,9 @@ type chapterPlanApplication interface {
 	GetCandidateByID(context.Context, uuid.UUID) (chapterplan.Candidate, error)
 	ListRevisions(context.Context, uuid.UUID, int, int) (chapterplan.RevisionListResult, error)
 	GetChapterPlanningSummary(context.Context, uuid.UUID) (chapterplan.Summary, error)
+	UpdateCandidate(context.Context, chapterplan.UpdateCandidateCommand) (chapterplan.Candidate, error)
+	CompareCandidate(context.Context, uuid.UUID) (chapterplan.CandidateComparison, error)
+	RecompareCandidate(context.Context, chapterplan.RecompareCandidateCommand) (chapterplan.CandidateComparison, error)
 }
 
 type chapterPlanStorylineRefResponse struct {
@@ -92,6 +95,9 @@ func registerChapterPlanRoutes(mux *http.ServeMux, service chapterPlanApplicatio
 	mux.HandleFunc("GET /api/v1/chapter-plan-candidates/{candidateId}", getCandidateHandler(service))
 	mux.HandleFunc("GET /api/v1/chapter-plans/{chapterPlanId}/revisions", listRevisionsHandler(service))
 	mux.HandleFunc("GET /api/v1/projects/{projectId}/chapter-planning-summary", getChapterPlanningSummaryHandler(service))
+	mux.HandleFunc("PATCH /api/v1/chapter-plan-candidates/{candidateId}", updateCandidateHandler(service))
+	mux.HandleFunc("GET /api/v1/chapter-plan-candidates/{candidateId}/compare", compareCandidateHandler(service))
+	mux.HandleFunc("POST /api/v1/chapter-plan-candidates/{candidateId}/recompare", recompareCandidateHandler(service))
 }
 
 func listChapterPlansHandler(service chapterPlanApplication) http.HandlerFunc {
@@ -247,6 +253,10 @@ func chapterPlanServiceError(w http.ResponseWriter, r *http.Request, err error) 
 		writeError(w, r, 404, "foreshadowing_not_found", "foreshadowing not found", map[string]any{})
 	case errors.Is(err, chapterplan.ErrChapterNoConflict):
 		writeError(w, r, 409, "chapter_no_conflict", "chapter number conflict", map[string]any{})
+	case errors.Is(err, chapterplan.ErrInvalidCandidateState):
+		writeError(w, r, 409, "invalid_candidate_state", "candidate state is invalid for mutation", map[string]any{})
+	case errors.Is(err, chapterplan.ErrStaleCandidate):
+		writeError(w, r, 409, "stale_candidate", "candidate baseline is stale", map[string]any{})
 	case errors.Is(err, chapterplan.ErrInvalidState), errors.Is(err, chapterplan.ErrVersionConflict):
 		writeError(w, r, 409, "version_conflict", "chapter plan version conflict", map[string]any{})
 	case errors.Is(err, chapterplan.ErrValidation), errors.Is(err, chapterplan.ErrProjectMismatch), errors.Is(err, chapterplan.ErrInvalidReference):
@@ -426,6 +436,82 @@ func getChapterPlanningSummaryHandler(service chapterPlanApplication) http.Handl
 			return
 		}
 		res, err := service.GetChapterPlanningSummary(r.Context(), id)
+		if err != nil {
+			chapterPlanServiceError(w, r, err)
+			return
+		}
+		writeJSON(w, r, http.StatusOK, res)
+	}
+}
+
+type updateCandidateRequest struct {
+	ExpectedCandidateVersion int             `json:"expectedCandidateVersion"`
+	CurrentSnapshot          json.RawMessage `json:"currentSnapshot"`
+}
+
+type recompareCandidateRequest struct {
+	ExpectedCandidateVersion int `json:"expectedCandidateVersion"`
+}
+
+func updateCandidateHandler(service chapterPlanApplication) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		candidateID, err := uuid.Parse(r.PathValue("candidateId"))
+		if err != nil {
+			writeError(w, r, http.StatusBadRequest, "invalid_uuid", "candidateId must be a UUID", map[string]any{})
+			return
+		}
+		var req updateCandidateRequest
+		if err := decodeBody(r, &req); err != nil || req.ExpectedCandidateVersion <= 0 || len(req.CurrentSnapshot) == 0 {
+			writeError(w, r, http.StatusBadRequest, "validation_error", "expectedCandidateVersion and currentSnapshot are required", map[string]any{})
+			return
+		}
+		res, err := service.UpdateCandidate(r.Context(), chapterplan.UpdateCandidateCommand{
+			CandidateID:              candidateID,
+			ExpectedCandidateVersion: req.ExpectedCandidateVersion,
+			CurrentSnapshot:          req.CurrentSnapshot,
+			ActorID:                  "system",
+		})
+		if err != nil {
+			chapterPlanServiceError(w, r, err)
+			return
+		}
+		writeJSON(w, r, http.StatusOK, res)
+	}
+}
+
+func compareCandidateHandler(service chapterPlanApplication) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		candidateID, err := uuid.Parse(r.PathValue("candidateId"))
+		if err != nil {
+			writeError(w, r, http.StatusBadRequest, "invalid_uuid", "candidateId must be a UUID", map[string]any{})
+			return
+		}
+		res, err := service.CompareCandidate(r.Context(), candidateID)
+		if err != nil {
+			chapterPlanServiceError(w, r, err)
+			return
+		}
+		writeJSON(w, r, http.StatusOK, res)
+	}
+}
+
+func recompareCandidateHandler(service chapterPlanApplication) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		candidateID, err := uuid.Parse(r.PathValue("candidateId"))
+		if err != nil {
+			writeError(w, r, http.StatusBadRequest, "invalid_uuid", "candidateId must be a UUID", map[string]any{})
+			return
+		}
+		var req recompareCandidateRequest
+		if err := decodeBody(r, &req); err != nil || req.ExpectedCandidateVersion <= 0 {
+			writeError(w, r, http.StatusBadRequest, "validation_error", "expectedCandidateVersion is required", map[string]any{})
+			return
+		}
+		res, err := service.RecompareCandidate(r.Context(), chapterplan.RecompareCandidateCommand{
+			CandidateID:              candidateID,
+			ExpectedCandidateVersion: req.ExpectedCandidateVersion,
+			ActorID:                  "system",
+		})
 		if err != nil {
 			chapterPlanServiceError(w, r, err)
 			return

@@ -73,6 +73,15 @@ func (f *fakeChapterPlanApplication) ListRevisions(_ context.Context, _ uuid.UUI
 func (f *fakeChapterPlanApplication) GetChapterPlanningSummary(_ context.Context, _ uuid.UUID) (chapterplan.Summary, error) {
 	return chapterplan.Summary{}, nil
 }
+func (f *fakeChapterPlanApplication) UpdateCandidate(_ context.Context, _ chapterplan.UpdateCandidateCommand) (chapterplan.Candidate, error) {
+	return chapterplan.Candidate{}, nil
+}
+func (f *fakeChapterPlanApplication) CompareCandidate(_ context.Context, _ uuid.UUID) (chapterplan.CandidateComparison, error) {
+	return chapterplan.CandidateComparison{}, nil
+}
+func (f *fakeChapterPlanApplication) RecompareCandidate(_ context.Context, _ chapterplan.RecompareCandidateCommand) (chapterplan.CandidateComparison, error) {
+	return chapterplan.CandidateComparison{}, nil
+}
 
 func chapterPlanHTTPValue(projectID uuid.UUID) chapterplan.Plan {
 	now := time.Date(2026, 7, 15, 1, 2, 3, 456000000, time.UTC)

@@ -94,6 +94,15 @@ func (f *fakeStore) ListRevisions(_ context.Context, _ uuid.UUID, _, _ int) (Rev
 func (f *fakeStore) GetChapterPlanningSummary(_ context.Context, _ uuid.UUID) (Summary, error) {
 	return Summary{}, nil
 }
+func (f *fakeStore) UpdateCandidate(_ context.Context, _ UpdateCandidateCommand) (Candidate, error) {
+	return Candidate{}, nil
+}
+func (f *fakeStore) CompareCandidate(_ context.Context, _ uuid.UUID) (CandidateComparison, error) {
+	return CandidateComparison{}, nil
+}
+func (f *fakeStore) RecompareCandidate(_ context.Context, _ RecompareCandidateCommand) (CandidateComparison, error) {
+	return CandidateComparison{}, nil
+}
 func (f *fakeStore) Confirm(_ context.Context, s []Selection) ([]Plan, error) {
 	f.confirms++
 	f.confirmed = slices.Clone(s)

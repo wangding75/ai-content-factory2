@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 
@@ -93,6 +94,43 @@ func (m *candidateMockApp) GetChapterPlanningSummary(ctx context.Context, projec
 	}, nil
 }
 
+func (m *candidateMockApp) UpdateCandidate(ctx context.Context, cmd chapterplan.UpdateCandidateCommand) (chapterplan.Candidate, error) {
+	for i := range m.candidates {
+		if m.candidates[i].ID == cmd.CandidateID {
+			if m.candidates[i].Version != cmd.ExpectedCandidateVersion {
+				return chapterplan.Candidate{}, chapterplan.ErrVersionConflict
+			}
+			m.candidates[i].Version++
+			m.candidates[i].CurrentSnapshot = cmd.CurrentSnapshot
+			return m.candidates[i], nil
+		}
+	}
+	return chapterplan.Candidate{}, chapterplan.ErrCandidateNotFound
+}
+
+func (m *candidateMockApp) CompareCandidate(ctx context.Context, candidateID uuid.UUID) (chapterplan.CandidateComparison, error) {
+	for _, c := range m.candidates {
+		if c.ID == candidateID {
+			return chapterplan.CandidateComparison{Candidate: c}, nil
+		}
+	}
+	return chapterplan.CandidateComparison{}, chapterplan.ErrCandidateNotFound
+}
+
+func (m *candidateMockApp) RecompareCandidate(ctx context.Context, cmd chapterplan.RecompareCandidateCommand) (chapterplan.CandidateComparison, error) {
+	for i := range m.candidates {
+		if m.candidates[i].ID == cmd.CandidateID {
+			if m.candidates[i].Version != cmd.ExpectedCandidateVersion {
+				return chapterplan.CandidateComparison{}, chapterplan.ErrVersionConflict
+			}
+			m.candidates[i].Version++
+			m.candidates[i].Status = "pending"
+			return chapterplan.CandidateComparison{Candidate: m.candidates[i]}, nil
+		}
+	}
+	return chapterplan.CandidateComparison{}, chapterplan.ErrCandidateNotFound
+}
+
 func TestChapterPlanCandidateHTTPContract(t *testing.T) {
 	projectID := uuid.New()
 	batchID := uuid.New()
@@ -122,6 +160,7 @@ func TestChapterPlanCandidateHTTPContract(t *testing.T) {
 				CurrentSnapshot:   []byte(`{}`),
 				DiffType:          "new",
 				Status:            "pending",
+				Version:           1,
 			},
 		},
 		revisions: []chapterplan.Revision{
@@ -170,7 +209,35 @@ func TestChapterPlanCandidateHTTPContract(t *testing.T) {
 		t.Errorf("expected 200 for get candidate, got %d: %s", w.Code, w.Body.String())
 	}
 
-	// 5. List Revisions
+	// 5. Update Candidate
+	patchBody := `{"expectedCandidateVersion":1,"currentSnapshot":{"title":"Updated"}}`
+	req = httptest.NewRequest("PATCH", "/api/v1/chapter-plan-candidates/"+candidateID.String(), strings.NewReader(patchBody))
+	req.Header.Set("Content-Type", "application/json")
+	w = httptest.NewRecorder()
+	server.Handler().ServeHTTP(w, req)
+	if w.Code != http.StatusOK {
+		t.Errorf("expected 200 for update candidate, got %d: %s", w.Code, w.Body.String())
+	}
+
+	// 6. Compare Candidate
+	req = httptest.NewRequest("GET", "/api/v1/chapter-plan-candidates/"+candidateID.String()+"/compare", nil)
+	w = httptest.NewRecorder()
+	server.Handler().ServeHTTP(w, req)
+	if w.Code != http.StatusOK {
+		t.Errorf("expected 200 for compare candidate, got %d: %s", w.Code, w.Body.String())
+	}
+
+	// 7. Recompare Candidate
+	recompareBody := `{"expectedCandidateVersion":2}`
+	req = httptest.NewRequest("POST", "/api/v1/chapter-plan-candidates/"+candidateID.String()+"/recompare", strings.NewReader(recompareBody))
+	req.Header.Set("Content-Type", "application/json")
+	w = httptest.NewRecorder()
+	server.Handler().ServeHTTP(w, req)
+	if w.Code != http.StatusOK {
+		t.Errorf("expected 200 for recompare candidate, got %d: %s", w.Code, w.Body.String())
+	}
+
+	// 8. List Revisions
 	req = httptest.NewRequest("GET", "/api/v1/chapter-plans/"+planID.String()+"/revisions", nil)
 	w = httptest.NewRecorder()
 	server.Handler().ServeHTTP(w, req)
@@ -178,7 +245,7 @@ func TestChapterPlanCandidateHTTPContract(t *testing.T) {
 		t.Errorf("expected 200 for list revisions, got %d: %s", w.Code, w.Body.String())
 	}
 
-	// 6. Get Summary
+	// 9. Get Summary
 	req = httptest.NewRequest("GET", "/api/v1/projects/"+projectID.String()+"/chapter-planning-summary", nil)
 	w = httptest.NewRecorder()
 	server.Handler().ServeHTTP(w, req)
