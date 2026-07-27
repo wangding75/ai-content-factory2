@@ -19,7 +19,7 @@ func TestSchemaAndSemanticValidation(t *testing.T) {
 			ProjectID: projectID,
 		},
 		Context: chapterplan.GenerationContextSnapshot{
-			InputDigest: digest,
+			InputDigest:   digest,
 			InputSnapshot: json.RawMessage(`{"generationMode":"full","target":{"startChapterNo":1,"endChapterNo":2,"requestedChapterCount":2}}`),
 		},
 		NormalizedOutput: chapterplan.NormalizedChapterPlanOutput{
@@ -56,6 +56,9 @@ func TestSchemaAndSemanticValidation(t *testing.T) {
 			},
 		},
 	}
+	storylineID := validInput.NormalizedOutput.Candidates[0].StorylineRefs[0].ID
+	secondStorylineID := validInput.NormalizedOutput.Candidates[1].StorylineRefs[0].ID
+	validInput.Context.StorylineSnapshot, _ = json.Marshal(map[string]any{"available": []map[string]any{{"id": storylineID}, {"id": secondStorylineID}}, "materials": []map[string]any{}, "foreshadowings": []map[string]any{}})
 
 	// 1. Valid input -> PASS
 	if err := chapterplan.ValidateNormalizedOutput(validInput); err != nil {
@@ -96,6 +99,13 @@ func TestSchemaAndSemanticValidation(t *testing.T) {
 	if err := chapterplan.ValidateNormalizedOutput(crossProjectRef); err == nil {
 		t.Errorf("expected error for cross-project reference")
 	}
+
+	// 7. A project-local but unfrozen storyline is equally invalid.
+	unfrozenRef := validInput
+	unfrozenRef.NormalizedOutput.Candidates[0].StorylineRefs[0].ID = uuid.New()
+	if err := chapterplan.ValidateNormalizedOutput(unfrozenRef); err == nil {
+		t.Errorf("expected error for unfrozen storyline reference")
+	}
 }
 
 func TestSnapshotMappingAndDiffTypeLogic(t *testing.T) {
@@ -105,12 +115,12 @@ func TestSnapshotMappingAndDiffTypeLogic(t *testing.T) {
 	planID := uuid.New()
 
 	baseSnap, _ := json.Marshal(map[string]any{
-		"chapterNo":      1,
-		"title":          "Base Title 1",
-		"summary":        "Base Summary 1",
-		"chapterPurpose": "plot_advance",
-		"storylineRefs":  []any{},
-		"materialRefs":   []any{},
+		"chapterNo":         1,
+		"title":             "Base Title 1",
+		"summary":           "Base Summary 1",
+		"chapterPurpose":    "plot_advance",
+		"storylineRefs":     []any{},
+		"materialRefs":      []any{},
 		"foreshadowingRefs": []any{},
 		"generationBasis": map[string]any{
 			"contextSummary": "",
@@ -118,7 +128,7 @@ func TestSnapshotMappingAndDiffTypeLogic(t *testing.T) {
 	})
 
 	ctxSnap := chapterplan.GenerationContextSnapshot{
-		InputDigest: digest,
+		InputDigest:   digest,
 		InputSnapshot: json.RawMessage(`{"generationMode":"full","target":{"startChapterNo":1,"endChapterNo":2,"requestedChapterCount":2}}`),
 		BaseChapterPlans: []chapterplan.BaseChapterPlanContext{
 			{
@@ -150,9 +160,9 @@ func TestSnapshotMappingAndDiffTypeLogic(t *testing.T) {
 					StorylineRefs: []chapterplan.NormalizedReference{
 						{ID: uuid.New(), ProjectID: projectID, Label: "Storyline 1", Relation: "primary", Position: 0, Version: 1},
 					},
-					MaterialRefs:     []chapterplan.NormalizedReference{},
+					MaterialRefs:      []chapterplan.NormalizedReference{},
 					ForeshadowingRefs: []chapterplan.NormalizedReference{},
-					GenerationBasis:  chapterplan.GenerationBasis{ContextSummary: ""},
+					GenerationBasis:   chapterplan.GenerationBasis{ContextSummary: ""},
 				},
 				{
 					ChapterNo:      2,
@@ -162,9 +172,9 @@ func TestSnapshotMappingAndDiffTypeLogic(t *testing.T) {
 					StorylineRefs: []chapterplan.NormalizedReference{
 						{ID: uuid.New(), ProjectID: projectID, Label: "Storyline 1", Relation: "primary", Position: 0, Version: 1},
 					},
-					MaterialRefs:     []chapterplan.NormalizedReference{},
+					MaterialRefs:      []chapterplan.NormalizedReference{},
 					ForeshadowingRefs: []chapterplan.NormalizedReference{},
-					GenerationBasis:  chapterplan.GenerationBasis{ContextSummary: ""},
+					GenerationBasis:   chapterplan.GenerationBasis{ContextSummary: ""},
 				},
 			},
 			Metadata: chapterplan.OutputMetadata{
