@@ -37,7 +37,14 @@ CREATE TABLE chapter_plan_candidate_batches (
 CREATE INDEX chapter_plan_candidate_batches_project_created_idx ON chapter_plan_candidate_batches (project_id, created_at DESC, id DESC);
 CREATE INDEX chapter_plan_candidate_batches_project_status_created_idx ON chapter_plan_candidate_batches (project_id, status, created_at DESC, id DESC);
 
-ALTER TABLE chapter_plans ADD CONSTRAINT chapter_plans_project_id_id_unique UNIQUE (project_id, id);
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_constraint WHERE conname = 'chapter_plans_project_id_id_unique'
+    ) THEN
+        ALTER TABLE chapter_plans ADD CONSTRAINT chapter_plans_project_id_id_unique UNIQUE (project_id, id);
+    END IF;
+END $$;
 
 CREATE TABLE chapter_plan_candidates (
     id UUID PRIMARY KEY,

@@ -64,29 +64,21 @@ func scanBatch(r pgx.Row) (CandidateBatch, error) {
 }
 
 func parseInputSummary(b *CandidateBatch) {
-	var summary InputSummary
-	summary.TargetSummary = fmt.Sprintf("Mode: %s, Count: %d", b.GenerationMode, b.RequestedChapterCount)
-
-	if len(b.StorylineSnapshot) > 0 {
-		var stObj struct {
-			SelectedTitles []string `json:"selectedTitles"`
-		}
-		if json.Unmarshal(b.StorylineSnapshot, &stObj) == nil && len(stObj.SelectedTitles) > 0 {
-			summary.SelectedStorylineTitles = stObj.SelectedTitles
-		}
+	summary := InputSummary{
+		GenerationMode: b.GenerationMode,
+		Target:         b.Target,
 	}
 
-	if len(b.ContextOptions) > 0 {
-		var ctxObj struct {
-			Labels []string `json:"labels"`
-		}
-		if json.Unmarshal(b.ContextOptions, &ctxObj) == nil && len(ctxObj.Labels) > 0 {
-			summary.ContextOptionLabels = ctxObj.Labels
-		}
+	if len(b.StorylineSnapshot) > 0 && json.Valid(b.StorylineSnapshot) && string(b.StorylineSnapshot) != "{}" {
+		summary.StorylineSelection = b.StorylineSnapshot
+	} else {
+		summary.StorylineSelection = json.RawMessage(`{"mode":"auto_balanced"}`)
 	}
 
-	if b.AdditionalInstructions != nil && strings.TrimSpace(*b.AdditionalInstructions) != "" {
-		summary.HasAdditionalInstructions = true
+	if len(b.ContextOptions) > 0 && json.Valid(b.ContextOptions) && string(b.ContextOptions) != "{}" {
+		summary.ContextOptions = b.ContextOptions
+	} else {
+		summary.ContextOptions = json.RawMessage(`{"includeProjectMaterials":true,"includeUnpaidForeshadowings":true,"includePriorChapterSummaries":true,"coreSettingsOnly":false}`)
 	}
 
 	b.InputSummary = summary

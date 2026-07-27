@@ -14,10 +14,10 @@ type BatchTarget struct {
 }
 
 type InputSummary struct {
-	TargetSummary             string   `json:"targetSummary"`
-	SelectedStorylineTitles   []string `json:"selectedStorylineTitles"`
-	ContextOptionLabels       []string `json:"contextOptionLabels"`
-	HasAdditionalInstructions bool     `json:"hasAdditionalInstructions"`
+	GenerationMode     string          `json:"generationMode"`
+	Target             BatchTarget     `json:"target"`
+	StorylineSelection json.RawMessage `json:"storylineSelection"`
+	ContextOptions     json.RawMessage `json:"contextOptions"`
 }
 
 type CandidateBatch struct {
