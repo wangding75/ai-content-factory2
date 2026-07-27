@@ -2,8 +2,10 @@ package chapterplan
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"slices"
+	"strings"
 	"testing"
 
 	"github.com/google/uuid"
@@ -25,6 +27,8 @@ type fakeStore struct {
 	deletedExpected                                 int
 	confirmed                                       []Selection
 	summaryErr                                      error
+	bulkAdoptResult                                 BulkAdoptResult
+	bulkAdoptErr                                    error
 }
 
 func (f *fakeStore) ListByProject(_ context.Context, id uuid.UUID) ([]Plan, error) {
@@ -108,7 +112,32 @@ func (f *fakeStore) AdoptCandidate(_ context.Context, _ AdoptCandidateCommand) (
 	return AdoptCandidateResult{}, nil
 }
 func (f *fakeStore) BulkAdoptCandidates(_ context.Context, _ BulkAdoptCommand) (BulkAdoptResult, error) {
-	return BulkAdoptResult{}, nil
+	return f.bulkAdoptResult, f.bulkAdoptErr
+}
+
+func TestBulkAdoptErrorsDoNotExposeDatabaseDetails(t *testing.T) {
+	unsafe := "SQLSTATE 23503 chapter_plan_candidates_base_plan_fk relation chapter_plan_candidates pq pgx driver SELECT * FROM postgres://user:secret@db stack trace"
+	service := NewService(nil, &fakeStore{bulkAdoptResult: BulkAdoptResult{Items: []BulkAdoptItemResult{{
+		CandidateID: uuid.New(), Outcome: "failed", Error: map[string]any{"code": unsafe, "detail": unsafe},
+	}}}}, nil, nil, nil)
+
+	result, err := service.BulkAdoptCandidates(context.Background(), BulkAdoptCommand{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	body, err := json.Marshal(result)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, forbidden := range []string{"SQLSTATE", "chapter_plan_candidates_base_plan_fk", "relation", "chapter_plan_candidates", "pq", "pgx", "driver", "SELECT", "postgres://", "stack trace"} {
+		if strings.Contains(string(body), forbidden) {
+			t.Fatalf("bulk adoption response leaked %q: %s", forbidden, body)
+		}
+	}
+	itemError := result.Items[0].Error
+	if len(itemError) != 3 || itemError["code"] != "failed" || itemError["safeReason"] == "" || itemError["retryAction"] == "" {
+		t.Fatalf("unexpected safe item error: %#v", itemError)
+	}
 }
 func (f *fakeStore) DiscardCandidate(_ context.Context, _ DiscardCandidateCommand) (Candidate, error) {
 	return Candidate{}, nil

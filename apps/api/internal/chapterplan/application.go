@@ -640,7 +640,31 @@ func (s *Service) BulkAdoptCandidates(ctx context.Context, cmd BulkAdoptCommand)
 	if err != nil {
 		return BulkAdoptResult{}, mapError(err)
 	}
-	return res, nil
+	return SanitizeBulkAdoptResult(res), nil
+}
+
+// SanitizeBulkAdoptResult is a final boundary for per-item failures. A bulk
+// adoption has independently committed items, so it returns itemized errors in
+// a success response; those errors must remain as safe as top-level errors.
+func SanitizeBulkAdoptResult(res BulkAdoptResult) BulkAdoptResult {
+	for i := range res.Items {
+		if res.Items[i].Error == nil {
+			continue
+		}
+
+		code, _ := res.Items[i].Error["code"].(string)
+		switch code {
+		case "stale_candidate", "version_conflict":
+		default:
+			code = "failed"
+		}
+		res.Items[i].Error = map[string]any{
+			"code":        code,
+			"safeReason":  "The candidate could not be adopted safely.",
+			"retryAction": "review_candidate",
+		}
+	}
+	return res
 }
 
 func (s *Service) DiscardCandidate(ctx context.Context, cmd DiscardCandidateCommand) (Candidate, error) {

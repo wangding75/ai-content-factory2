@@ -38,6 +38,8 @@ type fakeChapterPlanApplication struct {
 	selections        []chapterplan.Selection
 	confirmCalls      int
 	summaryErr        error
+	bulkAdoptResult   chapterplan.BulkAdoptResult
+	bulkAdoptErr      error
 }
 
 type fakeChapterPlanRunApplication struct {
@@ -107,7 +109,7 @@ func (f *fakeChapterPlanApplication) AdoptCandidate(_ context.Context, _ chapter
 	return chapterplan.AdoptCandidateResult{}, nil
 }
 func (f *fakeChapterPlanApplication) BulkAdoptCandidates(_ context.Context, _ chapterplan.BulkAdoptCommand) (chapterplan.BulkAdoptResult, error) {
-	return chapterplan.BulkAdoptResult{}, nil
+	return f.bulkAdoptResult, f.bulkAdoptErr
 }
 func (f *fakeChapterPlanApplication) DiscardCandidate(_ context.Context, _ chapterplan.DiscardCandidateCommand) (chapterplan.Candidate, error) {
 	return chapterplan.Candidate{}, nil
@@ -141,6 +143,31 @@ func TestChapterPlanSummaryMapsResultConsumptionFailure(t *testing.T) {
 	server.Handler().ServeHTTP(response, request)
 	if response.Code != http.StatusInternalServerError || !strings.Contains(response.Body.String(), `"code":"result_consumption_failed"`) || strings.Contains(response.Body.String(), "SQLSTATE") {
 		t.Fatalf("summary response=%d %s", response.Code, response.Body.String())
+	}
+}
+
+func TestChapterPlanBulkAdoptHTTPReturnsSafeItemErrors(t *testing.T) {
+	projectID, batchID, candidateID := uuid.New(), uuid.New(), uuid.New()
+	unsafe := "SQLSTATE 23503 chapter_plan_candidates_base_revision_fk relation chapter_plan_candidates pq pgx driver INSERT INTO postgres://user:secret@db stack trace"
+	server := New(":0", nil, &fakeChapterPlanApplication{bulkAdoptResult: chapterplan.BulkAdoptResult{Items: []chapterplan.BulkAdoptItemResult{{
+		CandidateID: candidateID, Outcome: "failed", Error: map[string]any{"code": unsafe, "database": unsafe},
+	}}}})
+	request := httptest.NewRequest(http.MethodPost, "/api/v1/chapter-plan-candidate-batches/"+batchID.String()+"/adoptions", strings.NewReader(`{"expectedBatchVersion":1,"candidates":[{"candidateId":"`+candidateID.String()+`","expectedCandidateVersion":1}]}`))
+	request.Header.Set("Content-Type", "application/json")
+	request.Header.Set("Idempotency-Key", "bulk-adopt-safe-errors")
+	request.SetPathValue("projectId", projectID.String())
+	response := httptest.NewRecorder()
+	server.Handler().ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("status=%d body=%s", response.Code, response.Body.String())
+	}
+	for _, forbidden := range []string{"SQLSTATE", "chapter_plan_candidates_base_revision_fk", "relation", "chapter_plan_candidates", "pq", "pgx", "driver", "INSERT INTO", "postgres://", "stack trace"} {
+		if strings.Contains(response.Body.String(), forbidden) {
+			t.Fatalf("HTTP bulk adoption response leaked %q: %s", forbidden, response.Body.String())
+		}
+	}
+	if !strings.Contains(response.Body.String(), `"code":"failed"`) || !strings.Contains(response.Body.String(), `"safeReason"`) || !strings.Contains(response.Body.String(), `"retryAction"`) {
+		t.Fatalf("HTTP bulk adoption response missing safe item error: %s", response.Body.String())
 	}
 }
 func chapterPlanRequest(handler http.Handler, method, path, body string) *httptest.ResponseRecorder {

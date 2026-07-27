@@ -686,7 +686,7 @@ func bulkAdoptCandidatesHandler(service chapterPlanApplication) http.HandlerFunc
 			chapterPlanServiceError(w, r, err)
 			return
 		}
-		writeJSON(w, r, http.StatusOK, res)
+		writeJSON(w, r, http.StatusOK, chapterplan.SanitizeBulkAdoptResult(res))
 	}
 }
 
