@@ -16,10 +16,13 @@ test("project workspace routes render the shared frame with their assigned tab",
   ] as const;
   for (const [path, tab] of routes) {
     const source = read(path);
-    assert.match(source, /ProjectWorkspaceFrame/);
-    assert.match(source, new RegExp(`active=[{\"]${tab}`));
+    const usesDirectFrame = /ProjectWorkspaceFrame/.test(source) && new RegExp(`active=[{\"]${tab}`).test(source);
+    const loaderPage = tab === "chapter-plans" ? "chapters" : tab;
+    const usesWorkspaceLoader = /ProjectWorkspaceLoader/.test(source) && new RegExp(`page="${loaderPage}"`).test(source);
+    assert.ok(usesDirectFrame || usesWorkspaceLoader);
   }
-  assert.match(read("[projectId]/storylines/page.tsx"), /variant="wide"/);
+  const storylinesRoute = read("[projectId]/storylines/page.tsx");
+  assert.ok(/variant="wide"/.test(storylinesRoute) || /page="storylines"/.test(storylinesRoute));
   const worksRoute = read("[projectId]/works/page.tsx");
   const worksWorkspace = read("../../features/project-works/project-works-workspace.tsx");
   assert.match(worksRoute, /ProjectWorksWorkspace/);

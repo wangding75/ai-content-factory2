@@ -268,7 +268,7 @@ export function CandidateBatchListPage({ projectId }: { projectId: string }) {
               <div>
                 <Link
                   className="chapter-plan-edit-button"
-                  href={`/chapter-plan-candidate-batches/${batch.id}`}
+                  href={`/projects/${batch.projectId}/chapter-plan-candidate-batches/${batch.id}`}
                 >
                   查看详情
                 </Link>
