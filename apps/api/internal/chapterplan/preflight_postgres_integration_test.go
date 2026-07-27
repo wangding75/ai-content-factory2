@@ -8,6 +8,7 @@ import (
 	"sort"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -42,7 +43,7 @@ type preflightRunCreator struct{ calls int }
 
 func (r *preflightRunCreator) CreateRun(context.Context, workflowrun.CreateRunCommand) (workflowrun.WorkflowRun, error) {
 	r.calls++
-	return workflowrun.WorkflowRun{}, errors.New("external workflow executor must not be called by preflight")
+	return workflowrun.WorkflowRun{ID: uuid.New()}, nil
 }
 
 type mutablePreflightBindingReader struct {
@@ -177,6 +178,97 @@ func TestPostgresPreflightPassedHasNoSideEffects(t *testing.T) {
 	requirePreflightPersistenceUnchanged(t, before, after)
 	if executor.calls != 0 {
 		t.Fatalf("external workflow executor calls=%d, want 0", executor.calls)
+	}
+}
+
+func TestPreflightTokenActorAndProjectBinding(t *testing.T) {
+	db, ctx := openIntegrationDB(t)
+	f := newFixture(t, ctx, db)
+	service, _ := newPostgresPreflightService(t, ctx, db, f, nil)
+	fixedNow := time.Date(2026, 7, 27, 10, 0, 0, 0, time.UTC)
+	service.now = func() time.Time { return fixedNow }
+	request := postgresPreflightRequest()
+	request.ActorID = "actor-a"
+	preflight, err := service.Preflight(ctx, f.project, request)
+	if err != nil || !preflight.Passed {
+		t.Fatalf("Preflight result=%+v err=%v", preflight, err)
+	}
+	claims, err := VerifyPreflightToken(service.plans.(*Repository).HMACSecret(), preflight.Token, fixedNow)
+	if err != nil || claims.ActorID != request.ActorID || claims.ProjectID != f.project || claims.IssuedAt != fixedNow.Unix() || claims.ExpiresAt != fixedNow.Add(10*time.Minute).Unix() {
+		t.Fatalf("claims=%+v err=%v", claims, err)
+	}
+	if _, err = service.CreateChapterPlanningRun(ctx, f.project, request.ActorID, preflight.Token, "same-actor"); err != nil {
+		t.Fatalf("same actor must create run: %v", err)
+	}
+	if _, err = service.CreateChapterPlanningRun(ctx, f.project, "actor-b", preflight.Token, "other-actor"); !errors.Is(err, ErrPreflightInputChanged) {
+		t.Fatalf("different actor error=%v", err)
+	}
+	if _, err = service.CreateChapterPlanningRun(ctx, uuid.New(), request.ActorID, preflight.Token, "other-project"); !errors.Is(err, ErrPreflightInputChanged) {
+		t.Fatalf("different project error=%v", err)
+	}
+}
+
+func TestPreflightTokenRejectsSnapshotChanges(t *testing.T) {
+	db, ctx := openIntegrationDB(t)
+	f := newFixture(t, ctx, db)
+	service, _ := newPostgresPreflightService(t, ctx, db, f, nil)
+	fixedNow := time.Date(2026, 7, 27, 11, 0, 0, 0, time.UTC)
+	service.now = func() time.Time { return fixedNow }
+	request := postgresPreflightRequest()
+	request.ActorID = "snapshot-actor"
+	preflight, err := service.Preflight(ctx, f.project, request)
+	if err != nil || !preflight.Passed {
+		t.Fatalf("Preflight result=%+v err=%v", preflight, err)
+	}
+	claims, err := VerifyPreflightToken(service.plans.(*Repository).HMACSecret(), preflight.Token, fixedNow)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, tc := range []struct {
+		name   string
+		mutate func(*PreflightTokenClaims)
+	}{
+		{"target", func(c *PreflightTokenClaims) { c.Target.EndChapterNo++ }},
+		{"generation-mode", func(c *PreflightTokenClaims) { c.GenerationMode = "append" }},
+		{"storyline-selection-mode", func(c *PreflightTokenClaims) { c.StorylineSelectionMode = "specified" }},
+		{"storyline-ids", func(c *PreflightTokenClaims) { c.StorylineIDs = []uuid.UUID{uuid.New()} }},
+		{"context-options", func(c *PreflightTokenClaims) {
+			c.ContextOptions = json.RawMessage(`{"includeProjectMaterials":false,"includeUnpaidForeshadowings":true,"includePriorChapterSummaries":true,"coreSettingsOnly":false}`)
+		}},
+		{"binding", func(c *PreflightTokenClaims) { c.BindingVersion++ }},
+		{"snapshot-digest", func(c *PreflightTokenClaims) { c.InputDigest = strings.Repeat("f", 64) }},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			changed := claims
+			tc.mutate(&changed)
+			token, err := SignPreflightToken(service.plans.(*Repository).HMACSecret(), changed)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if _, err = service.CreateChapterPlanningRun(ctx, f.project, request.ActorID, token, "changed-"+tc.name); !errors.Is(err, ErrPreflightInputChanged) {
+				t.Fatalf("changed %s error=%v", tc.name, err)
+			}
+		})
+	}
+}
+
+func TestContextOptionsRequireAllStrictBooleanFields(t *testing.T) {
+	valid := json.RawMessage(`{"includeProjectMaterials":true,"includeUnpaidForeshadowings":true,"includePriorChapterSummaries":true,"coreSettingsOnly":false}`)
+	if !validContextOptions(valid) {
+		t.Fatal("complete strict boolean options must be valid")
+	}
+	for _, raw := range []json.RawMessage{
+		nil,
+		json.RawMessage(`null`),
+		json.RawMessage(`{}`),
+		json.RawMessage(`{"includeProjectMaterials":true,"includeUnpaidForeshadowings":true,"includePriorChapterSummaries":true}`),
+		json.RawMessage(`{"includeProjectMaterials":true,"includeUnpaidForeshadowings":true,"includePriorChapterSummaries":true,"coreSettingsOnly":null}`),
+		json.RawMessage(`{"includeProjectMaterials":"true","includeUnpaidForeshadowings":true,"includePriorChapterSummaries":true,"coreSettingsOnly":false}`),
+		json.RawMessage(`{"includeProjectMaterials":true,"includeUnpaidForeshadowings":true,"includePriorChapterSummaries":true,"coreSettingsOnly":false,"extra":true}`),
+	} {
+		if validContextOptions(raw) {
+			t.Fatalf("context options must be rejected: %s", raw)
+		}
 	}
 }
 

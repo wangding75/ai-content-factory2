@@ -50,6 +50,13 @@ type fakeChapterPlanRunApplication struct {
 	calls     int
 }
 
+type testPrincipalProvider struct {
+	actor string
+	ok    bool
+}
+
+func (p testPrincipalProvider) ActorID(context.Context) (string, bool) { return p.actor, p.ok }
+
 func (f *fakeChapterPlanRunApplication) Preflight(_ context.Context, projectID uuid.UUID, request chapterplan.PreflightRequest) (chapterplan.PreflightResult, error) {
 	f.calls++
 	f.projectID = projectID
@@ -239,6 +246,23 @@ func TestChapterPlanPreflightHandlerReturnsPassedHTTP200WithToken(t *testing.T) 
 	}
 	if len(payload.Data.Blockers) != 0 || string(payload.Data.Checks) == "" || string(payload.Data.Warnings) == "" {
 		t.Fatalf("passed report is incomplete: %s", response.Body.String())
+	}
+}
+
+func TestChapterPlanHandlerUsesInjectedPrincipal(t *testing.T) {
+	previous := currentPrincipal
+	currentPrincipal = testPrincipalProvider{actor: "injected-actor", ok: true}
+	t.Cleanup(func() { currentPrincipal = previous })
+	projectID := uuid.New()
+	fake := &fakeChapterPlanRunApplication{result: chapterplan.PreflightResult{Passed: true, Token: "token", InputDigest: strings.Repeat("a", 64), Target: chapterplan.BatchTarget{StartChapterNo: 1, EndChapterNo: 2, RequestedChapterCount: 2}, BindingID: uuid.New(), BindingVersion: 1}}
+	response := chapterPlanRequest(chapterPlanPreflightHandler(fake), http.MethodPost, "/api/v1/projects/"+projectID.String()+"/chapter-plan-runs/preflight", chapterPlanPreflightBody())
+	if response.Code != http.StatusOK || fake.request.ActorID != "injected-actor" {
+		t.Fatalf("handler did not use injected principal: status=%d request=%+v", response.Code, fake.request)
+	}
+	currentPrincipal = testPrincipalProvider{ok: false}
+	response = chapterPlanRequest(chapterPlanPreflightHandler(fake), http.MethodPost, "/api/v1/projects/"+projectID.String()+"/chapter-plan-runs/preflight", chapterPlanPreflightBody())
+	if response.Code != http.StatusUnprocessableEntity || fake.calls != 1 || strings.Contains(response.Body.String(), "injected-actor") {
+		t.Fatalf("missing actor must return safe error: status=%d body=%s", response.Code, response.Body.String())
 	}
 }
 

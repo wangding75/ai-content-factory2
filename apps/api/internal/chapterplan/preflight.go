@@ -133,8 +133,8 @@ func validContextOptions(v json.RawMessage) bool {
 		if !ok {
 			return false
 		}
-		var b bool
-		if err := json.Unmarshal(value, &b); err != nil {
+		var b *bool
+		if err := json.Unmarshal(value, &b); err != nil || b == nil {
 			return false
 		}
 	}
@@ -281,7 +281,7 @@ func (s *Service) CreateChapterPlanningRun(ctx context.Context, projectID uuid.U
 	if err != nil {
 		return workflowrun.WorkflowRun{}, err
 	}
-	if current.InputDigest != claims.InputDigest || current.BindingID != claims.BindingID || current.BindingVersion != claims.BindingVersion {
+	if current.InputDigest != claims.InputDigest || current.Target != claims.Target || current.BindingID != claims.BindingID || current.BindingVersion != claims.BindingVersion {
 		return workflowrun.WorkflowRun{}, ErrPreflightInputChanged
 	}
 	snapshot := current.Snapshot

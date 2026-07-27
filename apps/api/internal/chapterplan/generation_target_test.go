@@ -60,4 +60,7 @@ func TestPreflightTokenUsesVerificationClockForExactTenMinuteBoundary(t *testing
 	if _, err = VerifyPreflightToken(secret, token, issuedAt.Add(10*time.Minute)); !errors.Is(err, ErrPreflightTokenExpired) {
 		t.Fatalf("token must expire exactly at the ten-minute boundary: %v", err)
 	}
+	if _, err = VerifyPreflightToken(secret, token, issuedAt.Add(11*time.Minute)); !errors.Is(err, ErrPreflightTokenExpired) {
+		t.Fatalf("token must remain expired after the ten-minute boundary: %v", err)
+	}
 }
