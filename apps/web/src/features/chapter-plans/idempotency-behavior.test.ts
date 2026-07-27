@@ -9,6 +9,7 @@ import {
   clearOperation,
   loadPersistedOperations,
   IdempotencyManager,
+  IdempotencyCryptoUnavailableError,
 } from "./use-idempotency.ts";
 
 test("canonicalizePayload sorts object keys lexicographically and preserves array order", async () => {
@@ -33,7 +34,7 @@ test("digest is not canonical JSON and persisted records exclude request content
   const payload = { candidateBody: "private chapter text", additionalInstructions: "private instruction" };
   const digest = await hashCanonicalPayload(payload);
   assert.notEqual(digest, JSON.stringify(canonicalizePayload(payload)));
-  assert.match(digest, /^(sha256|fnv1a):/);
+  assert.match(digest, /^sha256:[0-9a-f]{64}$/);
 
   const storage = new Map<string, string>();
   const originalWindow = Object.getOwnPropertyDescriptor(globalThis, "window");
@@ -59,6 +60,43 @@ test("legacy v1 storage is ignored instead of being treated as a request payload
   } finally {
     if (originalWindow) Object.defineProperty(globalThis, "window", originalWindow);
     else Reflect.deleteProperty(globalThis, "window");
+  }
+});
+
+test("persisted operations accept only lowercase SHA-256 digests", () => {
+  const storage = new Map<string, string>();
+  const originalWindow = Object.getOwnPropertyDescriptor(globalThis, "window");
+  Object.defineProperty(globalThis, "window", { configurable: true, value: { sessionStorage: { getItem: () => JSON.stringify({ legacy: { version: 2, scope: "write", payloadDigest: "fnv1a:deadbeef", idempotencyKey: "key", status: "pending", createdAt: "2026-01-01T00:00:00.000Z", updatedAt: "2026-01-01T00:00:00.000Z" } }), setItem: (key: string, value: string) => storage.set(key, value) } } });
+  try {
+    assert.deepEqual(loadPersistedOperations(), {});
+  } finally {
+    if (originalWindow) Object.defineProperty(globalThis, "window", originalWindow);
+    else Reflect.deleteProperty(globalThis, "window");
+  }
+});
+
+test("WebCrypto absence fails closed before a write request can be issued", async () => {
+  const originalCrypto = Object.getOwnPropertyDescriptor(globalThis, "crypto");
+  const originalFetch = globalThis.fetch;
+  let writeRequests = 0;
+  Object.defineProperty(globalThis, "crypto", { configurable: true, value: undefined });
+  globalThis.fetch = (async () => {
+    writeRequests += 1;
+    return new Response();
+  }) as typeof fetch;
+  try {
+    await assert.rejects(
+      async () => {
+        const key = await getOrCreateOperation("candidate:edit:blocked", { title: "private chapter text" });
+        await fetch("/write", { method: "POST", headers: { "Idempotency-Key": key } });
+      },
+      IdempotencyCryptoUnavailableError,
+    );
+    assert.equal(writeRequests, 0);
+  } finally {
+    globalThis.fetch = originalFetch;
+    if (originalCrypto) Object.defineProperty(globalThis, "crypto", originalCrypto);
+    else Reflect.deleteProperty(globalThis, "crypto");
   }
 });
 

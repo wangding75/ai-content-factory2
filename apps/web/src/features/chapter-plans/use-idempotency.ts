@@ -17,6 +17,13 @@ export class IdempotencyStorageError extends Error {
   }
 }
 
+export class IdempotencyCryptoUnavailableError extends Error {
+  constructor() {
+    super("浏览器不支持安全摘要，已阻止写入请求。请使用支持 WebCrypto 的浏览器后重试。");
+    this.name = "IdempotencyCryptoUnavailableError";
+  }
+}
+
 const STORAGE_KEY = "acf:chapter-planning:idempotency:v2";
 const memoryStore: Record<string, PersistedOperation> = {};
 
@@ -48,19 +55,10 @@ export function canonicalizePayload(value: unknown): unknown {
   return String(value);
 }
 
-function fallbackDigest(input: string): string {
-  let hash = 2166136261;
-  for (let index = 0; index < input.length; index += 1) {
-    hash ^= input.charCodeAt(index);
-    hash = Math.imul(hash, 16777619);
-  }
-  return `fnv1a:${(hash >>> 0).toString(16).padStart(8, "0")}`;
-}
-
 export async function hashCanonicalPayload(payload: unknown): Promise<string> {
   const canonicalJson = JSON.stringify(canonicalizePayload(payload));
   const subtle = globalThis.crypto?.subtle;
-  if (!subtle) return fallbackDigest(canonicalJson);
+  if (!subtle) throw new IdempotencyCryptoUnavailableError();
   const bytes = await subtle.digest("SHA-256", new TextEncoder().encode(canonicalJson));
   return `sha256:${Array.from(new Uint8Array(bytes), (byte) => byte.toString(16).padStart(2, "0")).join("")}`;
 }
@@ -68,7 +66,7 @@ export async function hashCanonicalPayload(payload: unknown): Promise<string> {
 function isPersistedOperation(value: unknown): value is PersistedOperation {
   if (!value || typeof value !== "object") return false;
   const item = value as Partial<PersistedOperation>;
-  return item.version === 2 && typeof item.scope === "string" && typeof item.payloadDigest === "string" && typeof item.idempotencyKey === "string" && (item.status === "pending" || item.status === "unknown") && typeof item.createdAt === "string" && typeof item.updatedAt === "string";
+  return item.version === 2 && typeof item.scope === "string" && /^sha256:[0-9a-f]{64}$/.test(item.payloadDigest ?? "") && typeof item.idempotencyKey === "string" && (item.status === "pending" || item.status === "unknown") && typeof item.createdAt === "string" && typeof item.updatedAt === "string";
 }
 
 export function loadPersistedOperations(): Record<string, PersistedOperation> {
