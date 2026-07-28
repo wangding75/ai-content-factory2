@@ -55,6 +55,8 @@ type Store interface {
 type CreateRunCommand struct {
 	ProjectID      uuid.UUID
 	Stage          string
+	SubjectType    *string
+	SubjectID      *uuid.UUID
 	InputPayload   json.RawMessage
 	TriggerSource  string
 	IdempotencyKey string
@@ -254,10 +256,13 @@ func (s *Service) CreateRun(ctx context.Context, command CreateRunCommand) (Work
 // mutable business input. Once the first Run exists, a replay must not fail a
 // new active-run check.
 func (s *Service) CreateRunIdempotent(ctx context.Context, projectID uuid.UUID, key, requestHash string, prepare CreateRunPreparation) (WorkflowRun, error) {
+	return s.CreateRunIdempotentForScope(ctx, "createChapterPlanRun", projectID, key, requestHash, prepare)
+}
+func (s *Service) CreateRunIdempotentForScope(ctx context.Context, operation string, projectID uuid.UUID, key, requestHash string, prepare CreateRunPreparation) (WorkflowRun, error) {
 	if projectID == uuid.Nil || strings.TrimSpace(key) == "" || strings.TrimSpace(requestHash) == "" || prepare == nil {
 		return WorkflowRun{}, ErrValidation
 	}
-	scope := "createChapterPlanRun:" + projectID.String()
+	scope := operation + ":" + projectID.String()
 	return s.store.ExecuteIdempotent(ctx, scope, key, requestHash, func(store Store) (WorkflowRun, error) {
 		command, err := prepare()
 		if err != nil {
@@ -300,6 +305,8 @@ func (s *Service) createRun(ctx context.Context, store Store, command CreateRunC
 	if err != nil {
 		return WorkflowRun{}, err
 	}
+	run.SubjectType, run.SubjectID = command.SubjectType, command.SubjectID
+	if _, err = NewFromDB(run); err != nil { return WorkflowRun{}, err }
 	now := s.now()
 	run.CreatedAt, run.UpdatedAt = now, now
 	created, _, err := store.CreateWithInitialEvent(ctx, run, Event{ID: s.newID(), RunID: run.ID, EventType: "queued", Status: StatusQueued, Payload: json.RawMessage(`{}`), CreatedAt: now})

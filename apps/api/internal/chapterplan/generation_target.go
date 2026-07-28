@@ -70,7 +70,7 @@ type PreflightTokenClaims struct {
 }
 
 func SignPreflightToken(secret []byte, claims PreflightTokenClaims) (string, error) {
-	if len(secret) == 0 || claims.ProjectID == uuid.Nil || claims.ActorID == "" || claims.Stage != "chapter_planning" || !digestPattern.MatchString(claims.InputDigest) || claims.BindingID == uuid.Nil || claims.BindingVersion < 1 {
+	if len(secret) == 0 || claims.ProjectID == uuid.Nil || claims.ActorID == "" || (claims.Stage != "chapter_planning" && claims.Stage != "content_generation") || !digestPattern.MatchString(claims.InputDigest) || claims.BindingID == uuid.Nil || claims.BindingVersion < 1 {
 		return "", ErrPreflightTokenInvalid
 	}
 	// Expiry is evaluated by VerifyPreflightToken against the injected clock.
@@ -113,7 +113,7 @@ func VerifyPreflightToken(secret []byte, raw string, now time.Time) (PreflightTo
 	if claims.ExpiresAt <= now.Unix() {
 		return claims, ErrPreflightTokenExpired
 	}
-	if claims.Stage != "chapter_planning" || claims.ProjectID == uuid.Nil || claims.ActorID == "" || claims.BindingID == uuid.Nil || claims.BindingVersion < 1 || !digestPattern.MatchString(claims.InputDigest) {
+	if (claims.Stage != "chapter_planning" && claims.Stage != "content_generation") || claims.ProjectID == uuid.Nil || claims.ActorID == "" || claims.BindingID == uuid.Nil || claims.BindingVersion < 1 || !digestPattern.MatchString(claims.InputDigest) {
 		return claims, ErrPreflightTokenInvalid
 	}
 	return claims, nil

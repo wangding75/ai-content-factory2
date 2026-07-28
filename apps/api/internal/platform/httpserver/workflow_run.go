@@ -44,6 +44,8 @@ type workflowRunDTO struct {
 	RunNumber               string          `json:"runNumber"`
 	ProjectID               uuid.UUID       `json:"projectId"`
 	Stage                   string          `json:"stage"`
+	SubjectType             *string         `json:"subjectType"`
+	SubjectID               *uuid.UUID      `json:"subjectId"`
 	WorkflowConfigurationID uuid.UUID       `json:"workflowConfigurationId"`
 	TriggerSource           string          `json:"triggerSource"`
 	Status                  workflowrun.Status `json:"status"`
@@ -180,7 +182,7 @@ func workflowRunListFilter(r *http.Request) (workflowrun.ListFilter, error) {
 }
 
 func iteration14WorkflowRunResponse(run workflowrun.WorkflowRun) workflowRunDTO {
-	return workflowRunDTO{ID: run.ID, RunNumber: run.RunNumber, ProjectID: run.ProjectID, Stage: run.Stage, WorkflowConfigurationID: run.WorkflowConfigurationID, TriggerSource: run.TriggerSource, Status: run.Status, InputPayload: workflowrun.RedactJSON(run.InputPayload), OutputPayload: workflowRunNullableJSON(run.OutputPayload), ErrorCode: run.ErrorCode, ErrorMessage: run.ErrorMessage, ErrorDetails: workflowRunNullableJSON(run.ErrorDetails), ConfigurationSnapshot: workflowrun.RedactJSON(run.ConfigurationSnapshot), StartedAt: run.StartedAt, FinishedAt: run.FinishedAt, CancelledAt: run.CancelledAt, CreatedAt: run.CreatedAt, UpdatedAt: run.UpdatedAt, Version: run.Version}
+	return workflowRunDTO{ID: run.ID, RunNumber: run.RunNumber, ProjectID: run.ProjectID, Stage: run.Stage, SubjectType: run.SubjectType, SubjectID: run.SubjectID, WorkflowConfigurationID: run.WorkflowConfigurationID, TriggerSource: run.TriggerSource, Status: run.Status, InputPayload: workflowrun.RedactJSON(run.InputPayload), OutputPayload: workflowRunNullableJSON(run.OutputPayload), ErrorCode: run.ErrorCode, ErrorMessage: run.ErrorMessage, ErrorDetails: workflowRunNullableJSON(run.ErrorDetails), ConfigurationSnapshot: workflowrun.RedactJSON(run.ConfigurationSnapshot), StartedAt: run.StartedAt, FinishedAt: run.FinishedAt, CancelledAt: run.CancelledAt, CreatedAt: run.CreatedAt, UpdatedAt: run.UpdatedAt, Version: run.Version}
 }
 
 func workflowRunEventResponse(event workflowrun.Event) workflowRunEventDTO { return workflowRunEventDTO{ID: event.ID, RunID: event.RunID, EventType: event.EventType, Status: event.Status, Payload: workflowrun.RedactJSON(event.Payload), CreatedAt: event.CreatedAt} }
