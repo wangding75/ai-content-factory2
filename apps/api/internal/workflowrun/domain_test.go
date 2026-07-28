@@ -85,3 +85,19 @@ func TestWorkflowRunTriggerSourcesAreFrozen(t *testing.T) {
 		if _, err := New(uuid.New(), uuid.New(), uuid.New(), "WR-"+source, "review", source, json.RawMessage(`{}`), json.RawMessage(`{}`)); !errors.Is(err, ErrValidation) { t.Fatalf("%s: %v", source, err) }
 	}
 }
+
+func TestWorkflowRunSubjectIsOptionalButMustBePaired(t *testing.T) {
+	run := testRun(t)
+	if _, err := NewFromDB(run); err != nil { t.Fatalf("historical run=%v", err) }
+	subjectType, subjectID := "content_item", uuid.New()
+	run.SubjectType, run.SubjectID = &subjectType, &subjectID
+	if _, err := NewFromDB(run); err != nil { t.Fatalf("content subject=%v", err) }
+	run.SubjectID = nil
+	if _, err := NewFromDB(run); !errors.Is(err, ErrValidation) { t.Fatalf("unpaired subject=%v", err) }
+}
+
+func TestContentGenerationResultEventTypesAreFrozen(t *testing.T) {
+	if EventTypeResultConsumed != "result_consumed" || EventTypeResultConsumptionFailed != "result_consumption_failed" {
+		t.Fatalf("result event types drifted: %q, %q", EventTypeResultConsumed, EventTypeResultConsumptionFailed)
+	}
+}

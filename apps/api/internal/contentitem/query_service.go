@@ -60,7 +60,7 @@ func (s *QueryService) versionRead(ctx context.Context, v ContentVersion) (Versi
 		return out, nil
 	}
 	var source ContentVersion
-	err = s.repo.db.QueryRow(ctx, "SELECT "+versionColumns+" FROM content_versions WHERE content_item_id=$1 AND version_no=1", v.ContentItemID).Scan(&source.ID, &source.ContentItemID, &source.VersionNo, &source.Title, &source.Content, &source.Summary, &source.WordCount, &source.Source, &source.Status, &source.GenerationParameters, &source.Version, &source.FrozenAt, &source.CreatedAt, &source.UpdatedAt)
+	err = s.repo.db.QueryRow(ctx, "SELECT "+versionColumns+" FROM content_versions WHERE content_item_id=$1 AND version_no=1", v.ContentItemID).Scan(&source.ID, &source.ContentItemID, &source.VersionNo, &source.SourceContentVersionID, &source.SourceContentVersionVersion, &source.SourceWorkflowRunID, &source.Title, &source.Content, &source.Summary, &source.WordCount, &source.Source, &source.Status, &source.GenerationParameters, &source.Version, &source.FrozenAt, &source.CreatedAt, &source.UpdatedAt)
 	if err != nil {
 		return VersionRead{}, rewriteDatabaseError(err)
 	}

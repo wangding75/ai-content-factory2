@@ -89,11 +89,22 @@ func (r *PostgresRepository) CreateContentVersion(ctx context.Context, tx pgx.Tx
 	if err := value.ValidateRewriteShape(); err != nil {
 		return ContentVersion{}, err
 	}
-	created, err := scanVersion(tx.QueryRow(ctx, "INSERT INTO content_versions(id,content_item_id,version_no,title,content,summary,word_count,source,status,generation_parameters,version,frozen_at,created_at,updated_at) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,COALESCE($10,'{}'::jsonb),$11,$12,COALESCE($13,NOW()),COALESCE($14,NOW())) RETURNING "+versionColumns, value.ID, value.ContentItemID, value.VersionNo, value.Title, value.Content, value.Summary, value.WordCount, value.Source, value.Status, value.GenerationParameters, value.Version, value.FrozenAt, nullableTime(value.CreatedAt), nullableTime(value.UpdatedAt)))
+	created, err := scanVersion(tx.QueryRow(ctx, "INSERT INTO content_versions(id,content_item_id,version_no,source_content_version_id,source_content_version_version,source_workflow_run_id,title,content,summary,word_count,source,status,generation_parameters,version,frozen_at,created_at,updated_at) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,COALESCE($13,'{}'::jsonb),$14,$15,COALESCE($16,NOW()),COALESCE($17,NOW())) RETURNING "+versionColumns, value.ID, value.ContentItemID, value.VersionNo, value.SourceContentVersionID, value.SourceContentVersionVersion, value.SourceWorkflowRunID, value.Title, value.Content, value.Summary, value.WordCount, value.Source, value.Status, value.GenerationParameters, value.Version, value.FrozenAt, nullableTime(value.CreatedAt), nullableTime(value.UpdatedAt)))
 	if err != nil {
 		return ContentVersion{}, rewriteContentVersionCreateError(err, value)
 	}
 	return created, nil
+}
+
+func (r *PostgresRepository) GetContentVersionBySourceWorkflowRunID(ctx context.Context, runID uuid.UUID) (ContentVersion, error) {
+	value, err := scanVersion(r.db.QueryRow(ctx, "SELECT "+versionColumns+" FROM content_versions WHERE source_workflow_run_id=$1", runID))
+	if errors.Is(err, pgx.ErrNoRows) {
+		return ContentVersion{}, ErrContentVersionNotFound
+	}
+	if err != nil {
+		return ContentVersion{}, rewriteDatabaseError(err)
+	}
+	return value, nil
 }
 
 func (r *PostgresRepository) GetContentVersionByNumber(ctx context.Context, itemID uuid.UUID, versionNo int) (ContentVersion, error) {

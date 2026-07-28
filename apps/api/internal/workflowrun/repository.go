@@ -28,11 +28,13 @@ type Repository struct {
 func NewPostgresRepository(pool *pgxpool.Pool) *Repository { return &Repository{db: pool, pool: pool} }
 func NewPostgresRepositoryTx(tx pgx.Tx) *Repository        { return &Repository{db: tx} }
 
-const runColumns = "id, run_number, project_id, stage, workflow_configuration_id, trigger_source, status, configuration_snapshot, input_payload, output_payload, error_code, error_message, error_details, retry_of_run_id, started_at, finished_at, cancelled_at, created_at, updated_at, version"
+const runColumns = "id, run_number, project_id, stage, subject_type, subject_id, workflow_configuration_id, trigger_source, status, configuration_snapshot, input_payload, output_payload, error_code, error_message, error_details, retry_of_run_id, started_at, finished_at, cancelled_at, created_at, updated_at, version"
 
 type ListFilter struct {
 	ProjectID                                                        *uuid.UUID
 	Stage, WorkflowConfigurationID, Status, TriggerSource, RunNumber string
+	SubjectType *string
+	SubjectID *uuid.UUID
 	Query                                                            string
 	StartTime, EndTime                                               *time.Time
 	Limit, Offset                                                    int
@@ -48,7 +50,7 @@ type Summary struct {
 
 func scanRun(row pgx.Row) (WorkflowRun, error) {
 	var r WorkflowRun
-	if err := row.Scan(&r.ID, &r.RunNumber, &r.ProjectID, &r.Stage, &r.WorkflowConfigurationID, &r.TriggerSource, &r.Status, &r.ConfigurationSnapshot, &r.InputPayload, &r.OutputPayload, &r.ErrorCode, &r.ErrorMessage, &r.ErrorDetails, &r.RetryOfRunID, &r.StartedAt, &r.FinishedAt, &r.CancelledAt, &r.CreatedAt, &r.UpdatedAt, &r.Version); err != nil {
+	if err := row.Scan(&r.ID, &r.RunNumber, &r.ProjectID, &r.Stage, &r.SubjectType, &r.SubjectID, &r.WorkflowConfigurationID, &r.TriggerSource, &r.Status, &r.ConfigurationSnapshot, &r.InputPayload, &r.OutputPayload, &r.ErrorCode, &r.ErrorMessage, &r.ErrorDetails, &r.RetryOfRunID, &r.StartedAt, &r.FinishedAt, &r.CancelledAt, &r.CreatedAt, &r.UpdatedAt, &r.Version); err != nil {
 		return WorkflowRun{}, err
 	}
 	return NewFromDB(r)
@@ -65,7 +67,10 @@ func scanEvent(row pgx.Row) (Event, error) {
 }
 
 func (r *Repository) Create(ctx context.Context, value WorkflowRun) (WorkflowRun, error) {
-	created, err := scanRun(r.db.QueryRow(ctx, "INSERT INTO workflow_run_records ("+runColumns+") VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20) RETURNING "+runColumns, value.ID, value.RunNumber, value.ProjectID, value.Stage, value.WorkflowConfigurationID, value.TriggerSource, value.Status, value.ConfigurationSnapshot, value.InputPayload, nullableJSON(value.OutputPayload), value.ErrorCode, value.ErrorMessage, nullableJSON(value.ErrorDetails), value.RetryOfRunID, value.StartedAt, value.FinishedAt, value.CancelledAt, value.CreatedAt, value.UpdatedAt, value.Version))
+	if _, err := NewFromDB(value); err != nil {
+		return WorkflowRun{}, err
+	}
+	created, err := scanRun(r.db.QueryRow(ctx, "INSERT INTO workflow_run_records ("+runColumns+") VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22) RETURNING "+runColumns, value.ID, value.RunNumber, value.ProjectID, value.Stage, value.SubjectType, value.SubjectID, value.WorkflowConfigurationID, value.TriggerSource, value.Status, value.ConfigurationSnapshot, value.InputPayload, nullableJSON(value.OutputPayload), value.ErrorCode, value.ErrorMessage, nullableJSON(value.ErrorDetails), value.RetryOfRunID, value.StartedAt, value.FinishedAt, value.CancelledAt, value.CreatedAt, value.UpdatedAt, value.Version))
 	if err != nil {
 		return WorkflowRun{}, fmt.Errorf("create workflow run: %w", err)
 	}
@@ -78,6 +83,16 @@ func (r *Repository) GetByID(ctx context.Context, id uuid.UUID) (WorkflowRun, er
 	}
 	if err != nil {
 		return WorkflowRun{}, fmt.Errorf("get workflow run: %w", err)
+	}
+	return value, nil
+}
+func (r *Repository) FindActive(ctx context.Context, projectID uuid.UUID, stage string, subjectType string, subjectID uuid.UUID) (WorkflowRun, error) {
+	value, err := scanRun(r.db.QueryRow(ctx, "SELECT "+runColumns+" FROM workflow_run_records WHERE project_id=$1 AND stage=$2 AND subject_type=$3 AND subject_id=$4 AND status IN ('queued','running') ORDER BY created_at DESC,id DESC LIMIT 1", projectID, stage, subjectType, subjectID))
+	if errors.Is(err, pgx.ErrNoRows) {
+		return WorkflowRun{}, ErrNotFound
+	}
+	if err != nil {
+		return WorkflowRun{}, fmt.Errorf("find active workflow run: %w", err)
 	}
 	return value, nil
 }
@@ -107,6 +122,12 @@ func (r *Repository) List(ctx context.Context, f ListFilter) ([]WorkflowRun, err
 	}
 	if f.RunNumber != "" {
 		add("run_number=$%d", f.RunNumber)
+	}
+	if f.SubjectType != nil {
+		add("subject_type=$%d", *f.SubjectType)
+	}
+	if f.SubjectID != nil {
+		add("subject_id=$%d", *f.SubjectID)
 	}
 	if f.Query != "" {
 		add("run_number ILIKE '%%' || $%d || '%%'", f.Query)
@@ -155,6 +176,8 @@ func (r *Repository) Count(ctx context.Context, f ListFilter) (int, error) {
 	if f.Status != "" { add("status=$%d", f.Status) }
 	if f.TriggerSource != "" { add("trigger_source=$%d", f.TriggerSource) }
 	if f.RunNumber != "" { add("run_number=$%d", f.RunNumber) }
+	if f.SubjectType != nil { add("subject_type=$%d", *f.SubjectType) }
+	if f.SubjectID != nil { add("subject_id=$%d", *f.SubjectID) }
 	if f.Query != "" { add("run_number ILIKE '%%' || $%d || '%%'", f.Query) }
 	if f.StartTime != nil { add("created_at >= $%d", f.StartTime.UTC()) }
 	if f.EndTime != nil { add("created_at <= $%d", f.EndTime.UTC()) }

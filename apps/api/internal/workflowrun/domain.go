@@ -17,6 +17,8 @@ const (
 	StatusSucceeded Status = "succeeded"
 	StatusFailed    Status = "failed"
 	StatusCancelled Status = "cancelled"
+	EventTypeResultConsumed           = "result_consumed"
+	EventTypeResultConsumptionFailed  = "result_consumption_failed"
 )
 
 var (
@@ -34,6 +36,7 @@ type Failure struct {
 
 type WorkflowRun struct {
 	ID uuid.UUID `json:"id"`; RunNumber string `json:"runNumber"`; ProjectID uuid.UUID `json:"projectId"`; Stage string `json:"stage"`; WorkflowConfigurationID uuid.UUID `json:"workflowConfigurationId"`; TriggerSource string `json:"triggerSource"`; Status Status `json:"status"`
+	SubjectType *string `json:"subjectType"`; SubjectID *uuid.UUID `json:"subjectId"`
 	ConfigurationSnapshot json.RawMessage `json:"configurationSnapshot"`; InputPayload json.RawMessage `json:"inputPayload"`; OutputPayload json.RawMessage `json:"outputPayload"`; ErrorCode *string `json:"errorCode"`; ErrorMessage *string `json:"errorMessage"`; ErrorDetails json.RawMessage `json:"errorDetails"`; RetryOfRunID *uuid.UUID `json:"retryOfRunId"`
 	StartedAt *time.Time `json:"startedAt"`; FinishedAt *time.Time `json:"finishedAt"`; CancelledAt *time.Time `json:"cancelledAt"`; CreatedAt time.Time `json:"createdAt"`; UpdatedAt time.Time `json:"updatedAt"`; Version int `json:"version"`
 }
@@ -107,6 +110,9 @@ func canTransition(from, to Status) bool {
 
 func (r WorkflowRun) validate() error {
 	if r.ID == uuid.Nil || r.ProjectID == uuid.Nil || r.WorkflowConfigurationID == uuid.Nil || strings.TrimSpace(r.RunNumber) == "" || strings.TrimSpace(r.Stage) == "" || !validTriggerSource(r.TriggerSource) || r.Version < 1 || !validJSONObject(r.ConfigurationSnapshot) || !validJSONObject(r.InputPayload) {
+		return ErrValidation
+	}
+	if (r.SubjectType == nil) != (r.SubjectID == nil) || (r.SubjectType != nil && (strings.TrimSpace(*r.SubjectType) == "" || *r.SubjectID == uuid.Nil)) {
 		return ErrValidation
 	}
 	if r.OutputPayload != nil && !validJSONObject(r.OutputPayload) || r.ErrorDetails != nil && !validJSONObject(r.ErrorDetails) {

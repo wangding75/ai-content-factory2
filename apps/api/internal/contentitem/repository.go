@@ -40,6 +40,9 @@ type ContentItem struct {
 }
 type ContentVersion struct {
 	ID, ContentItemID              uuid.UUID
+	SourceContentVersionID         *uuid.UUID
+	SourceContentVersionVersion    *int
+	SourceWorkflowRunID            *uuid.UUID
 	VersionNo, Version, WordCount  int
 	Title, Content, Source, Status string
 	Summary                        *string
@@ -182,7 +185,7 @@ type PostgresRepository struct{ db *pgxpool.Pool }
 func NewPostgresRepository(db *pgxpool.Pool) *PostgresRepository { return &PostgresRepository{db: db} }
 
 const itemColumns = "id,project_id,chapter_plan_id,title,status,current_version_id,version,reviewed_at,created_at,updated_at"
-const versionColumns = "id,content_item_id,version_no,title,content,summary,word_count,source,status,generation_parameters,version,frozen_at,created_at,updated_at"
+const versionColumns = "id,content_item_id,version_no,source_content_version_id,source_content_version_version,source_workflow_run_id,title,content,summary,word_count,source,status,generation_parameters,version,frozen_at,created_at,updated_at"
 const runColumns = "id,project_id,content_item_id,content_version_id,provider_key,workflow_key,subject_type,subject_id,status,idempotency_key,request_fingerprint,input_json,output_json,error_code,error_summary,started_at,finished_at,created_at,updated_at"
 
 func scanItem(r pgx.Row) (v ContentItem, err error) {
@@ -190,7 +193,7 @@ func scanItem(r pgx.Row) (v ContentItem, err error) {
 	return
 }
 func scanVersion(r pgx.Row) (v ContentVersion, err error) {
-	err = r.Scan(&v.ID, &v.ContentItemID, &v.VersionNo, &v.Title, &v.Content, &v.Summary, &v.WordCount, &v.Source, &v.Status, &v.GenerationParameters, &v.Version, &v.FrozenAt, &v.CreatedAt, &v.UpdatedAt)
+	err = r.Scan(&v.ID, &v.ContentItemID, &v.VersionNo, &v.SourceContentVersionID, &v.SourceContentVersionVersion, &v.SourceWorkflowRunID, &v.Title, &v.Content, &v.Summary, &v.WordCount, &v.Source, &v.Status, &v.GenerationParameters, &v.Version, &v.FrozenAt, &v.CreatedAt, &v.UpdatedAt)
 	return
 }
 func scanRun(r pgx.Row) (v WorkflowRun, err error) {

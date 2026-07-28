@@ -36,6 +36,18 @@ func TestContentVersionRewriteShapeRejectsInvalidV2Forms(t *testing.T) {
 	}
 }
 
+func TestContentVersionWorkflowGeneratedShapeRequiresCompleteSourceTrace(t *testing.T) {
+	sourceVersionID, sourceRunID := uuid.New(), uuid.New()
+	sourceVersion := 3
+	candidate := ContentVersion{
+		Source: ContentVersionSourceWorkflowGenerated, VersionNo: 4, Status: ContentVersionStatusEditableDraft, Version: 1,
+		SourceContentVersionID: &sourceVersionID, SourceContentVersionVersion: &sourceVersion, SourceWorkflowRunID: &sourceRunID,
+	}
+	if err := candidate.ValidateRewriteShape(); err != nil { t.Fatalf("candidate=%+v err=%v", candidate, err) }
+	candidate.SourceWorkflowRunID = nil
+	if !errors.Is(candidate.ValidateRewriteShape(), ErrInvalidContentVersion) { t.Fatal("candidate without source run accepted") }
+}
+
 func TestWorkflowRunRewriteShapeSucceedsAndFailsWithFrozenNullability(t *testing.T) {
 	reviewID, targetID := uuid.New(), uuid.New()
 	finished := time.Now().UTC()
