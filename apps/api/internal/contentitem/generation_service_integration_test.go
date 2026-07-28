@@ -14,6 +14,7 @@ import (
 
 type generationRunSpy struct { run workflowrun.WorkflowRun; getCalls, createRunCalls, runtimeDispatchCalls, n8nCalls int; mu sync.Mutex }
 func (s *generationRunSpy) CreateRunIdempotentForScope(context.Context,string,uuid.UUID,string,string,workflowrun.CreateRunPreparation)(workflowrun.WorkflowRun,error){s.mu.Lock();defer s.mu.Unlock();s.createRunCalls++;return workflowrun.WorkflowRun{},errors.New("unexpected create")}
+func (s *generationRunSpy) CreateRunForPreflightToken(context.Context,uuid.UUID,string,string,workflowrun.CreateRunPreparation)(workflowrun.WorkflowRun,error){s.mu.Lock();defer s.mu.Unlock();s.createRunCalls++;return workflowrun.WorkflowRun{},errors.New("unexpected create")}
 func (s *generationRunSpy) ListRuns(context.Context,workflowrun.ListRunsQuery)(workflowrun.RunList,error){return workflowrun.RunList{},nil}
 func (s *generationRunSpy) ListRunEvents(context.Context,uuid.UUID)([]workflowrun.Event,error){return nil,nil}
 func (s *generationRunSpy) GetRun(context.Context,uuid.UUID)(workflowrun.WorkflowRun,error){s.mu.Lock();defer s.mu.Unlock();s.getCalls++;return s.run,nil}

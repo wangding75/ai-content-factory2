@@ -86,6 +86,14 @@ func (r *Repository) GetByID(ctx context.Context, id uuid.UUID) (WorkflowRun, er
 	}
 	return value, nil
 }
+func (r *Repository) PreflightTokenUsed(ctx context.Context, nonce string) (bool, error) {
+	var used bool
+	err := r.db.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM workflow_run_records WHERE input_payload->>'preflightTokenNonce'=$1)", nonce).Scan(&used)
+	if err != nil {
+		return false, fmt.Errorf("find workflow run preflight token: %w", err)
+	}
+	return used, nil
+}
 func (r *Repository) FindActive(ctx context.Context, projectID uuid.UUID, stage string, subjectType string, subjectID uuid.UUID) (WorkflowRun, error) {
 	value, err := scanRun(r.db.QueryRow(ctx, "SELECT "+runColumns+" FROM workflow_run_records WHERE project_id=$1 AND stage=$2 AND subject_type=$3 AND subject_id=$4 AND status IN ('queued','running') ORDER BY created_at DESC,id DESC LIMIT 1", projectID, stage, subjectType, subjectID))
 	if errors.Is(err, pgx.ErrNoRows) {

@@ -26,6 +26,7 @@ var (
 	ErrInvalidTransition = errors.New("invalid workflow run status transition")
 	ErrNotFound          = errors.New("workflow run not found")
 	ErrVersionConflict   = errors.New("workflow run version conflict")
+	ErrPreflightTokenConsumed = errors.New("workflow run preflight token consumed")
 )
 
 type Failure struct {

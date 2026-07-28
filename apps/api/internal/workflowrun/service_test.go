@@ -21,6 +21,15 @@ type serviceStore struct {
 func (s *serviceStore) ExecuteIdempotent(_ context.Context, _ string, _ string, _ string, fn func(Store) (WorkflowRun, error)) (WorkflowRun, error) {
 	return fn(s)
 }
+func (s *serviceStore) PreflightTokenUsed(_ context.Context, nonce string) (bool, error) {
+	for _, run := range s.runs {
+		var input struct { PreflightTokenNonce string `json:"preflightTokenNonce"` }
+		if json.Unmarshal(run.InputPayload, &input) == nil && input.PreflightTokenNonce == nonce {
+			return true, nil
+		}
+	}
+	return false, nil
+}
 func (s *serviceStore) CreateWithInitialEvent(_ context.Context, run WorkflowRun, event Event) (WorkflowRun, Event, error) {
 	s.runs[run.ID] = run
 	s.events[run.ID] = append(s.events[run.ID], event)

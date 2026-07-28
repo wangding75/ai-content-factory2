@@ -50,6 +50,7 @@ type Store interface {
 	QuerySummary(context.Context, uuid.UUID, int) (Summary, error)
 	Count(context.Context, ListFilter) (int, error)
 	ExecuteIdempotent(context.Context, string, string, string, func(Store) (WorkflowRun, error)) (WorkflowRun, error)
+	PreflightTokenUsed(context.Context, string) (bool, error)
 }
 
 type CreateRunCommand struct {
@@ -267,6 +268,32 @@ func (s *Service) CreateRunIdempotentForScope(ctx context.Context, operation str
 	}
 	scope := operation + ":" + projectID.String()
 	return s.store.ExecuteIdempotent(ctx, scope, key, requestHash, func(store Store) (WorkflowRun, error) {
+		command, err := prepare()
+		if err != nil {
+			return WorkflowRun{}, err
+		}
+		if command.ProjectID != projectID {
+			return WorkflowRun{}, ErrValidation
+		}
+		if command.TriggerSource == "" {
+			command.TriggerSource = "manual"
+		}
+		return s.createRun(ctx, store, command)
+	})
+}
+func (s *Service) CreateRunForPreflightToken(ctx context.Context, projectID uuid.UUID, nonce, requestHash string, prepare CreateRunPreparation) (WorkflowRun, error) {
+	if projectID == uuid.Nil || strings.TrimSpace(nonce) == "" || strings.TrimSpace(requestHash) == "" || prepare == nil {
+		return WorkflowRun{}, ErrValidation
+	}
+	scope := "consumeContentGenerationPreflightToken:" + projectID.String()
+	return s.store.ExecuteIdempotent(ctx, scope, nonce, requestHash, func(store Store) (WorkflowRun, error) {
+		used, err := store.PreflightTokenUsed(ctx, nonce)
+		if err != nil {
+			return WorkflowRun{}, err
+		}
+		if used {
+			return WorkflowRun{}, ErrPreflightTokenConsumed
+		}
 		command, err := prepare()
 		if err != nil {
 			return WorkflowRun{}, err
