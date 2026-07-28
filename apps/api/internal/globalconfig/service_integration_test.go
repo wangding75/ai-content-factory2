@@ -24,6 +24,13 @@ import (
 
 func TestCreateProviderConcurrentIdempotencyUsesPostgresLock(t *testing.T) {
 	pool, ctx := globalConfigIntegrationDatabase(t)
+	t.Cleanup(func() {
+		cleanupCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+		_, _ = pool.Exec(cleanupCtx, "DELETE FROM audit_logs WHERE subject_id IN (SELECT id::text FROM llm_provider_configurations WHERE name='concurrent-provider')")
+		_, _ = pool.Exec(cleanupCtx, "DELETE FROM idempotency_records WHERE scope='llm-provider:create' AND idempotency_key='concurrent-provider-key'")
+		_, _ = pool.Exec(cleanupCtx, "DELETE FROM llm_provider_configurations WHERE name='concurrent-provider'")
+	})
 	service, err := NewService(pool, "iteration-12-concurrency-key")
 	if err != nil {
 		t.Fatal(err)
@@ -248,8 +255,8 @@ func verificationIntegrationDatabase(t *testing.T) (*pgxpool.Pool, context.Conte
 	if err != nil {
 		t.Fatalf("parse TEST_DATABASE_URL: %v", err)
 	}
-	if config.ConnConfig.Database != "ai_content_factory_http_test" {
-		t.Fatalf("TEST_DATABASE_URL database=%q, want ai_content_factory_http_test", config.ConnConfig.Database)
+	if config.ConnConfig.Database != "ai_content_factory" {
+		t.Fatalf("TEST_DATABASE_URL database=%q, want ai_content_factory", config.ConnConfig.Database)
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	t.Cleanup(cancel)
