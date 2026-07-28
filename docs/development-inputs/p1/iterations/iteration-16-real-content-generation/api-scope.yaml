@@ -1,11 +1,101 @@
 iteration: iteration-16-real-content-generation
-status: planned
-apis:
-  - "POST /api/v1/chapters/{chapterId}/content-generation-runs"
-  - "复用 ContentVersion 查询/设为当前版本 API"
+status: review_ready_cf_16_01c
+canonical_route: /projects/{projectId}/works/{workId}
+identity:
+  workId: ContentItem.id
+  stage: content_generation
+  subjectType: content_item
+new_operations:
+  - operationId: preflightContentGenerationRun
+    method: POST
+    path: /api/v1/content-items/{contentItemId}/content-generation-runs/preflight
+    idempotency_key: false
+    side_effect_free: true
+  - operationId: createContentGenerationRun
+    method: POST
+    path: /api/v1/content-items/{contentItemId}/content-generation-runs
+    idempotency_key: required
+    response: Iteration14WorkflowRunEnvelope
+  - operationId: getContentGenerationSummary
+    method: GET
+    path: /api/v1/content-items/{contentItemId}/content-generation-summary
+    response: ContentGenerationSummaryEnvelope
+  - operationId: retryContentGenerationResultConsumption
+    method: POST
+    path: /api/v1/content-generation-runs/{runId}/result-consumption-retries
+    idempotency_key: required
+    response: ContentGenerationResultEnvelope
+  - operationId: setCurrentContentVersion
+    method: POST
+    path: /api/v1/content-items/{contentItemId}/current-version
+    idempotency_key: required
+    response: ContentItemDetailEnvelope
+reused_operations:
+  - GET /api/v1/works/{workId}
+  - GET /api/v1/content-items/{contentItemId}
+  - PUT /api/v1/content-items/{contentItemId}/draft
+  - GET /api/v1/content-items/{contentItemId}/versions
+  - GET /api/v1/content-versions/{versionId}
+  - GET /api/v1/workflow-runs/{runId}
+  - GET /api/v1/workflow-runs/{runId}/events
+  - POST /api/v1/workflow-runs/{runId}/retries
+  - POST /api/v1/workflow-runs/{runId}/cancel
+schema_changes:
+  ContentVersionSource:
+    add: [workflow_generated]
+  ContentVersion:
+    add_optional:
+      source_content_version_id: uuid
+      source_content_version_version: integer
+      source_workflow_run_id: uuid
+  Iteration14WorkflowRun:
+    add_optional:
+      subjectType: string
+      subjectId: uuid
+  WorkflowRunEvent.eventType:
+    add: [result_consumed, result_consumption_failed]
+preflight:
+  token_ttl_minutes: 10
+  statuses: [passed, blocked]
+  blocker_codes:
+    - project_binding_missing
+    - execution_integration_unavailable
+    - chapter_plan_not_confirmed
+    - active_run_conflict
+    - current_version_changed
+    - generation_input_invalid
+summary_states:
+  - idle
+  - not_configured
+  - queued
+  - running
+  - candidate_ready
+  - runtime_failed
+  - output_validation_failed
+  - result_consumption_failed
+error_codes:
+  workflow_not_configured: {http: 422, operations: [createContentGenerationRun]}
+  execution_integration_unavailable: {http: 422, operations: [createContentGenerationRun]}
+  chapter_plan_not_confirmed: {http: 409, operations: [createContentGenerationRun]}
+  active_run_conflict: {http: 409, operations: [createContentGenerationRun]}
+  preflight_token_invalid: {http: 422, operations: [createContentGenerationRun]}
+  preflight_token_expired: {http: 422, operations: [createContentGenerationRun]}
+  preflight_input_changed: {http: 409, operations: [createContentGenerationRun]}
+  current_version_changed: {http: 409, operations: [createContentGenerationRun, setCurrentContentVersion]}
+  candidate_source_stale: {http: 409, operations: [setCurrentContentVersion]}
+  content_version_not_candidate: {http: 409, operations: [setCurrentContentVersion]}
+  content_version_item_mismatch: {http: 409, operations: [setCurrentContentVersion]}
+  run_already_consumed: {http: 200, operations: [retryContentGenerationResultConsumption], note: returns existing successful result}
+  output_validation_failed: {http: 409, operations: [retryContentGenerationResultConsumption], note: requires a new Runtime retry}
+  result_consumption_failed: {http: 500, operations: [retryContentGenerationResultConsumption]}
+  idempotency_key_reused_with_different_payload: {http: 409, operations: [createContentGenerationRun, retryContentGenerationResultConsumption, setCurrentContentVersion]}
 common_requirements:
-  - OpenAPI is the single contract source
-  - all commands use Idempotency-Key where applicable
-  - errors use the shared error envelope
-  - secrets and raw upstream responses are never returned
-  - optimistic locking is required for mutable configuration
+  - OpenAPI is the single HTTP contract source.
+  - Domain-specific creation fixes stage, triggerSource and subject server-side.
+  - Clients do not call generic createWorkflowRun to start real content generation.
+  - Preflight is side-effect free and blocked is an HTTP 200 business result.
+  - All command responses use the existing data/request_id envelope.
+  - All errors use a restricted ErrorEnvelope and display-safe details.
+  - Secrets, raw upstream payloads, internal URLs, stack traces and raw idempotency keys are never returned.
+  - A successful run creates one non-current candidate ContentVersion only after full validation and atomic consumption.
+  - Setting current uses expectedCurrentVersionId plus expectedCurrentVersion and never force-overwrites a stale baseline.

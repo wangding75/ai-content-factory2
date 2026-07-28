@@ -1,8 +1,8 @@
 openapi: 3.1.0
 info:
   title: AI Content Factory 2.0 API
-  version: 0.5.0
-  description: P0 API contract baseline.
+  version: 0.6.0
+  description: P0 baseline plus P1 Workflow Runtime, real chapter planning and real content generation contracts.
 servers:
   - url: http://localhost:8080
 paths:
@@ -713,6 +713,62 @@ paths:
         "409": {$ref: "#/components/responses/Conflict"}
         "422": {$ref: "#/components/responses/UnprocessableEntity"}
         "500": {$ref: "#/components/responses/InternalServerError"}
+  /api/v1/content-items/{contentItemId}/content-generation-runs/preflight:
+    parameters: [{$ref: "#/components/parameters/ContentItemId"}]
+    post:
+      operationId: preflightContentGenerationRun
+      description: Read-only real content-generation preflight. It creates no WorkflowRun or ContentVersion and performs no external execution. A passed token is actor, item, source-version, input and configuration bound and expires after 10 minutes; blocked is a normal HTTP 200 business result.
+      requestBody: {required: true, content: {application/json: {schema: {$ref: "#/components/schemas/ContentGenerationPreflightRequest"}}}}
+      responses:
+        "200": {description: Passed or blocked content-generation preflight report., content: {application/json: {schema: {$ref: "#/components/schemas/ContentGenerationPreflightEnvelope"}}}}
+        "400": {$ref: "#/components/responses/BadRequest"}
+        "404": {$ref: "#/components/responses/NotFound"}
+        "500": {$ref: "#/components/responses/InternalServerError"}
+  /api/v1/content-items/{contentItemId}/content-generation-runs:
+    parameters: [{$ref: "#/components/parameters/ContentItemId"}, {$ref: "#/components/parameters/IdempotencyKey"}]
+    post:
+      operationId: createContentGenerationRun
+      description: Validates the preflight token and delegates to the Iteration 14 Runtime. stage=content_generation, triggerSource=manual, subjectType=content_item and subjectId=contentItemId are server-managed. Clients must not call generic createWorkflowRun for this action. A successful Run does not update ContentItem.current_version_id.
+      requestBody: {required: true, content: {application/json: {schema: {$ref: "#/components/schemas/CreateContentGenerationRunRequest"}}}}
+      responses:
+        "201": {description: Queued content-generation Runtime WorkflowRun., content: {application/json: {schema: {$ref: "#/components/schemas/Iteration14WorkflowRunEnvelope"}}}}
+        "400": {$ref: "#/components/responses/BadRequest"}
+        "404": {$ref: "#/components/responses/NotFound"}
+        "409": {description: Current-version drift, active subject Run or idempotency conflict., content: {application/json: {schema: {$ref: "#/components/schemas/ContentGenerationErrorEnvelope"}}}}
+        "422": {description: Invalid or unavailable generation prerequisite., content: {application/json: {schema: {$ref: "#/components/schemas/ContentGenerationErrorEnvelope"}}}}
+  /api/v1/content-items/{contentItemId}/content-generation-summary:
+    parameters: [{$ref: "#/components/parameters/ContentItemId"}]
+    get:
+      operationId: getContentGenerationSummary
+      description: Read-only editor aggregation for workflow availability, queued/running Run recovery, safe failure state and the latest non-current workflow-generated candidate version. Business failure states are represented in the 200 data model rather than as read-time HTTP failures.
+      responses:
+        "200": {description: Content-generation workspace summary., content: {application/json: {schema: {$ref: "#/components/schemas/ContentGenerationSummaryEnvelope"}}}}
+        "400": {$ref: "#/components/responses/BadRequest"}
+        "404": {$ref: "#/components/responses/NotFound"}
+        "500": {$ref: "#/components/responses/InternalServerError"}
+  /api/v1/content-items/{contentItemId}/current-version:
+    parameters: [{$ref: "#/components/parameters/ContentItemId"}, {$ref: "#/components/parameters/IdempotencyKey"}]
+    post:
+      operationId: setCurrentContentVersion
+      description: Atomically sets a same-item non-current workflow_generated editable candidate as current. expectedCurrentVersionId and expectedCurrentVersion are compare-and-swap protection, and the candidate source_content_version_id/source_content_version_version must still equal the current version; no force-overwrite path exists. Success leaves historical versions and reviews intact, sets ContentItem.status=draft and clears reviewed_at.
+      requestBody: {required: true, content: {application/json: {schema: {$ref: "#/components/schemas/SetCurrentContentVersionRequest"}}}}
+      responses:
+        "200": {description: Candidate is now the current ContentVersion., content: {application/json: {schema: {$ref: "#/components/schemas/ContentItemDetailEnvelope"}}}}
+        "400": {$ref: "#/components/responses/BadRequest"}
+        "404": {$ref: "#/components/responses/NotFound"}
+        "409": {description: Current-version, candidate-state, baseline or idempotency conflict., content: {application/json: {schema: {$ref: "#/components/schemas/ContentGenerationErrorEnvelope"}}}}
+  /api/v1/content-generation-runs/{runId}/result-consumption-retries:
+    parameters: [{$ref: "#/components/parameters/Iteration14WorkflowRunId"}, {$ref: "#/components/parameters/IdempotencyKey"}]
+    post:
+      operationId: retryContentGenerationResultConsumption
+      description: Retries only the atomic domain result consumption for a succeeded content_generation Runtime Run whose output already passed protocol validation. It never calls the external workflow again. An already consumed Run returns the existing candidate version.
+      requestBody: {required: true, content: {application/json: {schema: {$ref: "#/components/schemas/RetryContentGenerationResultConsumptionRequest"}}}}
+      responses:
+        "200": {description: Existing or newly consumed candidate version., content: {application/json: {schema: {$ref: "#/components/schemas/ContentGenerationResultEnvelope"}}}}
+        "400": {$ref: "#/components/responses/BadRequest"}
+        "404": {$ref: "#/components/responses/NotFound"}
+        "409": {description: Run state, output validation, version or idempotency conflict., content: {application/json: {schema: {$ref: "#/components/schemas/ContentGenerationErrorEnvelope"}}}}
+        "500": {description: Atomic result consumption failed safely and created no ContentVersion., content: {application/json: {schema: {$ref: "#/components/schemas/ContentGenerationErrorEnvelope"}}}}
   /api/v1/content-items/{contentItemId}/mock-generate:
     parameters: [{$ref: "#/components/parameters/ContentItemId"}, {$ref: "#/components/parameters/IdempotencyKey"}]
     post:
@@ -2029,7 +2085,7 @@ components:
       enum: [editable_draft, frozen]
     ContentVersionSource:
       type: string
-      enum: [manual_created, mock_generated, mock_rewrite]
+      enum: [manual_created, mock_generated, mock_rewrite, workflow_generated]
     WorkflowRunStatus:
       type: string
       enum: [running, succeeded, failed]
@@ -2053,10 +2109,13 @@ components:
       properties:
         id: {type: string, format: uuid}
         content_item_id: {type: string, format: uuid}
-        version_no: {type: integer, minimum: 1, description: Historical body version number; fixed at 1 in Iteration 06.}
+        version_no: {type: integer, minimum: 1, description: Historical body version number unique within one ContentItem.}
         version: {type: integer, minimum: 1, description: Optimistic-lock version.}
         status: {$ref: "#/components/schemas/ContentVersionStatus"}
         source: {$ref: "#/components/schemas/ContentVersionSource"}
+        source_content_version_id: {type: [string, "null"], format: uuid, description: Source or baseline ContentVersion when this version was derived; null for versions without a source.}
+        source_content_version_version: {type: [integer, "null"], minimum: 1, description: Optimistic-lock version of source_content_version_id captured when generation started.}
+        source_workflow_run_id: {type: [string, "null"], format: uuid, description: Source P1 Runtime WorkflowRun for workflow-generated versions; null when not applicable.}
         title: {type: string, minLength: 1, maxLength: 120}
         content: {type: string, maxLength: 200000}
         summary: {type: [string, "null"], maxLength: 5000}
@@ -2184,7 +2243,7 @@ components:
         version_no: {type: integer, minimum: 1}
         title: {type: string, minLength: 1, maxLength: 120}
         source: {$ref: "#/components/schemas/ContentVersionSource"}
-        frozen_at: {type: string, format: date-time}
+        frozen_at: {type: [string, "null"], format: date-time}
     ContentVersionReviewSummary:
       type: object
       additionalProperties: false
@@ -2199,14 +2258,16 @@ components:
     ContentVersionWorkflowRunSummary:
       type: object
       additionalProperties: false
-      required: [id, provider_key, workflow_key, status, started_at, finished_at]
+      required: [id, status, started_at, finished_at]
       properties:
         id: {type: string, format: uuid}
-        provider_key: {type: string, const: mock}
-        workflow_key: {type: string, const: content_mock_rewrite}
-        status: {type: string, const: succeeded}
-        started_at: {type: string, format: date-time}
-        finished_at: {type: string, format: date-time}
+        run_number: {type: [string, "null"], maxLength: 80, description: P1 Runtime run number; null for legacy content workflow runs.}
+        stage: {anyOf: [{$ref: "#/components/schemas/ApplicableStage"}, {type: "null"}]}
+        provider_key: {type: [string, "null"], maxLength: 80, description: Legacy provider identifier when available.}
+        workflow_key: {type: [string, "null"], maxLength: 120, description: Legacy workflow identifier when available.}
+        status: {type: string, enum: [running, queued, succeeded, failed, cancelled]}
+        started_at: {type: [string, "null"], format: date-time}
+        finished_at: {type: [string, "null"], format: date-time}
     ContentVersionListItem:
       type: object
       additionalProperties: false
@@ -2259,7 +2320,8 @@ components:
         content_item: {$ref: "#/components/schemas/ContentVersionContentItemSummary"}
         source_content_version: {anyOf: [{$ref: "#/components/schemas/ContentVersionSourceSummary"}, {type: "null"}]}
         source_review_report: {anyOf: [{$ref: "#/components/schemas/ContentVersionReviewSummary"}, {type: "null"}]}
-        rewrite_workflow_run: {anyOf: [{$ref: "#/components/schemas/ContentVersionWorkflowRunSummary"}, {type: "null"}]}
+        rewrite_workflow_run: {anyOf: [{$ref: "#/components/schemas/ContentVersionWorkflowRunSummary"}, {type: "null"}], deprecated: true, description: Legacy mock-rewrite alias; use source_workflow_run for new integrations.}
+        source_workflow_run: {anyOf: [{$ref: "#/components/schemas/ContentVersionWorkflowRunSummary"}, {type: "null"}], description: Generic source Run summary for workflow-derived versions.}
         is_current: {type: boolean, description: True only when content_version.id equals content_item.current_version_id.}
       description: content_version is the requested immutable snapshot; null source fields mean no rewrite source relation.
     ContentVersionDetailEnvelope:
@@ -3626,6 +3688,8 @@ components:
       properties:
         projectId: {type: string, format: uuid}
         stage: {$ref: "#/components/schemas/ApplicableStage"}
+        subjectType: {type: [string, "null"], maxLength: 40, description: Optional domain subject type; content generation fixes content_item.}
+        subjectId: {type: [string, "null"], format: uuid, description: Optional domain subject identifier; content generation fixes ContentItem.id.}
         unbound: {type: boolean, const: true}
         workflowConfigurationRetained: {type: boolean, const: true}
     UnbindProjectWorkflowBindingResultEnvelope:
@@ -3707,7 +3771,7 @@ components:
       properties:
         id: {type: string, format: uuid}
         runId: {type: string, format: uuid}
-        eventType: {type: string, enum: [queued, worker_started, request_sent, response_received, output_validated, succeeded, failed, cancelled, retry_created]}
+        eventType: {type: string, enum: [queued, worker_started, request_sent, response_received, output_validated, result_consumed, result_consumption_failed, succeeded, failed, cancelled, retry_created]}
         status: {$ref: "#/components/schemas/Iteration14WorkflowRunStatus", description: WorkflowRun status snapshot after this event is written; event status is not an independent lifecycle.}
         payload: {type: object, additionalProperties: true, description: Redacted event payload.}
         createdAt: {type: string, format: date-time}
@@ -3731,6 +3795,150 @@ components:
       additionalProperties: false
       required: [data, request_id]
       properties: {data: {$ref: "#/components/schemas/ProjectWorkflowRunSummary"}, request_id: {type: string}}
+    ContentGenerationContextOptions:
+      type: object
+      additionalProperties: false
+      required: [includePriorChapterSummaries, includeProjectMaterials, includeStoryContext, includeForeshadowings]
+      properties:
+        includePriorChapterSummaries: {type: boolean, default: true}
+        includeProjectMaterials: {type: boolean, default: true}
+        includeStoryContext: {type: boolean, default: true}
+        includeForeshadowings: {type: boolean, default: true}
+    ContentGenerationPreflightRequest:
+      type: object
+      additionalProperties: false
+      required: [expectedCurrentVersionId, expectedCurrentVersion, contextOptions, additionalInstructions]
+      properties:
+        expectedCurrentVersionId: {type: string, format: uuid}
+        expectedCurrentVersion: {type: integer, minimum: 1, description: Optimistic-lock version of the current ContentVersion.}
+        contextOptions: {$ref: "#/components/schemas/ContentGenerationContextOptions"}
+        additionalInstructions: {type: [string, "null"], maxLength: 2000}
+    ContentGenerationPreflightStatus: {type: string, enum: [passed, blocked]}
+    ContentGenerationCheckStatus: {type: string, enum: [passed, warning, blocked]}
+    ContentGenerationCheckCode: {type: string, enum: [chapter_plan_confirmed, project_binding_available, execution_integration_available, active_run_absent, current_version_unchanged, generation_input_valid]}
+    ContentGenerationCheck:
+      type: object
+      additionalProperties: false
+      required: [code, status, message]
+      properties:
+        code: {$ref: "#/components/schemas/ContentGenerationCheckCode"}
+        status: {$ref: "#/components/schemas/ContentGenerationCheckStatus"}
+        message: {type: string, minLength: 1, maxLength: 300}
+    ContentGenerationContextSummary:
+      type: object
+      additionalProperties: false
+      required: [chapterGoalCount, keyPlotCount, priorChapterCount, materialCount, storylineCount, foreshadowingCount]
+      properties:
+        chapterGoalCount: {type: integer, minimum: 0}
+        keyPlotCount: {type: integer, minimum: 0}
+        priorChapterCount: {type: integer, minimum: 0}
+        materialCount: {type: integer, minimum: 0}
+        storylineCount: {type: integer, minimum: 0}
+        foreshadowingCount: {type: integer, minimum: 0}
+    ContentGenerationWorkflowSummary:
+      type: object
+      additionalProperties: false
+      required: [workflowConfigurationId, name, inputContractVersion, outputContractVersion, configurationVersion]
+      properties:
+        workflowConfigurationId: {type: string, format: uuid}
+        name: {type: string, minLength: 1, maxLength: 160}
+        inputContractVersion: {type: string, minLength: 1, maxLength: 40}
+        outputContractVersion: {type: string, minLength: 1, maxLength: 40}
+        configurationVersion: {type: integer, minimum: 1}
+    ContentGenerationPreflightReport:
+      type: object
+      additionalProperties: false
+      required: [status, preflightToken, expiresAt, sourceVersion, targetVersionNo, workflow, contextSummary, checks]
+      properties:
+        status: {$ref: "#/components/schemas/ContentGenerationPreflightStatus"}
+        preflightToken: {type: [string, "null"], minLength: 1, maxLength: 4096, description: Present only when status=passed.}
+        expiresAt: {type: [string, "null"], format: date-time, description: Present only when status=passed.}
+        sourceVersion: {$ref: "#/components/schemas/ContentVersion"}
+        targetVersionNo: {type: integer, minimum: 2}
+        workflow: {anyOf: [{$ref: "#/components/schemas/ContentGenerationWorkflowSummary"}, {type: "null"}]}
+        contextSummary: {$ref: "#/components/schemas/ContentGenerationContextSummary"}
+        checks: {type: array, minItems: 1, items: {$ref: "#/components/schemas/ContentGenerationCheck"}}
+    ContentGenerationPreflightEnvelope:
+      type: object
+      additionalProperties: false
+      required: [data, request_id]
+      properties: {data: {$ref: "#/components/schemas/ContentGenerationPreflightReport"}, request_id: {type: string}}
+    CreateContentGenerationRunRequest:
+      type: object
+      additionalProperties: false
+      required: [preflightToken]
+      properties:
+        preflightToken: {type: string, minLength: 1, maxLength: 4096}
+    ContentGenerationResultState: {type: string, enum: [idle, not_configured, queued, running, candidate_ready, runtime_failed, output_validation_failed, result_consumption_failed]}
+    ContentGenerationSafeError:
+      type: object
+      additionalProperties: false
+      required: [code, message, details]
+      properties:
+        code: {$ref: "#/components/schemas/ContentGenerationErrorCode"}
+        message: {type: string, minLength: 1, maxLength: 300}
+        details: {type: object, additionalProperties: true, description: Display-safe details only.}
+    ContentGenerationSummary:
+      type: object
+      additionalProperties: false
+      required: [contentItemId, currentVersionId, workflowConfigured, state, activeRun, latestRun, latestCandidateVersion, latestError, canGenerate, candidateCanBecomeCurrent]
+      properties:
+        contentItemId: {type: string, format: uuid}
+        currentVersionId: {type: string, format: uuid}
+        workflowConfigured: {type: boolean}
+        state: {$ref: "#/components/schemas/ContentGenerationResultState"}
+        activeRun: {anyOf: [{$ref: "#/components/schemas/Iteration14WorkflowRun"}, {type: "null"}]}
+        latestRun: {anyOf: [{$ref: "#/components/schemas/Iteration14WorkflowRun"}, {type: "null"}]}
+        latestCandidateVersion: {anyOf: [{$ref: "#/components/schemas/ContentVersion"}, {type: "null"}]}
+        latestError: {anyOf: [{$ref: "#/components/schemas/ContentGenerationSafeError"}, {type: "null"}]}
+        canGenerate: {type: boolean}
+        candidateCanBecomeCurrent: {type: boolean, description: False when the candidate source baseline no longer equals currentVersionId.}
+    ContentGenerationSummaryEnvelope:
+      type: object
+      additionalProperties: false
+      required: [data, request_id]
+      properties: {data: {$ref: "#/components/schemas/ContentGenerationSummary"}, request_id: {type: string}}
+    SetCurrentContentVersionRequest:
+      type: object
+      additionalProperties: false
+      required: [candidateVersionId, expectedCurrentVersionId, expectedCurrentVersion]
+      properties:
+        candidateVersionId: {type: string, format: uuid}
+        expectedCurrentVersionId: {type: string, format: uuid}
+        expectedCurrentVersion: {type: integer, minimum: 1}
+    RetryContentGenerationResultConsumptionRequest:
+      type: object
+      additionalProperties: false
+      required: [expectedRunVersion]
+      properties:
+        expectedRunVersion: {type: integer, minimum: 1}
+    ContentGenerationResult:
+      type: object
+      additionalProperties: false
+      required: [contentItem, candidateVersion, workflowRun]
+      properties:
+        contentItem: {$ref: "#/components/schemas/ContentItem"}
+        candidateVersion: {$ref: "#/components/schemas/ContentVersion"}
+        workflowRun: {$ref: "#/components/schemas/Iteration14WorkflowRun"}
+    ContentGenerationResultEnvelope:
+      type: object
+      additionalProperties: false
+      required: [data, request_id]
+      properties: {data: {$ref: "#/components/schemas/ContentGenerationResult"}, request_id: {type: string}}
+    ContentGenerationErrorCode:
+      type: string
+      enum: [workflow_not_configured, execution_integration_unavailable, chapter_plan_not_confirmed, active_run_conflict, preflight_token_invalid, preflight_token_expired, preflight_input_changed, current_version_changed, candidate_source_stale, content_version_not_candidate, content_version_item_mismatch, run_already_consumed, output_validation_failed, result_consumption_failed, idempotency_key_reused_with_different_payload]
+    ContentGenerationError:
+      allOf:
+        - {$ref: "#/components/schemas/Error"}
+        - {type: object, properties: {code: {$ref: "#/components/schemas/ContentGenerationErrorCode"}}}
+    ContentGenerationErrorEnvelope:
+      type: object
+      additionalProperties: false
+      required: [error, request_id]
+      properties:
+        error: {$ref: "#/components/schemas/ContentGenerationError"}
+        request_id: {type: string}
     ChapterPlanningGenerationMode: {type: string, enum: [full, append, range]}
     ChapterPlanningFullTarget: {type: object, additionalProperties: false, required: [targetTotalChapters], properties: {targetTotalChapters: {type: integer, minimum: 1, maximum: 100}}}
     ChapterPlanningAppendTarget: {type: object, additionalProperties: false, required: [chapterCount], properties: {chapterCount: {type: integer, minimum: 1, maximum: 100}}}
