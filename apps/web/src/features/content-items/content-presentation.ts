@@ -11,6 +11,7 @@ const sources: Record<ContentVersionSource, string> = {
   manual: "手动编辑",
   generated: "生成内容",
   mock_rewrite: "模拟重写",
+  workflow_generated: "工作流生成",
 };
 const statuses: Record<ContentVersionStatus, string> = {
   editable_draft: "可编辑草稿",

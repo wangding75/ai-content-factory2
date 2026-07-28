@@ -6,7 +6,8 @@ export type ContentVersionSource =
   | "mock_generated"
   | "manual"
   | "generated"
-  | "mock_rewrite";
+  | "mock_rewrite"
+  | "workflow_generated";
 export interface ContentItem {
   id: string;
   chapter_plan_id: string;
@@ -40,7 +41,10 @@ export interface ContentGenerationContextOptions { includePriorChapterSummaries:
 export interface ContentGenerationPreflightRequest { expectedCurrentVersionId: string; expectedCurrentVersion: number; contextOptions: ContentGenerationContextOptions; additionalInstructions: string | null; }
 export interface ContentGenerationCheck { code: string; status: "passed" | "warning" | "blocked"; message: string; }
 export interface ContentGenerationPreflightReport { status: "passed" | "blocked"; preflightToken: string | null; expiresAt: string | null; sourceVersion: ContentVersion; targetVersionNo: number; workflow: { name: string; inputContractVersion: string; outputContractVersion: string; configurationVersion: number } | null; contextSummary: { chapterGoalCount: number; keyPlotCount: number; priorChapterCount: number; materialCount: number; storylineCount: number; foreshadowingCount: number }; checks: ContentGenerationCheck[]; }
-export interface ContentGenerationSummary { contentItemId: string; contentItem: ContentItem; currentVersionId: string; currentVersion: ContentVersion; workflowConfigured: boolean; state: string; activeRun: WorkflowRunSummary | null; latestRun: WorkflowRunSummary | null; latestEvents: unknown[]; latestCandidateVersion: ContentVersion | null; latestError: { code: string; message: string; details: Record<string, unknown> } | null; canGenerate: boolean; candidateCanBecomeCurrent: boolean; }
+export type ContentGenerationState = "idle" | "not_configured" | "queued" | "running" | "candidate_ready" | "runtime_failed" | "output_validation_failed" | "result_consumption_failed";
+export interface GenerationRun { id: string; runNumber: string; status: "queued" | "running" | "succeeded" | "failed" | "cancelled"; version: number; startedAt: string | null; finishedAt: string | null; createdAt: string; errorMessage: string | null; }
+export interface GenerationEvent { id: string; eventType: string; status: string; createdAt: string; payload: Record<string, unknown>; }
+export interface ContentGenerationSummary { contentItemId: string; contentItem: ContentItem; currentVersionId: string; currentVersion: ContentVersion; workflowConfigured: boolean; state: ContentGenerationState; activeRun: GenerationRun | null; latestRun: GenerationRun | null; latestEvents: GenerationEvent[]; latestCandidateVersion: ContentVersion | null; latestError: { code: string; message: string; details: Record<string, unknown> } | null; canGenerate: boolean; candidateCanBecomeCurrent: boolean; }
 export interface SaveContentDraftRequest {
   expected_version: number;
   title?: string;
@@ -145,6 +149,11 @@ export const getContentItem = (contentItemId: string, init?: ApiRequestInit) =>
     init,
   );
 export const getContentGenerationSummary = (contentItemId: string, init?: ApiRequestInit) => apiRequest<ContentGenerationSummary>(`/content-items/${encodeURIComponent(contentItemId)}/content-generation-summary`, init);
+export const getWorkflowRunEvents = (runId: string, init?: ApiRequestInit) => apiRequest<{ items: GenerationEvent[] }>(`/workflow-runs/${encodeURIComponent(runId)}/events`, init);
+export const retryWorkflowRun = (runId: string, expectedVersion: number, idempotencyKey: string, init?: ApiRequestInit) => apiRequest<GenerationRun>(`/workflow-runs/${encodeURIComponent(runId)}/retries`, { ...init, method: "POST", headers: { ...init?.headers, "Content-Type": "application/json", "Idempotency-Key": idempotencyKey }, body: JSON.stringify({ expectedVersion }) });
+export const retryContentGenerationResultConsumption = (runId: string, expectedRunVersion: number, idempotencyKey: string, init?: ApiRequestInit) => apiRequest<unknown>(`/content-generation-runs/${encodeURIComponent(runId)}/result-consumption-retries`, { ...init, method: "POST", headers: { ...init?.headers, "Content-Type": "application/json", "Idempotency-Key": idempotencyKey }, body: JSON.stringify({ expectedRunVersion }) });
+export const getContentVersion = (versionId: string, init?: ApiRequestInit) => apiRequest<{ content_version: ContentVersion; source_workflow_run?: { runNumber: string | null } | null; is_current: boolean }>(`/content-versions/${encodeURIComponent(versionId)}`, init);
+export const setCurrentContentVersion = (contentItemId: string, payload: { candidateVersionId: string; expectedCurrentVersionId: string; expectedCurrentVersion: number }, idempotencyKey: string, init?: ApiRequestInit) => apiRequest<ContentItemDetail>(`/content-items/${encodeURIComponent(contentItemId)}/current-version`, { ...init, method: "POST", headers: { ...init?.headers, "Content-Type": "application/json", "Idempotency-Key": idempotencyKey }, body: JSON.stringify(payload) });
 export const preflightContentGenerationRun = (contentItemId: string, payload: ContentGenerationPreflightRequest, init?: ApiRequestInit) => apiRequest<ContentGenerationPreflightReport>(`/content-items/${encodeURIComponent(contentItemId)}/content-generation-runs/preflight`, { ...init, method: "POST", headers: { ...init?.headers, "Content-Type": "application/json" }, body: JSON.stringify(payload) });
 export const createContentGenerationRun = (contentItemId: string, payload: { preflightToken: string }, idempotencyKey: string, init?: ApiRequestInit) => apiRequest<WorkflowRunSummary>(`/content-items/${encodeURIComponent(contentItemId)}/content-generation-runs`, { ...init, method: "POST", headers: { ...init?.headers, "Content-Type": "application/json", "Idempotency-Key": idempotencyKey }, body: JSON.stringify(payload) });
 export const saveContentDraft = (

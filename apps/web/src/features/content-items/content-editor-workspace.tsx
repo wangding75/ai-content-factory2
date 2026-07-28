@@ -25,6 +25,8 @@ import {
   type WorkflowRunSummary,
 } from "./content-item-http-api";
 import { ContentGenerationDrawer } from "./content-generation-drawer";
+import { ContentGenerationStatus } from "./content-generation-status";
+import { ContentCandidateCompare } from "./content-candidate-compare";
 import {
   contentVersionSourceLabel,
   contentVersionStatusLabel,
@@ -61,7 +63,8 @@ export function ContentEditorWorkspace({
     [run, setRun] = useState<WorkflowRunSummary | null>(null),
     [generationSummary, setGenerationSummary] = useState<Awaited<ReturnType<typeof getContentGenerationSummary>> | null>(null),
     [contextTab, setContextTab] = useState<"goal" | "story" | "materials">("goal"),
-    [generationDrawer, setGenerationDrawer] = useState(false);
+    [generationDrawer, setGenerationDrawer] = useState(false),
+    [candidateOpen, setCandidateOpen] = useState(false);
   const initial = useRef<Draft | null>(null),
     current = useRef(""),
     sequence = useRef(0),
@@ -139,6 +142,23 @@ export function ContentEditorWorkspace({
       controllers.current.forEach((c) => c.abort());
     };
   }, [load]);
+  const refreshGeneration = useCallback(async () => {
+    if (!detail) return;
+    const c = addController();
+    const [nextSummary, nextDetail] = await Promise.all([
+      getContentGenerationSummary(detail.content_item.id, { signal: c.signal }),
+      getContentItem(detail.content_item.id, { signal: c.signal }),
+    ]);
+    if (!c.signal.aborted && current.current === detail.content_item.id) {
+      setGenerationSummary(nextSummary);
+      apply(nextDetail);
+    }
+  }, [apply, detail]);
+  useEffect(() => {
+    if (!generationSummary || !["queued", "running"].includes(generationSummary.state)) return;
+    const timer = window.setInterval(() => { void refreshGeneration().catch(() => undefined); }, 5000);
+    return () => window.clearInterval(timer);
+  }, [generationSummary?.state, refreshGeneration]);
   const dirty =
     !!draft &&
     !!initial.current &&
@@ -257,6 +277,7 @@ export function ContentEditorWorkspace({
         </Link>
         <span>项目正文 / 第 {plan?.chapter_no ?? "—"} 章</span>
       </header>
+      {generationSummary && <ContentGenerationStatus projectId={projectId} summary={generationSummary} onRefresh={refreshGeneration} onCandidate={() => setCandidateOpen(true)} />}
       <section className="content-editor-grid">
         <aside className="content-editor-left">
           <b>章节导航</b>
@@ -291,7 +312,7 @@ export function ContentEditorWorkspace({
               >
                 {saving ? "保存中…" : "保存草稿"}
               </button>
-              <button onClick={() => setGenerationDrawer(true)} disabled={readOnly || generationSummary?.canGenerate === false}>生成正文</button>
+              <button onClick={() => setGenerationDrawer(true)} disabled={readOnly || generationSummary?.canGenerate === false || generationSummary?.state === "queued" || generationSummary?.state === "running"}>生成正文</button>
               {readOnly ? (
                 <Link
                   className="content-review-link"
@@ -369,6 +390,7 @@ export function ContentEditorWorkspace({
               </label>
             </div>
           </div>
+          {candidateOpen && generationSummary && <ContentCandidateCompare summary={generationSummary} onClose={() => setCandidateOpen(false)} onRefresh={refreshGeneration} onApplied={async () => { await refreshGeneration(); setCandidateOpen(false); }} />}
           <footer className="content-editor-footer">
             <span>
               {saving
@@ -413,7 +435,7 @@ export function ContentEditorWorkspace({
           onSubmit={generate}
         />
       )}
-      {generationDrawer && <ContentGenerationDrawer contentItemId={detail.content_item.id} version={detail.current_version} onClose={() => setGenerationDrawer(false)} onCreated={async () => { setGenerationSummary(await getContentGenerationSummary(detail.content_item.id)); }} />}
+      {generationDrawer && <ContentGenerationDrawer contentItemId={detail.content_item.id} version={detail.current_version} onClose={() => setGenerationDrawer(false)} onCreated={refreshGeneration} />}
     </main>
   );
 }

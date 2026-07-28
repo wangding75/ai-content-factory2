@@ -12,3 +12,12 @@ test("正文生成 API 使用冻结预检、专用创建端点和幂等键", () 
   assert.match(source, /preflightToken: string/);
   assert.doesNotMatch(source, /createWorkflowRun/);
 });
+test("正文生成闭环 API 使用 Runtime Retry、消费 Retry、CAS 和幂等键", () => {
+  const source = readFileSync(join(process.cwd(), "src", "features", "content-items", "content-item-http-api.ts"), "utf8");
+  assert.match(source, /workflow-runs\/\$\{encodeURIComponent\(runId\)\}\/retries/);
+  assert.match(source, /result-consumption-retries/);
+  assert.match(source, /expectedRunVersion/);
+  assert.match(source, /candidateVersionId/);
+  assert.match(source, /expectedCurrentVersionId/);
+  assert.match(source, /"Idempotency-Key": idempotencyKey/);
+});
