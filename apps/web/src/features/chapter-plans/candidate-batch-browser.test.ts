@@ -43,7 +43,7 @@ test("candidate batch and candidate query helpers are exported in chapter-plan-h
 test("candidate batch list page renders 7 filters and pagination", () => {
   assert.match(listPageSource, /批次状态筛选/);
   assert.match(listPageSource, /生成模式筛选/);
-  assert.match(listPageSource, /来源运行任务标识/);
+  assert.match(listPageSource, /来源任务筛选/);
   assert.match(listPageSource, /创建起始时间/);
   assert.match(listPageSource, /创建截止时间/);
   assert.match(listPageSource, /listChapterPlanCandidateBatches/);

@@ -30,7 +30,6 @@ import {
 import { ConfirmChapterPlansDialog } from "./confirm-chapter-plans-dialog";
 import { EditChapterPlanDrawer } from "./edit-chapter-plan-drawer";
 import { GenerationSettingsDrawer } from "./generation-settings-drawer";
-import { MockGenerateDialog } from "./mock-generate-dialog";
 import {
   PreflightProgressDialog,
   PreflightReportDialog,
@@ -83,7 +82,6 @@ export function ChapterPlansWorkspace({
   const [error, setError] = useState<ApiError | null>(null);
 
   // Modals & Drawers
-  const [mockOpen, setMockOpen] = useState(false);
   const [editing, setEditing] = useState<ChapterPlan | null>(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [confirming, setConfirming] = useState(false);
@@ -364,14 +362,6 @@ export function ChapterPlansWorkspace({
               <Icon name="wand" size={17} />
               生成章节规划
             </button>
-            <button
-              type="button"
-              className="chapter-plan-button secondary"
-              onClick={() => setMockOpen(true)}
-            >
-              <Icon name="wand" size={17} />
-              模拟生成 (Mock)
-            </button>
           </div>
         </section>
 
@@ -491,7 +481,7 @@ export function ChapterPlansWorkspace({
 
         {error && (
           <p className="chapter-plans-form-error" role="alert">
-            {error.message || "数据刷新失败，请重试。"}
+            数据刷新失败，请重试。
           </p>
         )}
 
@@ -518,7 +508,7 @@ export function ChapterPlansWorkspace({
             <p>
               {plans?.length
                 ? "请调整搜索或筛选条件。"
-                : "请先生成章节规划候选或模拟生成。"}
+                : "请先生成章节规划候选。"}
             </p>
           </section>
         ) : (
@@ -600,18 +590,6 @@ export function ChapterPlansWorkspace({
         />
       )}
 
-      {mockOpen && (
-        <MockGenerateDialog
-          projectId={projectId}
-          onClose={() => setMockOpen(false)}
-          onGenerated={async () => {
-            setMockOpen(false);
-            invalidateChapterPlanViews(projectId);
-            await refresh();
-          }}
-        />
-      )}
-
       {editing && (
         <EditChapterPlanDrawer
           projectId={projectId}
@@ -663,7 +641,7 @@ function SummaryRunBanner({
         <div className="chapter-plan-run-banner warning">
           <Icon name="info" size={20} />
           <div className="banner-content">
-            <strong>未配置章节规划工作流 (P15_C1_NOT_CONFIGURED)</strong>
+            <strong>未配置章节规划工作流</strong>
             <p>请先选择或配置可用的章节规划工作流绑定再发起生成。</p>
           </div>
           <button type="button" onClick={onConfigure}>
@@ -678,10 +656,9 @@ function SummaryRunBanner({
         <div className="chapter-plan-run-banner error">
           <Icon name="info" size={20} />
           <div className="banner-content">
-            <strong>生成失败且零候选写入 (P15_C1_FAILED_ATOMIC)</strong>
+            <strong>生成失败且零候选写入</strong>
             <p>
-              {summaryError.message ||
-                "章节规划生成输出校验失败或数据入库失败，尚未写入候选。"}
+              章节规划生成输出校验失败或数据入库失败，尚未写入候选。
             </p>
           </div>
           <button type="button" onClick={onRetry}>

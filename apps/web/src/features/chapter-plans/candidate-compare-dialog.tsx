@@ -8,6 +8,11 @@ import {
   recompareChapterPlanCandidate,
   type ChapterPlanCandidateComparison,
 } from "./chapter-plan-http-api";
+import {
+  candidateDiffFieldLabel,
+  candidateDiffValueLabel,
+  chapterPlanningErrorMessage,
+} from "./chapter-plan-presentation";
 
 import { useIdempotency } from "./use-idempotency";
 import { invalidateChapterPlanViews } from "./chapter-plan-cache";
@@ -120,7 +125,7 @@ export function CandidateCompareDialog({
         <div className="chapter-plan-dialog-body">
           {error && (
             <div className="chapter-plans-form-error" role="alert">
-              {error.message}
+              {chapterPlanningErrorMessage(error, "候选差异暂时无法加载，请稍后重试。")}
             </div>
           )}
 
@@ -135,7 +140,7 @@ export function CandidateCompareDialog({
                 <div className="chapter-plan-status-banner warning">
                   <Icon name="info" size={20} />
                   <div>
-                    <strong>候选基线已过期 (Stale Baseline)</strong>
+                    <strong>候选基线已过期</strong>
                     <p>当前线上章节在候选生成后已发生修改。请执行“重新比较”更新差异。</p>
                   </div>
                   <button
@@ -152,7 +157,7 @@ export function CandidateCompareDialog({
               {/* Side-by-side Overview */}
               <div className="compare-grid">
                 <div className="compare-column">
-                  <h4>当前线上章节 {currentChapter ? `(v${currentChapter.version})` : "(无)"}</h4>
+                  <h4>当前线上章节 {currentChapter ? `（第 ${currentChapter.version} 版）` : "（无）"}</h4>
                   {currentChapter ? (
                     <div className="compare-box">
                       <strong>{currentChapter.title}</strong>
@@ -164,7 +169,7 @@ export function CandidateCompareDialog({
                 </div>
 
                 <div className="compare-column">
-                  <h4>候选章节 (v{candidate?.version})</h4>
+                  <h4>候选章节（第 {candidate?.version} 版）</h4>
                   <div className="compare-box highlight">
                     <strong>{candidate?.currentSnapshot.title}</strong>
                     <p>{candidate?.currentSnapshot.summary}</p>
@@ -176,21 +181,21 @@ export function CandidateCompareDialog({
               <div className="compare-diff-section">
                 <h4>字段级差异列表 ({diff?.entries.length || 0} 项)</h4>
                 {diff?.entries.length === 0 ? (
-                  <p className="chapter-plan-help-text">两版本无任何内容差异 (no_change)。</p>
+                  <p className="chapter-plan-help-text">两个版本的规划内容完全一致。</p>
                 ) : (
                   <table className="chapter-plan-diff-table">
                     <thead>
                       <tr>
                         <th>字段路径</th>
                         <th>变更类型</th>
-                        <th>变更前 (Before)</th>
-                        <th>变更后 (After)</th>
+                        <th>变更前</th>
+                        <th>变更后</th>
                       </tr>
                     </thead>
                     <tbody>
                       {diff?.entries.map((entry, index) => (
                         <tr key={index} className={`diff-row ${entry.changeType}`}>
-                          <td><code>{entry.path}</code></td>
+                          <td>{candidateDiffFieldLabel(entry.path)}</td>
                           <td>
                             <span className={`diff-tag ${entry.changeType}`}>
                               {entry.changeType === "added"
@@ -202,8 +207,8 @@ export function CandidateCompareDialog({
                                     : "未变"}
                             </span>
                           </td>
-                          <td>{entry.before || "—"}</td>
-                          <td>{entry.after || "—"}</td>
+                          <td>{candidateDiffValueLabel(entry.path, entry.before)}</td>
+                          <td>{candidateDiffValueLabel(entry.path, entry.after)}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -229,7 +234,7 @@ export function CandidateCompareDialog({
               onClick={() => void handleRecompare()}
               disabled={recomparing}
             >
-              {recomparing ? "重新比较中..." : "重新比较 (Recompare)"}
+              {recomparing ? "重新比较中..." : "重新比较"}
             </button>
           )}
         </footer>

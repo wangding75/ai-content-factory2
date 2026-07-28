@@ -35,9 +35,10 @@ test("candidate edit drawer supports currentSnapshot editing, expectedVersion, a
 test("candidate compare dialog displays field-level diff, stale warning, and recompare action without auto-adopting", () => {
   assert.match(compareDialogSource, /compareChapterPlanCandidate/);
   assert.match(compareDialogSource, /recompareChapterPlanCandidate/);
-  assert.match(compareDialogSource, /候选基线已过期 \(Stale Baseline\)/);
+  assert.match(compareDialogSource, /候选基线已过期/);
   assert.match(compareDialogSource, /字段级差异列表/);
-  assert.match(compareDialogSource, /重新比较 \(Recompare\)/);
+  assert.match(compareDialogSource, /重新比较/);
+  assert.match(compareDialogSource, /candidateDiffFieldLabel/);
   // Ensure recompare does not call adopt endpoint
   assert.doesNotMatch(compareDialogSource, /\/adopt/);
 });

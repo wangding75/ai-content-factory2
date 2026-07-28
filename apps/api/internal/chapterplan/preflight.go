@@ -297,13 +297,26 @@ func (s *Service) Preflight(ctx context.Context, projectID uuid.UUID, request Pr
 	}
 	snapshot.InputDigest, result.InputDigest, result.Snapshot = digest, digest, snapshot
 	var frozenStorylines struct {
-		Available []json.RawMessage `json:"available"`
+		Available []frozenStorylineSnapshot `json:"available"`
 	}
 	if err := json.Unmarshal(snapshot.StorylineSnapshot, &frozenStorylines); err != nil {
 		return result, ErrInternal
 	}
 	if len(frozenStorylines.Available) == 0 {
 		return blockedPreflight(result, "storyline_reference_invalid", "no project storyline is available", "configure_project_storyline", "At least one project storyline is required by the chapter-planning output contract."), nil
+	}
+	if request.StorylineSelectionMode == "specified" {
+		available := make(map[uuid.UUID]struct{}, len(frozenStorylines.Available))
+		for _, value := range frozenStorylines.Available {
+			if value.ProjectID == projectID && value.Status == "active" {
+				available[value.ID] = struct{}{}
+			}
+		}
+		for _, storylineID := range request.StorylineIDs {
+			if _, ok := available[storylineID]; !ok {
+				return blockedPreflight(result, "storyline_reference_invalid", "storyline selection contains an unavailable reference", "review_storyline_selection", "Choose active storylines from the current project."), nil
+			}
+		}
 	}
 	if s.bindingReader == nil || s.workflowReader == nil || s.connectionReader == nil {
 		return blockedPreflight(result, "project_binding_missing", "chapter-planning workflow binding is missing", "configure_workflow", "This project has no executable chapter-planning workflow."), nil

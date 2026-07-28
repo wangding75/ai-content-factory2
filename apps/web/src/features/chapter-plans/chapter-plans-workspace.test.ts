@@ -26,8 +26,9 @@ test("chapter plans batch-load relation names and summary", () => {
 
 test("chapter plans render active run banners and preflight controls", () => {
   assert.match(workspaceSource, /SummaryRunBanner/);
-  assert.match(workspaceSource, /P15_C1_NOT_CONFIGURED/);
-  assert.match(workspaceSource, /P15_C1_FAILED_ATOMIC/);
+  assert.match(workspaceSource, /未配置章节规划工作流/);
+  assert.match(workspaceSource, /生成失败且零候选写入/);
+  assert.doesNotMatch(workspaceSource, /P15_C\d+/);
   assert.match(workspaceSource, /GenerationSettingsDrawer/);
   assert.match(workspaceSource, /PreflightReportDialog/);
   assert.match(workspaceSource, /preflightChapterPlanRun/);
@@ -48,9 +49,11 @@ test("preflight report dialog differentiates passed and blocked status", () => {
   assert.match(preflightSource, /预检阻断/);
   assert.match(preflightSource, /阻断原因列表/);
   assert.match(preflightSource, /确认发起生成/);
-  assert.match(preflightSource, /代码：\{item\.code\}/);
-  assert.match(preflightSource, /safeReason \|\| item\.details\.safeSummary/);
-  assert.match(preflightSource, /retryAction \|\| item\.details\.action/);
+  assert.match(preflightSource, /blockerReasonLabel/);
+  assert.match(preflightSource, /blockerTitleLabel/);
+  assert.match(preflightSource, /retryActionLabel/);
+  assert.doesNotMatch(preflightSource, /代码：\{item\.code\}/);
+  assert.doesNotMatch(preflightSource, /\{item\.message\}/);
 });
 
 test("blocked preflight report omits unavailable summaries without dereferencing null", () => {
@@ -58,4 +61,9 @@ test("blocked preflight report omits unavailable summaries without dereferencing
   assert.match(preflightSource, /const modeLabel = inputSummary/);
   assert.match(preflightSource, /\{modeLabel && targetLabel && \(/);
   assert.doesNotMatch(preflightSource, /report\.inputSummary\.(generationMode|target)/);
+});
+
+test("chapter planning workspace exposes only the real preflight entry point", () => {
+  const source = readFileSync(new URL("./chapter-plans-workspace.tsx", import.meta.url), "utf8");
+  assert.doesNotMatch(source, /MockGenerateDialog|mockOpen|模拟生成/);
 });

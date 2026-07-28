@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Icon } from "@/components/ui/icons";
 import { ApiError } from "@/lib/api";
 import {
@@ -20,7 +20,9 @@ import {
   candidateBatchModeLabel,
   candidateBatchStatusLabel,
   candidateDiffTypeLabel,
+  candidatePurposeLabel,
   candidateStatusLabel,
+  chapterPlanningErrorMessage,
 } from "./chapter-plan-presentation";
 import { CandidateEditDrawer } from "./candidate-edit-drawer";
 import { CandidateCompareDialog } from "./candidate-compare-dialog";
@@ -187,9 +189,9 @@ export function CandidateBatchDetailPage({ batchId }: { batchId: string }) {
       invalidateChapterPlanViews(cand.projectId);
 
       if (envelope.outcome === "no_change") {
-        setActionNotice(`第 ${cand.chapterNo} 章候选与线上内容一致 (no_change)，未产生新 Revision。`);
+        setActionNotice(`第 ${cand.chapterNo} 章候选与线上内容一致，未产生新的修订记录。`);
       } else {
-        setActionNotice(`第 ${cand.chapterNo} 章候选采用成功 (Revision r${envelope.revision.revisionNo})。`);
+        setActionNotice(`第 ${cand.chapterNo} 章候选采用成功，已生成第 ${envelope.revision.revisionNo} 版修订记录。`);
       }
 
       await loadData();
@@ -247,6 +249,16 @@ export function CandidateBatchDetailPage({ batchId }: { batchId: string }) {
   };
 
 
+  const storylineOptions = useMemo(() => {
+    const values = new Map<string, string>();
+    for (const candidate of candidates) {
+      for (const ref of candidate.currentSnapshot.storylineRefs) {
+        values.set(ref.id, ref.label || "未命名故事线");
+      }
+    }
+    return [...values.entries()];
+  }, [candidates]);
+
   if (loading && !batch) {
     return <div className="chapter-plans-skeleton card" />;
   }
@@ -256,7 +268,7 @@ export function CandidateBatchDetailPage({ batchId }: { batchId: string }) {
       <div className="chapter-plans-state">
         <Icon name="info" size={34} />
         <h1>批次详情加载失败</h1>
-        <p>{error.message}</p>
+        <p>{chapterPlanningErrorMessage(error, "批次详情暂时无法加载，请稍后重试。")}</p>
         <button type="button" onClick={() => void loadData()}>
           重试
         </button>
@@ -275,8 +287,10 @@ export function CandidateBatchDetailPage({ batchId }: { batchId: string }) {
         <div>
           <h2>候选批次详情</h2>
           <p>
-            批次 ID: {batch?.id} (模式:{" "}
-            {batch ? candidateBatchModeLabel(batch.generationMode) : "—"})
+            {batch ? candidateBatchModeLabel(batch.generationMode) : "—"} ·{" "}
+            {batch
+              ? `第 ${batch.target.startChapterNo}–${batch.target.endChapterNo} 章`
+              : "正在加载目标范围"}
           </p>
         </div>
         <div className="chapter-plans-actions">
@@ -361,7 +375,7 @@ export function CandidateBatchDetailPage({ batchId }: { batchId: string }) {
 
       {error && (
         <div className="chapter-plans-form-error" role="alert" style={{ marginBottom: 16 }}>
-          {error.message}
+          {chapterPlanningErrorMessage(error, "候选操作未完成，请刷新后重试。")}
         </div>
       )}
 
@@ -398,12 +412,16 @@ export function CandidateBatchDetailPage({ batchId }: { batchId: string }) {
           <option value="stale_conflict">基线冲突</option>
         </select>
 
-        <input
-          aria-label="故事线标识筛选"
-          placeholder="故事线 ID"
+        <select
+          aria-label="故事线筛选"
           value={storylineIdParam}
           onChange={(e) => syncUrl({ storylineId: e.target.value, offset: 0 })}
-        />
+        >
+          <option value="">全部故事线</option>
+          {storylineOptions.map(([id, label]) => (
+            <option key={id} value={id}>{label}</option>
+          ))}
+        </select>
 
         <button
           type="button"
@@ -463,7 +481,7 @@ export function CandidateBatchDetailPage({ batchId }: { batchId: string }) {
                 <div>
                   <strong>{snap.title}</strong>
                   <p className="candidate-summary-text">{snap.summary}</p>
-                  <small>章节目的: {snap.chapterPurpose || "未描述"}</small>
+                  <small>章节目的: {candidatePurposeLabel(snap.chapterPurpose)}</small>
                 </div>
                 <span className={`diff-tag ${cand.diffType}`}>
                   {candidateDiffTypeLabel(cand.diffType)}
@@ -471,7 +489,7 @@ export function CandidateBatchDetailPage({ batchId }: { batchId: string }) {
                 <span className={`chapter-plan-status ${cand.status}`}>
                   {candidateStatusLabel(cand.status)}
                 </span>
-                <span>v{cand.version}</span>
+                <span>第 {cand.version} 版</span>
                 <span>{storylineNames}</span>
                 <div className="candidate-action-buttons">
                   {!isFinalized && !isBatchFinalized && (

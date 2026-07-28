@@ -269,6 +269,82 @@ func chapterPlanResponseFrom(value chapterplan.Plan) chapterPlanResponse {
 	}
 }
 
+type candidateComparisonResponse struct {
+	Candidate      chapterplan.Candidate     `json:"candidate"`
+	CurrentChapter *chapterPlanResponse      `json:"currentChapter"`
+	Diff           chapterplan.CandidateDiff `json:"diff"`
+}
+
+func candidateComparisonResponseFrom(value chapterplan.CandidateComparison) candidateComparisonResponse {
+	var currentChapter *chapterPlanResponse
+	if value.CurrentChapter != nil {
+		response := chapterPlanResponseFrom(*value.CurrentChapter)
+		currentChapter = &response
+	}
+	return candidateComparisonResponse{
+		Candidate:      value.Candidate,
+		CurrentChapter: currentChapter,
+		Diff:           value.Diff,
+	}
+}
+
+type adoptCandidateResponse struct {
+	Outcome     string                     `json:"outcome"`
+	Candidate   chapterplan.Candidate      `json:"candidate"`
+	ChapterPlan *chapterPlanResponse       `json:"chapterPlan"`
+	Revision    *chapterplan.Revision      `json:"revision"`
+	Batch       chapterplan.CandidateBatch `json:"batch"`
+}
+
+func adoptCandidateResponseFrom(value chapterplan.AdoptCandidateResult) adoptCandidateResponse {
+	var plan *chapterPlanResponse
+	if value.ChapterPlan != nil {
+		response := chapterPlanResponseFrom(*value.ChapterPlan)
+		plan = &response
+	}
+	return adoptCandidateResponse{
+		Outcome:     value.Outcome,
+		Candidate:   value.Candidate,
+		ChapterPlan: plan,
+		Revision:    value.Revision,
+		Batch:       value.Batch,
+	}
+}
+
+type bulkAdoptItemResponse struct {
+	CandidateID uuid.UUID              `json:"candidateId"`
+	Outcome     string                 `json:"outcome"`
+	Candidate   *chapterplan.Candidate `json:"candidate,omitempty"`
+	ChapterPlan *chapterPlanResponse   `json:"chapterPlan,omitempty"`
+	Revision    *chapterplan.Revision  `json:"revision,omitempty"`
+	Error       map[string]any         `json:"error,omitempty"`
+}
+
+type bulkAdoptResponse struct {
+	Items []bulkAdoptItemResponse    `json:"items"`
+	Batch chapterplan.CandidateBatch `json:"batch"`
+}
+
+func bulkAdoptResponseFrom(value chapterplan.BulkAdoptResult) bulkAdoptResponse {
+	items := make([]bulkAdoptItemResponse, 0, len(value.Items))
+	for _, item := range value.Items {
+		var plan *chapterPlanResponse
+		if item.ChapterPlan != nil {
+			response := chapterPlanResponseFrom(*item.ChapterPlan)
+			plan = &response
+		}
+		items = append(items, bulkAdoptItemResponse{
+			CandidateID: item.CandidateID,
+			Outcome:     item.Outcome,
+			Candidate:   item.Candidate,
+			ChapterPlan: plan,
+			Revision:    item.Revision,
+			Error:       item.Error,
+		})
+	}
+	return bulkAdoptResponse{Items: items, Batch: value.Batch}
+}
+
 func chapterPlanSourceResponse(source string) string {
 	switch source {
 	case "mock_generated", "candidate_adopted":
@@ -568,7 +644,7 @@ func compareCandidateHandler(service chapterPlanApplication) http.HandlerFunc {
 			chapterPlanServiceError(w, r, err)
 			return
 		}
-		writeJSON(w, r, http.StatusOK, res)
+		writeJSON(w, r, http.StatusOK, candidateComparisonResponseFrom(res))
 	}
 }
 
@@ -599,7 +675,7 @@ func recompareCandidateHandler(service chapterPlanApplication) http.HandlerFunc 
 			chapterPlanServiceError(w, r, err)
 			return
 		}
-		writeJSON(w, r, http.StatusOK, res)
+		writeJSON(w, r, http.StatusOK, candidateComparisonResponseFrom(res))
 	}
 }
 
@@ -658,7 +734,7 @@ func adoptCandidateHandler(service chapterPlanApplication) http.HandlerFunc {
 			chapterPlanServiceError(w, r, err)
 			return
 		}
-		writeJSON(w, r, http.StatusOK, res)
+		writeJSON(w, r, http.StatusOK, adoptCandidateResponseFrom(res))
 	}
 }
 
@@ -698,7 +774,7 @@ func bulkAdoptCandidatesHandler(service chapterPlanApplication) http.HandlerFunc
 			chapterPlanServiceError(w, r, err)
 			return
 		}
-		writeJSON(w, r, http.StatusOK, chapterplan.SanitizeBulkAdoptResult(res))
+		writeJSON(w, r, http.StatusOK, bulkAdoptResponseFrom(chapterplan.SanitizeBulkAdoptResult(res)))
 	}
 }
 

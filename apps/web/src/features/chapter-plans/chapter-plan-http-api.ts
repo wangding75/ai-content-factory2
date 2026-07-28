@@ -99,6 +99,8 @@ export interface ChapterPlanningPreflightItem {
   code: string;
   message: string;
   severity: ChapterPlanningItemSeverity;
+  safeReason?: string;
+  retryAction?: string;
   details?: ChapterPlanningItemDetails;
 }
 
@@ -106,6 +108,8 @@ export interface ChapterPlanningBlockerItem {
   code: ChapterPlanningBlockerCode;
   message: string;
   severity: "blocker";
+  safeReason: string;
+  retryAction: string;
   details?: ChapterPlanningItemDetails;
 }
 

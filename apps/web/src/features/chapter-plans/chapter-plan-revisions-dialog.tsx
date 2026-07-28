@@ -7,6 +7,7 @@ import {
   listChapterPlanRevisions,
   type ChapterPlanRevision,
 } from "./chapter-plan-http-api";
+import { chapterPlanningErrorMessage } from "./chapter-plan-presentation";
 
 export interface ChapterPlanRevisionsDialogProps {
   chapterPlanId: string;
@@ -95,7 +96,7 @@ export function ChapterPlanRevisionsDialog({
         <div className="chapter-plan-dialog-body">
           {error && (
             <div className="chapter-plans-form-error" role="alert">
-              {error.message}
+              {chapterPlanningErrorMessage(error, "版本记录暂时无法加载，请稍后重试。")}
             </div>
           )}
 
@@ -107,10 +108,10 @@ export function ChapterPlanRevisionsDialog({
             <table className="chapter-plan-diff-table">
               <thead>
                 <tr>
-                  <th>Revision</th>
+                  <th>修订版本</th>
                   <th>变更类型</th>
                   <th>标题与摘要快照</th>
-                  <th>来源追溯 (Candidate / Batch / Run)</th>
+                  <th>来源追溯</th>
                   <th>时间</th>
                 </tr>
               </thead>
@@ -129,15 +130,9 @@ export function ChapterPlanRevisionsDialog({
                     </td>
                     <td>
                       <div className="chapter-plan-help-text">
-                        {rev.sourceCandidateId && (
-                          <div>候选: {rev.sourceCandidateId.slice(0, 8)}...</div>
-                        )}
-                        {rev.sourceCandidateBatchId && (
-                          <div>批次: {rev.sourceCandidateBatchId.slice(0, 8)}...</div>
-                        )}
-                        {rev.sourceWorkflowRunId && (
-                          <div>Run: {rev.sourceWorkflowRunId.slice(0, 8)}...</div>
-                        )}
+                        {rev.sourceCandidateId && <div>候选采用</div>}
+                        {rev.sourceCandidateBatchId && <div>批次生成</div>}
+                        {rev.sourceWorkflowRunId && <div>工作流任务</div>}
                         {!rev.sourceCandidateId && !rev.sourceCandidateBatchId && !rev.sourceWorkflowRunId && (
                           <div>—</div>
                         )}

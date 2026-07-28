@@ -2,6 +2,7 @@ package chapterplan_test
 
 import (
 	"encoding/json"
+	"strings"
 	"testing"
 
 	"github.com/google/uuid"
@@ -10,22 +11,22 @@ import (
 
 func TestCandidateEditAndCompareLogic(t *testing.T) {
 	snap1, _ := json.Marshal(map[string]any{
-		"chapterNo":      1,
-		"title":          "Original Title",
-		"summary":        "Original Summary",
-		"chapterPurpose": "plot_advance",
-		"storylineRefs":  []any{},
-		"materialRefs":   []any{},
+		"chapterNo":         1,
+		"title":             "Original Title",
+		"summary":           "Original Summary",
+		"chapterPurpose":    "plot_advance",
+		"storylineRefs":     []any{},
+		"materialRefs":      []any{},
 		"foreshadowingRefs": []any{},
 	})
 
 	snap2, _ := json.Marshal(map[string]any{
-		"chapterNo":      1,
-		"title":          "Edited Title",
-		"summary":        "Original Summary",
-		"chapterPurpose": "plot_advance",
-		"storylineRefs":  []any{},
-		"materialRefs":   []any{},
+		"chapterNo":         1,
+		"title":             "Edited Title",
+		"summary":           "Original Summary",
+		"chapterPurpose":    "plot_advance",
+		"storylineRefs":     []any{},
+		"materialRefs":      []any{},
 		"foreshadowingRefs": []any{},
 	})
 
@@ -86,5 +87,23 @@ func TestCandidateEditAndCompareLogic(t *testing.T) {
 	}
 	if !titleChanged {
 		t.Errorf("expected title diff entry")
+	}
+}
+
+func TestCandidateDiffDoesNotExposeReferenceIdentifiers(t *testing.T) {
+	secretID := uuid.New().String()
+	base, _ := json.Marshal(map[string]any{
+		"storylineRefs": []any{},
+	})
+	current, _ := json.Marshal(map[string]any{
+		"storylineRefs": []any{map[string]any{"id": secretID, "projectId": uuid.New().String()}},
+	})
+	diff := chapterplan.CalculateCandidateDiff(chapterplan.Candidate{
+		BaseSnapshot: base, CurrentSnapshot: current,
+	}, nil)
+	for _, entry := range diff.Entries {
+		if entry.After != nil && strings.Contains(*entry.After, secretID) {
+			t.Fatalf("reference identifier leaked in candidate diff: %q", *entry.After)
+		}
 	}
 }

@@ -2,10 +2,68 @@
 
 import { Icon } from "@/components/ui/icons";
 import type {
+  ChapterPlanningBlockerItem,
   ChapterPlanningPreflightBlocked,
   ChapterPlanningPreflightPassed,
   ChapterPlanningPreflightReport,
 } from "./chapter-plan-http-api";
+
+function blockerReasonLabel(item: ChapterPlanningBlockerItem): string {
+  switch (item.code) {
+    case "project_binding_missing":
+      return "项目尚未配置章节规划工作流。";
+    case "execution_integration_unavailable":
+      return "章节规划执行配置暂不可用。";
+    case "active_run_conflict":
+      return "当前已有章节规划任务正在运行。";
+    case "storyline_reference_invalid":
+      return "所选故事线已失效或不属于当前项目。";
+    case "generation_input_invalid":
+      return "生成范围或生成参数不符合要求。";
+  }
+}
+
+function blockerTitleLabel(item: ChapterPlanningBlockerItem): string {
+  switch (item.code) {
+    case "project_binding_missing":
+      return "项目工作流尚未配置";
+    case "execution_integration_unavailable":
+      return "工作流执行服务暂不可用";
+    case "active_run_conflict":
+      return "已有生成任务正在运行";
+    case "storyline_reference_invalid":
+      return "所选故事线不可用";
+    case "generation_input_invalid":
+      return "生成设置需要调整";
+    default:
+      return "预检发现阻断项";
+  }
+}
+
+function retryActionLabel(action: string): string {
+  switch (action) {
+    case "configure_project_binding":
+    case "open_project_settings":
+    case "configure_workflow":
+      return "前往项目设置完成工作流配置后重试。";
+    case "retry_after_integration_recovers":
+    case "retry_preflight":
+      return "待执行服务恢复后重新预检。";
+    case "wait_for_active_run":
+      return "等待当前任务结束后重试。";
+    case "refresh_storylines":
+    case "review_storyline_selection":
+      return "刷新故事线并重新选择。";
+    case "fix_generation_input":
+    case "review_generation_target":
+      return "返回生成设置并修正范围或参数。";
+    case "restore_execution_integration":
+    case "verify_execution_integration":
+      return "恢复并复验工作流执行配置后重试。";
+    default:
+      return "修正阻断项后重新预检。";
+  }
+}
 
 export interface PreflightProgressDialogProps {
   onClose?: () => void;
@@ -128,19 +186,18 @@ export function PreflightReportDialog({
                   <li key={index} className="preflight-item blocker">
                     <div className="preflight-item-header">
                       <span className="badge blocker">阻断</span>
-                      <strong>{item.message}</strong>
+                      <strong>{blockerTitleLabel(item)}</strong>
                     </div>
-                    <p className="preflight-item-code">代码：{item.code}</p>
-                    {(item.details?.safeReason || item.details?.safeSummary) && (
-                      <p className="preflight-item-detail">
-                        {item.details.safeReason || item.details.safeSummary}
-                      </p>
-                    )}
-                    {(item.details?.retryAction || item.details?.action) && (
-                      <p className="preflight-item-action">
-                        建议操作：{item.details.retryAction || item.details.action}
-                      </p>
-                    )}
+                    <p className="preflight-item-detail">{blockerReasonLabel(item)}</p>
+                    <p className="preflight-item-action">
+                      建议操作：
+                      {retryActionLabel(
+                        item.retryAction ||
+                          item.details?.retryAction ||
+                          item.details?.action ||
+                          "",
+                      )}
+                    </p>
                   </li>
                 ))}
               </ul>
@@ -156,7 +213,7 @@ export function PreflightReportDialog({
                   <li key={index} className="preflight-item warning">
                     <div className="preflight-item-header">
                       <span className="badge warning">警告</span>
-                      <span>{item.message}</span>
+                      <span>生成上下文存在需要留意的事项。</span>
                     </div>
                   </li>
                 ))}
@@ -205,7 +262,7 @@ export interface RunCreatedDialogProps {
   onClose: () => void;
 }
 
-export function RunCreatedDialog({ runId, onClose }: RunCreatedDialogProps) {
+export function RunCreatedDialog({ onClose }: RunCreatedDialogProps) {
   return (
     <div
       className="chapter-plan-dialog-overlay"
@@ -230,7 +287,7 @@ export function RunCreatedDialog({ runId, onClose }: RunCreatedDialogProps) {
             <Icon name="sparkles" size={20} />
             <div>
               <strong>章节规划生成任务已进入队列</strong>
-              <p>运行任务标识：{runId}</p>
+              <p>系统已创建独立运行记录，可在工作区查看最新状态。</p>
             </div>
           </div>
           <p className="chapter-plan-help-text">

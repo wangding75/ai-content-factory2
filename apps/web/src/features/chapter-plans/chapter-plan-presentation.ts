@@ -266,3 +266,88 @@ export function candidateDiffTypeLabel(diffType: string): string {
       return diffType;
   }
 }
+
+export function candidatePurposeLabel(purpose: string): string {
+  switch (purpose) {
+    case "plot_advance":
+      return "剧情推进";
+    case "conflict_escalation":
+      return "冲突升级";
+    case "conflict_resolution":
+      return "冲突化解";
+    case "character_development":
+      return "人物成长";
+    case "transition":
+      return "情节过渡";
+    case "setup":
+      return "剧情铺垫";
+    case "climax":
+      return "情节高潮";
+    case "resolution":
+      return "剧情收束";
+    case "other":
+      return "其他";
+    default:
+      return purpose || "未描述";
+  }
+}
+
+export function candidateDiffFieldLabel(path: string): string {
+  const field = path.split(".").at(-1) ?? path;
+  switch (field) {
+    case "chapterNo":
+      return "章节序号";
+    case "title":
+      return "章节标题";
+    case "summary":
+      return "章节摘要";
+    case "chapterPurpose":
+      return "章节目的";
+    case "storylineRefs":
+      return "故事线关联";
+    case "materialRefs":
+      return "素材关联";
+    case "foreshadowingRefs":
+      return "伏笔关联";
+    case "generationBasis":
+      return "生成依据";
+    case "contextSummary":
+      return "上下文摘要";
+    case "additionalInstructions":
+      return "附加要求";
+    default:
+      return "规划内容";
+  }
+}
+
+export function candidateDiffValueLabel(path: string, value: string | null): string {
+  if (!value) return "—";
+  return path.split(".").at(-1) === "chapterPurpose"
+    ? candidatePurposeLabel(value)
+    : value;
+}
+
+export function chapterPlanningErrorMessage(
+  error: unknown,
+  fallback = "操作未完成，请刷新后重试。",
+): string {
+  if (!error || typeof error !== "object") return fallback;
+  const code = "code" in error && typeof error.code === "string" ? error.code : "";
+  switch (code) {
+    case "version_conflict":
+      return "数据已被更新，请刷新最新版本后重试。";
+    case "stale_candidate":
+      return "候选基线已过期，请重新比较后再操作。";
+    case "idempotency_key_reused":
+      return "请求内容已变化，请重新发起操作。";
+    case "candidate_not_found":
+    case "batch_not_found":
+      return "目标候选或批次已不存在，请返回列表刷新。";
+    case "output_validation_failed":
+      return "生成结果未通过校验，未写入任何候选。";
+    case "result_consumption_failed":
+      return "生成结果暂时无法保存，未写入任何候选。";
+    default:
+      return fallback;
+  }
+}

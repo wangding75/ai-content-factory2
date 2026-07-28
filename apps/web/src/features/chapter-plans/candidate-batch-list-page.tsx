@@ -15,6 +15,7 @@ import {
 import {
   candidateBatchModeLabel,
   candidateBatchStatusLabel,
+  chapterPlanningErrorMessage,
 } from "./chapter-plan-presentation";
 import { chapterPlanCacheEvent } from "./chapter-plan-cache";
 
@@ -146,7 +147,7 @@ export function CandidateBatchListPage({ projectId }: { projectId: string }) {
         <div className="chapter-plans-actions">
           <Link
             className="chapter-plan-button secondary"
-            href={`/projects/${projectId}/chapters`}
+            href={`/projects/${projectId}/chapter-plans`}
           >
             ← 返回章节工作区
           </Link>
@@ -178,12 +179,18 @@ export function CandidateBatchListPage({ projectId }: { projectId: string }) {
           <option value="append">追加后续</option>
         </select>
 
-        <input
-          aria-label="来源运行任务标识"
-          placeholder="来源运行任务 ID"
+        <select
+          aria-label="来源任务筛选"
           value={sourceRunIdParam}
           onChange={(e) => syncUrl({ sourceWorkflowRunId: e.target.value, offset: 0 })}
-        />
+        >
+          <option value="">全部来源任务</option>
+          {batches.map((batch, index) => (
+            <option key={batch.sourceWorkflowRunId} value={batch.sourceWorkflowRunId}>
+              来源任务 {offsetParam + index + 1} · {new Date(batch.createdAt).toLocaleDateString("zh-CN")}
+            </option>
+          ))}
+        </select>
 
         <input
           type="date"
@@ -218,7 +225,7 @@ export function CandidateBatchListPage({ projectId }: { projectId: string }) {
 
       {error && (
         <div className="chapter-plans-form-error" role="alert">
-          {error.message}
+          {chapterPlanningErrorMessage(error, "候选批次暂时无法加载，请稍后重试。")}
           <button type="button" onClick={() => void loadBatches()} style={{ marginLeft: 12 }}>
             重试
           </button>
@@ -236,7 +243,7 @@ export function CandidateBatchListPage({ projectId }: { projectId: string }) {
       ) : (
         <div className="chapter-plans-table" aria-live="polite">
           <div className="chapter-plan-row header">
-            <span>批次标识</span>
+            <span>候选批次</span>
             <span>生成模式</span>
             <span>目标范围</span>
             <span>状态</span>
@@ -245,9 +252,9 @@ export function CandidateBatchListPage({ projectId }: { projectId: string }) {
             <span>操作</span>
           </div>
 
-          {batches.map((batch) => (
+          {batches.map((batch, index) => (
             <article key={batch.id} className="chapter-plan-row">
-              <strong>{batch.id.slice(0, 8)}...</strong>
+              <strong>批次 {offsetParam + index + 1}</strong>
               <span>{candidateBatchModeLabel(batch.generationMode)}</span>
               <span>
                 {batch.generationMode === "range"

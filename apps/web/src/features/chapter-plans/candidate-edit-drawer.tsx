@@ -8,6 +8,8 @@ import {
   type ChapterPlanCandidate,
   type ChapterPlanCandidateSnapshot,
 } from "./chapter-plan-http-api";
+import { chapterPlanningErrorMessage } from "./chapter-plan-presentation";
+import { candidatePurposeLabel } from "./chapter-plan-presentation";
 
 import { useIdempotency } from "./use-idempotency";
 
@@ -93,7 +95,7 @@ export function CandidateEditDrawer({
       <div className="chapter-plan-drawer-content">
         <header className="chapter-plan-drawer-header">
           <h2 id="candidate-edit-title">
-            编辑章节候选 (第 {candidate.chapterNo} 章 - v{candidate.version})
+            编辑章节候选（第 {candidate.chapterNo} 章 · 第 {candidate.version} 版）
           </h2>
           <button
             type="button"
@@ -132,7 +134,7 @@ export function CandidateEditDrawer({
 
         {error && (
           <div className="chapter-plans-form-error" role="alert">
-            {error.message}
+            {chapterPlanningErrorMessage(error, "候选保存失败，请稍后重试。")}
             {versionConflict && onRefreshCandidate && (
               <button
                 type="button"
@@ -178,12 +180,12 @@ export function CandidateEditDrawer({
                   }))
                 }
               >
-                <option value="plot_advance">剧情推进 (Plot Advance)</option>
-                <option value="information_reveal">信息揭露 (Info Reveal)</option>
-                <option value="conflict_escalation">冲突升级 (Conflict Escalation)</option>
-                <option value="transition">过渡衔接 (Transition)</option>
-                <option value="atmosphere">氛围渲染 (Atmosphere)</option>
-                <option value="other">其他 (Other)</option>
+                <option value="plot_advance">剧情推进</option>
+                <option value="information_reveal">信息揭露</option>
+                <option value="conflict_escalation">冲突升级</option>
+                <option value="transition">过渡衔接</option>
+                <option value="atmosphere">氛围渲染</option>
+                <option value="other">其他</option>
               </select>
             </div>
 
@@ -282,7 +284,9 @@ function SnapshotViewer({
   return (
     <div className="snapshot-view">
       <h3>{snapshot.title}</h3>
-      <p className="chapter-plan-help-text">章节目的: {snapshot.chapterPurpose}</p>
+      <p className="chapter-plan-help-text">
+        章节目的: {candidatePurposeLabel(snapshot.chapterPurpose)}
+      </p>
       <div className="snapshot-summary-box">
         <strong>摘要内容：</strong>
         <p>{snapshot.summary}</p>

@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
+	"strings"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
@@ -143,6 +144,11 @@ func (r *Repository) UpdateCandidate(ctx context.Context, cmd UpdateCandidateCom
 	if err != nil {
 		return Candidate{}, err
 	}
+	if updatedCand.Status != cand.Status {
+		if _, err := r.recalculateBatchInTx(ctx, tx, cand.BatchID); err != nil {
+			return Candidate{}, err
+		}
+	}
 
 	if err := recordAuditLog(ctx, tx, actor, "candidate.updated", "chapter_plan_candidate", cand.ID, map[string]any{"candidate_id": cand.ID, "version": updatedCand.Version}); err != nil {
 		return Candidate{}, err
@@ -274,6 +280,9 @@ func (r *Repository) RecompareCandidate(ctx context.Context, cmd RecompareCandid
 	if err != nil {
 		return CandidateComparison{}, err
 	}
+	if _, err := r.recalculateBatchInTx(ctx, tx, cand.BatchID); err != nil {
+		return CandidateComparison{}, err
+	}
 
 	diff := CalculateCandidateDiff(updatedCand, targetPlan)
 	var currentChapterPtr *Plan
@@ -314,21 +323,19 @@ func (r *Repository) GetChapterPlanByProjectAndNumber(ctx context.Context, proje
 }
 
 func (r *Repository) findTargetChapterPlan(ctx context.Context, tx pgx.Tx, projectID uuid.UUID, chapterNo int) (*Plan, *uuid.UUID, error) {
-	var p Plan
-	var currentRevID *uuid.UUID
-	row := tx.QueryRow(ctx, "SELECT "+cols+", current_revision_id FROM chapter_plans WHERE project_id = $1 AND chapter_no = $2", projectID, chapterNo)
-	err := row.Scan(
-		&p.ID, &p.ProjectID, &p.RunID, &p.ChapterNo, &p.Title, &p.Summary, &p.Goal, &p.Notes,
-		&p.Status, &p.Source, &p.CreatedBy, &p.ConfirmedAt, &p.Version, &p.CreatedAt, &p.UpdatedAt,
-		&currentRevID,
-	)
+	p, err := scan(tx.QueryRow(
+		ctx,
+		"SELECT "+cols+" FROM chapter_plans WHERE project_id = $1 AND chapter_no = $2",
+		projectID,
+		chapterNo,
+	))
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil, nil
 	}
 	if err != nil {
 		return nil, nil, err
 	}
-	return &p, currentRevID, nil
+	return &p, p.CurrentRevisionID, nil
 }
 
 func (r *Repository) getPlanSnapshotJSON(ctx context.Context, tx pgx.Tx, plan *Plan) []byte {
@@ -390,12 +397,10 @@ func CalculateCandidateDiff(c Candidate, targetPlan *Plan) CandidateDiff {
 
 		var beforeStr, afterStr *string
 		if hasBase && baseVal != nil {
-			s := fmt.Sprintf("%v", baseVal)
-			beforeStr = &s
+			beforeStr = candidateDiffDisplayValue(f, baseVal)
 		}
 		if hasCurr && currVal != nil {
-			s := fmt.Sprintf("%v", currVal)
-			afterStr = &s
+			afterStr = candidateDiffDisplayValue(f, currVal)
 		}
 
 		changeType := "unchanged"
@@ -422,4 +427,41 @@ func CalculateCandidateDiff(c Candidate, targetPlan *Plan) CandidateDiff {
 		Entries:          entries,
 		Stale:            isStale,
 	}
+}
+
+func candidateDiffDisplayValue(field string, value any) *string {
+	if field != "storylineRefs" && field != "materialRefs" && field != "foreshadowingRefs" {
+		display := fmt.Sprint(value)
+		return &display
+	}
+
+	refs, ok := value.([]any)
+	if !ok {
+		display := "引用内容已更新"
+		return &display
+	}
+	if len(refs) == 0 {
+		display := "无"
+		return &display
+	}
+
+	labels := make([]string, 0, len(refs))
+	for _, ref := range refs {
+		object, ok := ref.(map[string]any)
+		if !ok {
+			continue
+		}
+		for _, key := range []string{"name", "title", "label"} {
+			if label, ok := object[key].(string); ok && label != "" {
+				labels = append(labels, label)
+				break
+			}
+		}
+	}
+	if len(labels) == 0 {
+		display := fmt.Sprintf("%d 项引用", len(refs))
+		return &display
+	}
+	display := strings.Join(labels, "、")
+	return &display
 }

@@ -13,6 +13,7 @@ import {
 } from "./chapter-plan-http-api";
 
 import { useIdempotency } from "./use-idempotency";
+import { chapterPlanningErrorMessage } from "./chapter-plan-presentation";
 
 // --- P15_C8_BATCH_ADOPT_DIALOG ---
 
@@ -100,15 +101,15 @@ export function BatchAdoptDialog({
         <div className="chapter-plan-dialog-body">
           {error && (
             <div className="chapter-plans-form-error" role="alert">
-              {error.message}
+              {chapterPlanningErrorMessage(error, "批量采用未完成，请刷新后重试。")}
             </div>
           )}
 
           {!result ? (
             <>
               <p>
-                即将为批次 <code>{batch.id.slice(0, 8)}</code> 中的{" "}
-                <b>{selectedCandidates.length}</b> 个候选章节执行采用动作。
+                即将采用当前批次中的 <b>{selectedCandidates.length}</b>{" "}
+                个候选章节。
               </p>
               <div className="chapter-plan-preflight-section">
                 <h4>待采用候选列表</h4>
@@ -116,7 +117,7 @@ export function BatchAdoptDialog({
                   {selectedCandidates.map((cand) => (
                     <li key={cand.id} className="preflight-item info">
                       <strong>第 {cand.chapterNo} 章: {cand.currentSnapshot.title}</strong>
-                      <span className="badge info">v{cand.version}</span>
+                      <span className="badge info">第 {cand.version} 版</span>
                     </li>
                   ))}
                 </ul>
@@ -198,20 +199,20 @@ function ItemizedOutcomeRow({ item }: { item: BulkAdoptChapterPlanCandidateResul
           }`}
         >
           {isSuccess
-            ? "已采用 (adopted)"
+            ? "已采用"
             : isNoChange
-              ? "无变化 (no_change)"
+              ? "无变化"
               : isStale
-                ? "基线过期 (stale)"
+                ? "基线过期"
                 : isConflict
-                  ? "版本冲突 (conflict)"
-                  : "失败 (failed)"}
+                  ? "版本冲突"
+                  : "处理失败"}
         </span>
-        <strong>候选 ID: {item.candidateId.slice(0, 8)}...</strong>
+        <strong>候选处理结果</strong>
       </div>
       {isNoChange && (
         <p className="preflight-item-detail">
-          该候选内容与线上章节无差异，未创建新 Revision。
+          该候选内容与线上章节无差异，未创建新的修订记录。
         </p>
       )}
       {(isStale || isConflict) && (
@@ -306,7 +307,7 @@ export function BatchAbandonDialog({
         <form onSubmit={handleSubmit} className="chapter-plan-dialog-body">
           {error && (
             <div className="chapter-plans-form-error" role="alert">
-              {error.message}
+              {chapterPlanningErrorMessage(error, "批次放弃未完成，请刷新后重试。")}
             </div>
           )}
 
@@ -315,7 +316,7 @@ export function BatchAbandonDialog({
             <div>
               <strong>提示：已采用章节将被保留</strong>
               <p>
-                放弃本批次后，未采用的候选将无法再修改或采用。但本批次中<b>已采用的章节及其 Revision 记录将被完整保留</b>，不会发生回滚。
+                放弃本批次后，未采用的候选将无法再修改或采用。但本批次中<b>已采用的章节及其修订记录将被完整保留</b>，不会发生回滚。
               </p>
             </div>
           </div>
@@ -328,7 +329,7 @@ export function BatchAbandonDialog({
                 onChange={(e) => setAcknowledged(e.target.checked)}
                 style={{ marginRight: 8 }}
               />
-              我已知晓并确认：已采用的章节将保留线上 Revision，不会发生回滚。
+              我已知晓并确认：已采用的章节将保留线上修订记录，不会发生回滚。
             </label>
           </div>
 
@@ -408,7 +409,7 @@ export function StaleConflictDialog({
           <div className="chapter-plan-status-banner warning">
             <Icon name="info" size={20} />
             <div>
-              <strong>候选基线已变更或存在版本冲突 (Stale / Conflict)</strong>
+              <strong>候选基线已变更或存在版本冲突</strong>
               <p>
                 第 {candidate.chapterNo} 章候选在生成后，线上对应的正式章节或服务端版本已更新。
                 系统已禁止强制覆盖操作。
@@ -443,7 +444,7 @@ export function StaleConflictDialog({
             className="chapter-plan-button primary"
             onClick={onRecompare}
           >
-            重新比较 (Recompare)
+            重新比较
           </button>
         </footer>
       </div>

@@ -111,7 +111,13 @@ func (m *candidateMockApp) UpdateCandidate(ctx context.Context, cmd chapterplan.
 func (m *candidateMockApp) CompareCandidate(ctx context.Context, candidateID uuid.UUID) (chapterplan.CandidateComparison, error) {
 	for _, c := range m.candidates {
 		if c.ID == candidateID {
-			return chapterplan.CandidateComparison{Candidate: c}, nil
+			plan := chapterplan.Plan{
+				ID: uuid.New(), ProjectID: c.ProjectID, ChapterNo: c.ChapterNo,
+				Title: "Current chapter", Summary: "Current summary",
+				Status: "pending_confirmation", Source: "candidate_adopted",
+				Version: 2, CreatedAt: time.Now(), UpdatedAt: time.Now(),
+			}
+			return chapterplan.CandidateComparison{Candidate: c, CurrentChapter: &plan}, nil
 		}
 	}
 	return chapterplan.CandidateComparison{}, chapterplan.ErrCandidateNotFound
@@ -136,7 +142,14 @@ func (m *candidateMockApp) AdoptCandidate(ctx context.Context, cmd chapterplan.A
 		if m.candidates[i].ID == cmd.CandidateID {
 			m.candidates[i].Status = "adopted"
 			m.candidates[i].Version++
-			return chapterplan.AdoptCandidateResult{Outcome: "adopted", Candidate: m.candidates[i]}, nil
+			plan := chapterplan.Plan{
+				ID: uuid.New(), ProjectID: m.candidates[i].ProjectID,
+				ChapterNo: m.candidates[i].ChapterNo, Title: "Adopted chapter",
+				Summary: "Adopted summary", Status: "pending_confirmation",
+				Source: "candidate_adopted", Version: 1,
+				CreatedAt: time.Now(), UpdatedAt: time.Now(),
+			}
+			return chapterplan.AdoptCandidateResult{Outcome: "adopted", Candidate: m.candidates[i], ChapterPlan: &plan}, nil
 		}
 	}
 	return chapterplan.AdoptCandidateResult{}, chapterplan.ErrCandidateNotFound
@@ -265,6 +278,9 @@ func TestChapterPlanCandidateHTTPContract(t *testing.T) {
 	if w.Code != http.StatusOK {
 		t.Errorf("expected 200 for compare candidate, got %d: %s", w.Code, w.Body.String())
 	}
+	if !strings.Contains(w.Body.String(), `"chapter_no":1`) || strings.Contains(w.Body.String(), `"ChapterNo"`) {
+		t.Errorf("compare response must expose the public chapter plan contract: %s", w.Body.String())
+	}
 
 	// 7. Recompare Candidate
 	recompareBody := `{"expectedCandidateVersion":2}`
@@ -286,6 +302,9 @@ func TestChapterPlanCandidateHTTPContract(t *testing.T) {
 	server.Handler().ServeHTTP(w, req)
 	if w.Code != http.StatusOK {
 		t.Errorf("expected 200 for adopt candidate, got %d: %s", w.Code, w.Body.String())
+	}
+	if !strings.Contains(w.Body.String(), `"chapter_no":1`) || strings.Contains(w.Body.String(), `"ChapterNo"`) {
+		t.Errorf("adopt response must expose the public chapter plan contract: %s", w.Body.String())
 	}
 
 	// 9. Abandon Batch

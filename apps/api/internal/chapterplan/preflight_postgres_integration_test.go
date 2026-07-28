@@ -89,7 +89,7 @@ func snapshotPreflightPersistence(t *testing.T, ctx context.Context, db *pgxpool
 		{"chapter_plan_candidates", &state.Candidates},
 		{"chapter_plan_revisions", &state.Revisions},
 	} {
-		if err := db.QueryRow(ctx, "SELECT COUNT(*) FROM "+entry.table).Scan(entry.dst); err != nil {
+		if err := db.QueryRow(ctx, "SELECT COUNT(*) FROM "+entry.table+" WHERE project_id=$1", projectID).Scan(entry.dst); err != nil {
 			t.Fatalf("count %s: %v", entry.table, err)
 		}
 	}
@@ -99,7 +99,10 @@ func snapshotPreflightPersistence(t *testing.T, ctx context.Context, db *pgxpool
 	}{
 		{"SELECT COALESCE(jsonb_agg(to_jsonb(p) ORDER BY p.id), '[]'::jsonb) FROM chapter_plans p WHERE project_id=$1", &state.Plans},
 		{"SELECT COALESCE(jsonb_agg(to_jsonb(p) ORDER BY p.id), '[]'::jsonb) FROM projects p WHERE id=$1", &state.Projects},
-		{"SELECT COALESCE(jsonb_agg(to_jsonb(i) ORDER BY i.id), '[]'::jsonb) FROM idempotency_records i WHERE $1::uuid IS NOT NULL", &state.Idempotency},
+		{`SELECT COALESCE(jsonb_agg(to_jsonb(i) ORDER BY i.id), '[]'::jsonb)
+			FROM idempotency_records i
+			WHERE i.response_body->>'projectId'=$1::text
+			   OR i.response_body->'batch'->>'projectId'=$1::text`, &state.Idempotency},
 	} {
 		if err := db.QueryRow(ctx, entry.query, projectID).Scan(entry.dst); err != nil {
 			t.Fatalf("snapshot persistence: %v", err)
@@ -316,6 +319,15 @@ func TestPostgresPreflightStorylineReferenceInvalidReturnsStableDigest(t *testin
 	}
 	if first.InputDigest != second.InputDigest {
 		t.Fatalf("invalid storyline digest must be stable: first=%s second=%s", first.InputDigest, second.InputDigest)
+	}
+
+	request.StorylineIDs = []uuid.UUID{uuid.New()}
+	missing, err := service.Preflight(ctx, f.project, request)
+	if err != nil {
+		t.Fatalf("missing storyline Preflight: %v", err)
+	}
+	if missing.Passed || missing.Token != "" || len(missing.Blockers) != 1 || missing.Blockers[0].Code != "storyline_reference_invalid" {
+		t.Fatalf("unexpected unavailable storyline result: %+v", missing)
 	}
 }
 

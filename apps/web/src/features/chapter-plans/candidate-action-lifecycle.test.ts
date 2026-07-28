@@ -20,21 +20,22 @@ const apiSource = readFileSync(
 test("batch adopt dialog handles itemized outcomes and partial success without compressing results", () => {
   assert.match(actionDialogsSource, /adoptChapterPlanCandidates/);
   assert.match(actionDialogsSource, /ItemizedOutcomeRow/);
-  assert.match(actionDialogsSource, /已采用 \(adopted\)/);
-  assert.match(actionDialogsSource, /无变化 \(no_change\)/);
-  assert.match(actionDialogsSource, /基线过期 \(stale\)/);
-  assert.match(actionDialogsSource, /版本冲突 \(conflict\)/);
+  assert.match(actionDialogsSource, /已采用/);
+  assert.match(actionDialogsSource, /无变化/);
+  assert.match(actionDialogsSource, /基线过期/);
+  assert.match(actionDialogsSource, /版本冲突/);
+  assert.doesNotMatch(actionDialogsSource, /候选 ID:/);
 });
 
 test("batch abandon dialog requires acknowledgeAdoptedChaptersRemain: true and shows non-rollback notice", () => {
   assert.match(actionDialogsSource, /abandonChapterPlanCandidateBatch/);
   assert.match(actionDialogsSource, /acknowledgeAdoptedChaptersRemain: true/);
-  assert.match(actionDialogsSource, /已采用的章节及其 Revision 记录将被完整保留/);
+  assert.match(actionDialogsSource, /已采用的章节及其修订记录将被完整保留/);
 });
 
 test("stale conflict dialog offers recompare and refresh options without force adopt", () => {
   assert.match(actionDialogsSource, /基线与版本冲突处理/);
-  assert.match(actionDialogsSource, /重新比较 \(Recompare\)/);
+  assert.match(actionDialogsSource, /重新比较/);
   assert.match(actionDialogsSource, /刷新最新版本/);
   assert.match(actionDialogsSource, /已禁止强制覆盖/);
   assert.doesNotMatch(actionDialogsSource, /force adopt/i);

@@ -440,6 +440,8 @@ test("blocked preflight reports support null summaries and no preflightToken", (
       code: "project_binding_missing",
       message: "Workflow binding is required",
       severity: "blocker",
+      safeReason: "Please configure a workflow binding",
+      retryAction: "Open project settings",
       details: { safeReason: "Please configure a workflow binding", retryAction: "Open project settings" },
     }],
     warnings: [],
@@ -449,6 +451,8 @@ test("blocked preflight reports support null summaries and no preflightToken", (
   assert.equal(blocked.executionConfigurationSummary, null);
   assert.equal("preflightToken" in blocked, false);
   assert.equal(blocked.blockers[0].code, "project_binding_missing");
+  assert.equal(blocked.blockers[0].safeReason, "Please configure a workflow binding");
+  assert.equal(blocked.blockers[0].retryAction, "Open project settings");
   assert.equal(blocked.blockers[0].details?.safeReason, "Please configure a workflow binding");
   assert.equal(blocked.blockers[0].details?.retryAction, "Open project settings");
 });

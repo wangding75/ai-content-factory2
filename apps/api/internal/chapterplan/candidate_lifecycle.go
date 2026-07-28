@@ -616,6 +616,25 @@ func (r *Repository) BulkAdoptCandidates(ctx context.Context, cmd BulkAdoptComma
 	itemResults := make([]BulkAdoptItemResult, 0, len(cmd.Candidates))
 
 	for i, item := range cmd.Candidates {
+		candidate, candidateErr := r.GetCandidateByID(ctx, item.CandidateID)
+		if candidateErr != nil || !candidateBelongsToBatch(candidate, batch) {
+			var candidatePtr *Candidate
+			if candidateErr == nil {
+				candidatePtr = &candidate
+			}
+			itemResults = append(itemResults, BulkAdoptItemResult{
+				CandidateID: item.CandidateID,
+				Outcome:     "failed",
+				Candidate:   candidatePtr,
+				Error: map[string]any{
+					"code":        "failed",
+					"safeReason":  "The candidate does not belong to this batch.",
+					"retryAction": "review_candidate",
+				},
+			})
+			continue
+		}
+
 		itemKey := fmt.Sprintf("%s:item:%s:%d", keyFp, item.CandidateID, i)
 		itemRes, err := r.AdoptCandidate(ctx, AdoptCandidateCommand{
 			CandidateID:                item.CandidateID,
@@ -692,6 +711,10 @@ func (r *Repository) BulkAdoptCandidates(ctx context.Context, cmd BulkAdoptComma
 	}
 
 	return result, nil
+}
+
+func candidateBelongsToBatch(candidate Candidate, batch CandidateBatch) bool {
+	return candidate.BatchID == batch.ID && candidate.ProjectID == batch.ProjectID
 }
 
 func (r *Repository) DiscardCandidate(ctx context.Context, cmd DiscardCandidateCommand) (Candidate, error) {

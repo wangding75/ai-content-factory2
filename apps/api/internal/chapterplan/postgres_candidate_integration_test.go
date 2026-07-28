@@ -195,6 +195,29 @@ func TestPostgresCandidateIntegration(t *testing.T) {
 		t.Errorf("idempotency replay mismatched result")
 	}
 
+	// Candidate edit/recompare reads the current target ChapterPlan inside the
+	// mutation transaction. Keep this read covered against column/Scan drift.
+	targetTx, err := db.Begin(ctx)
+	if err != nil {
+		t.Fatalf("begin target chapter read transaction: %v", err)
+	}
+	targetPlan, targetRevisionID, err := repo.findTargetChapterPlan(
+		ctx,
+		targetTx,
+		projectID,
+		adoptRes.ChapterPlan.ChapterNo,
+	)
+	_ = targetTx.Rollback(ctx)
+	if err != nil {
+		t.Fatalf("findTargetChapterPlan failed: %v", err)
+	}
+	if targetPlan == nil || targetPlan.ID != adoptRes.ChapterPlan.ID {
+		t.Fatalf("findTargetChapterPlan returned unexpected plan: %+v", targetPlan)
+	}
+	if targetRevisionID == nil || adoptRes.Revision == nil || *targetRevisionID != adoptRes.Revision.ID {
+		t.Fatalf("findTargetChapterPlan returned unexpected revision: %v", targetRevisionID)
+	}
+
 	// 5. Same Key Different Payload Conflict
 	_, err = repo.AdoptCandidate(ctx, AdoptCandidateCommand{
 		CandidateID:                cand1.ID,
