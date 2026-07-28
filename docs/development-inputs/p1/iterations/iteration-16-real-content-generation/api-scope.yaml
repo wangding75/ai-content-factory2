@@ -1,5 +1,5 @@
 iteration: iteration-16-real-content-generation
-status: review_ready_cf_16_01c
+status: frozen_cf_16_01b
 canonical_route: /projects/{projectId}/works/{workId}
 identity:
   workId: ContentItem.id
@@ -89,6 +89,13 @@ error_codes:
   output_validation_failed: {http: 409, operations: [retryContentGenerationResultConsumption], note: requires a new Runtime retry}
   result_consumption_failed: {http: 500, operations: [retryContentGenerationResultConsumption]}
   idempotency_key_reused_with_different_payload: {http: 409, operations: [createContentGenerationRun, retryContentGenerationResultConsumption, setCurrentContentVersion]}
+error_code_equivalents:
+  execution_connection_unavailable: execution_integration_unavailable
+  active_content_generation_run_exists: active_run_conflict
+  preflight_token_consumed: not_emitted_token_reuse_is_controlled_by_active_run_conflict_and_idempotency
+  result_already_consumed: run_already_consumed
+  candidate_not_eligible: content_version_not_candidate
+  idempotency_conflict: idempotency_key_reused_with_different_payload
 common_requirements:
   - OpenAPI is the single HTTP contract source.
   - Domain-specific creation fixes stage, triggerSource and subject server-side.

@@ -1,5 +1,7 @@
 # Iteration 16 — Stitch 原型来源映射
 
+**状态：`frozen_cf_16_01b`。**
+
 ## 1. 来源
 
 - 上传包：`stitch_acf_iteration_16_real_content_generation_ui_optimization.zip`

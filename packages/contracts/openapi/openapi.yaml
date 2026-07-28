@@ -740,7 +740,7 @@ paths:
     parameters: [{$ref: "#/components/parameters/ContentItemId"}]
     get:
       operationId: getContentGenerationSummary
-      description: Read-only editor aggregation for workflow availability, queued/running Run recovery, safe failure state and the latest non-current workflow-generated candidate version. Business failure states are represented in the 200 data model rather than as read-time HTTP failures.
+      description: Read-only editor aggregation for ContentItem/current-version recovery, workflow availability, queued/running Run recovery, latest Runtime events, safe failure state and the latest non-current workflow-generated candidate version. Business failure states are represented in the 200 data model rather than as read-time HTTP failures.
       responses:
         "200": {description: Content-generation workspace summary., content: {application/json: {schema: {$ref: "#/components/schemas/ContentGenerationSummaryEnvelope"}}}}
         "400": {$ref: "#/components/responses/BadRequest"}
@@ -3881,14 +3881,17 @@ components:
     ContentGenerationSummary:
       type: object
       additionalProperties: false
-      required: [contentItemId, currentVersionId, workflowConfigured, state, activeRun, latestRun, latestCandidateVersion, latestError, canGenerate, candidateCanBecomeCurrent]
+      required: [contentItemId, contentItem, currentVersionId, currentVersion, workflowConfigured, state, activeRun, latestRun, latestEvents, latestCandidateVersion, latestError, canGenerate, candidateCanBecomeCurrent]
       properties:
         contentItemId: {type: string, format: uuid}
+        contentItem: {$ref: "#/components/schemas/ContentItem"}
         currentVersionId: {type: string, format: uuid}
+        currentVersion: {$ref: "#/components/schemas/ContentVersion"}
         workflowConfigured: {type: boolean}
         state: {$ref: "#/components/schemas/ContentGenerationResultState"}
         activeRun: {anyOf: [{$ref: "#/components/schemas/Iteration14WorkflowRun"}, {type: "null"}]}
         latestRun: {anyOf: [{$ref: "#/components/schemas/Iteration14WorkflowRun"}, {type: "null"}]}
+        latestEvents: {type: array, maxItems: 20, items: {$ref: "#/components/schemas/WorkflowRunEvent"}, description: "Latest persisted events for the latest content-generation Run, ordered by createdAt ASC."}
         latestCandidateVersion: {anyOf: [{$ref: "#/components/schemas/ContentVersion"}, {type: "null"}]}
         latestError: {anyOf: [{$ref: "#/components/schemas/ContentGenerationSafeError"}, {type: "null"}]}
         canGenerate: {type: boolean}

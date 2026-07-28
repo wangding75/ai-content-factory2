@@ -1,5 +1,7 @@
 # ACF desktop workspace
 
+**状态：`frozen_cf_16_01b`。**
+
 - Keep the existing ACF desktop application frame unchanged across all screens.
 - Fixed top application bar with product logo/name on the left, current project selector, and right-side actions: 版本历史、提交审核、生成正文.
 - Fixed breadcrumb row below the top bar.
@@ -12,3 +14,5 @@
 - Real content generation creates a candidate version first; never imply automatic overwrite of the current version.
 - Async task states appear as a full-width status bar below breadcrumbs and above the three-column workspace.
 - Error messages must be actionable and must not expose tokens, API keys, stack traces, or infrastructure addresses.
+- Display `running` as “运行中”, `candidate_ready` as “候选版本已创建”, and workflow-not-configured as “尚未配置正文生成工作流”; never render API codes, snake_case, or Material Symbols ligature names as visible copy.
+- Icon-only controls require Chinese `aria-label`; final UI must not depend on an external icon font.

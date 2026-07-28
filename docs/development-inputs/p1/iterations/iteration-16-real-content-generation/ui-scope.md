@@ -1,6 +1,6 @@
 # Iteration 16 — 真实正文生成 — UI Scope
 
-**UI 状态：`APPROVED_SOURCE_20260728`。** Stitch 定稿共 11 个 Frame，全部基于现有 ACF 桌面框架。`screen.png` 是视觉和信息层级权威输入，`code.html` 仅辅助理解结构和文案。
+**UI 状态：`frozen_cf_16_01b`。** Stitch 定稿共 11 个 Frame，全部基于现有 ACF 桌面框架。`screen.png` 是视觉和信息层级权威输入，`code.html` 仅辅助理解结构和文案。
 
 ## 1. 正式路由
 
@@ -46,6 +46,8 @@
 - 不要求像素级一致；必须保证主要结构、状态、内容层级和操作闭环一致；
 - 禁止用原型图片作为页面背景或创建仅截图可用的路由；
 - 未配置、失败和候选状态必须来自正式 API/契约夹具，不得在生产代码硬编码。
+- `running` 显示为“运行中”，`candidate_ready` 显示为“候选版本已创建”，`workflow_not_configured` 显示为“尚未配置正文生成工作流”；候选基线过期必须显示可理解说明，不能显示 `candidate_source_stale`。
+- 只有图标的按钮必须有中文 `aria-label`；不显示 error.code、snake_case 或原始 API 枚举。
 
 ## 5. Canonical 与变体
 
