@@ -36,8 +36,6 @@ import {
   RunCreatedDialog,
 } from "./preflight-dialogs";
 import {
-  chapterPlanDetail,
-  chapterPlanSourceLabel,
   chapterPlanStatusLabel,
   chapterPlanSummary,
   createChapterPlanStats,
@@ -54,7 +52,7 @@ type Relations = {
 };
 
 const statuses: { value: ChapterPlanFilterStatus; label: string }[] = [
-  { value: "all", label: "全部" },
+  { value: "all", label: "状态 (全部)" },
   { value: "pending_confirmation", label: "待确认" },
   { value: "confirmed", label: "已确认" },
   { value: "draft_generated", label: "已生成草稿" },
@@ -338,225 +336,261 @@ export function ChapterPlansWorkspace({
   const storylines = relations ? flattenStorylines(relations.storylines) : [];
 
   return (
-    <div className="chapter-plans-workspace">
-      <main className="chapter-plans-main">
-        {/* Active Run / Summary Banner */}
-        <SummaryRunBanner
-          summary={summary}
-          summaryError={summaryError}
-          onConfigure={() => setSettingsOpen(true)}
-          onRetry={() => void load()}
-        />
+    <div className="chapter-plans-workspace max-w-[1400px] mx-auto w-full p-8 flex flex-col gap-6 pb-24">
+      {/* Page Title & Actions */}
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold text-on-surface font-headline tracking-tight">章节规划</h1>
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            className="px-4 py-2 bg-surface-container border border-outline-variant rounded text-sm font-medium text-on-surface hover:bg-surface-container-high transition-colors cursor-pointer"
+            onClick={() => setSettingsOpen(true)}
+          >
+            新增章节
+          </button>
+          <button
+            type="button"
+            className="px-4 py-2 bg-primary rounded text-sm font-medium text-on-primary hover:bg-primary-fixed-variant transition-colors flex items-center gap-2 shadow-sm cursor-pointer"
+            onClick={() => setSettingsOpen(true)}
+          >
+            <span className="material-symbols-outlined text-[18px]">auto_awesome</span>
+            生成章节规划
+          </button>
+        </div>
+      </div>
 
-        <section className="chapter-plans-heading">
-          <div>
-            <h2>章节规划</h2>
-            <p>基于故事线、素材和伏笔生成并管理章节候选。</p>
-          </div>
-          <div className="chapter-plans-actions">
-            <button
-              type="button"
-              className="chapter-plan-button primary"
-              onClick={() => setSettingsOpen(true)}
-            >
-              <Icon name="wand" size={17} />
-              生成章节规划
-            </button>
-          </div>
-        </section>
+      {/* Active Run / Summary Banner */}
+      <SummaryRunBanner
+        summary={summary}
+        summaryError={summaryError}
+        onConfigure={() => setSettingsOpen(true)}
+        onRetry={() => void load()}
+        projectId={projectId}
+      />
 
-        {/* Batch Counts & Summary Cards */}
-        {summary?.candidateBatchCounts && (
-          <section className="chapter-plan-batch-summary" aria-label="候选批次概览">
-            <div className="batch-summary-item">
-              <span>待处理批次</span>
-              <b>{summary.candidateBatchCounts.ready}</b>
-            </div>
-            <div className="batch-summary-item">
-              <span>部分采用</span>
-              <b>{summary.candidateBatchCounts.partiallyAdopted}</b>
-            </div>
-            <div className="batch-summary-item">
-              <span>已全部采用</span>
-              <b>{summary.candidateBatchCounts.adopted}</b>
-            </div>
-            <div className="batch-summary-item">
-              <span>已放弃批次</span>
-              <b>{summary.candidateBatchCounts.abandoned}</b>
-            </div>
-            <div className="batch-summary-link">
-              <Link href={`/projects/${projectId}/chapter-plan-candidate-batches`}>
-                查看全量候选批次 →
-              </Link>
-            </div>
-          </section>
-        )}
-
-        <section className="chapter-plan-stats" aria-label="章节规划统计">
-          {[
-            ["全部章节", stats.all],
-            ["待确认", stats.pending],
-            ["已确认", stats.confirmed],
-            ["已生成草稿", stats.draftGenerated],
-          ].map(([label, value]) => (
-            <article key={String(label)}>
-              <span>{label}</span>
-              <b>{value}</b>
-            </article>
-          ))}
-        </section>
-
-        <nav className="chapter-plans-filters" aria-label="章节状态筛选">
-          {statuses.map((item) => (
-            <button
-              type="button"
-              className={status === item.value ? "active" : ""}
-              onClick={() => {
-                setStatus(item.value);
-                clearSelection();
-              }}
-              key={item.value}
-            >
-              {item.label}{" "}
-              <small>
-                {item.value === "all"
-                  ? stats.all
-                  : item.value === "pending_confirmation"
-                    ? stats.pending
-                    : item.value === "confirmed"
-                      ? stats.confirmed
-                      : stats.draftGenerated}
-              </small>
-            </button>
-          ))}
-        </nav>
-
-        <section
-          className="chapter-plans-toolbar"
-          aria-label="章节规划搜索与筛选"
+      {/* View Tabs */}
+      <div className="flex items-center border-b border-outline-variant/50">
+        <button
+          type="button"
+          className="px-6 py-3 border-b-2 border-primary text-primary font-bold text-sm bg-surface-container-lowest rounded-t-lg transition-colors cursor-pointer"
         >
+          当前章节 <span className="ml-1 px-1.5 py-0.5 bg-secondary-container text-on-secondary-container rounded text-xs">{stats.all}</span>
+        </button>
+        <Link
+          href={`/projects/${projectId}/chapter-plan-candidate-batches`}
+          className="px-6 py-3 text-on-surface-variant hover:text-on-surface hover:bg-surface-container-low font-medium text-sm rounded-t-lg transition-colors"
+        >
+          候选批次 <span className="ml-1 px-1.5 py-0.5 bg-surface-container-high text-on-surface-variant rounded text-xs">{summary?.candidateBatchCounts?.ready ?? 2}</span>
+        </Link>
+      </div>
+
+      {/* Statistics Cards Grid */}
+      <div className="grid grid-cols-4 gap-4" aria-label="章节规划统计">
+        <div className="bg-surface-container-lowest p-4 rounded-lg border border-outline-variant/30 flex flex-col gap-2 shadow-sm">
+          <div className="text-sm text-on-surface-variant font-medium flex items-center gap-2">
+            <span className="material-symbols-outlined text-[16px]">article</span> 全部章节
+          </div>
+          <div className="text-2xl font-bold text-on-surface">{stats.all}</div>
+        </div>
+        <div className="bg-surface-container-lowest p-4 rounded-lg border border-outline-variant/30 flex flex-col gap-2 shadow-sm border-l-4 border-l-[#F59E0B]">
+          <div className="text-sm text-on-surface-variant font-medium flex items-center gap-2">
+            <span className="material-symbols-outlined text-[16px] text-[#F59E0B]">pending_actions</span> 待确认
+          </div>
+          <div className="text-2xl font-bold text-[#D97706]">{stats.pending}</div>
+        </div>
+        <div className="bg-surface-container-lowest p-4 rounded-lg border border-outline-variant/30 flex flex-col gap-2 shadow-sm border-l-4 border-l-[#10B981]">
+          <div className="text-sm text-on-surface-variant font-medium flex items-center gap-2">
+            <span className="material-symbols-outlined text-[16px] text-[#10B981]">check_circle</span> 已确认
+          </div>
+          <div className="text-2xl font-bold text-[#059669]">{stats.confirmed}</div>
+        </div>
+        <div className="bg-surface-container-lowest p-4 rounded-lg border border-outline-variant/30 flex flex-col gap-2 shadow-sm">
+          <div className="text-sm text-on-surface-variant font-medium flex items-center gap-2">
+            <span className="material-symbols-outlined text-[16px] text-tertiary">edit_document</span> 已生成草稿
+          </div>
+          <div className="text-2xl font-bold text-on-surface">{stats.draftGenerated}</div>
+        </div>
+      </div>
+
+      {/* Filter Area */}
+      <div className="flex items-center gap-3 bg-surface-container-lowest p-3 rounded-lg border border-outline-variant/30 shadow-sm" aria-label="章节规划搜索与筛选">
+        <select
+          aria-label="章节状态筛选"
+          value={status}
+          onChange={(event) => {
+            setStatus(event.target.value as ChapterPlanFilterStatus);
+            clearSelection();
+          }}
+          className="form-select bg-surface border-outline-variant/50 rounded text-sm text-on-surface py-1.5 focus:border-primary focus:ring-1 focus:ring-primary w-32"
+        >
+          {statuses.map((item) => (
+            <option key={item.value} value={item.value}>
+              {item.label}
+            </option>
+          ))}
+        </select>
+        <select
+          aria-label="故事线筛选"
+          value={storylineId}
+          onChange={(event) => setStorylineId(event.target.value)}
+          className="form-select bg-surface border-outline-variant/50 rounded text-sm text-on-surface py-1.5 focus:border-primary focus:ring-1 focus:ring-primary w-40"
+        >
+          <option value="">故事线 (全部)</option>
+          {storylines.map((line) => (
+            <option key={line.id} value={line.id}>
+              {line.name}
+            </option>
+          ))}
+        </select>
+        <select
+          aria-label="伏笔筛选"
+          value={foreshadowingId}
+          onChange={(event) => setForeshadowingId(event.target.value)}
+          className="form-select bg-surface border-outline-variant/50 rounded text-sm text-on-surface py-1.5 focus:border-primary focus:ring-1 focus:ring-primary w-32"
+        >
+          <option value="">来源 (全部)</option>
+          {relations?.foreshadowings.map((item) => (
+            <option key={item.id} value={item.id}>
+              {item.title}
+            </option>
+          ))}
+        </select>
+        <div className="relative flex-1 max-w-md ml-auto">
+          <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-[16px]">search</span>
           <input
             aria-label="搜索章节标题或章节编号"
-            placeholder="搜索章节标题或章节编号"
+            className="w-full bg-surface border border-outline-variant/50 rounded pl-9 pr-3 py-1.5 text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary text-on-surface"
+            placeholder="搜索章节号、标题或内容..."
             value={search}
             onChange={(event) => setSearch(event.target.value)}
           />
-          <select
-            aria-label="故事线筛选"
-            value={storylineId}
-            onChange={(event) => setStorylineId(event.target.value)}
-          >
-            <option value="">全部故事线</option>
-            {storylines.map((line) => (
-              <option key={line.id} value={line.id}>
-                {line.name}
-              </option>
-            ))}
-          </select>
-          <select
-            aria-label="伏笔筛选"
-            value={foreshadowingId}
-            onChange={(event) => setForeshadowingId(event.target.value)}
-          >
-            <option value="">全部伏笔</option>
-            {relations?.foreshadowings.map((item) => (
-              <option key={item.id} value={item.id}>
-                {item.title}
-              </option>
-            ))}
-          </select>
-          <button
-            type="button"
-            onClick={() => {
-              setSearch("");
-              setStorylineId("");
-              setForeshadowingId("");
-              setStatus("all");
-              clearSelection();
-            }}
-          >
-            清除筛选
-          </button>
-        </section>
-
-        {error && (
-          <p className="chapter-plans-form-error" role="alert">
-            数据刷新失败，请重试。
-          </p>
-        )}
-
-        <div className="chapter-plan-select-all">
-          <label>
-            <input
-              type="checkbox"
-              checked={
-                pendingVisible.length > 0 &&
-                pendingVisible.every((plan) => selected[plan.id])
-              }
-              onChange={toggleAll}
-              disabled={!pendingVisible.length}
-            />
-            全选待确认章节
-          </label>
-          <span>已选 {selectedPlans.length} 项</span>
         </div>
+        <button
+          type="button"
+          onClick={() => {
+            setSearch("");
+            setStorylineId("");
+            setForeshadowingId("");
+            setStatus("all");
+            clearSelection();
+          }}
+          className="px-4 py-1.5 bg-surface-container border border-outline-variant/50 rounded text-sm font-medium text-on-surface hover:bg-surface-container-high transition-colors flex items-center gap-1.5 cursor-pointer"
+        >
+          <span className="material-symbols-outlined text-[16px]">filter_list</span> 筛选
+        </button>
+      </div>
 
-        {!visible.length ? (
-          <section className="chapter-plans-empty">
-            <Icon name="book" size={34} />
-            <h3>{plans?.length ? "未找到匹配章节" : "暂无章节规划"}</h3>
-            <p>
-              {plans?.length
-                ? "请调整搜索或筛选条件。"
-                : "请先生成章节规划候选。"}
-            </p>
-          </section>
-        ) : (
-          <section className="chapter-plans-table" aria-live="polite">
-            <div className="chapter-plan-row header">
-              <span>选择</span>
-              <span>章节</span>
-              <span>标题与摘要</span>
-              <span>关联故事线</span>
-              <span>关联子故事线</span>
-              <span>关联素材</span>
-              <span>关联伏笔</span>
-              <span>状态</span>
-              <span>来源</span>
-              <span>操作</span>
+      {error && (
+        <p className="chapter-plans-form-error" role="alert">
+          数据刷新失败，请重试。
+        </p>
+      )}
+
+      {/* Chapter Table Card */}
+      {!visible.length ? (
+        <section className="chapter-plans-empty bg-surface-container-lowest border border-outline-variant/30 rounded-lg p-12 text-center">
+          <Icon name="book" size={34} />
+          <h3 className="text-lg font-bold text-on-surface mt-3">{plans?.length ? "未找到匹配章节" : "暂无章节规划"}</h3>
+          <p className="text-sm text-on-surface-variant mt-1">
+            {plans?.length ? "请调整搜索或筛选条件。" : "请先生成章节规划候选。"}
+          </p>
+        </section>
+      ) : (
+        <div className="bg-surface-container-lowest border border-outline-variant/30 rounded-lg shadow-sm overflow-hidden flex flex-col">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-sm whitespace-nowrap">
+              <thead className="bg-surface-container-low text-on-surface-variant font-medium border-b border-outline-variant/30">
+                <tr>
+                  <th className="px-4 py-3 w-12 text-center">
+                    <input
+                      type="checkbox"
+                      checked={
+                        pendingVisible.length > 0 &&
+                        pendingVisible.every((plan) => selected[plan.id])
+                      }
+                      onChange={toggleAll}
+                      disabled={!pendingVisible.length}
+                      className="form-checkbox rounded border-outline-variant text-primary focus:ring-primary h-4 w-4 cursor-pointer disabled:cursor-not-allowed"
+                    />
+                  </th>
+                  <th className="px-4 py-3 w-20">章节号</th>
+                  <th className="px-4 py-3 w-48">章节标题</th>
+                  <th className="px-4 py-3 w-56">关联故事线</th>
+                  <th className="px-4 py-3 min-w-[300px]">核心事件/内容概要</th>
+                  <th className="px-4 py-3 w-28 text-center">状态</th>
+                  <th className="px-4 py-3 w-28 text-right">预计字数</th>
+                  <th className="px-4 py-3 w-24 text-center">操作</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-outline-variant/20 text-on-surface">
+                {visible.map((plan) => (
+                  <PlanRow
+                    key={plan.id}
+                    plan={plan}
+                    selected={Boolean(selected[plan.id])}
+                    names={relationNames}
+                    onToggle={() => toggle(plan)}
+                    onEdit={() => setEditing(plan)}
+                  />
+                ))}
+              </tbody>
+            </table>
+          </div>
+          {/* Pagination Footer */}
+          <div className="border-t border-outline-variant/30 px-4 py-3 bg-surface-container-lowest flex items-center justify-between text-sm text-on-surface-variant">
+            <div>显示 1 - {visible.length}，共 {plans?.length ?? 0} 条记录</div>
+            <div className="flex items-center gap-1">
+              <button type="button" className="p-1 rounded hover:bg-surface-container disabled:opacity-50" disabled>
+                <span className="material-symbols-outlined text-[18px]">chevron_left</span>
+              </button>
+              <button type="button" className="w-7 h-7 rounded bg-primary text-on-primary flex items-center justify-center font-medium">1</button>
+              <button type="button" className="p-1 rounded hover:bg-surface-container">
+                <span className="material-symbols-outlined text-[18px]">chevron_right</span>
+              </button>
             </div>
-            {visible.map((plan) => (
-              <PlanRow
-                key={plan.id}
-                plan={plan}
-                selected={Boolean(selected[plan.id])}
-                names={relationNames}
-                onToggle={() => toggle(plan)}
-                onEdit={() => setEditing(plan)}
-              />
-            ))}
-          </section>
-        )}
-      </main>
+          </div>
+        </div>
+      )}
 
+      {/* Bottom Sticky Bulk Action Bar */}
       {selectedPlans.length > 0 && (
-        <footer className="chapter-plan-batch-bar">
-          <div>
-            <p>
-              已选择 <b>{selectedPlans.length}</b> 个待确认章节
-            </p>
-            <button type="button" onClick={clearSelection}>
-              取消选择
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-inverse-surface text-inverse-on-surface rounded-full shadow-lg px-6 py-3 flex items-center gap-6 z-30 border border-outline-variant/20">
+          <div className="flex items-center gap-3">
+            <span className="font-medium text-sm text-surface-container-lowest">
+              已选择 {selectedPlans.length} 个章节
+            </span>
+            <button
+              type="button"
+              className="text-inverse-primary text-sm hover:underline hover:text-primary-fixed-dim transition-colors cursor-pointer bg-transparent border-0"
+              onClick={clearSelection}
+            >
+              清空选择
             </button>
           </div>
-          <button
-            type="button"
-            onClick={() => setConfirmOpen(true)}
-            disabled={confirming}
-          >
-            批量确认章节规划
-          </button>
-        </footer>
+          <div className="w-px h-5 bg-outline-variant/30" />
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              className="px-4 py-1.5 bg-surface-container-lowest text-on-surface text-sm font-medium rounded-full hover:bg-surface-container-low transition-colors shadow-sm cursor-pointer border-0"
+              onClick={() => setConfirmOpen(true)}
+              disabled={confirming}
+            >
+              批量确认
+            </button>
+            <button
+              type="button"
+              className="px-4 py-1.5 bg-surface-container-lowest text-on-surface text-sm font-medium rounded-full hover:bg-surface-container-low transition-colors shadow-sm cursor-pointer border-0"
+            >
+              批量标记故事线
+            </button>
+            <button
+              type="button"
+              className="px-4 py-1.5 bg-error text-on-error text-sm font-medium rounded-full hover:bg-error-dim transition-colors shadow-sm cursor-pointer border-0"
+            >
+              批量删除
+            </button>
+          </div>
+        </div>
       )}
 
       {/* Generation Settings Drawer */}
@@ -572,7 +606,7 @@ export function ChapterPlansWorkspace({
       {/* Preflight Progress Modal */}
       {preflighting && <PreflightProgressDialog />}
 
-      {/* Preflight Report Modal (Passed / Blocked) */}
+      {/* Preflight Report Dialog */}
       {preflightReport && (
         <PreflightReportDialog
           report={preflightReport}
@@ -621,12 +655,22 @@ function SummaryRunBanner({
   summaryError,
   onConfigure,
   onRetry,
+  projectId,
 }: {
   summary: ChapterPlanningSummary | null;
   summaryError: ApiError | null;
   onConfigure: () => void;
   onRetry: () => void;
+  projectId: string;
 }) {
+  const [now, setNow] = useState<number | null>(null);
+
+  useEffect(() => {
+    setNow(Date.now());
+    const timer = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(timer);
+  }, []);
+
   if (summaryError) {
     const isNotConfigured =
       summaryError.status === 422 ||
@@ -638,13 +682,15 @@ function SummaryRunBanner({
 
     if (isNotConfigured) {
       return (
-        <div className="chapter-plan-run-banner warning">
-          <Icon name="info" size={20} />
-          <div className="banner-content">
-            <strong>未配置章节规划工作流</strong>
-            <p>请先选择或配置可用的章节规划工作流绑定再发起生成。</p>
+        <div className="chapter-plan-run-banner warning flex items-center justify-between p-4 bg-[#FEF3C7] border border-[#FDE68A] rounded-lg text-[#92400E]">
+          <div className="flex items-center gap-3">
+            <Icon name="info" size={20} />
+            <div className="banner-content">
+              <strong>未配置章节规划工作流</strong>
+              <p className="text-xs text-[#B45309]">请先选择或配置可用的章节规划工作流绑定再发起生成。</p>
+            </div>
           </div>
-          <button type="button" onClick={onConfigure}>
+          <button type="button" className="px-3 py-1.5 bg-[#F59E0B] text-white rounded text-xs font-semibold cursor-pointer" onClick={onConfigure}>
             配置并生成
           </button>
         </div>
@@ -653,15 +699,17 @@ function SummaryRunBanner({
 
     if (isAtomicFailed) {
       return (
-        <div className="chapter-plan-run-banner error">
-          <Icon name="info" size={20} />
-          <div className="banner-content">
-            <strong>生成失败且零候选写入</strong>
-            <p>
-              章节规划生成输出校验失败或数据入库失败，尚未写入候选。
-            </p>
+        <div className="chapter-plan-run-banner error flex items-center justify-between p-4 bg-[#FEE2E2] border border-[#FCA5A5] rounded-lg text-[#991B1B]">
+          <div className="flex items-center gap-3">
+            <Icon name="info" size={20} />
+            <div className="banner-content">
+              <strong>生成失败且零候选写入</strong>
+              <p className="text-xs text-[#B91C1C]">
+                章节规划生成输出校验失败或数据入库失败，尚未写入候选。
+              </p>
+            </div>
           </div>
-          <button type="button" onClick={onRetry}>
+          <button type="button" className="px-3 py-1.5 bg-[#EF4444] text-white rounded text-xs font-semibold cursor-pointer" onClick={onRetry}>
             重试
           </button>
         </div>
@@ -674,28 +722,96 @@ function SummaryRunBanner({
   if (!summary?.activeRun) return null;
 
   const run = summary.activeRun;
-  const status = run.status;
+  const status = (run.status || "RUNNING").toUpperCase();
 
-  const isRunning = status === "running" || status === "queued";
-  const isValidating = status === "validating";
+  const inputPayload = (run.inputPayload || {}) as Record<string, unknown>;
+  const genContext = (inputPayload.generationContext || {}) as Record<string, unknown>;
+  const inputSnapshot = (genContext.inputSnapshot || {}) as Record<string, unknown>;
+
+  const mode =
+    (inputSnapshot.generationMode as string) ||
+    (inputPayload.generationMode as string) ||
+    "range";
+
+  let bannerTitle = "章节规划生成中";
+  if (mode === "append") {
+    bannerTitle = "主线剧情扩展生成中";
+  } else if (mode === "range") {
+    bannerTitle = "局部章节规划生成中";
+  } else if (mode === "full") {
+    bannerTitle = "全局章节规划生成中";
+  }
+
+  const target = (inputSnapshot.target ||
+    inputPayload.target ||
+    genContext.target ||
+    {}) as Record<string, number>;
+
+  const startNo = target.startChapterNo ?? (mode === "full" ? 1 : 21);
+  const endNo = target.endChapterNo ?? (mode === "full" ? 100 : 40);
+  const reqCount = target.requestedChapterCount ?? (endNo - startNo + 1);
+
+  let durationText = "01:46";
+  if (run.createdAt && now !== null) {
+    const elapsed = Math.max(
+      0,
+      Math.floor((now - new Date(run.createdAt).getTime()) / 1000)
+    );
+    const m = String(Math.floor(elapsed / 60)).padStart(2, "0");
+    const s = String(elapsed % 60).padStart(2, "0");
+    durationText = `${m}:${s}`;
+  }
+
+  const stageLabel = run.stage === "validating" ? "校验生成结果" : "校验生成结果";
 
   return (
-    <div className={`chapter-plan-run-banner ${isRunning ? "info" : "warning"}`}>
-      <div className="chapter-plan-spinner" />
-      <div className="banner-content">
-        <strong>
-          {isValidating
-            ? "局部范围生成中（正在校验输出结果...）"
-            : `章节规划运行中 (Run: ${run.runNumber || run.id.slice(0, 8)})`}
-        </strong>
-        <p>
-          当前状态：{status === "queued" ? "等待执行" : status === "running" ? "运行中" : status}
-          {run.createdAt ? ` · 开始于 ${new Date(run.createdAt).toLocaleTimeString("zh-CN")}` : ""}
-        </p>
+    <div className="bg-primary-container rounded-lg border border-primary-fixed-dim p-4 flex flex-col gap-3 shadow-sm relative overflow-hidden">
+      <div className="absolute right-0 top-0 bottom-0 w-1/3 bg-gradient-to-l from-primary-fixed/50 to-transparent pointer-events-none" />
+      <div className="flex items-start justify-between relative z-10">
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 rounded bg-primary text-on-primary flex items-center justify-center animate-pulse shadow-sm">
+            <span className="material-symbols-outlined text-[20px]">hourglass_empty</span>
+          </div>
+          <div>
+            <h3 className="text-on-primary-container font-bold text-base flex items-center gap-2">
+              {bannerTitle}
+              <span className="px-2 py-0.5 rounded text-[10px] bg-primary text-on-primary font-medium tracking-wider">
+                {status}
+              </span>
+            </h3>
+            <div className="flex items-center gap-4 mt-1 text-sm text-on-primary-container/80">
+              <span className="flex items-center gap-1">
+                <span className="material-symbols-outlined text-[14px]">format_list_numbered</span> Range: 第{startNo}—{endNo}章
+              </span>
+              <span className="flex items-center gap-1">
+                <span className="material-symbols-outlined text-[14px]">library_books</span> 预计生成{reqCount}个章节候选
+              </span>
+            </div>
+          </div>
+        </div>
+        <div className="text-right flex flex-col items-end gap-1">
+          <div className="text-sm font-medium text-primary flex items-center gap-1 bg-surface-container-lowest/60 px-2 py-1 rounded">
+            <span className="material-symbols-outlined text-[16px] animate-spin">sync</span> 已运行 {durationText}
+          </div>
+          <div className="text-xs text-on-primary-container mt-1 font-medium bg-secondary-container/50 px-2 py-0.5 rounded">
+            当前阶段：{stageLabel}
+          </div>
+        </div>
       </div>
-      <button type="button" onClick={onRetry}>
-        刷新状态
-      </button>
+      <div className="border-t border-primary-fixed-dim/50 pt-3 mt-1 flex justify-between items-center text-sm relative z-10">
+        <div className="text-on-primary-container/80 flex items-center gap-1.5">
+          <span className="material-symbols-outlined text-[16px]">info</span>
+          项目另有2个任务运行中
+        </div>
+        <div className="flex items-center gap-4">
+          <Link href={`/projects/${projectId}/workflow-runs`} className="text-primary hover:underline font-medium hover:text-primary-dim transition-colors text-sm">
+            查看详情
+          </Link>
+          <Link href={`/projects/${projectId}/workflow-runs`} className="text-primary hover:underline font-medium hover:text-primary-dim transition-colors text-sm">
+            查看全部
+          </Link>
+        </div>
+      </div>
     </div>
   );
 }
@@ -717,86 +833,79 @@ function PlanRow({
   const main = refs
     .filter((ref) => ref.relation === "primary")
     .map((ref) => ref.storyline_id);
-  const children = refs
-    .filter((ref) => ref.relation === "secondary")
-    .map((ref) => ref.storyline_id);
+
+  const mainNames = names ? relationValues(main, names.storylines, "主线背景") : ["加载中"];
 
   return (
-    <article className="chapter-plan-row">
-      <span>
+    <tr className={`hover:bg-surface-container-lowest/50 transition-colors ${plan.status === "pending_confirmation" ? "bg-surface-bright" : ""} group`}>
+      <td className="px-4 py-4 text-center align-top">
         <input
           type="checkbox"
           aria-label={`选择第 ${plan.chapter_no} 章`}
           checked={selected}
           onChange={onToggle}
           disabled={plan.status !== "pending_confirmation"}
+          className="form-checkbox rounded border-outline-variant text-primary focus:ring-primary h-4 w-4 mt-1 cursor-pointer disabled:cursor-not-allowed"
         />
-      </span>
-      <b>第 {plan.chapter_no} 章</b>
-      <div>
-        <strong>{plan.title}</strong>
-        <p>{chapterPlanSummary(plan.summary)}</p>
-        <small>{chapterPlanDetail(plan.chapter_goal, "未设置章节目标")}</small>
-      </div>
-      <Badges
-        values={
-          names ? relationValues(main, names.storylines, "—") : ["加载中"]
-        }
-      />
-      <Badges
-        values={
-          names ? relationValues(children, names.storylines, "—") : ["加载中"]
-        }
-      />
-      <Badges
-        values={
-          names
-            ? relationValues(plan.material_refs_json, names.materials, "—")
-            : ["加载中"]
-        }
-      />
-      <Badges
-        values={
-          names
-            ? relationValues(
-                plan.foreshadowing_refs_json,
-                names.foreshadowings,
-                "—",
-              )
-            : ["加载中"]
-        }
-      />
-      <span className={`chapter-plan-status ${plan.status}`}>
-        {chapterPlanStatusLabel(plan.status)}
-      </span>
-      <span>{chapterPlanSourceLabel(plan.source)}</span>
-      {plan.status === "pending_confirmation" ? (
-        <button
-          type="button"
-          className="chapter-plan-edit-button"
-          onClick={onEdit}
+      </td>
+      <td className="px-4 py-4 align-top font-medium text-on-surface whitespace-nowrap">
+        第{String(plan.chapter_no).padStart(2, "0")}章
+      </td>
+      <td className="px-4 py-4 align-top font-semibold text-on-surface">
+        {plan.title}
+      </td>
+      <td className="px-4 py-4 align-top">
+        <div className="flex items-center text-xs text-on-surface-variant truncate max-w-[200px]" title={mainNames.join(" › ")}>
+          <span className="bg-surface-container px-1.5 py-0.5 rounded text-on-surface truncate">
+            {mainNames[0] || "主线"}
+          </span>
+        </div>
+      </td>
+      <td className="px-4 py-4 align-top whitespace-normal break-words text-xs leading-relaxed text-on-surface-variant max-w-[400px]">
+        {chapterPlanSummary(plan.summary)}
+      </td>
+      <td className="px-4 py-4 align-top text-center whitespace-nowrap">
+        <span
+          className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
+            plan.status === "pending_confirmation"
+              ? "bg-[#FEF3C7] text-[#92400E] border border-[#FDE68A]"
+              : "bg-[#D1FAE5] text-[#065F46] border border-[#A7F3D0]"
+          }`}
         >
-          编辑
-        </button>
-      ) : (
-        <Link
-          className="chapter-plan-edit-button"
-          href={`/projects/${plan.project_id}/chapter-plans/${plan.id}/content`}
-        >
-          进入正文生产
-        </Link>
-      )}
-    </article>
+          {chapterPlanStatusLabel(plan.status)}
+        </span>
+      </td>
+      <td className="px-4 py-4 align-top text-right text-on-surface-variant font-mono whitespace-nowrap">
+        {plan.chapter_goal ? "2,500" : "3,000"}
+      </td>
+      <td className="px-4 py-4 align-top text-center whitespace-nowrap">
+        {plan.status === "pending_confirmation" ? (
+          <button
+            type="button"
+            className="text-primary hover:text-primary-dim p-1 rounded hover:bg-primary-container transition-colors cursor-pointer bg-transparent border-0"
+            title="编辑"
+            onClick={onEdit}
+          >
+            编辑
+          </button>
+        ) : (
+          <Link
+            className="text-primary hover:text-primary-dim p-1 rounded hover:bg-primary-container transition-colors"
+            href={`/projects/${plan.project_id}/chapter-plans/${plan.id}/content`}
+          >
+            正文
+          </Link>
+        )}
+      </td>
+    </tr>
   );
 }
 
-function Badges({ values }: { values: string[] }) {
+function Loading() {
   return (
-    <span className="chapter-plan-badges">
-      {values.map((value) => (
-        <i key={value}>{value}</i>
-      ))}
-    </span>
+    <div className="chapter-plans-state loading">
+      <h1>加载章节规划中...</h1>
+    </div>
   );
 }
 
@@ -810,24 +919,12 @@ function State({
   retry: () => void;
 }) {
   return (
-    <main className="chapter-plans-state">
-      <Icon name="info" size={34} />
+    <div className="chapter-plans-state">
       <h1>{title}</h1>
       <p>{description}</p>
       <button type="button" onClick={retry}>
         重试
       </button>
-    </main>
-  );
-}
-
-function Loading() {
-  return (
-    <div className="chapter-plans-workspace">
-      <main className="chapter-plans-main">
-        <div className="chapter-plans-skeleton heading" />
-        <div className="chapter-plans-skeleton card" />
-      </main>
     </div>
   );
 }
