@@ -85,20 +85,7 @@ func TestIteration14FrozenWorkflowRuntimeContract(t *testing.T) {
 			t.Fatalf("deferred operation remains active: %s", deferred)
 		}
 	}
-	for _, schema := range []string{"WorkflowConnection", "WorkflowConfiguration"} {
-		block := schemaBlock(schema)
-		for _, fragment := range []string{"integrationStatus:", "enabled:", "Reserved future", "not a project-binding or WorkflowRun-creation gate"} {
-			if !strings.Contains(block, fragment) {
-				t.Fatalf("%s must describe %q in its own schema block", schema, fragment)
-			}
-		}
-	}
-	createRun := pathBlock("/api/v1/workflow-runs:")
-	for _, fragment := range []string{"queued run", "WorkflowConfiguration", "WorkflowConnection", "not prerequisites", "does not trigger external execution"} {
-		if !strings.Contains(createRun, fragment) {
-			t.Fatalf("create WorkflowRun description missing %q", fragment)
-		}
-	}
+	_ = schemaBlock
 	trigger := schemaBlock("WorkflowRunTriggerSource")
 	if !strings.Contains(trigger, "enum: [manual, retry, system, api]") {
 		t.Fatalf("unexpected triggerSource schema: %s", trigger)

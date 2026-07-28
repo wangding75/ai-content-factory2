@@ -16,6 +16,10 @@ enabled, while a failed probe changes only that configuration to
 `not_connected` and disabled. Disable only changes the target `enabled` flag
 and is idempotent at the current version.
 
+Connected and enabled are the lifecycle gate for project binding and real
+execution. Verify and Disable are the only operations that transition these
+read-only status fields.
+
 ## Formal endpoints
 
 - `POST /api/v1/workflow-connections/{connectionId}/verify`
@@ -27,6 +31,17 @@ Each action requires `Idempotency-Key` and a JSON body containing
 `expectedVersion`. Success returns the updated resource in the standard
 envelope. A safe `422 verification_failed` response contains no upstream body,
 credential, cookie, password, token, or internal network detail.
+
+The probe runs before the short PostgreSQL state-write transaction. After the
+probe completes, the service acquires the idempotency lock, rereads the resource,
+and performs a versioned compare-and-swap update. This prevents a slow probe
+from overwriting a newer lifecycle decision.
+
+The dedicated outbound client does not use environment proxies or redirects.
+It validates scheme and port and resolves all addresses immediately before
+dialing, rejecting loopback, private, link-local, unspecified, and multicast
+addresses. Only the exact Compose service name `n8n` is permitted as the local
+private-network exception.
 
 ## Local n8n probe
 
