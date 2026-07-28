@@ -734,7 +734,7 @@ paths:
         "201": {description: Queued content-generation Runtime WorkflowRun., content: {application/json: {schema: {$ref: "#/components/schemas/Iteration14WorkflowRunEnvelope"}}}}
         "400": {$ref: "#/components/responses/BadRequest"}
         "404": {$ref: "#/components/responses/NotFound"}
-        "409": {description: Current-version drift, active subject Run or idempotency conflict., content: {application/json: {schema: {$ref: "#/components/schemas/ContentGenerationErrorEnvelope"}}}}
+        "409": {description: "Current-version drift, active subject Run or idempotency conflict.", content: {application/json: {schema: {$ref: "#/components/schemas/ContentGenerationErrorEnvelope"}}}}
         "422": {description: Invalid or unavailable generation prerequisite., content: {application/json: {schema: {$ref: "#/components/schemas/ContentGenerationErrorEnvelope"}}}}
   /api/v1/content-items/{contentItemId}/content-generation-summary:
     parameters: [{$ref: "#/components/parameters/ContentItemId"}]
@@ -756,7 +756,7 @@ paths:
         "200": {description: Candidate is now the current ContentVersion., content: {application/json: {schema: {$ref: "#/components/schemas/ContentItemDetailEnvelope"}}}}
         "400": {$ref: "#/components/responses/BadRequest"}
         "404": {$ref: "#/components/responses/NotFound"}
-        "409": {description: Current-version, candidate-state, baseline or idempotency conflict., content: {application/json: {schema: {$ref: "#/components/schemas/ContentGenerationErrorEnvelope"}}}}
+        "409": {description: "Current-version, candidate-state, baseline or idempotency conflict.", content: {application/json: {schema: {$ref: "#/components/schemas/ContentGenerationErrorEnvelope"}}}}
   /api/v1/content-generation-runs/{runId}/result-consumption-retries:
     parameters: [{$ref: "#/components/parameters/Iteration14WorkflowRunId"}, {$ref: "#/components/parameters/IdempotencyKey"}]
     post:
@@ -767,7 +767,7 @@ paths:
         "200": {description: Existing or newly consumed candidate version., content: {application/json: {schema: {$ref: "#/components/schemas/ContentGenerationResultEnvelope"}}}}
         "400": {$ref: "#/components/responses/BadRequest"}
         "404": {$ref: "#/components/responses/NotFound"}
-        "409": {description: Run state, output validation, version or idempotency conflict., content: {application/json: {schema: {$ref: "#/components/schemas/ContentGenerationErrorEnvelope"}}}}
+        "409": {description: "Run state, output validation, version or idempotency conflict.", content: {application/json: {schema: {$ref: "#/components/schemas/ContentGenerationErrorEnvelope"}}}}
         "500": {description: Atomic result consumption failed safely and created no ContentVersion., content: {application/json: {schema: {$ref: "#/components/schemas/ContentGenerationErrorEnvelope"}}}}
   /api/v1/content-items/{contentItemId}/mock-generate:
     parameters: [{$ref: "#/components/parameters/ContentItemId"}, {$ref: "#/components/parameters/IdempotencyKey"}]
@@ -3688,8 +3688,6 @@ components:
       properties:
         projectId: {type: string, format: uuid}
         stage: {$ref: "#/components/schemas/ApplicableStage"}
-        subjectType: {type: [string, "null"], maxLength: 40, description: Optional domain subject type; content generation fixes content_item.}
-        subjectId: {type: [string, "null"], format: uuid, description: Optional domain subject identifier; content generation fixes ContentItem.id.}
         unbound: {type: boolean, const: true}
         workflowConfigurationRetained: {type: boolean, const: true}
     UnbindProjectWorkflowBindingResultEnvelope:
@@ -3734,6 +3732,8 @@ components:
         runNumber: {type: string, minLength: 1, maxLength: 80}
         projectId: {type: string, format: uuid}
         stage: {$ref: "#/components/schemas/ApplicableStage"}
+        subjectType: {type: [string, "null"], maxLength: 40, description: Optional domain subject type; content generation fixes content_item.}
+        subjectId: {type: [string, "null"], format: uuid, description: Optional domain subject identifier; content generation fixes ContentItem.id.}
         workflowConfigurationId: {type: string, format: uuid}
         triggerSource: {$ref: "#/components/schemas/WorkflowRunTriggerSource"}
         status: {$ref: "#/components/schemas/Iteration14WorkflowRunStatus", description: WorkflowRun status snapshot after this event is written; event status is not an independent lifecycle.}
