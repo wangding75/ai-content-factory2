@@ -725,8 +725,8 @@ func workflowBindingIntegrationDatabase(t *testing.T) (*pgxpool.Pool, context.Co
 	if err != nil {
 		t.Fatalf("parse TEST_DATABASE_URL: %v", err)
 	}
-	if cfg.ConnConfig.Database != "ai_content_factory_http_test" {
-		t.Fatalf("TEST_DATABASE_URL database=%q, want %q", cfg.ConnConfig.Database, "ai_content_factory_http_test")
+	if cfg.ConnConfig.Database != "ai_content_factory" {
+		t.Fatalf("TEST_DATABASE_URL database=%q, want %q", cfg.ConnConfig.Database, "ai_content_factory")
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	t.Cleanup(cancel)
@@ -739,7 +739,7 @@ func workflowBindingIntegrationDatabase(t *testing.T) (*pgxpool.Pool, context.Co
 	var exists bool
 	err = pool.QueryRow(ctx, "SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'project_workflow_bindings')").Scan(&exists)
 	if err != nil || !exists {
-		t.Fatalf("table project_workflow_bindings missing in database ai_content_factory_http_test: %v", err)
+		t.Fatalf("table project_workflow_bindings missing in database ai_content_factory: %v", err)
 	}
 
 	return pool, ctx

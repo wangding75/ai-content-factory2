@@ -18,7 +18,7 @@ import (
 	"github.com/local/ai-content-factory/apps/api/internal/project"
 )
 
-const iteration06HTTPTestDatabase = "ai_content_factory_http_test"
+const iteration06HTTPTestDatabase = "ai_content_factory"
 
 type i06Envelope struct {
 	Data  json.RawMessage `json:"data"`
