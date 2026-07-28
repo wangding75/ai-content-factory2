@@ -307,6 +307,11 @@ func (r *Repository) ExecuteIdempotent(ctx context.Context, scope, key, requestH
 		return WorkflowRun{}, fmt.Errorf("lock workflow run idempotency request: %w", err)
 	}
 	idem := idempotency.NewPostgresRepositoryTx(tx)
+	if strings.HasPrefix(scope, "consumeContentGenerationPreflightToken:") {
+		used, usedErr := NewPostgresRepositoryTx(tx).PreflightTokenUsed(ctx, key)
+		if usedErr != nil { return WorkflowRun{}, usedErr }
+		if used { return WorkflowRun{}, ErrPreflightTokenConsumed }
+	}
 	if record, getErr := idem.Get(ctx, scope, key); getErr == nil {
 		if record.RequestHash != requestHash {
 			return WorkflowRun{}, ErrIdempotencyConflict

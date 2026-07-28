@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"os"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -66,6 +67,41 @@ func newRun(t *testing.T, p, w uuid.UUID, n string) WorkflowRun {
 		t.Fatal(err)
 	}
 	return v
+}
+
+func contentGenerationService(t *testing.T, repo *Repository, projectID, workflowID uuid.UUID) *Service {
+	t.Helper()
+	connectionID := uuid.New()
+	s := NewService(repo, serviceProjects{p: project.Project{ID: projectID}}, serviceBindings{b: workflowbinding.ProjectWorkflowBinding{ID: uuid.New(), ProjectID: projectID, Stage: workflowbinding.StageContentGeneration, WorkflowConfigurationID: workflowID, Version: 1}}, serviceConfigs{w: globalconfig.Workflow{Common: globalconfig.Common{ID: workflowID, Enabled: true, IntegrationStatus: "verified"}, ConnectionID: connectionID, ApplicableStages: []string{"content_generation"}, TypeConfig: json.RawMessage(`{}`), DefaultParameters: json.RawMessage(`{}`)}}, serviceConnections{c: globalconfig.Connection{Common: globalconfig.Common{ID: connectionID, Enabled: true, IntegrationStatus: "verified"}, ConnectionType: "n8n", TypeConfig: json.RawMessage(`{}`)}})
+	return s
+}
+
+func preflightCommand(projectID uuid.UUID, nonce string) CreateRunPreparation {
+	return func() (CreateRunCommand, error) {
+		return CreateRunCommand{ProjectID: projectID, Stage: "content_generation", TriggerSource: "manual", InputPayload: json.RawMessage(`{"preflightTokenNonce":"` + nonce + `"}`)}, nil
+	}
+}
+
+func TestPreflightTokenSequentialSingleConsumption(t *testing.T) {
+	db, ctx := openDB(t); repo := NewPostgresRepository(db); projectID, workflowID := fixture(t, ctx, db); service := contentGenerationService(t, repo, projectID, workflowID); nonce := uuid.NewString()
+	first, err := service.CreateRunForPreflightToken(ctx, projectID, nonce, "first", preflightCommand(projectID, nonce)); if err != nil { t.Fatal(err) }
+	if _, err = service.CreateRunForPreflightToken(ctx, projectID, nonce, "second", preflightCommand(projectID, nonce)); !errors.Is(err, ErrPreflightTokenConsumed) { t.Fatalf("second use = %v", err) }
+	var count int; if err = db.QueryRow(ctx, "SELECT count(*) FROM workflow_run_records WHERE id=$1", first.ID).Scan(&count); err != nil || count != 1 { t.Fatalf("runs=%d err=%v", count, err) }
+	var payload string; if err = db.QueryRow(ctx, "SELECT input_payload::text FROM workflow_run_records WHERE id=$1", first.ID).Scan(&payload); err != nil || strings.Contains(payload, "eyJ") { t.Fatalf("token leaked or query failed: %q %v", payload, err) }
+}
+
+func TestPreflightTokenConcurrentSingleConsumption(t *testing.T) {
+	db, ctx := openDB(t); repo := NewPostgresRepository(db); projectID, workflowID := fixture(t, ctx, db); service := contentGenerationService(t, repo, projectID, workflowID); nonce := uuid.NewString(); start := make(chan struct{}); errs := make(chan error, 2)
+	for i := 0; i < 2; i++ { go func(i int) { <-start; _, err := service.CreateRunForPreflightToken(ctx, projectID, nonce, "key-"+string(rune('a'+i)), preflightCommand(projectID, nonce)); errs <- err }(i) }; close(start)
+	success := 0; for i := 0; i < 2; i++ { if err := <-errs; err == nil { success++ } else if !errors.Is(err, ErrPreflightTokenConsumed) { t.Fatalf("concurrent use = %v", err) } }; var count int; if err := db.QueryRow(ctx, "SELECT count(*) FROM workflow_run_records WHERE input_payload->>'preflightTokenNonce'=$1", nonce).Scan(&count); err != nil || success != 1 || count != 1 { t.Fatalf("success=%d runs=%d err=%v", success, count, err) }
+}
+
+func TestPreflightTokenConsumptionSurvivesMoreThan100HistoricalRuns(t *testing.T) {
+	db, ctx := openDB(t); repo := NewPostgresRepository(db); projectID, workflowID := fixture(t, ctx, db); service := contentGenerationService(t, repo, projectID, workflowID); nonce := uuid.NewString()
+	if _, err := service.CreateRunForPreflightToken(ctx, projectID, nonce, "first", preflightCommand(projectID, nonce)); err != nil { t.Fatal(err) }
+	for i := 0; i < 101; i++ { n := uuid.NewString(); if _, err := service.CreateRunForPreflightToken(ctx, projectID, n, "history-"+n, preflightCommand(projectID, n)); err != nil { t.Fatal(err) } }
+	if _, err := service.CreateRunForPreflightToken(ctx, projectID, nonce, "again", preflightCommand(projectID, nonce)); !errors.Is(err, ErrPreflightTokenConsumed) { t.Fatalf("reused nonce=%v", err) }
+	var count int; _ = db.QueryRow(ctx, "SELECT count(*) FROM workflow_run_records WHERE input_payload->>'preflightTokenNonce'=$1", nonce).Scan(&count); if count != 1 { t.Fatalf("runs=%d", count) }
 }
 func TestRepositoryCRUDEventsAndSummary(t *testing.T) {
 	db, ctx := openDB(t)

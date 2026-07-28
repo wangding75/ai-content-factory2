@@ -16,6 +16,7 @@ import (
 type serviceStore struct {
 	runs   map[uuid.UUID]WorkflowRun
 	events map[uuid.UUID][]Event
+	createErr error
 }
 
 func (s *serviceStore) ExecuteIdempotent(_ context.Context, _ string, _ string, _ string, fn func(Store) (WorkflowRun, error)) (WorkflowRun, error) {
@@ -31,9 +32,22 @@ func (s *serviceStore) PreflightTokenUsed(_ context.Context, nonce string) (bool
 	return false, nil
 }
 func (s *serviceStore) CreateWithInitialEvent(_ context.Context, run WorkflowRun, event Event) (WorkflowRun, Event, error) {
+	if s.createErr != nil { return WorkflowRun{}, Event{}, s.createErr }
 	s.runs[run.ID] = run
 	s.events[run.ID] = append(s.events[run.ID], event)
 	return run, event, nil
+}
+
+func TestPreflightTokenCreateFailureDoesNotConsumeToken(t *testing.T) {
+	s, store, projectID := fixtureService(t)
+	nonce := uuid.NewString()
+	prepare := func() (CreateRunCommand, error) { return CreateRunCommand{ProjectID: projectID, Stage: "review", TriggerSource: "manual", InputPayload: json.RawMessage(`{"preflightTokenNonce":"` + nonce + `"}`)}, nil }
+	store.createErr = errors.New("transaction create failed")
+	if _, err := s.CreateRunForPreflightToken(context.Background(), projectID, nonce, "first", prepare); err == nil { t.Fatal("expected create failure") }
+	if used, err := store.PreflightTokenUsed(context.Background(), nonce); err != nil || used { t.Fatalf("used=%v err=%v", used, err) }
+	store.createErr = nil
+	if _, err := s.CreateRunForPreflightToken(context.Background(), projectID, nonce, "retry", prepare); err != nil { t.Fatalf("retry=%v", err) }
+	if len(store.runs) != 1 || len(store.events) != 1 { t.Fatalf("partial state runs=%d events=%d", len(store.runs), len(store.events)) }
 }
 func (s *serviceStore) GetByID(_ context.Context, id uuid.UUID) (WorkflowRun, error) {
 	r, ok := s.runs[id]
@@ -107,7 +121,7 @@ func fixtureService(t *testing.T) (*Service, *serviceStore, uuid.UUID) {
 	t.Helper()
 	projectID, configID, connectionID, bindingID := uuid.New(), uuid.New(), uuid.New(), uuid.New()
 	now := time.Date(2026, 7, 22, 12, 0, 0, 0, time.UTC)
-	store := &serviceStore{map[uuid.UUID]WorkflowRun{}, map[uuid.UUID][]Event{}}
+	store := &serviceStore{runs: map[uuid.UUID]WorkflowRun{}, events: map[uuid.UUID][]Event{}}
 	s := NewService(store, serviceProjects{p: project.Project{ID: projectID}}, serviceBindings{b: workflowbinding.ProjectWorkflowBinding{ID: bindingID, ProjectID: projectID, Stage: workflowbinding.StageReview, WorkflowConfigurationID: configID, Version: 4}}, serviceConfigs{w: globalconfig.Workflow{Common: globalconfig.Common{ID: configID, Version: 3, Enabled: true, IntegrationStatus: "verified"}, ConnectionID: connectionID, ApplicableStages: []string{"review"}, TypeConfig: json.RawMessage(`{"webhook_secret":"x"}`), DefaultParameters: json.RawMessage(`{"token":"x"}`)}}, serviceConnections{c: globalconfig.Connection{Common: globalconfig.Common{ID: connectionID, Version: 2, Enabled: true, IntegrationStatus: "verified"}, ConnectionType: "n8n", TypeConfig: json.RawMessage(`{"api_key":"x"}`)}})
 	s.now = func() time.Time { return now }
 	return s, store, projectID
