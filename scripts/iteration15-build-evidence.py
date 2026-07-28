@@ -18,7 +18,6 @@ ITERATION = (
 )
 EVIDENCE = ITERATION / "evidence"
 FRAME_ROOT = ITERATION / "ui" / "frames"
-VIEWPORT = (1440, 1024)
 
 FRAMES = [
     ("01", "running-mainline-expansion", "P15_C1_RUNNING_MAINLINE_EXPANSION"),
@@ -45,17 +44,27 @@ FRAMES = [
 ]
 
 
-def fit_on_canvas(image: Image.Image) -> Image.Image:
-    output = Image.new("RGB", VIEWPORT, "white")
-    copy = image.convert("RGB")
-    copy.thumbnail(VIEWPORT, Image.Resampling.LANCZOS)
-    offset = ((VIEWPORT[0] - copy.width) // 2, (VIEWPORT[1] - copy.height) // 2)
-    output.paste(copy, offset)
-    return output
-
-
 def digest(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def create_comparison(prototype_img: Image.Image, actual_img: Image.Image) -> Image.Image:
+    w, h = prototype_img.size
+    act = actual_img.convert("RGB")
+    if act.size != (w, h):
+        act = act.resize((w, h), Image.Resampling.LANCZOS)
+    canvas = Image.new("RGB", (w * 2, h), "#e5e7eb")
+    canvas.paste(prototype_img.convert("RGB"), (0, 0))
+    canvas.paste(act, (w, 0))
+    return canvas
+
+
+def create_overlay(prototype_img: Image.Image, actual_img: Image.Image) -> Image.Image:
+    p = prototype_img.convert("RGBA")
+    a = actual_img.convert("RGBA")
+    if a.size != p.size:
+        a = a.resize(p.size, Image.Resampling.LANCZOS)
+    return Image.blend(p, a, alpha=0.5)
 
 
 def main() -> None:
@@ -67,16 +76,14 @@ def main() -> None:
         prototype = EVIDENCE / f"{number}-{slug}-prototype.png"
         actual = EVIDENCE / f"{number}-{slug}-actual.png"
         comparison = EVIDENCE / f"{number}-{slug}-comparison.png"
+        overlay = EVIDENCE / f"{number}-{slug}-overlay.png"
 
         if not source.is_file():
             raise FileNotFoundError(f"missing frozen prototype: {source}")
         if not actual.is_file():
             raise FileNotFoundError(f"missing Chromium screenshot: {actual}")
 
-        with Image.open(actual) as actual_image:
-            if actual_image.size != VIEWPORT:
-                normalized_actual = fit_on_canvas(actual_image)
-                normalized_actual.save(actual, "PNG", optimize=True)
+        shutil.copyfile(source, prototype)
 
         actual_digest = digest(actual)
         if actual_digest in actual_digests:
@@ -85,16 +92,18 @@ def main() -> None:
             )
         actual_digests[actual_digest] = actual
 
-        shutil.copyfile(source, prototype)
         with Image.open(source) as prototype_image, Image.open(actual) as actual_image:
-            canvas = Image.new("RGB", (VIEWPORT[0] * 2, VIEWPORT[1]), "#e5e7eb")
-            canvas.paste(fit_on_canvas(prototype_image), (0, 0))
-            canvas.paste(actual_image.convert("RGB"), (VIEWPORT[0], 0))
-            canvas.save(comparison, "PNG", optimize=True)
+            comp_img = create_comparison(prototype_image, actual_image)
+            comp_img.save(comparison, "PNG", optimize=True)
+
+            overlay_img = create_overlay(prototype_image, actual_image)
+            overlay_img.save(overlay, "PNG", optimize=True)
 
     prototypes = list(EVIDENCE.glob("*-prototype.png"))
     actuals = list(EVIDENCE.glob("*-actual.png"))
     comparisons = list(EVIDENCE.glob("*-comparison.png"))
+    overlays = list(EVIDENCE.glob("*-overlay.png"))
+
     if (len(prototypes), len(actuals), len(comparisons)) != (21, 21, 21):
         raise RuntimeError(
             "evidence count mismatch: "
@@ -102,7 +111,7 @@ def main() -> None:
             f"comparison={len(comparisons)}"
         )
     print("STATUS: PASS")
-    print("prototype=21 actual=21 comparison=21")
+    print(f"prototype={len(prototypes)} actual={len(actuals)} comparison={len(comparisons)} overlay={len(overlays)}")
 
 
 if __name__ == "__main__":

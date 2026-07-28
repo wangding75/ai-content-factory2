@@ -14,6 +14,7 @@ const SCENARIOS = [
     num: "01",
     slug: "running-mainline-expansion",
     title: "主线扩写",
+    expectedBannerText: "主线剧情扩展生成中",
     preflightBody: {
       generationMode: "append",
       target: { chapterCount: 20 },
@@ -31,6 +32,7 @@ const SCENARIOS = [
     num: "02",
     slug: "running-partial-range",
     title: "局部范围",
+    expectedBannerText: "局部章节规划生成中",
     preflightBody: {
       generationMode: "range",
       target: { startChapterNo: 21, endChapterNo: 40 },
@@ -48,6 +50,7 @@ const SCENARIOS = [
     num: "03",
     slug: "running-full-plan",
     title: "完整规划",
+    expectedBannerText: "全局章节规划生成中",
     preflightBody: {
       generationMode: "full",
       target: { targetTotalChapters: 100 },
@@ -93,23 +96,54 @@ async function captureScenario(scenario, browser) {
 
   // First ensure no active run is pending
   let summary = await fetch(`${API_BASE}/chapter-planning-summary`).then((r) => r.json());
+  let waitCount = 0;
   while (summary.data?.activeRun) {
+    if (waitCount > 30) {
+      throw new Error(`Timeout waiting for previous run to complete before starting scenario ${scenario.num}`);
+    }
     console.log("Waiting for previous active run to finish...");
     await new Promise((resolve) => setTimeout(resolve, 2000));
     summary = await fetch(`${API_BASE}/chapter-planning-summary`).then((r) => r.json());
+    waitCount++;
   }
 
   // Create new run
   console.log(`Creating run for ${scenario.title}...`);
   await createRun(scenario.preflightBody);
 
-  // Launch browser page
+  // Launch browser page with 1600x1280 matching prototype screen.png
   const page = await browser.newPage({
-    viewport: { width: 1440, height: 1024 },
+    viewport: { width: 1600, height: 1280 },
     deviceScaleFactor: 1,
   });
 
   const networkLogs = [];
+  const consoleErrors = [];
+  const pageErrors = [];
+
+  page.on("console", (msg) => {
+    if (msg.type() === "error") {
+      const text = msg.text();
+      if (
+        !text.includes("favicon.ico") &&
+        !text.includes("fonts.googleapis.com") &&
+        !text.includes("net::ERR_ABORTED") &&
+        !text.includes("net::ERR_CONNECTION_CLOSED")
+      ) {
+        consoleErrors.push(text);
+      }
+    }
+  });
+
+  page.on("pageerror", (err) => {
+    pageErrors.push(err.message);
+  });
+
+  page.on("requestfailed", (req) => {
+    if (!req.url().includes("favicon.ico")) {
+      console.log(`Failed request: ${req.method()} ${req.url()} - ${req.failure()?.errorText}`);
+    }
+  });
 
   page.on("request", (req) => {
     if (req.url().includes("/api/v1/")) {
@@ -122,6 +156,9 @@ async function captureScenario(scenario, browser) {
   });
 
   page.on("response", async (res) => {
+    if (res.status() === 404) {
+      console.log("404 response URL:", res.url());
+    }
     const log = networkLogs.find((l) => l.url === res.url() && l.method === res.request().method() && !l.status);
     if (log) {
       log.status = res.status();
@@ -129,8 +166,25 @@ async function captureScenario(scenario, browser) {
   });
 
   console.log(`Navigating to ${BASE_URL}...`);
-  await page.goto(BASE_URL, { waitUntil: "networkidle" });
+  await page.goto(BASE_URL, { waitUntil: "load" });
   await page.waitForTimeout(1000);
+
+  // Assert page content & errors
+  const bodyText = await page.innerText("body");
+  if (!bodyText.includes(scenario.expectedBannerText)) {
+    console.error("Body text received:\n", bodyText.slice(0, 1000));
+    throw new Error(
+      `Scenario ${scenario.num} banner text mismatch! Expected "${scenario.expectedBannerText}" in page.`
+    );
+  }
+
+  if (consoleErrors.length > 0) {
+    throw new Error(`Scenario ${scenario.num} encountered console errors: ${consoleErrors.join("; ")}`);
+  }
+
+  if (pageErrors.length > 0) {
+    throw new Error(`Scenario ${scenario.num} encountered page errors: ${pageErrors.join("; ")}`);
+  }
 
   const evidenceDir = path.resolve(
     "docs/development-inputs/p1/iterations/iteration-15-real-chapter-planning/evidence"
@@ -165,4 +219,7 @@ async function main() {
   console.log(JSON.stringify(allLogs, null, 2));
 }
 
-main().catch(console.error);
+main().catch((err) => {
+  console.error("Capture failed:", err);
+  process.exit(1);
+});

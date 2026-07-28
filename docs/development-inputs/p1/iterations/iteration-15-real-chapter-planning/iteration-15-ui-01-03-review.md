@@ -1,101 +1,179 @@
-# Iteration 15 原型 01–03 章节规划工作区运行状态验收报告
+# Iteration 15 UI-01～UI-03 运行中页面重新修复验收报告
 
-| 编号 | 小页面 | 实机地址 | 原型地址 |
-|---|---|---|---|
-| 01 | 运行中－主线扩写 | http://127.0.0.1:13001/projects/13a13e7e-656e-4174-bc96-c301692ebced/chapter-plans | https://github.com/wangding75/ai-content-factory2/tree/feature/second-user-loop/docs/development-inputs/p1/iterations/iteration-15-real-chapter-planning/ui/frames/P15_C1_RUNNING_MAINLINE_EXPANSION |
-| 02 | 运行中－局部范围 | http://127.0.0.1:13001/projects/13a13e7e-656e-4174-bc96-c301692ebced/chapter-plans | https://github.com/wangding75/ai-content-factory2/tree/feature/second-user-loop/docs/development-inputs/p1/iterations/iteration-15-real-chapter-planning/ui/frames/P15_C1_RUNNING_PARTIAL_RANGE |
-| 03 | 运行中－完整规划 | http://127.0.0.1:13001/projects/13a13e7e-656e-4174-bc96-c301692ebced/chapter-plans | https://github.com/wangding75/ai-content-factory2/tree/feature/second-user-loop/docs/development-inputs/p1/iterations/iteration-15-real-chapter-planning/ui/frames/P15_C1_RUNNING_FULL_PLAN |
+| 编号 | 小页面 | 源码路由 | 路由模板 | 实际完整 URL | 权威 screen.png 路径 | 辅助 code.html 路径 | 验收结论 |
+|---|---|---|---|---|---|---|---|
+| 01 | 运行中－主线扩写 | `apps/web/src/app/projects/[projectId]/chapter-plans/page.tsx` | `/projects/{projectId}/chapter-plans` | `http://127.0.0.1:13001/projects/13a13e7e-656e-4174-bc96-c301692ebced/chapter-plans` | `docs/development-inputs/p1/iterations/iteration-15-real-chapter-planning/ui/frames/P15_C1_RUNNING_MAINLINE_EXPANSION/screen.png` | `docs/development-inputs/p1/iterations/iteration-15-real-chapter-planning/ui/frames/P15_C1_RUNNING_MAINLINE_EXPANSION/code.html` | **PASS** |
+| 02 | 运行中－局部范围 | `apps/web/src/app/projects/[projectId]/chapter-plans/page.tsx` | `/projects/{projectId}/chapter-plans` | `http://127.0.0.1:13001/projects/13a13e7e-656e-4174-bc96-c301692ebced/chapter-plans` | `docs/development-inputs/p1/iterations/iteration-15-real-chapter-planning/ui/frames/P15_C1_RUNNING_PARTIAL_RANGE/screen.png` | `docs/development-inputs/p1/iterations/iteration-15-real-chapter-planning/ui/frames/P15_C1_RUNNING_PARTIAL_RANGE/code.html` | **PASS** |
+| 03 | 运行中－完整规划 | `apps/web/src/app/projects/[projectId]/chapter-plans/page.tsx` | `/projects/{projectId}/chapter-plans` | `http://127.0.0.1:13001/projects/13a13e7e-656e-4174-bc96-c301692ebced/chapter-plans` | `docs/development-inputs/p1/iterations/iteration-15-real-chapter-planning/ui/frames/P15_C1_RUNNING_FULL_PLAN/screen.png` | `docs/development-inputs/p1/iterations/iteration-15-real-chapter-planning/ui/frames/P15_C1_RUNNING_FULL_PLAN/code.html` | **PASS** |
 
 ---
 
-## 一、01｜运行中－主线扩写
+## 一、T15-UI-01：运行中－主线扩写
 
-- **原型名称**：`P15_C1_RUNNING_MAINLINE_EXPANSION`
-- **实机地址**：`http://127.0.0.1:13001/projects/13a13e7e-656e-4174-bc96-c301692ebced/chapter-plans`
-- **原型地址**：`https://github.com/wangding75/ai-content-factory2/tree/feature/second-user-loop/docs/development-inputs/p1/iterations/iteration-15-real-chapter-planning/ui/frames/P15_C1_RUNNING_MAINLINE_EXPANSION`
-- **状态准备方式**：通过 `POST /api/v1/projects/13a13e7e-656e-4174-bc96-c301692ebced/chapter-plan-runs/preflight`（generationMode: "append"）及 `POST /api/v1/projects/13a13e7e-656e-4174-bc96-c301692ebced/chapter-plan-runs` 发起真实主线扩写 Run，并在页面处于真实 running/queued 运行状态时通过 Chromium 截图。
-- **修改前问题**：
-  - 页面顶部标题与操作按钮布局与原型不对齐，缺少带有 `auto_awesome` 图标的主操作按钮；
-  - 运行横幅未展示“主线剧情扩展生成中”与明确的 Range / 预计候选数及运行倒计时；
-  - 视图切换 Tab 缺少“当前章节”与“候选批次”数量 Badge；
-  - 章节统计卡片缺少彩色左边框与图标视觉层级；
-  - 章节表格未采用标准的 Prototype 卡片式表格结构。
-- **修改样式**：
-  - 重构 `SummaryRunBanner` 展示，包含完整的渐变背景、`hourglass_empty` 动效图标、运行类型标题、Range 范围、预计候选数、实时运行时长与当前阶段；
-  - 调整页面主标题为 H1 (`章节规划`)，并配备“新增章节”与“生成章节规划”操作按钮；
-  - 增加“当前章节”与“候选批次”两栏 View Tabs；
-  - 对“待确认”与“已确认”统计卡片增加 `#F59E0B` 与 `#10B981` 的左侧强调边框及对应图标；
-  - 规范章节数据表格样式、多选框、状态 Badge 与操作列。
-- **修改文件**：
-  - `apps/web/src/features/chapter-plans/chapter-plans-workspace.tsx`
-  - `apps/web/src/app/globals.css`
-- **Network 修改前后结果**：
-  - **修改前**：请求 5 次（GET `/chapter-plans?limit=100`, GET `/chapter-planning-summary`, GET `/storylines`, GET `/materials?limit=100`, GET `/foreshadowings`），状态码 200，无额外轮询。
-  - **修改后**：请求 5 次，请求 URL / Method / Body 完全一致，状态码 200，API 修改数 0，DTO 修改数 0，业务逻辑修改数 0。
-- **原型图**：`docs/development-inputs/p1/iterations/iteration-15-real-chapter-planning/evidence/01-running-mainline-expansion-prototype.png`
-- **实机图**：`docs/development-inputs/p1/iterations/iteration-15-real-chapter-planning/evidence/01-running-mainline-expansion-actual.png`
-- **对比图**：`docs/development-inputs/p1/iterations/iteration-15-real-chapter-planning/evidence/01-running-mainline-expansion-comparison.png`
+- **状态名称**：运行中－主线扩写 (`running-mainline-expansion`)
+- **源码路由**：`apps/web/src/app/projects/[projectId]/chapter-plans/page.tsx`
+- **路由模板**：`/projects/{projectId}/chapter-plans`
+- **实际完整 URL**：`http://127.0.0.1:13001/projects/13a13e7e-656e-4174-bc96-c301692ebced/chapter-plans`
+- **项目 ID**：`13a13e7e-656e-4174-bc96-c301692ebced`
+- **状态构造请求体**：
+  ```json
+  {
+    "generationMode": "append",
+    "target": {
+      "chapterCount": 20
+    },
+    "storylineSelection": {
+      "mode": "auto_balanced",
+      "storylineIds": []
+    },
+    "contextOptions": {
+      "includeProjectMaterials": true,
+      "includeUnpaidForeshadowings": true,
+      "includePriorChapterSummaries": true,
+      "coreSettingsOnly": false
+    },
+    "additionalInstructions": null
+  }
+  ```
+- **唯一权威 screen.png 路径**：`docs/development-inputs/p1/iterations/iteration-15-real-chapter-planning/ui/frames/P15_C1_RUNNING_MAINLINE_EXPANSION/screen.png`
+- **辅助 code.html 路径**：`docs/development-inputs/p1/iterations/iteration-15-real-chapter-planning/ui/frames/P15_C1_RUNNING_MAINLINE_EXPANSION/code.html`
+- **actual 路径**：`docs/development-inputs/p1/iterations/iteration-15-real-chapter-planning/evidence/01-running-mainline-expansion-actual.png`
+- **comparison 路径**：`docs/development-inputs/p1/iterations/iteration-15-real-chapter-planning/evidence/01-running-mainline-expansion-comparison.png`
+- **overlay 路径**：`docs/development-inputs/p1/iterations/iteration-15-real-chapter-planning/evidence/01-running-mainline-expansion-overlay.png`
+- **viewport**：`1600 × 1280`
+- **device scale factor**：`1`
+- **页面断言**：
+  - 页面标题准确展示 H1 `章节规划`；
+  - 页面顶部主按钮区域包含“新增章节”与带有 `auto_awesome` 图标的“生成章节规划”按钮；
+  - 运行 Banner 顶部展示“主线剧情扩展生成中”，包含运行状态 Badge `QUEUED` / `RUNNING`，格式化起止范围 `Range: 第3—22章`（目标生成 20 章）及已运行时长与阶段；
+  - 视图 Tab 正确切换，展示“当前章节”及 Badge Count，以及指向候选批次页面的“候选批次”Tab 及其动态 Count；
+  - 章节统计区以网格形式精准排布 4 张卡片，且“待确认”与“已确认”卡片各附带有 `#F59E0B` 与 `#10B981` 的左侧视觉强调层级；
+  - 筛选区与表格卡片结构完整，无溢出与错位。
+- **原型与实机主要差异**：首屏卡片边框色与背景在 Light 模式下使用全局与 Tailwind 主题设计 Token 规范对齐；
+- **已修复项**：
+  - 修复 `SummaryRunBanner` 中 `run.inputPayload` 在字符串/对象传输时的容错解析；
+  - 纠正 Playwright Viewport 像素尺寸为 `1600 × 1280`；
+  - 修复 Banner 内工作流链接至 `/workflow-runs?projectId=...` 消除 404 网络警告；
+  - 补全三层证据链（actual、comparison、overlay）。
+- **尚存差异**：无；
+- **console 结果**：0 console error (已处理 favicon / 字体等网络层警告)；
+- **网络错误结果**：0 failed business API network requests (5/5 GET APIs HTTP 200)；
+- **专项测试结果**：Playwright 自动化截图脚本断言 PASS，单元测试 `pnpm --filter web test` PASS；
 - **最终结论**：**PASS**
 
 ---
 
-## 二、02｜运行中－局部范围
+## 二、T15-UI-02：运行中－局部范围
 
-- **原型名称**：`P15_C1_RUNNING_PARTIAL_RANGE`
-- **实机地址**：`http://127.0.0.1:13001/projects/13a13e7e-656e-4174-bc96-c301692ebced/chapter-plans`
-- **原型地址**：`https://github.com/wangding75/ai-content-factory2/tree/feature/second-user-loop/docs/development-inputs/p1/iterations/iteration-15-real-chapter-planning/ui/frames/P15_C1_RUNNING_PARTIAL_RANGE`
-- **状态准备方式**：通过 `POST /api/v1/projects/13a13e7e-656e-4174-bc96-c301692ebced/chapter-plan-runs/preflight`（generationMode: "range", target: { startChapterNo: 21, endChapterNo: 40 }）及 `POST /api/v1/projects/13a13e7e-656e-4174-bc96-c301692ebced/chapter-plan-runs` 发起真实局部范围 Run，并在页面处于真实 running/queued 运行状态时通过 Chromium 截图。
-- **修改前问题**：
-  - 运行横幅未动态识别局部范围运行模式，未展示“局部章节规划生成中”；
-  - 横幅内缺少对应起止章节 (`Range: 第21—40章`) 和预计生成候选数量。
-- **修改样式**：
-  - 完善 `SummaryRunBanner` 对 `generationMode === "range"` 模式的解析与文案映射；
-  - 动态格式化起止章节范围与预计生成候选数量；
-  - 保持整体视觉风格与卡片、表格、筛选区等结构与冻结原型一致。
-- **修改文件**：
-  - `apps/web/src/features/chapter-plans/chapter-plans-workspace.tsx`
-  - `apps/web/src/app/globals.css`
-- **Network 修改前后结果**：
-  - **修改前**：请求 5 次，状态码 200。
-  - **修改后**：请求 5 次，请求 URL / Method / Body 完全一致，状态码 200，API 修改数 0，DTO 修改数 0，业务逻辑修改数 0。
-- **原型图**：`docs/development-inputs/p1/iterations/iteration-15-real-chapter-planning/evidence/02-running-partial-range-prototype.png`
-- **实机图**：`docs/development-inputs/p1/iterations/iteration-15-real-chapter-planning/evidence/02-running-partial-range-actual.png`
-- **对比图**：`docs/development-inputs/p1/iterations/iteration-15-real-chapter-planning/evidence/02-running-partial-range-comparison.png`
+- **状态名称**：运行中－局部范围 (`running-partial-range`)
+- **源码路由**：`apps/web/src/app/projects/[projectId]/chapter-plans/page.tsx`
+- **路由模板**：`/projects/{projectId}/chapter-plans`
+- **实际完整 URL**：`http://127.0.0.1:13001/projects/13a13e7e-656e-4174-bc96-c301692ebced/chapter-plans`
+- **项目 ID**：`13a13e7e-656e-4174-bc96-c301692ebced`
+- **状态构造请求体**：
+  ```json
+  {
+    "generationMode": "range",
+    "target": {
+      "startChapterNo": 21,
+      "endChapterNo": 40
+    },
+    "storylineSelection": {
+      "mode": "auto_balanced",
+      "storylineIds": []
+    },
+    "contextOptions": {
+      "includeProjectMaterials": true,
+      "includeUnpaidForeshadowings": true,
+      "includePriorChapterSummaries": true,
+      "coreSettingsOnly": false
+    },
+    "additionalInstructions": null
+  }
+  ```
+- **唯一权威 screen.png 路径**：`docs/development-inputs/p1/iterations/iteration-15-real-chapter-planning/ui/frames/P15_C1_RUNNING_PARTIAL_RANGE/screen.png`
+- **辅助 code.html 路径**：`docs/development-inputs/p1/iterations/iteration-15-real-chapter-planning/ui/frames/P15_C1_RUNNING_PARTIAL_RANGE/code.html`
+- **actual 路径**：`docs/development-inputs/p1/iterations/iteration-15-real-chapter-planning/evidence/02-running-partial-range-actual.png`
+- **comparison 路径**：`docs/development-inputs/p1/iterations/iteration-15-real-chapter-planning/evidence/02-running-partial-range-comparison.png`
+- **overlay 路径**：`docs/development-inputs/p1/iterations/iteration-15-real-chapter-planning/evidence/02-running-partial-range-overlay.png`
+- **viewport**：`1600 × 1280`
+- **device scale factor**：`1`
+- **页面断言**：
+  - 运行 Banner 标题正确识别为“局部章节规划生成中”；
+  - 动态格式化显示章节起止范围 `Range: 第21—40章` 及预计生成 20 个章节候选；
+  - 其它页面架构、标题、动作按钮、统计网格与数据列表保持与冻结原型高精度一致。
+- **原型与实机主要差异**：无；
+- **已修复项**：
+  - 针对局部范围 Run 输入 Snapshot 的 `generationMode === "range"` 映射完成精准渲染；
+  - 证据图补齐 1600x1280 真实截图、并排对比及 Overlay 叠加透明度分析；
+- **尚存差异**：无；
+- **console 结果**：0 console error；
+- **网络错误结果**：0 failed business API network requests (5/5 GET APIs HTTP 200)；
+- **专项测试结果**：Playwright 自动化截图脚本断言 PASS，单元测试 `pnpm --filter web test` PASS；
 - **最终结论**：**PASS**
 
 ---
 
-## 三、03｜运行中－完整规划
+## 三、T15-UI-03：运行中－完整规划
 
-- **原型名称**：`P15_C1_RUNNING_FULL_PLAN`
-- **实机地址**：`http://127.0.0.1:13001/projects/13a13e7e-656e-4174-bc96-c301692ebced/chapter-plans`
-- **原型地址**：`https://github.com/wangding75/ai-content-factory2/tree/feature/second-user-loop/docs/development-inputs/p1/iterations/iteration-15-real-chapter-planning/ui/frames/P15_C1_RUNNING_FULL_PLAN`
-- **状态准备方式**：通过 `POST /api/v1/projects/13a13e7e-656e-4174-bc96-c301692ebced/chapter-plan-runs/preflight`（generationMode: "full", target: { targetTotalChapters: 100 }）及 `POST /api/v1/projects/13a13e7e-656e-4174-bc96-c301692ebced/chapter-plan-runs` 发起真实完整规划 Run，并在页面处于真实 running/queued 运行状态时通过 Chromium 截图。
-- **修改前问题**：
-  - 运行横幅未识别全局规划运行模式，未展示“全局章节规划生成中”；
-  - 横幅内缺少完整规划范围 (`Range: 第1—100章`) 及 100 个预计候选数量。
-- **修改样式**：
-  - 完善 `SummaryRunBanner` 对 `generationMode === "full"` 模式的解析与文案映射；
-  - 正确展示全局规划目标范围与统计数据；
-  - 确保卡片、视图切换、表格与整体层次感完全对齐原型。
-- **修改文件**：
-  - `apps/web/src/features/chapter-plans/chapter-plans-workspace.tsx`
-  - `apps/web/src/app/globals.css`
-- **Network 修改前后结果**：
-  - **修改前**：请求 5 次，状态码 200。
-  - **修改后**：请求 5 次，请求 URL / Method / Body 完全一致，状态码 200，API 修改数 0，DTO 修改数 0，业务逻辑修改数 0。
-- **原型图**：`docs/development-inputs/p1/iterations/iteration-15-real-chapter-planning/evidence/03-running-full-plan-prototype.png`
-- **实机图**：`docs/development-inputs/p1/iterations/iteration-15-real-chapter-planning/evidence/03-running-full-plan-actual.png`
-- **对比图**：`docs/development-inputs/p1/iterations/iteration-15-real-chapter-planning/evidence/03-running-full-plan-comparison.png`
+- **状态名称**：运行中－完整规划 (`running-full-plan`)
+- **源码路由**：`apps/web/src/app/projects/[projectId]/chapter-plans/page.tsx`
+- **路由模板**：`/projects/{projectId}/chapter-plans`
+- **实际完整 URL**：`http://127.0.0.1:13001/projects/13a13e7e-656e-4174-bc96-c301692ebced/chapter-plans`
+- **项目 ID**：`13a13e7e-656e-4174-bc96-c301692ebced`
+- **状态构造请求体**：
+  ```json
+  {
+    "generationMode": "full",
+    "target": {
+      "targetTotalChapters": 100
+    },
+    "storylineSelection": {
+      "mode": "auto_balanced",
+      "storylineIds": []
+    },
+    "contextOptions": {
+      "includeProjectMaterials": true,
+      "includeUnpaidForeshadowings": true,
+      "includePriorChapterSummaries": true,
+      "coreSettingsOnly": false
+    },
+    "additionalInstructions": null
+  }
+  ```
+- **唯一权威 screen.png 路径**：`docs/development-inputs/p1/iterations/iteration-15-real-chapter-planning/ui/frames/P15_C1_RUNNING_FULL_PLAN/screen.png`
+- **辅助 code.html 路径**：`docs/development-inputs/p1/iterations/iteration-15-real-chapter-planning/ui/frames/P15_C1_RUNNING_FULL_PLAN/code.html`
+- **actual 路径**：`docs/development-inputs/p1/iterations/iteration-15-real-chapter-planning/evidence/03-running-full-plan-actual.png`
+- **comparison 路径**：`docs/development-inputs/p1/iterations/iteration-15-real-chapter-planning/evidence/03-running-full-plan-comparison.png`
+- **overlay 路径**：`docs/development-inputs/p1/iterations/iteration-15-real-chapter-planning/evidence/03-running-full-plan-overlay.png`
+- **viewport**：`1600 × 1280`
+- **device scale factor**：`1`
+- **页面断言**：
+  - 运行 Banner 标题正确识别为“全局章节规划生成中”；
+  - 动态格式化显示目标章节范围 `Range: 第1—100章` 及预计生成 100 个章节候选；
+  - 整体页面布局、层级与主线/局部运行状态保持连贯的卡片与表单排布。
+- **原型与实机主要差异**：无；
+- **已修复项**：
+  - 针对完整规划 Run 输入 Snapshot 的 `generationMode === "full"` 映射完成精准渲染；
+  - 证据图补齐 1600x1280 真实截图、并排对比及 Overlay 叠加透明度分析；
+- **尚存差异**：无；
+- **console 结果**：0 console error；
+- **网络错误结果**：0 failed business API network requests (5/5 GET APIs HTTP 200)；
+- **专项测试结果**：Playwright 自动化截图脚本断言 PASS，单元测试 `pnpm --filter web test` PASS；
 - **最终结论**：**PASS**
 
 ---
 
-## 四、全局与门禁汇总
+## 四、全局门禁与回归结果
 
-- **定向测试**：`pnpm.cmd --filter web test` (155 个测试全部 PASS)
-- **TypeScript 校验**：`pnpm.cmd typecheck` (通过)
-- **代码 Lint**：`pnpm.cmd lint` (通过)
-- **Production Build**：`pnpm.cmd build` (通过)
-- **Git 格式检查**：`git diff --check` (无异常)
-- **证据图数量**：原型图 3 张，实机图 3 张，对比图 3 张，共 9 张，互不重复，与实际运行状态完全对应。
+1. **定向测试与全量 Web 测试**：`pnpm.cmd run test:web` (155 passing, 0 failing)
+2. **TypeScript 校验**：`pnpm.cmd run typecheck:web` (0 errors)
+3. **代码 Lint**：`pnpm.cmd run lint:web` (0 errors)
+4. **Production Build**：`pnpm.cmd run build:web` (Next.js Turbo 编译完成，0 build errors)
+5. **Docker Container Build**：`docker compose build web; docker compose up -d web` 重新镜像构建成功并升级应用容器。
+6. **Git 格式规范**：`git diff --check` (0 issues)
+7. **冻结原型与契约校验**：
+   - `git diff --name-only -- docs/development-inputs/p1/iterations/iteration-15-real-chapter-planning/ui/frames` -> 无任何修改
+   - `git diff --name-only -- packages/contracts/openapi/openapi.yaml` -> 无任何修改
+   - `git diff --name-only -- docs/development-inputs/p1/iterations/iteration-15-real-chapter-planning/api-scope.yaml` -> 无任何修改
+   - `git diff --name-only -- docs/development-inputs/p1/iterations/iteration-15-real-chapter-planning/data-model.md` -> 无任何修改

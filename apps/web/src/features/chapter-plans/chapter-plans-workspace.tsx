@@ -724,9 +724,23 @@ function SummaryRunBanner({
   const run = summary.activeRun;
   const status = (run.status || "RUNNING").toUpperCase();
 
-  const inputPayload = (run.inputPayload || {}) as Record<string, unknown>;
-  const genContext = (inputPayload.generationContext || {}) as Record<string, unknown>;
-  const inputSnapshot = (genContext.inputSnapshot || {}) as Record<string, unknown>;
+  const parsePayload = (payload: unknown): Record<string, unknown> => {
+    if (typeof payload === "string") {
+      try {
+        return JSON.parse(payload) as Record<string, unknown>;
+      } catch {
+        return {};
+      }
+    }
+    if (payload && typeof payload === "object") {
+      return payload as Record<string, unknown>;
+    }
+    return {};
+  };
+
+  const inputPayload = parsePayload(run.inputPayload);
+  const genContext = parsePayload(inputPayload.generationContext);
+  const inputSnapshot = parsePayload(genContext.inputSnapshot);
 
   const mode =
     (inputSnapshot.generationMode as string) ||
@@ -742,9 +756,9 @@ function SummaryRunBanner({
     bannerTitle = "全局章节规划生成中";
   }
 
-  const target = (inputSnapshot.target ||
-    inputPayload.target ||
-    genContext.target ||
+  const target = (parsePayload(inputSnapshot.target) ||
+    parsePayload(inputPayload.target) ||
+    parsePayload(genContext.target) ||
     {}) as Record<string, number>;
 
   const startNo = target.startChapterNo ?? (mode === "full" ? 1 : 21);
@@ -804,10 +818,10 @@ function SummaryRunBanner({
           项目另有2个任务运行中
         </div>
         <div className="flex items-center gap-4">
-          <Link href={`/projects/${projectId}/workflow-runs`} className="text-primary hover:underline font-medium hover:text-primary-dim transition-colors text-sm">
+          <Link href={`/workflow-runs?projectId=${projectId}`} className="text-primary hover:underline font-medium hover:text-primary-dim transition-colors text-sm">
             查看详情
           </Link>
-          <Link href={`/projects/${projectId}/workflow-runs`} className="text-primary hover:underline font-medium hover:text-primary-dim transition-colors text-sm">
+          <Link href={`/workflow-runs?projectId=${projectId}`} className="text-primary hover:underline font-medium hover:text-primary-dim transition-colors text-sm">
             查看全部
           </Link>
         </div>
