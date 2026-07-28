@@ -1299,6 +1299,12 @@ func (s *Service) verificationHTTPClient() *http.Client {
 	return &http.Client{Transport: transport, CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}
 }
 
+// RuntimeHTTPClient applies the same no-proxy, no-redirect, DNS-rebinding-safe
+// outbound policy used by explicit integration verification.
+func (s *Service) RuntimeHTTPClient() *http.Client {
+	return s.verificationHTTPClient()
+}
+
 // verificationURL validates only syntax. Every resolved address is checked in
 // DialContext immediately before use, which prevents DNS rebinding bypasses.
 func verificationURL(baseURL, suffix string) (string, error) {

@@ -255,6 +255,15 @@ func (s *Service) Preflight(ctx context.Context, projectID uuid.UUID, request Pr
 		return result, err
 	}
 	snapshot.InputDigest, result.InputDigest, result.Snapshot = digest, digest, snapshot
+	var frozenStorylines struct {
+		Available []json.RawMessage `json:"available"`
+	}
+	if err := json.Unmarshal(snapshot.StorylineSnapshot, &frozenStorylines); err != nil {
+		return result, ErrInternal
+	}
+	if len(frozenStorylines.Available) == 0 {
+		return blockedPreflight(result, "storyline_reference_invalid", "no project storyline is available", "configure_project_storyline", "At least one project storyline is required by the chapter-planning output contract."), nil
+	}
 	if s.bindingReader == nil || s.workflowReader == nil || s.connectionReader == nil {
 		return blockedPreflight(result, "project_binding_missing", "chapter-planning workflow binding is missing", "configure_workflow", "This project has no executable chapter-planning workflow."), nil
 	}
@@ -315,44 +324,62 @@ func (s *Service) CreateChapterPlanningRun(ctx context.Context, projectID uuid.U
 	if !ok {
 		return workflowrun.WorkflowRun{}, ErrInternal
 	}
-	claims, err := VerifyPreflightToken(repo.HMACSecret(), token, s.now())
+	prepare := func() (workflowrun.CreateRunCommand, error) {
+		claims, err := VerifyPreflightToken(repo.HMACSecret(), token, s.now())
+		if err != nil {
+			return workflowrun.CreateRunCommand{}, err
+		}
+		if claims.ProjectID != projectID || claims.ActorID != actorID {
+			return workflowrun.CreateRunCommand{}, ErrPreflightInputChanged
+		}
+		if claims.StorylineSelectionMode == "auto_balanced" && len(claims.StorylineIDs) != 0 {
+			return workflowrun.CreateRunCommand{}, ErrPreflightInputChanged
+		}
+		// Rebuild the immutable snapshot facts before delegation; the token digest is the
+		// authoritative comparison and prevents business drift between preflight/create.
+		target := GenerationTargetRequest{StartChapterNo: claims.Target.StartChapterNo, EndChapterNo: claims.Target.EndChapterNo}
+		if claims.GenerationMode == "full" {
+			target.TargetTotalChapters = claims.Target.RequestedChapterCount
+		}
+		if claims.GenerationMode == "append" {
+			target.ChapterCount = claims.Target.RequestedChapterCount
+		}
+		request := PreflightRequest{GenerationMode: claims.GenerationMode, Target: target, StorylineSelectionMode: claims.StorylineSelectionMode, StorylineIDs: claims.StorylineIDs, ContextOptions: claims.ContextOptions, AdditionalInstructions: claims.AdditionalInstructions, ActorID: actorID}
+		current, err := s.Preflight(ctx, projectID, request)
+		if err != nil {
+			return workflowrun.CreateRunCommand{}, err
+		}
+		if current.InputDigest != claims.InputDigest || current.Target != claims.Target || current.BindingID != claims.BindingID || current.BindingVersion != claims.BindingVersion {
+			return workflowrun.CreateRunCommand{}, ErrPreflightInputChanged
+		}
+		snapshot := current.Snapshot
+		if snapshot.InputDigest != claims.InputDigest {
+			return workflowrun.CreateRunCommand{}, ErrPreflightInputChanged
+		}
+		persistedDigest, err := digestGenerationContext(snapshot)
+		if err != nil || persistedDigest != claims.InputDigest {
+			return workflowrun.CreateRunCommand{}, ErrPreflightInputChanged
+		}
+		payload, err := json.Marshal(map[string]any{"generationContextDigest": claims.InputDigest, "target": claims.Target, "stage": "chapter_planning", "generationContext": snapshot})
+		if err != nil {
+			return workflowrun.CreateRunCommand{}, err
+		}
+		return workflowrun.CreateRunCommand{ProjectID: projectID, Stage: "chapter_planning", InputPayload: payload, TriggerSource: "manual"}, nil
+	}
+	if creator, supported := s.runCreator.(interface {
+		CreateRunIdempotent(context.Context, uuid.UUID, string, string, workflowrun.CreateRunPreparation) (workflowrun.WorkflowRun, error)
+	}); supported {
+		requestHash := workflowrun.Fingerprint(struct {
+			ProjectID uuid.UUID
+			ActorID   string
+			Token     string
+		}{ProjectID: projectID, ActorID: actorID, Token: token})
+		return creator.CreateRunIdempotent(ctx, projectID, key, requestHash, prepare)
+	}
+	command, err := prepare()
 	if err != nil {
 		return workflowrun.WorkflowRun{}, err
 	}
-	if claims.ProjectID != projectID || claims.ActorID != actorID {
-		return workflowrun.WorkflowRun{}, ErrPreflightInputChanged
-	}
-	if claims.StorylineSelectionMode == "auto_balanced" && len(claims.StorylineIDs) != 0 {
-		return workflowrun.WorkflowRun{}, ErrPreflightInputChanged
-	}
-	// Rebuild the immutable snapshot facts before delegation; the token digest is the
-	// authoritative comparison and prevents business drift between preflight/create.
-	target := GenerationTargetRequest{StartChapterNo: claims.Target.StartChapterNo, EndChapterNo: claims.Target.EndChapterNo}
-	if claims.GenerationMode == "full" {
-		target.TargetTotalChapters = claims.Target.RequestedChapterCount
-	}
-	if claims.GenerationMode == "append" {
-		target.ChapterCount = claims.Target.RequestedChapterCount
-	}
-	request := PreflightRequest{GenerationMode: claims.GenerationMode, Target: target, StorylineSelectionMode: claims.StorylineSelectionMode, StorylineIDs: claims.StorylineIDs, ContextOptions: claims.ContextOptions, AdditionalInstructions: claims.AdditionalInstructions, ActorID: actorID}
-	current, err := s.Preflight(ctx, projectID, request)
-	if err != nil {
-		return workflowrun.WorkflowRun{}, err
-	}
-	if current.InputDigest != claims.InputDigest || current.Target != claims.Target || current.BindingID != claims.BindingID || current.BindingVersion != claims.BindingVersion {
-		return workflowrun.WorkflowRun{}, ErrPreflightInputChanged
-	}
-	snapshot := current.Snapshot
-	if snapshot.InputDigest != claims.InputDigest {
-		return workflowrun.WorkflowRun{}, ErrPreflightInputChanged
-	}
-	persistedDigest, err := digestGenerationContext(snapshot)
-	if err != nil || persistedDigest != claims.InputDigest {
-		return workflowrun.WorkflowRun{}, ErrPreflightInputChanged
-	}
-	payload, err := json.Marshal(map[string]any{"generationContextDigest": claims.InputDigest, "target": claims.Target, "stage": "chapter_planning", "generationContext": snapshot})
-	if err != nil {
-		return workflowrun.WorkflowRun{}, err
-	}
-	return s.runCreator.CreateRun(ctx, workflowrun.CreateRunCommand{ProjectID: projectID, Stage: "chapter_planning", InputPayload: payload, TriggerSource: "manual", IdempotencyKey: key})
+	command.IdempotencyKey = key
+	return s.runCreator.CreateRun(ctx, command)
 }

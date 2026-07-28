@@ -59,6 +59,7 @@ type CreateRunCommand struct {
 	TriggerSource  string
 	IdempotencyKey string
 }
+type CreateRunPreparation func() (CreateRunCommand, error)
 type RunCommand struct {
 	RunID           uuid.UUID
 	ExpectedVersion int
@@ -105,7 +106,9 @@ func (s *Service) SetWorkflowExecutor(executor WorkflowExecutor) {
 }
 func (s *Service) SetSucceededConsumer(consumer interface {
 	ConsumeSucceededRun(context.Context, WorkflowRun) error
-}) { s.succeededConsumer = consumer }
+}) {
+	s.succeededConsumer = consumer
+}
 
 // ExecuteRun is an explicit application boundary. It never polls or schedules work.
 func (s *Service) ExecuteRun(ctx context.Context, runID uuid.UUID) (WorkflowRun, error) {
@@ -116,6 +119,19 @@ func (s *Service) ExecuteRun(ctx context.Context, runID uuid.UUID) (WorkflowRun,
 	request, err := executionRequest(run)
 	if err != nil {
 		return WorkflowRun{}, ErrValidation
+	}
+	if run.Status == StatusQueued {
+		next, startErr := run.Start(s.now())
+		if startErr != nil {
+			return WorkflowRun{}, startErr
+		}
+		started := Event{ID: s.newID(), RunID: run.ID, EventType: "worker_started", Status: StatusRunning, Payload: json.RawMessage(`{}`), CreatedAt: next.UpdatedAt}
+		run, _, err = s.store.UpdateStatusWithEvent(ctx, run, next, started)
+		if err != nil {
+			return WorkflowRun{}, mapStoreError(err)
+		}
+	} else if run.Status != StatusRunning {
+		return WorkflowRun{}, ErrInvalidTransition
 	}
 	result, err := s.executor.Execute(ctx, request)
 	if err != nil {
@@ -130,17 +146,6 @@ func (s *Service) ExecuteRun(ctx context.Context, runID uuid.UUID) (WorkflowRun,
 func (s *Service) applyExecutionResult(ctx context.Context, run WorkflowRun, result ExecutionResult) (WorkflowRun, error) {
 	if result.Status == ExecutionAccepted {
 		return run, nil
-	}
-	if run.Status == StatusQueued {
-		next, err := run.Start(s.now())
-		if err != nil {
-			return WorkflowRun{}, err
-		}
-		started := Event{ID: s.newID(), RunID: run.ID, EventType: "worker_started", Status: StatusRunning, Payload: json.RawMessage(`{}`), CreatedAt: next.UpdatedAt}
-		run, _, err = s.store.UpdateStatusWithEvent(ctx, run, next, started)
-		if err != nil {
-			return WorkflowRun{}, mapStoreError(err)
-		}
 	}
 	if result.Status == ExecutionRunning {
 		return run, nil
@@ -175,17 +180,6 @@ func (s *Service) applyExecutionResult(ctx context.Context, run WorkflowRun, res
 }
 
 func (s *Service) failExecution(ctx context.Context, run WorkflowRun, code, message string) (WorkflowRun, error) {
-	if run.Status == StatusQueued {
-		next, err := run.Start(s.now())
-		if err != nil {
-			return WorkflowRun{}, err
-		}
-		event := Event{ID: s.newID(), RunID: run.ID, EventType: "worker_started", Status: StatusRunning, Payload: json.RawMessage(`{}`), CreatedAt: next.UpdatedAt}
-		run, _, err = s.store.UpdateStatusWithEvent(ctx, run, next, event)
-		if err != nil {
-			return WorkflowRun{}, mapStoreError(err)
-		}
-	}
 	next, err := run.Fail(s.now(), Failure{Code: safeExecutionCode(code), Message: safeExecutionMessage(message), Details: json.RawMessage(`{}`)})
 	if err != nil {
 		return WorkflowRun{}, err
@@ -252,34 +246,64 @@ func (s *Service) CreateRun(ctx context.Context, command CreateRunCommand) (Work
 		Trigger   string
 	}{command.ProjectID, command.Stage, canonicalJSON(command.InputPayload), command.TriggerSource})
 	return s.store.ExecuteIdempotent(ctx, scope, command.IdempotencyKey, fingerprint, func(store Store) (WorkflowRun, error) {
-		stage, err := workflowbinding.ParseStage(command.Stage)
+		return s.createRun(ctx, store, command)
+	})
+}
+
+// CreateRunIdempotent establishes the replay boundary before callers rebuild
+// mutable business input. Once the first Run exists, a replay must not fail a
+// new active-run check.
+func (s *Service) CreateRunIdempotent(ctx context.Context, projectID uuid.UUID, key, requestHash string, prepare CreateRunPreparation) (WorkflowRun, error) {
+	if projectID == uuid.Nil || strings.TrimSpace(key) == "" || strings.TrimSpace(requestHash) == "" || prepare == nil {
+		return WorkflowRun{}, ErrValidation
+	}
+	scope := "createChapterPlanRun:" + projectID.String()
+	return s.store.ExecuteIdempotent(ctx, scope, key, requestHash, func(store Store) (WorkflowRun, error) {
+		command, err := prepare()
 		if err != nil {
+			return WorkflowRun{}, err
+		}
+		if command.ProjectID != projectID {
 			return WorkflowRun{}, ErrValidation
 		}
-		if _, err = s.projects.Get(ctx, command.ProjectID); err != nil {
-			return WorkflowRun{}, mapProjectError(err)
+		if command.TriggerSource == "" {
+			command.TriggerSource = "manual"
 		}
-		binding, err := s.bindings.GetByProjectAndStage(ctx, command.ProjectID, stage)
-		if err != nil {
-			return WorkflowRun{}, mapBindingError(err)
-		}
-		configuration, connection, err := s.runnableConfiguration(ctx, binding.WorkflowConfigurationID, stage)
-		if err != nil {
-			return WorkflowRun{}, err
-		}
-		snapshot, err := configurationSnapshot(binding, configuration, connection, s.now())
-		if err != nil {
-			return WorkflowRun{}, fmt.Errorf("build workflow run snapshot: %w", err)
-		}
-		run, err := New(s.newID(), command.ProjectID, configuration.ID, s.newRunNumber(), stage.String(), command.TriggerSource, snapshot, command.InputPayload)
-		if err != nil {
-			return WorkflowRun{}, err
-		}
-		now := s.now()
-		run.CreatedAt, run.UpdatedAt = now, now
-		created, _, err := store.CreateWithInitialEvent(ctx, run, Event{ID: s.newID(), RunID: run.ID, EventType: "queued", Status: StatusQueued, Payload: json.RawMessage(`{}`), CreatedAt: now})
-		return created, mapStoreError(err)
+		return s.createRun(ctx, store, command)
 	})
+}
+
+func (s *Service) createRun(ctx context.Context, store Store, command CreateRunCommand) (WorkflowRun, error) {
+	if command.ProjectID == uuid.Nil || !validJSONObject(command.InputPayload) || !validTriggerSource(command.TriggerSource) {
+		return WorkflowRun{}, ErrValidation
+	}
+	stage, err := workflowbinding.ParseStage(command.Stage)
+	if err != nil {
+		return WorkflowRun{}, ErrValidation
+	}
+	if _, err = s.projects.Get(ctx, command.ProjectID); err != nil {
+		return WorkflowRun{}, mapProjectError(err)
+	}
+	binding, err := s.bindings.GetByProjectAndStage(ctx, command.ProjectID, stage)
+	if err != nil {
+		return WorkflowRun{}, mapBindingError(err)
+	}
+	configuration, connection, err := s.runnableConfiguration(ctx, binding.WorkflowConfigurationID, stage)
+	if err != nil {
+		return WorkflowRun{}, err
+	}
+	snapshot, err := configurationSnapshot(binding, configuration, connection, s.now())
+	if err != nil {
+		return WorkflowRun{}, fmt.Errorf("build workflow run snapshot: %w", err)
+	}
+	run, err := New(s.newID(), command.ProjectID, configuration.ID, s.newRunNumber(), stage.String(), command.TriggerSource, snapshot, command.InputPayload)
+	if err != nil {
+		return WorkflowRun{}, err
+	}
+	now := s.now()
+	run.CreatedAt, run.UpdatedAt = now, now
+	created, _, err := store.CreateWithInitialEvent(ctx, run, Event{ID: s.newID(), RunID: run.ID, EventType: "queued", Status: StatusQueued, Payload: json.RawMessage(`{}`), CreatedAt: now})
+	return created, mapStoreError(err)
 }
 
 func (s *Service) ListRuns(ctx context.Context, query ListRunsQuery) (RunList, error) {
