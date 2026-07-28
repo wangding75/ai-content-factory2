@@ -1,62 +1,29 @@
-# Iteration 16 — 真实正文生成 — Closed Loop
+# Iteration 16 — 真实正文生成 Closed Loop
 
 > 业务状态以 `business-rules.md` 为准。
 
-## 1. 主入口
+## 1. 发起与确认
 
-作品列表 `/projects/{projectId}/works`
-→ 打开正文 `/projects/{projectId}/works/{workId}`。
+`/projects/{projectId}/works/{workId}`（`workId=ContentItem.id`）打开正文编辑器。用户选择当前 ContentVersion 作为基线、填写补充要求和上下文选项，点击生成后先执行无副作用预检。预检通过仅返回限时 Token 和报告；用户二次确认后才以 `Idempotency-Key` 创建 queued `content_generation` WorkflowRun。阻断、Token 过期、版本漂移或活跃 Run 冲突均不创建 Run，用户修正后重新预检。
 
-正文编辑器固定为三栏：章节目录、正文编辑区、上下文面板。右侧上下文包含章节目标、故事情报和素材库。
+## 2. 运行、恢复与失败
 
-## 2. 发起生成
+queued/running 显示安全状态、详情和流程中心入口；关闭提示仅隐藏提示，不取消 Run。刷新或重新进入时读取 `ContentGenerationSummary`、Runtime Run/Event 与版本历史恢复真实持久化状态。
 
-1. 用户点击“生成正文”。
-2. 抽屉展示目标章节、当前版本、预计新版本、工作流和前置检查。
-3. 用户可填写本次补充要求，并确认注入的上下文。
-4. 前端调用无副作用预检。
-5. 阻断时显示明确原因和最近恢复入口。
-6. 通过后用户点击“开始生成”。
-7. 服务端复核 Token 并创建 queued `WorkflowRun(stage=content_generation)`。
-8. 编辑器关闭抽屉并显示排队状态条。
+| 场景 | 保持的数据 | 恢复动作 |
+|---|---|---|
+| 未配置 / 执行不可用 | 无 Run、无候选 | 去项目绑定或最近全局配置入口。 |
+| Runtime failed/cancelled | 当前正文、Run 和安全错误；零候选 | Runtime Retry 创建新 Run。 |
+| 输出校验失败 | 当前正文、Run 和安全错误；零候选 | 修复输出后 Runtime Retry 创建新 Run。 |
+| 结果消费失败 | 当前正文、succeeded Run、失败 Event；零候选 | 专用消费 Retry，仅消费已有输出，不外呼。 |
+| 刷新 | 所有持久化事实 | 读取 Summary，无额外写入。 |
 
-## 3. 运行和刷新恢复
+## 3. 候选闭环
 
-- queued：显示 Run 编号、排队文案和详情入口。
-- running：显示安全阶段、已耗时、详情和流程中心入口。
-- 页面刷新：重新读取 ContentGenerationSummary、Run 和 Event；不依赖内存计时器恢复业务状态。
-- 用户关闭状态条只隐藏当前提示，不取消 Run。
-- 取消或 Retry 复用 Iteration 14 Runtime 行为。
+Runtime 成功 → 完整输出校验 → 单一事务创建 `workflow_generated` 非当前候选与 `result_consumed` Event → Summary 为 `candidate_ready` → 用户打开候选 → 与当前版本比较 → 明确“设为当前版本” → CAS 成功后仅更新 current pointer。
 
-## 4. 成功和候选版本
+候选创建永不覆盖当前正文。运行期间或展示后当前版本变化，候选仍可打开和比较，但设为当前返回 `candidate_source_stale`；不存在强制覆盖入口，用户必须以最新当前版本重新生成。
 
-1. Runtime 返回输出；
-2. 服务端校验完整 Schema；
-3. 在单一事务创建新 ContentVersion；
-4. 当前版本保持不变；
-5. 编辑器显示“已创建候选版本 vN”；
-6. 用户点击“打开结果”；
-7. 版本选择器显示 `vN（候选）`；
-8. 用户可与当前版本进行差异比较；
-9. 用户明确点击“设为当前版本”；
-10. compare-and-swap 成功后，新版本成为当前版本；旧版本保留。
+## 4. 后续边界
 
-## 5. 失败闭环
-
-| 场景 | 页面表现 | 数据终态 | 恢复动作 |
-|---|---|---|---|
-| 工作流未配置 | 编辑器保留，顶部/内容区显示未配置提示 | 无 Run、无版本 | 前往项目设置或全局设置 |
-| Runtime 失败 | 已失败状态条和安全说明 | 无候选版本，当前正文不变 | 查看详情或 Runtime Retry |
-| 输出协议非法 | 已失败，说明结果无法解析 | 零候选版本 | 查看详情，修复后 Retry 新 Run |
-| 结果事务失败 | 已失败，说明结果保存失败 | 零候选版本 | 专用结果消费重试 |
-| 当前版本在运行期间变化 | 候选仍可查看，但设为当前时提示基线过期 | 候选保留，当前版本不变 | 基于最新版本重新生成 |
-| 页面刷新 | 重新显示持久化状态 | 无额外写入 | 继续当前动作 |
-
-## 6. 后续闭环
-
-候选设为当前版本
-→ 用户继续编辑和保存
-→ 用户点击“提交审核”
-→ Iteration 17 针对明确 `ContentVersion.id` 发起审核。
-
-Iteration 16 不自动提交审核，不创建 ReviewReport，也不触发重写。
+候选成为当前版本后，用户可继续编辑；提交审核是 Iteration 17 的显式动作，固定指向明确 ContentVersion。本迭代不自动审核、不创建 ReviewReport、不触发重写。
