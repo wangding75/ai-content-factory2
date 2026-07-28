@@ -347,6 +347,7 @@ func (s *Service) ListRunEvents(ctx context.Context, id uuid.UUID) ([]Event, err
 	events, err := s.store.ListEvents(ctx, id)
 	return events, mapStoreError(err)
 }
+func (s *Service) AddEvent(ctx context.Context, event Event) (Event, error) { created, err := s.store.AddEvent(ctx,event); return created,mapStoreError(err) }
 
 func (s *Service) CancelRun(ctx context.Context, command RunCommand) (WorkflowRun, error) {
 	if command.RunID == uuid.Nil || command.ExpectedVersion < 1 || strings.TrimSpace(command.IdempotencyKey) == "" {
