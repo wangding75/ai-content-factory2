@@ -427,6 +427,18 @@ func TestPostgresPersistedGenerationContextDigestMatchesSnapshot(t *testing.T) {
 	if err = json.Unmarshal(persisted.GenerationContext.StorylineSnapshot, &storylineSnapshot); err != nil {
 		t.Fatalf("decode persisted storyline snapshot: %v", err)
 	}
+	var rawStorylineSnapshot struct {
+		Available []map[string]json.RawMessage `json:"available"`
+	}
+	if err = json.Unmarshal(persisted.GenerationContext.StorylineSnapshot, &rawStorylineSnapshot); err != nil || len(rawStorylineSnapshot.Available) == 0 {
+		t.Fatalf("decode raw persisted storyline snapshot: value=%s err=%v", persisted.GenerationContext.StorylineSnapshot, err)
+	}
+	if _, ok := rawStorylineSnapshot.Available[0]["id"]; !ok {
+		t.Fatalf("persisted storyline snapshot must use lowercase id: %s", persisted.GenerationContext.StorylineSnapshot)
+	}
+	if _, ok := rawStorylineSnapshot.Available[0]["ID"]; ok {
+		t.Fatalf("persisted storyline snapshot contains incompatible ID field: %s", persisted.GenerationContext.StorylineSnapshot)
+	}
 	if !slices.Equal(storylineSnapshot.Selected, wantSelected) || len(storylineSnapshot.Available) != len(f.storylines) || len(storylineSnapshot.Materials) != len(f.materials) || len(storylineSnapshot.Foreshadowings) != len(f.foreshadowings) {
 		t.Fatalf("persisted storyline references=%+v", storylineSnapshot)
 	}

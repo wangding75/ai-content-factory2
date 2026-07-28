@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/local/ai-content-factory/apps/api/internal/storyline"
 	"github.com/local/ai-content-factory/apps/api/internal/workflowbinding"
 	"github.com/local/ai-content-factory/apps/api/internal/workflowrun"
 )
@@ -40,6 +41,46 @@ type PreflightResult struct {
 	// Snapshot is intentionally not serialized by the HTTP layer.  It is the
 	// exact immutable value whose digest is bound into the preflight token.
 	Snapshot GenerationContextSnapshot
+}
+
+type frozenStorylineSnapshot struct {
+	ID           uuid.UUID  `json:"id"`
+	ProjectID    uuid.UUID  `json:"project_id"`
+	ParentID     *uuid.UUID `json:"parent_id"`
+	Type         string     `json:"type"`
+	Relation     string     `json:"relation"`
+	Name         string     `json:"name"`
+	Summary      string     `json:"summary"`
+	StartChapter *int       `json:"start_chapter"`
+	EndChapter   *int       `json:"end_chapter"`
+	Status       string     `json:"status"`
+	SortOrder    int        `json:"sort_order"`
+	Version      int        `json:"version"`
+	CreatedAt    time.Time  `json:"created_at"`
+	UpdatedAt    time.Time  `json:"updated_at"`
+}
+
+func freezeStorylines(values []storyline.PlotLine) []frozenStorylineSnapshot {
+	frozen := make([]frozenStorylineSnapshot, len(values))
+	for i, value := range values {
+		frozen[i] = frozenStorylineSnapshot{
+			ID:           value.ID,
+			ProjectID:    value.ProjectID,
+			ParentID:     value.ParentID,
+			Type:         value.Type,
+			Relation:     value.Relation,
+			Name:         value.Name,
+			Summary:      value.Summary,
+			StartChapter: value.StartChapter,
+			EndChapter:   value.EndChapter,
+			Status:       value.Status,
+			SortOrder:    value.SortOrder,
+			Version:      value.Version,
+			CreatedAt:    value.CreatedAt,
+			UpdatedAt:    value.UpdatedAt,
+		}
+	}
+	return frozen
 }
 
 func canonicalDigest(v any) (string, error) {
@@ -108,7 +149,7 @@ func (s *Service) snapshot(ctx context.Context, projectID uuid.UUID, request Pre
 	if err != nil {
 		return GenerationContextSnapshot{}, err
 	}
-	story, err := json.Marshal(map[string]any{"selected": storylineIDs, "available": storylines, "materials": materials, "foreshadowings": foreshadowings})
+	story, err := json.Marshal(map[string]any{"selected": storylineIDs, "available": freezeStorylines(storylines), "materials": materials, "foreshadowings": foreshadowings})
 	if err != nil {
 		return GenerationContextSnapshot{}, err
 	}
