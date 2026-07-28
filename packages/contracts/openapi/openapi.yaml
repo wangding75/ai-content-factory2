@@ -1067,6 +1067,31 @@ paths:
         "404": {$ref: "#/components/responses/NotFound"}
         "409": {$ref: "#/components/responses/Conflict"}
         "422": {$ref: "#/components/responses/UnprocessableEntity"}
+  /api/v1/workflow-connections/{connectionId}/verify:
+    parameters: [{$ref: "#/components/parameters/ConnectionId"}]
+    post:
+      operationId: verifyWorkflowConnection
+      description: Performs a real, safe outbound health probe and, on success, sets integrationStatus=connected and enabled=true. On failure it persists not_connected and enabled=false without exposing upstream details.
+      parameters: [{$ref: "#/components/parameters/IdempotencyKey"}]
+      requestBody: {required: true, content: {application/json: {schema: {$ref: "#/components/schemas/ConfigurationActionRequest"}}}}
+      responses:
+        "200": {description: Verified workflow connection., content: {application/json: {schema: {$ref: "#/components/schemas/WorkflowConnectionEnvelope"}}}}
+        "400": {$ref: "#/components/responses/BadRequest"}
+        "404": {$ref: "#/components/responses/NotFound"}
+        "409": {$ref: "#/components/responses/Conflict"}
+        "422": {$ref: "#/components/responses/UnprocessableEntity"}
+  /api/v1/workflow-connections/{connectionId}/disable:
+    parameters: [{$ref: "#/components/parameters/ConnectionId"}]
+    post:
+      operationId: disableWorkflowConnection
+      description: Sets enabled=false without deleting the connection or modifying dependent workflow configurations.
+      parameters: [{$ref: "#/components/parameters/IdempotencyKey"}]
+      requestBody: {required: true, content: {application/json: {schema: {$ref: "#/components/schemas/ConfigurationActionRequest"}}}}
+      responses:
+        "200": {description: Disabled workflow connection., content: {application/json: {schema: {$ref: "#/components/schemas/WorkflowConnectionEnvelope"}}}}
+        "400": {$ref: "#/components/responses/BadRequest"}
+        "404": {$ref: "#/components/responses/NotFound"}
+        "409": {$ref: "#/components/responses/Conflict"}
   /api/v1/workflow-configurations:
     get:
       operationId: listWorkflowConfigurations
@@ -1106,6 +1131,31 @@ paths:
         "404": {$ref: "#/components/responses/NotFound"}
         "409": {$ref: "#/components/responses/Conflict"}
         "422": {$ref: "#/components/responses/UnprocessableEntity"}
+  /api/v1/workflow-configurations/{workflowId}/verify:
+    parameters: [{$ref: "#/components/parameters/WorkflowConfigurationId"}]
+    post:
+      operationId: verifyWorkflowConfiguration
+      description: Requires its connection to be connected and enabled, then posts a dedicated verification probe to the production webhook. It never creates a WorkflowRun, batch, or candidate.
+      parameters: [{$ref: "#/components/parameters/IdempotencyKey"}]
+      requestBody: {required: true, content: {application/json: {schema: {$ref: "#/components/schemas/ConfigurationActionRequest"}}}}
+      responses:
+        "200": {description: Verified workflow configuration., content: {application/json: {schema: {$ref: "#/components/schemas/WorkflowConfigurationEnvelope"}}}}
+        "400": {$ref: "#/components/responses/BadRequest"}
+        "404": {$ref: "#/components/responses/NotFound"}
+        "409": {$ref: "#/components/responses/Conflict"}
+        "422": {$ref: "#/components/responses/UnprocessableEntity"}
+  /api/v1/workflow-configurations/{workflowId}/disable:
+    parameters: [{$ref: "#/components/parameters/WorkflowConfigurationId"}]
+    post:
+      operationId: disableWorkflowConfiguration
+      description: Sets enabled=false without deleting bindings or historical runs and without contacting the external service.
+      parameters: [{$ref: "#/components/parameters/IdempotencyKey"}]
+      requestBody: {required: true, content: {application/json: {schema: {$ref: "#/components/schemas/ConfigurationActionRequest"}}}}
+      responses:
+        "200": {description: Disabled workflow configuration., content: {application/json: {schema: {$ref: "#/components/schemas/WorkflowConfigurationEnvelope"}}}}
+        "400": {$ref: "#/components/responses/BadRequest"}
+        "404": {$ref: "#/components/responses/NotFound"}
+        "409": {$ref: "#/components/responses/Conflict"}
   /api/v1/projects/{projectId}/workflow-run-summary:
     parameters: [{$ref: "#/components/parameters/ProjectId"}]
     get:
@@ -1570,7 +1620,13 @@ components:
   schemas:
     IntegrationStatus:
       type: string
-      enum: [not_connected, unverified, verified, failed]
+      enum: [not_connected, connected, unverified, verified, failed]
+    ConfigurationActionRequest:
+      type: object
+      additionalProperties: false
+      required: [expectedVersion]
+      properties:
+        expectedVersion: {type: integer, minimum: 1}
     ConfigurationFieldSchema:
       type: object
       additionalProperties: false
