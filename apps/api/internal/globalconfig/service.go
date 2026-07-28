@@ -584,37 +584,43 @@ func (s *Service) VerifyConnection(ctx context.Context, id uuid.UUID, expectedVe
 	request := struct {
 		ExpectedVersion int `json:"expectedVersion"`
 	}{expectedVersion}
-	current, err := s.GetConnection(ctx, id)
+	verification, body, replayed, err := s.verificationReplay(ctx, "workflow-connection:verify:"+id.String(), key, request)
 	if err != nil {
 		return Connection{}, err
 	}
-	if current.Version != expectedVersion {
-		return Connection{}, ErrVersionConflict
-	}
-	probeErr := s.probeConnection(ctx, current)
-	body, _, err := s.verificationAction(ctx, "workflow-connection:verify:"+id.String(), key, request, probeErr == nil, func(tx pgx.Tx) (json.RawMessage, error) {
-		current, err := s.getConnectionTx(ctx, tx, id)
-		if err != nil {
-			return nil, err
+	if !replayed {
+		current, currentErr := s.GetConnection(ctx, id)
+		if currentErr != nil {
+			return Connection{}, currentErr
 		}
 		if current.Version != expectedVersion {
-			return nil, ErrVersionConflict
+			return Connection{}, ErrVersionConflict
 		}
-		out, err := s.setConnectionVerificationTx(ctx, tx, current, probeErr == nil)
+		probeErr := s.probeConnection(ctx, current)
+		body, _, err = s.verificationAction(ctx, verification, probeErr == nil, func(tx pgx.Tx) (json.RawMessage, error) {
+			current, err := s.getConnectionTx(ctx, tx, id)
+			if err != nil {
+				return nil, err
+			}
+			if current.Version != expectedVersion {
+				return nil, ErrVersionConflict
+			}
+			out, err := s.setConnectionVerificationTx(ctx, tx, current, probeErr == nil)
+			if err != nil {
+				return nil, err
+			}
+			action := "verify"
+			if probeErr != nil {
+				action = "verify_failed"
+			}
+			if err = s.audit(ctx, tx, action, "workflow_connection", id, safeAudit("verify", out.Version, map[string]any{})); err != nil {
+				return nil, err
+			}
+			return json.Marshal(out)
+		})
 		if err != nil {
-			return nil, err
+			return Connection{}, err
 		}
-		action := "verify"
-		if probeErr != nil {
-			action = "verify_failed"
-		}
-		if err = s.audit(ctx, tx, action, "workflow_connection", id, safeAudit("verify", out.Version, map[string]any{})); err != nil {
-			return nil, err
-		}
-		return json.Marshal(out)
-	})
-	if err != nil {
-		return Connection{}, err
 	}
 	var out Connection
 	if err = json.Unmarshal(body, &out); err != nil {
@@ -893,51 +899,57 @@ func (s *Service) VerifyWorkflowConfiguration(ctx context.Context, id uuid.UUID,
 	request := struct {
 		ExpectedVersion int `json:"expectedVersion"`
 	}{expectedVersion}
-	workflow, err := s.GetWorkflow(ctx, id)
+	verification, body, replayed, err := s.verificationReplay(ctx, "workflow-configuration:verify:"+id.String(), key, request)
 	if err != nil {
 		return Workflow{}, err
 	}
-	if workflow.Version != expectedVersion {
-		return Workflow{}, ErrVersionConflict
-	}
-	connection, err := s.GetConnection(ctx, workflow.ConnectionID)
-	if err != nil {
-		return Workflow{}, err
-	}
-	if !connection.Enabled || connection.IntegrationStatus != "connected" {
-		return Workflow{}, ErrConnectionNotReady
-	}
-	probeErr := s.probeWorkflow(ctx, connection, workflow)
-	body, _, err := s.verificationAction(ctx, "workflow-configuration:verify:"+id.String(), key, request, probeErr == nil, func(tx pgx.Tx) (json.RawMessage, error) {
-		workflow, err := s.getWorkflowTx(ctx, tx, id)
-		if err != nil {
-			return nil, err
+	if !replayed {
+		workflow, workflowErr := s.GetWorkflow(ctx, id)
+		if workflowErr != nil {
+			return Workflow{}, workflowErr
 		}
 		if workflow.Version != expectedVersion {
-			return nil, ErrVersionConflict
+			return Workflow{}, ErrVersionConflict
 		}
-		connection, err := s.getConnectionTx(ctx, tx, workflow.ConnectionID)
-		if err != nil {
-			return nil, err
+		connection, connectionErr := s.GetConnection(ctx, workflow.ConnectionID)
+		if connectionErr != nil {
+			return Workflow{}, connectionErr
 		}
 		if !connection.Enabled || connection.IntegrationStatus != "connected" {
-			return nil, ErrConnectionNotReady
+			return Workflow{}, ErrConnectionNotReady
 		}
-		out, err := s.setWorkflowVerificationTx(ctx, tx, workflow, probeErr == nil)
+		probeErr := s.probeWorkflow(ctx, connection, workflow)
+		body, _, err = s.verificationAction(ctx, verification, probeErr == nil, func(tx pgx.Tx) (json.RawMessage, error) {
+			workflow, err := s.getWorkflowTx(ctx, tx, id)
+			if err != nil {
+				return nil, err
+			}
+			if workflow.Version != expectedVersion {
+				return nil, ErrVersionConflict
+			}
+			connection, err := s.getConnectionTx(ctx, tx, workflow.ConnectionID)
+			if err != nil {
+				return nil, err
+			}
+			if !connection.Enabled || connection.IntegrationStatus != "connected" {
+				return nil, ErrConnectionNotReady
+			}
+			out, err := s.setWorkflowVerificationTx(ctx, tx, workflow, probeErr == nil)
+			if err != nil {
+				return nil, err
+			}
+			action := "verify"
+			if probeErr != nil {
+				action = "verify_failed"
+			}
+			if err = s.audit(ctx, tx, action, "workflow_configuration", id, safeAudit("verify", out.Version, map[string]any{})); err != nil {
+				return nil, err
+			}
+			return json.Marshal(out)
+		})
 		if err != nil {
-			return nil, err
+			return Workflow{}, err
 		}
-		action := "verify"
-		if probeErr != nil {
-			action = "verify_failed"
-		}
-		if err = s.audit(ctx, tx, action, "workflow_configuration", id, safeAudit("verify", out.Version, map[string]any{})); err != nil {
-			return nil, err
-		}
-		return json.Marshal(out)
-	})
-	if err != nil {
-		return Workflow{}, err
 	}
 	var out Workflow
 	if err = json.Unmarshal(body, &out); err != nil {
@@ -1320,28 +1332,55 @@ func verificationAddressAllowed(host string, ip net.IP) bool {
 	return !(addr.IsLoopback() || addr.IsPrivate() || addr.IsLinkLocalUnicast() || addr.IsUnspecified() || addr.IsMulticast())
 }
 
+type verificationRequest struct {
+	scope string
+	key   string
+	hash  string
+}
+
+// verificationReplay reads a completed response before any resource lookup or
+// external probe. A miss returns the prepared request hash for the transaction
+// recheck performed after the probe.
+func (s *Service) verificationReplay(ctx context.Context, scope, key string, request any) (verificationRequest, json.RawMessage, bool, error) {
+	if strings.TrimSpace(key) == "" || len(key) > 128 {
+		return verificationRequest{}, nil, false, ErrValidation
+	}
+	requestJSON, err := json.Marshal(request)
+	if err != nil {
+		return verificationRequest{}, nil, false, ErrValidation
+	}
+	hashBytes := sha256.Sum256(requestJSON)
+	hash := hex.EncodeToString(hashBytes[:])
+	verification := verificationRequest{scope: scope, key: key, hash: hash}
+	existing, err := idempotency.NewPostgresRepository(s.pool).Get(ctx, scope, key)
+	if err == nil {
+		if existing.RequestHash != hash {
+			return verificationRequest{}, nil, false, ErrIdempotency
+		}
+		return verification, existing.ResponseBody, true, nil
+	}
+	if !errors.Is(err, idempotency.ErrNotFound) {
+		return verificationRequest{}, nil, false, err
+	}
+	return verification, nil, false, nil
+}
+
 // verificationAction deliberately starts only after the external probe has
 // finished. The short transaction locks and rechecks both idempotency and the
 // resource version before a CAS write, so a stale probe cannot overwrite a
 // concurrent state transition.
-func (s *Service) verificationAction(ctx context.Context, scope, key string, request any, success bool, fn func(pgx.Tx) (json.RawMessage, error)) (json.RawMessage, bool, error) {
-	if strings.TrimSpace(key) == "" || len(key) > 128 {
-		return nil, false, ErrValidation
-	}
-	requestJSON, _ := json.Marshal(request)
-	hashBytes := sha256.Sum256(requestJSON)
-	hash := hex.EncodeToString(hashBytes[:])
+func (s *Service) verificationAction(ctx context.Context, request verificationRequest, success bool, fn func(pgx.Tx) (json.RawMessage, error)) (json.RawMessage, bool, error) {
 	tx, err := s.pool.Begin(ctx)
 	if err != nil {
 		return nil, false, err
 	}
 	defer tx.Rollback(ctx)
-	if _, err = tx.Exec(ctx, "SELECT pg_advisory_xact_lock(hashtextextended($1, 0))", scope+":"+key); err != nil {
+	if _, err = tx.Exec(ctx, "SELECT pg_advisory_xact_lock(hashtextextended($1, 0))", request.scope+":"+request.key); err != nil {
 		return nil, false, fmt.Errorf("lock verification request: %w", err)
 	}
 	repository := idempotency.NewPostgresRepositoryTx(tx)
-	if existing, existingErr := repository.Get(ctx, scope, key); existingErr == nil {
-		if existing.RequestHash != hash {
+	if existing, existingErr := repository.Get(ctx, request.scope, request.key); existingErr == nil {
+		if existing.RequestHash != request.hash {
 			return nil, false, ErrIdempotency
 		}
 		return existing.ResponseBody, true, tx.Commit(ctx)
@@ -1356,7 +1395,7 @@ func (s *Service) verificationAction(ctx context.Context, scope, key string, req
 	if !success {
 		status = http.StatusUnprocessableEntity
 	}
-	if _, err = repository.Create(ctx, idempotency.Record{ID: uuid.New(), Scope: scope, Key: key, RequestHash: hash, ResponseStatus: status, ResponseBody: body}); err != nil {
+	if _, err = repository.Create(ctx, idempotency.Record{ID: uuid.New(), Scope: request.scope, Key: request.key, RequestHash: request.hash, ResponseStatus: status, ResponseBody: body}); err != nil {
 		return nil, false, ErrIdempotency
 	}
 	if err = tx.Commit(ctx); err != nil {

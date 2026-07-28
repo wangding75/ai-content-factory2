@@ -3,6 +3,8 @@ package httpserver
 import (
 	"bytes"
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -337,6 +339,149 @@ func globalConfigurationTestDatabase(t *testing.T) (*pgxpool.Pool, context.Conte
 		}
 	}
 	return pool, ctx
+}
+
+func TestVerificationReplayHTTPIdempotency(t *testing.T) {
+	pool, ctx := workflowBindingIntegrationDatabase(t)
+	service, err := globalconfig.NewService(pool, "verification-http-replay-key")
+	if err != nil {
+		t.Fatal(err)
+	}
+	handler := New(":0", project.NewService(newMemoryRepository()), service).httpServer.Handler
+	connectionSuccessID := uuid.New()
+	connectionFailureID := uuid.New()
+	workflowConnectionID := uuid.New()
+	workflowSuccessID := uuid.New()
+	workflowFailureID := uuid.New()
+	allConnectionIDs := []uuid.UUID{connectionSuccessID, connectionFailureID, workflowConnectionID}
+	allWorkflowIDs := []uuid.UUID{workflowSuccessID, workflowFailureID}
+
+	for _, fixture := range []struct {
+		id      uuid.UUID
+		status  string
+		enabled bool
+	}{
+		{connectionSuccessID, "connected", true},
+		{connectionFailureID, "not_connected", false},
+		{workflowConnectionID, "connected", true},
+	} {
+		_, err = pool.Exec(ctx, `INSERT INTO workflow_connections
+			(id,name,connection_type,base_url,auth_type,timeout_seconds,type_config,integration_status,enabled,last_error_code,last_error_message,version)
+			VALUES ($1,$2,'n8n','http://verification.invalid:5678','api_key',30,'{"referenceType":"workflow_id","referenceValue":"verification"}',$3,$4,
+				CASE WHEN $4 THEN NULL ELSE 'verification_failed' END,CASE WHEN $4 THEN NULL ELSE 'The connection could not be verified.' END,2)`,
+			fixture.id, "verification-http-connection-"+fixture.id.String(), fixture.status, fixture.enabled)
+		if err != nil {
+			t.Fatalf("insert connection fixture: %v", err)
+		}
+	}
+	for _, fixture := range []struct {
+		id      uuid.UUID
+		status  string
+		enabled bool
+	}{
+		{workflowSuccessID, "connected", true},
+		{workflowFailureID, "not_connected", false},
+	} {
+		_, err = pool.Exec(ctx, `INSERT INTO workflow_configurations
+			(id,name,connection_id,applicable_stages,type_config,input_contract_version,output_contract_version,default_parameters,integration_status,enabled,last_error_code,last_error_message,version)
+			VALUES ($1,$2,$3,'["chapter_planning"]','{"referenceType":"webhook_path","referenceValue":"verification"}','v1','v1','{}',$4,$5,
+				CASE WHEN $5 THEN NULL ELSE 'verification_failed' END,CASE WHEN $5 THEN NULL ELSE 'The workflow endpoint could not be verified.' END,2)`,
+			fixture.id, "verification-http-workflow-"+fixture.id.String(), workflowConnectionID, fixture.status, fixture.enabled)
+		if err != nil {
+			t.Fatalf("insert workflow fixture: %v", err)
+		}
+	}
+	t.Cleanup(func() {
+		cleanupCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+		for _, id := range allWorkflowIDs {
+			_, _ = pool.Exec(cleanupCtx, "DELETE FROM idempotency_records WHERE scope=$1", "workflow-configuration:verify:"+id.String())
+			_, _ = pool.Exec(cleanupCtx, "DELETE FROM audit_logs WHERE subject_id=$1", id.String())
+			_, _ = pool.Exec(cleanupCtx, "DELETE FROM workflow_configurations WHERE id=$1", id)
+		}
+		for _, id := range allConnectionIDs {
+			_, _ = pool.Exec(cleanupCtx, "DELETE FROM idempotency_records WHERE scope=$1", "workflow-connection:verify:"+id.String())
+			_, _ = pool.Exec(cleanupCtx, "DELETE FROM audit_logs WHERE subject_id=$1", id.String())
+			_, _ = pool.Exec(cleanupCtx, "DELETE FROM workflow_connections WHERE id=$1", id)
+		}
+	})
+
+	connectionSuccess, err := service.GetConnection(ctx, connectionSuccessID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	connectionFailure, err := service.GetConnection(ctx, connectionFailureID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	workflowSuccess, err := service.GetWorkflow(ctx, workflowSuccessID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	workflowFailure, err := service.GetWorkflow(ctx, workflowFailureID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	insertVerificationReplayRecord(t, ctx, pool, "workflow-connection:verify:"+connectionSuccessID.String(), "connection-http-success", http.StatusOK, connectionSuccess)
+	insertVerificationReplayRecord(t, ctx, pool, "workflow-connection:verify:"+connectionFailureID.String(), "connection-http-failure", http.StatusUnprocessableEntity, connectionFailure)
+	insertVerificationReplayRecord(t, ctx, pool, "workflow-configuration:verify:"+workflowSuccessID.String(), "workflow-http-success", http.StatusOK, workflowSuccess)
+	insertVerificationReplayRecord(t, ctx, pool, "workflow-configuration:verify:"+workflowFailureID.String(), "workflow-http-failure", http.StatusUnprocessableEntity, workflowFailure)
+
+	call := func(path, key string, expectedVersion int) *httptest.ResponseRecorder {
+		body := fmt.Sprintf(`{"expectedVersion":%d}`, expectedVersion)
+		request := httptest.NewRequest(http.MethodPost, path, strings.NewReader(body))
+		request.Header.Set("Idempotency-Key", key)
+		response := httptest.NewRecorder()
+		handler.ServeHTTP(response, request)
+		return response
+	}
+	for _, test := range []struct {
+		name, path, key string
+		code            int
+		errorCode       string
+		expectedVersion int
+	}{
+		{"connection success replay", "/api/v1/workflow-connections/" + connectionSuccessID.String() + "/verify", "connection-http-success", http.StatusOK, "", 1},
+		{"connection failure replay", "/api/v1/workflow-connections/" + connectionFailureID.String() + "/verify", "connection-http-failure", http.StatusUnprocessableEntity, "verification_failed", 1},
+		{"connection payload conflict", "/api/v1/workflow-connections/" + connectionSuccessID.String() + "/verify", "connection-http-success", http.StatusConflict, "idempotency_key_reused_with_different_payload", 2},
+		{"workflow success replay", "/api/v1/workflow-configurations/" + workflowSuccessID.String() + "/verify", "workflow-http-success", http.StatusOK, "", 1},
+		{"workflow failure replay", "/api/v1/workflow-configurations/" + workflowFailureID.String() + "/verify", "workflow-http-failure", http.StatusUnprocessableEntity, "verification_failed", 1},
+		{"workflow payload conflict", "/api/v1/workflow-configurations/" + workflowSuccessID.String() + "/verify", "workflow-http-success", http.StatusConflict, "idempotency_key_reused_with_different_payload", 2},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			response := call(test.path, test.key, test.expectedVersion)
+			if response.Code != test.code {
+				t.Fatalf("status=%d body=%s, want %d", response.Code, response.Body.String(), test.code)
+			}
+			if test.errorCode != "" && !strings.Contains(response.Body.String(), `"`+test.errorCode+`"`) {
+				t.Fatalf("missing error code %s: %s", test.errorCode, response.Body.String())
+			}
+			if test.code == http.StatusOK && !strings.Contains(response.Body.String(), `"version":2`) {
+				t.Fatalf("replay did not return first response: %s", response.Body.String())
+			}
+		})
+	}
+}
+
+func insertVerificationReplayRecord(t *testing.T, ctx context.Context, pool *pgxpool.Pool, scope, key string, status int, response any) {
+	t.Helper()
+	requestBody, err := json.Marshal(struct {
+		ExpectedVersion int `json:"expectedVersion"`
+	}{1})
+	if err != nil {
+		t.Fatal(err)
+	}
+	hash := sha256.Sum256(requestBody)
+	responseBody, err := json.Marshal(response)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err = pool.Exec(ctx, `INSERT INTO idempotency_records
+		(id,scope,idempotency_key,request_hash,response_status,response_body)
+		VALUES ($1,$2,$3,$4,$5,$6)`,
+		uuid.New(), scope, key, hex.EncodeToString(hash[:]), status, responseBody); err != nil {
+		t.Fatalf("insert verification replay: %v", err)
+	}
 }
 
 func TestGlobalConfigurationTypeCataloguesAndRequestBoundaries(t *testing.T) {
