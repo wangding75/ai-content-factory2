@@ -65,8 +65,14 @@ func main() {
 		globalConfigurations,
 		globalConfigurations,
 	)
+	workflowRuns.SetWorkflowExecutor(workflowrun.NewN8NWorkflowExecutor(globalConfigurations.RuntimeHTTPClient()))
 	chapterPlans.ConfigureChapterPlanningRuntime(workflowbinding.NewPostgresRepository(pool), globalConfigurations, globalConfigurations, workflowRuns)
 	workflowRuns.SetSucceededConsumer(chapterplan.NewRuntimeConsumer(chapterplan.NewResultIngestor(pool), chapterplan.NewConsumptionRepository(pool)))
+	workerContext, stopWorker := context.WithCancel(context.Background())
+	defer stopWorker()
+	go workflowRuns.RunWorker(workerContext, time.Second, func(workerErr error) {
+		log.Printf("workflow worker: %v", workerErr)
+	})
 	server := httpserver.New(cfg.APIAddress, projects, plannings, materials, projectMaterials, storylines, foreshadowings, chapterPlans, contentItems, iteration07, iteration08, globalConfigurations, workflowbinding.NewCloseLoop(pool, projectRepository, globalConfigurations), workflowRuns)
 	log.Printf("api listening on %s", cfg.APIAddress)
 	if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {

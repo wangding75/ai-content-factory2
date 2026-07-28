@@ -1,0 +1,39 @@
+{
+  "id": "f4e32de0-15a0-4100-8000-000000000001",
+  "name": "ACF Iteration 15 Local Chapter Planning",
+  "active": false,
+  "nodes": [
+    {
+      "parameters": {"httpMethod":"POST","path":"acf-iteration-15-local-chapter-planning","responseMode":"responseNode","options":{}},
+      "id": "f4e32de0-15a0-4100-8000-000000000011",
+      "name": "Production Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [-420,0],
+      "webhookId": "f4e32de0-15a0-4100-8000-000000000021"
+    },
+    {
+      "parameters": {
+        "jsCode": "const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;\nconst DIGEST=/^[a-f0-9]{64}$/;\nconst fail=(code,message,field)=>({error:{code,message,field}});\nreturn items.map((item)=>{\n const request=item.json.body;\n if(!request||typeof request!=='object'||Array.isArray(request)) return {json:fail('invalid_request','Request body must be a JSON object.','body')};\n if(request.probeType==='acf_workflow_verification'){\n  if(request.stage!=='chapter_planning'||typeof request.contractVersion!=='string'||!request.contractVersion||typeof request.requestId!=='string'||!request.requestId) return {json:fail('invalid_request','Verification probe fields are invalid.','probeType')};\n  return {json:{verified:true,stage:'chapter_planning',contractVersion:request.contractVersion,requestId:request.requestId}};\n }\n const {runId,projectId,stage,input}=request;\n if(!UUID.test(runId||'')) return {json:fail('invalid_request','runId must be a UUID.','runId')};\n if(!UUID.test(projectId||'')) return {json:fail('invalid_request','projectId must be a UUID.','projectId')};\n if(stage!=='chapter_planning') return {json:fail('invalid_request','stage must be chapter_planning.','stage')};\n const context=input&&input.generationContext,target=input&&(input.target||context?.inputSnapshot?.target);\n if(!context||!target||!DIGEST.test(context.inputDigest||'')||!Number.isInteger(target.startChapterNo)||!Number.isInteger(target.endChapterNo)||target.startChapterNo<1||target.endChapterNo<target.startChapterNo) return {json:fail('invalid_request','Runtime input is invalid.','input')};\n const available=Array.isArray(context.storylineSnapshot?.available)?context.storylineSnapshot.available:[];\n if(!available[0]||!UUID.test(available[0].id||'')) return {json:fail('invalid_request','generationContext.storylineSnapshot must contain at least one frozen storyline.','input.generationContext.storylineSnapshot')};\n const candidates=[]; for(let n=target.startChapterNo;n<=target.endChapterNo;n++) candidates.push({chapterNo:n,title:`Chapter ${n}`,summary:`Deterministic local chapter-planning candidate ${n}.`,chapterPurpose:'plot_advance',storylineRefs:[{id:available[0].id,projectId,label:String(available[0].label||available[0].name||'Frozen reference').slice(0,160),relation:'primary',position:0,version:1}],materialRefs:[],foreshadowingRefs:[],generationBasis:{contextSummary:`Deterministic local generation for chapter ${n}.`,additionalInstructions:context.additionalInstructions??null}});\n return {json:{projectId,generationMode:context.inputSnapshot?.generationMode||input.generationMode,target,sourceWorkflowRunId:runId,candidates,metadata:{inputDigest:context.inputDigest,generatedAt:'2026-01-01T00:00:00Z',safeProviderSummary:'Local deterministic chapter-planning workflow; no LLM was called.'}}};\n});"
+      },
+      "id": "f4e32de0-15a0-4100-8000-000000000012",
+      "name": "Validate Request and Generate Deterministic Candidates",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-120,0]
+    },
+    {
+      "parameters": {"respondWith":"text","responseBody":"={{ JSON.stringify($json) }}","options":{"responseCode":"={{ $json.error ? 400 : 200 }}"}},
+      "id": "f4e32de0-15a0-4100-8000-000000000013",
+      "name": "Return Runtime Output or Contract Error",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [180,0]
+    }
+  ],
+  "connections": {"Production Webhook":{"main":[[{"node":"Validate Request and Generate Deterministic Candidates","type":"main","index":0}]]},"Validate Request and Generate Deterministic Candidates":{"main":[[{"node":"Return Runtime Output or Contract Error","type":"main","index":0}]]}},
+  "settings": {"executionOrder":"v1"},
+  "versionId": "f4e32de0-15a0-4100-8000-000000000031",
+  "meta": {"templateCredsSetupCompleted":true},
+  "tags": []
+}

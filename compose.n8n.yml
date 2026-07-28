@@ -1,0 +1,21 @@
+services:
+  n8n:
+    image: docker.n8n.io/n8nio/n8n:1.104.2
+    restart: unless-stopped
+    environment:
+      TZ: Asia/Shanghai
+      GENERIC_TIMEZONE: Asia/Shanghai
+      N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS: "true"
+    ports:
+      - "15678:5678"
+    volumes:
+      - n8n_storage:/home/node/.n8n
+    healthcheck:
+      test: ["CMD-SHELL", "wget --spider -q http://localhost:5678/healthz || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+
+volumes:
+  n8n_storage:

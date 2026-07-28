@@ -182,6 +182,26 @@ func TestPostgresPreflightPassedHasNoSideEffects(t *testing.T) {
 	}
 }
 
+func TestPostgresPreflightBlocksProjectWithoutStoryline(t *testing.T) {
+	db, ctx := openIntegrationDB(t)
+	f := newFixture(t, ctx, db)
+	service, executor := newPostgresPreflightService(t, ctx, db, f, nil)
+
+	result, err := service.Preflight(ctx, f.otherProject, postgresPreflightRequest())
+	if err != nil {
+		t.Fatalf("Preflight: %v", err)
+	}
+	if result.Passed || result.Token != "" || len(result.Blockers) != 1 || result.Blockers[0].Code != "storyline_reference_invalid" {
+		t.Fatalf("unexpected result for project without storylines: %+v", result)
+	}
+	if !regexp.MustCompile(`^[a-f0-9]{64}$`).MatchString(result.InputDigest) {
+		t.Fatalf("input digest=%q, want SHA-256", result.InputDigest)
+	}
+	if executor.calls != 0 {
+		t.Fatalf("external workflow executor calls=%d, want 0", executor.calls)
+	}
+}
+
 func TestPreflightTokenActorAndProjectBinding(t *testing.T) {
 	db, ctx := openIntegrationDB(t)
 	f := newFixture(t, ctx, db)
@@ -357,6 +377,10 @@ func TestPostgresPersistedGenerationContextDigestMatchesSnapshot(t *testing.T) {
 	if err != nil {
 		t.Fatalf("CreateChapterPlanningRun: %v", err)
 	}
+	replayed, err := service.CreateChapterPlanningRun(ctx, f.project, request.ActorID, preflight.Token, "persisted-generation-context")
+	if err != nil || replayed.ID != run.ID {
+		t.Fatalf("CreateChapterPlanningRun replay=%+v original=%+v err=%v", replayed, run, err)
+	}
 
 	var persistedPayload json.RawMessage
 	if err = db.QueryRow(ctx, "SELECT input_payload FROM workflow_run_records WHERE id=$1", run.ID).Scan(&persistedPayload); err != nil {
@@ -402,6 +426,18 @@ func TestPostgresPersistedGenerationContextDigestMatchesSnapshot(t *testing.T) {
 	}
 	if err = json.Unmarshal(persisted.GenerationContext.StorylineSnapshot, &storylineSnapshot); err != nil {
 		t.Fatalf("decode persisted storyline snapshot: %v", err)
+	}
+	var rawStorylineSnapshot struct {
+		Available []map[string]json.RawMessage `json:"available"`
+	}
+	if err = json.Unmarshal(persisted.GenerationContext.StorylineSnapshot, &rawStorylineSnapshot); err != nil || len(rawStorylineSnapshot.Available) == 0 {
+		t.Fatalf("decode raw persisted storyline snapshot: value=%s err=%v", persisted.GenerationContext.StorylineSnapshot, err)
+	}
+	if _, ok := rawStorylineSnapshot.Available[0]["id"]; !ok {
+		t.Fatalf("persisted storyline snapshot must use lowercase id: %s", persisted.GenerationContext.StorylineSnapshot)
+	}
+	if _, ok := rawStorylineSnapshot.Available[0]["ID"]; ok {
+		t.Fatalf("persisted storyline snapshot contains incompatible ID field: %s", persisted.GenerationContext.StorylineSnapshot)
 	}
 	if !slices.Equal(storylineSnapshot.Selected, wantSelected) || len(storylineSnapshot.Available) != len(f.storylines) || len(storylineSnapshot.Materials) != len(f.materials) || len(storylineSnapshot.Foreshadowings) != len(f.foreshadowings) {
 		t.Fatalf("persisted storyline references=%+v", storylineSnapshot)

@@ -1,6 +1,7 @@
 package httpserver
 
 import (
+	"context"
 	"errors"
 	"github.com/google/uuid"
 	"github.com/local/ai-content-factory/apps/api/internal/globalconfig"
@@ -8,6 +9,10 @@ import (
 	"strconv"
 	"strings"
 )
+
+type configurationActionRequest struct {
+	ExpectedVersion int `json:"expectedVersion"`
+}
 
 func registerGlobalConfigurationRoutes(m *http.ServeMux, s *globalconfig.Service) {
 	m.HandleFunc("GET /api/v1/llm-provider-types", func(w http.ResponseWriter, r *http.Request) {
@@ -99,6 +104,35 @@ func registerGlobalConfigurationRoutes(m *http.ServeMux, s *globalconfig.Service
 		v, e := s.UpdateConnectionIdempotent(r.Context(), id, x, key)
 		configurationRead(w, r, v, e)
 	})
+	for _, action := range []struct {
+		path    string
+		handler func(context.Context, uuid.UUID, int, string) (globalconfig.Connection, error)
+	}{
+		{"POST /api/v1/workflow-connections/{connectionId}/verify", s.VerifyConnection},
+		{"POST /api/v1/workflow-connections/{connectionId}/disable", s.DisableConnection},
+	} {
+		action := action
+		m.HandleFunc(action.path, func(w http.ResponseWriter, r *http.Request) {
+			id, ok := configurationID(w, r, "connectionId")
+			if !ok {
+				return
+			}
+			var body configurationActionRequest
+			if !configurationBody(w, r, &body) {
+				return
+			}
+			if body.ExpectedVersion < 1 {
+				writeError(w, r, 400, "validation_error", "invalid configuration", map[string]any{"fields": map[string]string{"expectedVersion": "required"}})
+				return
+			}
+			key, ok := configurationPatchKey(w, r)
+			if !ok {
+				return
+			}
+			v, err := action.handler(r.Context(), id, body.ExpectedVersion, key)
+			configurationRead(w, r, v, err)
+		})
+	}
 	m.HandleFunc("GET /api/v1/workflow-configurations", func(w http.ResponseWriter, r *http.Request) {
 		o, ok := configurationListOptions(w, r)
 		if !ok {
@@ -139,6 +173,35 @@ func registerGlobalConfigurationRoutes(m *http.ServeMux, s *globalconfig.Service
 		v, e := s.UpdateWorkflowIdempotent(r.Context(), id, x, key)
 		configurationRead(w, r, v, e)
 	})
+	for _, action := range []struct {
+		path    string
+		handler func(context.Context, uuid.UUID, int, string) (globalconfig.Workflow, error)
+	}{
+		{"POST /api/v1/workflow-configurations/{workflowId}/verify", s.VerifyWorkflowConfiguration},
+		{"POST /api/v1/workflow-configurations/{workflowId}/disable", s.DisableWorkflowConfiguration},
+	} {
+		action := action
+		m.HandleFunc(action.path, func(w http.ResponseWriter, r *http.Request) {
+			id, ok := configurationID(w, r, "workflowId")
+			if !ok {
+				return
+			}
+			var body configurationActionRequest
+			if !configurationBody(w, r, &body) {
+				return
+			}
+			if body.ExpectedVersion < 1 {
+				writeError(w, r, 400, "validation_error", "invalid configuration", map[string]any{"fields": map[string]string{"expectedVersion": "required"}})
+				return
+			}
+			key, ok := configurationPatchKey(w, r)
+			if !ok {
+				return
+			}
+			v, err := action.handler(r.Context(), id, body.ExpectedVersion, key)
+			configurationRead(w, r, v, err)
+		})
+	}
 	m.HandleFunc("GET /api/v1/distribution-platforms", func(w http.ResponseWriter, r *http.Request) {
 		o, ok := configurationListOptions(w, r)
 		if !ok {
@@ -301,6 +364,10 @@ func configurationError(w http.ResponseWriter, r *http.Request, e error) {
 		writeError(w, r, 409, "validation_error", "configuration name already exists", map[string]any{"fields": map[string]string{"name": "already_exists"}})
 	case errors.Is(e, globalconfig.ErrValidation):
 		writeError(w, r, 400, "validation_error", "invalid configuration", map[string]any{"fields": map[string]string{"body": "invalid"}})
+	case errors.Is(e, globalconfig.ErrConnectionNotReady):
+		writeError(w, r, 422, "connection_not_ready", "workflow connection must be connected and enabled", map[string]any{})
+	case errors.Is(e, globalconfig.ErrVerification):
+		writeError(w, r, 422, "verification_failed", "integration verification failed", map[string]any{})
 	default:
 		writeError(w, r, 500, "internal_error", "internal server error", map[string]any{})
 	}

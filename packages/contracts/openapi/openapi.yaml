@@ -1040,7 +1040,7 @@ paths:
         "500": {$ref: "#/components/responses/InternalServerError"}
     post:
       operationId: createWorkflowConnection
-      description: Creates an internal workflow connection configuration record without contacting n8n. connectionType is required and currently must be n8n. Idempotency-Key is required and operation-scoped. The returned integrationStatus=not_connected and enabled=false values are reserved future-integration metadata and do not prevent project binding or queued WorkflowRun creation.
+      description: Creates an internal workflow connection configuration record without contacting n8n. connectionType is required and currently must be n8n. Idempotency-Key is required and operation-scoped. New connections always return integrationStatus=not_connected and enabled=false; only Verify can make a connection callable.
       parameters: [{$ref: "#/components/parameters/IdempotencyKey"}]
       requestBody: {required: true, content: {application/json: {schema: {$ref: "#/components/schemas/CreateWorkflowConnectionRequest"}}}}
       responses:
@@ -1067,6 +1067,32 @@ paths:
         "404": {$ref: "#/components/responses/NotFound"}
         "409": {$ref: "#/components/responses/Conflict"}
         "422": {$ref: "#/components/responses/UnprocessableEntity"}
+  /api/v1/workflow-connections/{connectionId}/verify:
+    parameters: [{$ref: "#/components/parameters/ConnectionId"}]
+    post:
+      operationId: verifyWorkflowConnection
+      description: Performs a real, safe outbound health probe and, on success, sets integrationStatus=connected and enabled=true. On failure it persists not_connected and enabled=false without exposing upstream details.
+      parameters: [{$ref: "#/components/parameters/IdempotencyKey"}]
+      requestBody: {required: true, content: {application/json: {schema: {$ref: "#/components/schemas/ConfigurationActionRequest"}}}}
+      responses:
+        "200": {description: Verified workflow connection., content: {application/json: {schema: {$ref: "#/components/schemas/WorkflowConnectionEnvelope"}}}}
+        "400": {$ref: "#/components/responses/BadRequest"}
+        "404": {$ref: "#/components/responses/NotFound"}
+        "409": {$ref: "#/components/responses/Conflict"}
+        "422": {$ref: "#/components/responses/UnprocessableEntity"}
+  /api/v1/workflow-connections/{connectionId}/disable:
+    parameters: [{$ref: "#/components/parameters/ConnectionId"}]
+    post:
+      operationId: disableWorkflowConnection
+      description: Sets enabled=false without deleting the connection or modifying dependent workflow configurations.
+      parameters: [{$ref: "#/components/parameters/IdempotencyKey"}]
+      requestBody: {required: true, content: {application/json: {schema: {$ref: "#/components/schemas/ConfigurationActionRequest"}}}}
+      responses:
+        "200": {description: Disabled workflow connection., content: {application/json: {schema: {$ref: "#/components/schemas/WorkflowConnectionEnvelope"}}}}
+        "400": {$ref: "#/components/responses/BadRequest"}
+        "404": {$ref: "#/components/responses/NotFound"}
+        "409": {$ref: "#/components/responses/Conflict"}
+        "422": {$ref: "#/components/responses/UnprocessableEntity"}
   /api/v1/workflow-configurations:
     get:
       operationId: listWorkflowConfigurations
@@ -1078,7 +1104,7 @@ paths:
         "500": {$ref: "#/components/responses/InternalServerError"}
     post:
       operationId: createWorkflowConfiguration
-      description: Creates an internal workflow configuration record bound to an existing connection. connectionId is required; workflowType is derived server-side and clients must not submit it. Idempotency-Key is required and operation-scoped. The returned integrationStatus=not_connected and enabled=false values are reserved future-integration metadata and do not prevent project binding or queued WorkflowRun creation.
+      description: Creates an internal workflow configuration record bound to an existing connection. connectionId is required; workflowType is derived server-side and clients must not submit it. Idempotency-Key is required and operation-scoped. New configurations always return integrationStatus=not_connected and enabled=false; only Verify can make a configuration callable.
       parameters: [{$ref: "#/components/parameters/IdempotencyKey"}]
       requestBody: {required: true, content: {application/json: {schema: {$ref: "#/components/schemas/CreateWorkflowConfigurationRequest"}}}}
       responses:
@@ -1102,6 +1128,32 @@ paths:
       requestBody: {required: true, content: {application/json: {schema: {$ref: "#/components/schemas/UpdateWorkflowConfigurationRequest"}}}}
       responses:
         "200": {description: Updated workflow configuration., content: {application/json: {schema: {$ref: "#/components/schemas/WorkflowConfigurationEnvelope"}}}}
+        "400": {$ref: "#/components/responses/BadRequest"}
+        "404": {$ref: "#/components/responses/NotFound"}
+        "409": {$ref: "#/components/responses/Conflict"}
+        "422": {$ref: "#/components/responses/UnprocessableEntity"}
+  /api/v1/workflow-configurations/{workflowId}/verify:
+    parameters: [{$ref: "#/components/parameters/WorkflowConfigurationId"}]
+    post:
+      operationId: verifyWorkflowConfiguration
+      description: Requires its connection to be connected and enabled, then posts a dedicated verification probe to the production webhook. It never creates a WorkflowRun, batch, or candidate.
+      parameters: [{$ref: "#/components/parameters/IdempotencyKey"}]
+      requestBody: {required: true, content: {application/json: {schema: {$ref: "#/components/schemas/ConfigurationActionRequest"}}}}
+      responses:
+        "200": {description: Verified workflow configuration., content: {application/json: {schema: {$ref: "#/components/schemas/WorkflowConfigurationEnvelope"}}}}
+        "400": {$ref: "#/components/responses/BadRequest"}
+        "404": {$ref: "#/components/responses/NotFound"}
+        "409": {$ref: "#/components/responses/Conflict"}
+        "422": {$ref: "#/components/responses/UnprocessableEntity"}
+  /api/v1/workflow-configurations/{workflowId}/disable:
+    parameters: [{$ref: "#/components/parameters/WorkflowConfigurationId"}]
+    post:
+      operationId: disableWorkflowConfiguration
+      description: Sets enabled=false without deleting bindings or historical runs and without contacting the external service.
+      parameters: [{$ref: "#/components/parameters/IdempotencyKey"}]
+      requestBody: {required: true, content: {application/json: {schema: {$ref: "#/components/schemas/ConfigurationActionRequest"}}}}
+      responses:
+        "200": {description: Disabled workflow configuration., content: {application/json: {schema: {$ref: "#/components/schemas/WorkflowConfigurationEnvelope"}}}}
         "400": {$ref: "#/components/responses/BadRequest"}
         "404": {$ref: "#/components/responses/NotFound"}
         "409": {$ref: "#/components/responses/Conflict"}
@@ -1570,7 +1622,13 @@ components:
   schemas:
     IntegrationStatus:
       type: string
-      enum: [not_connected, unverified, verified, failed]
+      enum: [not_connected, connected, unverified, verified, failed]
+    ConfigurationActionRequest:
+      type: object
+      additionalProperties: false
+      required: [expectedVersion]
+      properties:
+        expectedVersion: {type: integer, minimum: 1}
     ConfigurationFieldSchema:
       type: object
       additionalProperties: false
@@ -1716,8 +1774,8 @@ components:
         typeConfig: {$ref: "#/components/schemas/N8nTypeConfig"}
         hasCredential: {type: boolean, readOnly: true}
         credentialFingerprint: {type: [string, "null"], maxLength: 32, readOnly: true, description: Non-reversible safe identifier; plaintext and ciphertext are never returned.}
-        integrationStatus: {allOf: [{$ref: "#/components/schemas/IntegrationStatus"}], readOnly: true, description: Reserved future-integration metadata; it does not prove a real verified connection and is not a project-binding or WorkflowRun-creation gate.}
-        enabled: {type: boolean, readOnly: true, description: Reserved future-integration metadata; it is not a project-binding or WorkflowRun-creation gate.}
+        integrationStatus: {allOf: [{$ref: "#/components/schemas/IntegrationStatus"}], readOnly: true, description: Starts as not_connected and becomes connected only through Verify. Connected and enabled are required by project binding and real execution gates.}
+        enabled: {type: boolean, readOnly: true, description: Starts false; Verify and Disable are the only state-transition endpoints.}
         lastVerifiedAt: {type: [string, "null"], format: date-time, readOnly: true}
         lastErrorCode: {type: [string, "null"], maxLength: 80, readOnly: true}
         lastErrorMessage: {type: [string, "null"], maxLength: 300, readOnly: true}
@@ -1789,8 +1847,8 @@ components:
         outputContractVersion: {type: string, minLength: 1, maxLength: 40}
         defaultParameters: {type: object, additionalProperties: true}
         note: {type: [string, "null"], maxLength: 5000}
-        integrationStatus: {allOf: [{$ref: "#/components/schemas/IntegrationStatus"}], readOnly: true, description: Reserved future-execution metadata; it is not a verified callable workflow and is not a project-binding or WorkflowRun-creation gate.}
-        enabled: {type: boolean, readOnly: true, description: Reserved future-execution metadata; it is not a project-binding or WorkflowRun-creation gate.}
+        integrationStatus: {allOf: [{$ref: "#/components/schemas/IntegrationStatus"}], readOnly: true, description: Starts as not_connected and becomes connected only through Verify. Connected and enabled are required by project binding and real execution gates.}
+        enabled: {type: boolean, readOnly: true, description: Starts false; Verify and Disable are the only state-transition endpoints.}
         lastVerifiedAt: {type: [string, "null"], format: date-time, readOnly: true}
         lastErrorCode: {type: [string, "null"], maxLength: 80, readOnly: true}
         lastErrorMessage: {type: [string, "null"], maxLength: 300, readOnly: true}
