@@ -17,12 +17,14 @@ import { Icon } from "@/components/ui/icons";
 import {
   createOrGetContentItem,
   getContentItem,
+  getContentGenerationSummary,
   mockGenerateContent,
   saveContentDraft,
   type ContentItemDetail,
   type MockGenerationParameters,
   type WorkflowRunSummary,
 } from "./content-item-http-api";
+import { ContentGenerationDrawer } from "./content-generation-drawer";
 import {
   contentVersionSourceLabel,
   contentVersionStatusLabel,
@@ -38,9 +40,11 @@ const idKey = () => crypto.randomUUID();
 export function ContentEditorWorkspace({
   projectId,
   chapterPlanId,
+  workId,
 }: {
   projectId: string;
-  chapterPlanId: string;
+  chapterPlanId?: string;
+  workId?: string;
 }) {
   const [detail, setDetail] = useState<ContentItemDetail | null>(null),
     [plan, setPlan] = useState<ChapterPlan | null>(null),
@@ -54,7 +58,10 @@ export function ContentEditorWorkspace({
     [dialog, setDialog] = useState(false),
     [generating, setGenerating] = useState(false),
     [generateError, setGenerateError] = useState<string | null>(null),
-    [run, setRun] = useState<WorkflowRunSummary | null>(null);
+    [run, setRun] = useState<WorkflowRunSummary | null>(null),
+    [generationSummary, setGenerationSummary] = useState<Awaited<ReturnType<typeof getContentGenerationSummary>> | null>(null),
+    [contextTab, setContextTab] = useState<"goal" | "story" | "materials">("goal"),
+    [generationDrawer, setGenerationDrawer] = useState(false);
   const initial = useRef<Draft | null>(null),
     current = useRef(""),
     sequence = useRef(0),
@@ -87,7 +94,7 @@ export function ContentEditorWorkspace({
     try {
       const c = addController();
       const [created, plans] = await Promise.all([
-        createOrGetContentItem(chapterPlanId, { signal: c.signal }),
+        workId ? getContentItem(workId, { signal: c.signal }) : createOrGetContentItem(chapterPlanId!, { signal: c.signal }),
         listChapterPlans(
           projectId,
           { limit: 100, offset: 0 },
@@ -96,7 +103,7 @@ export function ContentEditorWorkspace({
       ]);
       if (c.signal.aborted || request !== sequence.current) return;
       current.current = created.content_item.id;
-      setPlan(plans.items.find((x) => x.id === chapterPlanId) ?? null);
+      setPlan(plans.items.find((x) => x.id === created.content_item.chapter_plan_id) ?? null);
       apply(created);
       const get = addController(),
         fresh = await getContentItem(created.content_item.id, {
@@ -109,6 +116,8 @@ export function ContentEditorWorkspace({
       )
         return;
       apply(fresh);
+      const summary = await getContentGenerationSummary(fresh.content_item.id, { signal: get.signal });
+      if (!get.signal.aborted && request === sequence.current) setGenerationSummary(summary);
     } catch (cause) {
       if (request !== sequence.current) return;
       const api = cause as ApiError;
@@ -122,7 +131,7 @@ export function ContentEditorWorkspace({
     } finally {
       if (request === sequence.current) setLoading(false);
     }
-  }, [apply, chapterPlanId, projectId]);
+  }, [apply, chapterPlanId, projectId, workId]);
   useEffect(() => {
     void load();
     return () => {
@@ -282,12 +291,7 @@ export function ContentEditorWorkspace({
               >
                 {saving ? "保存中…" : "保存草稿"}
               </button>
-              <button
-                onClick={() => setDialog(true)}
-                disabled={generating || readOnly}
-              >
-                模拟生成正文
-              </button>
+              <button onClick={() => setGenerationDrawer(true)} disabled={readOnly || generationSummary?.canGenerate === false}>生成正文</button>
               {readOnly ? (
                 <Link
                   className="content-review-link"
@@ -386,32 +390,10 @@ export function ContentEditorWorkspace({
           )}
         </section>
         <aside className="content-editor-right">
-          <Info title="章节目标" value={plan?.chapter_goal ?? "未设置"} />
-          <Info
-            title="故事线"
-            value={
-              plan?.storyline_refs_json.length
-                ? `${plan.storyline_refs_json.length} 条关联`
-                : "未加载"
-            }
-          />
-          <Info
-            title="关联素材"
-            value={
-              plan?.material_refs_json.length
-                ? `${plan.material_refs_json.length} 项关联`
-                : "无"
-            }
-          />
-          <Info
-            title="关联伏笔"
-            value={
-              plan?.foreshadowing_refs_json.length
-                ? `${plan.foreshadowing_refs_json.length} 项关联`
-                : "无"
-            }
-          />
-          <Info title="创作提醒" value={plan?.creation_notes ?? "未设置"} />
+          <div className="content-context-tabs" role="tablist"><button role="tab" aria-selected={contextTab === "goal"} onClick={() => setContextTab("goal")}>章节目标</button><button role="tab" aria-selected={contextTab === "story"} onClick={() => setContextTab("story")}>故事情报</button><button role="tab" aria-selected={contextTab === "materials"} onClick={() => setContextTab("materials")}>素材库</button></div>
+          {contextTab === "goal" && <><Info title="本章目标" value={plan?.chapter_goal ?? "未设置"} /><Info title="创作提醒" value={plan?.creation_notes ?? "未设置"} /></>}
+          {contextTab === "story" && <><Info title="故事线" value={plan?.storyline_refs_json.length ? `${plan.storyline_refs_json.length} 条关联` : "未加载"} /><Info title="关联伏笔" value={plan?.foreshadowing_refs_json.length ? `${plan.foreshadowing_refs_json.length} 项关联` : "无"} /></>}
+          {contextTab === "materials" && <Info title="关联素材" value={plan?.material_refs_json.length ? `${plan.material_refs_json.length} 项关联` : "无"} />}
           <Info title="版本记录" value={`v${v.version_no}${detail.content_item.current_version_id === v.id ? "（当前）" : ""} · ${contentVersionSourceLabel(v.source)}`} />
           {run && <Info title="最近工作流" value="最近工作流已完成" />}
         </aside>
@@ -431,6 +413,7 @@ export function ContentEditorWorkspace({
           onSubmit={generate}
         />
       )}
+      {generationDrawer && <ContentGenerationDrawer contentItemId={detail.content_item.id} version={detail.current_version} onClose={() => setGenerationDrawer(false)} onCreated={async () => { setGenerationSummary(await getContentGenerationSummary(detail.content_item.id)); }} />}
     </main>
   );
 }

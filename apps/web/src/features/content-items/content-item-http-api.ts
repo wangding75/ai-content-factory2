@@ -36,6 +36,11 @@ export interface ContentItemDetail {
   content_item: ContentItem;
   current_version: ContentVersion;
 }
+export interface ContentGenerationContextOptions { includePriorChapterSummaries: boolean; includeProjectMaterials: boolean; includeStoryContext: boolean; includeForeshadowings: boolean; }
+export interface ContentGenerationPreflightRequest { expectedCurrentVersionId: string; expectedCurrentVersion: number; contextOptions: ContentGenerationContextOptions; additionalInstructions: string | null; }
+export interface ContentGenerationCheck { code: string; status: "passed" | "warning" | "blocked"; message: string; }
+export interface ContentGenerationPreflightReport { status: "passed" | "blocked"; preflightToken: string | null; expiresAt: string | null; sourceVersion: ContentVersion; targetVersionNo: number; workflow: { name: string; inputContractVersion: string; outputContractVersion: string; configurationVersion: number } | null; contextSummary: { chapterGoalCount: number; keyPlotCount: number; priorChapterCount: number; materialCount: number; storylineCount: number; foreshadowingCount: number }; checks: ContentGenerationCheck[]; }
+export interface ContentGenerationSummary { contentItemId: string; contentItem: ContentItem; currentVersionId: string; currentVersion: ContentVersion; workflowConfigured: boolean; state: string; activeRun: WorkflowRunSummary | null; latestRun: WorkflowRunSummary | null; latestEvents: unknown[]; latestCandidateVersion: ContentVersion | null; latestError: { code: string; message: string; details: Record<string, unknown> } | null; canGenerate: boolean; candidateCanBecomeCurrent: boolean; }
 export interface SaveContentDraftRequest {
   expected_version: number;
   title?: string;
@@ -139,6 +144,9 @@ export const getContentItem = (contentItemId: string, init?: ApiRequestInit) =>
     `/content-items/${encodeURIComponent(contentItemId)}`,
     init,
   );
+export const getContentGenerationSummary = (contentItemId: string, init?: ApiRequestInit) => apiRequest<ContentGenerationSummary>(`/content-items/${encodeURIComponent(contentItemId)}/content-generation-summary`, init);
+export const preflightContentGenerationRun = (contentItemId: string, payload: ContentGenerationPreflightRequest, init?: ApiRequestInit) => apiRequest<ContentGenerationPreflightReport>(`/content-items/${encodeURIComponent(contentItemId)}/content-generation-runs/preflight`, { ...init, method: "POST", headers: { ...init?.headers, "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+export const createContentGenerationRun = (contentItemId: string, payload: { preflightToken: string }, idempotencyKey: string, init?: ApiRequestInit) => apiRequest<WorkflowRunSummary>(`/content-items/${encodeURIComponent(contentItemId)}/content-generation-runs`, { ...init, method: "POST", headers: { ...init?.headers, "Content-Type": "application/json", "Idempotency-Key": idempotencyKey }, body: JSON.stringify(payload) });
 export const saveContentDraft = (
   contentItemId: string,
   payload: SaveContentDraftRequest,
