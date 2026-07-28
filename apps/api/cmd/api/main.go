@@ -67,6 +67,7 @@ func main() {
 	)
 	workflowRuns.SetWorkflowExecutor(workflowrun.NewN8NWorkflowExecutor(globalConfigurations.RuntimeHTTPClient()))
 	contentGeneration := contentitem.NewGenerationService(contentRepository, workflowbinding.NewPostgresRepository(pool), globalConfigurations, workflowRuns, hmacSecret)
+	workflowRuns.SetContentSucceededConsumer(contentGeneration)
 	chapterPlans.ConfigureChapterPlanningRuntime(workflowbinding.NewPostgresRepository(pool), globalConfigurations, globalConfigurations, workflowRuns)
 	workflowRuns.SetSucceededConsumer(chapterplan.NewRuntimeConsumer(chapterplan.NewResultIngestor(pool), chapterplan.NewConsumptionRepository(pool)))
 	workerContext, stopWorker := context.WithCancel(context.Background())

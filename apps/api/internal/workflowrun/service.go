@@ -93,6 +93,7 @@ type Service struct {
 	succeededConsumer interface {
 		ConsumeSucceededRun(context.Context, WorkflowRun) error
 	}
+	contentSucceededConsumer interface { ConsumeSucceededRun(context.Context, WorkflowRun) error }
 }
 
 func NewService(store Store, projects ProjectReader, bindings BindingReader, configurations ConfigurationReader, connections ConnectionReader) *Service {
@@ -111,6 +112,7 @@ func (s *Service) SetSucceededConsumer(consumer interface {
 }) {
 	s.succeededConsumer = consumer
 }
+func (s *Service) SetContentSucceededConsumer(consumer interface { ConsumeSucceededRun(context.Context, WorkflowRun) error }) { s.contentSucceededConsumer = consumer }
 
 // ExecuteRun is an explicit application boundary. It never polls or schedules work.
 func (s *Service) ExecuteRun(ctx context.Context, runID uuid.UUID) (WorkflowRun, error) {
@@ -167,6 +169,7 @@ func (s *Service) applyExecutionResult(ctx context.Context, run WorkflowRun, res
 				return updated, err
 			}
 		}
+		if s.contentSucceededConsumer != nil && updated.Stage == "content_generation" { if err := s.contentSucceededConsumer.ConsumeSucceededRun(ctx,updated); err != nil { return updated,err } }
 		return updated, nil
 	}
 	if result.Status == ExecutionCancelled {
