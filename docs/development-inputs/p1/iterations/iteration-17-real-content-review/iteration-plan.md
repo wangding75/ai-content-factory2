@@ -1,76 +1,100 @@
 # Iteration 17 — 真实内容审核
 
-## 1. 目标
+**状态：`rebuild_candidate_2026_07_29`。** 本目录用于替换原 Iteration 17 开发输入。业务、数据、事务、API、UI 和原型已经重新对齐；正式实现前仍需按 `development-plan.md` 完成 OpenAPI 与 Migration 冻结。
 
-针对固定 ContentVersion 执行结构化审核并生成 ReviewReport。
+## 1. 迭代目标
 
-## 2. 用户闭环
+针对一个明确、已保存的 `ContentVersion` 发起真实异步审核，通过项目绑定的 `review` 工作流生成结构化 `ReviewReport` 与 `ReviewIssue`，并完整保留来源版本、WorkflowRun、证据、定位和建议。
 
-固定版本审核完成，证据和建议结构化可追踪，审核不修改正文。
+审核不得修改正文内容，也不得自动创建重写版本。用户可以离开页面；返回或刷新后，页面必须从持久化的 Run、Event、Report 和 Issue 恢复状态。
 
-## 3. 数据模型
+## 2. 完整用户闭环
 
-- `WorkflowRun(stage=content_review)`
-- `ReviewReport.workflowRunId`
-- `ReviewReport.sourceContentVersionId`
-- `ReviewIssue`
+```text
+正文编辑器确认已保存版本
+→ 打开发起审核抽屉
+→ 选择固定 ContentVersion
+→ 只读预检并确认项目审核工作流
+→ 创建 WorkflowRun(stage=review, subject=content_version)
+→ queued / running
+→ 校验 review.output.v1
+→ 原子创建 ReviewReport + ReviewIssue
+→ review_ready
+→ 查看问题列表、证据、全文定位和历史报告
+→ 可标记问题为忽略
+→ Iteration 18 才可基于选中问题创建重写任务
+```
 
-详细字段和约束见 `data-model.md`。
+## 3. 核心业务边界
 
-## 4. API
+- Runtime Stage 固定为 `review`，与 Iteration 13 的项目工作流绑定枚举一致；不得使用 `content_review` 新建第二套 Stage。
+- 审核来源固定为 `ContentVersion.id`。提交后正文 ID、乐观锁版本和内容摘要必须保持可追溯。
+- 同一版本允许多次历史审核，但同一版本最多一个 `queued/running` 审核 Run。
+- 每个成功 Run 最多生成一个 ReviewReport；失败 Run 不得留下部分 Report 或 Issue。
+- ReviewReport 不覆盖历史报告；历史页同时展示成功、失败和运行中的 Run。
+- 问题“忽略”只改变用户处置状态，不修改审核输出、原始证据或正文。
+- “创建重写任务”属于 Iteration 18；本迭代原型只保留禁用的交接入口，不调用重写 API。
+- P0 Mock Review API 与既有 Mock 数据继续保留，不作为真实审核成功依据。
 
-- POST /api/v1/content-versions/{contentVersionId}/review-runs
-- 复用 ReviewReport/Issue 查询 API
+## 4. 复用关系
 
-冻结范围见 `api-scope.yaml`。
+| 来源迭代 | 直接复用 |
+|---|---|
+| Iteration 06 | ReviewReport、ReviewFinding、ReviewRecommendation、审核历史和详情读取语义 |
+| Iteration 12 | n8n Connection、凭据保护与 Verify |
+| Iteration 13 | ProjectWorkflowBinding(stage=`review`) |
+| Iteration 14 | WorkflowRun、WorkflowRunEvent、Runtime Retry、运行详情和安全错误 |
+| Iteration 15 | 项目绑定与异步状态恢复模式 |
+| Iteration 16 | Preflight Token、命令幂等、输出校验失败/消费失败分离、Summary 聚合模式 |
+| Iteration 18 | 只提供 ReviewReport/Issue 来源；不提前执行重写 |
 
-## 5. UI 与原型关联
+## 5. API 范围
 
-- `D2_REVIEW_V2` → `ui/frames/D2_REVIEW_V2/screen.png`
-- `D2_SUBMIT_REVIEW_DRAWER` → `ui/frames/D2_SUBMIT_REVIEW_DRAWER/screen.png`
-- `STATE_TASK_RUNNING_BAR` → `ui/frames/STATE_TASK_RUNNING_BAR/screen.png`
-- `STATE_TASK_FAILED_NOTICE` → `ui/frames/STATE_TASK_FAILED_NOTICE/screen.png`
-- `STATE_NOT_CONFIGURED_EMPTY` → `ui/frames/STATE_NOT_CONFIGURED_EMPTY/screen.png`
+- `POST /api/v1/content-versions/{contentVersionId}/review-runs/preflight`
+- `POST /api/v1/content-versions/{contentVersionId}/review-runs`
+- `GET /api/v1/content-items/{contentItemId}/review-summary`
+- 复用 `GET /api/v1/content-items/{contentItemId}/reviews`
+- 复用 `GET /api/v1/reviews/{reviewId}`
+- `PATCH /api/v1/reviews/{reviewId}/issues/{issueId}`
+- `POST /api/v1/workflow-runs/{workflowRunId}/review-result-consumption-retries`
+- 复用 WorkflowRun 详情、Event、Cancel 与 Runtime Retry API
 
-详细状态和开发约束见 `ui-scope.md` 与 `ui-manifest.json`。
+完整冻结范围见 `api-scope.yaml`。
 
-## 6. 实施顺序
+## 6. UI 与原型
 
-1. 读取冻结 OpenAPI、数据模型和原型；
-2. 后端先实现领域模型、迁移、Repository、Service 与 API；
-3. 前端可基于冻结契约和原型并行开发；
-4. 先使用 Mock Adapter 验证全部页面状态；
-5. 人工 UI 验收后接入真实 API；
-6. 局部测试通过后执行分组测试；
-7. 最终执行全链路 E2E、Code Review 和 Git 验收。
+Iteration 17 采用 8 张按用户链路排序的桌面原型：
 
-## 7. 不在范围
+1. `I17_D1_EDITOR_REVIEW_ENTRY` — 正文编辑器与提交审核入口
+2. `D2_SUBMIT_REVIEW_DRAWER` — 发起内容审核抽屉
+3. `STATE_TASK_RUNNING_BAR` — 审核运行中
+4. `D2_REVIEW_V2` — 审核结果总览
+5. `I17_D2_REVIEW_ISSUE_DETAIL` — 问题详情与全文定位
+6. `STATE_TASK_FAILED_NOTICE` — 审核失败与安全恢复
+7. `STATE_NOT_CONFIGURED_EMPTY` — 审核工作流未配置
+8. `I17_D2_REVIEW_HISTORY` — 审核历史
 
-- 不接入 Coze、ComfyUI 或其他工作流平台；
-- 不建设 n8n 可视化编辑器或字段映射器；
-- 不实现多 n8n 实例路由、费用大盘或自动模型路由；
-- 不允许业务页面临时切换工作流；
-- 不静默改变第一闭环 Mock 契约。
+原型冻结 ACF 现有桌面 AppShell，只允许中心业务区变化。详细映射见 `ui-scope.md`、`ui-manifest.json`、`prototype-source-mapping.md` 和 `ui-contract-traceability.md`。
 
-## UI 条件通过与开发修正规则
+## 7. 实施顺序
 
-Iteration 11 的人工验收结论为：**有条件通过**。
+严格按 `development-plan.md` 执行：契约 → 数据与后端 → 前端 → 真实 n8n → 异常与最终回归。不得在契约冻结前直接实现 Iteration 17。
 
-已知问题：部分 Stitch 原型文案为英文，尤其可能出现在左侧一级菜单、状态标签、表头、按钮、辅助说明和技术占位文案中。原型中的英文不构成最终产品文案冻结。
+## 8. 不在范围
 
-开发必须满足：
+- 不修改正文内容；
+- 不自动生成新 ContentVersion；
+- 不实现 Iteration 18 重写；
+- 不允许业务页临时切换审核工作流；
+- 不建设工作流可视化编辑器、字段映射器或多 n8n 路由；
+- 不删除、替换或静默改变 P0 Mock Review 契约；
+- 不在业务页面展示密钥、原始上游响应、SQL、堆栈、内部节点或基础设施地址。
 
-1. 默认中文环境下，用户可见文案全部使用统一中文资源，不得直接复制 HTML 中的英文硬编码；
-2. 左侧一级菜单统一为：首页、项目、素材、作品、工作流、设置；
-3. 状态统一为：排队中、运行中、已成功、已失败、未验证、验证成功、已停用、配置异常；
-4. `Run ID`、`Workflow ID`、Schema 版本、模型名、API 名称等技术标识可以保留英文；
-5. 所有业务文案进入前端 i18n/locale 资源；组件不得内嵌不可替换英文；
-6. 人工 UI 验收增加“中文文案与术语一致性”专项，发现英文用户文案即不通过。
+## 9. 完成定义
 
-## 8. 完成定义
-
-- [ ] 数据模型、API 和 UI 三者一致；
-- [ ] 所有用户动作都有反馈、数据结果和失败恢复；
-- [ ] 原型关联文件存在且可打开；
-- [ ] 验收项全部通过；
-- [ ] 变更报告、测试报告与 Git 状态完整。
+- [ ] 业务规则、OpenAPI、数据模型、事务和 8 张原型一致；
+- [ ] 固定版本、Run、Report、Issue 来源关系可追溯；
+- [ ] 正常、未配置、运行、失败、输出非法、消费失败和刷新恢复闭环通过；
+- [ ] 失败零部分领域数据；
+- [ ] P0 Mock Review 与 Iteration 16 无回归；
+- [ ] 真实 n8n 正常链路、异常回归、独立 Code Review 和 Git 门禁完成。

@@ -3,7 +3,7 @@
 <html class="light" lang="zh-CN"><head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>02 — 发起内容审核抽屉 - AI Content Factory</title>
+<title>01 — 正文编辑器与提交审核入口 - AI Content Factory</title>
 <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&amp;display=swap" rel="stylesheet"/>
@@ -22,7 +22,7 @@
                         "surface-container": "#e8eff4",
                         "tertiary-fixed-dim": "#58e7ab",
                         "primary-container": "#e3dfff",
-                        "outline-variant": "#E6EAF0", /* Updated to match #E6EAF0 request */
+                        "outline-variant": "#a8b3bb",
                         "primary": "#4f43e3",
                         "surface-dim": "#cedce5",
                         "error-dim": "#4f0116",
@@ -47,7 +47,7 @@
                         "secondary-container": "#d3e4fe",
                         "on-background": "#29343a",
                         "on-tertiary-fixed-variant": "#006544",
-                        "outline": "#E6EAF0", /* Updated to match #E6EAF0 request */
+                        "outline": "#717c84",
                         "on-tertiary-fixed": "#00452d",
                         "surface-container-lowest": "#ffffff",
                         "on-tertiary-container": "#005a3c",
@@ -63,13 +63,16 @@
                         "tertiary-fixed": "#69f6b8",
                         "on-secondary-fixed-variant": "#4d5d73",
                         "surface-tint": "#4f43e3",
-                        "error-container": "#ff8b9a"
+                        "error-container": "#ff8b9a",
+                        "border-light": "#E6EAF0"
                     },
                     borderRadius: {
-                        "DEFAULT": "6px", /* Updated to 6px radius */
-                        "lg": "6px",
-                        "xl": "8px",
-                        "full": "9999px"
+                        "DEFAULT": "0.125rem",
+                        "md": "0.375rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem",
+                        "card": "6px"
                     },
                     fontFamily: {
                         "headline": ["Inter", "sans-serif"],
@@ -86,8 +89,8 @@
     </style>
 </head>
 <body class="bg-surface text-on-surface h-screen w-screen overflow-hidden flex font-body antialiased">
-<!-- Sidebar Shell (244px) -->
-<nav class="fixed left-0 top-0 h-full w-[244px] bg-surface-container-lowest border-r border-[#E6EAF0] flex flex-col z-20">
+<!-- Sidebar Shell -->
+<nav class="fixed left-0 top-0 h-full w-[244px] bg-white border-r border-[#E6EAF0] flex flex-col z-20">
 <div class="h-[60px] flex items-center px-6 border-b border-[#E6EAF0] shrink-0">
 <div class="w-6 h-6 bg-primary rounded-sm flex items-center justify-center mr-3 shrink-0">
 <span class="material-symbols-outlined text-white text-[16px]">psychiatry</span>
@@ -98,24 +101,23 @@
 </div>
 </div>
 <div class="flex-1 py-4 flex flex-col gap-1 px-3 overflow-y-auto">
-<a class="flex items-center gap-3 px-3 py-2.5 rounded text-secondary hover:bg-surface-container-low transition-colors duration-200 font-medium text-[14px]" href="#">
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-secondary hover:bg-surface-container-low transition-colors duration-200 font-medium text-[14px]" href="#">
 <span class="material-symbols-outlined text-[20px]">home</span>
 <span>首页</span>
 </a>
-<!-- Active: 项目 -->
-<a class="flex items-center gap-3 px-3 py-2.5 rounded bg-primary-container text-primary font-semibold transition-colors duration-200 text-[14px]" href="#">
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-primary-container text-primary font-semibold transition-colors duration-200 text-[14px]" href="#">
 <span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'FILL' 1;">folder_open</span>
 <span>项目</span>
 </a>
-<a class="flex items-center gap-3 px-3 py-2.5 rounded text-secondary hover:bg-surface-container-low transition-colors duration-200 font-medium text-[14px]" href="#">
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-secondary hover:bg-surface-container-low transition-colors duration-200 font-medium text-[14px]" href="#">
 <span class="material-symbols-outlined text-[20px]">inventory_2</span>
 <span>素材</span>
 </a>
-<a class="flex items-center gap-3 px-3 py-2.5 rounded text-secondary hover:bg-surface-container-low transition-colors duration-200 font-medium text-[14px]" href="#">
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-secondary hover:bg-surface-container-low transition-colors duration-200 font-medium text-[14px]" href="#">
 <span class="material-symbols-outlined text-[20px]">description</span>
 <span>作品</span>
 </a>
-<a class="flex items-center gap-3 px-3 py-2.5 rounded text-secondary hover:bg-surface-container-low transition-colors duration-200 font-medium text-[14px]" href="#">
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-secondary hover:bg-surface-container-low transition-colors duration-200 font-medium text-[14px]" href="#">
 <span class="material-symbols-outlined text-[20px]">account_tree</span>
 <span>流程</span>
 </a>
@@ -123,8 +125,8 @@
 </nav>
 <!-- Main Workspace -->
 <div class="ml-[244px] flex-1 flex flex-col h-full relative">
-<!-- Global Top Bar (60px) -->
-<header class="h-[60px] bg-surface-container-lowest border-b border-[#E6EAF0] flex justify-between items-center px-6 shrink-0 z-10 w-full relative">
+<!-- Global Top Bar -->
+<header class="h-[60px] bg-white border-b border-[#E6EAF0] flex justify-between items-center px-6 shrink-0 z-10 w-full relative">
 <div class="flex-1 flex items-center">
 <div class="relative w-[280px]">
 <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline text-[18px]">search</span>
@@ -139,20 +141,20 @@
 <span class="material-symbols-outlined text-[20px]">notifications</span>
 <span class="absolute top-0 right-0 w-2 h-2 bg-error rounded-full"></span>
 </button>
-<div class="w-px h-4 bg-outline-variant mx-1"></div>
+<div class="w-px h-4 bg-[#E6EAF0] mx-1"></div>
 <div class="flex items-center gap-2 cursor-pointer">
 <div class="w-8 h-8 rounded-full bg-secondary-container flex items-center justify-center text-primary font-bold text-[13px] overflow-hidden">
-<img class="w-full h-full object-cover" data-alt="A clean, minimalist 3D render of a stylized avatar representing an administrator. The avatar is abstract, featuring smooth geometric shapes, rendered in a crisp, bright light-mode aesthetic with soft, high-key lighting. The color palette emphasizes whites, soft grays, and subtle hints of vibrant purple to denote administrative authority. The mood is professional, efficient, and precise." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCKcGugbxtbCON6c5XXPDRc050-OaFKl_lXhQcRlkHRqIinFZo01OP4V_Pnqn7wjuiXngRdBEJU8QOdujo_ptxb-Yg12qDlW6K3Kjc2wPRDfw-XUcNHC2gnqq2gmFlbOuG2CrZJjyz8K0xT0N9KY9QOnn9O1EesIQbeYkX7yebNyagWQmqnPZ367bCvfihFI8rRWuTL8u0V9f13HQmCm-2MIuxO6StQ2p7gQ86DtWoq6ISG3tF99USXHY2fOk2J4wru_qTQKBZf7-Y"/>
+<img class="w-full h-full object-cover" data-alt="Admin Avatar" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCKcGugbxtbCON6c5XXPDRc050-OaFKl_lXhQcRlkHRqIinFZo01OP4V_Pnqn7wjuiXngRdBEJU8QOdujo_ptxb-Yg12qDlW6K3Kjc2wPRDfw-XUcNHC2gnqq2gmFlbOuG2CrZJjyz8K0xT0N9KY9QOnn9O1EesIQbeYkX7yebNyagWQmqnPZ367bCvfihFI8rRWuTL8u0V9f13HQmCm-2MIuxO6StQ2p7gQ86DtWoq6ISG3tF99USXHY2fOk2J4wru_qTQKBZf7-Y"/>
 </div>
 <span class="text-[13px] font-medium text-on-surface">创作管理员</span>
 </div>
 </div>
 </header>
 <!-- Project Identity Header -->
-<div class="bg-surface-container-lowest pt-4 px-6 shrink-0">
+<div class="bg-white pt-6 px-6 shrink-0">
 <div class="flex items-center text-[12px] text-on-surface-variant mb-3">
 <span class="hover:text-primary cursor-pointer transition-colors">项目</span>
-<span class="mx-2 text-[#E6EAF0]">/</span>
+<span class="mx-2 text-outline-variant">/</span>
 <span class="text-on-surface">acf17-review-001</span>
 </div>
 <div class="flex items-start justify-between mb-4">
@@ -161,7 +163,7 @@
 <h2 class="text-[22px] font-headline font-semibold text-on-surface">霓港纪事</h2>
 <div class="flex gap-2">
 <span class="px-2 py-0.5 rounded text-[12px] bg-secondary-container text-on-secondary-container font-medium border border-secondary-fixed-dim">小说</span>
-<span class="px-2 py-0.5 rounded text-[12px] bg-surface-variant text-on-surface-variant font-medium border border-[#E6EAF0]">策划中</span>
+<span class="px-2 py-0.5 rounded text-[12px] bg-surface-variant text-on-surface-variant font-medium border border-outline-variant">策划中</span>
 </div>
 </div>
 <p class="text-[14px] text-on-surface-variant mt-1.5">Iteration 17 真实内容审核验收项目</p>
@@ -179,12 +181,12 @@
 <a class="pb-3 text-[14px] font-medium text-on-surface-variant hover:text-primary transition-colors" href="#">故事线</a>
 <a class="pb-3 text-[14px] font-medium text-on-surface-variant hover:text-primary transition-colors" href="#">章节规划</a>
 <a class="pb-3 text-[14px] font-medium text-on-surface-variant hover:text-primary transition-colors" href="#">审核</a>
-<a class="pb-3 text-[14px] font-semibold text-primary border-b-[2px] border-primary" href="#">作品</a>
+<a class="pb-3 text-[14px] font-semibold text-primary border-b-2 border-primary" href="#">作品</a>
 <a class="pb-3 text-[14px] font-medium text-on-surface-variant hover:text-primary transition-colors" href="#">设置</a>
 </div>
 </div>
 <!-- Page Specific Content -->
-<main class="flex-1 overflow-hidden flex flex-col p-6 gap-6"> <!-- Updated to 24px gap/margins -->
+<main class="flex-1 overflow-hidden flex flex-col p-6 gap-4 bg-surface">
 <!-- Header Row -->
 <div class="flex justify-between items-start shrink-0">
 <div>
@@ -193,11 +195,11 @@
 </div>
 <div class="flex flex-col items-end">
 <div class="flex items-center gap-3">
-<button class="px-4 h-[36px] bg-white border border-[#E6EAF0] rounded text-[13px] font-medium text-on-surface hover:bg-surface-container-low transition-colors flex items-center gap-2">
+<button class="px-4 h-[36px] bg-white border border-[#E6EAF0] rounded-md text-[13px] font-medium text-on-surface hover:bg-surface-container-low transition-colors flex items-center gap-2">
 <span class="material-symbols-outlined text-[16px]">history</span>
                             版本记录
                         </button>
-<button class="px-4 h-[36px] bg-primary rounded text-[13px] font-medium text-on-primary hover:bg-primary-dim transition-colors flex items-center gap-2 shadow-sm">
+<button class="px-4 h-[36px] bg-primary rounded-md text-[13px] font-medium text-on-primary hover:bg-primary-dim transition-colors flex items-center gap-2">
 <span class="material-symbols-outlined text-[16px]">check_circle</span>
                             提交审核
                         </button>
@@ -211,22 +213,22 @@
 <!-- Context Row -->
 <div class="flex items-center gap-4 py-3 border-y border-[#E6EAF0] shrink-0">
 <div class="flex items-center gap-2">
-<button class="h-[34px] px-3 bg-white border border-[#E6EAF0] rounded text-[13px] font-medium text-on-surface hover:bg-surface-container-low transition-colors flex items-center gap-2">
+<button class="h-[34px] px-3 bg-white border border-[#E6EAF0] rounded-md text-[13px] font-medium text-on-surface hover:bg-surface-container-low transition-colors flex items-center gap-2">
                         第08章 雨夜来客
                         <span class="material-symbols-outlined text-[16px]">expand_more</span>
 </button>
 </div>
 <div class="w-px h-4 bg-[#E6EAF0]"></div>
-<span class="px-2 py-0.5 rounded text-[12px] bg-surface-variant text-on-surface-variant font-medium border border-[#E6EAF0]">当前已保存版本 V4</span>
+<span class="px-2 py-0.5 rounded text-[12px] bg-surface-variant text-on-surface-variant font-medium border border-outline-variant">当前已保存版本 V4</span>
 <div class="flex items-center gap-1.5 text-[12px] text-on-tertiary-fixed-variant bg-tertiary-container px-2 py-0.5 rounded border border-tertiary-fixed-dim">
 <div class="w-2 h-2 rounded-full bg-tertiary"></div>
 <span>已保存 14:32</span>
 </div>
 </div>
 <!-- Three-Pane Editor Workspace -->
-<div class="flex-1 flex gap-6 min-h-0"> <!-- Updated gap to 24px -->
+<div class="flex-1 flex gap-4 min-h-0">
 <!-- Left Sidebar: Chapter List -->
-<div class="w-[230px] bg-white rounded border border-[#E6EAF0] flex flex-col shrink-0 overflow-hidden shadow-sm">
+<div class="w-[230px] bg-white rounded-card border border-[#E6EAF0] flex flex-col shrink-0 overflow-hidden">
 <div class="h-10 border-b border-[#E6EAF0] flex justify-between items-center px-4 shrink-0 bg-surface-bright">
 <span class="text-[13px] font-semibold text-on-surface">目录</span>
 <button class="text-on-surface-variant hover:text-primary transition-colors">
@@ -245,11 +247,11 @@
 </button>
 <button class="w-full flex items-center justify-between px-4 py-2 hover:bg-surface-container-low group transition-colors text-left">
 <span class="text-[13px] text-on-surface truncate pr-2">第07章 迷雾重重</span>
-<span class="text-[11px] px-1.5 py-0.5 rounded bg-surface-variant text-on-surface-variant font-medium shrink-0 border border-[#E6EAF0]">草稿</span>
+<span class="text-[11px] px-1.5 py-0.5 rounded bg-surface-variant text-on-surface-variant font-medium shrink-0 border border-outline-variant">草稿</span>
 </button>
 <button class="w-full flex items-center justify-between px-4 py-2 bg-primary-container group transition-colors text-left border-l-2 border-primary">
 <span class="text-[13px] font-semibold text-primary truncate pr-2">第08章 雨夜来客</span>
-<span class="text-[11px] px-1.5 py-0.5 rounded bg-surface-variant text-on-surface-variant font-medium shrink-0 border border-[#E6EAF0]">草稿</span>
+<span class="text-[11px] px-1.5 py-0.5 rounded bg-surface-variant text-on-surface-variant font-medium shrink-0 border border-outline-variant">草稿</span>
 </button>
 <button class="w-full flex items-center justify-between px-4 py-2 hover:bg-surface-container-low group transition-colors text-left">
 <span class="text-[13px] text-secondary truncate pr-2">第09章 破局之机</span>
@@ -258,7 +260,7 @@
 </div>
 </div>
 <!-- Center Editor -->
-<div class="flex-1 bg-white rounded border border-[#E6EAF0] flex flex-col min-w-0 shadow-sm relative overflow-hidden">
+<div class="flex-1 bg-white rounded-card border border-[#E6EAF0] flex flex-col min-w-0 relative overflow-hidden">
 <!-- Toolbar -->
 <div class="h-10 border-b border-[#E6EAF0] flex items-center px-4 gap-2 shrink-0 bg-surface-bright">
 <button class="w-7 h-7 flex items-center justify-center rounded hover:bg-surface-variant text-on-surface-variant transition-colors"><span class="material-symbols-outlined text-[18px]">format_bold</span></button>
@@ -280,7 +282,7 @@
 <!-- Document Canvas Background -->
 <div class="flex-1 bg-surface overflow-y-auto p-6 flex justify-center">
 <!-- Document Sheet -->
-<div class="w-full max-w-[720px] bg-white border border-[#E6EAF0] rounded shadow-sm p-10 min-h-full">
+<div class="w-full max-w-[720px] bg-white border border-[#E6EAF0] rounded-sm p-10 min-h-full">
 <h2 class="text-[24px] font-headline font-bold text-center mb-8 text-on-surface">第08章 雨夜来客</h2>
 <div class="text-[15px] leading-relaxed text-on-surface-variant space-y-4 text-justify font-body">
 <p class="indent-8">
@@ -300,7 +302,7 @@
 </div>
 </div>
 <!-- Right Inspector -->
-<div class="w-[280px] bg-white rounded border border-[#E6EAF0] flex flex-col shrink-0 overflow-y-auto shadow-sm">
+<div class="w-[280px] bg-white rounded-card border border-[#E6EAF0] flex flex-col shrink-0 overflow-y-auto">
 <div class="h-10 border-b border-[#E6EAF0] flex items-center px-4 shrink-0 bg-surface-bright">
 <span class="text-[13px] font-semibold text-on-surface">属性与检查</span>
 </div>
@@ -334,7 +336,7 @@
 <!-- Verification Section -->
 <section>
 <h4 class="text-[12px] font-semibold text-secondary uppercase tracking-wider mb-3">审核准备</h4>
-<div class="border border-tertiary-fixed-dim bg-[#F0FDF4] rounded p-3 space-y-2">
+<div class="border border-tertiary-fixed-dim bg-[#F0FDF4] rounded-md p-3 space-y-2">
 <div class="flex items-start gap-2 text-[12px] text-tertiary-dim">
 <span class="material-symbols-outlined text-[16px] shrink-0 mt-0.5">check_circle</span>
 <span>正文已保存</span>
@@ -359,118 +361,6 @@
 </div>
 </div>
 </main>
-<div class="absolute inset-0 bg-slate-900/10 z-20 pointer-events-none"></div><aside class="fixed right-0 top-[60px] bottom-0 w-[520px] bg-white border-l border-[#E6EAF0] shadow-xl z-30 flex flex-col font-body pointer-events-auto">
-<!-- Drawer Header -->
-<div class="px-6 py-4 border-b border-[#E6EAF0] flex justify-between items-start shrink-0">
-<div>
-<h2 class="text-[18px] font-semibold text-on-surface">发起内容审核</h2>
-<p class="text-[13px] text-on-surface-variant mt-0.5">为固定正文版本创建真实异步审核任务</p>
 </div>
-<button class="p-1 hover:bg-surface-container-low rounded-full transition-colors">
-<span class="material-symbols-outlined text-on-surface-variant">close</span>
-</button>
-</div>
-<!-- Drawer Content -->
-<div class="flex-1 overflow-y-auto p-6 space-y-6">
-<!-- Content Object Card -->
-<div class="p-4 bg-white rounded border border-[#E6EAF0]">
-<div class="flex justify-between items-start mb-2">
-<span class="text-[14px] font-semibold text-on-surface">第08章 雨夜来客</span>
-<span class="px-2 py-0.5 bg-surface-variant text-on-surface-variant text-[11px] rounded font-medium">正文</span>
-</div>
-<div class="flex gap-4 text-[12px] text-on-surface-variant">
-<span class="flex items-center gap-1"><span class="material-symbols-outlined text-[14px]">description</span>3,842 字</span>
-<span class="flex items-center gap-1"><span class="material-symbols-outlined text-[14px]">check_circle</span>已保存</span>
-</div>
-</div>
-<!-- Version Selection -->
-<section>
-<h3 class="text-[12px] font-semibold text-secondary uppercase tracking-wider mb-3">选择审核版本</h3>
-<div class="space-y-2">
-<!-- Selected Version -->
-<div class="p-3 bg-[#EEF2FF] border border-primary rounded flex items-center gap-3 cursor-pointer">
-<div class="w-4 h-4 rounded-full border-4 border-primary bg-white"></div>
-<div class="flex-1">
-<div class="flex justify-between">
-<span class="text-[13px] font-semibold text-primary">V4 · 2026-07-28 14:32</span>
-<span class="text-[11px] text-primary font-medium">最新已保存版本</span>
-</div>
-<p class="text-[12px] text-on-primary-fixed-variant mt-0.5">3,842 字</p>
-</div>
-</div>
-<!-- History Versions -->
-<div class="p-3 bg-white border border-[#E6EAF0] rounded flex items-center gap-3 hover:bg-surface-container-low cursor-pointer transition-colors">
-<div class="w-4 h-4 rounded-full border border-outline"></div>
-<div class="flex-1">
-<div class="flex justify-between">
-<span class="text-[13px] text-on-surface">V3 · 2026-07-28 10:15</span>
-<span class="text-[11px] text-on-surface-variant">历史版本</span>
-</div>
-<p class="text-[12px] text-on-surface-variant mt-0.5">3,720 字</p>
-</div>
-</div>
-<div class="p-3 bg-white border border-[#E6EAF0] rounded flex items-center gap-3 hover:bg-surface-container-low cursor-pointer transition-colors">
-<div class="w-4 h-4 rounded-full border border-outline"></div>
-<div class="flex-1">
-<div class="flex justify-between">
-<span class="text-[13px] text-on-surface">V2 · 2026-07-27 18:40</span>
-<span class="text-[11px] text-on-surface-variant">历史版本</span>
-</div>
-<p class="text-[12px] text-on-surface-variant mt-0.5">3,550 字</p>
-</div>
-</div>
-</div>
-<div class="mt-3 p-3 bg-[#EEF2FF] rounded flex items-start gap-2">
-<span class="material-symbols-outlined text-[16px] text-primary mt-0.5">info</span>
-<p class="text-[12px] text-on-primary-fixed-variant leading-relaxed">审核将基于所选版本快照运行。后续修改正文不会改变本次审核结果。</p>
-</div>
-</section>
-<!-- Workflow Section -->
-<section>
-<h3 class="text-[12px] font-semibold text-secondary uppercase tracking-wider mb-3">审核工作流</h3>
-<div class="p-3 bg-white border border-[#E6EAF0] rounded flex items-center justify-between">
-<div class="flex items-center gap-3">
-<span class="material-symbols-outlined text-primary">account_tree</span>
-<div>
-<p class="text-[13px] font-medium text-on-surface">内容质量审核 v2</p>
-<p class="text-[11px] text-on-surface-variant">本地 n8n</p>
-</div>
-</div>
-<div class="flex items-center gap-3">
-<div class="flex items-center gap-1 text-[12px] text-on-tertiary-fixed-variant">
-<span class="w-1.5 h-1.5 rounded-full bg-tertiary"></span>
-            可用
-          </div>
-<button class="text-[12px] text-primary hover:underline">查看项目配置</button>
-</div>
-</div>
-</section>
-<!-- Dimensions Section -->
-<section>
-<h3 class="text-[12px] font-semibold text-secondary uppercase tracking-wider mb-3">审核维度</h3>
-<div class="flex flex-wrap gap-2">
-<span class="px-2 py-1 bg-surface-container-high text-on-surface-variant text-[12px] rounded">合规性</span>
-<span class="px-2 py-1 bg-surface-container-high text-on-surface-variant text-[12px] rounded">事实一致性</span>
-<span class="px-2 py-1 bg-surface-container-high text-on-surface-variant text-[12px] rounded">语言表达</span>
-<span class="px-2 py-1 bg-surface-container-high text-on-surface-variant text-[12px] rounded">结构逻辑</span>
-<span class="px-2 py-1 bg-surface-container-high text-on-surface-variant text-[12px] rounded">角色一致性</span>
-</div>
-<p class="text-[11px] text-on-surface-variant mt-2">由项目审核配置决定，不支持临时切换</p>
-</section>
-<!-- Remark Section -->
-<section>
-<label class="block text-[12px] font-semibold text-secondary uppercase tracking-wider mb-3">本次审核说明（可选）</label>
-<textarea class="w-full h-24 p-3 bg-white border border-[#E6EAF0] rounded text-[13px] text-on-surface placeholder:text-outline focus:ring-1 focus:ring-primary outline-none resize-none" placeholder="例如：重点检查人物动机与前文设定是否一致"></textarea>
-</section>
-</div>
-<!-- Drawer Footer -->
-<div class="px-6 py-4 border-t border-[#E6EAF0] bg-white flex justify-between items-center shrink-0">
-<span class="text-[12px] text-on-surface-variant">启动后将在后台异步运行</span>
-<div class="flex gap-3">
-<button class="px-4 h-[36px] bg-white border border-[#E6EAF0] rounded text-[13px] font-medium text-on-surface hover:bg-surface-container-low transition-colors">取消</button>
-<button class="px-4 h-[36px] bg-primary rounded text-[13px] font-medium text-on-primary hover:bg-primary-dim transition-colors shadow-sm">开始审核</button>
-</div>
-</div>
-</aside></div>
-<script>window.__ACF_PROTOTYPE_PAGE__="D2_SUBMIT_REVIEW_DRAWER";window.__ACF_PROTOTYPE_LABEL__="发起内容审核抽屉";</script>
+<script>window.__ACF_PROTOTYPE_PAGE__="I17_D1_EDITOR_REVIEW_ENTRY";window.__ACF_PROTOTYPE_LABEL__="正文编辑器与提交审核入口";</script>
 </body></html>

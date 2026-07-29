@@ -1,26 +1,37 @@
-# Iteration 17 — 真实内容审核 — UI Scope
+# Iteration 17 — 真实内容审核 UI Scope
 
-## 原型关联
+## 1. Frame 映射
 
-| Frame | 区域 | 用途 | 截图 | HTML |
-|---|---|---|---|---|
-| `D2_REVIEW_V2` | 审核 | 真实审核结果与问题选择 | `ui/frames/D2_REVIEW_V2/screen.png` | `ui/frames/D2_REVIEW_V2/code.html` |
-| `D2_SUBMIT_REVIEW_DRAWER` | 审核 | 发起固定版本审核 | `ui/frames/D2_SUBMIT_REVIEW_DRAWER/screen.png` | `ui/frames/D2_SUBMIT_REVIEW_DRAWER/code.html` |
-| `STATE_TASK_RUNNING_BAR` | 共享组件 | 异步运行状态条 | `ui/frames/STATE_TASK_RUNNING_BAR/screen.png` | `ui/frames/STATE_TASK_RUNNING_BAR/code.html` |
-| `STATE_TASK_FAILED_NOTICE` | 共享组件 | 安全错误通知与恢复动作 | `ui/frames/STATE_TASK_FAILED_NOTICE/screen.png` | `ui/frames/STATE_TASK_FAILED_NOTICE/code.html` |
-| `STATE_NOT_CONFIGURED_EMPTY` | 共享组件 | 未配置、失效与空结果状态 | `ui/frames/STATE_NOT_CONFIGURED_EMPTY/screen.png` | `ui/frames/STATE_NOT_CONFIGURED_EMPTY/code.html` |
+| Order | Frame | 页面/状态 | 正式路由 | Screenshot | HTML |
+|---:|---|---|---|---|---|
+| 1 | `I17_D1_EDITOR_REVIEW_ENTRY` | 正文编辑器与提交审核入口 | `/projects/{projectId}/works/{workId}` | `ui/frames/I17_D1_EDITOR_REVIEW_ENTRY/screen.png` | `ui/frames/I17_D1_EDITOR_REVIEW_ENTRY/code.html` |
+| 2 | `D2_SUBMIT_REVIEW_DRAWER` | 发起内容审核抽屉 | 编辑器路由上的 Drawer | `ui/frames/D2_SUBMIT_REVIEW_DRAWER/screen.png` | `ui/frames/D2_SUBMIT_REVIEW_DRAWER/code.html` |
+| 3 | `STATE_TASK_RUNNING_BAR` | queued/running 审核任务 | `/projects/{projectId}/works/{workId}/review` | `ui/frames/STATE_TASK_RUNNING_BAR/screen.png` | `ui/frames/STATE_TASK_RUNNING_BAR/code.html` |
+| 4 | `D2_REVIEW_V2` | 审核结果总览 | `/projects/{projectId}/works/{workId}/review?reportId={reviewId}` | `ui/frames/D2_REVIEW_V2/screen.png` | `ui/frames/D2_REVIEW_V2/code.html` |
+| 5 | `I17_D2_REVIEW_ISSUE_DETAIL` | 问题详情与全文定位 | `/projects/{projectId}/works/{workId}/review?reportId={reviewId}&issueId={issueId}&view=source` | `ui/frames/I17_D2_REVIEW_ISSUE_DETAIL/screen.png` | `ui/frames/I17_D2_REVIEW_ISSUE_DETAIL/code.html` |
+| 6 | `STATE_TASK_FAILED_NOTICE` | 三类失败与恢复 | `/projects/{projectId}/works/{workId}/review` | `ui/frames/STATE_TASK_FAILED_NOTICE/screen.png` | `ui/frames/STATE_TASK_FAILED_NOTICE/code.html` |
+| 7 | `STATE_NOT_CONFIGURED_EMPTY` | 未配置/配置失效 | `/projects/{projectId}/works/{workId}/review` | `ui/frames/STATE_NOT_CONFIGURED_EMPTY/screen.png` | `ui/frames/STATE_NOT_CONFIGURED_EMPTY/code.html` |
+| 8 | `I17_D2_REVIEW_HISTORY` | 审核历史 | `/projects/{projectId}/works/{workId}/review/history` | `ui/frames/I17_D2_REVIEW_HISTORY/screen.png` | `ui/frames/I17_D2_REVIEW_HISTORY/code.html` |
 
-## UI 条件通过与开发修正规则
+## 2. 开发约束
 
-Iteration 11 的人工验收结论为：**有条件通过**。
+- 01/02 复用 Iteration 16 编辑器，不新建截图专用编辑器页面。
+- 03–07 是同一 Review Route 的持久化状态，不创建 queued/failed/not-configured 伪路由。
+- 04/05 使用同一 Report/Issue 数据；全文定位必须读取来源版本快照。
+- 06 依据 Summary 失败类型显示不同 Retry；技术详情必须脱敏。
+- 08 基于 WorkflowRun 历史，失败/运行中记录的 Report 可为空。
+- 所有业务文案进入现有 locale；示例数据不得写死进生产代码。
+- “创建重写任务”在 Iteration 17 必须禁用；Iteration 18 再接入真实命令。
 
-已知问题：部分 Stitch 原型文案为英文，尤其可能出现在左侧一级菜单、状态标签、表头、按钮、辅助说明和技术占位文案中。原型中的英文不构成最终产品文案冻结。
+## 3. 状态复用
 
-开发必须满足：
-
-1. 默认中文环境下，用户可见文案全部使用统一中文资源，不得直接复制 HTML 中的英文硬编码；
-2. 左侧一级菜单统一为：首页、项目、素材、作品、工作流、设置；
-3. 状态统一为：排队中、运行中、已成功、已失败、未验证、验证成功、已停用、配置异常；
-4. `Run ID`、`Workflow ID`、Schema 版本、模型名、API 名称等技术标识可以保留英文；
-5. 所有业务文案进入前端 i18n/locale 资源；组件不得内嵌不可替换英文；
-6. 人工 UI 验收增加“中文文案与术语一致性”专项，发现英文用户文案即不通过。
+| Summary State | Frame |
+|---|---|
+| `idle` | 01 / 02 |
+| `not_configured` | 07 |
+| `queued` | 03 的排队文案变体 |
+| `running` | 03 |
+| `review_ready` | 04 / 05 / 08 |
+| `runtime_failed` | 06 Runtime Retry 变体 |
+| `output_validation_failed` | 06 Runtime Retry 变体 |
+| `result_consumption_failed` | 06 仅消费 Retry 变体 |

@@ -1,11 +1,79 @@
 iteration: iteration-17-real-content-review
-status: planned
+status: rebuild_candidate_2026_07_29
+runtime_stage: review
+input_contract: review.input.v1
+output_contract: review.output.v1
+canonical_routes:
+  editor: /projects/{projectId}/works/{workId}
+  review: /projects/{projectId}/works/{workId}/review
+  history: /projects/{projectId}/works/{workId}/review/history
 apis:
-  - "POST /api/v1/content-versions/{contentVersionId}/review-runs"
-  - "复用 ReviewReport/Issue 查询 API"
+  - method: POST
+    path: /api/v1/content-versions/{contentVersionId}/review-runs/preflight
+    success: 200
+    command: false
+    side_effects: none
+    body: [sourceContentVersionVersion, optionalInstructions]
+    returns: [status, checks, reviewDimensions, configurationSummary, preflightToken, expiresAt]
+  - method: POST
+    path: /api/v1/content-versions/{contentVersionId}/review-runs
+    success: [201, 200]
+    command: true
+    required_headers: [Idempotency-Key]
+    body: [preflightToken]
+    server_fixed: {stage: review, triggerSource: manual, subjectType: content_version}
+  - method: GET
+    path: /api/v1/content-items/{contentItemId}/review-summary
+    success: 200
+    returns: [state, canStartReview, activeRun, latestRun, latestReport, issueSummary, latestError, configurationSummary]
+  - method: GET
+    path: /api/v1/content-items/{contentItemId}/reviews
+    success: 200
+    reuse: p0
+    sort: created_at DESC, id DESC
+    includes: [workflowRunSummary, sourceContentVersionSummary, reportSummary]
+  - method: GET
+    path: /api/v1/reviews/{reviewId}
+    success: 200
+    reuse: p0
+    includes: [report, sourceContentVersionSummary, issues, recommendations, workflowRunSummary]
+  - method: PATCH
+    path: /api/v1/reviews/{reviewId}/issues/{issueId}
+    success: 200
+    command: true
+    required_headers: [Idempotency-Key]
+    body: [disposition, expectedVersion]
+    allowed_disposition: [open, ignored]
+  - method: POST
+    path: /api/v1/workflow-runs/{workflowRunId}/review-result-consumption-retries
+    success: 200
+    command: true
+    required_headers: [Idempotency-Key]
+    body: [expectedRunVersion]
+    external_runtime_call: false
+reused_workflow_run_apis:
+  - getWorkflowRunDetail
+  - listWorkflowRunEvents
+  - retryWorkflowRun
+  - cancelWorkflowRun
+summary_states:
+  - idle
+  - not_configured
+  - queued
+  - running
+  - review_ready
+  - runtime_failed
+  - output_validation_failed
+  - result_consumption_failed
 common_requirements:
-  - OpenAPI is the single contract source
-  - all commands use Idempotency-Key where applicable
-  - errors use the shared error envelope
-  - secrets and raw upstream responses are never returned
-  - optimistic locking is required for mutable configuration
+  - OpenAPI is the single HTTP contract source after CF-17-01B
+  - all commands use persistent Idempotency-Key semantics
+  - errors use the shared ErrorEnvelope
+  - source version, project ownership and optimistic locks are checked server-side
+  - secrets, raw upstream responses, SQL, stacks, internal nodes and internal URLs are never returned
+  - business pages cannot override stage, subject, workflow binding or configuration snapshot
+excluded:
+  - POST rewrite-runs implementation
+  - temporary workflow selection in review drawer
+  - parallel content_review stage
+  - changes to P0 mock review API semantics

@@ -1,368 +1,350 @@
 <!DOCTYPE html>
 
-<html lang="zh-CN"><head>
+<html class="light" lang="zh-CN"><head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>STATE_TASK_RUNNING_BAR Component Specification</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&amp;display=swap" rel="stylesheet"/>
-<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
-<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<title>03 — 内容审核运行中</title>
 <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&amp;display=swap" rel="stylesheet"/>
 <script id="tailwind-config">
-      tailwind.config = {
-        darkMode: "class",
-        theme: {
-          extend: {
-            "colors": {
-                    "tertiary-container": "#5a6168",
-                    "primary-fixed-dim": "#c3c0ff",
-                    "on-tertiary-fixed": "#161c22",
-                    "surface-container-lowest": "#ffffff",
-                    "on-secondary": "#ffffff",
-                    "primary-container": "#4f46e5",
-                    "surface-variant": "#e0e3e5",
-                    "on-primary": "#ffffff",
-                    "primary-fixed": "#e2dfff",
-                    "outline-variant": "#c7c4d8",
-                    "secondary-fixed-dim": "#b7c8e1",
-                    "on-secondary-fixed-variant": "#38485d",
-                    "inverse-primary": "#c3c0ff",
-                    "on-secondary-container": "#54647a",
-                    "tertiary-fixed-dim": "#c1c7cf",
-                    "secondary-container": "#d0e1fb",
-                    "surface-container-high": "#e6e8ea",
-                    "on-tertiary-container": "#d6dce4",
-                    "on-secondary-fixed": "#0b1c30",
-                    "surface-bright": "#f7f9fb",
-                    "tertiary-fixed": "#dde3eb",
-                    "primary": "#3525cd",
-                    "surface-container-low": "#f2f4f6",
-                    "on-primary-container": "#dad7ff",
-                    "inverse-surface": "#2d3133",
-                    "tertiary": "#434950",
-                    "secondary": "#505f76",
-                    "surface-tint": "#4d44e3",
-                    "on-tertiary-fixed-variant": "#41474e",
-                    "on-primary-fixed": "#0f0069",
-                    "error-container": "#ffdad6",
-                    "on-surface": "#191c1e",
-                    "on-surface-variant": "#464555",
-                    "on-tertiary": "#ffffff",
-                    "outline": "#777587",
-                    "surface-dim": "#d8dadc",
-                    "inverse-on-surface": "#eff1f3",
-                    "background": "#f7f9fb",
-                    "error": "#ba1a1a",
-                    "on-error-container": "#93000a",
-                    "surface-container": "#eceef0",
-                    "surface": "#f7f9fb",
-                    "on-primary-fixed-variant": "#3323cc",
-                    "on-background": "#191c1e",
-                    "surface-container-highest": "#e0e3e5",
-                    "secondary-fixed": "#d3e4fe",
-                    "on-error": "#ffffff"
-            },
-            "borderRadius": {
-                    "DEFAULT": "0.25rem",
-                    "lg": "0.5rem",
-                    "xl": "0.75rem",
-                    "full": "9999px"
-            },
-            "fontFamily": {
-                    "headline": ["Inter"],
-                    "display": ["Inter"],
-                    "body": ["Inter"],
-                    "label": ["Inter"]
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "primary": "#4f43e3",
+                        "surface-container-high": "#e1e9f0",
+                        "error-container": "#ff8b9a",
+                        "on-secondary-fixed-variant": "#4d5d73",
+                        "tertiary": "#006d4a",
+                        "surface-container-highest": "#d9e4ec",
+                        "on-background": "#29343a",
+                        "on-tertiary-fixed-variant": "#006544",
+                        "background": "#f7f9fc",
+                        "error-dim": "#4f0116",
+                        "outline": "#717c84",
+                        "on-primary": "#faf6ff",
+                        "on-secondary": "#f7f9ff",
+                        "tertiary-container": "#69f6b8",
+                        "on-error": "#fff7f7",
+                        "primary-container": "#e3dfff",
+                        "on-secondary-fixed": "#314055",
+                        "secondary": "#506076",
+                        "tertiary-fixed-dim": "#58e7ab",
+                        "on-primary-fixed-variant": "#4c40e0",
+                        "surface-dim": "#cedce5",
+                        "on-surface": "#29343a",
+                        "surface-container": "#e8eff4",
+                        "secondary-fixed": "#d3e4fe",
+                        "error": "#9e3f4e",
+                        "surface": "#f7f9fc",
+                        "secondary-fixed-dim": "#c5d6f0",
+                        "surface-container-lowest": "#ffffff",
+                        "on-primary-fixed": "#2c12c5",
+                        "primary-dim": "#4234d7",
+                        "surface-variant": "#d9e4ec",
+                        "inverse-on-surface": "#9a9da0",
+                        "surface-bright": "#f7f9fc",
+                        "surface-container-low": "#f0f4f8",
+                        "primary-fixed": "#e3dfff",
+                        "tertiary-dim": "#005f40",
+                        "outline-variant": "#a8b3bb",
+                        "on-surface-variant": "#566168",
+                        "inverse-surface": "#0b0f11",
+                        "tertiary-fixed": "#69f6b8",
+                        "primary-fixed-dim": "#d3d0ff",
+                        "secondary-container": "#d3e4fe",
+                        "on-primary-container": "#4133d6",
+                        "secondary-dim": "#44546a",
+                        "on-tertiary-container": "#005a3c",
+                        "on-secondary-container": "#435368",
+                        "surface-tint": "#4f43e3",
+                        "on-tertiary": "#e6ffee",
+                        "on-tertiary-fixed": "#00452d",
+                        "inverse-primary": "#8681ff",
+                        "on-error-container": "#782232"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "fontFamily": {
+                        "headline": ["Inter"],
+                        "display": ["Inter"],
+                        "body": ["Inter"],
+                        "label": ["Inter"]
+                    }
+                }
             }
-          },
-        },
-      }
+        }
     </script>
 <style>
-        .material-symbols-outlined {
-            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        .pulse-ring {
+            animation: pulse-ring 1.25s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
         }
-        .bar-gradient-running {
-            background: linear-gradient(90deg, #d0e1fb 0%, #4f46e5 50%, #d0e1fb 100%);
-            background-size: 200% 100%;
-            animation: shimmer 2s infinite linear;
+        @keyframes pulse-ring {
+            0% { transform: scale(0.8); opacity: 0.5; }
+            80%, 100% { opacity: 0; transform: scale(2.4); }
         }
-        @keyframes shimmer {
-            0% { background-position: 200% 0; }
-            100% { background-position: -200% 0; }
+        .pulse-dot {
+            animation: pulse-dot 1.25s cubic-bezier(0.455, 0.03, 0.515, 0.955) -0.4s infinite;
         }
-        .annotation-line {
-            position: absolute;
-            border-left: 1px dashed #777587;
-            height: 20px;
+        @keyframes pulse-dot {
+            0% { transform: scale(0.8); }
+            50% { transform: scale(1); }
+            100% { transform: scale(0.8); }
         }
     </style>
 </head>
-<body class="bg-background text-on-surface font-body min-h-screen">
-<!-- Side Navigation Shell -->
-<aside class="w-[240px] h-screen fixed left-0 top-0 bg-surface-container-lowest border-r border-surface-variant flex flex-col gap-2 p-4 z-[60]">
-<div class="mb-6 px-2">
-<h1 class="text-xl font-headline font-black text-primary">Content Factory</h1>
-<p class="text-xs text-secondary opacity-70">v2.0 Enterprise</p>
+<body class="bg-background text-on-background font-body antialiased h-screen w-screen flex overflow-hidden text-[13px]">
+<!-- SideNavBar -->
+<nav class="w-[244px] bg-surface-container-lowest border-r border-outline-variant flex flex-col shrink-0 z-20">
+<div class="h-[60px] flex items-center px-6 border-b border-transparent shrink-0">
+<div class="w-6 h-6 bg-primary rounded flex items-center justify-center mr-3">
+<span class="material-symbols-outlined text-white text-[14px]">psychiatry</span>
 </div>
-<nav class="flex flex-col gap-1">
-<a class="flex items-center gap-3 px-3 py-2 text-secondary hover:bg-surface-container-high transition-colors rounded-lg font-medium" href="#">
-<span class="material-symbols-outlined">home</span> Home
-            </a>
-<a class="flex items-center gap-3 px-3 py-2 text-secondary hover:bg-surface-container-high transition-colors rounded-lg font-medium" href="#">
-<span class="material-symbols-outlined">folder_open</span> Projects
-            </a>
-<a class="flex items-center gap-3 px-3 py-2 text-secondary hover:bg-surface-container-high transition-colors rounded-lg font-medium" href="#">
-<span class="material-symbols-outlined">inventory_2</span> Materials
-            </a>
-<a class="flex items-center gap-3 px-3 py-2 text-secondary hover:bg-surface-container-high transition-colors rounded-lg font-medium" href="#">
-<span class="material-symbols-outlined">auto_stories</span> Works
-            </a>
-<a class="flex items-center gap-3 px-3 py-2 text-secondary hover:bg-surface-container-high transition-colors rounded-lg font-medium" href="#">
-<span class="material-symbols-outlined">account_tree</span> Workflows
-            </a>
-<a class="flex items-center gap-3 px-3 py-2 bg-primary-fixed text-primary rounded-lg font-semibold" href="#">
-<span class="material-symbols-outlined">settings</span> Settings
-            </a>
+<div>
+<div class="font-headline font-bold text-[16px] text-on-surface leading-none">AI Content Factory</div>
+<div class="text-[10px] text-on-surface-variant mt-0.5">内容创作平台</div>
+</div>
+</div>
+<div class="flex-1 py-4 flex flex-col gap-1 px-3">
+<a class="flex items-center gap-3 px-3 py-2 rounded text-secondary hover:bg-surface-container-low transition-colors duration-200" href="#">
+<span class="material-symbols-outlined text-[20px]">home</span>
+<span class="font-medium">首页</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded bg-primary-container text-primary font-semibold transition-colors duration-200" href="#">
+<span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'FILL' 1;">folder_open</span>
+<span>项目</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded text-secondary hover:bg-surface-container-low transition-colors duration-200" href="#">
+<span class="material-symbols-outlined text-[20px]">inventory_2</span>
+<span class="font-medium">素材</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded text-secondary hover:bg-surface-container-low transition-colors duration-200" href="#">
+<span class="material-symbols-outlined text-[20px]">description</span>
+<span class="font-medium">作品</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded text-secondary hover:bg-surface-container-low transition-colors duration-200" href="#">
+<span class="material-symbols-outlined text-[20px]">account_tree</span>
+<span class="font-medium">流程</span>
+</a>
+</div>
 </nav>
-</aside>
-<!-- Top Utility Bar Shell -->
-<header class="h-16 fixed top-0 right-0 left-[240px] z-50 bg-surface-container-lowest border-b border-surface-variant flex justify-between items-center px-8">
-<div class="flex items-center gap-4 flex-1">
-<div class="relative w-full max-w-md">
-<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-secondary text-sm">search</span>
-<input class="w-full pl-10 pr-4 py-1.5 bg-surface-container-low border-none rounded-full text-sm focus:ring-2 focus:ring-primary-container transition-all" placeholder="Search documentation..." type="text"/>
+<!-- Main Column -->
+<div class="flex-1 flex flex-col min-w-0">
+<!-- TopNavBar -->
+<header class="h-[60px] bg-surface-container-lowest border-b border-outline-variant flex justify-between items-center px-6 shrink-0 z-10">
+<div class="flex items-center w-[320px]">
+<div class="relative w-full">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-[18px]">search</span>
+<input class="w-full h-[34px] pl-9 pr-4 bg-surface rounded-full border border-transparent focus:border-outline-variant focus:bg-white text-[13px] outline-none transition-all placeholder:text-on-surface-variant/70" placeholder="搜索项目或素材…" type="text"/>
 </div>
 </div>
 <div class="flex items-center gap-4">
-<button class="p-2 text-secondary hover:text-primary transition-colors focus:ring-2 focus:ring-primary-container rounded-full">
-<span class="material-symbols-outlined">help</span>
+<button class="text-on-surface-variant hover:text-primary transition-all">
+<span class="material-symbols-outlined text-[20px]">help</span>
 </button>
-<button class="p-2 text-secondary hover:text-primary transition-colors focus:ring-2 focus:ring-primary-container rounded-full relative">
-<span class="material-symbols-outlined">notifications</span>
-<span class="absolute top-2 right-2 w-2 h-2 bg-error rounded-full border-2 border-surface-container-lowest"></span>
+<button class="text-on-surface-variant hover:text-primary transition-all">
+<span class="material-symbols-outlined text-[20px]">notifications</span>
 </button>
-<div class="w-8 h-8 rounded-full bg-secondary-container flex items-center justify-center overflow-hidden border border-surface-variant">
-<img class="w-full h-full object-cover" data-alt="A professional corporate headshot of a software architect with a clean, high-key background. The lighting is soft and neutral, reflecting a modern light-mode enterprise aesthetic. The subject is wearing a dark indigo blazer, aligning with the primary brand color." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDTAUeUOUZ_Nb6tCpxWlbn5dDAOHwQFXeh-p5cdMFh3vopJXnla1z5yGmjN2pM7Ux2n87WzUI6yx_JCifdn9M02LlzK_YFWZqNX5okEo5TB2zNF_k71WunKkz3pcNnErfj5JwOWHRgldc3g1FrNilTppEzzocLSEyT1KrQM3YKP1RE_H2xSG0E86M-rrknTxt4JvvOFhpoy7cnK2UQJ8grpkIdqf3_GrvkXqRyTNqiQzMKR2qx5XPPggQXzD2RkkPQ-URFSPnAml9E"/>
+<div class="w-[1px] h-[24px] bg-outline-variant/30"></div>
+<div class="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity">
+<img alt="创作管理员" class="w-8 h-8 rounded-full bg-surface-container object-cover" data-alt="A small circular avatar placeholder image for a user profile in a UI mockup, featuring a generic abstract geometric pattern in light pastel colors. Modern minimal aesthetic. Professional web design element." src="https://lh3.googleusercontent.com/aida-public/AB6AXuD5iT7ED0VZwVOmHnsN-aq3y4hKDAR0MAPt22TJ3oE_frtYs2E8xcJgPkeHTxdajQ7HV9KqrZTDAJXnNdKegswy3F4Byvr66fYhZx-a5xrecHc7uhVvUQh0yQwhWhdpmRL__NuP7_lc6P7qNyeGsOuzUsFAFH66zDd36X3cSltLnvzqR1aZ9K5rec1YZD6HzklHyltTr20t0jPbP330HfD0TvFGaoP83W2OxJoJQnPOzwElPJyTkSuyXG1vik5_l6K-3DiiI5C2HIU"/>
+<span class="font-medium text-on-surface">创作管理员</span>
 </div>
 </div>
 </header>
-<!-- Main Content -->
-<main class="pl-[272px] pt-24 pr-8 pb-12">
-<header class="mb-10">
-<div class="flex items-center gap-3 mb-2">
-<span class="px-2 py-0.5 bg-secondary-container text-on-secondary-container text-[10px] font-bold rounded uppercase tracking-wider">Component Spec</span>
-<h2 class="text-2xl font-headline font-bold text-on-surface">STATE_TASK_RUNNING_BAR</h2>
+<!-- Main Content Area -->
+<main class="flex-1 flex flex-col min-w-0 bg-background overflow-y-auto">
+<!-- Project Identity Header -->
+<div class="bg-surface-container-lowest border-b border-outline-variant px-6 pt-5 pb-0 shrink-0">
+<div class="flex items-center text-on-surface-variant text-[12px] mb-2">
+<a class="hover:text-primary transition-colors" href="#">项目</a>
+<span class="mx-2">/</span>
+<span>acf17-review-001</span>
 </div>
-<p class="text-secondary max-w-3xl">Reusable page-level asynchronous task status bar. Designed for top-of-canvas placement below the utility bar to provide non-blocking execution updates.</p>
-</header>
-<!-- Variants Documentation Board -->
-<section class="grid grid-cols-1 gap-16">
-<div class="space-y-12">
-<!-- 1. QUEUED -->
-<div class="relative">
-<div class="flex items-center justify-between mb-4">
-<span class="text-xs font-bold text-secondary uppercase tracking-widest flex items-center gap-2">
-<span class="w-2 h-2 rounded-full bg-secondary"></span> 01. Queued
-                        </span>
-<code class="text-[10px] px-2 py-1 bg-surface-container-high rounded text-on-surface-variant font-mono">status: "queued"</code>
+<div class="flex items-end justify-between mb-5">
+<div>
+<div class="flex items-center gap-3 mb-1.5">
+<h1 class="text-[22px] font-headline font-semibold text-on-surface leading-tight">霓港纪事</h1>
+<span class="px-2 py-0.5 rounded text-[11px] font-medium bg-surface text-secondary border border-outline-variant/30">小说</span>
+<span class="px-2 py-0.5 rounded text-[11px] font-medium bg-secondary-container text-on-secondary-container border border-secondary-container/50">策划中</span>
 </div>
-<!-- The Component Instance -->
-<div class="w-full bg-white border border-surface-variant rounded-xl shadow-sm p-4 flex items-center gap-4 transition-transform hover:scale-[1.002]">
-<div class="flex-shrink-0 w-10 h-10 rounded-lg bg-surface-container-low flex items-center justify-center">
-<span class="material-symbols-outlined text-secondary">hourglass_empty</span>
+<p class="text-secondary text-[13px]">Iteration 17 真实内容审核验收项目</p>
 </div>
-<div class="flex-grow">
-<div class="flex items-center gap-2">
-<span class="text-sm font-semibold text-on-surface">RUN-8F18 已进入队列</span>
-<span class="px-1.5 py-0.5 bg-surface-container-high text-secondary text-[10px] font-bold rounded">QUEUED</span>
+<div class="text-[12px] text-on-surface-variant mb-1">
+                        更新于 2026年7月28日 14:32
+                    </div>
 </div>
-<p class="text-xs text-secondary">正在等待工作进程</p>
-</div>
-<div class="flex items-center gap-3">
-<button class="text-xs font-semibold text-primary hover:underline px-3 py-1.5 transition-all">查看执行详情</button>
-<div class="w-px h-6 bg-surface-variant"></div>
-<button class="p-1 text-secondary hover:text-on-surface transition-colors">
-<span class="material-symbols-outlined text-lg">close</span>
-</button>
+<!-- Project Tabs -->
+<div class="flex gap-6 relative">
+<a class="pb-3 text-on-surface-variant hover:text-primary font-medium transition-colors border-b-2 border-transparent" href="#">概览</a>
+<a class="pb-3 text-on-surface-variant hover:text-primary font-medium transition-colors border-b-2 border-transparent" href="#">策划</a>
+<a class="pb-3 text-on-surface-variant hover:text-primary font-medium transition-colors border-b-2 border-transparent" href="#">素材</a>
+<a class="pb-3 text-on-surface-variant hover:text-primary font-medium transition-colors border-b-2 border-transparent" href="#">故事线</a>
+<a class="pb-3 text-on-surface-variant hover:text-primary font-medium transition-colors border-b-2 border-transparent" href="#">章节规划</a>
+<a class="pb-3 text-primary font-semibold border-b-2 border-primary transition-colors" href="#">审核</a>
+<a class="pb-3 text-on-surface-variant hover:text-primary font-medium transition-colors border-b-2 border-transparent" href="#">作品</a>
+<a class="pb-3 text-on-surface-variant hover:text-primary font-medium transition-colors border-b-2 border-transparent" href="#">设置</a>
 </div>
 </div>
-<!-- Annotations -->
-<div class="absolute -left-4 top-1/2 -translate-y-1/2 w-1 bg-secondary h-8 rounded-full"></div>
-</div>
-<!-- 2. RUNNING -->
-<div class="relative">
-<div class="flex items-center justify-between mb-4">
-<span class="text-xs font-bold text-primary uppercase tracking-widest flex items-center gap-2">
-<span class="w-2 h-2 rounded-full bg-primary-container"></span> 02. Running
-                        </span>
-<code class="text-[10px] px-2 py-1 bg-surface-container-high rounded text-on-surface-variant font-mono">status: "running"</code>
-</div>
-<!-- The Component Instance -->
-<div class="w-full bg-white border border-surface-variant rounded-xl shadow-sm p-4 flex items-center gap-4 relative overflow-hidden transition-transform hover:scale-[1.002]">
-<!-- Progress Indicator -->
-<div class="absolute bottom-0 left-0 right-0 h-1 bar-gradient-running"></div>
-<div class="flex-shrink-0 w-10 h-10 rounded-lg bg-primary-fixed flex items-center justify-center">
-<span class="material-symbols-outlined text-primary-container animate-pulse" style="font-variation-settings: 'FILL' 1;">sync</span>
-</div>
-<div class="flex-grow">
-<div class="flex items-center gap-2">
-<span class="text-sm font-semibold text-on-surface">RUN-8F20 正在生成正文</span>
-<span class="px-1.5 py-0.5 bg-primary-container text-on-primary text-[10px] font-bold rounded">RUNNING</span>
-</div>
-<p class="text-xs text-secondary">正在生成并校验结构 · 已用时 1m12s</p>
+<!-- Workspace Context -->
+<div class="p-6 flex flex-col gap-4 max-w-[1200px] mx-auto w-full mb-12">
+<!-- Page Header -->
+<div class="flex items-start justify-between mb-2">
+<div>
+<h2 class="text-[16px] font-semibold text-on-surface mb-1">内容审核</h2>
+<p class="text-[13px] text-secondary">查看真实审核任务状态、审核报告和问题清单</p>
 </div>
 <div class="flex items-center gap-3">
-<div class="flex items-center gap-2">
-<button class="text-xs font-semibold text-primary hover:bg-primary-fixed px-3 py-1.5 rounded transition-all">查看执行详情</button>
-<button class="text-xs font-semibold text-on-surface-variant border border-surface-variant hover:bg-surface-container-low px-3 py-1.5 rounded transition-all">前往流程中心</button>
-</div>
-<div class="w-px h-6 bg-surface-variant"></div>
-<button class="p-1 text-secondary hover:text-on-surface transition-colors">
-<span class="material-symbols-outlined text-lg">close</span>
-</button>
+<button class="h-[36px] px-4 rounded-[6px] border border-[#E6EAF0] bg-white text-on-surface font-medium hover:bg-surface transition-colors">审核历史</button>
+<button class="h-[36px] px-4 rounded-[6px] bg-primary/50 text-white font-medium cursor-not-allowed" disabled="">发起新审核</button>
 </div>
 </div>
-<!-- Dimension Annotation -->
-<div class="mt-2 flex justify-between text-[10px] text-outline font-mono uppercase tracking-tighter">
-<span>Padding: 16px (p-4)</span>
-<span>Radius: 12px (rounded-xl)</span>
-<span>Height: 72px (auto)</span>
+<!-- Running Status Card -->
+<div class="bg-surface-container-lowest border border-[#E6EAF0] rounded-[6px] p-5 flex items-start gap-5">
+<div class="relative w-10 h-10 flex items-center justify-center shrink-0 mt-1">
+<div class="absolute inset-0 rounded-full border-2 border-primary/30 pulse-ring"></div>
+<div class="w-3.5 h-3.5 bg-primary rounded-full pulse-dot"></div>
+</div>
+<div class="flex-1">
+<div class="flex flex-col h-full justify-between">
+<div>
+<div class="flex items-center gap-3 mb-1.5">
+<h3 class="text-[15px] font-semibold text-on-surface">第08章《雨夜来客》内容审核中</h3>
+<span class="px-2 py-0.5 rounded-sm bg-primary-container text-primary text-[11px] font-medium">运行中</span>
+</div>
+<div class="text-[13px] text-secondary flex items-center gap-2">
+<span>固定版本 V4</span>
+<span class="w-1 h-1 rounded-full bg-outline-variant"></span>
+<span>3,842 字</span>
+<span class="w-1 h-1 rounded-full bg-outline-variant"></span>
+<span>内容质量审核 v2</span>
 </div>
 </div>
-<!-- 3. SUCCEEDED -->
-<div class="relative">
-<div class="flex items-center justify-between mb-4">
-<span class="text-xs font-bold text-green-600 uppercase tracking-widest flex items-center gap-2">
-<span class="w-2 h-2 rounded-full bg-green-500"></span> 03. Succeeded
-                        </span>
-<code class="text-[10px] px-2 py-1 bg-surface-container-high rounded text-on-surface-variant font-mono">status: "succeeded"</code>
-</div>
-<!-- The Component Instance -->
-<div class="w-full bg-white border border-surface-variant rounded-xl shadow-sm p-4 flex items-center gap-4 transition-transform hover:scale-[1.002]">
-<div class="flex-shrink-0 w-10 h-10 rounded-lg bg-green-50 flex items-center justify-center">
-<span class="material-symbols-outlined text-green-600" style="font-variation-settings: 'FILL' 1;">check_circle</span>
-</div>
-<div class="flex-grow">
-<div class="flex items-center gap-2">
-<span class="text-sm font-semibold text-on-surface">RUN-8F24 重写已完成</span>
-<span class="px-1.5 py-0.5 bg-green-100 text-green-800 text-[10px] font-bold rounded">SUCCESS</span>
-</div>
-<p class="text-xs text-secondary">已创建 ContentVersion v5 候选</p>
-</div>
-<div class="flex items-center gap-3">
-<div class="flex items-center gap-2">
-<button class="text-xs font-semibold text-white bg-green-600 hover:bg-green-700 px-4 py-1.5 rounded-lg transition-all shadow-sm">打开结果</button>
-<button class="text-xs font-semibold text-secondary hover:underline px-3 py-1.5 transition-all">查看执行详情</button>
-</div>
-<div class="w-px h-6 bg-surface-variant"></div>
-<button class="p-1 text-secondary hover:text-on-surface transition-colors">
-<span class="material-symbols-outlined text-lg">close</span>
-</button>
-</div>
-</div>
-</div>
-<!-- 4. FAILED -->
-<div class="relative">
-<div class="flex items-center justify-between mb-4">
-<span class="text-xs font-bold text-error uppercase tracking-widest flex items-center gap-2">
-<span class="w-2 h-2 rounded-full bg-error"></span> 04. Failed
-                        </span>
-<code class="text-[10px] px-2 py-1 bg-surface-container-high rounded text-on-surface-variant font-mono">status: "failed"</code>
-</div>
-<!-- The Component Instance -->
-<div class="w-full bg-white border-2 border-error-container rounded-xl shadow-sm p-4 flex items-center gap-4 transition-transform hover:scale-[1.002]">
-<div class="flex-shrink-0 w-10 h-10 rounded-lg bg-error-container flex items-center justify-center">
-<span class="material-symbols-outlined text-error" style="font-variation-settings: 'FILL' 1;">error</span>
-</div>
-<div class="flex-grow">
-<div class="flex items-center gap-2">
-<span class="text-sm font-semibold text-on-surface">RUN-8F19 内容审核失败</span>
-<span class="px-1.5 py-0.5 bg-error text-white text-[10px] font-bold rounded">FAILED</span>
-</div>
-<p class="text-xs text-secondary">输出结构校验失败</p>
-</div>
-<div class="flex items-center gap-3">
-<div class="flex items-center gap-2">
-<button class="text-xs font-semibold text-error hover:bg-error-container px-3 py-1.5 rounded transition-all">查看详情</button>
-<button class="text-xs font-semibold text-on-surface bg-surface-container-high hover:bg-surface-dim px-4 py-1.5 rounded-lg transition-all">重试</button>
-</div>
-<div class="w-px h-6 bg-surface-variant"></div>
-<button class="p-1 text-secondary hover:text-on-surface transition-colors">
-<span class="material-symbols-outlined text-lg">close</span>
-</button>
+<div class="mt-4 pt-4 border-t border-outline-variant/30 flex items-center justify-between text-[12px]">
+<div class="text-secondary">
+                                    任务会在后台继续运行，可安全离开当前页面
+                                </div>
+<div class="flex gap-4">
+<a class="text-primary hover:underline" href="#">查看运行详情</a>
+<a class="text-primary hover:underline" href="#">查看全部任务</a>
 </div>
 </div>
 </div>
 </div>
-<!-- Footer Documentation Details -->
-<div class="grid grid-cols-1 md:grid-cols-2 gap-8 pt-12 border-t border-surface-variant">
-<div class="space-y-4">
-<h3 class="text-sm font-bold text-on-surface flex items-center gap-2">
-<span class="material-symbols-outlined text-primary text-lg">info</span>
-                        Usage Notes
-                    </h3>
-<ul class="space-y-3">
-<li class="flex items-start gap-3 text-sm text-secondary">
-<span class="w-1.5 h-1.5 rounded-full bg-primary mt-1.5 flex-shrink-0"></span>
-                            Page navigation remains fully available and functional during active runs.
-                        </li>
-<li class="flex items-start gap-3 text-sm text-secondary">
-<span class="w-1.5 h-1.5 rounded-full bg-primary mt-1.5 flex-shrink-0"></span>
-                            Status restores automatically after page refresh via persistent worker synchronization.
-                        </li>
-<li class="flex items-start gap-3 text-sm text-secondary">
-<span class="w-1.5 h-1.5 rounded-full bg-primary mt-1.5 flex-shrink-0"></span>
-                            The bar serves as a progress summary and never exposes raw upstream responses or internal secrets.
-                        </li>
-</ul>
+<div class="shrink-0 text-right w-[180px] flex flex-col justify-between h-full pt-1">
+<div>
+<div class="text-[14px] font-semibold text-on-surface font-mono">00:42</div>
+<div class="text-[11px] text-secondary uppercase tracking-wider mb-2">已运行</div>
 </div>
-<div class="space-y-4">
-<h3 class="text-sm font-bold text-on-surface flex items-center gap-2">
-<span class="material-symbols-outlined text-primary text-lg">code</span>
-                        Developer Implementation
-                    </h3>
-<div class="bg-inverse-surface rounded-xl p-4 text-xs font-mono text-on-primary-container leading-relaxed overflow-x-auto">
-<p class="mb-2">// Component: STATE_TASK_RUNNING_BAR</p>
-<p class="text-primary-fixed-dim">const StatusColors = {</p>
-<p class="pl-4">QUEUED: "text-secondary bg-surface-variant",</p>
-<p class="pl-4">RUNNING: "text-primary bg-primary-fixed",</p>
-<p class="pl-4">SUCCESS: "text-green-600 bg-green-50",</p>
-<p class="pl-4">FAILED: "text-error bg-error-container"</p>
-<p class="text-primary-fixed-dim">};</p>
-<p class="mt-2 text-surface-variant opacity-50">// Spacing: gap-4, px-4, h-auto</p>
+<div class="text-[13px] text-primary font-medium flex items-center justify-end gap-1.5">
+                            正在校验工作流输出
+                            <span class="material-symbols-outlined text-[16px] animate-spin">sync</span>
 </div>
 </div>
 </div>
-</section>
+<!-- Metadata Info Card -->
+<div class="bg-surface-container-lowest border border-[#E6EAF0] rounded-[6px] px-5 py-3">
+<div class="flex items-center text-[13px] divide-x divide-outline-variant/30">
+<div class="pr-5 flex items-center gap-2">
+<span class="text-secondary">审核对象:</span>
+<span class="font-medium text-on-surface">第08章 雨夜来客</span>
+</div>
+<div class="px-5 flex items-center gap-2">
+<span class="text-secondary">内容版本:</span>
+<span class="font-medium text-on-surface">V4</span>
+</div>
+<div class="px-5 flex items-center gap-2">
+<span class="text-secondary">工作流:</span>
+<span class="font-medium text-on-surface">内容质量审核 v2</span>
+</div>
+<div class="px-5 flex items-center gap-2">
+<span class="text-secondary">运行编号:</span>
+<span class="font-medium text-on-surface font-mono text-[12px]">run_review_20260728_143501</span>
+</div>
+<div class="pl-5 flex items-center gap-2">
+<span class="text-secondary">启动时间:</span>
+<span class="font-medium text-on-surface font-mono text-[12px]">2026-07-28 14:35:01</span>
+</div>
+</div>
+</div>
+<!-- Report Progress Card -->
+<div class="bg-surface-container-lowest border border-[#E6EAF0] rounded-[6px] flex flex-col mt-2">
+<!-- Card Tabs -->
+<div class="flex items-center gap-6 px-6 border-b border-outline-variant/30 shrink-0">
+<button class="py-3 text-primary font-semibold border-b-2 border-primary relative top-[1px]">审核结果</button>
+<button class="py-3 text-on-surface-variant hover:text-on-surface font-medium border-b-2 border-transparent transition-colors">全文内容</button>
+<button class="py-3 text-on-surface-variant hover:text-on-surface font-medium border-b-2 border-transparent transition-colors">配置维度</button>
+<button class="py-3 text-on-surface-variant hover:text-on-surface font-medium border-b-2 border-transparent transition-colors">调用日志</button>
+</div>
+<!-- Timeline Content -->
+<div class="p-8 flex justify-center">
+<div class="w-[500px] relative">
+<!-- Connecting Line -->
+<div class="absolute left-3.5 top-5 bottom-8 w-[2px] bg-outline-variant/20"></div>
+<!-- Step 1 -->
+<div class="relative flex gap-5 mb-8">
+<div class="relative z-10 w-7 h-7 rounded-full bg-tertiary-container text-tertiary flex items-center justify-center shrink-0 border border-tertiary/20">
+<span class="material-symbols-outlined text-[16px] font-bold">check</span>
+</div>
+<div class="pt-0.5 flex-1">
+<h4 class="text-[14px] font-semibold text-on-surface mb-0.5">创建任务</h4>
+<p class="text-[13px] text-secondary">准备固定版本与参数</p>
+</div>
+<div class="pt-0.5 font-mono text-[12px] text-secondary">
+                                    00:01
+                                </div>
+</div>
+<!-- Step 2 -->
+<div class="relative flex gap-5 mb-8">
+<div class="relative z-10 w-7 h-7 rounded-full bg-tertiary-container text-tertiary flex items-center justify-center shrink-0 border border-tertiary/20">
+<span class="material-symbols-outlined text-[16px] font-bold">check</span>
+</div>
+<div class="pt-0.5 flex-1">
+<h4 class="text-[14px] font-semibold text-on-surface mb-0.5">执行审核工作流</h4>
+<p class="text-[13px] text-secondary">调用本地 n8n 并执行分析</p>
+</div>
+<div class="pt-0.5 font-mono text-[12px] text-secondary">
+                                    00:38
+                                </div>
+</div>
+<!-- Step 3 (Active) -->
+<div class="relative flex gap-5 mb-8">
+<div class="relative z-10 w-7 h-7 rounded-full bg-surface-container-lowest flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-[24px] text-primary animate-spin">progress_activity</span>
+</div>
+<div class="pt-0.5 flex-1">
+<h4 class="text-[14px] font-semibold text-primary mb-0.5">校验结果结构</h4>
+<p class="text-[13px] text-on-surface-variant">格式校验与结构化 JSON</p>
+</div>
+<div class="pt-0.5 text-[12px] text-primary font-medium bg-primary-container/50 px-2 py-0.5 rounded-sm self-start">
+                                    进行中
+                                </div>
+</div>
+<!-- Step 4 (Pending) -->
+<div class="relative flex gap-5">
+<div class="relative z-10 w-7 h-7 rounded-full bg-surface-container flex items-center justify-center shrink-0 border border-outline-variant/30">
+<div class="w-2 h-2 rounded-full bg-outline-variant/50"></div>
+</div>
+<div class="pt-0.5 flex-1 opacity-60">
+<h4 class="text-[14px] font-semibold text-on-surface mb-0.5">保存审核报告与问题</h4>
+<p class="text-[13px] text-secondary">入库并生成最终摘要</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Footer Note -->
+<div class="text-center mt-2 text-[12px] text-secondary/70">
+                    刷新页面后将根据 WorkflowRun 恢复当前状态
+                </div>
+</div>
 </main>
-<!-- Visual Polish: Floating Tooltip for annotations -->
-<div class="fixed hidden bg-on-surface text-surface text-[10px] px-2 py-1 rounded shadow-lg z-[100] pointer-events-none transition-opacity duration-200" id="annotation-tooltip"></div>
-<script>
-        // Simple micro-interaction for the close buttons
-        document.querySelectorAll('button:has(.material-symbols-outlined:contains("close"))').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                const bar = e.target.closest('.w-full.bg-white');
-                bar.style.opacity = '0';
-                bar.style.transform = 'translateY(-10px)';
-                setTimeout(() => {
-                    bar.style.display = 'none';
-                }, 300);
-            });
-        });
-
-        // Developer Tooltip Logic (Conceptual)
-        const annotations = [
-            { id: 'dim-spec', text: '12px Radius Border' },
-            { id: 'color-spec', text: 'Brand Primary 500' }
-        ];
-
-        // Atmospheric effect - gentle pulse for the running variant
-        const runningBar = document.querySelector('.bar-gradient-running');
-        if (runningBar) {
-            setInterval(() => {
-                runningBar.style.opacity = runningBar.style.opacity === '0.8' ? '1' : '0.8';
-            }, 1000);
-        }
-    </script>
+</div>
+<script>window.__ACF_PROTOTYPE_PAGE__="STATE_TASK_RUNNING_BAR";window.__ACF_PROTOTYPE_LABEL__="内容审核运行中";</script>
 </body></html>
