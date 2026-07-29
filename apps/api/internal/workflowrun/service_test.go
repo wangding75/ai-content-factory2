@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"strings"
 	"testing"
 	"time"
 
@@ -250,6 +251,57 @@ func TestWorkerExecutesQueuedRuns(t *testing.T) {
 	<-done
 	if store.runs[runID].Status != StatusSucceeded || fake.ExecuteCalls != 1 {
 		t.Fatalf("run=%+v calls=%d", store.runs[runID], fake.ExecuteCalls)
+	}
+}
+
+type succeededConsumerSpy struct {
+	calls int
+	stage string
+}
+
+func (spy *succeededConsumerSpy) ConsumeSucceededRun(_ context.Context, run WorkflowRun) error {
+	spy.calls++
+	spy.stage = run.Stage
+	return nil
+}
+
+func TestSucceededResultRoutesOnlyToMatchingStageConsumer(t *testing.T) {
+	for _, stage := range []string{"chapter_planning", "content_generation", "review", "rewrite"} {
+		t.Run(stage, func(t *testing.T) {
+			service, store, projectID := fixtureService(t)
+			now := service.now()
+			run := WorkflowRun{
+				ID: uuid.New(), RunNumber: "WR-" + strings.ToUpper(uuid.NewString()[:8]),
+				ProjectID: projectID, Stage: stage, WorkflowConfigurationID: uuid.New(),
+				TriggerSource: "manual", Status: StatusRunning,
+				ConfigurationSnapshot: json.RawMessage(`{}`), InputPayload: json.RawMessage(`{}`),
+				StartedAt: &now, CreatedAt: now, UpdatedAt: now, Version: 2,
+			}
+			store.runs[run.ID] = run
+			chapter, generation, review, rewrite := &succeededConsumerSpy{}, &succeededConsumerSpy{}, &succeededConsumerSpy{}, &succeededConsumerSpy{}
+			service.SetSucceededConsumer(chapter)
+			service.SetContentSucceededConsumer(generation)
+			service.SetReviewSucceededConsumer(review)
+			service.SetRewriteSucceededConsumer(rewrite)
+			if _, err := service.applyExecutionResult(context.Background(), run, ExecutionResult{
+				Status: ExecutionSucceeded, Output: json.RawMessage(`{"ok":true}`),
+			}); err != nil {
+				t.Fatal(err)
+			}
+			expected := map[string]*succeededConsumerSpy{
+				"chapter_planning": chapter, "content_generation": generation,
+				"review": review, "rewrite": rewrite,
+			}
+			for consumerStage, spy := range expected {
+				want := 0
+				if consumerStage == stage {
+					want = 1
+				}
+				if spy.calls != want || want == 1 && spy.stage != stage {
+					t.Fatalf("stage=%s consumer=%s calls=%d consumedStage=%s", stage, consumerStage, spy.calls, spy.stage)
+				}
+			}
+		})
 	}
 }
 

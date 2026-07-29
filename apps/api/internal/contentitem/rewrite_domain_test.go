@@ -48,6 +48,31 @@ func TestContentVersionWorkflowGeneratedShapeRequiresCompleteSourceTrace(t *test
 	if !errors.Is(candidate.ValidateRewriteShape(), ErrInvalidContentVersion) { t.Fatal("candidate without source run accepted") }
 }
 
+func TestContentVersionWorkflowRewriteShapeRequiresFrozenLineage(t *testing.T) {
+	candidateID, sourceVersionID, sourceRunID := uuid.New(), uuid.New(), uuid.New()
+	sourceVersion := 4
+	candidate := ContentVersion{
+		ID: candidateID, Source: ContentVersionSourceWorkflowRewrite, VersionNo: 5,
+		Status: ContentVersionStatusEditableDraft, Version: 1,
+		SourceContentVersionID: &sourceVersionID,
+		SourceContentVersionVersion: &sourceVersion,
+		SourceWorkflowRunID: &sourceRunID,
+	}
+	if err := candidate.ValidateRewriteShape(); err != nil {
+		t.Fatalf("candidate=%+v err=%v", candidate, err)
+	}
+	for _, invalid := range []ContentVersion{
+		{ID: candidateID, Source: ContentVersionSourceWorkflowRewrite, Status: ContentVersionStatusEditableDraft, Version: 1},
+		{ID: candidateID, Source: ContentVersionSourceWorkflowRewrite, Status: ContentVersionStatusFrozen, Version: 1, SourceContentVersionID: &sourceVersionID, SourceContentVersionVersion: &sourceVersion, SourceWorkflowRunID: &sourceRunID},
+		{ID: candidateID, Source: ContentVersionSourceWorkflowRewrite, Status: ContentVersionStatusEditableDraft, Version: 2, SourceContentVersionID: &sourceVersionID, SourceContentVersionVersion: &sourceVersion, SourceWorkflowRunID: &sourceRunID},
+		{ID: candidateID, Source: ContentVersionSourceWorkflowRewrite, Status: ContentVersionStatusEditableDraft, Version: 1, SourceContentVersionID: &candidateID, SourceContentVersionVersion: &sourceVersion, SourceWorkflowRunID: &sourceRunID},
+	} {
+		if !errors.Is(invalid.ValidateRewriteShape(), ErrInvalidContentVersion) {
+			t.Fatalf("invalid candidate accepted: %+v", invalid)
+		}
+	}
+}
+
 func TestWorkflowRunRewriteShapeSucceedsAndFailsWithFrozenNullability(t *testing.T) {
 	reviewID, targetID := uuid.New(), uuid.New()
 	finished := time.Now().UTC()

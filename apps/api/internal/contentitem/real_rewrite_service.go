@@ -161,6 +161,7 @@ type RealRewriteService struct {
 	runs   rewriteRunService
 	secret []byte
 	now    func() time.Time
+	begin  func(context.Context) (pgx.Tx, error)
 }
 
 func NewRealRewriteService(
@@ -175,7 +176,10 @@ func NewRealRewriteService(
 	runs rewriteRunService,
 	secret string,
 ) *RealRewriteService {
-	return &RealRewriteService{repo: repo, bindings: bindings, configs: configs, runs: runs, secret: []byte(secret), now: time.Now}
+	return &RealRewriteService{
+		repo: repo, bindings: bindings, configs: configs, runs: runs,
+		secret: []byte(secret), now: time.Now, begin: repo.db.Begin,
+	}
 }
 
 type rewriteReportFacts struct {

@@ -15,6 +15,7 @@ const (
 	ContentVersionSourceMockGenerated = "mock_generated"
 	ContentVersionSourceMockRewrite   = "mock_rewrite"
 	ContentVersionSourceWorkflowGenerated = "workflow_generated"
+	ContentVersionSourceWorkflowRewrite   = "workflow_rewrite"
 
 	ContentVersionStatusEditableDraft = "editable_draft"
 	ContentVersionStatusFrozen        = "frozen"
@@ -56,6 +57,13 @@ func (v ContentVersion) ValidateRewriteShape() error {
 		}
 	case ContentVersionSourceWorkflowGenerated:
 		if v.Status == ContentVersionStatusEditableDraft && v.Version == 1 && v.SourceContentVersionID != nil && v.SourceContentVersionVersion != nil && *v.SourceContentVersionVersion >= 1 && v.SourceWorkflowRunID != nil {
+			return nil
+		}
+	case ContentVersionSourceWorkflowRewrite:
+		if v.Status == ContentVersionStatusEditableDraft && v.Version == 1 && v.FrozenAt == nil &&
+			v.SourceContentVersionID != nil && *v.SourceContentVersionID != v.ID &&
+			v.SourceContentVersionVersion != nil && *v.SourceContentVersionVersion >= 1 &&
+			v.SourceWorkflowRunID != nil {
 			return nil
 		}
 	}

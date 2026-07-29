@@ -15,6 +15,7 @@ const contentVersionItemVersionNoUniqueConstraint = "content_versions_item_versi
 
 var (
 	ErrWorkflowRunNotFound = errors.New("workflow run not found")
+	ErrRewriteCandidateAlreadyExists = errors.New("rewrite candidate already exists")
 
 	_ ContentVersionRepository = (*PostgresRepository)(nil)
 	_ WorkflowRunRepository    = (*PostgresRepository)(nil)
@@ -45,6 +46,11 @@ func (r *PostgresRepository) GetContentVersion(ctx context.Context, versionID uu
 
 func rewriteContentVersionCreateError(err error, value ContentVersion) error {
 	var pgErr *pgconn.PgError
+	if errors.As(err, &pgErr) && pgErr.Code == "23505" &&
+		pgErr.ConstraintName == "content_versions_source_workflow_run_unique_idx" &&
+		value.Source == ContentVersionSourceWorkflowRewrite {
+		return ErrRewriteCandidateAlreadyExists
+	}
 	if errors.As(err, &pgErr) && pgErr.Code == "23505" && pgErr.ConstraintName == contentVersionItemVersionNoUniqueConstraint && value.Source == ContentVersionSourceMockRewrite && value.VersionNo == 2 {
 		return ErrRewriteAlreadyExists
 	}

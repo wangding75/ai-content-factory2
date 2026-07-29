@@ -106,6 +106,7 @@ type Service struct {
 	}
 	contentSucceededConsumer interface { ConsumeSucceededRun(context.Context, WorkflowRun) error }
 	reviewSucceededConsumer interface { ConsumeSucceededRun(context.Context, WorkflowRun) error }
+	rewriteSucceededConsumer interface { ConsumeSucceededRun(context.Context, WorkflowRun) error }
 }
 
 func NewService(store Store, projects ProjectReader, bindings BindingReader, configurations ConfigurationReader, connections ConnectionReader) *Service {
@@ -126,6 +127,7 @@ func (s *Service) SetSucceededConsumer(consumer interface {
 }
 func (s *Service) SetContentSucceededConsumer(consumer interface { ConsumeSucceededRun(context.Context, WorkflowRun) error }) { s.contentSucceededConsumer = consumer }
 func (s *Service) SetReviewSucceededConsumer(consumer interface { ConsumeSucceededRun(context.Context, WorkflowRun) error }) { s.reviewSucceededConsumer = consumer }
+func (s *Service) SetRewriteSucceededConsumer(consumer interface { ConsumeSucceededRun(context.Context, WorkflowRun) error }) { s.rewriteSucceededConsumer = consumer }
 
 // ExecuteRun is an explicit application boundary. It never polls or schedules work.
 func (s *Service) ExecuteRun(ctx context.Context, runID uuid.UUID) (WorkflowRun, error) {
@@ -184,6 +186,7 @@ func (s *Service) applyExecutionResult(ctx context.Context, run WorkflowRun, res
 		}
 		if s.contentSucceededConsumer != nil && updated.Stage == "content_generation" { if err := s.contentSucceededConsumer.ConsumeSucceededRun(ctx,updated); err != nil { return updated,err } }
 		if s.reviewSucceededConsumer != nil && updated.Stage == "review" { if err := s.reviewSucceededConsumer.ConsumeSucceededRun(ctx,updated); err != nil { return updated,err } }
+		if s.rewriteSucceededConsumer != nil && updated.Stage == "rewrite" { if err := s.rewriteSucceededConsumer.ConsumeSucceededRun(ctx,updated); err != nil { return updated,err } }
 		return updated, nil
 	}
 	if result.Status == ExecutionCancelled {
