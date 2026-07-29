@@ -849,9 +849,13 @@ function RealReportView({
             {formatReviewTime(detail.workflowRunSummary.createdAt)}
           </span>
         </div>
-        <button type="button" disabled title={copy.report.disabledRewriteHint}>
-          {copy.report.disabledRewrite}
-        </button>
+        {detail.issues.some((issue) => issue.disposition === "open") ? (
+          <Link href={`/projects/${projectId}/works/${workId}/rewrite?reportId=${encodeURIComponent(detail.report.id)}`}>
+            创建重写
+          </Link>
+        ) : (
+          <button type="button" disabled title="当前审核结果没有可处理的问题">创建重写</button>
+        )}
       </section>
     </>
   );

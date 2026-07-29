@@ -1,11 +1,37 @@
-import {mockRewriteContentItem,type MockRewriteResponseDto,type RewriteFocus} from "./project-work-api";
-export type {RewriteFocus};
-export type RewriteMockState="default"|"loading"|"success"|"invalid-parameters"|"stale"|"idempotency-conflict"|"already-exists"|"source-not-frozen"|"review-not-completed"|"relation-mismatch"|"provider-failure"|"internal-error";
-export type RewriteForm={rewrite_focus:RewriteFocus[];instructions:string;preserve_ending:boolean;expected_version:number};
-export type RewriteContext={projectId:string;workId:string;contentItemId:string;sourceVersionId:string;reviewReportId:string};
-export type RewriteResult={source_content_version_id:string;target_content_version_id:string;target_version_no:2;source:"mock_rewrite";current_version_id_unchanged:true;workflow_run:{id:string;status:"succeeded";target_content_version_id:string};idempotent_replay:boolean};
-export const parseRewriteState=(value:string|null):RewriteMockState=>(["loading","success","invalid-parameters","stale","idempotency-conflict","already-exists","source-not-frozen","review-not-completed","relation-mismatch","provider-failure","internal-error"].includes(value??"")?value:"default") as RewriteMockState;
-export function validateRewriteForm(form:RewriteForm){const errors:{rewrite_focus?:string;instructions?:string}={};if(!form.rewrite_focus.length)errors.rewrite_focus="至少选择一项重写重点。";if(form.instructions.length>2000)errors.instructions="补充说明不能超过 2000 个字符。";return errors;}
-export function createMockRewrite(context:RewriteContext,form:RewriteForm,key:string,signal?:AbortSignal):Promise<MockRewriteResponseDto>{return mockRewriteContentItem(context.contentItemId,{source_content_version_id:context.sourceVersionId,review_report_id:context.reviewReportId,expected_version:form.expected_version,parameters:{rewrite_focus:form.rewrite_focus,preserve_ending:form.preserve_ending,instructions:form.instructions.trim()||null}},key,signal);}
-export function d5Url(context:RewriteContext,result:MockRewriteResponseDto){const q=new URLSearchParams({contentItemId:context.contentItemId,sourceVersionId:result.workflow_run.source_content_version_id,targetVersionId:result.workflow_run.target_content_version_id??result.target_content_version.id,workflowRunId:result.workflow_run.id});return `/projects/${context.projectId}/works/${context.workId}/rewrite-result?${q}`;}
-export function rewriteErrorMessage(code:string){return ({invalid_request:"请求参数无效，请检查后重试。",invalid_uuid:"请求标识无效，请返回作品列表后重试。",invalid_rewrite_parameters:"重写参数无效，请检查后重试。",version_conflict:"来源版本已变化，请刷新作品后重试。",idempotency_key_reused_with_different_payload:"该提交键已用于不同请求，请修改参数后重新提交。",rewrite_already_exists:"该正文已存在重写版本。",content_version_not_frozen:"来源版本尚未冻结，不能创建重写。",review_not_completed:"来源审核尚未完成。",source_version_mismatch:"来源版本与审核结果不匹配。",cross_project_relation_conflict:"来源数据关系不匹配。",content_item_not_found:"作品不存在或无权访问。",content_version_not_found:"来源版本不存在。",review_report_not_found:"审核结果不存在。",mock_rewrite_failed:"暂时无法创建重写，请稍后使用新的提交重试。",internal_error:"暂时无法创建重写，请稍后重试。",network_error:"网络连接失败，请检查后重试。",timeout:"请求超时，请重试。"} as Record<string,string>)[code]??"暂时无法创建重写，请稍后重试。";}
+import { apiRequest, type ApiRequestInit } from "@/lib/api";
+import type { WorkflowRunDto } from "@/features/workflow-runs/workflow-run-api";
+
+export type RewriteStrategy = "targeted_fix" | "creative_rewrite";
+export type RewriteOptions = { strategy: RewriteStrategy };
+export type RewriteIssue = { id: string; reviewId: string; issueKey: string; position: number; categoryLabel: string; severity: string; title: string; description: string; disposition: "open" | "ignored"; version: number };
+export type RewriteSource = { id: string; contentItemId: string; versionNo: number; version: number; title: string; wordCount: number; contentHash: string };
+export type RewriteConfiguration = { workflowConfigurationName: string; inputContract: "rewrite.input.v1"; outputContract: "rewrite.output.v1" };
+export type RewriteAvailability = { reviewReportId: string; contentItemId: string; sourceContentVersionSummary: RewriteSource; available: boolean; reason: "review_not_completed" | "no_open_issues" | "rewrite_not_configured" | "active_rewrite_run_conflict" | null; openIssueCount: number; activeRun: WorkflowRunDto | null; configurationSummary: RewriteConfiguration | null };
+export type RewriteCheck = { code: string; status: "passed" | "blocked"; message: string };
+export type RewritePreflight = { status: "passed" | "blocked"; checks: RewriteCheck[]; reviewReportSnapshot: { id: string; conclusion: string; summary: string; completedAt: string }; sourceContentVersionSummary: RewriteSource; selectedIssueSummary: { total: number; items: Array<{ reviewIssueId: string; issueKey: string; position: number; title: string; severity: string }> }; rewriteOptions: RewriteOptions; optionalInstructions: string | null; configurationSummary: RewriteConfiguration | null; preflightToken: string | null; expiresAt: string | null };
+
+const reviewPath = (reviewId: string) => `/reviews/${encodeURIComponent(reviewId)}`;
+export const getContentRewriteAvailability = (reviewId: string, init?: ApiRequestInit) => apiRequest<RewriteAvailability>(`${reviewPath(reviewId)}/rewrite-availability`, init);
+export const preflightContentRewrite = (reviewId: string, body: { selectedIssueIds: string[]; optionalInstructions: string | null; rewriteOptions: RewriteOptions }, init?: ApiRequestInit) => apiRequest<RewritePreflight>(`${reviewPath(reviewId)}/rewrites/preflight`, { ...init, method: "POST", headers: { ...init?.headers, "Content-Type": "application/json" }, body: JSON.stringify(body) });
+export const createContentRewriteRun = (reviewId: string, preflightToken: string, key: string, init?: ApiRequestInit) => apiRequest<WorkflowRunDto>(`${reviewPath(reviewId)}/rewrites`, { ...init, method: "POST", headers: { ...init?.headers, "Content-Type": "application/json", "Idempotency-Key": key }, body: JSON.stringify({ preflightToken }) });
+
+export const rewriteErrorMessage = (code?: string) => ({
+  rewrite_not_configured: "当前项目尚未配置可用的重写工作流。",
+  rewrite_not_available: "当前审核结果暂时不能创建重写。",
+  rewrite_preflight_expired: "预检已过期，请重新进行预检。",
+  rewrite_preflight_stale: "审核数据已变化，请重新进行预检。",
+  rewrite_preflight_consumed: "该预检已被使用，请重新进行预检。",
+  active_rewrite_run_conflict: "已有重写任务正在执行，已为你恢复该任务。",
+  idempotency_conflict: "本次提交状态不一致，请修改内容后重新预检。",
+  validation_error: "输入内容不符合要求，请检查后重试。",
+  timeout: "请求超时，创建结果暂未确认。请使用原提交重试。",
+  network_error: "网络连接异常，创建结果暂未确认。请使用原提交重试。",
+}[code ?? ""] ?? "暂时无法完成操作，请稍后重试。");
+
+export const validRewriteInput = (issueIds: string[], instructions: string, options: RewriteOptions) => {
+  if (issueIds.length < 1 || issueIds.length > 50) return "请选择 1 至 50 个待处理问题。";
+  if (new Set(issueIds).size !== issueIds.length) return "选择的问题不能重复。";
+  if ([...instructions].length > 2000) return "补充要求不能超过 2000 个字符。";
+  if (options.strategy !== "targeted_fix" && options.strategy !== "creative_rewrite") return "请选择有效的重写策略。";
+  return null;
+};
