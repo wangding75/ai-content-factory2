@@ -6,6 +6,6 @@ export const contentGenerationCopy = {
   viewCandidate: "查看候选", viewDetails: "查看详情", hideDetails: "收起详情", workflowCenter: "前往流程中心", configureWorkflow: "配置工作流", retryRuntime: "重新执行 Runtime", retryConsumption: "重试结果消费", retrying: "正在重试…",
   candidateCompareAria: "候选版本比较", candidateViewing: (version: number) => `当前查看：v${version}（候选）`, sourceRun: (run: string, version: number) => `来源 Run：${run}；基线版本：v${version}`,
   viewCurrent: (version: number) => `查看当前 v${version}`, viewCandidateVersion: (version: number) => `查看候选 v${version}`, closeCandidate: "关闭候选", setCurrent: "设为当前版本", settingCurrent: "正在设为当前…",
-  stale: "当前正文已变化；候选仍可比较，但不能强制覆盖。", currentReadFailed: "无法读取当前版本，请稍后重试。", currentReading: "正在读取当前版本…", switchFailed: "切换版本失败，当前正文未被覆盖，请稍后重试。", confirmSetCurrent: "确认将候选版本设为当前正文吗？当前版本会保留在版本历史中。",
+  stale: "当前正文已变化；候选仍可比较，但不能强制覆盖。", currentReadFailed: "无法读取当前版本，请稍后重试。", currentReading: "正在读取当前版本…", switchFailed: "切换版本失败，当前正文未被覆盖，请稍后重试。", confirmSetCurrent: "确认将候选版本设为当前正文吗？当前版本会保留在版本历史中。", confirmSetCurrentAction: "确认设为当前版本", cancelSetCurrent: "取消切换",
   candidateTitle: (version: number) => `候选版本 v${version}`, currentTitle: (version: number | undefined) => `当前版本 v${version ?? "—"}`,
 };
