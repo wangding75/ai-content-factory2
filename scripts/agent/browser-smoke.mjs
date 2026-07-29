@@ -97,7 +97,7 @@ try {
       url,
       title: pageState.title,
       horizontalOverflow: pageState.scrollWidth > pageState.clientWidth + 1,
-      consoleErrors,
+      consoleErrors: filterAllowed(consoleErrors),
       pageErrors,
       failedResponses: filterAllowed(failedResponses),
       failedRequests: filterAllowed(failedRequests),
