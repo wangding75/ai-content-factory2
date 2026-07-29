@@ -19,6 +19,7 @@ const (
 	StatusCancelled Status = "cancelled"
 	EventTypeResultConsumed           = "result_consumed"
 	EventTypeResultConsumptionFailed  = "result_consumption_failed"
+	EventTypeOutputValidationFailed   = "output_validation_failed"
 )
 
 var (

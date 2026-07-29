@@ -308,6 +308,21 @@ func (s *Service) CreateRunForPreflightToken(ctx context.Context, projectID uuid
 	})
 }
 
+func (s *Service) CreateRunForPreflightTokenIdempotent(ctx context.Context, projectID uuid.UUID, key, requestHash, nonce string, prepare CreateRunPreparation) (WorkflowRun, error) {
+	if projectID == uuid.Nil || strings.TrimSpace(key) == "" || strings.TrimSpace(requestHash) == "" || strings.TrimSpace(nonce) == "" || prepare == nil { return WorkflowRun{}, ErrValidation }
+	scope := "createContentGenerationRun:" + projectID.String()
+	return s.store.ExecuteIdempotent(ctx, scope, key, requestHash, func(store Store) (WorkflowRun, error) {
+		used, err := store.PreflightTokenUsed(ctx, nonce)
+		if err != nil { return WorkflowRun{}, err }
+		if used { return WorkflowRun{}, ErrPreflightTokenConsumed }
+		command, err := prepare()
+		if err != nil { return WorkflowRun{}, err }
+		if command.ProjectID != projectID { return WorkflowRun{}, ErrValidation }
+		if command.TriggerSource == "" { command.TriggerSource = "manual" }
+		return s.createRun(ctx, store, command)
+	})
+}
+
 func (s *Service) createRun(ctx context.Context, store Store, command CreateRunCommand) (WorkflowRun, error) {
 	if command.ProjectID == uuid.Nil || !validJSONObject(command.InputPayload) || !validTriggerSource(command.TriggerSource) {
 		return WorkflowRun{}, ErrValidation
@@ -460,6 +475,7 @@ func (s *Service) RetryRun(ctx context.Context, command RetryCommand) (WorkflowR
 			return WorkflowRun{}, err
 		}
 		now := s.now()
+		run.SubjectType, run.SubjectID = original.SubjectType, original.SubjectID
 		run.CreatedAt, run.UpdatedAt, run.RetryOfRunID = now, now, &original.ID
 		created, _, err := store.CreateWithInitialEvent(ctx, run, Event{ID: s.newID(), RunID: run.ID, EventType: "queued", Status: StatusQueued, Payload: json.RawMessage(`{}`), CreatedAt: now})
 		return created, mapStoreError(err)

@@ -48,6 +48,7 @@ type generationSummaryRuns struct {
 
 func (f *generationSummaryRuns) CreateRunIdempotentForScope(context.Context, string, uuid.UUID, string, string, workflowrun.CreateRunPreparation) (workflowrun.WorkflowRun, error) { return workflowrun.WorkflowRun{}, errors.New("unexpected create") }
 func (f *generationSummaryRuns) CreateRunForPreflightToken(context.Context, uuid.UUID, string, string, workflowrun.CreateRunPreparation) (workflowrun.WorkflowRun, error) { return workflowrun.WorkflowRun{}, errors.New("unexpected create") }
+func (f *generationSummaryRuns) CreateRunForPreflightTokenIdempotent(context.Context, uuid.UUID, string, string, string, workflowrun.CreateRunPreparation) (workflowrun.WorkflowRun, error) { return workflowrun.WorkflowRun{}, errors.New("unexpected create") }
 func (f *generationSummaryRuns) ListRuns(context.Context, workflowrun.ListRunsQuery) (workflowrun.RunList, error) { return f.list, f.listErr }
 func (f *generationSummaryRuns) ListRunEvents(context.Context, uuid.UUID) ([]workflowrun.Event, error) { if f.cancel != nil { f.cancel() }; return f.events, f.eventsErr }
 func (f *generationSummaryRuns) GetRun(context.Context, uuid.UUID) (workflowrun.WorkflowRun, error) { return workflowrun.WorkflowRun{}, errors.New("unexpected get") }
