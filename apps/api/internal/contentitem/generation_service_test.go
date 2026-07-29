@@ -98,6 +98,24 @@ func TestGenerationSummaryErrorPropagation(t *testing.T) {
 	}
 }
 
+func TestGenerationSummaryRestoresPersistentStatesAndSafeErrors(t *testing.T) {
+	repo, ctx, _, item, spy := generationFixture(t)
+	missing := generationSummaryBindings{err: workflowbinding.ErrNotFound}
+	message := "workflow execution failed"
+	for _, tc := range []struct { name string; status workflowrun.Status; events []workflowrun.Event; want string; wantError bool }{
+		{name:"queued",status:workflowrun.StatusQueued,want:"queued"},
+		{name:"running",status:workflowrun.StatusRunning,want:"running"},
+		{name:"runtime failed",status:workflowrun.StatusFailed,want:"runtime_failed",wantError:true},
+		{name:"output validation",status:workflowrun.StatusSucceeded,events:[]workflowrun.Event{{EventType:workflowrun.EventTypeOutputValidationFailed,Payload:json.RawMessage(`{"message":"invalid generated output"}`)}},want:"output_validation_failed",wantError:true},
+		{name:"result consumption",status:workflowrun.StatusSucceeded,events:[]workflowrun.Event{{EventType:workflowrun.EventTypeResultConsumptionFailed,Payload:json.RawMessage(`{"message":"candidate persistence failed"}`)}},want:"result_consumption_failed",wantError:true},
+		{name:"non failure",status:workflowrun.StatusSucceeded,want:"idle"},
+	} {
+		t.Run(tc.name, func(t *testing.T) { run:=spy.run;run.Status=tc.status;if tc.status==workflowrun.StatusFailed{run.ErrorMessage=&message};summary,e:=NewGenerationService(repo,missing,generationSummaryConfigs{},&generationSummaryRuns{list:workflowrun.RunList{Items:[]workflowrun.WorkflowRun{run}},events:tc.events},"x").Summary(ctx,item.Detail.Item.ID);if e!=nil||summary.State!=tc.want||(summary.LatestError!=nil)!=tc.wantError{t.Fatalf("summary=%+v err=%v",summary,e)} })
+	}
+	summary,e:=NewGenerationService(repo,missing,generationSummaryConfigs{},&generationSummaryRuns{},"x").Summary(ctx,item.Detail.Item.ID)
+	if e!=nil||summary.State!="not_configured"||summary.LatestError!=nil{t.Fatalf("empty summary=%+v err=%v",summary,e)}
+}
+
 type generationFailureTx struct {
 	pgx.Tx
 	eventErr error
