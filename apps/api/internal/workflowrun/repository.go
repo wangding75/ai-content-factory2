@@ -335,7 +335,7 @@ func (r *Repository) ExecuteIdempotentWithReplay(ctx context.Context, scope, key
 	}
 	var tx pgx.Tx
 	var err error
-	if strings.HasPrefix(scope, "createContentGenerationRun:") {
+	if strings.HasPrefix(scope, "createContentGenerationRun:") || strings.HasPrefix(scope, "createContentRewriteRun:") {
 		tx, err = r.pool.BeginTx(ctx, pgx.TxOptions{IsoLevel: pgx.Serializable})
 	} else {
 		tx, err = r.pool.Begin(ctx)
@@ -344,7 +344,7 @@ func (r *Repository) ExecuteIdempotentWithReplay(ctx context.Context, scope, key
 		return WorkflowRun{}, false, fmt.Errorf("begin workflow run idempotency transaction: %w", err)
 	}
 	defer tx.Rollback(ctx)
-	if _, err = tx.Exec(ctx, "SELECT pg_advisory_xact_lock(hashtextextended($1, 0))", scope+":"+key); err != nil {
+	if _, err = tx.Exec(ctx, "SELECT pg_advisory_xact_lock(hashtextextended($1, 0))", "idempotency:"+scope+":"+key); err != nil {
 		return WorkflowRun{}, false, fmt.Errorf("lock workflow run idempotency request: %w", err)
 	}
 	idem := idempotency.NewPostgresRepositoryTx(tx)
@@ -353,7 +353,7 @@ func (r *Repository) ExecuteIdempotentWithReplay(ctx context.Context, scope, key
 		if usedErr != nil { return WorkflowRun{}, false, usedErr }
 		if used { return WorkflowRun{}, false, ErrPreflightTokenConsumed }
 	}
-	if record, getErr := idem.Get(ctx, scope, key); getErr == nil {
+	if record, getErr := idem.GetForUpdate(ctx, scope, key); getErr == nil {
 		if record.RequestHash != requestHash {
 			return WorkflowRun{}, false, ErrIdempotencyConflict
 		}
@@ -373,7 +373,7 @@ func (r *Repository) ExecuteIdempotentWithReplay(ctx context.Context, scope, key
 		return WorkflowRun{}, false, fmt.Errorf("encode workflow run idempotency replay: %w", err)
 	}
 	status := 200
-	if strings.Contains(scope, "createWorkflowRun") || strings.Contains(scope, "createContentGenerationRun") || strings.Contains(scope, "createContentReviewRun") || strings.Contains(scope, "retryWorkflowRun") { status = 201 }
+	if strings.Contains(scope, "createWorkflowRun") || strings.Contains(scope, "createContentGenerationRun") || strings.Contains(scope, "createContentReviewRun") || strings.Contains(scope, "createContentRewriteRun") || strings.Contains(scope, "retryWorkflowRun") { status = 201 }
 	if _, err = idem.Create(ctx, idempotency.Record{ID: uuid.New(), Scope: scope, Key: key, RequestHash: requestHash, ResponseStatus: status, ResponseBody: RedactJSON(body)}); err != nil {
 		if errors.Is(err, idempotency.ErrConflict) {
 			return WorkflowRun{}, false, ErrIdempotencyConflict

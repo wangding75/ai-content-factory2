@@ -71,6 +71,7 @@ func main() {
 	realReview := contentitem.NewRealReviewService(contentRepository, workflowbinding.NewPostgresRepository(pool), globalConfigurations, workflowRuns, hmacSecret)
 	contentItems.SetRealReviewService(realReview)
 	workflowRuns.SetReviewSucceededConsumer(realReview)
+	realRewrite := contentitem.NewRealRewriteService(contentRepository, workflowbinding.NewPostgresRepository(pool), globalConfigurations, workflowRuns, hmacSecret)
 	chapterPlans.ConfigureChapterPlanningRuntime(workflowbinding.NewPostgresRepository(pool), globalConfigurations, globalConfigurations, workflowRuns)
 	workflowRuns.SetSucceededConsumer(chapterplan.NewRuntimeConsumer(chapterplan.NewResultIngestor(pool), chapterplan.NewConsumptionRepository(pool)))
 	workerContext, stopWorker := context.WithCancel(context.Background())
@@ -78,7 +79,7 @@ func main() {
 	go workflowRuns.RunWorker(workerContext, time.Second, func(workerErr error) {
 		log.Printf("workflow worker: %v", workerErr)
 	})
-	server := httpserver.New(cfg.APIAddress, projects, plannings, materials, projectMaterials, storylines, foreshadowings, chapterPlans, contentItems, iteration07, iteration08, contentGeneration, realReview, globalConfigurations, workflowbinding.NewCloseLoop(pool, projectRepository, globalConfigurations), workflowRuns)
+	server := httpserver.New(cfg.APIAddress, projects, plannings, materials, projectMaterials, storylines, foreshadowings, chapterPlans, contentItems, iteration07, iteration08, contentGeneration, realReview, realRewrite, globalConfigurations, workflowbinding.NewCloseLoop(pool, projectRepository, globalConfigurations), workflowRuns)
 	log.Printf("api listening on %s", cfg.APIAddress)
 	if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 		log.Fatal(err)

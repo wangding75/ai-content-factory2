@@ -352,20 +352,41 @@ func TestWorkflowRunPersistentIdempotencyReplayConcurrencyAndRestart(t *testing.
 	p, w := fixture(t, ctx, db)
 	newService := func() *Service {
 		connectionID := uuid.New()
-		return NewService(NewPostgresRepository(db), serviceProjects{p: project.Project{ID: p}}, serviceBindings{b: workflowbinding.ProjectWorkflowBinding{ID: uuid.New(), ProjectID: p, Stage: workflowbinding.StageRewrite, WorkflowConfigurationID: w, Version: 1}}, serviceConfigs{w: globalconfig.Workflow{Common: globalconfig.Common{ID: w, Version: 1, Enabled: true, IntegrationStatus: "verified"}, ConnectionID: connectionID, ApplicableStages: []string{"rewrite"}, TypeConfig: json.RawMessage(`{}`), DefaultParameters: json.RawMessage(`{}`)}}, serviceConnections{c: globalconfig.Connection{Common: globalconfig.Common{ID: connectionID, Version: 1, Enabled: true, IntegrationStatus: "verified"}, ConnectionType: "n8n", TypeConfig: json.RawMessage(`{}`)}})
+		return NewService(NewPostgresRepository(db), serviceProjects{p: project.Project{ID: p}}, serviceBindings{b: workflowbinding.ProjectWorkflowBinding{ID: uuid.New(), ProjectID: p, Stage: workflowbinding.StageChapterPlanning, WorkflowConfigurationID: w, Version: 1}}, serviceConfigs{w: globalconfig.Workflow{Common: globalconfig.Common{ID: w, Version: 1, Enabled: true, IntegrationStatus: "verified"}, ConnectionID: connectionID, ApplicableStages: []string{"chapter_planning"}, TypeConfig: json.RawMessage(`{}`), DefaultParameters: json.RawMessage(`{}`)}}, serviceConnections{c: globalconfig.Connection{Common: globalconfig.Common{ID: connectionID, Version: 1, Enabled: true, IntegrationStatus: "verified"}, ConnectionType: "n8n", TypeConfig: json.RawMessage(`{}`)}})
+	}
+	create := func(service *Service, input json.RawMessage, trigger, key string) (WorkflowRun, error) {
+		command := CreateRunCommand{ProjectID: p, Stage: "chapter_planning", InputPayload: input, TriggerSource: trigger}
+		requestHash := Fingerprint(struct {
+			ProjectID uuid.UUID
+			Stage     string
+			Input     json.RawMessage
+			Trigger   string
+		}{p, command.Stage, canonicalJSON(input), trigger})
+		return service.CreateRunIdempotentForScope(ctx, "testWorkflowRunPersistentIdempotency", p, key, requestHash, func() (CreateRunCommand, error) {
+			return command, nil
+		})
 	}
 	first := newService()
-	command := CreateRunCommand{ProjectID: p, Stage: "rewrite", InputPayload: json.RawMessage(`{"z":1,"a":{"b":2}}`), TriggerSource: "api", IdempotencyKey: "workflow-run-replay"}
-	created, err := first.CreateRun(ctx, command)
+	created, err := create(first, json.RawMessage(`{"z":1,"a":{"b":2}}`), "api", "workflow-run-replay")
 	if err != nil {
 		t.Fatal(err)
 	}
-	replayed, err := newService().CreateRun(ctx, CreateRunCommand{ProjectID: p, Stage: "rewrite", InputPayload: json.RawMessage(` { "a" : { "b" : 2 }, "z" : 1 } `), TriggerSource: "api", IdempotencyKey: "workflow-run-replay"})
+	replayed, err := create(newService(), json.RawMessage(` { "a" : { "b" : 2 }, "z" : 1 } `), "api", "workflow-run-replay")
 	if err != nil || replayed.ID != created.ID {
 		t.Fatalf("restart replay=%+v err=%v", replayed, err)
 	}
-	if _, err = newService().CreateRun(ctx, CreateRunCommand{ProjectID: p, Stage: "rewrite", InputPayload: json.RawMessage(`{"z":2}`), TriggerSource: "api", IdempotencyKey: "workflow-run-replay"}); !errors.Is(err, ErrIdempotencyConflict) {
+	if _, err = create(newService(), json.RawMessage(`{"z":2}`), "api", "workflow-run-replay"); !errors.Is(err, ErrIdempotencyConflict) {
 		t.Fatalf("conflict=%v", err)
+	}
+	if _, err = first.CancelRun(ctx, RunCommand{RunID: created.ID, ExpectedVersion: created.Version, IdempotencyKey: "workflow-run-cancel"}); err != nil {
+		t.Fatal(err)
+	}
+	cancelReplay, err := newService().CancelRun(ctx, RunCommand{RunID: created.ID, ExpectedVersion: created.Version, IdempotencyKey: "workflow-run-cancel"})
+	if err != nil || cancelReplay.Status != StatusCancelled {
+		t.Fatalf("cancel replay=%+v err=%v", cancelReplay, err)
+	}
+	if _, err = newService().CancelRun(ctx, RunCommand{RunID: created.ID, ExpectedVersion: created.Version + 1, IdempotencyKey: "workflow-run-cancel"}); !errors.Is(err, ErrIdempotencyConflict) {
+		t.Fatalf("cancel conflict=%v", err)
 	}
 	var wg sync.WaitGroup
 	results := make([]WorkflowRun, 2)
@@ -374,7 +395,7 @@ func TestWorkflowRunPersistentIdempotencyReplayConcurrencyAndRestart(t *testing.
 		wg.Add(1)
 		go func(i int) {
 			defer wg.Done()
-			results[i], errs[i] = newService().CreateRun(context.Background(), CreateRunCommand{ProjectID: p, Stage: "rewrite", InputPayload: json.RawMessage(`{"concurrent":true}`), TriggerSource: "system", IdempotencyKey: "workflow-run-concurrent"})
+			results[i], errs[i] = create(newService(), json.RawMessage(`{"concurrent":true}`), "system", "workflow-run-concurrent")
 		}(i)
 	}
 	wg.Wait()
@@ -391,16 +412,7 @@ func TestWorkflowRunPersistentIdempotencyReplayConcurrencyAndRestart(t *testing.
 	if runs != 2 || events != 1 {
 		t.Fatalf("runs=%d events=%d", runs, events)
 	}
-	if _, err = first.CancelRun(ctx, RunCommand{RunID: created.ID, ExpectedVersion: created.Version, IdempotencyKey: "workflow-run-cancel"}); err != nil {
-		t.Fatal(err)
-	}
-	cancelReplay, err := newService().CancelRun(ctx, RunCommand{RunID: created.ID, ExpectedVersion: created.Version, IdempotencyKey: "workflow-run-cancel"})
-	if err != nil || cancelReplay.Status != StatusCancelled {
-		t.Fatalf("cancel replay=%+v err=%v", cancelReplay, err)
-	}
-	if _, err = newService().CancelRun(ctx, RunCommand{RunID: created.ID, ExpectedVersion: created.Version + 1, IdempotencyKey: "workflow-run-cancel"}); !errors.Is(err, ErrIdempotencyConflict) {
-		t.Fatalf("cancel conflict=%v", err)
-	}
+	if _, err = first.CancelRun(ctx, RunCommand{RunID: results[0].ID, ExpectedVersion: results[0].Version, IdempotencyKey: "workflow-run-concurrent-cancel"}); err != nil { t.Fatal(err) }
 	retried, err := first.RetryRun(ctx, RetryCommand{RunID: created.ID, ExpectedVersion: cancelReplay.Version, UseCurrentConfiguration: false, InputOverride: json.RawMessage(`{"override":true}`), IdempotencyKey: "workflow-run-retry"})
 	if err != nil {
 		t.Fatal(err)

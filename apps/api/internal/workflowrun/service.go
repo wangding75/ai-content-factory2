@@ -335,16 +335,19 @@ func (s *Service) CreateRunForPreflightTokenIdempotentForScope(ctx context.Conte
 
 func (s *Service) CreateRunForPreflightTokenIdempotentForScopeWithReplay(ctx context.Context, operation string, projectID uuid.UUID, key, requestHash, nonce string, prepare CreateRunTxPreparation) (WorkflowRun, bool, error) {
 	if projectID == uuid.Nil || strings.TrimSpace(key) == "" || strings.TrimSpace(requestHash) == "" || strings.TrimSpace(nonce) == "" || prepare == nil { return WorkflowRun{}, false, ErrValidation }
-	if operation != "createContentGenerationRun" && operation != "createContentReviewRun" { return WorkflowRun{}, false, ErrValidation }
+	if operation != "createContentGenerationRun" && operation != "createContentReviewRun" && operation != "createContentRewriteRun" { return WorkflowRun{}, false, ErrValidation }
 	scope := operation + ":" + projectID.String()
 	return s.store.ExecuteIdempotentWithReplay(ctx, scope, key, requestHash, func(store Store) (WorkflowRun, error) {
 		transactional, ok := store.(interface{ Transaction() pgx.Tx })
 		if !ok || transactional.Transaction() == nil { return WorkflowRun{}, ErrValidation }
-		if _, err := transactional.Transaction().Exec(ctx, "SELECT pg_advisory_xact_lock(hashtextextended($1, 0))", operation+":token:"+nonce); err != nil { return WorkflowRun{}, err }
-		if operation == "createContentReviewRun" {
-			var used bool
-			if err := transactional.Transaction().QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM idempotency_records WHERE scope=$1 AND idempotency_key=$2)", "consumeContentReviewPreflightToken:"+projectID.String(), nonce).Scan(&used); err != nil { return WorkflowRun{}, err }
-			if used { return WorkflowRun{}, ErrPreflightTokenConsumed }
+		if _, err := transactional.Transaction().Exec(ctx, "SELECT pg_advisory_xact_lock(hashtextextended($1, 0))", "preflight-token:"+nonce); err != nil { return WorkflowRun{}, err }
+		if operation == "createContentReviewRun" || operation == "createContentRewriteRun" {
+			consumeScope := "consumeContentReviewPreflightToken:" + projectID.String()
+			if operation == "createContentRewriteRun" { consumeScope = "consumeContentRewritePreflightToken:" + projectID.String() }
+			var marker int
+			markerErr := transactional.Transaction().QueryRow(ctx, "SELECT 1 FROM idempotency_records WHERE scope=$1 AND idempotency_key=$2 FOR UPDATE", consumeScope, nonce).Scan(&marker)
+			if markerErr == nil { return WorkflowRun{}, ErrPreflightTokenConsumed }
+			if !errors.Is(markerErr, pgx.ErrNoRows) { return WorkflowRun{}, markerErr }
 		} else {
 			used, err := store.PreflightTokenUsed(ctx, nonce)
 			if err != nil { return WorkflowRun{}, err }
@@ -356,12 +359,14 @@ func (s *Service) CreateRunForPreflightTokenIdempotentForScopeWithReplay(ctx con
 		if command.TriggerSource == "" { command.TriggerSource = "manual" }
 		created, err := s.createRun(ctx, store, command)
 		if err != nil { return WorkflowRun{}, err }
-		if operation == "createContentReviewRun" {
+		if operation == "createContentReviewRun" || operation == "createContentRewriteRun" {
 			body, marshalErr := json.Marshal(struct {
 				RunID uuid.UUID `json:"runId"`
 			}{created.ID})
 			if marshalErr != nil { return WorkflowRun{}, marshalErr }
-			_, err = transactional.Transaction().Exec(ctx, "INSERT INTO idempotency_records(id,scope,idempotency_key,request_hash,response_status,response_body) VALUES($1,$2,$3,$4,201,$5)", uuid.New(), "consumeContentReviewPreflightToken:"+projectID.String(), nonce, requestHash, body)
+			consumeScope := "consumeContentReviewPreflightToken:" + projectID.String()
+			if operation == "createContentRewriteRun" { consumeScope = "consumeContentRewritePreflightToken:" + projectID.String() }
+			_, err = transactional.Transaction().Exec(ctx, "INSERT INTO idempotency_records(id,scope,idempotency_key,request_hash,response_status,response_body) VALUES($1,$2,$3,$4,201,$5)", uuid.New(), consumeScope, nonce, requestHash, body)
 			if err != nil { return WorkflowRun{}, err }
 		}
 		return created, nil
@@ -379,7 +384,7 @@ func (s *Service) createRun(ctx context.Context, store Store, command CreateRunC
 	var configurationID uuid.UUID
 	var snapshot json.RawMessage
 	if command.PreparedConfiguration != nil {
-		if (stage != workflowbinding.StageContentGeneration && stage != workflowbinding.StageReview) || command.PreparedConfiguration.WorkflowConfigurationID == uuid.Nil || !validJSONObject(command.PreparedConfiguration.Snapshot) {
+		if (stage != workflowbinding.StageContentGeneration && stage != workflowbinding.StageReview && stage != workflowbinding.StageRewrite) || command.PreparedConfiguration.WorkflowConfigurationID == uuid.Nil || !validJSONObject(command.PreparedConfiguration.Snapshot) {
 			return WorkflowRun{}, ErrValidation
 		}
 		configurationID = command.PreparedConfiguration.WorkflowConfigurationID
@@ -587,7 +592,7 @@ func (s *Service) RetryRun(ctx context.Context, command RetryCommand) (WorkflowR
 }
 
 func protectedStage(stage string) bool {
-	return stage == "content_generation" || stage == "chapter_planning" || stage == "review"
+	return stage == "content_generation" || stage == "chapter_planning" || stage == "review" || stage == "rewrite"
 }
 
 func (s *Service) GetProjectRunSummary(ctx context.Context, projectID uuid.UUID) (Summary, error) {

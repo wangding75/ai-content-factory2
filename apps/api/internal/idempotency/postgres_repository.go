@@ -42,6 +42,16 @@ func (r *PostgresRepository) Get(ctx context.Context, scope, key string) (Record
 	}
 	return value, nil
 }
+func (r *PostgresRepository) GetForUpdate(ctx context.Context, scope, key string) (Record, error) {
+	value, err := scan(r.db.QueryRow(ctx, "SELECT id,scope,idempotency_key,request_hash,response_status,response_body,created_at,expires_at FROM idempotency_records WHERE scope=$1 AND idempotency_key=$2 FOR UPDATE", scope, key))
+	if errors.Is(err, pgx.ErrNoRows) {
+		return Record{}, ErrNotFound
+	}
+	if err != nil {
+		return Record{}, fmt.Errorf("lock idempotency record: %w", err)
+	}
+	return value, nil
+}
 func (r *PostgresRepository) Create(ctx context.Context, value Record) (Record, error) {
 	if !json.Valid(value.ResponseBody) {
 		return Record{}, fmt.Errorf("invalid idempotency response: %w", ErrConflict)

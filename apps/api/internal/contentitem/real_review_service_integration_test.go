@@ -42,7 +42,8 @@ func newRealReviewFixture(t *testing.T) realReviewFixture {
 	if _, err := db.Exec(ctx, "INSERT INTO workflow_configurations(id,name,connection_id,applicable_stages,type_config,input_contract_version,output_contract_version,default_parameters,integration_status,enabled) VALUES($1,$2,$3,'[\"review\"]','{}','review.input.v1','review.output.v1',$4,'connected',true)", workflowID, "review-"+workflowID.String(), connectionID, json.RawMessage(`{"reviewDimensions":["compliance","factual_consistency","language_quality","structural_logic","character_consistency"]}`)); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := db.Exec(ctx, "INSERT INTO project_workflow_bindings(id,project_id,stage,workflow_configuration_id) VALUES($1,$2,'review',$3)", uuid.New(), item.Detail.Item.ProjectID, workflowID); err != nil {
+	bindingID := uuid.New()
+	if _, err := db.Exec(ctx, "INSERT INTO project_workflow_bindings(id,project_id,stage,workflow_configuration_id) VALUES($1,$2,'review',$3)", bindingID, item.Detail.Item.ProjectID, workflowID); err != nil {
 		t.Fatal(err)
 	}
 	configs, err := globalconfig.NewService(db, "real-review-integration-key")
@@ -55,6 +56,7 @@ func newRealReviewFixture(t *testing.T) realReviewFixture {
 	)
 	service := NewRealReviewService(repo, workflowbinding.NewPostgresRepository(db), configs, runs, "real-review-token-secret")
 	t.Cleanup(func() {
+		_, _ = db.Exec(context.Background(), "DELETE FROM project_workflow_bindings WHERE id=$1", bindingID)
 		_, _ = db.Exec(context.Background(), "DELETE FROM workflow_configurations WHERE id=$1", workflowID)
 		_, _ = db.Exec(context.Background(), "DELETE FROM workflow_connections WHERE id=$1", connectionID)
 	})
