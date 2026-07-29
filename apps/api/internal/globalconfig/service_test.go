@@ -7,6 +7,7 @@ import (
 	"io"
 	"net"
 	"net/http"
+	"strconv"
 	"strings"
 	"testing"
 )
@@ -73,6 +74,75 @@ func TestVerificationHTTPClientRejectsPrivateResolutionAndRedirects(t *testing.T
 	if response.StatusCode != http.StatusFound {
 		t.Fatalf("redirect status=%d, want 302", response.StatusCode)
 	}
+}
+
+func TestProbeWorkflowVerifiesEveryDeclaredStage(t *testing.T) {
+	tests := []struct {
+		name             string
+		stages           []string
+		response         func(int, workflowProbeRequest) (int, workflowProbeResponse)
+		wantErr          bool
+		wantRequestCount int
+	}{
+		{"single chapter planning", []string{"chapter_planning"}, workflowProbeSuccess, false, 1},
+		{"single content generation", []string{"content_generation"}, workflowProbeSuccess, false, 1},
+		{"multiple stages in declared order", []string{"chapter_planning", "content_generation", "review"}, workflowProbeSuccess, false, 3},
+		{"second stage HTTP error fails verification", []string{"chapter_planning", "content_generation"}, func(index int, request workflowProbeRequest) (int, workflowProbeResponse) { if index == 1 { return http.StatusBadGateway, workflowProbeResponse{} }; return workflowProbeSuccess(index, request) }, true, 2},
+		{"empty stages fail verification", nil, workflowProbeSuccess, true, 0},
+		{"response stage mismatch fails verification", []string{"content_generation"}, func(_ int, request workflowProbeRequest) (int, workflowProbeResponse) { return http.StatusOK, workflowProbeResponse{Verified: true, Stage: "chapter_planning", ContractVersion: request.ContractVersion, RequestID: request.RequestID} }, true, 1},
+		{"response request ID mismatch fails verification", []string{"content_generation"}, func(_ int, request workflowProbeRequest) (int, workflowProbeResponse) { return http.StatusOK, workflowProbeResponse{Verified: true, Stage: request.Stage, ContractVersion: request.ContractVersion, RequestID: "different-request-id"} }, true, 1},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			service, requests := workflowProbeService(t, test.response)
+			workflow := Workflow{ApplicableStages: test.stages, TypeConfig: json.RawMessage(`{"referenceType":"webhook_path","referenceValue":"verification"}`), InputContractVersion: "v1"}
+			connection := Connection{BaseURL: "http://n8n:5678", TimeoutSeconds: 30}
+			err := service.probeWorkflow(context.Background(), connection, workflow)
+			if (err != nil) != test.wantErr {
+				t.Fatalf("error=%v, wantErr=%v", err, test.wantErr)
+			}
+			if len(*requests) != test.wantRequestCount {
+				t.Fatalf("request count=%d, want %d", len(*requests), test.wantRequestCount)
+			}
+			seenRequestIDs := map[string]bool{}
+			for index, request := range *requests {
+				if request.ProbeType != "acf_workflow_verification" || request.Stage != test.stages[index] || request.ContractVersion != "v1" || request.RequestID == "" || seenRequestIDs[request.RequestID] {
+					t.Fatalf("request %d=%+v", index, request)
+				}
+				seenRequestIDs[request.RequestID] = true
+			}
+		})
+	}
+}
+
+type workflowProbeRequest struct { ProbeType, Stage, ContractVersion, RequestID string }
+type workflowProbeResponse struct { Verified bool `json:"verified"`; Stage string `json:"stage"`; ContractVersion string `json:"contractVersion"`; RequestID string `json:"requestId"` }
+
+func workflowProbeSuccess(_ int, request workflowProbeRequest) (int, workflowProbeResponse) { return http.StatusOK, workflowProbeResponse{Verified: true, Stage: request.Stage, ContractVersion: request.ContractVersion, RequestID: request.RequestID} }
+
+func workflowProbeService(t *testing.T, responder func(int, workflowProbeRequest) (int, workflowProbeResponse)) (*Service, *[]workflowProbeRequest) {
+	t.Helper()
+	requests := []workflowProbeRequest{}
+	service := &Service{
+		resolveHost: func(context.Context, string) ([]net.IP, error) { return []net.IP{net.ParseIP("172.20.0.3")}, nil },
+		dialContext: func(_ context.Context, _, _ string) (net.Conn, error) {
+			client, server := net.Pipe()
+			go func() {
+				defer server.Close()
+				request, err := http.ReadRequest(bufio.NewReader(server))
+				if err != nil { return }
+				defer request.Body.Close()
+				probe := workflowProbeRequest{}
+				if json.NewDecoder(request.Body).Decode(&probe) != nil { return }
+				requests = append(requests, probe)
+				status, response := responder(len(requests)-1, probe)
+				body, _ := json.Marshal(response)
+				_, _ = io.WriteString(server, "HTTP/1.1 "+strconv.Itoa(status)+" "+http.StatusText(status)+"\r\nContent-Type: application/json\r\nContent-Length: "+strconv.Itoa(len(body))+"\r\n\r\n"+string(body))
+			}()
+			return client, nil
+		},
+	}
+	return service, &requests
 }
 
 func TestCredentialEncryptionAndFingerprint(t *testing.T) {

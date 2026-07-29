@@ -1201,27 +1201,28 @@ func (s *Service) probeConnection(ctx context.Context, connection Connection) er
 
 func (s *Service) probeWorkflow(ctx context.Context, connection Connection, workflow Workflow) error {
 	var cfg struct{ ReferenceType, ReferenceValue string }
-	if err := json.Unmarshal(workflow.TypeConfig, &cfg); err != nil || cfg.ReferenceValue == "" || len(workflow.ApplicableStages) != 1 {
+	if err := json.Unmarshal(workflow.TypeConfig, &cfg); err != nil || cfg.ReferenceValue == "" || len(workflow.ApplicableStages) == 0 {
 		return ErrVerification
 	}
-	stage := workflow.ApplicableStages[0]
 	endpoint, err := verificationURL(connection.BaseURL, path.Join("webhook", cfg.ReferenceValue))
 	if err != nil {
 		return err
 	}
-	requestID := uuid.NewString()
-	body, _ := json.Marshal(map[string]string{"probeType": "acf_workflow_verification", "stage": stage, "contractVersion": workflow.InputContractVersion, "requestId": requestID})
-	var response struct {
-		Verified        bool   `json:"verified"`
-		Stage           string `json:"stage"`
-		ContractVersion string `json:"contractVersion"`
-		RequestID       string `json:"requestId"`
-	}
-	if err = s.probe(ctx, endpoint, connection.TimeoutSeconds, body, &response); err != nil {
-		return err
-	}
-	if !response.Verified || response.Stage != stage || response.ContractVersion != workflow.InputContractVersion || response.RequestID != requestID {
-		return ErrVerification
+	for _, stage := range workflow.ApplicableStages {
+		requestID := uuid.NewString()
+		body, _ := json.Marshal(map[string]string{"probeType": "acf_workflow_verification", "stage": stage, "contractVersion": workflow.InputContractVersion, "requestId": requestID})
+		var response struct {
+			Verified        bool   `json:"verified"`
+			Stage           string `json:"stage"`
+			ContractVersion string `json:"contractVersion"`
+			RequestID       string `json:"requestId"`
+		}
+		if err = s.probe(ctx, endpoint, connection.TimeoutSeconds, body, &response); err != nil {
+			return err
+		}
+		if !response.Verified || response.Stage != stage || response.ContractVersion != workflow.InputContractVersion || response.RequestID != requestID {
+			return ErrVerification
+		}
 	}
 	return nil
 }
