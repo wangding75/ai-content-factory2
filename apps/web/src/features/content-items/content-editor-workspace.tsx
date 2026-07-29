@@ -27,6 +27,12 @@ import {
 import { ContentGenerationDrawer } from "./content-generation-drawer";
 import { ContentGenerationStatus } from "./content-generation-status";
 import { ContentCandidateCompare } from "./content-candidate-compare";
+import { ContentReviewDrawer } from "@/features/content-review/content-review-drawer";
+import {
+  getContentReviewSummary,
+  type ContentReviewSummary,
+} from "@/features/content-review/content-review-api";
+import { reviewCopy } from "@/features/content-review/content-review-locale";
 import {
   contentVersionSourceLabel,
   contentVersionStatusLabel,
@@ -62,6 +68,8 @@ export function ContentEditorWorkspace({
     [generateError, setGenerateError] = useState<string | null>(null),
     [run, setRun] = useState<WorkflowRunSummary | null>(null),
     [generationSummary, setGenerationSummary] = useState<Awaited<ReturnType<typeof getContentGenerationSummary>> | null>(null),
+    [reviewSummary, setReviewSummary] = useState<ContentReviewSummary | null>(null),
+    [reviewDrawer, setReviewDrawer] = useState(false),
     [contextTab, setContextTab] = useState<"goal" | "story" | "materials">("goal"),
     [generationDrawer, setGenerationDrawer] = useState(false),
     [candidateOpen, setCandidateOpen] = useState(false);
@@ -119,8 +127,14 @@ export function ContentEditorWorkspace({
       )
         return;
       apply(fresh);
-      const summary = await getContentGenerationSummary(fresh.content_item.id, { signal: get.signal });
-      if (!get.signal.aborted && request === sequence.current) setGenerationSummary(summary);
+      const [summary, nextReviewSummary] = await Promise.all([
+        getContentGenerationSummary(fresh.content_item.id, { signal: get.signal }),
+        getContentReviewSummary(fresh.content_item.id, { signal: get.signal }),
+      ]);
+      if (!get.signal.aborted && request === sequence.current) {
+        setGenerationSummary(summary);
+        setReviewSummary(nextReviewSummary);
+      }
     } catch (cause) {
       if (request !== sequence.current) return;
       const api = cause as ApiError;
@@ -164,11 +178,29 @@ export function ContentEditorWorkspace({
       setGenerationSummary(nextSummary);
     }
   }, [apply, detail]);
+  const refreshReviewSummary = useCallback(async () => {
+    if (!detail) return;
+    const c = addController();
+    const nextSummary = await getContentReviewSummary(detail.content_item.id, {
+      signal: c.signal,
+    });
+    if (!c.signal.aborted && current.current === detail.content_item.id)
+      setReviewSummary(nextSummary);
+  }, [detail]);
   useEffect(() => {
     if (!generationSummary || !["queued", "running"].includes(generationSummary.state)) return;
     const timer = window.setInterval(() => { void refreshGenerationSummary().catch(() => undefined); }, 5000);
     return () => window.clearInterval(timer);
   }, [generationSummary?.state, refreshGenerationSummary]);
+  useEffect(() => {
+    if (!reviewSummary || !["queued", "running"].includes(reviewSummary.state))
+      return;
+    const timer = window.setInterval(
+      () => void refreshReviewSummary().catch(() => undefined),
+      5000,
+    );
+    return () => window.clearInterval(timer);
+  }, [refreshReviewSummary, reviewSummary?.state]);
   const dirty =
     !!draft &&
     !!initial.current &&
@@ -278,6 +310,11 @@ export function ContentEditorWorkspace({
   const v = detail.current_version,
     readOnly =
       v.status !== "editable_draft" || detail.content_item.status !== "draft";
+  const reviewPath = `/projects/${projectId}/works/${detail.content_item.id}/review`;
+  const hasActiveReview =
+    reviewSummary?.state === "queued" || reviewSummary?.state === "running";
+  const hasReview =
+    reviewSummary?.state === "review_ready" || !!reviewSummary?.latestReport;
   return (
     <main className="content-editor">
       <header className="content-editor-project">
@@ -323,23 +360,43 @@ export function ContentEditorWorkspace({
                 {saving ? "保存中…" : "保存草稿"}
               </button>
               <button onClick={() => setGenerationDrawer(true)} disabled={readOnly || generationSummary?.canGenerate === false || generationSummary?.state === "queued" || generationSummary?.state === "running"}>生成正文</button>
-              {readOnly ? (
+              <Link
+                className="content-review-history-link"
+                href={`${reviewPath}/history`}
+              >
+                {reviewCopy.common.history}
+              </Link>
+              {hasActiveReview || hasReview || readOnly ? (
                 <Link
                   className="content-review-link"
-                  href={`/projects/${projectId}/chapter-plans/${chapterPlanId}/content/review`}
+                  href={
+                    reviewSummary?.latestReport
+                      ? `${reviewPath}?reportId=${encodeURIComponent(reviewSummary.latestReport.id)}`
+                      : reviewPath
+                  }
                 >
-                  查看审核结果
+                  {hasActiveReview
+                    ? reviewCopy.editor.active
+                    : reviewCopy.editor.ready}
                 </Link>
               ) : (
-                <Link
+                <button
                   className="content-review-link"
-                  href={`/projects/${projectId}/chapter-plans/${chapterPlanId}/content/review`}
+                  type="button"
+                  onClick={() => setReviewDrawer(true)}
+                  disabled={dirty || !reviewSummary}
+                  title={dirty ? reviewCopy.editor.unsaved : reviewCopy.editor.opensDrawer}
                 >
-                  提交审核
-                </Link>
+                  {reviewCopy.editor.submit}
+                </button>
               )}
             </div>
           </header>
+          {dirty && (
+            <p className="content-review-entry-note" role="status">
+              {reviewCopy.editor.unsaved}
+            </p>
+          )}
           <div className="content-toolbar" aria-label="编辑器工具栏">
             <button disabled>¶</button>
             <button disabled>
@@ -446,6 +503,17 @@ export function ContentEditorWorkspace({
         />
       )}
       {generationDrawer && <ContentGenerationDrawer contentItemId={detail.content_item.id} version={detail.current_version} onClose={() => setGenerationDrawer(false)} onCreated={refreshGenerationSummary} />}
+      {reviewDrawer && (
+        <ContentReviewDrawer
+          projectId={projectId}
+          version={detail.current_version}
+          onClose={() => setReviewDrawer(false)}
+          onCreated={() => {
+            setReviewDrawer(false);
+            window.location.assign(reviewPath);
+          }}
+        />
+      )}
     </main>
   );
 }

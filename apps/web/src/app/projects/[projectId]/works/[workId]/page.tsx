@@ -1,7 +1,7 @@
 import { AppShell } from "@/components/ui/app-shell";
-import { ContentEditorWorkspace } from "@/features/content-items/content-editor-workspace";
+import { ProjectWorkEditorShell } from "@/features/content-review/project-content-review-shell";
 
 export default async function WorkEditorRoute({ params }: { params: Promise<{ projectId: string; workId: string }> }) {
   const { projectId, workId } = await params;
-  return <AppShell active="projects"><ContentEditorWorkspace projectId={projectId} workId={workId} /></AppShell>;
+  return <AppShell active="projects"><ProjectWorkEditorShell projectId={projectId} workId={workId} /></AppShell>;
 }

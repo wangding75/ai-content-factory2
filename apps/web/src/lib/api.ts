@@ -149,8 +149,8 @@ export function listProjectTypes(signal?: AbortSignal) {
   return apiRequest<{ items: ProjectTypeDescriptor[] }>("/project-types", { signal });
 }
 
-export function getProjectWorkspace(projectId: string) {
-  return apiRequest<ProjectWorkspace>(`/projects/${encodeURIComponent(projectId)}/workspace`);
+export function getProjectWorkspace(projectId: string, signal?: AbortSignal) {
+  return apiRequest<ProjectWorkspace>(`/projects/${encodeURIComponent(projectId)}/workspace`, { signal });
 }
 
 export function createProject(input: { name: string; description?: string; type: ProjectType }, signal?: AbortSignal) {
