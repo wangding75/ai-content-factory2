@@ -6,6 +6,11 @@ $openApiPath = Join-Path $Root 'packages/contracts/openapi/openapi.yaml'
 $apiScopePath = Join-Path $iteration 'api-scope.yaml'
 $tracePath = Join-Path $iteration 'ui-contract-traceability.md'
 $manifestPath = Join-Path $iteration 'ui-manifest.json'
+$dataModelPath = Join-Path $iteration 'data-model.md'
+$transactionPath = Join-Path $iteration 'transaction-and-migration-design.md'
+$migrationUpPath = Join-Path $Root 'apps/api/migrations/000018_real_content_rewrite_foundation.up.sql'
+$migrationDownPath = Join-Path $Root 'apps/api/migrations/000018_real_content_rewrite_foundation.down.sql'
+$migration15Path = Join-Path $Root 'apps/api/migrations/000015_content_generation_data_foundation.up.sql'
 
 function Assert-Contract([bool]$Condition, [string]$Message) {
     if (-not $Condition) { throw $Message }
@@ -36,6 +41,11 @@ $closedLoop = Get-Content -Raw -Encoding utf8 (Join-Path $iteration 'closed-loop
 $acceptance = Get-Content -Raw -Encoding utf8 (Join-Path $iteration 'acceptance.md')
 $iterationPlan = Get-Content -Raw -Encoding utf8 (Join-Path $iteration 'iteration-plan.md')
 $developmentPlan = Get-Content -Raw -Encoding utf8 (Join-Path $iteration 'development-plan.md')
+$dataModel = Get-Content -Raw -Encoding utf8 $dataModelPath
+$transaction = Get-Content -Raw -Encoding utf8 $transactionPath
+$migrationUp = Get-Content -Raw -Encoding utf8 $migrationUpPath
+$migrationDown = Get-Content -Raw -Encoding utf8 $migrationDownPath
+$migration15 = Get-Content -Raw -Encoding utf8 $migration15Path
 $manifest = Get-Content -Raw -Encoding utf8 $manifestPath | ConvertFrom-Json
 
 $operations = @(
@@ -185,19 +195,82 @@ foreach ($frameId in $expectedFrames) {
 }
 Assert-Contract ($trace.Contains('| Frame |') -and ([regex]::Matches($trace, '(?m)^\| `I18_').Count -eq 9)) 'UI traceability must contain the 9-Frame contract table.'
 
-$protectedChanges = @(& git -C $Root diff --name-only -- `
-    apps/api `
-    apps/web `
-    apps/api/migrations `
-    infra/n8n `
-    docs/development-inputs/p1/iterations/iteration-15* `
-    docs/development-inputs/p1/iterations/iteration-16-real-content-generation `
-    docs/development-inputs/p1/iterations/iteration-17-real-content-review `
-    docs/development-inputs/p1/iterations/iteration-18-real-content-rewrite/ui `
-    docs/development-inputs/p1/iterations/iteration-18-real-content-rewrite/ui-manifest.json `
-    docs/development-inputs/p1/iterations/iteration-18-real-content-rewrite/data-model.md `
-    docs/development-inputs/p1/iterations/iteration-18-real-content-rewrite/transaction-and-migration-design.md)
-Assert-Contract ($LASTEXITCODE -eq 0) 'Unable to inspect protected file changes.'
-Assert-Contract ($protectedChanges.Count -eq 0) "Protected code, Migration, prototype or adjacent iteration changed: $($protectedChanges -join ', ')"
+Assert-Contract ($dataModel.Contains('frozen_cf_18_01b') -and $transaction.Contains('frozen_cf_18_01b')) 'CF-18-01B data and transaction documents are not frozen.'
+foreach ($table in @(
+    'content_items',
+    'content_versions',
+    'workflow_run_records',
+    'workflow_run_events',
+    'idempotency_records',
+    'review_reports',
+    'review_findings'
+)) {
+    Assert-Contract ($dataModel.Contains($table)) "CF-18-01B data model does not reuse $table."
+}
+Assert-Contract (-not (($dataModel + $transaction + $migrationUp) -match '(?i)stage\s*=?\s*[''`"]?content_rewrite')) 'Deprecated content_rewrite Stage remains in CF-18-01B.'
+Assert-Contract (-not ($migrationUp -match '(?im)^\s*CREATE\s+TABLE\b')) 'Migration 18 must not create a parallel table.'
+Assert-Contract (-not ($migrationUp -match '(?im)^\s*ALTER\s+TABLE[\s\S]*?\bADD\s+COLUMN\b')) 'Migration 18 must not add an unproven column.'
+Assert-Contract (-not ($migrationUp -match '(?i)CREATE\s+TABLE\s+rewrite_source_issue_links')) 'Forbidden Rewrite Issue link table remains in Migration 18.'
+foreach ($term in @(
+    "'workflow_rewrite'",
+    'content_versions_workflow_rewrite_shape',
+    'workflow_run_records_rewrite_subject_shape_check',
+    'workflow_run_records_active_rewrite_subject_idx',
+    'workflow_run_records_rewrite_scope_trigger',
+    'content_versions_workflow_rewrite_scope_trigger',
+    "'rewrite.input.v1'",
+    "'rewrite.output.v1'"
+)) {
+    Assert-Contract ($migrationUp.Contains($term)) "Migration 18 is missing: $term"
+}
+Assert-Contract ($migration15.Contains('content_versions_source_workflow_run_unique_idx')) 'Existing same-Run Candidate unique index is missing from Migration 15.'
+Assert-Contract ($dataModel.Contains('input_payload.selectedIssues') -and $dataModel.Contains('content_versions_source_workflow_run_unique_idx')) 'Selected Issue persistence or Candidate uniqueness is not frozen.'
+foreach ($section in @(
+    '## 3. Preflight',
+    'Create Rewrite Run',
+    '## 5. Rewrite',
+    '### 6.1 Runtime Retry',
+    '### 6.2 Result Consumption Retry',
+    'Set Current / CAS',
+    '## 2.',
+    'Event'
+)) {
+    Assert-Contract ($transaction.Contains($section)) "CF-18-01B transaction boundary is missing: $section"
+}
+foreach ($term in @('SERIALIZABLE', 'FOR UPDATE', 'advisory lock', 'Runtime/n8n', 'candidateIsCurrent=true')) {
+    Assert-Contract (($dataModel + $transaction).Contains($term)) "CF-18-01B atomicity or lock rule is missing: $term"
+}
+foreach ($term in @(
+    'content_versions_workflow_rewrite_scope_trigger',
+    'workflow_run_records_rewrite_scope_trigger',
+    'workflow_run_records_active_rewrite_subject_idx',
+    'content_versions_workflow_rewrite_shape',
+    'workflow_run_records_rewrite_subject_shape_check'
+)) {
+    Assert-Contract ($migrationDown.Contains($term)) "Migration 18 down file does not remove its object: $term"
+}
+Assert-Contract (-not ($migrationDown -match '(?im)^\s*DROP\s+TABLE\b')) 'Migration 18 down must not drop an existing table.'
 
-Write-Host '[PASS] Iteration 18 business, OpenAPI, Runtime contracts, eight-state Summary, Retry, Set Current, error semantics, API scope, 9-Frame traceability and protected-scope validation completed.' -ForegroundColor Green
+$allowedChanges = @(
+    'apps/api/migrations/000018_real_content_rewrite_foundation.up.sql',
+    'apps/api/migrations/000018_real_content_rewrite_foundation.down.sql',
+    'docs/development-inputs/p1/iterations/iteration-18-real-content-rewrite/data-model.md',
+    'docs/development-inputs/p1/iterations/iteration-18-real-content-rewrite/transaction-and-migration-design.md',
+    'docs/development-inputs/p1/iterations/iteration-18-real-content-rewrite/development-plan.md',
+    'docs/development-inputs/p1/iterations/iteration-18-real-content-rewrite/iteration-plan.md',
+    'scripts/validate-iteration18-contract.ps1'
+)
+$trackedChanges = @(& git -C $Root diff --name-only)
+Assert-Contract ($LASTEXITCODE -eq 0) 'Unable to inspect tracked file changes.'
+$untrackedChanges = @(& git -C $Root ls-files --others --exclude-standard)
+Assert-Contract ($LASTEXITCODE -eq 0) 'Unable to inspect untracked file changes.'
+$allChanges = @($trackedChanges + $untrackedChanges | ForEach-Object { $_.Replace('\', '/') } | Sort-Object -Unique)
+foreach ($changedPath in $allChanges) {
+    Assert-Contract ($allowedChanges -contains $changedPath) "Protected or out-of-scope file changed: $changedPath"
+}
+$historicalMigrationChanges = @($allChanges | Where-Object {
+    $_ -match '^apps/api/migrations/0000(0[1-9]|1[0-7])_'
+})
+Assert-Contract ($historicalMigrationChanges.Count -eq 0) "Migration 1-17 changed: $($historicalMigrationChanges -join ', ')"
+
+Write-Host '[PASS] Iteration 18 business/API and CF-18-01B data model, transaction, lock, idempotency, CAS, Migration 18 and protected-scope validation completed.' -ForegroundColor Green

@@ -1,6 +1,6 @@
 # Iteration 18 — 真实正文重写
 
-**状态：`frozen_cf_18_01a`。** CF-18-01A 已冻结业务、API、Runtime 输入输出、Summary、Retry、Set Current、错误语义和 9 Frame 追踪；数据与 Migration 设计仍由 CF-18-01B 冻结。
+**状态：`frozen_cf_18_01b`。** CF-18-01A 已冻结业务/API 契约；CF-18-01B 已冻结数据模型、事务、锁、索引与最小向前 Migration 18。下一任务仍须单独下发，不得提前执行 CF-18-02A。
 
 ## 1. 目标
 
@@ -21,7 +21,7 @@
 - Candidate 非当前；Set Current 是独立幂等 CAS。
 - 不新建第二套 Candidate、Review 或 Runtime 体系。
 
-具体数据表、关联记录、约束、锁、索引和 Migration 不在 CF-18-01A 决策范围，以 CF-18-01B 最终冻结为准。
+具体数据表、来源关系、约束、锁、索引和 Migration 以 CF-18-01B 的 `data-model.md`、`transaction-and-migration-design.md` 与 Migration 18 为准。
 
 ## 4. 正式 API
 
@@ -60,7 +60,7 @@ active Run 优先；succeeded 且 Candidate 已原子持久化才是 ready；后
 ## 7. 实施顺序
 
 1. CF-18-01A：业务与 API 契约冻结（模型：GPT-5.6 Sol；推理：high；已完成）；
-2. CF-18-01B：数据模型、事务与 Migration 契约冻结（模型：GPT-5.6 Sol；推理：high）；
+2. CF-18-01B：数据模型、事务与 Migration 契约冻结（模型：GPT-5.6 Sol；推理：high；已完成）；
 3. CF-18-02A：后端 Preflight、Token、创建 Rewrite Run 与输入快照（模型：GPT-5.6 Sol；推理：high）；
 4. CF-18-02B：后端输出校验、Candidate 原子消费与消费失败（模型：GPT-5.6 Sol；推理：high）；
 5. CF-18-02C：后端 Summary、Runtime Retry、消费 Retry、Set Current 与历史（模型：GPT-5.6 Sol；推理：high）；

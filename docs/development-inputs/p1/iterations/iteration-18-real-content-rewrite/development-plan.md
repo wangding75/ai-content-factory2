@@ -1,11 +1,11 @@
 # Iteration 18 开发计划
 
-**状态：`frozen_cf_18_01a`。** 当前任务只完成 CF-18-01A；不得自动开始后续任务或扩大各任务验收范围。
+**状态：`frozen_cf_18_01b`。** CF-18-01A 与 CF-18-01B 已按顺序完成冻结；不得自动开始 CF-18-02A 或扩大各任务验收范围。
 
 | 顺序 | 任务 | 名称 | 固定产出 / 前置 |
 |---:|---|---|---|
 | 1 | CF-18-01A | 业务与 API 契约冻结 | 模型：GPT-5.6 Sol；推理：high；状态：已完成；业务闭环、版本/Issue、rewrite.input/output、OpenAPI、Summary、Retry、Set Current、错误语义和 9 Frame 追踪。 |
-| 2 | CF-18-01B | 数据模型、事务与 Migration 契约冻结 | 模型：GPT-5.6 Sol；推理：high；数据模型、事务、锁、索引与最小向前 Migration 设计；仅依赖 01A。 |
+| 2 | CF-18-01B | 数据模型、事务与 Migration 契约冻结 | 模型：GPT-5.6 Sol；推理：high；状态：已完成；数据模型、事务、锁、索引与最小向前 Migration 18；仅依赖 01A。 |
 | 3 | CF-18-02A | 后端 Preflight、Token、创建 Rewrite Run 与输入快照 | 模型：GPT-5.6 Sol；推理：high；依赖 01B。 |
 | 4 | CF-18-02B | 后端输出校验、Candidate 原子消费与消费失败 | 模型：GPT-5.6 Sol；推理：high；依赖 02A。 |
 | 5 | CF-18-02C | 后端 Summary、Runtime Retry、消费 Retry、Set Current 与历史 | 模型：GPT-5.6 Sol；推理：high；依赖 02B。 |
