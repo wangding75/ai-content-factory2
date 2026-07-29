@@ -1,36 +1,33 @@
-# Iteration 18 — 真实正文重写验收标准
+# CF-18-01A — Iteration 18 业务与 API 契约冻结验收
 
-**状态：`rebuild_candidate_2026_07_29`。** 本次临时任务只验收文档/原型替换包；以下业务矩阵供 CF-18-01 冻结，不代表当前代码已实现。
-
-## 1. 文档与原型替换验收
-
-- [ ] 9 个 Frame 均存在 1600×1280 screen.png 与非空 code.html。
-- [ ] ui-manifest.json 为 UTF-8、合法 JSON、frameCount=9，路径均存在。
-- [ ] ui-scope、iteration-plan、prototype mapping 和 UI/API 追踪包含全部 9 Frame。
-- [ ] 旧 5 Frame 目录从 Iteration 18 中删除；不修改 Iteration 15/16/17、OpenAPI、Migration、代码或 n8n。
-- [ ] p1/ui-master-manifest.json 和 ui-version-selection.md 只更新 Iteration 18 条目。
-- [ ] Git diff 只包含替换清单文件，`git diff --check` 通过。
-
-## 2. CF-18-01 业务冻结矩阵
+**状态：`frozen_cf_18_01a`。** 本验收仅覆盖业务规则、API、输入输出、状态机、错误语义与 9 Frame UI 契约追踪。
 
 | 范围 | PASS 条件 |
 |---|---|
-| Stage/Subject | content_rewrite + review_report 唯一语义，无平行 Runtime |
-| 来源 | Report、Issue、来源版本、Run、候选和 IssueLink 完整追踪 |
-| Issue | 只允许同 Report 的 open Issue；1～50 项；不自动改 disposition |
-| 输入输出 | rewrite.input.v1 / rewrite.output.v1 严格 Schema |
-| Preflight/Create | 只读预检、Token、幂等、事务和 active Run 并发完整 |
-| 消费 | 候选与全部 IssueLink 原子写入；失败零部分数据 |
-| 状态 | 8 个 Summary 状态及优先级完整 |
-| Retry | Runtime Retry 与仅消费 Retry 严格区分 |
-| 候选 | 非当前、不覆盖源版本、不自动审核/发布 |
-| Set Current | 复用 Iteration 16 CAS，stale 不强制覆盖 |
-| P0 | Mock Rewrite 兼容且来源标识清晰 |
-| UI | 9 个 Frame 与 API/状态/模型可追踪 |
+| 闭环 | Report/Issue → Availability → 选择 → 配置 → Preflight → 二次确认 → rewrite Run → 严格输出 → 原子 Candidate → Set Current/CAS 唯一链路完整 |
+| Stage/Subject | `rewrite` + `review_report/reviewId` 唯一语义；无平行创建接口 |
+| 来源版本 | Report 来源、Run 固定来源、ContentItem current 三者明确；运行中 current 漂移不改变输入 |
+| Issue | 同 Report 的 1～50 个 `open` Issue；重复/空选择拒绝；`ignored` 不可选；不改 disposition |
+| 输入 | `rewrite.input.v1` 字段顺序、服务端保护、Report/Issue 安全快照、长度与禁止字段完整 |
+| 输出 | `rewrite.output.v1` 必填/nullable/数量/长度、Issue 精确分区、未知字段/尾随 JSON/内部字段拒绝完整 |
+| API | Availability、Preflight、Create、Summary、History、Result、Consumption Retry 完整；复用 Set Current、Run Detail/Event/Retry/Cancel 与 ContentVersion Detail |
+| 命令 | Idempotency-Key 完整；创建/Runtime Retry 首次 201、回放 200；消费 Retry/Set Current 成功与回放 200 |
+| 状态 | 仅 `idle/not_configured/queued/running/candidate_ready/runtime_failed/output_validation_failed/result_consumption_failed`；优先级与刷新恢复明确 |
+| 消费 | 输出校验失败零 Candidate；消费失败零 Candidate/部分关联；succeeded 不等于 ready |
+| Retry | Runtime Retry 与仅消费 Retry 严格分离；rewrite 禁止 inputOverride/current configuration |
+| Set Current | Candidate、expected current ID/version、CAS、已是当前、同 Key 异请求与成功后 Summary 语义唯一 |
+| 错误 | 17 个 Rewrite 错误码去重；400/404/409/422/500 边界与安全 ErrorEnvelope 完整 |
+| 兼容 | 复用 Iteration 16 Candidate/Set Current；Iteration 17 Report/Issue/八状态与 open/ignored 不变；Mock 不伪造真实来源 |
+| UI | 9 个 Frame 均含入口、API、请求字段、响应状态、按钮行为与禁用/后续边界 |
+| 工程 | OpenAPI、Iteration 17、Iteration 18 三脚本与 `git diff --check` 通过 |
+| 保护 | Migration 前后为 17；代码、Migration、n8n、原型、Iteration 15～17 未修改 |
 
-## 3. 不在本次替换任务验收范围
+## 不在 CF-18-01A 范围
 
-- OpenAPI、Migration、后端、前端或 n8n 实现；
-- 浏览器实机截图；
-- Iteration 17 冻结修复；
-- Iteration 19 集成验收。
+- 数据模型、事务、锁、索引与 Migration 决策或实现；
+- 后端、前端、n8n 开发；
+- Docker 应用栈、浏览器、视觉或真实 API 联调；
+- 自动审核/重写循环、自动 Set Current 或发布；
+- CF-18-01B 及后续开发任务。
+
+不得因本次契约冻结扩大后续验收范围。

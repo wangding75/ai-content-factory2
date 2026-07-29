@@ -1,63 +1,77 @@
 # Iteration 18 — 真实正文重写
 
-**状态：`rebuild_candidate_2026_07_29`。** 当前包只重建需求文档和 9 个原型，不修改 OpenAPI、Migration 或业务代码。CF-18-01 才执行正式契约冻结。
+**状态：`frozen_cf_18_01a`。** CF-18-01A 已冻结业务、API、Runtime 输入输出、Summary、Retry、Set Current、错误语义和 9 Frame 追踪；数据与 Migration 设计仍由 CF-18-01B 冻结。
 
 ## 1. 目标
 
-基于一个明确 ReviewReport 和用户选中的 open ReviewIssue，通过真实 `content_rewrite` WorkflowRun 创建新的非当前候选 ContentVersion，保留来源版本、报告、问题、Run 和候选的完整追踪关系。
+用户从一个明确 ReviewReport 选择同 Report 的 1～50 个 `open` ReviewIssue，通过真实 `WorkflowRun(stage=rewrite, subjectType=review_report)` 基于 Report 的固定来源 ContentVersion 创建一个新的非当前 Rewrite Candidate，并显式执行 Set Current/CAS。
 
 ## 2. 用户闭环
 
-审核报告选择 Issue → 创建页预检与二次确认 → queued/running → 严格输出校验 → 原子创建候选和 IssueLink → 查看/对比候选 → 明确设为当前版本。
+审核报告与 Issue → Rewrite Availability → 配置要求 → 无副作用 Preflight → 二次确认 → queued/running → 严格校验 `rewrite.output.v1` → 原子创建非当前 Candidate → 查看/比较来源与候选 → Set Current/CAS。
 
-异常分别恢复：未配置、Runtime 失败、输出校验失败、结果消费失败和 stale set-current。
+异常分别恢复：未配置、Runtime failed/cancelled、输出校验失败、结果消费失败和 CAS 冲突。刷新仅从持久化 Summary/Run/Event/Candidate 恢复。
 
-## 3. 核心模型
+## 3. 冻结模型边界
 
-- WorkflowRun(stage=content_rewrite, subjectType=review_report)
-- ContentVersion(source=workflow_rewrite)
-- ReviewReport / ReviewIssue（只读输入）
-- RewriteSourceIssueLink
-- idempotency_records
+- 复用 WorkflowRun、ReviewReport、ReviewIssue、ContentItem、ContentVersion/Candidate 与 Idempotency 体系。
+- Stage 唯一为 `rewrite`；subject 唯一为 `review_report/reviewId`。
+- Input/Output 唯一为 `rewrite.input.v1` / `rewrite.output.v1`。
+- Rewrite 不等于 Review，不修改 Report/Issue/来源版本。
+- Candidate 非当前；Set Current 是独立幂等 CAS。
+- 不新建第二套 Candidate、Review 或 Runtime 体系。
 
-详细规则见 `business-rules.md`、`data-model.md` 和 `transaction-and-migration-design.md`。
+具体数据表、关联记录、约束、锁、索引和 Migration 不在 CF-18-01A 决策范围，以 CF-18-01B 最终冻结为准。
 
-## 4. API 候选范围
+## 4. 正式 API
 
-- Preflight：`POST /api/v1/review-reports/{reviewReportId}/rewrite-runs/preflight`
-- Create：`POST /api/v1/review-reports/{reviewReportId}/rewrite-runs`
-- Summary：`GET /api/v1/review-reports/{reviewReportId}/rewrite-summary`
-- Consumption Retry：`POST /api/v1/workflow-runs/{workflowRunId}/rewrite-result-consumption-retries`
-- 复用 Review、ContentVersion、版本列表/比较/设为当前、WorkflowRun Detail/Event/Runtime Retry/Cancel。
+新增：
 
-最终字段由 CF-18-01 OpenAPI 冻结。
+- `GET /api/v1/reviews/{reviewId}/rewrite-availability`
+- `POST /api/v1/reviews/{reviewId}/rewrites/preflight`
+- `POST /api/v1/reviews/{reviewId}/rewrites`
+- `GET /api/v1/reviews/{reviewId}/rewrite-summary`
+- `GET /api/v1/content-items/{contentItemId}/rewrite-history`
+- `GET /api/v1/workflow-runs/{workflowRunId}/rewrite-result`
+- `POST /api/v1/workflow-runs/{workflowRunId}/rewrite-result-consumption-retries`
 
-## 5. UI 顺序
+复用 Set Current、WorkflowRun Detail/Event/Runtime Retry/Cancel 和 ContentVersion 只读详情。完整字段见 OpenAPI 与 `api-scope.yaml`。
+
+## 5. Summary
+
+只允许八状态：`idle`、`not_configured`、`queued`、`running`、`candidate_ready`、`runtime_failed`、`output_validation_failed`、`result_consumption_failed`。
+
+active Run 优先；succeeded 且 Candidate 已原子持久化才是 ready；后续配置失效不遮蔽已有事实。Set Current 后保持 `candidate_ready`，通过 `candidateIsCurrent=true` 表达。
+
+## 6. UI 顺序
 
 | 顺序 | Frame | 页面/状态 |
 |---:|---|---|
 | 1 | I18_D2_REVIEW_REWRITE_ENTRY | 审核结果选择问题并创建重写 |
-| 2 | I18_D4_CREATE_REWRITE | 创建正文重写 |
-| 3 | I18_D4_REWRITE_CONFIG_DRAWER | 查看项目配置抽屉 |
+| 2 | I18_D4_CREATE_REWRITE | 创建、Preflight 与二次确认 |
+| 3 | I18_D4_REWRITE_CONFIG_DRAWER | 只读查看项目配置 |
 | 4 | I18_D4_REWRITE_RUNNING | queued/running |
-| 5 | I18_D5_REWRITE_RESULT | 成功候选版本 |
-| 6 | I18_D5_SET_CURRENT_CONFIRM | 设为当前确认 |
-| 7 | I18_D5_RESULT_CONSUMPTION_FAILED | 结果消费失败 |
+| 5 | I18_D5_REWRITE_RESULT | candidate_ready |
+| 6 | I18_D5_SET_CURRENT_CONFIRM | Set Current 确认 |
+| 7 | I18_D5_RESULT_CONSUMPTION_FAILED | 仅消费 Retry |
 | 8 | I18_D4_REWRITE_FAILED | Runtime/输出校验失败 |
-| 9 | I18_D4_REWRITE_AVAILABILITY | 未配置、配置失效与空状态 |
+| 9 | I18_D4_REWRITE_AVAILABILITY | idle/not_configured/可用性 |
 
-## 6. 实施顺序
+## 7. 实施顺序
 
-1. CF-18-01：冻结业务、输入输出、OpenAPI、数据终态、事务、Summary 和 9 Frame 追踪；
-2. CF-18-02：后端开发；
-3. CF-18-03：前端开发；
-4. CF-18-04：真实 n8n 联调、浏览器验收和最终 Review。
+1. CF-18-01A：业务/API/Input/Output/状态/错误/UI 追踪冻结；
+2. CF-18-01B：数据模型、事务、锁、索引和 Migration 冻结；
+3. CF-18-02：后端开发；
+4. CF-18-03：前端开发；
+5. CF-18-04：真实 n8n 联调与最终收口。
 
-## 7. 不在范围
+任务按序执行；CF-18-01A 不提前执行 CF-18-01B。
 
-- 不覆盖或删除源版本；
-- 不自动设为当前、审核或发布；
+## 8. 不在范围
+
+- 不覆盖或删除来源版本；
+- 不自动设为当前、审核、再次重写或发布；
 - 不修改 ReviewIssue disposition；
-- 不建设 n8n 编辑器、字段映射器、多实例路由、费用大盘或自动模型路由；
+- 不建设工作流编辑器、多实例路由、费用或自动模型路由；
 - 不允许业务页面临时切换工作流；
-- 不改动 P0 Mock Rewrite 契约。
+- 历史 Mock 与旧 Candidate 不伪造真实 Rewrite 来源。

@@ -1,8 +1,8 @@
 openapi: 3.1.0
 info:
   title: AI Content Factory 2.0 API
-  version: 0.6.0
-  description: P0 baseline plus P1 Workflow Runtime, real chapter planning and real content generation contracts.
+  version: 0.7.0
+  description: P0 baseline plus P1 Workflow Runtime, real chapter planning, content generation, review and rewrite contracts.
 servers:
   - url: http://localhost:8080
 paths:
@@ -750,13 +750,15 @@ paths:
     parameters: [{$ref: "#/components/parameters/ContentItemId"}, {$ref: "#/components/parameters/IdempotencyKey"}]
     post:
       operationId: setCurrentContentVersion
-      description: Atomically sets a same-item non-current workflow_generated editable candidate as current. expectedCurrentVersionId and expectedCurrentVersion are compare-and-swap protection, and the candidate source_content_version_id/source_content_version_version must still equal the current version; no force-overwrite path exists. Success leaves historical versions and reviews intact, sets ContentItem.status=draft and clears reviewed_at.
+      description: Atomically sets a same-item non-current workflow_generated or workflow_rewrite editable Candidate as current. expectedCurrentVersionId and expectedCurrentVersion are compare-and-swap protection, and the Candidate source_content_version_id/source_content_version_version must still equal the current version; no force-overwrite path exists. A Candidate already current returns 200 without another state change. Same-key same-request returns the first success, while same-key different-request returns idempotency_conflict. Success leaves historical versions, ReviewReports and ReviewIssues intact, sets ContentItem.status=draft and clears reviewed_at.
       requestBody: {required: true, content: {application/json: {schema: {$ref: "#/components/schemas/SetCurrentContentVersionRequest"}}}}
       responses:
         "200": {description: Candidate is now the current ContentVersion., content: {application/json: {schema: {$ref: "#/components/schemas/ContentItemDetailEnvelope"}}}}
         "400": {$ref: "#/components/responses/BadRequest"}
         "404": {$ref: "#/components/responses/NotFound"}
-        "409": {description: "Current-version, candidate-state, baseline or idempotency conflict.", content: {application/json: {schema: {$ref: "#/components/schemas/ContentGenerationErrorEnvelope"}}}}
+        "409": {description: "Current-version, Candidate-state, baseline or idempotency conflict.", content: {application/json: {schema: {oneOf: [{$ref: "#/components/schemas/ContentGenerationErrorEnvelope"}, {$ref: "#/components/schemas/ContentRewriteErrorEnvelope"}]}}}}
+        "422": {description: Candidate is not eligible for Set Current., content: {application/json: {schema: {oneOf: [{$ref: "#/components/schemas/ContentGenerationErrorEnvelope"}, {$ref: "#/components/schemas/ContentRewriteErrorEnvelope"}]}}}}
+        "500": {$ref: "#/components/responses/InternalServerError"}
   /api/v1/content-generation-runs/{runId}/result-consumption-retries:
     parameters: [{$ref: "#/components/parameters/Iteration14WorkflowRunId"}, {$ref: "#/components/parameters/IdempotencyKey"}]
     post:
@@ -971,6 +973,85 @@ paths:
         "404": {$ref: "#/components/responses/NotFound"}
         "409": {description: "Run state, output, version or idempotency conflict.", content: {application/json: {schema: {$ref: "#/components/schemas/ContentReviewErrorEnvelope"}}}}
         "500": {description: Atomic Report and Issue consumption failed safely with no partial review tree., content: {application/json: {schema: {$ref: "#/components/schemas/ContentReviewErrorEnvelope"}}}}
+  /api/v1/reviews/{reviewId}/rewrite-availability:
+    parameters: [{$ref: "#/components/parameters/ReviewId"}]
+    get:
+      operationId: getContentRewriteAvailability
+      description: Read-only availability for starting a rewrite from this completed ReviewReport. It never creates a Run, Candidate, idempotency record or external call. Existing Rewrite Runs and Candidates remain discoverable even when the current binding later becomes unavailable.
+      responses:
+        "200": {description: Rewrite availability and safe blocking reason., content: {application/json: {schema: {$ref: "#/components/schemas/ContentRewriteAvailabilityEnvelope"}}}}
+        "400": {$ref: "#/components/responses/BadRequest"}
+        "404": {description: ReviewReport not found., content: {application/json: {schema: {$ref: "#/components/schemas/ContentRewriteErrorEnvelope"}}}}
+        "500": {description: Safe internal failure., content: {application/json: {schema: {$ref: "#/components/schemas/ContentRewriteErrorEnvelope"}}}}
+  /api/v1/reviews/{reviewId}/rewrites/preflight:
+    parameters: [{$ref: "#/components/parameters/ReviewId"}]
+    post:
+      operationId: preflightContentRewrite
+      description: Side-effect-free rewrite preflight. The client supplies only selected ReviewIssue IDs, optional instructions and rewrite options. The service reads every Issue and protected source/report/configuration field, canonicalizes selected IDs in ReviewIssue position then ID order, and issues a single-use token valid for 10 minutes only when passed.
+      requestBody: {required: true, content: {application/json: {schema: {$ref: "#/components/schemas/ContentRewritePreflightRequest"}}}}
+      responses:
+        "200": {description: Passed or blocked rewrite preflight., content: {application/json: {schema: {$ref: "#/components/schemas/ContentRewritePreflightEnvelope"}}}}
+        "400": {$ref: "#/components/responses/BadRequest"}
+        "404": {description: ReviewReport or selected ReviewIssue not found., content: {application/json: {schema: {$ref: "#/components/schemas/ContentRewriteErrorEnvelope"}}}}
+        "422": {description: Request or rewrite business validation failed., content: {application/json: {schema: {$ref: "#/components/schemas/ContentRewriteErrorEnvelope"}}}}
+        "500": {description: Safe internal failure., content: {application/json: {schema: {$ref: "#/components/schemas/ContentRewriteErrorEnvelope"}}}}
+  /api/v1/reviews/{reviewId}/rewrites:
+    parameters: [{$ref: "#/components/parameters/ReviewId"}, {$ref: "#/components/parameters/IdempotencyKey"}]
+    post:
+      operationId: createContentRewriteRun
+      description: Creates a queued Runtime WorkflowRun with server-fixed stage=rewrite, triggerSource=manual, subjectType=review_report and subjectId=reviewId. The fixed source ContentVersion, ReviewReport, selected Issues, Binding, Configuration and Connection snapshots come only from the valid preflight token. A same-key same-request replay returns the original Run; a same-key different-request use conflicts.
+      requestBody: {required: true, content: {application/json: {schema: {$ref: "#/components/schemas/CreateContentRewriteRunRequest"}}}}
+      responses:
+        "200": {description: Idempotent replay of the originally queued Rewrite Run., content: {application/json: {schema: {$ref: "#/components/schemas/Iteration14WorkflowRunEnvelope"}}}}
+        "201": {description: Newly queued Rewrite Run., content: {application/json: {schema: {$ref: "#/components/schemas/Iteration14WorkflowRunEnvelope"}}}}
+        "400": {$ref: "#/components/responses/BadRequest"}
+        "404": {description: ReviewReport or protected source resource not found., content: {application/json: {schema: {$ref: "#/components/schemas/ContentRewriteErrorEnvelope"}}}}
+        "409": {description: "Preflight drift or consumption, active Rewrite Run, optimistic-lock or idempotency conflict.", content: {application/json: {schema: {$ref: "#/components/schemas/ContentRewriteErrorEnvelope"}}}}
+        "422": {description: Expired preflight or unavailable rewrite prerequisite., content: {application/json: {schema: {$ref: "#/components/schemas/ContentRewriteErrorEnvelope"}}}}
+        "500": {description: Safe internal failure., content: {application/json: {schema: {$ref: "#/components/schemas/ContentRewriteErrorEnvelope"}}}}
+  /api/v1/reviews/{reviewId}/rewrite-summary:
+    parameters: [{$ref: "#/components/parameters/ReviewId"}]
+    get:
+      operationId: getContentRewriteSummary
+      description: Read-only persisted aggregation for one ReviewReport. Active Runs have priority. A succeeded Run is candidate_ready only after one same-Run Candidate is atomically persisted; configuration unavailability never masks an existing Run, failure or Candidate. After Set Current, state remains candidate_ready, candidateIsCurrent is true and canSetCurrent is false.
+      responses:
+        "200": {description: Rewrite workspace summary., content: {application/json: {schema: {$ref: "#/components/schemas/ContentRewriteSummaryEnvelope"}}}}
+        "400": {$ref: "#/components/responses/BadRequest"}
+        "404": {description: ReviewReport not found., content: {application/json: {schema: {$ref: "#/components/schemas/ContentRewriteErrorEnvelope"}}}}
+        "500": {description: Safe internal failure., content: {application/json: {schema: {$ref: "#/components/schemas/ContentRewriteErrorEnvelope"}}}}
+  /api/v1/content-items/{contentItemId}/rewrite-history:
+    parameters: [{$ref: "#/components/parameters/ContentItemId"}, {$ref: "#/components/parameters/LimitQuery"}, {$ref: "#/components/parameters/OffsetQuery"}]
+    get:
+      operationId: listContentRewriteHistory
+      description: Lists persisted Rewrite Runs for one ContentItem in createdAt DESC, id DESC order. Each item exposes the same eight-state interpretation and never fabricates Rewrite provenance for Mock or older Candidates.
+      responses:
+        "200": {description: Rewrite history., content: {application/json: {schema: {$ref: "#/components/schemas/ContentRewriteHistoryEnvelope"}}}}
+        "400": {$ref: "#/components/responses/BadRequest"}
+        "404": {$ref: "#/components/responses/NotFound"}
+        "500": {description: Safe internal failure., content: {application/json: {schema: {$ref: "#/components/schemas/ContentRewriteErrorEnvelope"}}}}
+  /api/v1/workflow-runs/{workflowRunId}/rewrite-result:
+    parameters: [{$ref: "#/components/parameters/WorkflowRunId"}]
+    get:
+      operationId: getContentRewriteResult
+      description: Returns the fixed ReviewReport/source relationship, selected Issues, validated rewrite.output.v1 outcome and same-Run Candidate. It is available only after atomic result consumption; the Candidate may already be current without changing candidate_ready semantics.
+      responses:
+        "200": {description: Rewrite Candidate detail., content: {application/json: {schema: {$ref: "#/components/schemas/ContentRewriteResultEnvelope"}}}}
+        "400": {$ref: "#/components/responses/BadRequest"}
+        "404": {description: WorkflowRun or Rewrite Candidate not found., content: {application/json: {schema: {$ref: "#/components/schemas/ContentRewriteErrorEnvelope"}}}}
+        "409": {description: Rewrite Candidate is not ready., content: {application/json: {schema: {$ref: "#/components/schemas/ContentRewriteErrorEnvelope"}}}}
+        "500": {description: Safe internal failure., content: {application/json: {schema: {$ref: "#/components/schemas/ContentRewriteErrorEnvelope"}}}}
+  /api/v1/workflow-runs/{workflowRunId}/rewrite-result-consumption-retries:
+    parameters: [{$ref: "#/components/parameters/WorkflowRunId"}, {$ref: "#/components/parameters/IdempotencyKey"}]
+    post:
+      operationId: retryContentRewriteResultConsumption
+      description: Reconsumes only the persisted, strictly validated rewrite.output.v1 for a succeeded rewrite Run with result_consumption_failed. It never calls Runtime or n8n, creates no new Run and reuses the original output. If the same-Run Candidate already exists, it returns that result.
+      requestBody: {required: true, content: {application/json: {schema: {$ref: "#/components/schemas/RetryContentRewriteResultConsumptionRequest"}}}}
+      responses:
+        "200": {description: "Existing or newly consumed Rewrite Candidate result, including idempotent replay.", content: {application/json: {schema: {$ref: "#/components/schemas/ContentRewriteResultEnvelope"}}}}
+        "400": {$ref: "#/components/responses/BadRequest"}
+        "404": {description: WorkflowRun not found., content: {application/json: {schema: {$ref: "#/components/schemas/ContentRewriteErrorEnvelope"}}}}
+        "409": {description: "Run version/state, output or idempotency conflict.", content: {application/json: {schema: {$ref: "#/components/schemas/ContentRewriteErrorEnvelope"}}}}
+        "500": {description: Atomic consumption failed with zero Candidate or partial related data., content: {application/json: {schema: {$ref: "#/components/schemas/ContentRewriteErrorEnvelope"}}}}
   /api/v1/workflow-runs:
     get:
       operationId: listWorkflowRuns
@@ -1058,10 +1139,11 @@ paths:
     parameters: [{$ref: "#/components/parameters/Iteration14WorkflowRunId"}]
     post:
       operationId: retryWorkflowRun
-      description: Creates a new queued WorkflowRun from a failed or cancelled source. expectedVersion targets the original runId WorkflowRun.version. By default it reuses the original snapshot and input; useCurrentConfiguration=true reads the current binding, configuration, and connection when those referenced records exist, and inputOverride fully replaces the input. enabled and integrationStatus are not prerequisites; external execution is not triggered. The original run, snapshot and events remain immutable.
+      description: Creates a new queued WorkflowRun from an eligible failed source. expectedVersion targets the original runId WorkflowRun.version. For stage=rewrite, only failed, cancelled or output_validation_failed are eligible; useCurrentConfiguration must be absent or false, inputOverride is forbidden, and the new Run inherits the fixed source ContentVersion, ReviewReport, selected Issues and Binding/Configuration/Connection snapshots with retryOfRunId set to the original Run. result_consumption_failed must use the dedicated consumption retry and never calls Runtime. Other stages retain their previously frozen retry rules.
       parameters: [{$ref: "#/components/parameters/IdempotencyKey"}]
       requestBody: {required: true, content: {application/json: {schema: {$ref: "#/components/schemas/WorkflowRunRetryRequest"}}}}
       responses:
+        "200": {description: Idempotent replay of the original retry result., content: {application/json: {schema: {$ref: "#/components/schemas/Iteration14WorkflowRunEnvelope"}}}}
         "201": {description: Retry run created., content: {application/json: {schema: {$ref: "#/components/schemas/Iteration14WorkflowRunEnvelope"}}}}
         "400": {$ref: "#/components/responses/BadRequest"}
         "404": {$ref: "#/components/responses/NotFound"}
@@ -2152,7 +2234,7 @@ components:
       enum: [editable_draft, frozen]
     ContentVersionSource:
       type: string
-      enum: [manual_created, mock_generated, mock_rewrite, workflow_generated]
+      enum: [manual_created, mock_generated, mock_rewrite, workflow_generated, workflow_rewrite]
     WorkflowRunStatus:
       type: string
       enum: [running, succeeded, failed]
@@ -2181,8 +2263,8 @@ components:
         status: {$ref: "#/components/schemas/ContentVersionStatus"}
         source: {$ref: "#/components/schemas/ContentVersionSource"}
         source_content_version_id: {type: [string, "null"], format: uuid, description: Source or baseline ContentVersion when this version was derived; null for versions without a source.}
-        source_content_version_version: {type: [integer, "null"], minimum: 1, description: Optimistic-lock version of source_content_version_id captured when generation started.}
-        source_workflow_run_id: {type: [string, "null"], format: uuid, description: Source P1 Runtime WorkflowRun for workflow-generated versions; null when not applicable.}
+        source_content_version_version: {type: [integer, "null"], minimum: 1, description: Optimistic-lock version of source_content_version_id captured when the deriving WorkflowRun started.}
+        source_workflow_run_id: {type: [string, "null"], format: uuid, description: Source P1 Runtime WorkflowRun for workflow_generated or workflow_rewrite versions; null when not applicable.}
         title: {type: string, minLength: 1, maxLength: 120}
         content: {type: string, maxLength: 200000}
         summary: {type: [string, "null"], maxLength: 5000}
@@ -3790,8 +3872,8 @@ components:
       required: [expectedVersion]
       properties:
         expectedVersion: {type: integer, minimum: 1, description: Version of the original WorkflowRun named by runId.}
-        useCurrentConfiguration: {type: boolean, default: false, description: When false reuse the immutable source snapshot; when true resolve the current runnable configuration.}
-        inputOverride: {type: object, additionalProperties: true, description: Complete replacement for the new run inputPayload; it is not deep-merged.}
+        useCurrentConfiguration: {type: boolean, default: false, description: When false reuse the immutable source snapshot; when true resolve the current runnable configuration. stage=rewrite requires false or omission.}
+        inputOverride: {type: object, additionalProperties: true, description: Complete replacement for the new run inputPayload; it is not deep-merged. Forbidden for stage=rewrite.}
     WorkflowRunTriggerSource:
       type: string
       enum: [manual, retry, system, api]
@@ -3804,13 +3886,13 @@ components:
         runNumber: {type: string, minLength: 1, maxLength: 80}
         projectId: {type: string, format: uuid}
         stage: {$ref: "#/components/schemas/ApplicableStage"}
-        subjectType: {type: [string, "null"], maxLength: 40, description: Optional domain subject type; content generation fixes content_item.}
-        subjectId: {type: [string, "null"], format: uuid, description: Optional domain subject identifier; content generation fixes ContentItem.id.}
+        subjectType: {type: [string, "null"], maxLength: 40, description: "Optional domain subject type; content generation fixes content_item, review fixes content_version and rewrite fixes review_report."}
+        subjectId: {type: [string, "null"], format: uuid, description: Optional domain subject identifier; rewrite fixes the source ReviewReport ID for the Run lifetime.}
         workflowConfigurationId: {type: string, format: uuid}
         triggerSource: {$ref: "#/components/schemas/WorkflowRunTriggerSource"}
         status: {$ref: "#/components/schemas/Iteration14WorkflowRunStatus", description: WorkflowRun status snapshot after this event is written; event status is not an independent lifecycle.}
-        inputPayload: {anyOf: [{$ref: "#/components/schemas/ReviewRuntimeInputV1"}, {type: object, additionalProperties: true}], description: "Redacted, schema-validated input; review Runs use ReviewRuntimeInputV1."}
-        outputPayload: {anyOf: [{$ref: "#/components/schemas/ReviewRuntimeOutputV1"}, {type: object, additionalProperties: true}, {type: "null"}], description: "Redacted, schema-validated output; review Runs use ReviewRuntimeOutputV1."}
+        inputPayload: {anyOf: [{$ref: "#/components/schemas/ReviewRuntimeInputV1"}, {$ref: "#/components/schemas/RewriteRuntimeInputV1"}, {type: object, additionalProperties: true}], description: "Redacted, schema-validated input; review and rewrite Runs use their respective v1 contracts."}
+        outputPayload: {anyOf: [{$ref: "#/components/schemas/ReviewRuntimeOutputV1"}, {$ref: "#/components/schemas/RewriteRuntimeOutputV1"}, {type: object, additionalProperties: true}, {type: "null"}], description: "Redacted output; rewrite output is trusted for domain consumption only after strict RewriteRuntimeOutputV1 parsing and validation."}
         errorCode: {type: [string, "null"], maxLength: 80}
         errorMessage: {type: [string, "null"], maxLength: 300}
         errorDetails: {type: [object, "null"], additionalProperties: true, description: Redacted display-safe details only.}
@@ -4180,6 +4262,316 @@ components:
       required: [error, request_id]
       properties:
         error: {$ref: "#/components/schemas/ContentReviewError"}
+        request_id: {type: string}
+    RewriteStrategy:
+      type: string
+      enum: [targeted_fix, creative_rewrite]
+    ContentRewriteOptions:
+      type: object
+      additionalProperties: false
+      required: [strategy]
+      properties:
+        strategy: {$ref: "#/components/schemas/RewriteStrategy"}
+    ContentRewritePreflightRequest:
+      type: object
+      additionalProperties: false
+      required: [selectedIssueIds, optionalInstructions, rewriteOptions]
+      properties:
+        selectedIssueIds:
+          type: array
+          minItems: 1
+          maxItems: 50
+          uniqueItems: true
+          items: {type: string, format: uuid}
+          description: One to 50 unique open ReviewIssue IDs belonging to reviewId. Empty selection is forbidden; clients never submit Issue content. The service canonicalizes the final order by ReviewIssue position ASC then ID ASC.
+        optionalInstructions: {type: [string, "null"], maxLength: 2000, description: "Empty string is normalized to null. Credentials, tokens, cookies, webhooks, database information and internal URLs are forbidden."}
+        rewriteOptions: {$ref: "#/components/schemas/ContentRewriteOptions"}
+      example:
+        selectedIssueIds: ["66666666-6666-4666-8666-666666666666"]
+        optionalInstructions: "保持原文冷峻风格。"
+        rewriteOptions: {strategy: targeted_fix}
+    ContentRewriteAvailabilityReason:
+      type: [string, "null"]
+      enum: [null, review_not_completed, no_open_issues, rewrite_not_configured, active_rewrite_run_conflict]
+    ContentRewriteSourceVersionSummary:
+      type: object
+      additionalProperties: false
+      required: [id, contentItemId, versionNo, version, title, wordCount, contentHash]
+      properties:
+        id: {type: string, format: uuid}
+        contentItemId: {type: string, format: uuid}
+        versionNo: {type: integer, minimum: 1}
+        version: {type: integer, minimum: 1}
+        title: {type: string, minLength: 1, maxLength: 120}
+        wordCount: {type: integer, minimum: 0}
+        contentHash: {type: string, pattern: "^[0-9a-f]{64}$"}
+    ContentRewriteReportSnapshot:
+      type: object
+      additionalProperties: false
+      required: [reviewReportId, sourceContentVersionId, sourceContentVersionVersion, sourceContentHash, conclusion, summary, completedAt]
+      properties:
+        reviewReportId: {type: string, format: uuid}
+        sourceContentVersionId: {type: string, format: uuid}
+        sourceContentVersionVersion: {type: integer, minimum: 1}
+        sourceContentHash: {type: string, pattern: "^[0-9a-f]{64}$"}
+        conclusion: {type: string, enum: [passed, needs_changes]}
+        summary: {type: string, minLength: 1, maxLength: 5000}
+        completedAt: {type: string, format: date-time}
+      description: Safe immutable Report snapshot. It contains no raw provider response or mutable ReviewIssue disposition.
+    ContentRewriteConfigurationSummary:
+      type: object
+      additionalProperties: false
+      required: [bindingVersion, workflowConfigurationId, workflowConfigurationName, workflowConfigurationVersion, connectionId, connectionVersion, inputContract, outputContract]
+      properties:
+        bindingVersion: {type: integer, minimum: 1}
+        workflowConfigurationId: {type: string, format: uuid}
+        workflowConfigurationName: {type: string, minLength: 1, maxLength: 160}
+        workflowConfigurationVersion: {type: integer, minimum: 1}
+        connectionId: {type: string, format: uuid}
+        connectionVersion: {type: integer, minimum: 1}
+        inputContract: {type: string, const: rewrite.input.v1}
+        outputContract: {type: string, const: rewrite.output.v1}
+    ContentRewriteAvailability:
+      type: object
+      additionalProperties: false
+      required: [reviewReportId, contentItemId, sourceContentVersionSummary, available, reason, openIssueCount, activeRun, configurationSummary]
+      properties:
+        reviewReportId: {type: string, format: uuid}
+        contentItemId: {type: string, format: uuid}
+        sourceContentVersionSummary: {$ref: "#/components/schemas/ContentRewriteSourceVersionSummary"}
+        available: {type: boolean}
+        reason: {$ref: "#/components/schemas/ContentRewriteAvailabilityReason"}
+        openIssueCount: {type: integer, minimum: 0, maximum: 200}
+        activeRun: {anyOf: [{$ref: "#/components/schemas/Iteration14WorkflowRun"}, {type: "null"}]}
+        configurationSummary: {anyOf: [{$ref: "#/components/schemas/ContentRewriteConfigurationSummary"}, {type: "null"}]}
+    ContentRewriteAvailabilityEnvelope:
+      type: object
+      additionalProperties: false
+      required: [data, request_id]
+      properties: {data: {$ref: "#/components/schemas/ContentRewriteAvailability"}, request_id: {type: string}}
+    ContentRewriteCheckStatus: {type: string, enum: [passed, blocked]}
+    ContentRewriteCheckCode:
+      type: string
+      enum: [review_report_ready, source_version_fixed, selected_issues_valid, project_binding_available, workflow_configuration_available, workflow_connection_available, active_rewrite_run_absent, rewrite_input_valid]
+    ContentRewriteCheck:
+      type: object
+      additionalProperties: false
+      required: [code, status, message]
+      properties:
+        code: {$ref: "#/components/schemas/ContentRewriteCheckCode"}
+        status: {$ref: "#/components/schemas/ContentRewriteCheckStatus"}
+        message: {type: string, minLength: 1, maxLength: 300}
+    RewriteIssueSnapshot:
+      type: object
+      additionalProperties: false
+      required: [reviewIssueId, reviewReportId, issueKey, position, version, categoryKey, categoryLabel, severity, title, description, evidence, location, suggestion, disposition]
+      properties:
+        reviewIssueId: {type: string, format: uuid}
+        reviewReportId: {type: string, format: uuid}
+        issueKey: {type: string, minLength: 1, maxLength: 120}
+        position: {type: integer, minimum: 1, maximum: 200}
+        version: {type: integer, minimum: 1}
+        categoryKey: {type: string, minLength: 1, maxLength: 80}
+        categoryLabel: {type: string, minLength: 1, maxLength: 120}
+        severity: {type: string, enum: [critical, warning, suggestion]}
+        title: {type: string, minLength: 1, maxLength: 200}
+        description: {type: string, minLength: 1, maxLength: 5000}
+        evidence: {$ref: "#/components/schemas/ReviewRuntimeEvidenceV1"}
+        location: {anyOf: [{$ref: "#/components/schemas/ReviewRuntimeLocationV1"}, {type: "null"}]}
+        suggestion: {type: [string, "null"], maxLength: 5000}
+        disposition: {type: string, const: open}
+      description: Server-read immutable Issue snapshot. ignored Issues are never selectable.
+    ContentRewriteSelectedIssueSummary:
+      type: object
+      additionalProperties: false
+      required: [total, items]
+      properties:
+        total: {type: integer, minimum: 1, maximum: 50}
+        items: {type: array, minItems: 1, maxItems: 50, items: {$ref: "#/components/schemas/RewriteIssueSnapshot"}}
+    ContentRewritePreflightStatus: {type: string, enum: [passed, blocked]}
+    ContentRewritePreflightReport:
+      type: object
+      additionalProperties: false
+      required: [status, checks, reviewReportSnapshot, sourceContentVersionSummary, selectedIssueSummary, rewriteOptions, optionalInstructions, configurationSummary, preflightToken, expiresAt]
+      properties:
+        status: {$ref: "#/components/schemas/ContentRewritePreflightStatus"}
+        checks: {type: array, minItems: 1, maxItems: 8, items: {$ref: "#/components/schemas/ContentRewriteCheck"}}
+        reviewReportSnapshot: {$ref: "#/components/schemas/ContentRewriteReportSnapshot"}
+        sourceContentVersionSummary: {$ref: "#/components/schemas/ContentRewriteSourceVersionSummary"}
+        selectedIssueSummary: {$ref: "#/components/schemas/ContentRewriteSelectedIssueSummary"}
+        rewriteOptions: {$ref: "#/components/schemas/ContentRewriteOptions"}
+        optionalInstructions: {type: [string, "null"], maxLength: 2000}
+        configurationSummary: {anyOf: [{$ref: "#/components/schemas/ContentRewriteConfigurationSummary"}, {type: "null"}]}
+        preflightToken: {type: [string, "null"], minLength: 1, maxLength: 4096, description: "Present only when status=passed. It is single-use, actor/request/snapshot bound, expires after 10 minutes and is never persisted in Run, Event or logs."}
+        expiresAt: {type: [string, "null"], format: date-time}
+    ContentRewritePreflightEnvelope:
+      type: object
+      additionalProperties: false
+      required: [data, request_id]
+      properties: {data: {$ref: "#/components/schemas/ContentRewritePreflightReport"}, request_id: {type: string}}
+    CreateContentRewriteRunRequest:
+      type: object
+      additionalProperties: false
+      required: [preflightToken]
+      properties:
+        preflightToken: {type: string, minLength: 1, maxLength: 4096}
+    RewriteRuntimeInputV1:
+      type: object
+      additionalProperties: false
+      description: Canonical property order is fixed below. The service builds every field from protected persisted facts and the preflight snapshot. Clients cannot submit or override protected fields. Credentials, tokens, Authorization, Cookie, webhook URLs, database information, internal URLs, raw upstream responses and Idempotency-Key are forbidden.
+      required: [schemaVersion, workflowRunId, correlationId, projectId, contentItemId, sourceContentVersionId, sourceContentVersionVersion, sourceContentHash, sourceTitle, sourceContent, reviewReportId, reportSnapshot, selectedIssues, optionalInstructions, rewriteOptions]
+      properties:
+        schemaVersion: {type: string, const: rewrite.input.v1}
+        workflowRunId: {type: string, format: uuid}
+        correlationId: {type: string, minLength: 1, maxLength: 128}
+        projectId: {type: string, format: uuid}
+        contentItemId: {type: string, format: uuid}
+        sourceContentVersionId: {type: string, format: uuid}
+        sourceContentVersionVersion: {type: integer, minimum: 1}
+        sourceContentHash: {type: string, pattern: "^[0-9a-f]{64}$"}
+        sourceTitle: {type: string, minLength: 1, maxLength: 120}
+        sourceContent: {type: string, minLength: 1, maxLength: 200000}
+        reviewReportId: {type: string, format: uuid}
+        reportSnapshot: {$ref: "#/components/schemas/ContentRewriteReportSnapshot"}
+        selectedIssues: {type: array, minItems: 1, maxItems: 50, items: {$ref: "#/components/schemas/RewriteIssueSnapshot"}, description: Unique by reviewIssueId and serialized by position ASC then reviewIssueId ASC.}
+        optionalInstructions: {type: [string, "null"], maxLength: 2000}
+        rewriteOptions: {$ref: "#/components/schemas/ContentRewriteOptions"}
+    RewriteIssueOutcomeV1:
+      type: object
+      additionalProperties: false
+      required: [reviewIssueId, summary]
+      properties:
+        reviewIssueId: {type: string, format: uuid}
+        summary: {type: string, minLength: 1, maxLength: 2000}
+    RewriteOutputMetadataV1:
+      type: object
+      additionalProperties: false
+      required: [changeSummary]
+      properties:
+        changeSummary: {type: [string, "null"], maxLength: 2000}
+    RewriteRuntimeOutputV1:
+      type: object
+      additionalProperties: false
+      description: A single strict JSON object with no trailing JSON is required. Unknown fields and credential, token, Cookie, webhook, database, SQL, stack, internal-node, internal-URL, Candidate-ID and current-version fields are rejected. addressedIssues and unresolvedIssues may reference only selectedIssues; reviewIssueId must be unique across both arrays and the two arrays must partition all selected Issue IDs exactly once. Violations produce output_validation_failed and zero Candidate. The service computes word count from content.
+      required: [schemaVersion, title, content, summary, addressedIssues, unresolvedIssues, warnings, metadata]
+      properties:
+        schemaVersion: {type: string, const: rewrite.output.v1}
+        title: {type: string, minLength: 1, maxLength: 120}
+        content: {type: string, minLength: 1, maxLength: 200000}
+        summary: {type: string, minLength: 1, maxLength: 5000}
+        addressedIssues: {type: array, maxItems: 50, items: {$ref: "#/components/schemas/RewriteIssueOutcomeV1"}}
+        unresolvedIssues: {type: array, maxItems: 50, items: {$ref: "#/components/schemas/RewriteIssueOutcomeV1"}}
+        warnings: {type: array, maxItems: 50, items: {type: string, minLength: 1, maxLength: 1000}}
+        metadata: {anyOf: [{$ref: "#/components/schemas/RewriteOutputMetadataV1"}, {type: "null"}]}
+      example:
+        schemaVersion: rewrite.output.v1
+        title: "第12章 雨夜访客"
+        content: "重写后的完整正文。"
+        summary: "修复逻辑冲突并压缩转场。"
+        addressedIssues:
+          - {reviewIssueId: "66666666-6666-4666-8666-666666666666", summary: "统一人物背景设定。"}
+        unresolvedIssues: []
+        warnings: []
+        metadata: {changeSummary: "保留原叙事视角。"}
+    ContentRewriteResultState:
+      type: string
+      enum: [idle, not_configured, queued, running, candidate_ready, runtime_failed, output_validation_failed, result_consumption_failed]
+    ContentRewriteSafeError:
+      type: object
+      additionalProperties: false
+      required: [code, message, correlationId, occurredAt]
+      properties:
+        code: {type: string, enum: [runtime_failed, output_validation_failed, result_consumption_failed]}
+        message: {type: string, minLength: 1, maxLength: 300}
+        correlationId: {type: string, minLength: 1, maxLength: 128}
+        occurredAt: {type: string, format: date-time}
+      description: Display-safe summary only. SQL, connection information, stack traces, n8n nodes, webhooks and raw upstream data are forbidden.
+    ContentRewriteSummary:
+      type: object
+      additionalProperties: false
+      required: [reviewReportId, contentItemId, state, canStartRewrite, activeRun, latestRun, sourceContentVersionSummary, selectedIssueSummary, candidateVersion, candidateIsCurrent, canSetCurrent, latestError, configurationSummary]
+      properties:
+        reviewReportId: {type: string, format: uuid}
+        contentItemId: {type: string, format: uuid}
+        state: {$ref: "#/components/schemas/ContentRewriteResultState"}
+        canStartRewrite: {type: boolean}
+        activeRun: {anyOf: [{$ref: "#/components/schemas/Iteration14WorkflowRun"}, {type: "null"}]}
+        latestRun: {anyOf: [{$ref: "#/components/schemas/Iteration14WorkflowRun"}, {type: "null"}]}
+        sourceContentVersionSummary: {$ref: "#/components/schemas/ContentRewriteSourceVersionSummary"}
+        selectedIssueSummary: {anyOf: [{$ref: "#/components/schemas/ContentRewriteSelectedIssueSummary"}, {type: "null"}]}
+        candidateVersion: {anyOf: [{$ref: "#/components/schemas/ContentVersion"}, {type: "null"}]}
+        candidateIsCurrent: {type: boolean}
+        canSetCurrent: {type: boolean}
+        latestError: {anyOf: [{$ref: "#/components/schemas/ContentRewriteSafeError"}, {type: "null"}]}
+        configurationSummary: {anyOf: [{$ref: "#/components/schemas/ContentRewriteConfigurationSummary"}, {type: "null"}]}
+    ContentRewriteSummaryEnvelope:
+      type: object
+      additionalProperties: false
+      required: [data, request_id]
+      properties: {data: {$ref: "#/components/schemas/ContentRewriteSummary"}, request_id: {type: string}}
+    ContentRewriteHistoryItem:
+      type: object
+      additionalProperties: false
+      required: [reviewReportSnapshot, sourceContentVersionSummary, workflowRun, state, candidateVersion, candidateIsCurrent, latestError]
+      properties:
+        reviewReportSnapshot: {$ref: "#/components/schemas/ContentRewriteReportSnapshot"}
+        sourceContentVersionSummary: {$ref: "#/components/schemas/ContentRewriteSourceVersionSummary"}
+        workflowRun: {$ref: "#/components/schemas/Iteration14WorkflowRun"}
+        state: {$ref: "#/components/schemas/ContentRewriteResultState"}
+        candidateVersion: {anyOf: [{$ref: "#/components/schemas/ContentVersion"}, {type: "null"}]}
+        candidateIsCurrent: {type: boolean}
+        latestError: {anyOf: [{$ref: "#/components/schemas/ContentRewriteSafeError"}, {type: "null"}]}
+    ContentRewriteHistory:
+      type: object
+      additionalProperties: false
+      required: [items, total, limit, offset]
+      properties:
+        items: {type: array, items: {$ref: "#/components/schemas/ContentRewriteHistoryItem"}}
+        total: {type: integer, minimum: 0}
+        limit: {type: integer, minimum: 1, maximum: 100}
+        offset: {type: integer, minimum: 0}
+    ContentRewriteHistoryEnvelope:
+      type: object
+      additionalProperties: false
+      required: [data, request_id]
+      properties: {data: {$ref: "#/components/schemas/ContentRewriteHistory"}, request_id: {type: string}}
+    ContentRewriteResult:
+      type: object
+      additionalProperties: false
+      required: [reviewReportSnapshot, sourceContentVersionSummary, selectedIssueSummary, workflowRun, output, candidateVersion, candidateIsCurrent, canSetCurrent]
+      properties:
+        reviewReportSnapshot: {$ref: "#/components/schemas/ContentRewriteReportSnapshot"}
+        sourceContentVersionSummary: {$ref: "#/components/schemas/ContentRewriteSourceVersionSummary"}
+        selectedIssueSummary: {$ref: "#/components/schemas/ContentRewriteSelectedIssueSummary"}
+        workflowRun: {$ref: "#/components/schemas/Iteration14WorkflowRun"}
+        output: {$ref: "#/components/schemas/RewriteRuntimeOutputV1"}
+        candidateVersion: {$ref: "#/components/schemas/ContentVersion"}
+        candidateIsCurrent: {type: boolean}
+        canSetCurrent: {type: boolean}
+    ContentRewriteResultEnvelope:
+      type: object
+      additionalProperties: false
+      required: [data, request_id]
+      properties: {data: {$ref: "#/components/schemas/ContentRewriteResult"}, request_id: {type: string}}
+    RetryContentRewriteResultConsumptionRequest:
+      type: object
+      additionalProperties: false
+      required: [expectedRunVersion]
+      properties:
+        expectedRunVersion: {type: integer, minimum: 1}
+    ContentRewriteErrorCode:
+      type: string
+      enum: [review_not_found, review_issue_not_found, rewrite_not_available, rewrite_not_configured, rewrite_preflight_expired, rewrite_preflight_stale, rewrite_preflight_consumed, active_rewrite_run_conflict, rewrite_candidate_not_found, rewrite_candidate_not_ready, rewrite_output_validation_failed, rewrite_result_consumption_failed, content_version_conflict, idempotency_conflict, workflow_run_not_found, workflow_run_version_conflict, internal_error]
+    ContentRewriteError:
+      allOf:
+        - {$ref: "#/components/schemas/Error"}
+        - {type: object, properties: {code: {$ref: "#/components/schemas/ContentRewriteErrorCode"}}}
+    ContentRewriteErrorEnvelope:
+      type: object
+      additionalProperties: false
+      required: [error, request_id]
+      properties:
+        error: {$ref: "#/components/schemas/ContentRewriteError"}
         request_id: {type: string}
     ContentGenerationContextOptions:
       type: object

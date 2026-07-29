@@ -1,36 +1,65 @@
 iteration: iteration-18-real-content-rewrite
-status: rebuild_candidate_2026_07_29
-runtime_stage: content_rewrite
+task: CF-18-01A
+status: frozen_cf_18_01a
+runtime_stage: rewrite
 subject_type: review_report
+subject_id: reviewId
 trigger_source: manual
 input_contract: rewrite.input.v1
 output_contract: rewrite.output.v1
 canonical_routes:
-  review_entry: /projects/{projectId}/works/{workId}/review?reportId={reviewReportId}
+  review_entry: /projects/{projectId}/works/{workId}/review?reportId={reviewId}
   rewrite: /projects/{projectId}/works/{workId}/rewrite
+issue_selection:
+  minimum: 1
+  maximum: 50
+  disposition: open
+  ignored_selectable: false
+  duplicates: rejected
+  stable_order: position ASC, issueId ASC
+  empty_selection: forbidden
 apis:
-  - operationId: preflightContentRewriteRun
+  - operationId: getContentRewriteAvailability
+    method: GET
+    path: /api/v1/reviews/{reviewId}/rewrite-availability
+    success: 200
+    command: false
+    returns: [reviewReportId, contentItemId, sourceContentVersionSummary, available, reason, openIssueCount, activeRun, configurationSummary]
+  - operationId: preflightContentRewrite
     method: POST
-    path: /api/v1/review-reports/{reviewReportId}/rewrite-runs/preflight
+    path: /api/v1/reviews/{reviewId}/rewrites/preflight
     success: 200
     command: false
     side_effects: none
-    body: [selectedIssueIds, rewriteStrategy, optionalInstructions]
-    returns: [status, checks, sourceContentVersionSummary, selectedIssueSummary, constraints, configurationSummary, preflightToken, expiresAt]
+    body: [selectedIssueIds, optionalInstructions, rewriteOptions]
+    returns: [status, checks, reviewReportSnapshot, sourceContentVersionSummary, selectedIssueSummary, rewriteOptions, optionalInstructions, configurationSummary, preflightToken, expiresAt]
   - operationId: createContentRewriteRun
     method: POST
-    path: /api/v1/review-reports/{reviewReportId}/rewrite-runs
+    path: /api/v1/reviews/{reviewId}/rewrites
     success: [201, 200]
     command: true
     required_headers: [Idempotency-Key]
     body: [preflightToken]
-    server_fixed: {stage: content_rewrite, triggerSource: manual, subjectType: review_report, subjectId: reviewReportId}
+    server_fixed: {stage: rewrite, triggerSource: manual, subjectType: review_report, subjectId: reviewId}
   - operationId: getContentRewriteSummary
     method: GET
-    path: /api/v1/review-reports/{reviewReportId}/rewrite-summary
+    path: /api/v1/reviews/{reviewId}/rewrite-summary
     success: 200
-    returns: [state, canStartRewrite, activeRun, latestRun, candidateVersion, sourceContentVersionSummary, selectedIssueSummary, latestError, configurationSummary]
-  - operationId: retryRewriteResultConsumption
+    command: false
+    returns: [reviewReportId, contentItemId, state, canStartRewrite, activeRun, latestRun, sourceContentVersionSummary, selectedIssueSummary, candidateVersion, candidateIsCurrent, canSetCurrent, latestError, configurationSummary]
+  - operationId: listContentRewriteHistory
+    method: GET
+    path: /api/v1/content-items/{contentItemId}/rewrite-history
+    success: 200
+    command: false
+    query: [limit, offset]
+  - operationId: getContentRewriteResult
+    method: GET
+    path: /api/v1/workflow-runs/{workflowRunId}/rewrite-result
+    success: 200
+    command: false
+    returns: [reviewReportSnapshot, sourceContentVersionSummary, selectedIssueSummary, workflowRun, output, candidateVersion, candidateIsCurrent, canSetCurrent]
+  - operationId: retryContentRewriteResultConsumption
     method: POST
     path: /api/v1/workflow-runs/{workflowRunId}/rewrite-result-consumption-retries
     success: 200
@@ -39,14 +68,29 @@ apis:
     body: [expectedRunVersion]
     external_runtime_call: false
 reused_apis:
-  - getReview
-  - getContentVersion
-  - listContentItemVersions
-  - setCurrentContentVersion
-  - getWorkflowRunDetail
-  - listWorkflowRunEvents
-  - retryWorkflowRun
-  - cancelWorkflowRun
+  - operationId: setCurrentContentVersion
+    method: POST
+    path: /api/v1/content-items/{contentItemId}/current-version
+    required_headers: [Idempotency-Key]
+    body: [candidateVersionId, expectedCurrentVersionId, expectedCurrentVersion]
+  - operationId: getWorkflowRunDetail
+    method: GET
+    path: /api/v1/workflow-runs/{runId}
+  - operationId: listWorkflowRunEvents
+    method: GET
+    path: /api/v1/workflow-runs/{runId}/events
+  - operationId: retryWorkflowRun
+    method: POST
+    path: /api/v1/workflow-runs/{runId}/retries
+    required_headers: [Idempotency-Key]
+    rewrite_body_rule: expectedVersion required; useCurrentConfiguration absent or false; inputOverride forbidden
+  - operationId: cancelWorkflowRun
+    method: POST
+    path: /api/v1/workflow-runs/{runId}/cancel
+    required_headers: [Idempotency-Key]
+  - operationId: getContentVersion
+    method: GET
+    path: /api/v1/content-versions/{versionId}
 summary_states:
   - idle
   - not_configured
@@ -56,25 +100,54 @@ summary_states:
   - runtime_failed
   - output_validation_failed
   - result_consumption_failed
-rewrite_strategies:
-  - targeted_fix
-  - creative_rewrite
-issue_resolution_statuses:
-  - addressed
-  - partially_addressed
-  - not_addressed
+runtime_retry:
+  allowed: [failed, cancelled, output_validation_failed]
+  forbidden: [result_consumption_failed]
+  inherits: [sourceContentVersion, reviewReport, selectedIssues, bindingSnapshot, configurationSnapshot, connectionSnapshot]
+  input_override: forbidden
+  success: [201, 200]
+result_consumption_retry:
+  allowed: [succeeded_with_result_consumption_failed]
+  creates_run: false
+  calls_runtime: false
+  reuses_persisted_output: true
+  success: 200
+set_current:
+  candidate_already_current: 200
+  cas_conflict: {http: 409, code: content_version_conflict}
+  idempotent_replay: 200
+error_codes:
+  review_not_found: [404]
+  review_issue_not_found: [404]
+  rewrite_not_available: [422]
+  rewrite_not_configured: [422]
+  rewrite_preflight_expired: [422]
+  rewrite_preflight_stale: [409]
+  rewrite_preflight_consumed: [409]
+  active_rewrite_run_conflict: [409]
+  rewrite_candidate_not_found: [404]
+  rewrite_candidate_not_ready: [409]
+  rewrite_output_validation_failed: [422, 409]
+  rewrite_result_consumption_failed: [500]
+  content_version_conflict: [409]
+  idempotency_conflict: [409]
+  workflow_run_not_found: [404]
+  workflow_run_version_conflict: [409]
+  internal_error: [500]
 common_requirements:
-  - CF-18-01 must update OpenAPI before implementation; this file is planning input only
-  - all commands use persistent Idempotency-Key semantics
-  - source ContentVersion and selected ReviewIssues are fixed server-side
-  - selected issues must belong to the report and have disposition open
-  - succeeded without a same-Run candidate is not candidate_ready
-  - result consumption retry never calls external runtime
-  - errors use the shared safe ErrorEnvelope
-  - secrets, raw upstream responses, SQL, stacks, internal nodes and internal URLs are never returned
+  - OpenAPI is the single HTTP contract source.
+  - Every operation has one canonical path; no parallel rewrite API exists.
+  - Empty Issue selection is forbidden; only 1-50 open Issues from the bound ReviewReport are legal.
+  - The service builds rewrite.input.v1 from protected persisted facts.
+  - rewrite.output.v1 is strict and trailing JSON, unknown fields, forbidden internal fields and duplicate Issue references are rejected.
+  - Runtime succeeded without an atomically persisted same-Run Candidate is not candidate_ready.
+  - Set Current leaves Summary candidate_ready and returns candidateIsCurrent=true plus canSetCurrent=false.
+  - Result consumption retry never calls Runtime or n8n and never creates a new Run.
+  - Secrets, tokens, cookies, webhooks, database information, raw upstream responses, SQL, stacks, internal nodes and internal URLs are never returned.
 excluded:
   - automatic set-current
-  - automatic review or publish
+  - automatic review, rewrite loop or publish
   - mutation of source ReviewReport or ReviewIssue disposition
   - temporary workflow selection
   - visual workflow editor or multi-instance routing
+  - data-model, transaction, lock, index or Migration decisions reserved for CF-18-01B
