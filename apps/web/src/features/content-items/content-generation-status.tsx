@@ -1,18 +1,19 @@
 "use client";
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
-import { getOrCreateOperation } from "@/features/chapter-plans/use-idempotency";
+import { useEffect, useState } from "react";
+import { clearOperation, getOrCreateOperation } from "@/features/chapter-plans/use-idempotency";
 import { getWorkflowRunEvents, retryContentGenerationResultConsumption, retryWorkflowRun, type ContentGenerationSummary, type GenerationEvent } from "./content-item-http-api";
+import { contentGenerationCopy as copy } from "./content-generation-locale";
 
 const failed = new Set(["runtime_failed", "output_validation_failed", "result_consumption_failed"]);
-const safe = (message: string | null | undefined) => message && message.length <= 300 && !/(stack|sql|postgres|https?:\/\/|\\\\)/i.test(message) ? message : "任务未能完成，当前正文已保留。";
-const eventLabel = (value: string) => ({ queued: "已进入队列", worker_started: "开始执行", request_sent: "已发送生成请求", response_received: "已收到生成结果", output_validated: "输出已校验", result_consumed: "候选版本已创建", result_consumption_failed: "候选版本创建失败", succeeded: "任务完成", failed: "任务失败", cancelled: "任务已取消", retry_created: "已创建重试任务" })[value] ?? "运行状态已更新";
+const safe = (message: string | null | undefined) => message && message.length <= 300 && !/(stack|sql|postgres|https?:\/\/|\\\\)/i.test(message) ? message : copy.safeFailure;
+const eventLabel = (value: string) => copy.events[value] ?? copy.eventFallback;
 
 export function ContentGenerationStatus({ projectId, summary, onRefresh, onCandidate }: { projectId: string; summary: ContentGenerationSummary; onRefresh: () => Promise<void>; onCandidate: () => void }) {
   const [fetchedEvents, setFetchedEvents] = useState<GenerationEvent[] | null>(null);
   const [showEvents, setShowEvents] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const retryKey = useRef<string | null>(null);
+  const [retryError, setRetryError] = useState<{ identity: string; message: string } | null>(null);
   const run = summary.activeRun ?? summary.latestRun;
   useEffect(() => {
     if (!run || !["queued", "running"].includes(summary.state)) return;
@@ -21,36 +22,32 @@ export function ContentGenerationStatus({ projectId, summary, onRefresh, onCandi
     return () => controller.abort();
   }, [run, summary.state]);
   if (!["queued", "running", "candidate_ready", "not_configured", ...failed].includes(summary.state)) return null;
-  const title = summary.state === "queued" ? "排队中" : summary.state === "running" ? "运行中" : summary.state === "candidate_ready" ? "候选版本已创建" : summary.state === "not_configured" ? "尚未配置正文生成工作流" : "正文生成未完成";
+  const title = summary.state === "queued" ? copy.titles.queued : summary.state === "running" ? copy.titles.running : summary.state === "candidate_ready" ? copy.titles.candidate_ready : summary.state === "not_configured" ? copy.titles.not_configured : copy.titles.failed;
+  const retryType = summary.state === "result_consumption_failed" ? "result-consumption-retry" : "runtime-retry";
+  const retryPayload = run ? { runId: run.id, state: summary.state, runVersion: run.version, retryType } : null;
+  const retryIdentity = retryPayload ? JSON.stringify(retryPayload) : "";
   const retry = async () => {
-    if (!run || submitting) return;
-    setSubmitting(true);
+    if (!run || !retryPayload || submitting) return;
+    const scope = `content-generation-retry:${run.id}`;
+    setRetryError(null); setSubmitting(true);
     try {
-      const key = retryKey.current ?? await getOrCreateOperation(`content-generation-retry:${run.id}:${summary.state}`, { runId: run.id, state: summary.state });
-      retryKey.current = key;
+      const key = await getOrCreateOperation(scope, retryPayload);
       if (summary.state === "result_consumption_failed") await retryContentGenerationResultConsumption(run.id, run.version, key);
       else await retryWorkflowRun(run.id, run.version, key);
+      clearOperation(scope);
       await onRefresh();
-    } catch { /* The summary remains the authority; expose only a safe message below. */ }
+    } catch { setRetryError({ identity: retryIdentity, message: copy.retryFailure }); }
     finally { setSubmitting(false); }
   };
   return <section className={`content-generation-status content-generation-status-${summary.state}`} aria-live="polite">
     <div><strong>{title}</strong>{run && <span>Run ID: {run.runNumber}</span>}
-      {summary.state === "queued" && <span>正文生成任务已进入队列，等待执行。</span>}
-      {summary.state === "running" && <span>正文生成正在执行，进度以运行事件为准。</span>}
-      {summary.state === "candidate_ready" && <span>候选版本 v{summary.latestCandidateVersion?.version_no} 已创建，当前正文尚未被替换。</span>}
-      {failed.has(summary.state) && <span>{safe(summary.latestError?.message ?? run?.errorMessage)}</span>}
-      {summary.state === "not_configured" && <span>请在项目设置中绑定正文生成工作流，并确认执行连接可用。</span>}
+      {summary.state === "queued" && <span>{copy.queuedDetail}</span>}{summary.state === "running" && <span>{copy.runningDetail}</span>}{summary.state === "candidate_ready" && <span>{copy.candidateDetail(summary.latestCandidateVersion?.version_no)}</span>}{failed.has(summary.state) && <span>{safe(summary.latestError?.message ?? run?.errorMessage)}</span>}{summary.state === "not_configured" && <span>{copy.notConfiguredDetail}</span>}
     </div>
     <div className="content-generation-status-actions">
-      {summary.state === "candidate_ready" && <button onClick={onCandidate}>查看候选</button>}
-      {run && <button onClick={() => setShowEvents((x) => !x)}>{showEvents ? "收起详情" : "查看详情"}</button>}
-      {summary.state === "running" && run && <Link href={`/workflow-runs/${run.id}`}>前往流程中心</Link>}
-      {summary.state === "not_configured" && <Link href={`/projects/${projectId}/settings?tab=workflow-bindings`}>配置工作流</Link>}
-      {summary.state === "runtime_failed" && <button onClick={() => void retry()} disabled={submitting}>{submitting ? "正在重试…" : "重新执行 Runtime"}</button>}
-      {summary.state === "output_validation_failed" && <button onClick={() => void retry()} disabled={submitting}>{submitting ? "正在重试…" : "重新执行 Runtime"}</button>}
-      {summary.state === "result_consumption_failed" && <button onClick={() => void retry()} disabled={submitting}>{submitting ? "正在重试…" : "重试结果消费"}</button>}
+      {summary.state === "candidate_ready" && <button onClick={onCandidate}>{copy.viewCandidate}</button>}{run && <button onClick={() => setShowEvents((x) => !x)}>{showEvents ? copy.hideDetails : copy.viewDetails}</button>}{summary.state === "running" && run && <Link href={`/workflow-runs/${run.id}`}>{copy.workflowCenter}</Link>}{summary.state === "not_configured" && <Link href={`/projects/${projectId}/settings?tab=workflow-bindings`}>{copy.configureWorkflow}</Link>}
+      {summary.state === "runtime_failed" && <button onClick={() => void retry()} disabled={submitting}>{submitting ? copy.retrying : copy.retryRuntime}</button>}{summary.state === "output_validation_failed" && <button onClick={() => void retry()} disabled={submitting}>{submitting ? copy.retrying : copy.retryRuntime}</button>}{summary.state === "result_consumption_failed" && <button onClick={() => void retry()} disabled={submitting}>{submitting ? copy.retrying : copy.retryConsumption}</button>}
     </div>
-    {showEvents && <ol className="content-generation-events">{(fetchedEvents ?? summary.latestEvents).length ? (fetchedEvents ?? summary.latestEvents).map((event) => <li key={event.id}><b>{eventLabel(event.eventType)}</b><span>{new Date(event.createdAt).toLocaleString("zh-CN")}</span></li>) : <li>暂无可公开的运行事件。</li>}</ol>}
+    {retryError?.identity === retryIdentity && <p className="content-inline-error" role="alert">{retryError.message}</p>}
+    {showEvents && <ol className="content-generation-events">{(fetchedEvents ?? summary.latestEvents).length ? (fetchedEvents ?? summary.latestEvents).map((event) => <li key={event.id}><b>{eventLabel(event.eventType)}</b><span>{new Date(event.createdAt).toLocaleString("zh-CN")}</span></li>) : <li>{copy.eventEmpty}</li>}</ol>}
   </section>;
 }

@@ -7,6 +7,7 @@ const editor = readFileSync(join(root, "content-editor-workspace.tsx"), "utf8");
 const drawer = readFileSync(join(root, "content-generation-drawer.tsx"), "utf8");
 const status = readFileSync(join(root, "content-generation-status.tsx"), "utf8");
 const candidate = readFileSync(join(root, "content-candidate-compare.tsx"), "utf8");
+const locale = readFileSync(join(root, "content-generation-locale.ts"), "utf8");
 test("编辑器加载 Summary，并以同一路由 Tab 和抽屉组织正文生成", () => {
   assert.match(editor, /getContentGenerationSummary/);
   assert.match(editor, /章节目标/); assert.match(editor, /故事情报/); assert.match(editor, /素材库/);
@@ -22,7 +23,8 @@ test("排队和运行状态只按持久化 Summary 轮询，并展示安全 Run/
   assert.match(editor, /\["queued", "running"\]/);
   assert.match(editor, /window\.setInterval/);
   assert.match(status, /getWorkflowRunEvents/);
-  assert.match(status, /正文生成正在执行，进度以运行事件为准/);
+  assert.match(status, /contentGenerationCopy as copy/);
+  assert.match(locale, /正文生成正在执行，进度以运行事件为准/);
   assert.doesNotMatch(status, /\d+%/);
 });
 test("三类失败严格映射到冻结恢复动作", () => {
@@ -31,6 +33,11 @@ test("三类失败严格映射到冻结恢复动作", () => {
   assert.match(status, /summary\.state === "result_consumption_failed"/);
   assert.match(status, /retryContentGenerationResultConsumption/);
   assert.match(status, /retryWorkflowRun/);
+  assert.match(status, /retryType/);
+  assert.match(status, /runId: run\.id, state: summary\.state, runVersion: run\.version, retryType/);
+  assert.match(status, /clearOperation\(scope\)/);
+  assert.match(status, /setRetryError\(\{ identity: retryIdentity, message: copy\.retryFailure \}\)/);
+  assert.match(status, /role="alert"/);
 });
 test("候选比较与 CAS 切换不会覆盖当前版本，且 stale 禁止强制覆盖", () => {
   assert.match(candidate, /getContentVersion\(summary\.currentVersionId/);
@@ -39,9 +46,22 @@ test("候选比较与 CAS 切换不会覆盖当前版本，且 stale 禁止强�
   assert.match(candidate, /expectedCurrentVersionId: summary\.currentVersionId/);
   assert.match(candidate, /expectedCurrentVersion: summary\.currentVersion\.version/);
   assert.match(candidate, /candidate_source_stale/);
+  assert.match(candidate, /getOrCreateOperation/);
+  assert.match(candidate, /contentItemId: summary\.contentItemId, candidateVersionId: candidate\.id, expectedCurrentVersionId: summary\.currentVersionId, expectedCurrentVersion: summary\.currentVersion\.version/);
+  assert.match(candidate, /clearOperation\(scope\)/);
+  assert.doesNotMatch(candidate, /crypto\.randomUUID/);
   assert.doesNotMatch(candidate, /force|override/);
 });
 test("未配置状态跳转既有项目工作流绑定入口", () => {
   assert.match(status, /settings\?tab=workflow-bindings/);
-  assert.match(status, /尚未配置正文生成工作流/);
+  assert.match(locale, /尚未配置正文生成工作流/);
+});
+test("03B 用户可见文案集中在现有特性 locale 资源，不散落在两个组件 JSX", () => {
+  assert.match(status, /content-generation-locale/);
+  assert.match(candidate, /content-generation-locale/);
+  for (const copy of ["查看候选", "配置工作流", "设为当前版本", "关闭候选", "重试未能完成"]) {
+    assert.match(locale, new RegExp(copy));
+    assert.doesNotMatch(status, new RegExp(copy));
+    assert.doesNotMatch(candidate, new RegExp(copy));
+  }
 });
