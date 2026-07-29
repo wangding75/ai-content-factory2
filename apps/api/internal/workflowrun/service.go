@@ -52,6 +52,7 @@ type Store interface {
 	QuerySummary(context.Context, uuid.UUID, int) (Summary, error)
 	Count(context.Context, ListFilter) (int, error)
 	ExecuteIdempotent(context.Context, string, string, string, func(Store) (WorkflowRun, error)) (WorkflowRun, error)
+	ExecuteIdempotentWithReplay(context.Context, string, string, string, func(Store) (WorkflowRun, error)) (WorkflowRun, bool, error)
 	PreflightTokenUsed(context.Context, string) (bool, error)
 }
 
@@ -328,10 +329,15 @@ func (s *Service) CreateRunForPreflightTokenIdempotent(ctx context.Context, proj
 }
 
 func (s *Service) CreateRunForPreflightTokenIdempotentForScope(ctx context.Context, operation string, projectID uuid.UUID, key, requestHash, nonce string, prepare CreateRunTxPreparation) (WorkflowRun, error) {
-	if projectID == uuid.Nil || strings.TrimSpace(key) == "" || strings.TrimSpace(requestHash) == "" || strings.TrimSpace(nonce) == "" || prepare == nil { return WorkflowRun{}, ErrValidation }
-	if operation != "createContentGenerationRun" && operation != "createContentReviewRun" { return WorkflowRun{}, ErrValidation }
+	run, _, err := s.CreateRunForPreflightTokenIdempotentForScopeWithReplay(ctx, operation, projectID, key, requestHash, nonce, prepare)
+	return run, err
+}
+
+func (s *Service) CreateRunForPreflightTokenIdempotentForScopeWithReplay(ctx context.Context, operation string, projectID uuid.UUID, key, requestHash, nonce string, prepare CreateRunTxPreparation) (WorkflowRun, bool, error) {
+	if projectID == uuid.Nil || strings.TrimSpace(key) == "" || strings.TrimSpace(requestHash) == "" || strings.TrimSpace(nonce) == "" || prepare == nil { return WorkflowRun{}, false, ErrValidation }
+	if operation != "createContentGenerationRun" && operation != "createContentReviewRun" { return WorkflowRun{}, false, ErrValidation }
 	scope := operation + ":" + projectID.String()
-	return s.store.ExecuteIdempotent(ctx, scope, key, requestHash, func(store Store) (WorkflowRun, error) {
+	return s.store.ExecuteIdempotentWithReplay(ctx, scope, key, requestHash, func(store Store) (WorkflowRun, error) {
 		transactional, ok := store.(interface{ Transaction() pgx.Tx })
 		if !ok || transactional.Transaction() == nil { return WorkflowRun{}, ErrValidation }
 		if _, err := transactional.Transaction().Exec(ctx, "SELECT pg_advisory_xact_lock(hashtextextended($1, 0))", operation+":token:"+nonce); err != nil { return WorkflowRun{}, err }

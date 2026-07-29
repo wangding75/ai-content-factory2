@@ -189,6 +189,8 @@ export interface ReviewHistoryItem {
   workflowRun: WorkflowRunDto;
   sourceContentVersionSummary: ReviewSourceVersionSummary;
   reportSummary: ReviewReportSummary | null;
+  state: ReviewState;
+  latestError: ReviewSafeError | null;
 }
 
 export type ReviewHistoryEntry = ReviewHistoryItem | MockReviewReport;

@@ -45,6 +45,11 @@ import {
   reviewConclusionLabel,
   reviewSeverityLabel,
 } from "@/features/content-items/content-presentation";
+import {
+  isUncertainReviewCommandError,
+  reviewCommandKey,
+  type ReviewCommandKey,
+} from "./content-review-command-key";
 
 const activeStates = new Set(["queued", "running"]);
 
@@ -53,17 +58,21 @@ export function ContentReviewWorkspace({
   workId,
   reportId,
   issueId,
+  sourceView,
 }: {
   projectId: string;
   workId: string;
   reportId?: string;
   issueId?: string;
+  sourceView?: boolean;
 }) {
   const router = useRouter();
   const [content, setContent] = useState<ContentItemDetail | null>(null);
   const [summary, setSummary] = useState<ContentReviewSummary | null>(null);
   const [detail, setDetail] = useState<ReviewDetail | null>(null);
   const [events, setEvents] = useState<WorkflowRunEventDto[]>([]);
+  const [runSource, setRunSource] = useState<ContentVersion | null>(null);
+  const [runSourceError, setRunSourceError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [detailLoading, setDetailLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -71,6 +80,8 @@ export function ContentReviewWorkspace({
   const [drawer, setDrawer] = useState(false);
   const [retrying, setRetrying] = useState(false);
   const controllers = useRef<AbortController[]>([]);
+  const runSourceCache = useRef<{ id: string; value: ContentVersion } | null>(null);
+  const retryCommand = useRef<ReviewCommandKey | null>(null);
 
   const addController = useCallback(() => {
     const controller = new AbortController();
@@ -94,11 +105,45 @@ export function ContentReviewWorkspace({
         setError(null);
         const run = nextSummary.activeRun ?? nextSummary.latestRun;
         if (run && activeStates.has(nextSummary.state)) {
-          const eventPage = await getReviewRunEvents(run.id, {
-            signal: controller.signal,
-          });
-          if (!controller.signal.aborted) setEvents(eventPage.items);
-        } else setEvents([]);
+          if (!run.subjectId) {
+            setEvents([]);
+            setRunSource(null);
+            setRunSourceError(copy.errors.source);
+            return;
+          }
+          const cachedSource = runSourceCache.current;
+          const sourceRequest =
+            cachedSource?.id === run.subjectId
+              ? Promise.resolve({ content_version: cachedSource.value })
+              : getReviewSourceVersion(run.subjectId, {
+                  signal: controller.signal,
+                });
+          try {
+            const [eventPage, sourceResult] = await Promise.all([
+              getReviewRunEvents(run.id, { signal: controller.signal }),
+              sourceRequest,
+            ]);
+            if (!controller.signal.aborted) {
+              setEvents(eventPage.items);
+              setRunSource(sourceResult.content_version);
+              setRunSourceError(null);
+              runSourceCache.current = {
+                id: run.subjectId,
+                value: sourceResult.content_version,
+              };
+            }
+          } catch {
+            if (!controller.signal.aborted) {
+              setEvents([]);
+              setRunSource(null);
+              setRunSourceError(copy.errors.source);
+            }
+          }
+        } else {
+          setEvents([]);
+          setRunSource(null);
+          setRunSourceError(null);
+        }
         if (
           !reportId &&
           nextSummary.state === "review_ready" &&
@@ -162,22 +207,33 @@ export function ContentReviewWorkspace({
     if (!run || retrying) return;
     setRetrying(true);
     setError(null);
+    const operation =
+      summary.state === "result_consumption_failed"
+        ? "consumption-retry"
+        : "runtime-retry";
+    const command = reviewCommandKey(
+      retryCommand.current,
+      `${operation}:${run.id}:${run.version}`,
+    );
+    retryCommand.current = command;
     try {
       if (summary.state === "result_consumption_failed") {
         const result = await retryReviewResultConsumption(
           run.id,
           run.version,
-          crypto.randomUUID(),
+          command.key,
         );
         router.replace(
           `/projects/${projectId}/works/${workId}/review?reportId=${encodeURIComponent(result.report.id)}`,
         );
       } else {
-        await retryWorkflowRun(run.id, run.version, crypto.randomUUID());
+        await retryWorkflowRun(run.id, run.version, command.key);
         setDetail(null);
         await loadSummary();
       }
+      retryCommand.current = null;
     } catch (cause) {
+      if (!isUncertainReviewCommandError(cause)) retryCommand.current = null;
       setError(
         safeReviewError(
           cause,
@@ -232,6 +288,7 @@ export function ContentReviewWorkspace({
             workId={workId}
             detail={detail}
             issueId={issueId}
+            sourceView={sourceView}
             onReload={() => loadDetail(detail.report.id)}
             onDetailChange={setDetail}
           />
@@ -244,6 +301,8 @@ export function ContentReviewWorkspace({
           content={content}
           summary={summary}
           events={events}
+          runSource={runSource}
+          runSourceError={runSourceError}
           retrying={retrying}
           onRetry={() => void retry()}
           onStart={() => setDrawer(true)}
@@ -300,6 +359,8 @@ function SummaryState({
   content,
   summary,
   events,
+  runSource,
+  runSourceError,
   retrying,
   onRetry,
   onStart,
@@ -308,6 +369,8 @@ function SummaryState({
   content: ContentItemDetail;
   summary: ContentReviewSummary;
   events: WorkflowRunEventDto[];
+  runSource: ContentVersion | null;
+  runSourceError: string | null;
   retrying: boolean;
   onRetry: () => void;
   onStart: () => void;
@@ -361,9 +424,19 @@ function SummaryState({
     );
   if (summary.state === "queued" || summary.state === "running") {
     const run = summary.activeRun ?? summary.latestRun!;
+    if (runSourceError)
+      return (
+        <ReviewState
+          title={copy.errors.source}
+          description={runSourceError}
+          compact
+        />
+      );
+    if (!runSource)
+      return <ReviewState title={copy.common.loading} loading compact />;
     return (
       <RunningState
-        content={content}
+        source={runSource}
         run={run}
         state={summary.state}
         events={events}
@@ -394,12 +467,12 @@ function SummaryState({
 }
 
 function RunningState({
-  content,
+  source,
   run,
   state,
   events,
 }: {
-  content: ContentItemDetail;
+  source: ContentVersion;
   run: WorkflowRunDto;
   state: "queued" | "running";
   events: WorkflowRunEventDto[];
@@ -417,10 +490,10 @@ function RunningState({
         <span className="review-running-pulse" />
         <div>
           <h3>
-            {content.current_version.title} {copy.states.runningTitle}
+            {source.title} {copy.states.runningTitle}
           </h3>
           <p>
-            {copy.common.versionPrefix} V{content.current_version.version_no} ·{" "}
+            {copy.common.versionPrefix} V{source.version_no} ·{" "}
             {state === "queued" ? copy.states.queued : copy.states.running}
           </p>
           <small>{copy.states.runningHint}</small>
@@ -431,7 +504,11 @@ function RunningState({
       </section>
       <section className="review-run-summary">
         <span>
-          {copy.common.contentVersion} <b>V{content.current_version.version_no}</b>
+          {copy.common.contentVersion} <b>V{source.version_no}</b>
+        </span>
+        <span>
+          {copy.common.wordCount}{" "}
+          <b>{source.word_count.toLocaleString("zh-CN")} {copy.common.words}</b>
         </span>
         <span>
           {copy.common.startedAt} <b>{formatReviewTime(run.createdAt)}</b>
@@ -560,6 +637,7 @@ function RealReportView({
   workId,
   detail,
   issueId,
+  sourceView,
   onReload,
   onDetailChange,
 }: {
@@ -567,6 +645,7 @@ function RealReportView({
   workId: string;
   detail: RealReviewDetail;
   issueId?: string;
+  sourceView?: boolean;
   onReload: () => Promise<void>;
   onDetailChange: (detail: ReviewDetail) => void;
 }) {
@@ -578,9 +657,10 @@ function RealReportView({
   const [actionError, setActionError] = useState<string | null>(null);
   const [source, setSource] = useState<ContentVersion | null>(null);
   const [sourceError, setSourceError] = useState<string | null>(null);
+  const dispositionCommand = useRef<ReviewCommandKey | null>(null);
 
   useEffect(() => {
-    if (!issueId) {
+    if (!sourceView || !issueId) {
       setSource(null);
       setSourceError(null);
       return;
@@ -599,7 +679,7 @@ function RealReportView({
         if (!controller.signal.aborted) setSourceError(copy.errors.source);
       });
     return () => controller.abort();
-  }, [detail.report.sourceContentVersionId, issueId]);
+  }, [detail.report.sourceContentVersionId, issueId, sourceView]);
 
   const changeDisposition = async (
     issue: RealReviewIssue,
@@ -608,13 +688,19 @@ function RealReportView({
     if (savingId) return;
     setSavingId(issue.id);
     setActionError(null);
+    const command = reviewCommandKey(
+      dispositionCommand.current,
+      `${issue.id}:${disposition}:${issue.version}`,
+    );
+    dispositionCommand.current = command;
     try {
       const updated = await updateReviewIssue(
         detail.report.id,
         issue.id,
         { disposition, expectedVersion: issue.version },
-        crypto.randomUUID(),
+        command.key,
       );
+      dispositionCommand.current = null;
       onDetailChange({
         ...detail,
         issues: detail.issues.map((item) =>
@@ -623,6 +709,8 @@ function RealReportView({
       });
     } catch (cause) {
       const error = cause as { status?: number };
+      if (!isUncertainReviewCommandError(cause))
+        dispositionCommand.current = null;
       if (error?.status === 409) {
         setActionError(copy.report.conflict);
         await onReload();
@@ -632,7 +720,7 @@ function RealReportView({
     }
   };
 
-  if (issueId && selected && source)
+  if (sourceView && issueId && selected && source)
     return (
       <IssueSourceView
         projectId={projectId}
@@ -645,7 +733,7 @@ function RealReportView({
         onDisposition={(value) => void changeDisposition(selected, value)}
       />
     );
-  if (issueId && sourceError)
+  if (sourceView && issueId && sourceError)
     return (
       <ReviewState
         title={copy.errors.source}
@@ -661,7 +749,7 @@ function RealReportView({
         compact
       />
     );
-  if (issueId)
+  if (sourceView && issueId)
     return <ReviewState title={copy.common.loading} loading compact />;
 
   const counts = detail.issues.reduce(

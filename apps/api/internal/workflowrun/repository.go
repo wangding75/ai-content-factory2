@@ -325,60 +325,65 @@ func (r *Repository) UpdateStatusWithEvent(ctx context.Context, current, next Wo
 // result and its replay record in one database transaction.  The shared
 // idempotency table is therefore the sole durable source of replay state.
 func (r *Repository) ExecuteIdempotent(ctx context.Context, scope, key, requestHash string, fn func(Store) (WorkflowRun, error)) (WorkflowRun, error) {
+	run, _, err := r.ExecuteIdempotentWithReplay(ctx, scope, key, requestHash, fn)
+	return run, err
+}
+
+func (r *Repository) ExecuteIdempotentWithReplay(ctx context.Context, scope, key, requestHash string, fn func(Store) (WorkflowRun, error)) (WorkflowRun, bool, error) {
 	if r.pool == nil || scope == "" || key == "" || requestHash == "" {
-		return WorkflowRun{}, ErrValidation
+		return WorkflowRun{}, false, ErrValidation
 	}
 	var tx pgx.Tx
 	var err error
-	if strings.HasPrefix(scope, "createContentGenerationRun:") || strings.HasPrefix(scope, "createContentReviewRun:") {
+	if strings.HasPrefix(scope, "createContentGenerationRun:") {
 		tx, err = r.pool.BeginTx(ctx, pgx.TxOptions{IsoLevel: pgx.Serializable})
 	} else {
 		tx, err = r.pool.Begin(ctx)
 	}
 	if err != nil {
-		return WorkflowRun{}, fmt.Errorf("begin workflow run idempotency transaction: %w", err)
+		return WorkflowRun{}, false, fmt.Errorf("begin workflow run idempotency transaction: %w", err)
 	}
 	defer tx.Rollback(ctx)
 	if _, err = tx.Exec(ctx, "SELECT pg_advisory_xact_lock(hashtextextended($1, 0))", scope+":"+key); err != nil {
-		return WorkflowRun{}, fmt.Errorf("lock workflow run idempotency request: %w", err)
+		return WorkflowRun{}, false, fmt.Errorf("lock workflow run idempotency request: %w", err)
 	}
 	idem := idempotency.NewPostgresRepositoryTx(tx)
 	if strings.HasPrefix(scope, "consumeContentGenerationPreflightToken:") {
 		used, usedErr := NewPostgresRepositoryTx(tx).PreflightTokenUsed(ctx, key)
-		if usedErr != nil { return WorkflowRun{}, usedErr }
-		if used { return WorkflowRun{}, ErrPreflightTokenConsumed }
+		if usedErr != nil { return WorkflowRun{}, false, usedErr }
+		if used { return WorkflowRun{}, false, ErrPreflightTokenConsumed }
 	}
 	if record, getErr := idem.Get(ctx, scope, key); getErr == nil {
 		if record.RequestHash != requestHash {
-			return WorkflowRun{}, ErrIdempotencyConflict
+			return WorkflowRun{}, false, ErrIdempotencyConflict
 		}
 		var replay WorkflowRun
-		if err := json.Unmarshal(record.ResponseBody, &replay); err != nil { return WorkflowRun{}, fmt.Errorf("decode workflow run idempotency replay: %w", err) }
-		if replay.ID == uuid.Nil { return WorkflowRun{}, fmt.Errorf("decode workflow run idempotency replay: %w", ErrValidation) }
-		return replay, nil
+		if err := json.Unmarshal(record.ResponseBody, &replay); err != nil { return WorkflowRun{}, false, fmt.Errorf("decode workflow run idempotency replay: %w", err) }
+		if replay.ID == uuid.Nil { return WorkflowRun{}, false, fmt.Errorf("decode workflow run idempotency replay: %w", ErrValidation) }
+		return replay, true, nil
 	} else if !errors.Is(getErr, idempotency.ErrNotFound) {
-		return WorkflowRun{}, getErr
+		return WorkflowRun{}, false, getErr
 	}
 	created, err := fn(NewPostgresRepositoryTx(tx))
 	if err != nil {
-		return WorkflowRun{}, err
+		return WorkflowRun{}, false, err
 	}
 	body, err := json.Marshal(created)
 	if err != nil {
-		return WorkflowRun{}, fmt.Errorf("encode workflow run idempotency replay: %w", err)
+		return WorkflowRun{}, false, fmt.Errorf("encode workflow run idempotency replay: %w", err)
 	}
 	status := 200
-	if strings.Contains(scope, "createWorkflowRun") || strings.Contains(scope, "retryWorkflowRun") { status = 201 }
+	if strings.Contains(scope, "createWorkflowRun") || strings.Contains(scope, "createContentGenerationRun") || strings.Contains(scope, "createContentReviewRun") || strings.Contains(scope, "retryWorkflowRun") { status = 201 }
 	if _, err = idem.Create(ctx, idempotency.Record{ID: uuid.New(), Scope: scope, Key: key, RequestHash: requestHash, ResponseStatus: status, ResponseBody: RedactJSON(body)}); err != nil {
 		if errors.Is(err, idempotency.ErrConflict) {
-			return WorkflowRun{}, ErrIdempotencyConflict
+			return WorkflowRun{}, false, ErrIdempotencyConflict
 		}
-		return WorkflowRun{}, err
+		return WorkflowRun{}, false, err
 	}
 	if err = tx.Commit(ctx); err != nil {
-		return WorkflowRun{}, fmt.Errorf("commit workflow run idempotency transaction: %w", err)
+		return WorkflowRun{}, false, fmt.Errorf("commit workflow run idempotency transaction: %w", err)
 	}
-	return created, nil
+	return created, false, nil
 }
 func (r *Repository) QuerySummary(ctx context.Context, projectID uuid.UUID, recentLimit int) (Summary, error) {
 	if recentLimit <= 0 || recentLimit > 3 {

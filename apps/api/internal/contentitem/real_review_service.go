@@ -253,6 +253,8 @@ type ReviewHistoryItem struct {
 	WorkflowRun                 workflowrun.WorkflowRun       `json:"workflowRun"`
 	SourceContentVersionSummary ReviewSourceVersionSummary    `json:"sourceContentVersionSummary"`
 	ReportSummary               *ReviewReportSummary          `json:"reportSummary"`
+	State                       string                        `json:"state"`
+	LatestError                 *ReviewSafeError              `json:"latestError"`
 }
 
 type ReviewHistoryPage struct {
@@ -272,6 +274,7 @@ type RealReviewDetail struct {
 
 type reviewRunService interface {
 	CreateRunForPreflightTokenIdempotentForScope(context.Context, string, uuid.UUID, string, string, string, workflowrun.CreateRunTxPreparation) (workflowrun.WorkflowRun, error)
+	CreateRunForPreflightTokenIdempotentForScopeWithReplay(context.Context, string, uuid.UUID, string, string, string, workflowrun.CreateRunTxPreparation) (workflowrun.WorkflowRun, bool, error)
 	ListRuns(context.Context, workflowrun.ListRunsQuery) (workflowrun.RunList, error)
 	ListRunEvents(context.Context, uuid.UUID) ([]workflowrun.Event, error)
 	GetRun(context.Context, uuid.UUID) (workflowrun.WorkflowRun, error)
@@ -455,7 +458,7 @@ func (s *RealReviewService) signReviewToken(claims reviewTokenClaims) (string, e
 	return base64.RawURLEncoding.EncodeToString(payload) + "." + base64.RawURLEncoding.EncodeToString(mac.Sum(nil)), nil
 }
 
-func (s *RealReviewService) verifyReviewToken(raw string) (reviewTokenClaims, error) {
+func (s *RealReviewService) parseReviewToken(raw string) (reviewTokenClaims, error) {
 	var claims reviewTokenClaims
 	parts := strings.Split(raw, ".")
 	if len(parts) != 2 || len(s.secret) == 0 {
@@ -474,14 +477,22 @@ func (s *RealReviewService) verifyReviewToken(raw string) (reviewTokenClaims, er
 	if !hmac.Equal(signature, mac.Sum(nil)) || json.Unmarshal(payload, &claims) != nil {
 		return claims, ErrReviewTokenInvalid
 	}
-	if claims.ExpiresAt <= s.now().Unix() {
-		return claims, ErrReviewTokenExpired
-	}
 	if claims.ProjectID == uuid.Nil || claims.ContentItemID == uuid.Nil || claims.SourceContentVersionID == uuid.Nil ||
 		claims.SourceContentVersionVersion < 1 || strings.TrimSpace(claims.ActorID) == "" ||
 		claims.BindingID == uuid.Nil || claims.ConfigurationID == uuid.Nil || claims.ConnectionID == uuid.Nil ||
 		len(claims.InputDigest) != 64 || strings.TrimSpace(claims.Nonce) == "" {
 		return claims, ErrReviewTokenInvalid
+	}
+	return claims, nil
+}
+
+func (s *RealReviewService) verifyReviewToken(raw string) (reviewTokenClaims, error) {
+	claims, err := s.parseReviewToken(raw)
+	if err != nil {
+		return claims, err
+	}
+	if claims.ExpiresAt <= s.now().Unix() {
+		return claims, ErrReviewTokenExpired
 	}
 	return claims, nil
 }
@@ -631,15 +642,20 @@ func runnableReviewForCreate(ctx context.Context, tx pgx.Tx, projectID uuid.UUID
 }
 
 func (s *RealReviewService) CreateRun(ctx context.Context, versionID uuid.UUID, actorID, token, key string) (workflowrun.WorkflowRun, error) {
-	claims, err := s.verifyReviewToken(token)
+	run, _, err := s.CreateRunWithReplay(ctx, versionID, actorID, token, key)
+	return run, err
+}
+
+func (s *RealReviewService) CreateRunWithReplay(ctx context.Context, versionID uuid.UUID, actorID, token, key string) (workflowrun.WorkflowRun, bool, error) {
+	claims, err := s.parseReviewToken(token)
 	if err != nil {
-		return workflowrun.WorkflowRun{}, err
+		return workflowrun.WorkflowRun{}, false, err
 	}
 	if versionID == uuid.Nil || strings.TrimSpace(actorID) == "" || strings.TrimSpace(key) == "" || len(key) > 128 {
-		return workflowrun.WorkflowRun{}, ErrValidation
+		return workflowrun.WorkflowRun{}, false, ErrValidation
 	}
 	if claims.SourceContentVersionID != versionID || claims.ActorID != actorID {
-		return workflowrun.WorkflowRun{}, ErrReviewPreflightChanged
+		return workflowrun.WorkflowRun{}, false, ErrReviewPreflightChanged
 	}
 	tokenSum := sha256.Sum256([]byte(token))
 	requestHash := workflowrun.Fingerprint(struct {
@@ -648,7 +664,10 @@ func (s *RealReviewService) CreateRun(ctx context.Context, versionID uuid.UUID, 
 		ActorID     string    `json:"actorId"`
 		InputDigest string    `json:"inputDigest"`
 	}{versionID, hex.EncodeToString(tokenSum[:]), actorID, claims.InputDigest})
-	return s.runs.CreateRunForPreflightTokenIdempotentForScope(ctx, "createContentReviewRun", claims.ProjectID, key, requestHash, claims.Nonce, func(tx pgx.Tx) (workflowrun.CreateRunCommand, error) {
+	return s.runs.CreateRunForPreflightTokenIdempotentForScopeWithReplay(ctx, "createContentReviewRun", claims.ProjectID, key, requestHash, claims.Nonce, func(tx pgx.Tx) (workflowrun.CreateRunCommand, error) {
+		if claims.ExpiresAt <= s.now().Unix() {
+			return workflowrun.CreateRunCommand{}, ErrReviewTokenExpired
+		}
 		source, err := s.source(ctx, tx, versionID, true)
 		if err != nil {
 			return workflowrun.CreateRunCommand{}, err
@@ -718,20 +737,6 @@ func (s *RealReviewService) CreateRun(ctx context.Context, versionID uuid.UUID, 
 			PreparedConfiguration: &workflowrun.PreparedRunConfiguration{WorkflowConfigurationID: workflow.ID, Snapshot: snapshot},
 		}, nil
 	})
-}
-
-func (s *RealReviewService) CreateRunWithReplay(ctx context.Context, versionID uuid.UUID, actorID, token, key string) (workflowrun.WorkflowRun, bool, error) {
-	claims, err := s.verifyReviewToken(token)
-	if err != nil {
-		return workflowrun.WorkflowRun{}, false, err
-	}
-	var replay bool
-	err = s.repo.db.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM idempotency_records WHERE scope=$1 AND idempotency_key=$2)", "createContentReviewRun:"+claims.ProjectID.String(), key).Scan(&replay)
-	if err != nil {
-		return workflowrun.WorkflowRun{}, false, err
-	}
-	run, err := s.CreateRun(ctx, versionID, actorID, token, key)
-	return run, replay && err == nil, err
 }
 
 func sameStrings(left, right []string) bool {
@@ -1075,23 +1080,30 @@ func (s *RealReviewService) consumeReviewLocked(ctx context.Context, tx pgx.Tx, 
 }
 
 func (s *RealReviewService) recordReviewFailure(ctx context.Context, run workflowrun.WorkflowRun, eventType string) error {
+	tx, err := s.repo.db.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback(ctx)
+	if _, err = tx.Exec(ctx, "SELECT 1 FROM workflow_run_records WHERE id=$1 FOR UPDATE", run.ID); err != nil {
+		return err
+	}
 	var exists bool
-	if err := s.repo.db.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM workflow_run_events WHERE run_id=$1 AND event_type=$2)", run.ID, eventType).Scan(&exists); err != nil {
+	if err = tx.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM workflow_run_events WHERE run_id=$1 AND event_type=$2)", run.ID, eventType).Scan(&exists); err != nil {
 		return err
 	}
 	if exists {
-		return nil
+		return tx.Commit(ctx)
 	}
 	message := "审核结果处理失败"
 	if eventType == workflowrun.EventTypeOutputValidationFailed {
 		message = "审核输出未通过结构校验"
 	}
 	payload, _ := json.Marshal(map[string]any{"code": eventType, "message": message, "correlationId": run.ID.String()})
-	_, err := s.runs.AddEvent(ctx, workflowrun.Event{
-		ID: uuid.New(), RunID: run.ID, EventType: eventType, Status: run.Status,
-		Payload: payload, CreatedAt: s.now().UTC(),
-	})
-	return err
+	if _, err = tx.Exec(ctx, "INSERT INTO workflow_run_events(id,run_id,event_type,status,payload,created_at) VALUES($1,$2,$3,$4,$5,$6)", uuid.New(), run.ID, eventType, run.Status, payload, s.now().UTC()); err != nil {
+		return err
+	}
+	return tx.Commit(ctx)
 }
 
 func (s *RealReviewService) RetryResultConsumption(ctx context.Context, runID uuid.UUID, request ReviewResultConsumptionRetryRequest) (RealReviewResult, error) {
@@ -1297,44 +1309,41 @@ func (s *RealReviewService) Summary(ctx context.Context, itemID uuid.UUID) (Cont
 	} else if !errors.Is(configuredErr, ErrReviewNotConfigured) {
 		return ContentReviewSummary{}, configuredErr
 	}
-	rows, err := s.repo.db.Query(ctx, "SELECT r.id FROM workflow_run_records r JOIN content_versions v ON v.id=r.subject_id AND v.content_item_id=$1 WHERE r.project_id=$2 AND r.stage='review' AND r.subject_type='content_version' ORDER BY r.created_at DESC,r.id DESC LIMIT 20", itemID, detail.Item.ProjectID)
-	if err != nil {
-		return ContentReviewSummary{}, err
-	}
-	runIDs := []uuid.UUID{}
-	for rows.Next() {
-		var id uuid.UUID
-		if err = rows.Scan(&id); err != nil {
-			rows.Close()
-			return ContentReviewSummary{}, err
-		}
-		runIDs = append(runIDs, id)
-	}
-	rows.Close()
-	if err = rows.Err(); err != nil {
-		return ContentReviewSummary{}, err
-	}
-	if len(runIDs) == 0 {
+	var latestID uuid.UUID
+	err = s.repo.db.QueryRow(ctx, "SELECT r.id FROM workflow_run_records r JOIN content_versions v ON v.id=r.subject_id AND v.content_item_id=$1 WHERE r.project_id=$2 AND r.stage='review' AND r.subject_type='content_version' ORDER BY r.created_at DESC,r.id DESC LIMIT 1", itemID, detail.Item.ProjectID).Scan(&latestID)
+	if errors.Is(err, pgx.ErrNoRows) {
 		if errors.Is(configuredErr, ErrReviewNotConfigured) {
 			summary.State = "not_configured"
 		}
 		summary.CanStartReview = configuredErr == nil
 		return summary, nil
 	}
-	latest, err := s.runs.GetRun(ctx, runIDs[0])
+	if err != nil {
+		return ContentReviewSummary{}, err
+	}
+	latest, err := s.runs.GetRun(ctx, latestID)
 	if err != nil {
 		return ContentReviewSummary{}, err
 	}
 	summary.LatestRun = &latest
-	for _, id := range runIDs {
-		run, runErr := s.runs.GetRun(ctx, id)
+	var activeID uuid.UUID
+	activeErr := s.repo.db.QueryRow(ctx, "SELECT r.id FROM workflow_run_records r JOIN content_versions v ON v.id=r.subject_id AND v.content_item_id=$1 WHERE r.project_id=$2 AND r.stage='review' AND r.subject_type='content_version' AND r.status IN ('queued','running') ORDER BY r.created_at DESC,r.id DESC LIMIT 1", itemID, detail.Item.ProjectID).Scan(&activeID)
+	if activeErr == nil {
+		active, runErr := s.runs.GetRun(ctx, activeID)
 		if runErr != nil {
 			return ContentReviewSummary{}, runErr
 		}
-		if run.Status == workflowrun.StatusQueued || run.Status == workflowrun.StatusRunning {
-			summary.ActiveRun = &run
-			break
+		summary.ActiveRun = &active
+		events, eventsErr := s.runs.ListRunEvents(ctx, active.ID)
+		if eventsErr != nil {
+			return ContentReviewSummary{}, eventsErr
 		}
+		summary.State = reviewStateFromFacts(active, events)
+		summary.CanStartReview = false
+		return summary, nil
+	}
+	if !errors.Is(activeErr, pgx.ErrNoRows) {
+		return ContentReviewSummary{}, activeErr
 	}
 	events, err := s.runs.ListRunEvents(ctx, latest.ID)
 	if err != nil {
@@ -1438,7 +1447,7 @@ func (s *RealReviewService) UpdateIssue(ctx context.Context, reviewID, issueID u
 		strings.TrimSpace(request.ActorID) == "" {
 		return RealReviewIssue{}, ErrValidation
 	}
-	scope := "updateReviewIssue:" + issueID.String()
+	scope := "updateReviewIssue:" + issueID.String() + ":" + strings.TrimSpace(request.ActorID)
 	requestHash := workflowrun.Fingerprint(struct {
 		ReviewID    uuid.UUID `json:"reviewId"`
 		IssueID     uuid.UUID `json:"issueId"`
@@ -1458,13 +1467,11 @@ func (s *RealReviewService) UpdateIssue(ctx context.Context, reviewID, issueID u
 		if record.RequestHash != requestHash {
 			return RealReviewIssue{}, workflowrun.ErrIdempotencyConflict
 		}
-		var replay struct {
-			IssueID uuid.UUID `json:"issueId"`
-		}
-		if json.Unmarshal(record.ResponseBody, &replay) != nil {
+		var replay RealReviewIssue
+		if json.Unmarshal(record.ResponseBody, &replay) != nil || replay.ID != issueID || replay.ReviewID != reviewID {
 			return RealReviewIssue{}, ErrReviewIssueNotFound
 		}
-		return queryRealReviewIssue(ctx, tx, replay.IssueID)
+		return replay, nil
 	} else if !errors.Is(getErr, idempotency.ErrNotFound) {
 		return RealReviewIssue{}, getErr
 	}
@@ -1491,9 +1498,7 @@ func (s *RealReviewService) UpdateIssue(ctx context.Context, reviewID, issueID u
 	if err != nil {
 		return RealReviewIssue{}, err
 	}
-	body, _ := json.Marshal(struct {
-		IssueID uuid.UUID `json:"issueId"`
-	}{issue.ID})
+	body, _ := json.Marshal(issue)
 	if _, err = idem.Create(ctx, idempotency.Record{
 		ID: uuid.New(), Scope: scope, Key: request.IdempotencyKey, RequestHash: requestHash,
 		ResponseStatus: 200, ResponseBody: body,
@@ -1622,6 +1627,11 @@ func (s *RealReviewService) ListReviewHistory(ctx context.Context, itemID uuid.U
 			return ReviewHistoryPage{}, sourceErr
 		}
 		var reportSummary *ReviewReportSummary
+		events, eventsErr := s.runs.ListRunEvents(ctx, run.ID)
+		if eventsErr != nil {
+			rows.Close()
+			return ReviewHistoryPage{}, eventsErr
+		}
 		output, _ := DecodeReviewRuntimeOutput(run.OutputPayload)
 		if result, reportErr := s.realReviewResultByRun(ctx, s.repo.db, run, output.PassedRuleCount); reportErr == nil {
 			reportSummary = &ReviewReportSummary{
@@ -1632,7 +1642,18 @@ func (s *RealReviewService) ListReviewHistory(ctx context.Context, itemID uuid.U
 			rows.Close()
 			return ReviewHistoryPage{}, reportErr
 		}
-		value := ReviewHistoryItem{WorkflowRun: run, SourceContentVersionSummary: reviewSourceSummary(source), ReportSummary: reportSummary}
+		state := reviewStateFromFacts(run, events)
+		if reportSummary != nil {
+			state = "review_ready"
+		}
+		var latestError *ReviewSafeError
+		if state == "runtime_failed" || state == "output_validation_failed" || state == "result_consumption_failed" {
+			latestError = reviewSafeError(run, events, state)
+		}
+		value := ReviewHistoryItem{
+			WorkflowRun: run, SourceContentVersionSummary: reviewSourceSummary(source),
+			ReportSummary: reportSummary, State: state, LatestError: latestError,
+		}
 		values = append(values, reviewHistorySortable{CreatedAt: run.CreatedAt, ID: run.ID, Value: value})
 	}
 	rows.Close()

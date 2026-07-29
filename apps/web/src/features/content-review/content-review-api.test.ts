@@ -22,6 +22,8 @@ const run = {
   runNumber: "RUN-17",
   projectId: "project",
   stage: "review",
+  subjectType: "content_version",
+  subjectId: "version",
   workflowConfigurationId: "configuration",
   triggerSource: "manual",
   status: "queued",
@@ -195,6 +197,14 @@ test("history discriminates runtime rows from compatible P0 mock reports", () =>
         frozen: true,
       },
       reportSummary: null,
+      state: "output_validation_failed",
+      latestError: {
+        code: "output_validation_failed",
+        message: "审核输出未通过结构校验",
+        correlationId: "corr",
+        attemptCount: 1,
+        occurredAt: "2026-07-29T00:00:00Z",
+      },
     }),
     true,
   );

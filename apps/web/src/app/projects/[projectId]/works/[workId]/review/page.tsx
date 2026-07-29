@@ -20,7 +20,8 @@ export default async function WorkReviewRoute({
         projectId={projectId}
         workId={workId}
         reportId={query.reportId}
-        issueId={query.view === "source" ? query.issueId : undefined}
+        issueId={query.issueId}
+        sourceView={query.view === "source"}
       />
     </AppShell>
   );

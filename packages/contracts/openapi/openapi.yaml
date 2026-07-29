@@ -4118,11 +4118,13 @@ components:
     ContentReviewHistoryItem:
       type: object
       additionalProperties: false
-      required: [workflowRun, sourceContentVersionSummary, reportSummary]
+      required: [workflowRun, sourceContentVersionSummary, reportSummary, state, latestError]
       properties:
         workflowRun: {$ref: "#/components/schemas/Iteration14WorkflowRun"}
         sourceContentVersionSummary: {$ref: "#/components/schemas/ContentReviewSourceVersionSummary"}
         reportSummary: {anyOf: [{$ref: "#/components/schemas/RealReviewReportSummary"}, {type: "null"}]}
+        state: {$ref: "#/components/schemas/ContentReviewResultState"}
+        latestError: {anyOf: [{$ref: "#/components/schemas/ContentReviewSafeError"}, {type: "null"}]}
     RealReviewDetail:
       type: object
       additionalProperties: false
@@ -4167,7 +4169,7 @@ components:
       properties: {data: {$ref: "#/components/schemas/RealReviewResult"}, request_id: {type: string}}
     ContentReviewErrorCode:
       type: string
-      enum: [review_not_configured, execution_integration_unavailable, content_version_not_reviewable, active_review_conflict, preflight_token_invalid, preflight_token_expired, preflight_token_consumed, preflight_input_changed, source_content_version_changed, review_issue_version_conflict, review_result_not_retryable, run_already_consumed, output_validation_failed, result_consumption_failed, idempotency_key_reused_with_different_payload]
+      enum: [review_not_configured, execution_integration_unavailable, content_version_not_found, review_not_found, review_issue_not_found, workflow_run_not_found, content_version_not_reviewable, active_review_conflict, preflight_token_invalid, preflight_token_expired, preflight_token_consumed, preflight_input_changed, source_content_version_changed, review_issue_version_conflict, workflow_run_version_conflict, review_result_not_retryable, run_already_consumed, output_validation_failed, result_consumption_failed, idempotency_key_reused_with_different_payload]
     ContentReviewError:
       allOf:
         - {$ref: "#/components/schemas/Error"}

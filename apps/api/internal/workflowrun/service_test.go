@@ -25,14 +25,18 @@ type serviceStore struct {
 }
 
 func (s *serviceStore) ExecuteIdempotent(_ context.Context, scope string, key string, hash string, fn func(Store) (WorkflowRun, error)) (WorkflowRun, error) {
+	run, _, err := s.ExecuteIdempotentWithReplay(context.Background(), scope, key, hash, fn)
+	return run, err
+}
+func (s *serviceStore) ExecuteIdempotentWithReplay(_ context.Context, scope string, key string, hash string, fn func(Store) (WorkflowRun, error)) (WorkflowRun, bool, error) {
 	id := scope+":"+key
 	if record, ok := s.idempotency[id]; ok {
-		if record.hash != hash { return WorkflowRun{},ErrIdempotencyConflict }
-		return record.run,nil
+		if record.hash != hash { return WorkflowRun{},false,ErrIdempotencyConflict }
+		return record.run,true,nil
 	}
 	run, err := fn(s)
 	if err==nil { s.idempotency[id]=struct{hash string;run WorkflowRun}{hash,run} }
-	return run,err
+	return run,false,err
 }
 func (s *serviceStore) PreflightTokenUsed(_ context.Context, nonce string) (bool, error) {
 	for _, run := range s.runs {

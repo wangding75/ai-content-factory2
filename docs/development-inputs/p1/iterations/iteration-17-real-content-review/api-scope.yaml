@@ -37,7 +37,7 @@ apis:
     success: 200
     reuse: p0
     sort: created_at DESC, id DESC
-    includes: [workflowRun, sourceContentVersionSummary, reportSummary]
+    includes: [workflowRun, sourceContentVersionSummary, reportSummary, state, latestError]
   - operationId: getReview
     method: GET
     path: /api/v1/reviews/{reviewId}
@@ -82,6 +82,7 @@ common_requirements:
   - secrets, raw upstream responses, SQL, stacks, internal nodes and internal URLs are never returned
   - business pages cannot override stage, subject, workflow binding, configuration or connection snapshots
   - succeeded without a same-Run ReviewReport is not review_ready
+  - review resources and optimistic-lock failures use content_version_not_found, review_not_found, review_issue_not_found, workflow_run_not_found, review_issue_version_conflict, and workflow_run_version_conflict precisely
 excluded:
   - Iteration 18 rewrite-run APIs
   - temporary workflow selection in review drawer

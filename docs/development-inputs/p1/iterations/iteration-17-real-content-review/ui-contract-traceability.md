@@ -11,7 +11,7 @@
 | `I17_D2_REVIEW_ISSUE_DETAIL` | 全文定位 | `getReview`, `getContentVersion`, `updateReviewIssue` | `ContentReviewSourceVersionSummary`, `ReviewRuntimeEvidenceV1`, `ReviewRuntimeLocationV1` | content_versions, review_findings | CF-17-03 |
 | `STATE_TASK_FAILED_NOTICE` | Runtime Retry / 仅消费 Retry | `getContentReviewSummary`, `retryWorkflowRun`, `retryReviewResultConsumption` | `runtime_failed/output_validation_failed/result_consumption_failed`, `ContentReviewSafeError` | workflow_run_records, workflow_run_events | CF-17-03 |
 | `STATE_NOT_CONFIGURED_EMPTY` | 查看配置入口 | `getContentReviewSummary`, `preflightContentReviewRun` | `not_configured`, `ContentReviewConfigurationSummary` | ProjectWorkflowBinding, WorkflowConfiguration, WorkflowConnection | CF-17-03 |
-| `I17_D2_REVIEW_HISTORY` | 查看历次 Run/Report | `listContentItemReviews`, `getReview`, `getWorkflowRunDetail` | `ContentReviewHistoryItem`, `ReviewListEnvelope` | workflow_run_records, review_reports | CF-17-03 |
+| `I17_D2_REVIEW_HISTORY` | 查看历次 Run/Report | `listContentItemReviews`, `getReview`, `getWorkflowRunDetail` | `ContentReviewHistoryItem.state/latestError`, `ReviewListEnvelope` | workflow_run_records, workflow_run_events, review_reports | CF-17-03 |
 
 ## 强制追踪规则
 
@@ -21,3 +21,4 @@
 4. `review_ready` 必须存在绑定同一 WorkflowRun 的 ReviewReport；succeeded 且无 Report 时不得返回。
 5. 失败 Frame 只显示 `ContentReviewSafeError`，不得显示原始上游响应或内部实现。
 6. 重写按钮在 Iteration 17 不对应任何 OpenAPI operation。
+7. 历史页只消费服务端按同一 Run 的 Event/Report 计算出的 `state/latestError`，不根据 Run 状态猜测消费失败。

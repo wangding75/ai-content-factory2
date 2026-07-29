@@ -6,6 +6,7 @@ import (
 	"errors"
 	"sync"
 	"testing"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/local/ai-content-factory/apps/api/internal/globalconfig"
@@ -88,9 +89,9 @@ func TestRealReviewPreflightCreateConsumeSummaryAndIssueDisposition(t *testing.T
 		count(t, f.ctx, f.repo.db, "SELECT count(*) FROM review_reports WHERE content_version_id=$1", f.item.Detail.CurrentVersion.ID) != 0 {
 		t.Fatal("preflight created durable review facts")
 	}
-	run, err := f.service.CreateRun(f.ctx, f.item.Detail.CurrentVersion.ID, "reviewer", *preflight.PreflightToken, "create-review")
-	if err != nil {
-		t.Fatal(err)
+	run, replayed, err := f.service.CreateRunWithReplay(f.ctx, f.item.Detail.CurrentVersion.ID, "reviewer", *preflight.PreflightToken, "create-review")
+	if err != nil || replayed {
+		t.Fatalf("run=%+v replayed=%v err=%v", run, replayed, err)
 	}
 	if run.Stage != "review" || run.Status != workflowrun.StatusQueued || run.SubjectType == nil || *run.SubjectType != "content_version" ||
 		run.SubjectID == nil || *run.SubjectID != f.item.Detail.CurrentVersion.ID {
@@ -102,10 +103,16 @@ func TestRealReviewPreflightCreateConsumeSummaryAndIssueDisposition(t *testing.T
 		input.SourceContentVersionVersion != f.item.Detail.CurrentVersion.Version+1 {
 		t.Fatalf("input=%+v", input)
 	}
-	replay, err := f.service.CreateRun(f.ctx, f.item.Detail.CurrentVersion.ID, "reviewer", *preflight.PreflightToken, "create-review")
-	if err != nil || replay.ID != run.ID {
-		t.Fatalf("replay=%+v err=%v", replay, err)
+	replay, replayed, err := f.service.CreateRunWithReplay(f.ctx, f.item.Detail.CurrentVersion.ID, "reviewer", *preflight.PreflightToken, "create-review")
+	if err != nil || replay.ID != run.ID || !replayed {
+		t.Fatalf("replay=%+v replayed=%v err=%v", replay, replayed, err)
 	}
+	f.service.now = func() time.Time { return time.Now().Add(20 * time.Minute) }
+	expiredReplay, replayed, err := f.service.CreateRunWithReplay(f.ctx, f.item.Detail.CurrentVersion.ID, "reviewer", *preflight.PreflightToken, "create-review")
+	if err != nil || expiredReplay.ID != run.ID || !replayed {
+		t.Fatalf("expired token replay=%+v replayed=%v err=%v", expiredReplay, replayed, err)
+	}
+	f.service.now = time.Now
 	if _, err = f.service.CreateRun(f.ctx, f.item.Detail.CurrentVersion.ID, "reviewer", *preflight.PreflightToken, "other-key"); !errors.Is(err, ErrReviewTokenConsumed) {
 		t.Fatalf("token reuse error=%v", err)
 	}
@@ -149,6 +156,28 @@ func TestRealReviewPreflightCreateConsumeSummaryAndIssueDisposition(t *testing.T
 	if err != nil || ignoredReplay.Version != 2 {
 		t.Fatalf("issue replay=%+v err=%v", ignoredReplay, err)
 	}
+	reopened, err := f.service.UpdateIssue(f.ctx, result.Report.ID, issue.ID, ReviewIssueUpdateRequest{
+		Disposition: "open", ExpectedVersion: 2, IdempotencyKey: "reopen-issue", ActorID: "reviewer",
+	})
+	if err != nil || reopened.Disposition != "open" || reopened.Version != 3 || reopened.IgnoredAt != nil || reopened.IgnoredBy != nil {
+		t.Fatalf("reopened=%+v err=%v", reopened, err)
+	}
+	firstSnapshot, err := f.service.UpdateIssue(f.ctx, result.Report.ID, issue.ID, ReviewIssueUpdateRequest{
+		Disposition: "ignored", ExpectedVersion: 1, IdempotencyKey: "ignore-issue", ActorID: "reviewer",
+	})
+	if err != nil || firstSnapshot.Disposition != "ignored" || firstSnapshot.Version != 2 {
+		t.Fatalf("first response snapshot=%+v err=%v", firstSnapshot, err)
+	}
+	if _, err = f.service.UpdateIssue(f.ctx, result.Report.ID, issue.ID, ReviewIssueUpdateRequest{
+		Disposition: "ignored", ExpectedVersion: 1, IdempotencyKey: "ignore-issue", ActorID: "other-reviewer",
+	}); !errors.Is(err, ErrReviewIssueVersion) {
+		t.Fatalf("different actor replay error=%v", err)
+	}
+	if _, err = f.service.UpdateIssue(f.ctx, result.Report.ID, issue.ID, ReviewIssueUpdateRequest{
+		Disposition: "open", ExpectedVersion: 1, IdempotencyKey: "ignore-issue", ActorID: "reviewer",
+	}); !errors.Is(err, workflowrun.ErrIdempotencyConflict) {
+		t.Fatalf("same key different request error=%v", err)
+	}
 	if _, err = f.service.UpdateIssue(f.ctx, result.Report.ID, issue.ID, ReviewIssueUpdateRequest{
 		Disposition: "open", ExpectedVersion: 1, IdempotencyKey: "stale-issue", ActorID: "reviewer",
 	}); !errors.Is(err, ErrReviewIssueVersion) {
@@ -161,6 +190,10 @@ func TestRealReviewPreflightCreateConsumeSummaryAndIssueDisposition(t *testing.T
 	history, err := f.service.ListReviewHistory(f.ctx, f.item.Detail.Item.ID, 20, 0)
 	if err != nil || history.Total != 1 {
 		t.Fatalf("history=%+v err=%v", history, err)
+	}
+	historyItem, ok := history.Items[0].(ReviewHistoryItem)
+	if !ok || historyItem.State != "review_ready" || historyItem.LatestError != nil {
+		t.Fatalf("history item=%+v", history.Items[0])
 	}
 }
 
@@ -285,6 +318,49 @@ func TestRealReviewSummaryRestoresAllEightStatesAndFactPriority(t *testing.T) {
 	assertState("review_ready")
 }
 
+func TestRealReviewHistoryUsesPersistedStateAndSafeErrorPerRun(t *testing.T) {
+	f := newRealReviewFixture(t)
+	invalidPreflight := f.preflight(t)
+	invalid, err := f.service.CreateRun(f.ctx, f.item.Detail.CurrentVersion.ID, "reviewer", *invalidPreflight.PreflightToken, "history-invalid")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err = f.repo.db.Exec(f.ctx, "UPDATE workflow_run_records SET status='succeeded',output_payload='{\"schemaVersion\":\"review.output.v1\"}',started_at=NOW(),finished_at=NOW(),updated_at=NOW(),version=2 WHERE id=$1", invalid.ID); err != nil {
+		t.Fatal(err)
+	}
+	invalid, _ = f.runs.GetRun(f.ctx, invalid.ID)
+	if err = f.service.ConsumeSucceededRun(f.ctx, invalid); !errors.Is(err, ErrReviewOutputInvalid) {
+		t.Fatal(err)
+	}
+	plainPreflight := f.preflight(t)
+	plain, err := f.service.CreateRun(f.ctx, f.item.Detail.CurrentVersion.ID, "reviewer", *plainPreflight.PreflightToken, "history-plain-success")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err = f.repo.db.Exec(f.ctx, "UPDATE workflow_run_records SET status='succeeded',output_payload=$1,started_at=NOW(),finished_at=NOW(),updated_at=NOW(),version=2 WHERE id=$2", json.RawMessage(validReviewOutput), plain.ID); err != nil {
+		t.Fatal(err)
+	}
+	history, err := f.service.ListReviewHistory(f.ctx, f.item.Detail.Item.ID, 20, 0)
+	if err != nil || history.Total != 2 {
+		t.Fatalf("history=%+v err=%v", history, err)
+	}
+	states := map[uuid.UUID]ReviewHistoryItem{}
+	for _, value := range history.Items {
+		item, ok := value.(ReviewHistoryItem)
+		if !ok {
+			t.Fatalf("history item=%+v", value)
+		}
+		states[item.WorkflowRun.ID] = item
+	}
+	if states[plain.ID].State != "idle" || states[plain.ID].LatestError != nil {
+		t.Fatalf("plain success history=%+v", states[plain.ID])
+	}
+	if states[invalid.ID].State != "output_validation_failed" || states[invalid.ID].LatestError == nil ||
+		states[invalid.ID].LatestError.Code != "output_validation_failed" {
+		t.Fatalf("invalid history=%+v", states[invalid.ID])
+	}
+}
+
 func TestRealReviewConcurrentCreateAllowsOnlyOneActiveRun(t *testing.T) {
 	f := newRealReviewFixture(t)
 	first := f.preflight(t)
@@ -317,6 +393,131 @@ func TestRealReviewConcurrentCreateAllowsOnlyOneActiveRun(t *testing.T) {
 		t.Fatal("more than one active review run was persisted")
 	}
 }
+
+func TestRealReviewConcurrentSameKeyReturnsOneCreateAndReplays(t *testing.T) {
+	f := newRealReviewFixture(t)
+	preflight := f.preflight(t)
+	const requests = 6
+	start := make(chan struct{})
+	var wait sync.WaitGroup
+	runs := make([]workflowrun.WorkflowRun, requests)
+	replayed := make([]bool, requests)
+	errs := make([]error, requests)
+	for index := 0; index < requests; index++ {
+		wait.Add(1)
+		go func(index int) {
+			defer wait.Done()
+			<-start
+			runs[index], replayed[index], errs[index] = f.service.CreateRunWithReplay(
+				f.ctx, f.item.Detail.CurrentVersion.ID, "reviewer", *preflight.PreflightToken, "same-create-key",
+			)
+		}(index)
+	}
+	close(start)
+	wait.Wait()
+	created := 0
+	for index, err := range errs {
+		if err != nil {
+			t.Fatalf("request %d error=%v", index, err)
+		}
+		if !replayed[index] {
+			created++
+		}
+		if runs[index].ID != runs[0].ID {
+			t.Fatalf("runs=%+v", runs)
+		}
+	}
+	if created != 1 || count(t, f.ctx, f.repo.db, "SELECT count(*) FROM workflow_run_records WHERE subject_id=$1", f.item.Detail.CurrentVersion.ID) != 1 ||
+		count(t, f.ctx, f.repo.db, "SELECT count(*) FROM workflow_run_events WHERE run_id=$1 AND event_type='queued'", runs[0].ID) != 1 {
+		t.Fatalf("created=%d replayed=%v", created, replayed)
+	}
+}
+
+func TestRealReviewFailureEventsAreAtomicallyDeduplicated(t *testing.T) {
+	for _, eventType := range []string{workflowrun.EventTypeOutputValidationFailed, workflowrun.EventTypeResultConsumptionFailed} {
+		t.Run(eventType, func(t *testing.T) {
+			f := newRealReviewFixture(t)
+			preflight := f.preflight(t)
+			run, err := f.service.CreateRun(f.ctx, f.item.Detail.CurrentVersion.ID, "reviewer", *preflight.PreflightToken, "failure-"+eventType)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if _, err = f.repo.db.Exec(f.ctx, "UPDATE workflow_run_records SET status='succeeded',output_payload='{}',started_at=NOW(),finished_at=NOW(),updated_at=NOW(),version=2 WHERE id=$1", run.ID); err != nil {
+				t.Fatal(err)
+			}
+			run, _ = f.runs.GetRun(f.ctx, run.ID)
+			start := make(chan struct{})
+			var wait sync.WaitGroup
+			errs := make([]error, 8)
+			for index := range errs {
+				wait.Add(1)
+				go func(index int) {
+					defer wait.Done()
+					<-start
+					errs[index] = f.service.recordReviewFailure(f.ctx, run, eventType)
+				}(index)
+			}
+			close(start)
+			wait.Wait()
+			for _, eventErr := range errs {
+				if eventErr != nil {
+					t.Fatal(eventErr)
+				}
+			}
+			if count(t, f.ctx, f.repo.db, "SELECT count(*) FROM workflow_run_events WHERE run_id=$1 AND event_type=$2", run.ID, eventType) != 1 {
+				t.Fatalf("duplicate %s events", eventType)
+			}
+		})
+	}
+}
+
+func TestRealReviewSummaryPrioritizesActiveRunBeyondRecentHistory(t *testing.T) {
+	f := newRealReviewFixture(t)
+	preflight := f.preflight(t)
+	active, err := f.service.CreateRun(f.ctx, f.item.Detail.CurrentVersion.ID, "reviewer", *preflight.PreflightToken, "active-priority")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err = f.repo.db.Exec(f.ctx, "UPDATE workflow_run_records SET status='running',started_at=NOW(),updated_at=NOW(),version=2 WHERE id=$1", active.ID); err != nil {
+		t.Fatal(err)
+	}
+	for index := 0; index < 25; index++ {
+		if _, err = f.repo.db.Exec(f.ctx, "INSERT INTO workflow_run_records("+workflowrunColumnsForTest+") SELECT $1,$2,project_id,stage,subject_type,subject_id,workflow_configuration_id,trigger_source,'failed',configuration_snapshot,input_payload,NULL,'runtime_failed','safe failure','{}',NULL,started_at,NOW(),NULL,NOW()+($3 * interval '1 second'),NOW(),3 FROM workflow_run_records WHERE id=$4", uuid.New(), "RUN-HISTORY-"+uuid.NewString(), index+1, active.ID); err != nil {
+			t.Fatal(err)
+		}
+	}
+	summary, err := f.service.Summary(f.ctx, f.item.Detail.Item.ID)
+	if err != nil || summary.State != "running" || summary.ActiveRun == nil || summary.ActiveRun.ID != active.ID ||
+		summary.LatestRun == nil || summary.LatestRun.ID == active.ID {
+		t.Fatalf("summary=%+v err=%v", summary, err)
+	}
+	if _, err = f.repo.db.Exec(f.ctx, "UPDATE workflow_run_records SET status='failed',error_code='runtime_failed',error_message='safe failure',error_details='{}',finished_at=NOW(),updated_at=NOW(),version=3 WHERE id=$1", active.ID); err != nil {
+		t.Fatal(err)
+	}
+	summary, err = f.service.Summary(f.ctx, f.item.Detail.Item.ID)
+	if err != nil || summary.State != "runtime_failed" || summary.ActiveRun != nil {
+		t.Fatalf("terminal summary=%+v err=%v", summary, err)
+	}
+}
+
+func TestRealReviewSummaryPrioritizesQueuedRunOverNewerFailure(t *testing.T) {
+	f := newRealReviewFixture(t)
+	preflight := f.preflight(t)
+	queued, err := f.service.CreateRun(f.ctx, f.item.Detail.CurrentVersion.ID, "reviewer", *preflight.PreflightToken, "queued-priority")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err = f.repo.db.Exec(f.ctx, "INSERT INTO workflow_run_records("+workflowrunColumnsForTest+") SELECT $1,$2,project_id,stage,subject_type,subject_id,workflow_configuration_id,trigger_source,'failed',configuration_snapshot,input_payload,NULL,'runtime_failed','safe failure','{}',NULL,NOW(),NOW(),NULL,NOW()+interval '1 minute',NOW(),3 FROM workflow_run_records WHERE id=$3", uuid.New(), "RUN-NEWER-FAILED-"+uuid.NewString(), queued.ID); err != nil {
+		t.Fatal(err)
+	}
+	summary, err := f.service.Summary(f.ctx, f.item.Detail.Item.ID)
+	if err != nil || summary.State != "queued" || summary.ActiveRun == nil || summary.ActiveRun.ID != queued.ID ||
+		summary.LatestRun == nil || summary.LatestRun.ID == queued.ID {
+		t.Fatalf("summary=%+v err=%v", summary, err)
+	}
+}
+
+const workflowrunColumnsForTest = "id,run_number,project_id,stage,subject_type,subject_id,workflow_configuration_id,trigger_source,status,configuration_snapshot,input_payload,output_payload,error_code,error_message,error_details,retry_of_run_id,started_at,finished_at,cancelled_at,created_at,updated_at,version"
 
 func TestRealReviewContentItemStatusUsesImmutableSourceVersion(t *testing.T) {
 	t.Run("passed current source marks reviewed", func(t *testing.T) {

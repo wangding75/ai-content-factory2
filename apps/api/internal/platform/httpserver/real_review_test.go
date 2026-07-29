@@ -1,6 +1,7 @@
 package httpserver
 
 import (
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -8,6 +9,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/local/ai-content-factory/apps/api/internal/contentitem"
+	"github.com/local/ai-content-factory/apps/api/internal/workflowrun"
 )
 
 func TestRealReviewCommandHandlersRejectInvalidTransportInput(t *testing.T) {
@@ -36,6 +38,37 @@ func TestRealReviewCommandHandlersRejectInvalidTransportInput(t *testing.T) {
 			mux.ServeHTTP(response, request)
 			if response.Code != http.StatusBadRequest || !strings.Contains(response.Body.String(), `"code":"validation_error"`) {
 				t.Fatalf("status=%d body=%s", response.Code, response.Body.String())
+			}
+		})
+	}
+}
+
+func TestRealReviewErrorMapsPreciseResourceAndVersionCodes(t *testing.T) {
+	cases := []struct {
+		err        error
+		status     int
+		code       string
+	}{
+		{contentitem.ErrContentVersionNotFound, 404, "content_version_not_found"},
+		{contentitem.ErrReviewNotFound, 404, "review_not_found"},
+		{contentitem.ErrReviewIssueNotFound, 404, "review_issue_not_found"},
+		{workflowrun.ErrNotFound, 404, "workflow_run_not_found"},
+		{contentitem.ErrReviewIssueVersion, 409, "review_issue_version_conflict"},
+		{workflowrun.ErrVersionConflict, 409, "workflow_run_version_conflict"},
+		{errors.New("repository sql postgres webhook stack"), 500, "internal_error"},
+	}
+	for _, test := range cases {
+		t.Run(test.code, func(t *testing.T) {
+			response := httptest.NewRecorder()
+			request := httptest.NewRequest("GET", "/api/v1/review-test", nil)
+			realReviewError(response, request, test.err)
+			if response.Code != test.status || !strings.Contains(response.Body.String(), `"code":"`+test.code+`"`) {
+				t.Fatalf("status=%d body=%s", response.Code, response.Body.String())
+			}
+			for _, forbidden := range []string{"sql", "postgres", "webhook", "stack"} {
+				if strings.Contains(strings.ToLower(response.Body.String()), forbidden) {
+					t.Fatalf("leaked %s in %s", forbidden, response.Body.String())
+				}
 			}
 		})
 	}

@@ -213,16 +213,7 @@ function HistoryRow({
       </tr>
     );
   const run = item.workflowRun;
-  const state =
-    run.status === "queued"
-      ? "queued"
-      : run.status === "running"
-        ? "running"
-        : item.reportSummary
-          ? "review_ready"
-          : run.status === "succeeded"
-            ? "result_consumption_failed"
-            : "runtime_failed";
+  const state = item.state;
   return (
     <tr className={selected ? "selected" : ""} onClick={onSelect}>
       <td>{formatReviewTime(run.createdAt)}</td>
@@ -299,11 +290,7 @@ function HistoryDetail({
         <div>
           <dt>{copy.history.status}</dt>
           <dd>
-            {run?.status === "running"
-              ? copy.labels.states.running
-              : run?.status === "queued"
-                ? copy.labels.states.queued
-                : copy.history.ended}
+            {real ? reviewStateLabel(item.state) : copy.history.ended}
           </dd>
         </div>
         <div>
@@ -331,6 +318,7 @@ function HistoryDetail({
           {copy.history.viewReport}
         </Link>
       )}
+      {real && item.latestError && <p>{item.latestError.message}</p>}
       {run && <Link href={`/workflow-runs/${run.id}`}>{copy.common.runDetail}</Link>}
     </aside>
   );

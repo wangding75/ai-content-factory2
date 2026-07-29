@@ -67,6 +67,12 @@ Assert-Contract $stateMatch.Success 'ContentReviewResultState is missing.'
 $states = @($stateMatch.Groups[1].Value.Split(',') | ForEach-Object { $_.Trim() })
 $expectedStates = @('idle','not_configured','queued','running','review_ready','runtime_failed','output_validation_failed','result_consumption_failed')
 Assert-Contract ($states.Count -eq $expectedStates.Count -and (Compare-Object $states $expectedStates).Count -eq 0) "Unexpected ContentReviewResultState values: $($states -join ', ')"
+$historyBlock = [regex]::Match($openApi, '(?ms)^    ContentReviewHistoryItem:\r?\n(.*?)(?=^    [A-Za-z][A-Za-z0-9]+:\r?\n)').Value
+Assert-Contract ($historyBlock.Contains('required: [workflowRun, sourceContentVersionSummary, reportSummary, state, latestError]') -and $historyBlock.Contains('state: {$ref: "#/components/schemas/ContentReviewResultState"}') -and $historyBlock.Contains('latestError: {anyOf: [{$ref: "#/components/schemas/ContentReviewSafeError"}, {type: "null"}]}')) 'ContentReviewHistoryItem state/latestError contract is incomplete.'
+$reviewErrorCodes = @('content_version_not_found','review_not_found','review_issue_not_found','workflow_run_not_found','review_issue_version_conflict','workflow_run_version_conflict')
+foreach ($reviewErrorCode in $reviewErrorCodes) {
+    Assert-Contract ($openApi.Contains($reviewErrorCode)) "Missing precise review error code: $reviewErrorCode"
+}
 
 $reviewReportBlock = [regex]::Match($openApi, '(?ms)^    ReviewReport:\r?\n(.*?)(?=^    [A-Za-z][A-Za-z0-9]+:\r?\n)').Value
 Assert-Contract ($reviewReportBlock -match 'workflowRunId: \{type: \[string, "null"\]') 'ReviewReport.workflowRunId is not nullable in OpenAPI.'

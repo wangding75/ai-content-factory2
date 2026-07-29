@@ -92,3 +92,23 @@ test("error mapper exposes safe business copy rather than raw server details", (
     "审核条件已变化，请重新预检。",
   );
 });
+
+test("review resource and optimistic-lock errors have precise safe copy", () => {
+  const cases = [
+    ["content_version_not_found", "固定来源正文版本不存在或已不可用。"],
+    ["review_not_found", "所请求的审核报告不存在或已不可用。"],
+    ["review_issue_not_found", "所请求的审核问题不存在或已不可用。"],
+    ["workflow_run_not_found", "所请求的审核任务不存在或已不可用。"],
+    ["review_issue_version_conflict", "审核问题状态已变化，请重新加载后再操作。"],
+    ["workflow_run_version_conflict", "审核任务状态已变化，请刷新后再重试。"],
+  ] as const;
+  for (const [code, expected] of cases) {
+    assert.equal(
+      safeReviewError(
+        { code, status: code.includes("not_found") ? 404 : 409 },
+        "fallback",
+      ),
+      expected,
+    );
+  }
+});

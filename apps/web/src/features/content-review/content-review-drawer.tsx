@@ -19,6 +19,11 @@ import {
   reviewDimensionLabel,
   safeReviewError,
 } from "./content-review-presentation";
+import {
+  isUncertainReviewCommandError,
+  reviewCommandKey,
+  type ReviewCommandKey,
+} from "./content-review-command-key";
 
 export function ContentReviewDrawer({
   projectId,
@@ -56,7 +61,7 @@ export function ContentReviewDrawer({
   ]);
   const [selectedVersion, setSelectedVersion] = useState(version);
   const sequence = useRef(0);
-  const createKey = useRef<string | null>(null);
+  const createKey = useRef<ReviewCommandKey | null>(null);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -168,19 +173,23 @@ export function ContentReviewDrawer({
       return;
     setCreating(true);
     setError(null);
-    const key = createKey.current ?? crypto.randomUUID();
-    createKey.current = key;
+    const signature = `${selectedVersion.id}:${preflight.preflightToken}`;
+    const command = reviewCommandKey(createKey.current, signature);
+    createKey.current = command;
     try {
       const run = await createContentReviewRun(
         selectedVersion.id,
         preflight.preflightToken,
-        key,
+        command.key,
       );
       createKey.current = null;
       onCreated(run);
     } catch (cause) {
       setError(safeReviewError(cause, copy.drawer.createFailed));
-      setPreflight(null);
+      if (!isUncertainReviewCommandError(cause)) {
+        createKey.current = null;
+        setPreflight(null);
+      }
     } finally {
       setCreating(false);
     }

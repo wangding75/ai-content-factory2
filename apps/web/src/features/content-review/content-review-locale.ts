@@ -216,5 +216,11 @@ export const reviewCopy = {
     activeReview: "该版本已有正在进行的审核任务，请查看当前审核状态。",
     unavailableRecord: "所请求的审核记录不存在或已不可用。",
     stateChanged: "审核状态已变化，请刷新后重试。",
+    contentVersionMissing: "固定来源正文版本不存在或已不可用。",
+    reviewMissing: "所请求的审核报告不存在或已不可用。",
+    issueMissing: "所请求的审核问题不存在或已不可用。",
+    runMissing: "所请求的审核任务不存在或已不可用。",
+    issueConflict: "审核问题状态已变化，请重新加载后再操作。",
+    runConflict: "审核任务状态已变化，请刷新后再重试。",
   },
 } as const;

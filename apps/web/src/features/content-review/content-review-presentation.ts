@@ -106,6 +106,18 @@ export function safeReviewError(cause: unknown, fallback: string) {
     return reviewCopy.errors.conditionsChanged;
   if (error?.code === "active_review_conflict")
     return reviewCopy.errors.activeReview;
+  if (error?.code === "content_version_not_found")
+    return reviewCopy.errors.contentVersionMissing;
+  if (error?.code === "review_not_found")
+    return reviewCopy.errors.reviewMissing;
+  if (error?.code === "review_issue_not_found")
+    return reviewCopy.errors.issueMissing;
+  if (error?.code === "workflow_run_not_found")
+    return reviewCopy.errors.runMissing;
+  if (error?.code === "review_issue_version_conflict")
+    return reviewCopy.errors.issueConflict;
+  if (error?.code === "workflow_run_version_conflict")
+    return reviewCopy.errors.runConflict;
   if (error?.status === 404) return reviewCopy.errors.unavailableRecord;
   if (error?.status === 409) return reviewCopy.errors.stateChanged;
   return fallback;

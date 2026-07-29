@@ -62,11 +62,13 @@ export function ProjectReviewShell({
   workId,
   reportId,
   issueId,
+  sourceView,
 }: {
   projectId: string;
   workId: string;
   reportId?: string;
   issueId?: string;
+  sourceView?: boolean;
 }) {
   const { project, error } = useProject(projectId);
   if (!project) return <ProjectState error={error} />;
@@ -77,6 +79,7 @@ export function ProjectReviewShell({
         workId={workId}
         reportId={reportId}
         issueId={issueId}
+        sourceView={sourceView}
       />
     </ProjectWorkspaceFrame>
   );

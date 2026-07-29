@@ -164,8 +164,14 @@ func realReviewConsumptionRetryHandler(service *contentitem.RealReviewService) h
 
 func realReviewError(w http.ResponseWriter, r *http.Request, err error) {
 	switch {
-	case errors.Is(err, contentitem.ErrContentVersionNotFound), errors.Is(err, contentitem.ErrReviewNotFound), errors.Is(err, contentitem.ErrReviewIssueNotFound), errors.Is(err, workflowrun.ErrNotFound):
+	case errors.Is(err, contentitem.ErrContentVersionNotFound):
 		writeError(w, r, 404, "content_version_not_found", "requested review resource was not found", map[string]any{})
+	case errors.Is(err, contentitem.ErrReviewNotFound):
+		writeError(w, r, 404, "review_not_found", "requested review was not found", map[string]any{})
+	case errors.Is(err, contentitem.ErrReviewIssueNotFound):
+		writeError(w, r, 404, "review_issue_not_found", "requested review issue was not found", map[string]any{})
+	case errors.Is(err, workflowrun.ErrNotFound):
+		writeError(w, r, 404, "workflow_run_not_found", "requested workflow run was not found", map[string]any{})
 	case errors.Is(err, contentitem.ErrReviewNotConfigured):
 		writeError(w, r, 422, "review_not_configured", "审核工作流尚未配置", map[string]any{})
 	case errors.Is(err, contentitem.ErrReviewNotReviewable):
@@ -180,8 +186,10 @@ func realReviewError(w http.ResponseWriter, r *http.Request, err error) {
 		writeError(w, r, 422, "preflight_token_consumed", "预检令牌已使用", map[string]any{})
 	case errors.Is(err, contentitem.ErrReviewPreflightChanged):
 		writeError(w, r, 409, "preflight_input_changed", "审核预检输入已变化", map[string]any{})
-	case errors.Is(err, contentitem.ErrReviewIssueVersion), errors.Is(err, workflowrun.ErrVersionConflict):
+	case errors.Is(err, contentitem.ErrReviewIssueVersion):
 		writeError(w, r, 409, "review_issue_version_conflict", "审核问题版本冲突", map[string]any{})
+	case errors.Is(err, workflowrun.ErrVersionConflict):
+		writeError(w, r, 409, "workflow_run_version_conflict", "工作流运行版本冲突", map[string]any{})
 	case errors.Is(err, workflowrun.ErrIdempotencyConflict), errors.Is(err, contentitem.ErrIdempotencyConflict):
 		writeError(w, r, 409, "idempotency_key_reused_with_different_payload", "幂等键已用于不同请求", map[string]any{})
 	case errors.Is(err, contentitem.ErrReviewResultNotRetryable):
