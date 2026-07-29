@@ -142,23 +142,33 @@ export function ContentEditorWorkspace({
       controllers.current.forEach((c) => c.abort());
     };
   }, [load]);
-  const refreshGeneration = useCallback(async () => {
+  const refreshGenerationSummary = useCallback(async () => {
     if (!detail) return;
     const c = addController();
-    const [nextSummary, nextDetail] = await Promise.all([
-      getContentGenerationSummary(detail.content_item.id, { signal: c.signal }),
-      getContentItem(detail.content_item.id, { signal: c.signal }),
-    ]);
+    const nextSummary = await getContentGenerationSummary(detail.content_item.id, {
+      signal: c.signal,
+    });
     if (!c.signal.aborted && current.current === detail.content_item.id) {
       setGenerationSummary(nextSummary);
+    }
+  }, [detail]);
+  const refreshWorkspace = useCallback(async () => {
+    if (!detail) return;
+    const c = addController();
+    const [nextDetail, nextSummary] = await Promise.all([
+      getContentItem(detail.content_item.id, { signal: c.signal }),
+      getContentGenerationSummary(detail.content_item.id, { signal: c.signal }),
+    ]);
+    if (!c.signal.aborted && current.current === detail.content_item.id) {
       apply(nextDetail);
+      setGenerationSummary(nextSummary);
     }
   }, [apply, detail]);
   useEffect(() => {
     if (!generationSummary || !["queued", "running"].includes(generationSummary.state)) return;
-    const timer = window.setInterval(() => { void refreshGeneration().catch(() => undefined); }, 5000);
+    const timer = window.setInterval(() => { void refreshGenerationSummary().catch(() => undefined); }, 5000);
     return () => window.clearInterval(timer);
-  }, [generationSummary?.state, refreshGeneration]);
+  }, [generationSummary?.state, refreshGenerationSummary]);
   const dirty =
     !!draft &&
     !!initial.current &&
@@ -277,7 +287,7 @@ export function ContentEditorWorkspace({
         </Link>
         <span>项目正文 / 第 {plan?.chapter_no ?? "—"} 章</span>
       </header>
-      {generationSummary && <ContentGenerationStatus projectId={projectId} summary={generationSummary} onRefresh={refreshGeneration} onCandidate={() => setCandidateOpen(true)} />}
+      {generationSummary && <ContentGenerationStatus projectId={projectId} summary={generationSummary} onRefresh={refreshGenerationSummary} onCandidate={() => setCandidateOpen(true)} />}
       <section className="content-editor-grid">
         <aside className="content-editor-left">
           <b>章节导航</b>
@@ -390,7 +400,7 @@ export function ContentEditorWorkspace({
               </label>
             </div>
           </div>
-          {candidateOpen && generationSummary && <ContentCandidateCompare summary={generationSummary} onClose={() => setCandidateOpen(false)} onRefresh={refreshGeneration} onApplied={async () => { await refreshGeneration(); setCandidateOpen(false); }} />}
+          {candidateOpen && generationSummary && <ContentCandidateCompare summary={generationSummary} onClose={() => setCandidateOpen(false)} onRefresh={refreshGenerationSummary} onApplied={async () => { await refreshWorkspace(); setCandidateOpen(false); }} />}
           <footer className="content-editor-footer">
             <span>
               {saving
@@ -435,7 +445,7 @@ export function ContentEditorWorkspace({
           onSubmit={generate}
         />
       )}
-      {generationDrawer && <ContentGenerationDrawer contentItemId={detail.content_item.id} version={detail.current_version} onClose={() => setGenerationDrawer(false)} onCreated={refreshGeneration} />}
+      {generationDrawer && <ContentGenerationDrawer contentItemId={detail.content_item.id} version={detail.current_version} onClose={() => setGenerationDrawer(false)} onCreated={refreshGenerationSummary} />}
     </main>
   );
 }

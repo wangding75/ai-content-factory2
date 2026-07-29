@@ -22,10 +22,22 @@ test("预检阻断不会创建任务，确认提交使用 Token 且防止重复�
 test("排队和运行状态只按持久化 Summary 轮询，并展示安全 Run/Event 详情", () => {
   assert.match(editor, /\["queued", "running"\]/);
   assert.match(editor, /window\.setInterval/);
+  assert.match(editor, /refreshGenerationSummary/);
+  assert.match(editor, /getContentGenerationSummary\(detail\.content_item\.id/);
+  assert.doesNotMatch(editor, /const refreshGenerationSummary[\s\S]*?getContentItem[\s\S]*?const refreshWorkspace/);
+  assert.match(editor, /const refreshWorkspace[\s\S]*?getContentItem/);
+  assert.match(editor, /onCreated=\{refreshGenerationSummary\}/);
   assert.match(status, /getWorkflowRunEvents/);
   assert.match(status, /contentGenerationCopy as copy/);
   assert.match(locale, /正文生成正在执行，进度以运行事件为准/);
   assert.doesNotMatch(status, /\d+%/);
+});
+test("上下文选项变更会使预检结果、Token 和创建幂等操作失效", () => {
+  assert.match(drawer, /const invalidatePreflight = \(\) => \{ setReport\(null\); clearOperation\(`content-generation:\$\{contentItemId\}`\); \}/);
+  for (const option of ["includePriorChapterSummaries", "includeProjectMaterials", "includeStoryContext", "includeForeshadowings"]) assert.match(drawer, new RegExp(option));
+  assert.match(drawer, /setOptions\(\(v\) => \(\{ \.\.\.v, \[key\]: e\.target\.checked \}\)\); invalidatePreflight\(\)/);
+  assert.match(drawer, /setInstructions\(e\.target\.value\); invalidatePreflight\(\)/);
+  assert.match(drawer, /report\?\.status === "passed"/);
 });
 test("三类失败严格映射到冻结恢复动作", () => {
   assert.match(status, /summary\.state === "runtime_failed"/);

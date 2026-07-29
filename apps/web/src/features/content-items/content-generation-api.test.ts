@@ -2,6 +2,10 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
+import type { ContentVersion } from "./content-item-http-api";
+
+const versionNoAllowsLaterVersions: ContentVersion["version_no"] = 2;
+void versionNoAllowsLaterVersions;
 
 test("正文生成 API 使用冻结预检、专用创建端点和幂等键", () => {
   const source = readFileSync(join(process.cwd(), "src", "features", "content-items", "content-item-http-api.ts"), "utf8");
@@ -20,4 +24,9 @@ test("正文生成闭环 API 使用 Runtime Retry、消费 Retry、CAS 和幂等
   assert.match(source, /candidateVersionId/);
   assert.match(source, /expectedCurrentVersionId/);
   assert.match(source, /"Idempotency-Key": idempotencyKey/);
+});
+test("ContentVersion 的版本号使用数字类型", () => {
+  const source = readFileSync(join(process.cwd(), "src", "features", "content-items", "content-item-http-api.ts"), "utf8");
+  assert.match(source, /version_no: number/);
+  assert.doesNotMatch(source, /version_no: 1/);
 });

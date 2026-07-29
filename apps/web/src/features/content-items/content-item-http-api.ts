@@ -21,7 +21,7 @@ export interface ContentItem {
 export interface ContentVersion {
   id: string;
   content_item_id: string;
-  version_no: 1;
+  version_no: number;
   version: number;
   status: ContentVersionStatus;
   source: ContentVersionSource;
