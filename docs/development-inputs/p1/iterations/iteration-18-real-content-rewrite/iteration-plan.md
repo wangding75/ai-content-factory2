@@ -59,11 +59,16 @@ active Run 优先；succeeded 且 Candidate 已原子持久化才是 ready；后
 
 ## 7. 实施顺序
 
-1. CF-18-01A：业务/API/Input/Output/状态/错误/UI 追踪冻结；
-2. CF-18-01B：数据模型、事务、锁、索引和 Migration 冻结；
-3. CF-18-02：后端开发；
-4. CF-18-03：前端开发；
-5. CF-18-04：真实 n8n 联调与最终收口。
+1. CF-18-01A：业务与 API 契约冻结（模型：GPT-5.6 Sol；推理：high；已完成）；
+2. CF-18-01B：数据模型、事务与 Migration 契约冻结（模型：GPT-5.6 Sol；推理：high）；
+3. CF-18-02A：后端 Preflight、Token、创建 Rewrite Run 与输入快照（模型：GPT-5.6 Sol；推理：high）；
+4. CF-18-02B：后端输出校验、Candidate 原子消费与消费失败（模型：GPT-5.6 Sol；推理：high）；
+5. CF-18-02C：后端 Summary、Runtime Retry、消费 Retry、Set Current 与历史（模型：GPT-5.6 Sol；推理：high）；
+6. CF-18-03A：前端审核入口、Availability、Preflight 与创建重写（模型：GPT-5.6 Terra；推理：medium）；
+7. CF-18-03B：前端 queued/running、失败恢复、结果和 Candidate 展示（模型：GPT-5.6 Terra；推理：medium）；
+8. CF-18-03C：前端 Set Current、CAS 冲突、刷新恢复与历史（模型：GPT-5.6 Terra；推理：medium）；
+9. CF-18-04A：Iteration 18 全量代码 Review（模型：GPT-5.6 Sol；推理：high；只做 Review，不修改代码）；
+10. CF-18-04B：Iteration 18 前后端功能联调与工程冻结（模型：GPT-5.6 Sol；推理：high；不包含浏览器截图比对和视觉验收）。
 
 任务按序执行；CF-18-01A 不提前执行 CF-18-01B。
 
