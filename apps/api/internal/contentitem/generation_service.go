@@ -199,8 +199,155 @@ func (s *GenerationService) RetryConsumption(ctx context.Context, runID uuid.UUI
 	if e!=nil{_ = tx.Rollback(ctx);if !errors.Is(e,ErrRunNotConsumable){s.recordConsumptionFailure(ctx,run,errors.Is(e,ErrValidation))};return ContentGenerationResult{},e};body,_:=json.Marshal(struct{CandidateID uuid.UUID}{candidate.ID});if _,e=idem.Create(ctx,idempotency.Record{ID:uuid.New(),Scope:scope,Key:request.IdempotencyKey,RequestHash:hash,ResponseStatus:200,ResponseBody:body});e!=nil{return ContentGenerationResult{},e};out,e:=s.generationResult(ctx,tx,runID,candidate.ID);if e!=nil{return ContentGenerationResult{},e};if e=tx.Commit(ctx);e!=nil{s.recordConsumptionFailure(ctx,run,false);return ContentGenerationResult{},e};return out,nil
 }
 func (s *GenerationService) consume(ctx context.Context,run workflowrun.WorkflowRun)(ContentVersion,error){ if run.ID==uuid.Nil{return ContentVersion{},ErrRunNotConsumable};tx,e:=s.begin(ctx);if e!=nil{return ContentVersion{},e};candidate,e:=s.consumeLocked(ctx,tx,run,uuid.Nil);if e!=nil{_ = tx.Rollback(ctx);if !errors.Is(e,ErrRunNotConsumable){s.recordConsumptionFailure(ctx,run,errors.Is(e,ErrValidation))};return ContentVersion{},e};if e=tx.Commit(ctx);e!=nil{s.recordConsumptionFailure(ctx,run,false);return ContentVersion{},e};return candidate,nil }
-func (s *GenerationService) SetCurrent(ctx context.Context,itemID uuid.UUID,request SetCurrentRequest)(Detail,error){
-	if itemID==uuid.Nil||request.CandidateVersionID==uuid.Nil||request.ExpectedCurrentVersionID==uuid.Nil||request.ExpectedCurrentVersion<1||strings.TrimSpace(request.IdempotencyKey)==""||len(request.IdempotencyKey)>128{return Detail{},ErrValidation};hash:=generationCommandFingerprint(struct{Candidate,Current uuid.UUID;Version int}{request.CandidateVersionID,request.ExpectedCurrentVersionID,request.ExpectedCurrentVersion});scope:="setCurrentContentVersion:"+itemID.String();tx,e:=s.repo.db.Begin(ctx);if e!=nil{return Detail{},e};defer tx.Rollback(ctx);if _,e=tx.Exec(ctx,"SELECT pg_advisory_xact_lock(hashtextextended($1, 0))",scope+":"+request.IdempotencyKey);e!=nil{return Detail{},e};idem:=idempotency.NewPostgresRepositoryTx(tx);if record,get:=idem.Get(ctx,scope,request.IdempotencyKey);get==nil{if record.RequestHash!=hash{return Detail{},workflowrun.ErrIdempotencyConflict};var replay struct{Detail Detail};if json.Unmarshal(record.ResponseBody,&replay)!=nil||replay.Detail.CurrentVersion.ID==uuid.Nil{return Detail{},ErrValidation};return replay.Detail,nil} else if !errors.Is(get,idempotency.ErrNotFound){return Detail{},get};detail,e:=s.repo.detail(ctx,tx,itemID);if e!=nil{return Detail{},e};if detail.CurrentVersion.ID!=request.ExpectedCurrentVersionID||detail.CurrentVersion.Version!=request.ExpectedCurrentVersion{return Detail{},ErrVersionConflict};candidate,e:=scanVersion(tx.QueryRow(ctx,"SELECT "+versionColumns+" FROM content_versions WHERE id=$1 AND content_item_id=$2 FOR UPDATE",request.CandidateVersionID,itemID));if errors.Is(e,pgx.ErrNoRows){var exists bool;e=tx.QueryRow(ctx,"SELECT EXISTS(SELECT 1 FROM content_versions WHERE id=$1)",request.CandidateVersionID).Scan(&exists);if e!=nil{return Detail{},e};if exists{return Detail{},ErrCandidateItemMismatch};return Detail{},ErrContentVersionNotFound};if e!=nil{return Detail{},e};if candidate.Source!=ContentVersionSourceWorkflowGenerated||candidate.Status!=ContentVersionStatusEditableDraft||candidate.ID==detail.CurrentVersion.ID{return Detail{},ErrCandidateNotEligible};if candidate.SourceContentVersionID==nil||candidate.SourceContentVersionVersion==nil||*candidate.SourceContentVersionID!=detail.CurrentVersion.ID||*candidate.SourceContentVersionVersion!=detail.CurrentVersion.Version{return Detail{},ErrCandidateStale};if e=setCurrentContentItemPointer(ctx,tx,itemID,candidate.ID,request.ExpectedCurrentVersionID,detail.Item.Version);e!=nil{return Detail{},e};out,e:=s.repo.detail(ctx,tx,itemID);if e!=nil{return Detail{},e};body,_:=json.Marshal(struct{Detail Detail}{out});if _,e=idem.Create(ctx,idempotency.Record{ID:uuid.New(),Scope:scope,Key:request.IdempotencyKey,RequestHash:hash,ResponseStatus:200,ResponseBody:body});e!=nil{return Detail{},e};if e=tx.Commit(ctx);e!=nil{return Detail{},e};return out,nil}
+func (s *GenerationService) SetCurrent(ctx context.Context, itemID uuid.UUID, request SetCurrentRequest) (Detail, error) {
+	if itemID == uuid.Nil || request.CandidateVersionID == uuid.Nil ||
+		request.ExpectedCurrentVersionID == uuid.Nil || request.ExpectedCurrentVersion < 1 ||
+		strings.TrimSpace(request.IdempotencyKey) == "" || len(request.IdempotencyKey) > 128 {
+		return Detail{}, ErrValidation
+	}
+	hash := generationCommandFingerprint(struct {
+		Candidate uuid.UUID
+		Current   uuid.UUID
+		Version   int
+	}{request.CandidateVersionID, request.ExpectedCurrentVersionID, request.ExpectedCurrentVersion})
+	scope := "setCurrentContentVersion:" + itemID.String()
+	tx, e := s.repo.db.Begin(ctx)
+	if e != nil {
+		return Detail{}, e
+	}
+	defer tx.Rollback(ctx)
+	if _, e = tx.Exec(ctx, "SELECT pg_advisory_xact_lock(hashtextextended($1,0))", "idempotency:"+scope+":"+request.IdempotencyKey); e != nil {
+		return Detail{}, e
+	}
+	idem := idempotency.NewPostgresRepositoryTx(tx)
+	if record, get := idem.GetForUpdate(ctx, scope, request.IdempotencyKey); get == nil {
+		if record.RequestHash != hash {
+			var first struct {
+				Detail Detail
+			}
+			if json.Unmarshal(record.ResponseBody, &first) == nil &&
+				first.Detail.CurrentVersion.Source == ContentVersionSourceWorkflowRewrite {
+				return Detail{}, ErrRewriteIdempotencyConflict
+			}
+			return Detail{}, workflowrun.ErrIdempotencyConflict
+		}
+		var replay struct {
+			Detail Detail
+		}
+		if json.Unmarshal(record.ResponseBody, &replay) != nil || replay.Detail.CurrentVersion.ID == uuid.Nil {
+			return Detail{}, ErrValidation
+		}
+		return replay.Detail, nil
+	} else if !errors.Is(get, idempotency.ErrNotFound) {
+		return Detail{}, get
+	}
+	if _, e = tx.Exec(ctx, "SELECT pg_advisory_xact_lock(hashtextextended($1,0))", "content-item:"+itemID.String()); e != nil {
+		return Detail{}, e
+	}
+	item, e := scanItem(tx.QueryRow(ctx, "SELECT "+itemColumns+" FROM content_items WHERE id=$1 FOR UPDATE", itemID))
+	if errors.Is(e, pgx.ErrNoRows) {
+		return Detail{}, ErrContentItemNotFound
+	}
+	if e != nil {
+		return Detail{}, e
+	}
+	current, e := scanVersion(tx.QueryRow(ctx, "SELECT "+versionColumns+" FROM content_versions WHERE id=$1 AND content_item_id=$2", item.CurrentVersionID, item.ID))
+	if e != nil {
+		return Detail{}, e
+	}
+	candidate, e := scanVersion(tx.QueryRow(ctx, "SELECT "+versionColumns+" FROM content_versions WHERE id=$1 FOR UPDATE", request.CandidateVersionID))
+	if errors.Is(e, pgx.ErrNoRows) {
+		return Detail{}, ErrRewriteCandidateNotFound
+	}
+	if e != nil {
+		return Detail{}, e
+	}
+	if candidate.ContentItemID != item.ID {
+		if candidate.Source == ContentVersionSourceWorkflowRewrite {
+			return Detail{}, ErrRewriteCandidateNotFound
+		}
+		return Detail{}, ErrCandidateItemMismatch
+	}
+	isRewrite := candidate.Source == ContentVersionSourceWorkflowRewrite
+	if candidate.Status != ContentVersionStatusEditableDraft ||
+		(candidate.Source != ContentVersionSourceWorkflowGenerated && !isRewrite) {
+		if isRewrite {
+			return Detail{}, ErrRewriteCandidateNotReady
+		}
+		return Detail{}, ErrCandidateNotEligible
+	}
+	if candidate.SourceContentVersionID == nil || candidate.SourceContentVersionVersion == nil ||
+		candidate.SourceWorkflowRunID == nil {
+		if isRewrite {
+			return Detail{}, ErrRewriteCandidateNotReady
+		}
+		return Detail{}, ErrCandidateNotEligible
+	}
+	if isRewrite {
+		var ready bool
+		e = tx.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM workflow_run_records r JOIN review_reports p ON p.id=r.subject_id WHERE r.id=$1 AND r.project_id=$2 AND r.stage='rewrite' AND r.status='succeeded' AND r.subject_type='review_report' AND p.project_id=$2 AND p.content_item_id=$3 AND p.content_version_id=$4 AND p.source_content_version_version=$5 AND r.input_payload->>'sourceContentVersionId'=$4::text AND (r.input_payload->>'sourceContentVersionVersion')::integer=$5 AND EXISTS(SELECT 1 FROM workflow_run_events e WHERE e.run_id=r.id AND e.event_type='result_consumed'))", *candidate.SourceWorkflowRunID, item.ProjectID, item.ID, *candidate.SourceContentVersionID, *candidate.SourceContentVersionVersion).Scan(&ready)
+		if e != nil {
+			return Detail{}, e
+		}
+		if !ready {
+			return Detail{}, ErrRewriteCandidateNotReady
+		}
+	}
+	if candidate.ID == item.CurrentVersionID {
+		out := Detail{Item: item, CurrentVersion: candidate}
+		body, marshalErr := json.Marshal(struct {
+			Detail Detail
+		}{out})
+		if marshalErr != nil {
+			return Detail{}, marshalErr
+		}
+		if _, e = idem.Create(ctx, idempotency.Record{ID: uuid.New(), Scope: scope, Key: request.IdempotencyKey, RequestHash: hash, ResponseStatus: 200, ResponseBody: body}); e != nil {
+			return Detail{}, e
+		}
+		if e = tx.Commit(ctx); e != nil {
+			return Detail{}, e
+		}
+		return out, nil
+	}
+	if current.ID != request.ExpectedCurrentVersionID || current.Version != request.ExpectedCurrentVersion {
+		if isRewrite {
+			return Detail{}, ErrRewriteContentVersionConflict
+		}
+		return Detail{}, ErrVersionConflict
+	}
+	if *candidate.SourceContentVersionID != current.ID || *candidate.SourceContentVersionVersion != current.Version {
+		if isRewrite {
+			return Detail{}, ErrRewriteContentVersionConflict
+		}
+		return Detail{}, ErrCandidateStale
+	}
+	if e = setCurrentContentItemPointer(ctx, tx, itemID, candidate.ID, request.ExpectedCurrentVersionID, item.Version); e != nil {
+		if isRewrite && errors.Is(e, ErrVersionConflict) {
+			return Detail{}, ErrRewriteContentVersionConflict
+		}
+		return Detail{}, e
+	}
+	out, e := s.repo.detail(ctx, tx, itemID)
+	if e != nil {
+		return Detail{}, e
+	}
+	body, e := json.Marshal(struct {
+		Detail Detail
+	}{out})
+	if e != nil {
+		return Detail{}, e
+	}
+	if _, e = idem.Create(ctx, idempotency.Record{ID: uuid.New(), Scope: scope, Key: request.IdempotencyKey, RequestHash: hash, ResponseStatus: 200, ResponseBody: body}); e != nil {
+		if errors.Is(e, idempotency.ErrConflict) {
+			return Detail{}, workflowrun.ErrIdempotencyConflict
+		}
+		return Detail{}, e
+	}
+	if e = tx.Commit(ctx); e != nil {
+		return Detail{}, e
+	}
+	return out, nil
+}
 
 func setCurrentContentItemPointer(ctx context.Context,tx pgx.Tx,itemID,candidateID,expectedCurrentID uuid.UUID,expectedItemVersion int) error { tag,e:=tx.Exec(ctx,"UPDATE content_items SET current_version_id=$1,status='draft',reviewed_at=NULL,version=version+1,updated_at=NOW() WHERE id=$2 AND current_version_id=$3 AND version=$4",candidateID,itemID,expectedCurrentID,expectedItemVersion);if e!=nil{return e};if tag.RowsAffected()!=1{return ErrVersionConflict};return nil }
 

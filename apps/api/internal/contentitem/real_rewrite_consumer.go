@@ -326,7 +326,7 @@ func (s *RealRewriteService) ConsumeRewriteResult(ctx context.Context, signal wo
 		return ContentVersion{}, ErrRewriteResultConsumption
 	}
 	defer tx.Rollback(ctx)
-	candidate, err := s.consumeRewriteLocked(ctx, tx, run, input, output)
+	candidate, err := s.consumeRewriteLocked(ctx, tx, run, input, output, false)
 	if err != nil {
 		_ = tx.Rollback(ctx)
 		if errors.Is(err, ErrRewriteCandidateAlreadyExists) {
@@ -357,6 +357,7 @@ func (s *RealRewriteService) consumeRewriteLocked(
 	persisted workflowrun.WorkflowRun,
 	input RewriteRuntimeInputV1,
 	output RewriteRuntimeOutputV1,
+	allowConsumptionFailure bool,
 ) (ContentVersion, error) {
 	if _, err := tx.Exec(ctx, "SELECT pg_advisory_xact_lock(hashtextextended($1,0))", "content-item:"+input.ContentItemID.String()); err != nil {
 		return ContentVersion{}, err
@@ -440,7 +441,7 @@ func (s *RealRewriteService) consumeRewriteLocked(
 	if validationFailed {
 		return ContentVersion{}, ErrRewriteOutputInvalid
 	}
-	if consumptionFailed {
+	if consumptionFailed && !allowConsumptionFailure {
 		return ContentVersion{}, ErrRewriteResultConsumption
 	}
 	if consumed {

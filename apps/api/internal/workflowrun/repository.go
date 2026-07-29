@@ -76,6 +76,10 @@ func (r *Repository) Create(ctx context.Context, value WorkflowRun) (WorkflowRun
 	}
 	created, err := scanRun(r.db.QueryRow(ctx, "INSERT INTO workflow_run_records ("+runColumns+") VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22) RETURNING "+runColumns, value.ID, value.RunNumber, value.ProjectID, value.Stage, value.SubjectType, value.SubjectID, value.WorkflowConfigurationID, value.TriggerSource, value.Status, value.ConfigurationSnapshot, value.InputPayload, nullableJSON(value.OutputPayload), value.ErrorCode, value.ErrorMessage, nullableJSON(value.ErrorDetails), value.RetryOfRunID, value.StartedAt, value.FinishedAt, value.CancelledAt, value.CreatedAt, value.UpdatedAt, value.Version))
 	if err != nil {
+		var postgresError *pgconn.PgError
+		if errors.As(err, &postgresError) && postgresError.ConstraintName == "workflow_run_records_active_rewrite_subject_idx" {
+			return WorkflowRun{}, ErrActiveRewriteRun
+		}
 		return WorkflowRun{}, fmt.Errorf("create workflow run: %w", err)
 	}
 	return created, nil
@@ -123,6 +127,118 @@ func (r *Repository) HasReviewReport(ctx context.Context, runID uuid.UUID) (bool
 		return false, fmt.Errorf("find review report: %w", err)
 	}
 	return exists, nil
+}
+func (r *Repository) HasRewriteCandidate(ctx context.Context, runID uuid.UUID) (bool, error) {
+	var exists bool
+	err := r.db.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM content_versions WHERE source_workflow_run_id=$1 AND source='workflow_rewrite')", runID).Scan(&exists)
+	if err != nil {
+		return false, fmt.Errorf("find rewrite candidate: %w", err)
+	}
+	return exists, nil
+}
+
+type rewriteRetryInput struct {
+	SchemaVersion               string    `json:"schemaVersion"`
+	ProjectID                   uuid.UUID `json:"projectId"`
+	ContentItemID               uuid.UUID `json:"contentItemId"`
+	SourceContentVersionID      uuid.UUID `json:"sourceContentVersionId"`
+	SourceContentVersionVersion int       `json:"sourceContentVersionVersion"`
+	ReviewReportID              uuid.UUID `json:"reviewReportId"`
+	SelectedIssues              []struct {
+		ReviewIssueID  uuid.UUID `json:"reviewIssueId"`
+		ReviewReportID uuid.UUID `json:"reviewReportId"`
+		Position       int       `json:"position"`
+	} `json:"selectedIssues"`
+}
+
+func parseRewriteRetryInput(run WorkflowRun) (rewriteRetryInput, error) {
+	var input rewriteRetryInput
+	if json.Unmarshal(run.InputPayload, &input) != nil || input.SchemaVersion != "rewrite.input.v1" ||
+		input.ProjectID != run.ProjectID || input.ContentItemID == uuid.Nil ||
+		input.SourceContentVersionID == uuid.Nil || input.SourceContentVersionVersion < 1 ||
+		run.SubjectType == nil || *run.SubjectType != "review_report" || run.SubjectID == nil ||
+		input.ReviewReportID != *run.SubjectID || len(input.SelectedIssues) < 1 || len(input.SelectedIssues) > 50 {
+		return rewriteRetryInput{}, ErrNotRetryable
+	}
+	seen := map[uuid.UUID]bool{}
+	for _, issue := range input.SelectedIssues {
+		if issue.ReviewIssueID == uuid.Nil || issue.ReviewReportID != input.ReviewReportID || seen[issue.ReviewIssueID] {
+			return rewriteRetryInput{}, ErrNotRetryable
+		}
+		seen[issue.ReviewIssueID] = true
+	}
+	return input, nil
+}
+
+func (r *Repository) LockRewriteRetryScope(ctx context.Context, run WorkflowRun) error {
+	input, err := parseRewriteRetryInput(run)
+	if err != nil {
+		return err
+	}
+	if _, err = r.db.Exec(ctx, "SELECT pg_advisory_xact_lock(hashtextextended($1,0))", "content-item:"+input.ContentItemID.String()); err != nil {
+		return err
+	}
+	_, err = r.db.Exec(ctx, "SELECT pg_advisory_xact_lock(hashtextextended($1,0))", "rewrite-active:"+run.ProjectID.String()+":"+input.ReviewReportID.String())
+	return err
+}
+
+func (r *Repository) ValidateRewriteRetryRelations(ctx context.Context, run WorkflowRun) error {
+	input, err := parseRewriteRetryInput(run)
+	if err != nil {
+		return err
+	}
+	var sourceItem uuid.UUID
+	var sourceVersion int
+	if err = r.db.QueryRow(ctx, "SELECT content_item_id,version FROM content_versions WHERE id=$1 FOR UPDATE", input.SourceContentVersionID).Scan(&sourceItem, &sourceVersion); err != nil {
+		return ErrNotRetryable
+	}
+	if sourceItem != input.ContentItemID || sourceVersion != input.SourceContentVersionVersion {
+		return ErrNotRetryable
+	}
+	var itemProject uuid.UUID
+	if err = r.db.QueryRow(ctx, "SELECT project_id FROM content_items WHERE id=$1 FOR UPDATE", input.ContentItemID).Scan(&itemProject); err != nil || itemProject != run.ProjectID {
+		return ErrNotRetryable
+	}
+	var reportProject, reportItem, reportSource uuid.UUID
+	var reportStatus, provider string
+	var schemaVersion *string
+	if err = r.db.QueryRow(ctx, "SELECT project_id,content_item_id,content_version_id,status,provider_key,schema_version FROM review_reports WHERE id=$1 FOR UPDATE", input.ReviewReportID).Scan(&reportProject, &reportItem, &reportSource, &reportStatus, &provider, &schemaVersion); err != nil {
+		return ErrNotRetryable
+	}
+	if reportProject != run.ProjectID || reportItem != input.ContentItemID ||
+		reportSource != input.SourceContentVersionID || reportStatus != "completed" ||
+		provider != "runtime" || schemaVersion == nil || *schemaVersion != "review.output.v1" {
+		return ErrNotRetryable
+	}
+	issueIDs := make([]uuid.UUID, len(input.SelectedIssues))
+	for i := range input.SelectedIssues {
+		issueIDs[i] = input.SelectedIssues[i].ReviewIssueID
+	}
+	rows, err := r.db.Query(ctx, "SELECT id FROM review_findings WHERE review_id=$1 AND id=ANY($2) ORDER BY sort_order ASC,id ASC FOR UPDATE", input.ReviewReportID, issueIDs)
+	if err != nil {
+		return err
+	}
+	count := 0
+	for rows.Next() {
+		var issueID uuid.UUID
+		if err = rows.Scan(&issueID); err != nil {
+			rows.Close()
+			return err
+		}
+		count++
+	}
+	rows.Close()
+	if count != len(issueIDs) {
+		return ErrNotRetryable
+	}
+	var active bool
+	if err = r.db.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM workflow_run_records WHERE project_id=$1 AND stage='rewrite' AND subject_type='review_report' AND subject_id=$2 AND status IN ('queued','running'))", run.ProjectID, input.ReviewReportID).Scan(&active); err != nil {
+		return err
+	}
+	if active {
+		return ErrActiveRewriteRun
+	}
+	return nil
 }
 func (r *Repository) FindActive(ctx context.Context, projectID uuid.UUID, stage string, subjectType string, subjectID uuid.UUID) (WorkflowRun, error) {
 	value, err := scanRun(r.db.QueryRow(ctx, "SELECT "+runColumns+" FROM workflow_run_records WHERE project_id=$1 AND stage=$2 AND subject_type=$3 AND subject_id=$4 AND status IN ('queued','running') ORDER BY created_at DESC,id DESC LIMIT 1", projectID, stage, subjectType, subjectID))

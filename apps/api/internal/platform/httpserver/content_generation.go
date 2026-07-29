@@ -31,4 +31,49 @@ func contentGenerationSummaryResponse(v contentitem.GenerationSummary) map[strin
 func contentGenerationVersion(v contentitem.ContentVersion) map[string]any{return map[string]any{"id":v.ID,"content_item_id":v.ContentItemID,"version_no":v.VersionNo,"title":v.Title,"content":v.Content,"summary":v.Summary,"word_count":v.WordCount,"source":v.Source,"status":v.Status,"generation_parameters":json.RawMessage(v.GenerationParameters),"version":v.Version,"frozen_at":v.FrozenAt,"created_at":v.CreatedAt.UTC().Format(time.RFC3339Nano),"updated_at":v.UpdatedAt.UTC().Format(time.RFC3339Nano),"source_content_version_id":v.SourceContentVersionID,"source_content_version_version":v.SourceContentVersionVersion,"source_workflow_run_id":v.SourceWorkflowRunID}}
 func contentGenerationResultResponse(v contentitem.ContentGenerationResult) map[string]any{return map[string]any{"contentItem":contentItemGenerationResponse(v.ContentItem),"candidateVersion":contentGenerationVersion(v.CandidateVersion),"workflowRun":iteration14WorkflowRunResponse(v.WorkflowRun)}}
 func contentItemGenerationResponse(v contentitem.ContentItem) map[string]any{var reviewed any;if v.ReviewedAt!=nil{reviewed=v.ReviewedAt.UTC().Format(time.RFC3339Nano)};return map[string]any{"id":v.ID,"chapter_plan_id":v.ChapterPlanID,"title":v.Title,"status":v.Status,"current_version_id":v.CurrentVersionID,"reviewed_at":reviewed,"created_at":v.CreatedAt.UTC().Format(time.RFC3339Nano),"updated_at":v.UpdatedAt.UTC().Format(time.RFC3339Nano)}}
-func contentGenerationError(w http.ResponseWriter,r *http.Request,e error){switch{case errors.Is(e,contentitem.ErrContentItemNotFound):writeError(w,r,404,"content_item_not_found","content item not found",map[string]any{});case errors.Is(e,workflowrun.ErrNotFound):writeError(w,r,404,"validation_error","workflow run not found",map[string]any{});case errors.Is(e,contentitem.ErrGenerationNotConfigured):writeError(w,r,422,"workflow_not_configured","正文生成工作流尚未配置",map[string]any{});case errors.Is(e,contentitem.ErrGenerationActiveRun):writeError(w,r,409,"active_run_conflict","当前正文已有生成任务",map[string]any{});case errors.Is(e,contentitem.ErrGenerationInputChanged):writeError(w,r,409,"current_version_changed","当前正文版本已变化",map[string]any{});case errors.Is(e,contentitem.ErrGenerationTokenExpired):writeError(w,r,422,"preflight_token_expired","预检令牌已过期",map[string]any{});case errors.Is(e,contentitem.ErrGenerationTokenConsumed):writeError(w,r,422,"preflight_token_consumed","预检令牌已使用",map[string]any{});case errors.Is(e,contentitem.ErrGenerationTokenInvalid):writeError(w,r,422,"preflight_token_invalid","预检令牌无效",map[string]any{});case errors.Is(e,contentitem.ErrCandidateStale):writeError(w,r,409,"candidate_source_stale","候选版本基线已过期",map[string]any{});case errors.Is(e,contentitem.ErrCandidateNotEligible):writeError(w,r,409,"content_version_not_candidate","content version is not an eligible candidate",map[string]any{});case errors.Is(e,contentitem.ErrCandidateItemMismatch):writeError(w,r,409,"content_version_item_mismatch","candidate belongs to another content item",map[string]any{});case errors.Is(e,contentitem.ErrRunNotConsumable):writeError(w,r,409,"result_consumption_failed","workflow run cannot be consumed",map[string]any{});case errors.Is(e,contentitem.ErrGenerationSourceInvalid):writeError(w,r,500,"result_consumption_failed","source content version is no longer valid",map[string]any{});case errors.Is(e,workflowrun.ErrVersionConflict):writeError(w,r,409,"current_version_changed","version conflict",map[string]any{});case errors.Is(e,workflowrun.ErrIdempotencyConflict):writeError(w,r,409,"idempotency_key_reused_with_different_payload","幂等键与请求不匹配",map[string]any{});case errors.Is(e,contentitem.ErrValidation):writeError(w,r,400,"validation_error","请求无效",map[string]any{});default:writeError(w,r,500,"internal_error","internal server error",map[string]any{})}}
+func contentGenerationError(w http.ResponseWriter, r *http.Request, e error) {
+	switch {
+	case errors.Is(e, contentitem.ErrRewriteCandidateNotFound):
+		writeError(w, r, 404, "rewrite_candidate_not_found", "rewrite candidate not found", map[string]any{})
+	case errors.Is(e, contentitem.ErrRewriteCandidateNotReady):
+		writeError(w, r, 409, "rewrite_candidate_not_ready", "rewrite candidate is not ready", map[string]any{})
+	case errors.Is(e, contentitem.ErrRewriteContentVersionConflict):
+		writeError(w, r, 409, "content_version_conflict", "current content version changed", map[string]any{})
+	case errors.Is(e, contentitem.ErrRewriteIdempotencyConflict):
+		writeError(w, r, 409, "idempotency_conflict", "幂等键与请求不匹配", map[string]any{})
+	case errors.Is(e, contentitem.ErrContentItemNotFound):
+		writeError(w, r, 404, "content_item_not_found", "content item not found", map[string]any{})
+	case errors.Is(e, workflowrun.ErrNotFound):
+		writeError(w, r, 404, "validation_error", "workflow run not found", map[string]any{})
+	case errors.Is(e, contentitem.ErrGenerationNotConfigured):
+		writeError(w, r, 422, "workflow_not_configured", "正文生成工作流尚未配置", map[string]any{})
+	case errors.Is(e, contentitem.ErrGenerationActiveRun):
+		writeError(w, r, 409, "active_run_conflict", "当前正文已有生成任务", map[string]any{})
+	case errors.Is(e, contentitem.ErrGenerationInputChanged):
+		writeError(w, r, 409, "current_version_changed", "当前正文版本已变化", map[string]any{})
+	case errors.Is(e, contentitem.ErrGenerationTokenExpired):
+		writeError(w, r, 422, "preflight_token_expired", "预检令牌已过期", map[string]any{})
+	case errors.Is(e, contentitem.ErrGenerationTokenConsumed):
+		writeError(w, r, 422, "preflight_token_consumed", "预检令牌已使用", map[string]any{})
+	case errors.Is(e, contentitem.ErrGenerationTokenInvalid):
+		writeError(w, r, 422, "preflight_token_invalid", "预检令牌无效", map[string]any{})
+	case errors.Is(e, contentitem.ErrCandidateStale):
+		writeError(w, r, 409, "candidate_source_stale", "候选版本基线已过期", map[string]any{})
+	case errors.Is(e, contentitem.ErrCandidateNotEligible):
+		writeError(w, r, 409, "content_version_not_candidate", "content version is not an eligible candidate", map[string]any{})
+	case errors.Is(e, contentitem.ErrCandidateItemMismatch):
+		writeError(w, r, 409, "content_version_item_mismatch", "candidate belongs to another content item", map[string]any{})
+	case errors.Is(e, contentitem.ErrRunNotConsumable):
+		writeError(w, r, 409, "result_consumption_failed", "workflow run cannot be consumed", map[string]any{})
+	case errors.Is(e, contentitem.ErrGenerationSourceInvalid):
+		writeError(w, r, 500, "result_consumption_failed", "source content version is no longer valid", map[string]any{})
+	case errors.Is(e, workflowrun.ErrVersionConflict):
+		writeError(w, r, 409, "current_version_changed", "version conflict", map[string]any{})
+	case errors.Is(e, workflowrun.ErrIdempotencyConflict):
+		writeError(w, r, 409, "idempotency_key_reused_with_different_payload", "幂等键与请求不匹配", map[string]any{})
+	case errors.Is(e, contentitem.ErrValidation):
+		writeError(w, r, 400, "validation_error", "请求无效", map[string]any{})
+	default:
+		writeError(w, r, 500, "internal_error", "internal server error", map[string]any{})
+	}
+}

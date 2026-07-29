@@ -146,9 +146,19 @@ func retryWorkflowRunHandler(app workflowRunApplication) http.HandlerFunc {
 		key, ok := workflowRunIdempotencyKey(w, r); if !ok { return }
 		var body workflowRunRetryRequest
 		if err := decodeBody(r, &body); err != nil || body.ExpectedVersion < 1 { workflowRunValidationError(w, r, "expectedVersion must be at least 1"); return }
-		run, err := app.RetryRun(r.Context(), workflowrun.RetryCommand{RunID: id, ExpectedVersion: body.ExpectedVersion, UseCurrentConfiguration: body.UseCurrentConfiguration, InputOverride: body.InputOverride, IdempotencyKey: key})
+		command := workflowrun.RetryCommand{RunID: id, ExpectedVersion: body.ExpectedVersion, UseCurrentConfiguration: body.UseCurrentConfiguration, InputOverride: body.InputOverride, IdempotencyKey: key}
+		run, replay, err := workflowrun.WorkflowRun{}, false, error(nil)
+		if replayApplication, ok := app.(interface {
+			RetryRunWithReplay(context.Context, workflowrun.RetryCommand) (workflowrun.WorkflowRun, bool, error)
+		}); ok {
+			run, replay, err = replayApplication.RetryRunWithReplay(r.Context(), command)
+		} else {
+			run, err = app.RetryRun(r.Context(), command)
+		}
 		if err != nil { workflowRunServiceError(w, r, err); return }
-		writeJSON(w, r, http.StatusCreated, iteration14WorkflowRunResponse(run))
+		status := http.StatusCreated
+		if replay { status = http.StatusOK }
+		writeJSON(w, r, status, iteration14WorkflowRunResponse(run))
 	}
 }
 
@@ -206,6 +216,9 @@ func workflowRunServiceError(w http.ResponseWriter, r *http.Request, err error) 
 	case errors.Is(err, workflowrun.ErrNotFound): writeError(w, r, http.StatusNotFound, "workflow_run_not_found", "workflow run not found", map[string]any{})
 	case errors.Is(err, workflowrun.ErrVersionConflict): writeError(w, r, http.StatusConflict, "version_conflict", "workflow run version conflict", map[string]any{})
 	case errors.Is(err, workflowrun.ErrIdempotencyConflict): writeError(w, r, http.StatusConflict, "idempotency_key_reused_with_different_payload", "idempotency key conflicts with a different request", map[string]any{})
+	case errors.Is(err, workflowrun.ErrRewriteVersionConflict): writeError(w, r, http.StatusConflict, "workflow_run_version_conflict", "workflow run version conflict", map[string]any{})
+	case errors.Is(err, workflowrun.ErrRewriteIdempotencyConflict): writeError(w, r, http.StatusConflict, "idempotency_conflict", "idempotency key conflicts with a different request", map[string]any{})
+	case errors.Is(err, workflowrun.ErrActiveRewriteRun): writeError(w, r, http.StatusConflict, "active_rewrite_run_conflict", "an active rewrite run already exists", map[string]any{})
 	case errors.Is(err, workflowrun.ErrNotCancellable): writeError(w, r, http.StatusConflict, "validation_error", "workflow run cannot be cancelled", map[string]any{})
 	case errors.Is(err, workflowrun.ErrNotRetryable): writeError(w, r, http.StatusConflict, "validation_error", "workflow run cannot be retried", map[string]any{})
 	case errors.Is(err, workflowrun.ErrExecutorUnavailable): writeError(w, r, http.StatusServiceUnavailable, "executor_unavailable", "workflow executor is unavailable", map[string]any{})

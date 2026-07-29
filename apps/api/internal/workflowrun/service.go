@@ -26,7 +26,10 @@ var (
 	ErrNotRunnable           = errors.New("workflow is not runnable")
 	ErrNotCancellable        = errors.New("workflow run is not cancellable")
 	ErrNotRetryable          = errors.New("workflow run is not retryable")
+	ErrActiveRewriteRun      = errors.New("active rewrite run conflict")
 	ErrIdempotencyConflict   = errors.New("idempotency key reused with different payload")
+	ErrRewriteVersionConflict = errors.New("rewrite workflow run version conflict")
+	ErrRewriteIdempotencyConflict = errors.New("rewrite idempotency conflict")
 	ErrProtectedStage        = errors.New("workflow stage requires its domain command")
 )
 
@@ -489,8 +492,13 @@ func (s *Service) CancelRun(ctx context.Context, command RunCommand) (WorkflowRu
 }
 
 func (s *Service) RetryRun(ctx context.Context, command RetryCommand) (WorkflowRun, error) {
+	run, _, err := s.RetryRunWithReplay(ctx, command)
+	return run, err
+}
+
+func (s *Service) RetryRunWithReplay(ctx context.Context, command RetryCommand) (WorkflowRun, bool, error) {
 	if command.RunID == uuid.Nil || command.ExpectedVersion < 1 || strings.TrimSpace(command.IdempotencyKey) == "" {
-		return WorkflowRun{}, ErrValidation
+		return WorkflowRun{}, false, ErrValidation
 	}
 	scope, fingerprint := commandScope("retryWorkflowRun", command.RunID.String(), struct {
 		ID      uuid.UUID
@@ -498,13 +506,30 @@ func (s *Service) RetryRun(ctx context.Context, command RetryCommand) (WorkflowR
 		Current bool
 		Input   json.RawMessage
 	}{command.RunID, command.ExpectedVersion, command.UseCurrentConfiguration, canonicalJSON(command.InputOverride)})
-	return s.store.ExecuteIdempotent(ctx, scope, command.IdempotencyKey, fingerprint, func(store Store) (WorkflowRun, error) {
+	run, replay, executeErr := s.store.ExecuteIdempotentWithReplay(ctx, scope, command.IdempotencyKey, fingerprint, func(store Store) (WorkflowRun, error) {
+		discovered, err := store.GetByID(ctx, command.RunID)
+		if err != nil {
+			return WorkflowRun{}, mapStoreError(err)
+		}
 		var original WorkflowRun
-		var err error
-		if lockingStore, ok := store.(interface{ GetByIDForUpdate(context.Context,uuid.UUID)(WorkflowRun,error) }); ok {
-			original, err = lockingStore.GetByIDForUpdate(ctx,command.RunID)
+		if discovered.Stage == "rewrite" {
+			rewriteStore, ok := store.(interface {
+				LockRewriteRetryScope(context.Context, WorkflowRun) error
+				GetByIDForUpdate(context.Context, uuid.UUID) (WorkflowRun, error)
+			})
+			if !ok {
+				return WorkflowRun{}, ErrNotRetryable
+			}
+			if err = rewriteStore.LockRewriteRetryScope(ctx, discovered); err != nil {
+				return WorkflowRun{}, err
+			}
+			original, err = rewriteStore.GetByIDForUpdate(ctx, command.RunID)
+		} else if lockingStore, ok := store.(interface {
+			GetByIDForUpdate(context.Context, uuid.UUID) (WorkflowRun, error)
+		}); ok {
+			original, err = lockingStore.GetByIDForUpdate(ctx, command.RunID)
 		} else {
-			original, err = store.GetByID(ctx, command.RunID)
+			original = discovered
 		}
 		if err != nil {
 			return WorkflowRun{}, mapStoreError(err)
@@ -512,13 +537,13 @@ func (s *Service) RetryRun(ctx context.Context, command RetryCommand) (WorkflowR
 		if original.Version != command.ExpectedVersion {
 			return WorkflowRun{}, ErrVersionConflict
 		}
-		if (original.Stage == "content_generation" || original.Stage == "review") && command.InputOverride != nil {
+		if (original.Stage == "content_generation" || original.Stage == "review" || original.Stage == "rewrite") && command.InputOverride != nil {
 			return WorkflowRun{}, ErrValidation
 		}
-		if original.Stage == "review" && command.UseCurrentConfiguration {
+		if (original.Stage == "review" || original.Stage == "rewrite") && command.UseCurrentConfiguration {
 			return WorkflowRun{}, ErrValidation
 		}
-		if original.Stage == "content_generation" || original.Stage == "review" {
+		if original.Stage == "content_generation" || original.Stage == "review" || original.Stage == "rewrite" {
 			events, eventErr := store.ListEvents(ctx, original.ID)
 			if eventErr != nil {
 				return WorkflowRun{}, mapStoreError(eventErr)
@@ -541,16 +566,35 @@ func (s *Service) RetryRun(ctx context.Context, command RetryCommand) (WorkflowR
 				})
 				if !ok { return WorkflowRun{}, ErrNotRetryable }
 				hasResult, eventErr = candidateStore.HasContentGenerationCandidate(ctx, original.ID)
-			} else {
+			} else if original.Stage == "review" {
 				reportStore, ok := store.(interface {
 					HasReviewReport(context.Context, uuid.UUID) (bool, error)
 				})
 				if ok { hasResult, eventErr = reportStore.HasReviewReport(ctx, original.ID) }
+			} else {
+				candidateStore, ok := store.(interface {
+					HasRewriteCandidate(context.Context, uuid.UUID) (bool, error)
+				})
+				if !ok {
+					return WorkflowRun{}, ErrNotRetryable
+				}
+				hasResult, eventErr = candidateStore.HasRewriteCandidate(ctx, original.ID)
 			}
 			if eventErr != nil { return WorkflowRun{}, eventErr }
 			if resultConsumptionFailed || resultConsumed || hasResult { return WorkflowRun{}, ErrNotRetryable }
 			if original.Status != StatusFailed && original.Status != StatusCancelled && (original.Status != StatusSucceeded || !outputValidationFailed || command.UseCurrentConfiguration) {
 				return WorkflowRun{}, ErrNotRetryable
+			}
+			if original.Stage == "rewrite" {
+				rewriteStore, ok := store.(interface {
+					ValidateRewriteRetryRelations(context.Context, WorkflowRun) error
+				})
+				if !ok {
+					return WorkflowRun{}, ErrNotRetryable
+				}
+				if eventErr = rewriteStore.ValidateRewriteRetryRelations(ctx, original); eventErr != nil {
+					return WorkflowRun{}, eventErr
+				}
 			}
 		} else if original.Status != StatusFailed && original.Status != StatusCancelled {
 			return WorkflowRun{}, ErrNotRetryable
@@ -588,10 +632,56 @@ func (s *Service) RetryRun(ctx context.Context, command RetryCommand) (WorkflowR
 		}
 		now := s.now()
 		run.SubjectType, run.SubjectID = original.SubjectType, original.SubjectID
+		if original.Stage == "rewrite" {
+			input, err = rewriteRetryPayload(input, run.ID)
+			if err != nil {
+				return WorkflowRun{}, ErrNotRetryable
+			}
+			run.InputPayload = input
+		}
 		run.CreatedAt, run.UpdatedAt, run.RetryOfRunID = now, now, &original.ID
 		created, _, err := store.CreateWithInitialEvent(ctx, run, Event{ID: s.newID(), RunID: run.ID, EventType: "queued", Status: StatusQueued, Payload: json.RawMessage(`{}`), CreatedAt: now})
 		return created, mapStoreError(err)
 	})
+	if errors.Is(executeErr, ErrVersionConflict) || errors.Is(executeErr, ErrIdempotencyConflict) {
+		if original, readErr := s.store.GetByID(ctx, command.RunID); readErr == nil && original.Stage == "rewrite" {
+			if errors.Is(executeErr, ErrVersionConflict) {
+				return WorkflowRun{}, false, ErrRewriteVersionConflict
+			}
+			return WorkflowRun{}, false, ErrRewriteIdempotencyConflict
+		}
+	}
+	return run, replay, executeErr
+}
+
+func rewriteRetryPayload(raw json.RawMessage, runID uuid.UUID) (json.RawMessage, error) {
+	var input struct {
+		SchemaVersion               string          `json:"schemaVersion"`
+		WorkflowRunID               uuid.UUID       `json:"workflowRunId"`
+		CorrelationID               string          `json:"correlationId"`
+		ProjectID                   uuid.UUID       `json:"projectId"`
+		ContentItemID               uuid.UUID       `json:"contentItemId"`
+		SourceContentVersionID      uuid.UUID       `json:"sourceContentVersionId"`
+		SourceContentVersionVersion int             `json:"sourceContentVersionVersion"`
+		SourceContentHash           string          `json:"sourceContentHash"`
+		SourceTitle                 string          `json:"sourceTitle"`
+		SourceContent               string          `json:"sourceContent"`
+		ReviewReportID              uuid.UUID       `json:"reviewReportId"`
+		ReportSnapshot              json.RawMessage `json:"reportSnapshot"`
+		SelectedIssues              json.RawMessage `json:"selectedIssues"`
+		OptionalInstructions        json.RawMessage `json:"optionalInstructions"`
+		RewriteOptions              json.RawMessage `json:"rewriteOptions"`
+	}
+	if json.Unmarshal(raw, &input) != nil || input.SchemaVersion != "rewrite.input.v1" ||
+		input.ProjectID == uuid.Nil || input.ContentItemID == uuid.Nil ||
+		input.SourceContentVersionID == uuid.Nil || input.ReviewReportID == uuid.Nil ||
+		len(input.ReportSnapshot) == 0 || len(input.SelectedIssues) == 0 ||
+		len(input.OptionalInstructions) == 0 || len(input.RewriteOptions) == 0 {
+		return nil, ErrNotRetryable
+	}
+	input.WorkflowRunID = runID
+	input.CorrelationID = runID.String()
+	return json.Marshal(input)
 }
 
 func protectedStage(stage string) bool {

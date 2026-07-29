@@ -24,6 +24,7 @@ type fakeWorkflowRunApplication struct {
 	run workflowrun.WorkflowRun
 	events []workflowrun.Event
 	summary workflowrun.Summary
+	retryReplay bool
 	createErr, listErr, getErr, eventsErr, cancelErr, retryErr, summaryErr error
 }
 
@@ -33,6 +34,7 @@ func (f *fakeWorkflowRunApplication) GetRun(context.Context, uuid.UUID) (workflo
 func (f *fakeWorkflowRunApplication) ListRunEvents(context.Context, uuid.UUID) ([]workflowrun.Event, error) { return f.events, f.eventsErr }
 func (f *fakeWorkflowRunApplication) CancelRun(_ context.Context, command workflowrun.RunCommand) (workflowrun.WorkflowRun, error) { f.cancelCommand = command; return f.run, f.cancelErr }
 func (f *fakeWorkflowRunApplication) RetryRun(_ context.Context, command workflowrun.RetryCommand) (workflowrun.WorkflowRun, error) { f.retryCommand = command; return f.run, f.retryErr }
+func (f *fakeWorkflowRunApplication) RetryRunWithReplay(_ context.Context, command workflowrun.RetryCommand) (workflowrun.WorkflowRun, bool, error) { f.retryCommand = command; return f.run, f.retryReplay, f.retryErr }
 func (f *fakeWorkflowRunApplication) GetProjectRunSummary(context.Context, uuid.UUID) (workflowrun.Summary, error) { return f.summary, f.summaryErr }
 
 func workflowRunHTTPHandler(app workflowRunApplication) http.Handler {
@@ -98,12 +100,30 @@ func TestWorkflowRunHTTPCommandsAndErrors(t *testing.T) {
 	if w.Code != http.StatusOK || app.cancelCommand.RunID != run.ID || app.cancelCommand.ExpectedVersion != 1 || app.cancelCommand.IdempotencyKey != "cancel-key" { t.Fatalf("cancel mapping failed: %d %#v", w.Code, app.cancelCommand) }
 	w = workflowRunHTTPRequest(handler, http.MethodPost, "/api/v1/workflow-runs/"+run.ID.String()+"/retries", `{"expectedVersion":1,"useCurrentConfiguration":true,"inputOverride":{"topic":"new"}}`, "retry-key")
 	if w.Code != http.StatusCreated || !app.retryCommand.UseCurrentConfiguration || !strings.Contains(string(app.retryCommand.InputOverride), "new") { t.Fatalf("retry mapping failed: %d %#v", w.Code, app.retryCommand) }
+	app.retryReplay = true
+	w = workflowRunHTTPRequest(handler, http.MethodPost, "/api/v1/workflow-runs/"+run.ID.String()+"/retries", `{"expectedVersion":1,"useCurrentConfiguration":true,"inputOverride":{"topic":"new"}}`, "retry-key")
+	if w.Code != http.StatusOK { t.Fatalf("retry replay status=%d body=%s", w.Code, w.Body.String()) }
+	app.retryReplay = false
 	app.cancelErr = workflowrun.ErrVersionConflict
 	w = workflowRunHTTPRequest(handler, http.MethodPost, "/api/v1/workflow-runs/"+run.ID.String()+"/cancel", `{"expectedVersion":1}`, "cancel-key-2")
 	if w.Code != http.StatusConflict || !strings.Contains(w.Body.String(), `"code":"version_conflict"`) || strings.Contains(w.Body.String(), "workflow run version conflict") && strings.Contains(w.Body.String(), "stack") { t.Fatalf("version error = %d: %s", w.Code, w.Body.String()) }
 	app.cancelErr = workflowrun.ErrIdempotencyConflict
 	w = workflowRunHTTPRequest(handler, http.MethodPost, "/api/v1/workflow-runs/"+run.ID.String()+"/cancel", `{"expectedVersion":1}`, "cancel-key-3")
 	if w.Code != http.StatusConflict || !strings.Contains(w.Body.String(), "idempotency_key_reused_with_different_payload") { t.Fatalf("idempotency error = %d: %s", w.Code, w.Body.String()) }
+	for _, test := range []struct {
+		err  error
+		code string
+	}{
+		{workflowrun.ErrRewriteVersionConflict, "workflow_run_version_conflict"},
+		{workflowrun.ErrRewriteIdempotencyConflict, "idempotency_conflict"},
+		{workflowrun.ErrActiveRewriteRun, "active_rewrite_run_conflict"},
+	} {
+		app.retryErr = test.err
+		w = workflowRunHTTPRequest(handler, http.MethodPost, "/api/v1/workflow-runs/"+run.ID.String()+"/retries", `{"expectedVersion":1}`, uuid.NewString())
+		if w.Code != http.StatusConflict || !strings.Contains(w.Body.String(), `"code":"`+test.code+`"`) {
+			t.Fatalf("rewrite retry err=%v status=%d body=%s", test.err, w.Code, w.Body.String())
+		}
+	}
 }
 
 func TestWorkflowRunHTTPDetailsEventsAndSummary(t *testing.T) {

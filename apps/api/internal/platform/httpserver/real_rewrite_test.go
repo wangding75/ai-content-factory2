@@ -2,6 +2,7 @@ package httpserver
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"net/http"
 	"net/http/httptest"
@@ -21,6 +22,9 @@ type rewriteApplicationStub struct {
 	replay       bool
 	err          error
 	request      contentitem.RewritePreflightRequest
+	summary      contentitem.RewriteSummary
+	history      contentitem.RewriteHistory
+	result       contentitem.RewriteResult
 }
 
 func (s *rewriteApplicationStub) Availability(context.Context, uuid.UUID) (contentitem.RewriteAvailability, error) {
@@ -34,6 +38,22 @@ func (s *rewriteApplicationStub) Preflight(_ context.Context, _ uuid.UUID, reque
 
 func (s *rewriteApplicationStub) CreateRun(context.Context, uuid.UUID, string, string, string) (workflowrun.WorkflowRun, bool, error) {
 	return s.run, s.replay, s.err
+}
+
+func (s *rewriteApplicationStub) Summary(context.Context, uuid.UUID) (contentitem.RewriteSummary, error) {
+	return s.summary, s.err
+}
+
+func (s *rewriteApplicationStub) History(context.Context, uuid.UUID, int, int) (contentitem.RewriteHistory, error) {
+	return s.history, s.err
+}
+
+func (s *rewriteApplicationStub) Result(context.Context, uuid.UUID) (contentitem.RewriteResult, error) {
+	return s.result, s.err
+}
+
+func (s *rewriteApplicationStub) RetryResultConsumption(context.Context, uuid.UUID, contentitem.RetryRewriteConsumptionRequest) (contentitem.RewriteResult, error) {
+	return s.result, s.err
 }
 
 func TestRealRewriteRoutesAndFrozenTransportContract(t *testing.T) {
@@ -124,6 +144,11 @@ func TestRealRewriteErrorMappingIsPreciseAndSafe(t *testing.T) {
 		{contentitem.ErrRewritePreflightStale, 409, "rewrite_preflight_stale"},
 		{contentitem.ErrRewritePreflightConsumed, 409, "rewrite_preflight_consumed"},
 		{contentitem.ErrRewriteActiveRun, 409, "active_rewrite_run_conflict"},
+		{contentitem.ErrRewriteCandidateNotFound, 404, "rewrite_candidate_not_found"},
+		{contentitem.ErrRewriteCandidateNotReady, 409, "rewrite_candidate_not_ready"},
+		{contentitem.ErrRewriteOutputInvalid, 409, "rewrite_output_validation_failed"},
+		{contentitem.ErrRewriteResultConsumption, 500, "rewrite_result_consumption_failed"},
+		{workflowrun.ErrVersionConflict, 409, "workflow_run_version_conflict"},
 		{workflowrun.ErrIdempotencyConflict, 409, "idempotency_conflict"},
 		{errors.New("sql postgres webhook stack secret"), 500, "internal_error"},
 	}
@@ -137,6 +162,99 @@ func TestRealRewriteErrorMappingIsPreciseAndSafe(t *testing.T) {
 		}
 		for _, forbidden := range []string{"sql", "postgres", "webhook", "stack", "secret"} {
 			if strings.Contains(lower, forbidden) { t.Fatalf("%s leaked in %s", forbidden, response.Body.String()) }
+		}
+	}
+}
+
+func TestRealRewriteSummaryHistoryResultAndConsumptionRetryRoutes(t *testing.T) {
+	now := time.Now().UTC()
+	reviewID, itemID, runID, sourceID, candidateID, issueID := uuid.New(), uuid.New(), uuid.New(), uuid.New(), uuid.New(), uuid.New()
+	subjectType := "review_report"
+	run := workflowrun.WorkflowRun{
+		ID: runID, RunNumber: "WR-QUERY", ProjectID: uuid.New(), Stage: "rewrite",
+		WorkflowConfigurationID: uuid.New(), TriggerSource: "manual", Status: workflowrun.StatusSucceeded,
+		SubjectType: &subjectType, SubjectID: &reviewID,
+		ConfigurationSnapshot: json.RawMessage(`{"baseUrl":"http://internal.example","credential":"secret"}`),
+		InputPayload: json.RawMessage(`{"sourceContent":"private full source","token":"secret"}`),
+		OutputPayload: json.RawMessage(`{"content":"private runtime output"}`),
+		ErrorDetails: json.RawMessage(`{"stack":"hidden"}`), CreatedAt: now, UpdatedAt: now, Version: 2,
+	}
+	source := contentitem.RewriteSourceVersionSummary{
+		ID: sourceID, ContentItemID: itemID, VersionNo: 1, Version: 2,
+		Title: "来源", WordCount: 4, ContentHash: strings.Repeat("a", 64),
+	}
+	report := contentitem.RewriteReportSnapshot{
+		ReviewReportID: reviewID, SourceContentVersionID: sourceID,
+		SourceContentVersionVersion: 2, SourceContentHash: strings.Repeat("a", 64),
+		Conclusion: "needs_changes", Summary: "摘要", CompletedAt: now,
+	}
+	issues := contentitem.RewriteSelectedIssueSummary{
+		Total: 1, Items: []contentitem.RewriteIssueSnapshot{{
+			ReviewIssueID: issueID, ReviewReportID: reviewID, IssueKey: "ISSUE-1",
+			Position: 1, Version: 1, CategoryKey: "logic", CategoryLabel: "逻辑",
+			Severity: "warning", Title: "问题", Description: "描述",
+			Disposition: "open",
+		}},
+	}
+	candidate := contentitem.ContentVersion{
+		ID: candidateID, ContentItemID: itemID, VersionNo: 2, Version: 1,
+		Title: "候选", Content: "候选完整正文", WordCount: 6,
+		Source: contentitem.ContentVersionSourceWorkflowRewrite,
+		Status: contentitem.ContentVersionStatusEditableDraft,
+		CreatedAt: now, UpdatedAt: now,
+	}
+	stub := &rewriteApplicationStub{
+		summary: contentitem.RewriteSummary{
+			ReviewReportID: reviewID, ContentItemID: itemID, State: "candidate_ready",
+			LatestRun: &run, SourceContentVersionSummary: source,
+			SelectedIssueSummary: &issues, CandidateVersion: &candidate, CanSetCurrent: true,
+		},
+		history: contentitem.RewriteHistory{
+			Items: []contentitem.RewriteHistoryItem{{
+				ReviewReportSnapshot: report, SourceContentVersionSummary: source,
+				WorkflowRun: run, State: "candidate_ready", CandidateVersion: &candidate,
+			}},
+			Total: 1, Limit: 20, Offset: 0,
+		},
+		result: contentitem.RewriteResult{
+			ReviewReportSnapshot: report, SourceContentVersionSummary: source,
+			SelectedIssueSummary: issues, WorkflowRun: run,
+			Output: contentitem.RewriteRuntimeOutputV1{
+				SchemaVersion: "rewrite.output.v1", Title: "候选", Content: "候选完整正文",
+				Summary: "摘要", AddressedIssues: []contentitem.RewriteIssueOutcomeV1{{
+					ReviewIssueID: issueID, Summary: "已处理",
+				}}, UnresolvedIssues: []contentitem.RewriteIssueOutcomeV1{}, Warnings: []string{},
+			},
+			CandidateVersion: candidate, CanSetCurrent: true,
+		},
+	}
+	mux := http.NewServeMux()
+	registerRealRewriteRoutes(mux, stub)
+	cases := []struct {
+		method, path, body, key string
+		status                  int
+		contains                string
+		forbidden               []string
+	}{
+		{http.MethodGet, "/api/v1/reviews/" + reviewID.String() + "/rewrite-summary", "", "", 200, `"state":"candidate_ready"`, []string{"private full source", "private runtime output", "internal.example", "credential"}},
+		{http.MethodGet, "/api/v1/content-items/" + itemID.String() + "/rewrite-history?limit=20&offset=0", "", "", 200, `"total":1`, []string{"候选完整正文", "private full source", "private runtime output", "hidden"}},
+		{http.MethodGet, "/api/v1/workflow-runs/" + runID.String() + "/rewrite-result", "", "", 200, `"content":"候选完整正文"`, []string{"private full source", "private runtime output", "internal.example", "hidden"}},
+		{http.MethodPost, "/api/v1/workflow-runs/" + runID.String() + "/rewrite-result-consumption-retries", `{"expectedRunVersion":2}`, "retry-key", 200, `"candidateVersion"`, []string{"private full source", "private runtime output", "internal.example", "hidden"}},
+	}
+	for _, test := range cases {
+		response := httptest.NewRecorder()
+		request := httptest.NewRequest(test.method, test.path, strings.NewReader(test.body))
+		if test.key != "" {
+			request.Header.Set("Idempotency-Key", test.key)
+		}
+		mux.ServeHTTP(response, request)
+		if response.Code != test.status || !strings.Contains(response.Body.String(), test.contains) {
+			t.Fatalf("%s status=%d body=%s", test.path, response.Code, response.Body.String())
+		}
+		for _, forbidden := range test.forbidden {
+			if strings.Contains(response.Body.String(), forbidden) {
+				t.Fatalf("%s leaked %q: %s", test.path, forbidden, response.Body.String())
+			}
 		}
 	}
 }
