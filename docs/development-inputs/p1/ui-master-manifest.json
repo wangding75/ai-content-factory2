@@ -828,72 +828,137 @@
     },
     {
       "iteration": "iteration-18-real-content-rewrite",
-      "frameId": "D4_CREATE_REWRITE_V2",
+      "frameId": "I18_D2_REVIEW_REWRITE_ENTRY",
       "area": "重写",
-      "purpose": "选择审核问题并发起重写",
-      "sourceFolder": "d1_editor_v2_create_rewrite_console",
-      "screen": "ui/frames/D4_CREATE_REWRITE_V2/screen.png",
-      "html": "ui/frames/D4_CREATE_REWRITE_V2/code.html",
-      "acceptance": "CONDITIONAL_PASS",
+      "purpose": "审核结果：选择问题并创建重写",
+      "sourcePackage": "stitch_acf_iteration_18_ui_real_content_rewrite_frozen_shell.zip",
+      "sourceFolder": "01",
+      "screen": "ui/frames/I18_D2_REVIEW_REWRITE_ENTRY/screen.png",
+      "html": "ui/frames/I18_D2_REVIEW_REWRITE_ENTRY/code.html",
+      "acceptance": "REBUILD_CANDIDATE",
       "developmentCorrections": [
-        "replace user-visible English copy with Chinese locale resources",
-        "preserve technical identifiers only when appropriate"
+        "reuse the existing production AppShell",
+        "follow Iteration 18 business rules and locale; do not extend persisted enums from sample copy"
       ]
     },
     {
       "iteration": "iteration-18-real-content-rewrite",
-      "frameId": "D5_REWRITE_RESULT_V2",
+      "frameId": "I18_D4_CREATE_REWRITE",
       "area": "重写",
-      "purpose": "新旧版本关系与结果预览",
-      "sourceFolder": "d5_rewrite_result_v2_rewrite_result_console_2",
-      "screen": "ui/frames/D5_REWRITE_RESULT_V2/screen.png",
-      "html": "ui/frames/D5_REWRITE_RESULT_V2/code.html",
-      "acceptance": "CONDITIONAL_PASS",
+      "purpose": "创建正文重写",
+      "sourcePackage": "stitch_acf_iteration_18_ui_real_content_rewrite_frozen_shell.zip",
+      "sourceFolder": "02",
+      "screen": "ui/frames/I18_D4_CREATE_REWRITE/screen.png",
+      "html": "ui/frames/I18_D4_CREATE_REWRITE/code.html",
+      "acceptance": "REBUILD_CANDIDATE",
       "developmentCorrections": [
-        "replace user-visible English copy with Chinese locale resources",
-        "preserve technical identifiers only when appropriate"
+        "reuse the existing production AppShell",
+        "follow Iteration 18 business rules and locale; do not extend persisted enums from sample copy"
       ]
     },
     {
       "iteration": "iteration-18-real-content-rewrite",
-      "frameId": "STATE_TASK_RUNNING_BAR",
-      "area": "共享组件",
-      "purpose": "异步运行状态条",
-      "sourceFolder": "component_spec_state_task_running_bar",
-      "screen": "ui/frames/STATE_TASK_RUNNING_BAR/screen.png",
-      "html": "ui/frames/STATE_TASK_RUNNING_BAR/code.html",
-      "acceptance": "CONDITIONAL_PASS",
+      "frameId": "I18_D4_REWRITE_CONFIG_DRAWER",
+      "area": "重写",
+      "purpose": "查看项目重写配置",
+      "sourcePackage": "stitch_acf_iteration_18_ui_real_content_rewrite_frozen_shell.zip",
+      "sourceFolder": "03",
+      "screen": "ui/frames/I18_D4_REWRITE_CONFIG_DRAWER/screen.png",
+      "html": "ui/frames/I18_D4_REWRITE_CONFIG_DRAWER/code.html",
+      "acceptance": "REBUILD_CANDIDATE",
       "developmentCorrections": [
-        "replace user-visible English copy with Chinese locale resources",
-        "preserve technical identifiers only when appropriate"
+        "reuse the existing production AppShell",
+        "follow Iteration 18 business rules and locale; do not extend persisted enums from sample copy"
       ]
     },
     {
       "iteration": "iteration-18-real-content-rewrite",
-      "frameId": "STATE_TASK_FAILED_NOTICE",
-      "area": "共享组件",
-      "purpose": "安全错误通知与恢复动作",
-      "sourceFolder": "component_spec_state_task_failed_notice",
-      "screen": "ui/frames/STATE_TASK_FAILED_NOTICE/screen.png",
-      "html": "ui/frames/STATE_TASK_FAILED_NOTICE/code.html",
-      "acceptance": "CONDITIONAL_PASS",
+      "frameId": "I18_D4_REWRITE_RUNNING",
+      "area": "重写",
+      "purpose": "正文重写运行中",
+      "sourcePackage": "stitch_acf_iteration_18_ui_real_content_rewrite_frozen_shell.zip",
+      "sourceFolder": "04",
+      "screen": "ui/frames/I18_D4_REWRITE_RUNNING/screen.png",
+      "html": "ui/frames/I18_D4_REWRITE_RUNNING/code.html",
+      "acceptance": "REBUILD_CANDIDATE",
       "developmentCorrections": [
-        "replace user-visible English copy with Chinese locale resources",
-        "preserve technical identifiers only when appropriate"
+        "reuse the existing production AppShell",
+        "follow Iteration 18 business rules and locale; do not extend persisted enums from sample copy"
       ]
     },
     {
       "iteration": "iteration-18-real-content-rewrite",
-      "frameId": "STATE_NOT_CONFIGURED_EMPTY",
-      "area": "共享组件",
-      "purpose": "未配置、失效与空结果状态",
-      "sourceFolder": "component_spec_state_not_configured_empty",
-      "screen": "ui/frames/STATE_NOT_CONFIGURED_EMPTY/screen.png",
-      "html": "ui/frames/STATE_NOT_CONFIGURED_EMPTY/code.html",
-      "acceptance": "CONDITIONAL_PASS",
+      "frameId": "I18_D5_REWRITE_RESULT",
+      "area": "重写",
+      "purpose": "正文重写成功候选",
+      "sourcePackage": "stitch_acf_iteration_18_ui_real_content_rewrite_frozen_shell.zip",
+      "sourceFolder": "05",
+      "screen": "ui/frames/I18_D5_REWRITE_RESULT/screen.png",
+      "html": "ui/frames/I18_D5_REWRITE_RESULT/code.html",
+      "acceptance": "REBUILD_CANDIDATE",
       "developmentCorrections": [
-        "replace user-visible English copy with Chinese locale resources",
-        "preserve technical identifiers only when appropriate"
+        "reuse the existing production AppShell",
+        "follow Iteration 18 business rules and locale; do not extend persisted enums from sample copy"
+      ]
+    },
+    {
+      "iteration": "iteration-18-real-content-rewrite",
+      "frameId": "I18_D5_SET_CURRENT_CONFIRM",
+      "area": "重写",
+      "purpose": "设为当前版本确认",
+      "sourcePackage": "stitch_acf_iteration_18_ui_real_content_rewrite_frozen_shell.zip",
+      "sourceFolder": "06",
+      "screen": "ui/frames/I18_D5_SET_CURRENT_CONFIRM/screen.png",
+      "html": "ui/frames/I18_D5_SET_CURRENT_CONFIRM/code.html",
+      "acceptance": "REBUILD_CANDIDATE",
+      "developmentCorrections": [
+        "reuse the existing production AppShell",
+        "follow Iteration 18 business rules and locale; do not extend persisted enums from sample copy"
+      ]
+    },
+    {
+      "iteration": "iteration-18-real-content-rewrite",
+      "frameId": "I18_D5_RESULT_CONSUMPTION_FAILED",
+      "area": "重写",
+      "purpose": "重写结果提交失败",
+      "sourcePackage": "stitch_acf_iteration_18_ui_real_content_rewrite_frozen_shell.zip",
+      "sourceFolder": "07",
+      "screen": "ui/frames/I18_D5_RESULT_CONSUMPTION_FAILED/screen.png",
+      "html": "ui/frames/I18_D5_RESULT_CONSUMPTION_FAILED/code.html",
+      "acceptance": "REBUILD_CANDIDATE",
+      "developmentCorrections": [
+        "reuse the existing production AppShell",
+        "follow Iteration 18 business rules and locale; do not extend persisted enums from sample copy"
+      ]
+    },
+    {
+      "iteration": "iteration-18-real-content-rewrite",
+      "frameId": "I18_D4_REWRITE_FAILED",
+      "area": "重写",
+      "purpose": "重写任务执行失败",
+      "sourcePackage": "stitch_acf_iteration_18_ui_real_content_rewrite_frozen_shell.zip",
+      "sourceFolder": "08",
+      "screen": "ui/frames/I18_D4_REWRITE_FAILED/screen.png",
+      "html": "ui/frames/I18_D4_REWRITE_FAILED/code.html",
+      "acceptance": "REBUILD_CANDIDATE",
+      "developmentCorrections": [
+        "reuse the existing production AppShell",
+        "follow Iteration 18 business rules and locale; do not extend persisted enums from sample copy"
+      ]
+    },
+    {
+      "iteration": "iteration-18-real-content-rewrite",
+      "frameId": "I18_D4_REWRITE_AVAILABILITY",
+      "area": "重写",
+      "purpose": "未配置、配置失效与空状态",
+      "sourcePackage": "stitch_acf_iteration_18_ui_real_content_rewrite_frozen_shell.zip",
+      "sourceFolder": "09",
+      "screen": "ui/frames/I18_D4_REWRITE_AVAILABILITY/screen.png",
+      "html": "ui/frames/I18_D4_REWRITE_AVAILABILITY/code.html",
+      "acceptance": "REBUILD_CANDIDATE",
+      "developmentCorrections": [
+        "reuse the existing production AppShell",
+        "follow Iteration 18 business rules and locale; do not extend persisted enums from sample copy"
       ]
     },
     {

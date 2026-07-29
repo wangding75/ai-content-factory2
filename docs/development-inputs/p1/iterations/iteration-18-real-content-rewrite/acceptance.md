@@ -1,31 +1,36 @@
-# Iteration 18 — 真实正文重写 — 验收标准
+# Iteration 18 — 真实正文重写验收标准
 
-## 闭环验收
+**状态：`rebuild_candidate_2026_07_29`。** 本次临时任务只验收文档/原型替换包；以下业务矩阵供 CF-18-01 冻结，不代表当前代码已实现。
 
-- [ ] 重写创建新版本、源版本不可变、结果可回到编辑器并可追踪 WorkflowRun。
-- [ ] OpenAPI、实现和 UI 字段一致。
-- [ ] 成功、失败、未配置、配置失效和刷新恢复状态均验证。
-- [ ] 失败不产生部分领域数据。
-- [ ] P0 已完成闭环无回归。
+## 1. 文档与原型替换验收
 
-## UI 条件通过与开发修正规则
+- [ ] 9 个 Frame 均存在 1600×1280 screen.png 与非空 code.html。
+- [ ] ui-manifest.json 为 UTF-8、合法 JSON、frameCount=9，路径均存在。
+- [ ] ui-scope、iteration-plan、prototype mapping 和 UI/API 追踪包含全部 9 Frame。
+- [ ] 旧 5 Frame 目录从 Iteration 18 中删除；不修改 Iteration 15/16/17、OpenAPI、Migration、代码或 n8n。
+- [ ] p1/ui-master-manifest.json 和 ui-version-selection.md 只更新 Iteration 18 条目。
+- [ ] Git diff 只包含替换清单文件，`git diff --check` 通过。
 
-Iteration 11 的人工验收结论为：**有条件通过**。
+## 2. CF-18-01 业务冻结矩阵
 
-已知问题：部分 Stitch 原型文案为英文，尤其可能出现在左侧一级菜单、状态标签、表头、按钮、辅助说明和技术占位文案中。原型中的英文不构成最终产品文案冻结。
+| 范围 | PASS 条件 |
+|---|---|
+| Stage/Subject | content_rewrite + review_report 唯一语义，无平行 Runtime |
+| 来源 | Report、Issue、来源版本、Run、候选和 IssueLink 完整追踪 |
+| Issue | 只允许同 Report 的 open Issue；1～50 项；不自动改 disposition |
+| 输入输出 | rewrite.input.v1 / rewrite.output.v1 严格 Schema |
+| Preflight/Create | 只读预检、Token、幂等、事务和 active Run 并发完整 |
+| 消费 | 候选与全部 IssueLink 原子写入；失败零部分数据 |
+| 状态 | 8 个 Summary 状态及优先级完整 |
+| Retry | Runtime Retry 与仅消费 Retry 严格区分 |
+| 候选 | 非当前、不覆盖源版本、不自动审核/发布 |
+| Set Current | 复用 Iteration 16 CAS，stale 不强制覆盖 |
+| P0 | Mock Rewrite 兼容且来源标识清晰 |
+| UI | 9 个 Frame 与 API/状态/模型可追踪 |
 
-开发必须满足：
+## 3. 不在本次替换任务验收范围
 
-1. 默认中文环境下，用户可见文案全部使用统一中文资源，不得直接复制 HTML 中的英文硬编码；
-2. 左侧一级菜单统一为：首页、项目、素材、作品、工作流、设置；
-3. 状态统一为：排队中、运行中、已成功、已失败、未验证、验证成功、已停用、配置异常；
-4. `Run ID`、`Workflow ID`、Schema 版本、模型名、API 名称等技术标识可以保留英文；
-5. 所有业务文案进入前端 i18n/locale 资源；组件不得内嵌不可替换英文；
-6. 人工 UI 验收增加“中文文案与术语一致性”专项，发现英文用户文案即不通过。
-
-## 工程验收
-
-- [ ] 先局部测试，再分组测试，最后总门禁；未定位根因前禁止反复完整重跑。
-- [ ] 类型检查、构建、API 测试、E2E 和安全检查通过。
-- [ ] `git diff --name-status`、未跟踪文件和 `git status --short` 已记录。
-- [ ] 独立 Code Review 完成。
+- OpenAPI、Migration、后端、前端或 n8n 实现；
+- 浏览器实机截图；
+- Iteration 17 冻结修复；
+- Iteration 19 集成验收。

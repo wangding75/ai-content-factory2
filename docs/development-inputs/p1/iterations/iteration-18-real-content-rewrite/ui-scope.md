@@ -1,26 +1,42 @@
-# Iteration 18 — 真实正文重写 — UI Scope
+# Iteration 18 — 真实正文重写 UI Scope
 
-## 原型关联
+**状态：`rebuild_candidate_2026_07_29`。**
 
-| Frame | 区域 | 用途 | 截图 | HTML |
-|---|---|---|---|---|
-| `D4_CREATE_REWRITE_V2` | 重写 | 选择审核问题并发起重写 | `ui/frames/D4_CREATE_REWRITE_V2/screen.png` | `ui/frames/D4_CREATE_REWRITE_V2/code.html` |
-| `D5_REWRITE_RESULT_V2` | 重写 | 新旧版本关系与结果预览 | `ui/frames/D5_REWRITE_RESULT_V2/screen.png` | `ui/frames/D5_REWRITE_RESULT_V2/code.html` |
-| `STATE_TASK_RUNNING_BAR` | 共享组件 | 异步运行状态条 | `ui/frames/STATE_TASK_RUNNING_BAR/screen.png` | `ui/frames/STATE_TASK_RUNNING_BAR/code.html` |
-| `STATE_TASK_FAILED_NOTICE` | 共享组件 | 安全错误通知与恢复动作 | `ui/frames/STATE_TASK_FAILED_NOTICE/screen.png` | `ui/frames/STATE_TASK_FAILED_NOTICE/code.html` |
-| `STATE_NOT_CONFIGURED_EMPTY` | 共享组件 | 未配置、失效与空结果状态 | `ui/frames/STATE_NOT_CONFIGURED_EMPTY/screen.png` | `ui/frames/STATE_NOT_CONFIGURED_EMPTY/code.html` |
+## 1. Frame 清单
 
-## UI 条件通过与开发修正规则
+| 顺序 | Frame | 页面/状态 | 生产路由 | 截图 |
+|---:|---|---|---|---|
+| 1 | `I18_D2_REVIEW_REWRITE_ENTRY` | 审核结果：选择问题并创建重写 | `/projects/{projectId}/works/{workId}/review?reportId={reviewReportId}` | `ui/frames/I18_D2_REVIEW_REWRITE_ENTRY/screen.png` |
+| 2 | `I18_D4_CREATE_REWRITE` | 创建正文重写 | `/projects/{projectId}/works/{workId}/rewrite?reportId={reviewReportId}` | `ui/frames/I18_D4_CREATE_REWRITE/screen.png` |
+| 3 | `I18_D4_REWRITE_CONFIG_DRAWER` | 查看项目重写配置 | `/projects/{projectId}/works/{workId}/rewrite?reportId={reviewReportId}` | `ui/frames/I18_D4_REWRITE_CONFIG_DRAWER/screen.png` |
+| 4 | `I18_D4_REWRITE_RUNNING` | 正文重写运行中 | `/projects/{projectId}/works/{workId}/rewrite?workflowRunId={workflowRunId}` | `ui/frames/I18_D4_REWRITE_RUNNING/screen.png` |
+| 5 | `I18_D5_REWRITE_RESULT` | 正文重写成功候选 | `/projects/{projectId}/works/{workId}/rewrite?workflowRunId={workflowRunId}` | `ui/frames/I18_D5_REWRITE_RESULT/screen.png` |
+| 6 | `I18_D5_SET_CURRENT_CONFIRM` | 设为当前版本确认 | `/projects/{projectId}/works/{workId}/rewrite?workflowRunId={workflowRunId}` | `ui/frames/I18_D5_SET_CURRENT_CONFIRM/screen.png` |
+| 7 | `I18_D5_RESULT_CONSUMPTION_FAILED` | 重写结果提交失败 | `/projects/{projectId}/works/{workId}/rewrite?workflowRunId={workflowRunId}` | `ui/frames/I18_D5_RESULT_CONSUMPTION_FAILED/screen.png` |
+| 8 | `I18_D4_REWRITE_FAILED` | 重写任务执行失败 | `/projects/{projectId}/works/{workId}/rewrite?workflowRunId={workflowRunId}` | `ui/frames/I18_D4_REWRITE_FAILED/screen.png` |
+| 9 | `I18_D4_REWRITE_AVAILABILITY` | 未配置、配置失效与空状态 | `/projects/{projectId}/works/{workId}/rewrite?reportId={reviewReportId}` | `ui/frames/I18_D4_REWRITE_AVAILABILITY/screen.png` |
 
-Iteration 11 的人工验收结论为：**有条件通过**。
+## 2. 状态映射
 
-已知问题：部分 Stitch 原型文案为英文，尤其可能出现在左侧一级菜单、状态标签、表头、按钮、辅助说明和技术占位文案中。原型中的英文不构成最终产品文案冻结。
+| Summary State | Frame |
+|---|---|
+| idle | 01 / 02 |
+| not_configured | 03 / 09 |
+| queued | 04 排队文案变体 |
+| running | 04 |
+| candidate_ready | 05 / 06 |
+| runtime_failed | 08 Runtime 失败变体 |
+| output_validation_failed | 08 输出校验变体 |
+| result_consumption_failed | 07 |
 
-开发必须满足：
+## 3. UI 强制规则
 
-1. 默认中文环境下，用户可见文案全部使用统一中文资源，不得直接复制 HTML 中的英文硬编码；
-2. 左侧一级菜单统一为：首页、项目、素材、作品、工作流、设置；
-3. 状态统一为：排队中、运行中、已成功、已失败、未验证、验证成功、已停用、配置异常；
-4. `Run ID`、`Workflow ID`、Schema 版本、模型名、API 名称等技术标识可以保留英文；
-5. 所有业务文案进入前端 i18n/locale 资源；组件不得内嵌不可替换英文；
-6. 人工 UI 验收增加“中文文案与术语一致性”专项，发现英文用户文案即不通过。
+- 01 扩展 Iteration 17 审核结果页；只有 `open` Issue 可选择。
+- 02 的工作流/模型来自项目配置，只读；用户只选择 Issue、策略和补充要求。
+- 03/06 是抽屉/弹窗状态，不创建伪路由。
+- 04/07/08/09 是同一 Rewrite Route 的持久化状态，不为每个状态创建页面。
+- 05 候选不是 current；打开编辑器只能进入只读候选预览，直到显式设为当前。
+- 07 不得展示候选、版本比较、编辑器入口或 set-current。
+- 08 不得把 output_validation_failed 显示为 result_consumption_failed。
+- 09 的卡片互斥显示，不得在生产中同时展示。
+- 所有示例数据不得硬编码；业务文案进入现有 locale。

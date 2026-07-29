@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+
+<html class="light" lang="zh-CN"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>AI Content Factory - 审核结果—选择问题并创建重写</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-primary-container": "#4133d6",
+                        "tertiary-fixed": "#69f6b8",
+                        "surface-tint": "#4f43e3",
+                        "secondary": "#506076",
+                        "primary-container": "#e3dfff",
+                        "on-error": "#fff7f7",
+                        "on-secondary-fixed-variant": "#4d5d73",
+                        "tertiary-fixed-dim": "#58e7ab",
+                        "surface-variant": "#d9e4ec",
+                        "primary-fixed-dim": "#d3d0ff",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-container-highest": "#d9e4ec",
+                        "primary": "#4f43e3",
+                        "tertiary-dim": "#005f40",
+                        "on-error-container": "#782232",
+                        "inverse-surface": "#0b0f11",
+                        "error-container": "#ff8b9a",
+                        "outline-variant": "#a8b3bb",
+                        "surface-container": "#e8eff4",
+                        "error": "#9e3f4e",
+                        "surface-container-low": "#f0f4f8",
+                        "on-surface": "#29343a",
+                        "inverse-primary": "#8681ff",
+                        "inverse-on-surface": "#9a9da0",
+                        "outline": "#717c84",
+                        "secondary-fixed-dim": "#c5d6f0",
+                        "on-primary-fixed-variant": "#4c40e0",
+                        "on-surface-variant": "#566168",
+                        "on-tertiary-fixed": "#00452d",
+                        "tertiary": "#006d4a",
+                        "secondary-dim": "#44546a",
+                        "on-secondary-fixed": "#314055",
+                        "tertiary-container": "#69f6b8",
+                        "error-dim": "#4f0116",
+                        "on-secondary": "#f7f9ff",
+                        "on-background": "#29343a",
+                        "on-secondary-container": "#435368",
+                        "on-tertiary-container": "#005a3c",
+                        "primary-fixed": "#e3dfff",
+                        "on-primary-fixed": "#2c12c5",
+                        "surface-container-high": "#e1e9f0",
+                        "on-primary": "#faf6ff",
+                        "primary-dim": "#4234d7",
+                        "on-tertiary-fixed-variant": "#006544",
+                        "surface-dim": "#cedce5",
+                        "on-tertiary": "#e6ffee",
+                        "surface": "#f7f9fc",
+                        "secondary-fixed": "#d3e4fe",
+                        "surface-bright": "#f7f9fc",
+                        "secondary-container": "#d3e4fe",
+                        "background": "#f7f9fc"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "fontFamily": {
+                        "headline": ["Inter", "sans-serif"],
+                        "display": ["Inter", "sans-serif"],
+                        "body": ["Inter", "sans-serif"],
+                        "label": ["Inter", "sans-serif"]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; }
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+    </style>
+</head>
+<body class="bg-surface text-on-surface h-screen overflow-hidden flex font-body">
+<!-- SideNavBar -->
+<aside class="fixed left-0 top-0 h-full w-[244px] bg-white dark:bg-surface-container-lowest border-r border-outline-variant flex flex-col py-4 z-20">
+<div class="px-6 mb-8 flex items-center gap-3">
+<div class="w-8 h-8 rounded bg-primary flex items-center justify-center text-on-primary font-bold shadow-sm">
+                A
+            </div>
+<div>
+<h1 class="text-lg font-headline font-bold text-on-surface dark:text-on-surface leading-tight">AI Content Factory</h1>
+<p class="text-xs text-on-surface-variant">内容创作平台</p>
+</div>
+</div>
+<nav class="flex-1 px-3 space-y-1">
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container-low transition-colors font-medium text-sm cursor-pointer active:scale-95" href="#">
+<span class="material-symbols-outlined text-xl">home</span>
+                首页
+            </a>
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-primary-container text-on-primary-container font-bold transition-colors text-sm cursor-pointer active:scale-95" href="#">
+<span class="material-symbols-outlined text-xl" style="font-variation-settings: 'FILL' 1;">folder_open</span>
+                项目
+            </a>
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container-low transition-colors font-medium text-sm cursor-pointer active:scale-95" href="#">
+<span class="material-symbols-outlined text-xl">folder_zip</span>
+                素材
+            </a>
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container-low transition-colors font-medium text-sm cursor-pointer active:scale-95" href="#">
+<span class="material-symbols-outlined text-xl">article</span>
+                作品
+            </a>
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container-low transition-colors font-medium text-sm cursor-pointer active:scale-95" href="#">
+<span class="material-symbols-outlined text-xl">account_tree</span>
+                流程
+            </a>
+</nav>
+<div class="px-6 mt-auto">
+<div class="text-xs text-outline font-medium">v2.4.1 (Stable)</div>
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="ml-[244px] flex-1 flex flex-col h-full overflow-hidden bg-background">
+<!-- TopNavBar -->
+<header class="fixed top-0 right-0 w-[calc(100%-244px)] h-[60px] bg-white dark:bg-surface-container-lowest border-b border-outline-variant flex items-center justify-between px-6 z-10">
+<div class="flex items-center gap-6">
+<div class="flex flex-col">
+<span class="text-xs text-on-surface-variant">项目 / acf18-rewrite-001</span>
+<h2 class="text-on-surface font-headline font-semibold text-sm">霓港纪事 <span class="mx-1 text-outline-variant">|</span> 小说 <span class="mx-1 text-outline-variant">|</span> 策划中 <span class="mx-1 text-outline-variant">|</span> Iteration 18 真实正文重写验收项目</h2>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<div class="relative w-64">
+<span class="material-symbols-outlined absolute left-2.5 top-2 text-on-surface-variant text-[18px]">search</span>
+<input class="w-full pl-9 pr-3 py-1.5 bg-surface-container-low border-transparent rounded-md text-sm text-on-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all placeholder:text-outline" placeholder="搜索项目或素材…" type="text"/>
+</div>
+<button class="text-on-surface-variant hover:text-primary transition-colors cursor-pointer w-8 h-8 flex items-center justify-center rounded-full hover:bg-surface-container-low">
+<span class="material-symbols-outlined text-[20px]">help</span>
+</button>
+<button class="text-on-surface-variant hover:text-primary transition-colors cursor-pointer w-8 h-8 flex items-center justify-center rounded-full hover:bg-surface-container-low relative">
+<span class="material-symbols-outlined text-[20px]">notifications</span>
+<span class="absolute top-1.5 right-1.5 w-2 h-2 bg-error rounded-full"></span>
+</button>
+<div class="h-6 w-px bg-outline-variant mx-1"></div>
+<div class="flex items-center gap-2 cursor-pointer hover:bg-surface-container-low px-2 py-1 rounded-md transition-colors">
+<div class="w-7 h-7 rounded-full bg-secondary-container text-on-secondary-container flex items-center justify-center text-xs font-bold font-headline overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="A small, professional avatar image of a user, stylized in a clean, modern vector illustration style. The background is a soft blue tone, and the character is a generic, gender-neutral tech professional. High-key lighting, minimalistic aesthetic fitting for a B2B SaaS dashboard." src="https://lh3.googleusercontent.com/aida-public/AB6AXuB8BrZtw_lqcVvcTPUcqPaOv7VZSAFSufI_n_7JeuRFFY5azo0jpgojrQLB-cRxlZnK5oKS3fbaCojOX2NDPxf39e7Z0eun72OgjQgADS50WhelRK-fnTiMx2D5E0tPWuevCXn1jL6-1ZrMLlai18NKQJwso8FMEWP9drvxxafdnZzjpeqJErOlavOyRlPuPAFNq12HCaUbb1tnEPeBvZd8fwshEyuSShEKMa9klSLA85LnN3CO-oFpxeU6fkWnkLxuuXo4RHI1g6td"/>
+</div>
+<div class="flex flex-col">
+<span class="text-sm font-medium text-on-surface leading-none">创作管理员</span>
+</div>
+</div>
+</div>
+</header>
+<!-- Project Tabs -->
+<div class="w-full bg-white border-b border-outline-variant px-6 pt-0 mt-[60px] flex gap-6 overflow-x-auto no-scrollbar">
+<a class="text-sm font-body text-on-surface-variant hover:text-on-surface pb-[18px] pt-[18px] cursor-pointer hover:text-primary transition-all whitespace-nowrap" href="#">概览</a>
+<a class="text-sm font-body text-on-surface-variant hover:text-on-surface pb-[18px] pt-[18px] cursor-pointer hover:text-primary transition-all whitespace-nowrap" href="#">策划</a>
+<a class="text-sm font-body text-on-surface-variant hover:text-on-surface pb-[18px] pt-[18px] cursor-pointer hover:text-primary transition-all whitespace-nowrap" href="#">素材</a>
+<a class="text-sm font-body text-on-surface-variant hover:text-on-surface pb-[18px] pt-[18px] cursor-pointer hover:text-primary transition-all whitespace-nowrap" href="#">故事线</a>
+<a class="text-sm font-body text-on-surface-variant hover:text-on-surface pb-[18px] pt-[18px] cursor-pointer hover:text-primary transition-all whitespace-nowrap" href="#">章节规划</a>
+<a class="text-sm font-body text-primary border-b-2 border-primary font-bold pb-[18px] pt-[18px] cursor-pointer hover:text-primary transition-all whitespace-nowrap" href="#">审核</a>
+<a class="text-sm font-body text-on-surface-variant hover:text-on-surface pb-[18px] pt-[18px] cursor-pointer hover:text-primary transition-all whitespace-nowrap" href="#">作品</a>
+<a class="text-sm font-body text-on-surface-variant hover:text-on-surface pb-[18px] pt-[18px] cursor-pointer hover:text-primary transition-all whitespace-nowrap" href="#">设置</a>
+</div>
+<!-- Scrollable Workspace -->
+<div class="flex-1 overflow-y-auto p-6 flex flex-col gap-6 relative">
+<!-- Header Section -->
+<div class="flex flex-col gap-4">
+<a class="flex items-center gap-1 text-sm font-medium text-secondary hover:text-primary transition-colors w-fit group" href="#">
+<span class="material-symbols-outlined text-[18px] group-hover:-translate-x-1 transition-transform">arrow_back</span>
+                    返回审核历史
+                </a>
+<div class="flex justify-between items-end">
+<div class="flex items-center gap-4">
+<h1 class="text-2xl font-headline font-bold text-on-surface">内容审核结果</h1>
+<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-tertiary-container text-on-tertiary-container border border-tertiary-fixed-dim/50">
+<span class="w-1.5 h-1.5 rounded-full bg-tertiary mr-1.5"></span>
+                            审核完成
+                        </span>
+</div>
+<div class="flex gap-3">
+<button class="px-4 py-2 border border-outline rounded-md text-sm font-medium text-on-surface hover:bg-surface-container-low transition-colors focus:ring-2 focus:ring-primary/20 outline-none">
+                            查看执行详情
+                        </button>
+<button class="px-4 py-2 bg-primary rounded-md text-sm font-medium text-white shadow-sm hover:bg-primary-dim transition-colors focus:ring-2 focus:ring-primary/50 outline-none">
+                            创建重写任务
+                        </button>
+</div>
+</div>
+<!-- Source Summary Strip -->
+<div class="flex items-center gap-6 p-3 bg-white rounded-md border border-outline-variant text-sm text-secondary shadow-sm">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px] text-outline">description</span>
+<span class="font-medium text-on-surface">章节：</span>第 12 章 雨夜访客
+                    </div>
+<div class="w-px h-4 bg-outline-variant"></div>
+<div><span class="font-medium text-on-surface">审核版本：</span>v4</div>
+<div class="w-px h-4 bg-outline-variant"></div>
+<div><span class="font-medium text-on-surface">审核报告：</span>RR-20260729-018</div>
+<div class="w-px h-4 bg-outline-variant"></div>
+<div><span class="font-medium text-on-surface">WorkflowRun：</span>run_review_018</div>
+<div class="w-px h-4 bg-outline-variant"></div>
+<div class="ml-auto flex items-center gap-1.5 text-xs">
+<span class="material-symbols-outlined text-[14px]">schedule</span>
+                        完成时间：2026-07-29 14:30
+                    </div>
+</div>
+</div>
+<!-- Two Column Layout -->
+<div class="flex gap-6 pb-24">
+<!-- Left Column (68%) -->
+<div class="flex-[0_0_68%] flex flex-col gap-6">
+<!-- Score Card -->
+<div class="bg-white rounded-lg border border-outline-variant p-6 shadow-sm flex items-center gap-8">
+<div class="flex flex-col items-center justify-center min-w-[120px]">
+<span class="text-xs text-secondary font-medium uppercase tracking-wider mb-1">综合评分</span>
+<div class="text-5xl font-display font-bold text-primary tracking-tight">76</div>
+<span class="text-xs text-outline mt-1">满分 100</span>
+</div>
+<div class="w-px h-20 bg-outline-variant/50"></div>
+<div class="flex-1 grid grid-cols-2 gap-x-8 gap-y-4">
+<!-- Bar 1 -->
+<div>
+<div class="flex justify-between text-xs mb-1.5">
+<span class="font-medium text-on-surface">内容一致性</span>
+<span class="text-secondary">85/100</span>
+</div>
+<div class="w-full bg-surface-container-high rounded-full h-1.5">
+<div class="bg-tertiary h-1.5 rounded-full" style="width: 85%"></div>
+</div>
+</div>
+<!-- Bar 2 -->
+<div>
+<div class="flex justify-between text-xs mb-1.5">
+<span class="font-medium text-on-surface">文学性</span>
+<span class="text-secondary">72/100</span>
+</div>
+<div class="w-full bg-surface-container-high rounded-full h-1.5">
+<div class="bg-primary h-1.5 rounded-full" style="width: 72%"></div>
+</div>
+</div>
+<!-- Bar 3 -->
+<div>
+<div class="flex justify-between text-xs mb-1.5">
+<span class="font-medium text-on-surface">逻辑性</span>
+<span class="text-secondary">60/100</span>
+</div>
+<div class="w-full bg-surface-container-high rounded-full h-1.5">
+<div class="bg-error h-1.5 rounded-full" style="width: 60%"></div>
+</div>
+</div>
+<!-- Bar 4 -->
+<div>
+<div class="flex justify-between text-xs mb-1.5">
+<span class="font-medium text-on-surface">合规性</span>
+<span class="text-secondary">100/100</span>
+</div>
+<div class="w-full bg-surface-container-high rounded-full h-1.5">
+<div class="bg-tertiary h-1.5 rounded-full" style="width: 100%"></div>
+</div>
+</div>
+</div>
+</div>
+<!-- Issues Table Section -->
+<div class="bg-white rounded-lg border border-outline-variant shadow-sm flex flex-col">
+<div class="px-5 py-4 border-b border-outline-variant flex justify-between items-center bg-surface-bright rounded-t-lg">
+<h3 class="font-headline font-semibold text-on-surface flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-[20px]">fact_check</span>
+                                审核问题明细
+                            </h3>
+<div class="flex items-center gap-3">
+<select class="text-sm border-outline-variant rounded-md py-1.5 pl-3 pr-8 focus:ring-primary focus:border-primary bg-white text-on-surface-variant shadow-sm">
+<option>全部级别</option>
+<option>严重 (1)</option>
+<option>警告 (2)</option>
+<option>建议 (2)</option>
+</select>
+<select class="text-sm border-outline-variant rounded-md py-1.5 pl-3 pr-8 focus:ring-primary focus:border-primary bg-white text-on-surface-variant shadow-sm">
+<option>全部类型</option>
+<option>逻辑冲突</option>
+<option>叙事节奏</option>
+<option>用词重复</option>
+<option>细节优化</option>
+</select>
+<div class="relative">
+<span class="material-symbols-outlined absolute left-2.5 top-1.5 text-outline text-[18px]">search</span>
+<input class="w-48 pl-8 pr-3 py-1.5 border-outline-variant rounded-md text-sm focus:ring-primary focus:border-primary placeholder:text-outline shadow-sm" placeholder="搜索问题..." type="text"/>
+</div>
+</div>
+</div>
+<div class="px-5 py-3 bg-surface-container-low border-b border-outline-variant text-sm font-medium text-primary flex items-center">
+                            已选择 3 项
+                            <span class="mx-3 text-outline-variant">|</span>
+<span class="text-secondary font-normal text-xs">选中的问题将进入下一步重写流程</span>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full text-left text-sm whitespace-nowrap">
+<thead class="bg-surface-bright text-xs text-secondary uppercase tracking-wider border-b border-outline-variant">
+<tr>
+<th class="px-5 py-3 w-[40px] text-center" scope="col">
+<input checked="" class="rounded border-outline-variant text-primary focus:ring-primary" type="checkbox"/>
+</th>
+<th class="px-5 py-3" scope="col">严重程度</th>
+<th class="px-5 py-3" scope="col">类型</th>
+<th class="px-5 py-3 w-1/2" scope="col">问题描述</th>
+<th class="px-5 py-3" scope="col">位置</th>
+<th class="px-5 py-3" scope="col">状态</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-outline-variant bg-white">
+<!-- Row 1 (Selected, Severe) -->
+<tr class="hover:bg-surface-container-low transition-colors bg-[#F5F3FF]">
+<td class="px-5 py-4 text-center">
+<input checked="" class="rounded border-outline-variant text-primary focus:ring-primary" type="checkbox"/>
+</td>
+<td class="px-5 py-4">
+<span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs font-medium bg-error-container text-on-error-container border border-error/20">
+<span class="w-1.5 h-1.5 rounded-full bg-error"></span>
+                                                严重
+                                            </span>
+</td>
+<td class="px-5 py-4 font-medium text-on-surface">逻辑冲突</td>
+<td class="px-5 py-4 text-secondary whitespace-normal min-w-[250px]">角色对话与前文背景设定矛盾</td>
+<td class="px-5 py-4 text-secondary font-mono text-xs">第 12 章 第 2 段</td>
+<td class="px-5 py-4"><span class="text-error font-medium text-xs">待解决</span></td>
+</tr>
+<!-- Row 2 (Selected, Warning) -->
+<tr class="hover:bg-surface-container-low transition-colors bg-[#F5F3FF]">
+<td class="px-5 py-4 text-center">
+<input checked="" class="rounded border-outline-variant text-primary focus:ring-primary" type="checkbox"/>
+</td>
+<td class="px-5 py-4">
+<span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs font-medium bg-[#FFF3CD] text-[#856404] border border-[#FFEBA1]">
+<span class="w-1.5 h-1.5 rounded-full bg-[#FFC107]"></span>
+                                                警告
+                                            </span>
+</td>
+<td class="px-5 py-4 font-medium text-on-surface">叙事节奏</td>
+<td class="px-5 py-4 text-secondary whitespace-normal min-w-[250px]">转场过于突兀，缺乏情感过渡</td>
+<td class="px-5 py-4 text-secondary font-mono text-xs">第 12 章 第 15 段</td>
+<td class="px-5 py-4"><span class="text-primary font-medium text-xs">进行中</span></td>
+</tr>
+<!-- Row 3 (Selected, Warning) -->
+<tr class="hover:bg-surface-container-low transition-colors bg-[#F5F3FF]">
+<td class="px-5 py-4 text-center">
+<input checked="" class="rounded border-outline-variant text-primary focus:ring-primary" type="checkbox"/>
+</td>
+<td class="px-5 py-4">
+<span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs font-medium bg-[#FFF3CD] text-[#856404] border border-[#FFEBA1]">
+<span class="w-1.5 h-1.5 rounded-full bg-[#FFC107]"></span>
+                                                警告
+                                            </span>
+</td>
+<td class="px-5 py-4 font-medium text-on-surface">用词重复</td>
+<td class="px-5 py-4 text-secondary whitespace-normal min-w-[250px]">形容词"阴冷"在同一段落出现 4 次</td>
+<td class="px-5 py-4 text-secondary font-mono text-xs">第 12 章 第 8 段</td>
+<td class="px-5 py-4"><span class="text-secondary font-medium text-xs">待处理</span></td>
+</tr>
+<!-- Row 4 (Unselected, Suggestion) -->
+<tr class="hover:bg-surface-container-low transition-colors bg-white">
+<td class="px-5 py-4 text-center">
+<input class="rounded border-outline-variant text-primary focus:ring-primary" type="checkbox"/>
+</td>
+<td class="px-5 py-4">
+<span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs font-medium bg-surface-container-high text-secondary border border-outline-variant">
+<span class="w-1.5 h-1.5 rounded-full bg-outline"></span>
+                                                建议
+                                            </span>
+</td>
+<td class="px-5 py-4 font-medium text-on-surface">细节优化</td>
+<td class="px-5 py-4 text-secondary whitespace-normal min-w-[250px]">可以增加对环境氛围的侧面描写</td>
+<td class="px-5 py-4 text-secondary font-mono text-xs">第 12 章 第 22 段</td>
+<td class="px-5 py-4"><span class="text-outline font-medium text-xs line-through">已忽略</span></td>
+</tr>
+<!-- Row 5 (Unselected, Suggestion) -->
+<tr class="hover:bg-surface-container-low transition-colors bg-white">
+<td class="px-5 py-4 text-center">
+<input class="rounded border-outline-variant text-primary focus:ring-primary" type="checkbox"/>
+</td>
+<td class="px-5 py-4">
+<span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs font-medium bg-surface-container-high text-secondary border border-outline-variant">
+<span class="w-1.5 h-1.5 rounded-full bg-outline"></span>
+                                                建议
+                                            </span>
+</td>
+<td class="px-5 py-4 font-medium text-on-surface">标点规范</td>
+<td class="px-5 py-4 text-secondary whitespace-normal min-w-[250px]">对话结尾应使用双引号</td>
+<td class="px-5 py-4 text-secondary font-mono text-xs">第 12 章 第 5 段</td>
+<td class="px-5 py-4"><span class="text-secondary font-medium text-xs">待处理</span></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<!-- Right Column (32%) -->
+<div class="flex-[0_0_32%] flex flex-col gap-6">
+<!-- Summary Card -->
+<div class="bg-white rounded-lg border border-outline-variant p-5 shadow-sm">
+<h3 class="font-headline font-semibold text-on-surface mb-4 pb-3 border-b border-outline-variant flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px] text-primary">pie_chart</span>
+                            本次审核摘要
+                        </h3>
+<div class="flex items-center justify-between mb-6">
+<div class="flex flex-col items-center">
+<span class="text-2xl font-display font-bold text-error">1</span>
+<span class="text-xs text-secondary mt-1">严重问题</span>
+</div>
+<div class="w-px h-8 bg-outline-variant/50"></div>
+<div class="flex flex-col items-center">
+<span class="text-2xl font-display font-bold text-[#D97706]">2</span>
+<span class="text-xs text-secondary mt-1">警告级别</span>
+</div>
+<div class="w-px h-8 bg-outline-variant/50"></div>
+<div class="flex flex-col items-center">
+<span class="text-2xl font-display font-bold text-secondary">2</span>
+<span class="text-xs text-secondary mt-1">优化建议</span>
+</div>
+</div>
+<div class="space-y-3 pt-4 border-t border-outline-variant">
+<div class="flex justify-between text-sm">
+<span class="text-outline">审核引擎</span>
+<span class="font-medium text-on-surface font-mono text-xs">ACF-Core-v4</span>
+</div>
+<div class="flex justify-between text-sm">
+<span class="text-outline">处理耗时</span>
+<span class="font-medium text-on-surface font-mono text-xs">45s</span>
+</div>
+<div class="flex justify-between text-sm">
+<span class="text-outline">字数变化预测</span>
+<span class="font-medium text-tertiary text-xs">+ 约 150 字</span>
+</div>
+</div>
+</div>
+<!-- Rewrite Instructions Card -->
+<div class="bg-primary-container/30 rounded-lg border border-primary-container p-5 shadow-sm">
+<h3 class="font-headline font-semibold text-primary mb-2 flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px]">info</span>
+                            重写说明
+                        </h3>
+<p class="text-sm text-secondary leading-relaxed">
+                            选中的审核问题将自动带入新的重写任务。原文 v4 版本保持不变。生成新候选版本后，您可以选择是否应用为当前工作版本。
+                        </p>
+</div>
+</div>
+</div>
+<!-- Sticky Bottom Action Bar -->
+<div class="absolute bottom-6 left-6 right-6 bg-white border border-outline-variant rounded-lg p-4 shadow-[0_-4px_12px_rgba(0,0,0,0.05)] flex justify-between items-center z-10">
+<button class="text-sm font-medium text-secondary hover:text-on-surface transition-colors px-3 py-2 rounded-md hover:bg-surface-container-low">
+                    取消选择
+                </button>
+<div class="flex items-center gap-4">
+<span class="text-sm text-secondary font-medium">已选择 <span class="text-primary font-bold">3</span> 个关键问题</span>
+<button class="px-6 py-2.5 bg-primary rounded-md text-sm font-medium text-white shadow-md hover:bg-primary-dim transition-all focus:ring-2 focus:ring-primary/50 outline-none flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px]">auto_awesome</span>
+                        创建重写任务（3）
+                    </button>
+</div>
+</div>
+</div>
+</main>
+</body></html>

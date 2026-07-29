@@ -1,74 +1,203 @@
 {
   "iteration": "iteration-18-real-content-rewrite",
-  "uiAcceptance": "CONDITIONAL_PASS",
-  "knownIssues": [
-    "Some Stitch user-visible copy is English; development must use Chinese locale resources."
-  ],
+  "status": "rebuild_candidate_2026_07_29",
+  "canonicalRoutes": {
+    "reviewEntry": "/projects/{projectId}/works/{workId}/review?reportId={reviewReportId}",
+    "rewrite": "/projects/{projectId}/works/{workId}/rewrite"
+  },
+  "runtimeStage": "content_rewrite",
+  "subjectType": "review_report",
+  "inputContract": "rewrite.input.v1",
+  "outputContract": "rewrite.output.v1",
+  "designSystem": "ui/DESIGN.md",
+  "frameCount": 9,
   "frames": [
     {
-      "frameId": "D4_CREATE_REWRITE_V2",
-      "area": "重写",
-      "purpose": "选择审核问题并发起重写",
-      "sourceFolder": "d1_editor_v2_create_rewrite_console",
-      "screen": "ui/frames/D4_CREATE_REWRITE_V2/screen.png",
-      "html": "ui/frames/D4_CREATE_REWRITE_V2/code.html",
-      "acceptance": "CONDITIONAL_PASS",
-      "developmentCorrections": [
-        "replace user-visible English copy with Chinese locale resources",
-        "preserve technical identifiers only when appropriate"
-      ]
+      "order": 1,
+      "frameId": "I18_D2_REVIEW_REWRITE_ENTRY",
+      "title": "审核结果：选择问题并创建重写",
+      "type": "review_entry",
+      "route": "/projects/{projectId}/works/{workId}/review?reportId={reviewReportId}",
+      "trigger": "选择可处理 Issue 并点击创建重写任务",
+      "screenPath": "ui/frames/I18_D2_REVIEW_REWRITE_ENTRY/screen.png",
+      "htmlPath": "ui/frames/I18_D2_REVIEW_REWRITE_ENTRY/code.html",
+      "sourceFolder": "01",
+      "api": [
+        "getReview",
+        "preflightContentRewriteRun"
+      ],
+      "summaryStates": [
+        "idle",
+        "not_configured"
+      ],
+      "developmentTask": "CF-18-03",
+      "acceptance": "保持来源版本不可变；状态、操作和恢复方式符合业务规则"
     },
     {
-      "frameId": "D5_REWRITE_RESULT_V2",
-      "area": "重写",
-      "purpose": "新旧版本关系与结果预览",
-      "sourceFolder": "d5_rewrite_result_v2_rewrite_result_console_2",
-      "screen": "ui/frames/D5_REWRITE_RESULT_V2/screen.png",
-      "html": "ui/frames/D5_REWRITE_RESULT_V2/code.html",
-      "acceptance": "CONDITIONAL_PASS",
-      "developmentCorrections": [
-        "replace user-visible English copy with Chinese locale resources",
-        "preserve technical identifiers only when appropriate"
-      ]
+      "order": 2,
+      "frameId": "I18_D4_CREATE_REWRITE",
+      "title": "创建正文重写",
+      "type": "form_state",
+      "route": "/projects/{projectId}/works/{workId}/rewrite?reportId={reviewReportId}",
+      "trigger": "进入创建页并完成预检",
+      "screenPath": "ui/frames/I18_D4_CREATE_REWRITE/screen.png",
+      "htmlPath": "ui/frames/I18_D4_CREATE_REWRITE/code.html",
+      "sourceFolder": "02",
+      "api": [
+        "preflightContentRewriteRun",
+        "createContentRewriteRun"
+      ],
+      "summaryStates": [
+        "idle",
+        "queued"
+      ],
+      "developmentTask": "CF-18-03",
+      "acceptance": "保持来源版本不可变；状态、操作和恢复方式符合业务规则"
     },
     {
-      "frameId": "STATE_TASK_RUNNING_BAR",
-      "area": "共享组件",
-      "purpose": "异步运行状态条",
-      "sourceFolder": "component_spec_state_task_running_bar",
-      "screen": "ui/frames/STATE_TASK_RUNNING_BAR/screen.png",
-      "html": "ui/frames/STATE_TASK_RUNNING_BAR/code.html",
-      "acceptance": "CONDITIONAL_PASS",
-      "developmentCorrections": [
-        "replace user-visible English copy with Chinese locale resources",
-        "preserve technical identifiers only when appropriate"
-      ]
+      "order": 3,
+      "frameId": "I18_D4_REWRITE_CONFIG_DRAWER",
+      "title": "查看项目重写配置",
+      "type": "drawer",
+      "route": "/projects/{projectId}/works/{workId}/rewrite?reportId={reviewReportId}",
+      "trigger": "点击查看项目配置",
+      "screenPath": "ui/frames/I18_D4_REWRITE_CONFIG_DRAWER/screen.png",
+      "htmlPath": "ui/frames/I18_D4_REWRITE_CONFIG_DRAWER/code.html",
+      "sourceFolder": "03",
+      "api": [
+        "preflightContentRewriteRun"
+      ],
+      "summaryStates": [
+        "idle",
+        "not_configured"
+      ],
+      "developmentTask": "CF-18-03",
+      "acceptance": "保持来源版本不可变；状态、操作和恢复方式符合业务规则"
     },
     {
-      "frameId": "STATE_TASK_FAILED_NOTICE",
-      "area": "共享组件",
-      "purpose": "安全错误通知与恢复动作",
-      "sourceFolder": "component_spec_state_task_failed_notice",
-      "screen": "ui/frames/STATE_TASK_FAILED_NOTICE/screen.png",
-      "html": "ui/frames/STATE_TASK_FAILED_NOTICE/code.html",
-      "acceptance": "CONDITIONAL_PASS",
-      "developmentCorrections": [
-        "replace user-visible English copy with Chinese locale resources",
-        "preserve technical identifiers only when appropriate"
-      ]
+      "order": 4,
+      "frameId": "I18_D4_REWRITE_RUNNING",
+      "title": "正文重写运行中",
+      "type": "async_state",
+      "route": "/projects/{projectId}/works/{workId}/rewrite?workflowRunId={workflowRunId}",
+      "trigger": "summary=queued|running",
+      "screenPath": "ui/frames/I18_D4_REWRITE_RUNNING/screen.png",
+      "htmlPath": "ui/frames/I18_D4_REWRITE_RUNNING/code.html",
+      "sourceFolder": "04",
+      "api": [
+        "getContentRewriteSummary",
+        "getWorkflowRunDetail",
+        "listWorkflowRunEvents"
+      ],
+      "summaryStates": [
+        "queued",
+        "running"
+      ],
+      "developmentTask": "CF-18-03",
+      "acceptance": "保持来源版本不可变；状态、操作和恢复方式符合业务规则"
     },
     {
-      "frameId": "STATE_NOT_CONFIGURED_EMPTY",
-      "area": "共享组件",
-      "purpose": "未配置、失效与空结果状态",
-      "sourceFolder": "component_spec_state_not_configured_empty",
-      "screen": "ui/frames/STATE_NOT_CONFIGURED_EMPTY/screen.png",
-      "html": "ui/frames/STATE_NOT_CONFIGURED_EMPTY/code.html",
-      "acceptance": "CONDITIONAL_PASS",
-      "developmentCorrections": [
-        "replace user-visible English copy with Chinese locale resources",
-        "preserve technical identifiers only when appropriate"
-      ]
+      "order": 5,
+      "frameId": "I18_D5_REWRITE_RESULT",
+      "title": "正文重写成功候选",
+      "type": "candidate_state",
+      "route": "/projects/{projectId}/works/{workId}/rewrite?workflowRunId={workflowRunId}",
+      "trigger": "summary=candidate_ready",
+      "screenPath": "ui/frames/I18_D5_REWRITE_RESULT/screen.png",
+      "htmlPath": "ui/frames/I18_D5_REWRITE_RESULT/code.html",
+      "sourceFolder": "05",
+      "api": [
+        "getContentRewriteSummary",
+        "getContentVersion",
+        "listContentItemVersions"
+      ],
+      "summaryStates": [
+        "candidate_ready"
+      ],
+      "developmentTask": "CF-18-03",
+      "acceptance": "保持来源版本不可变；状态、操作和恢复方式符合业务规则"
+    },
+    {
+      "order": 6,
+      "frameId": "I18_D5_SET_CURRENT_CONFIRM",
+      "title": "设为当前版本确认",
+      "type": "dialog",
+      "route": "/projects/{projectId}/works/{workId}/rewrite?workflowRunId={workflowRunId}",
+      "trigger": "点击设为当前版本",
+      "screenPath": "ui/frames/I18_D5_SET_CURRENT_CONFIRM/screen.png",
+      "htmlPath": "ui/frames/I18_D5_SET_CURRENT_CONFIRM/code.html",
+      "sourceFolder": "06",
+      "api": [
+        "setCurrentContentVersion"
+      ],
+      "summaryStates": [
+        "candidate_ready"
+      ],
+      "developmentTask": "CF-18-03",
+      "acceptance": "保持来源版本不可变；状态、操作和恢复方式符合业务规则"
+    },
+    {
+      "order": 7,
+      "frameId": "I18_D5_RESULT_CONSUMPTION_FAILED",
+      "title": "重写结果提交失败",
+      "type": "error_state",
+      "route": "/projects/{projectId}/works/{workId}/rewrite?workflowRunId={workflowRunId}",
+      "trigger": "summary=result_consumption_failed",
+      "screenPath": "ui/frames/I18_D5_RESULT_CONSUMPTION_FAILED/screen.png",
+      "htmlPath": "ui/frames/I18_D5_RESULT_CONSUMPTION_FAILED/code.html",
+      "sourceFolder": "07",
+      "api": [
+        "getContentRewriteSummary",
+        "retryRewriteResultConsumption"
+      ],
+      "summaryStates": [
+        "result_consumption_failed"
+      ],
+      "developmentTask": "CF-18-03",
+      "acceptance": "保持来源版本不可变；状态、操作和恢复方式符合业务规则"
+    },
+    {
+      "order": 8,
+      "frameId": "I18_D4_REWRITE_FAILED",
+      "title": "重写任务执行失败",
+      "type": "error_state",
+      "route": "/projects/{projectId}/works/{workId}/rewrite?workflowRunId={workflowRunId}",
+      "trigger": "summary=runtime_failed|output_validation_failed",
+      "screenPath": "ui/frames/I18_D4_REWRITE_FAILED/screen.png",
+      "htmlPath": "ui/frames/I18_D4_REWRITE_FAILED/code.html",
+      "sourceFolder": "08",
+      "api": [
+        "getContentRewriteSummary",
+        "retryWorkflowRun",
+        "getWorkflowRunDetail"
+      ],
+      "summaryStates": [
+        "runtime_failed",
+        "output_validation_failed"
+      ],
+      "developmentTask": "CF-18-03",
+      "acceptance": "保持来源版本不可变；状态、操作和恢复方式符合业务规则"
+    },
+    {
+      "order": 9,
+      "frameId": "I18_D4_REWRITE_AVAILABILITY",
+      "title": "未配置、配置失效与空状态",
+      "type": "availability_state",
+      "route": "/projects/{projectId}/works/{workId}/rewrite?reportId={reviewReportId}",
+      "trigger": "summary=not_configured 或无记录",
+      "screenPath": "ui/frames/I18_D4_REWRITE_AVAILABILITY/screen.png",
+      "htmlPath": "ui/frames/I18_D4_REWRITE_AVAILABILITY/code.html",
+      "sourceFolder": "09",
+      "api": [
+        "getContentRewriteSummary",
+        "preflightContentRewriteRun"
+      ],
+      "summaryStates": [
+        "idle",
+        "not_configured"
+      ],
+      "developmentTask": "CF-18-03",
+      "acceptance": "保持来源版本不可变；状态、操作和恢复方式符合业务规则"
     }
   ]
 }

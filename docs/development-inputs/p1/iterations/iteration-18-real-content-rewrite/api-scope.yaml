@@ -1,11 +1,80 @@
 iteration: iteration-18-real-content-rewrite
-status: planned
+status: rebuild_candidate_2026_07_29
+runtime_stage: content_rewrite
+subject_type: review_report
+trigger_source: manual
+input_contract: rewrite.input.v1
+output_contract: rewrite.output.v1
+canonical_routes:
+  review_entry: /projects/{projectId}/works/{workId}/review?reportId={reviewReportId}
+  rewrite: /projects/{projectId}/works/{workId}/rewrite
 apis:
-  - "POST /api/v1/review-reports/{reviewReportId}/rewrite-runs"
-  - "复用版本比较/设为当前版本 API"
+  - operationId: preflightContentRewriteRun
+    method: POST
+    path: /api/v1/review-reports/{reviewReportId}/rewrite-runs/preflight
+    success: 200
+    command: false
+    side_effects: none
+    body: [selectedIssueIds, rewriteStrategy, optionalInstructions]
+    returns: [status, checks, sourceContentVersionSummary, selectedIssueSummary, constraints, configurationSummary, preflightToken, expiresAt]
+  - operationId: createContentRewriteRun
+    method: POST
+    path: /api/v1/review-reports/{reviewReportId}/rewrite-runs
+    success: [201, 200]
+    command: true
+    required_headers: [Idempotency-Key]
+    body: [preflightToken]
+    server_fixed: {stage: content_rewrite, triggerSource: manual, subjectType: review_report, subjectId: reviewReportId}
+  - operationId: getContentRewriteSummary
+    method: GET
+    path: /api/v1/review-reports/{reviewReportId}/rewrite-summary
+    success: 200
+    returns: [state, canStartRewrite, activeRun, latestRun, candidateVersion, sourceContentVersionSummary, selectedIssueSummary, latestError, configurationSummary]
+  - operationId: retryRewriteResultConsumption
+    method: POST
+    path: /api/v1/workflow-runs/{workflowRunId}/rewrite-result-consumption-retries
+    success: 200
+    command: true
+    required_headers: [Idempotency-Key]
+    body: [expectedRunVersion]
+    external_runtime_call: false
+reused_apis:
+  - getReview
+  - getContentVersion
+  - listContentItemVersions
+  - setCurrentContentVersion
+  - getWorkflowRunDetail
+  - listWorkflowRunEvents
+  - retryWorkflowRun
+  - cancelWorkflowRun
+summary_states:
+  - idle
+  - not_configured
+  - queued
+  - running
+  - candidate_ready
+  - runtime_failed
+  - output_validation_failed
+  - result_consumption_failed
+rewrite_strategies:
+  - targeted_fix
+  - creative_rewrite
+issue_resolution_statuses:
+  - addressed
+  - partially_addressed
+  - not_addressed
 common_requirements:
-  - OpenAPI is the single contract source
-  - all commands use Idempotency-Key where applicable
-  - errors use the shared error envelope
-  - secrets and raw upstream responses are never returned
-  - optimistic locking is required for mutable configuration
+  - CF-18-01 must update OpenAPI before implementation; this file is planning input only
+  - all commands use persistent Idempotency-Key semantics
+  - source ContentVersion and selected ReviewIssues are fixed server-side
+  - selected issues must belong to the report and have disposition open
+  - succeeded without a same-Run candidate is not candidate_ready
+  - result consumption retry never calls external runtime
+  - errors use the shared safe ErrorEnvelope
+  - secrets, raw upstream responses, SQL, stacks, internal nodes and internal URLs are never returned
+excluded:
+  - automatic set-current
+  - automatic review or publish
+  - mutation of source ReviewReport or ReviewIssue disposition
+  - temporary workflow selection
+  - visual workflow editor or multi-instance routing

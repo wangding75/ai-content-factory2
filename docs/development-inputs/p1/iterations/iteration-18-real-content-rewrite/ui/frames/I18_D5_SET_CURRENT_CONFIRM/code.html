@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+
+<html class="light" lang="zh"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>设为当前版本 - 确认 - AI Content Factory</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "surface-container-highest": "#d9e4ec",
+                      "on-surface": "#29343a",
+                      "outline-variant": "#a8b3bb",
+                      "on-secondary-fixed": "#314055",
+                      "inverse-surface": "#0b0f11",
+                      "primary-fixed-dim": "#d3d0ff",
+                      "on-tertiary-fixed-variant": "#006544",
+                      "surface": "#f7f9fc",
+                      "secondary-dim": "#44546a",
+                      "on-tertiary-container": "#005a3c",
+                      "tertiary-fixed-dim": "#58e7ab",
+                      "tertiary-dim": "#005f40",
+                      "on-tertiary": "#e6ffee",
+                      "tertiary-container": "#69f6b8",
+                      "on-tertiary-fixed": "#00452d",
+                      "inverse-primary": "#8681ff",
+                      "on-primary-container": "#4133d6",
+                      "primary-fixed": "#e3dfff",
+                      "surface-container-low": "#f0f4f8",
+                      "surface-container": "#e8eff4",
+                      "secondary-fixed": "#d3e4fe",
+                      "error": "#9e3f4e",
+                      "surface-container-high": "#e1e9f0",
+                      "primary-dim": "#4234d7",
+                      "surface-variant": "#d9e4ec",
+                      "surface-container-lowest": "#ffffff",
+                      "surface-tint": "#4f43e3",
+                      "primary": "#4f43e3",
+                      "secondary": "#506076",
+                      "on-secondary-container": "#435368",
+                      "on-error-container": "#782232",
+                      "on-primary-fixed-variant": "#4c40e0",
+                      "on-error": "#fff7f7",
+                      "on-surface-variant": "#566168",
+                      "primary-container": "#e3dfff",
+                      "error-dim": "#4f0116",
+                      "secondary-fixed-dim": "#c5d6f0",
+                      "tertiary-fixed": "#69f6b8",
+                      "surface-dim": "#cedce5",
+                      "on-secondary-fixed-variant": "#4d5d73",
+                      "background": "#f7f9fc",
+                      "on-primary-fixed": "#2c12c5",
+                      "on-secondary": "#f7f9ff",
+                      "inverse-on-surface": "#9a9da0",
+                      "on-background": "#29343a",
+                      "on-primary": "#faf6ff",
+                      "surface-bright": "#f7f9fc",
+                      "outline": "#717c84",
+                      "error-container": "#ff8b9a",
+                      "tertiary": "#006d4a",
+                      "secondary-container": "#d3e4fe"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.125rem",
+                      "lg": "0.25rem",
+                      "xl": "0.5rem",
+                      "full": "0.75rem"
+              },
+              "fontFamily": {
+                      "headline": ["Inter", "sans-serif"],
+                      "display": ["Inter", "sans-serif"],
+                      "body": ["Inter", "sans-serif"],
+                      "label": ["Inter", "sans-serif"]
+              }
+            },
+          },
+        }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-surface text-on-surface min-h-screen overflow-hidden">
+<!-- Dimmed Background Overlay -->
+<div class="fixed inset-0 bg-black/40 z-40 flex items-center justify-center">
+<!-- Confirmation Modal -->
+<div class="bg-surface-container-lowest rounded-lg border border-outline-variant shadow-lg w-full max-w-[480px] flex flex-col">
+<!-- Modal Header -->
+<div class="flex items-center justify-between px-6 py-4 border-b border-outline-variant/30">
+<h2 class="font-headline font-semibold text-lg text-on-surface">设为当前版本</h2>
+<button class="text-on-surface-variant hover:text-on-surface transition-colors cursor-pointer">
+<span class="material-symbols-outlined" data-icon="close">close</span>
+</button>
+</div>
+<!-- Modal Content -->
+<div class="px-6 py-6 flex flex-col gap-5">
+<p class="font-body font-semibold text-lg text-on-surface">
+                    确认将候选版本 v5 设为第 12 章的当前版本？
+                </p>
+<!-- Transition Box -->
+<div class="bg-surface-container-low rounded border border-outline-variant/20 p-4 flex items-center justify-center gap-4">
+<div class="flex flex-col items-center gap-1">
+<span class="text-on-surface-variant text-sm">当前版本</span>
+<span class="font-semibold text-on-surface">v4</span>
+</div>
+<span class="material-symbols-outlined text-outline-variant" data-icon="arrow_forward">arrow_forward</span>
+<div class="flex flex-col items-center gap-1">
+<span class="text-primary text-sm font-medium">新当前版本</span>
+<span class="font-semibold text-primary">v5</span>
+</div>
+</div>
+<!-- Impact List -->
+<ul class="flex flex-col gap-3 font-body text-sm text-on-surface-variant">
+<li class="flex items-start gap-2">
+<span class="material-symbols-outlined text-[18px] text-secondary mt-0.5" data-icon="history">history</span>
+<span>v4 将继续保留在版本历史中</span>
+</li>
+<li class="flex items-start gap-2">
+<span class="material-symbols-outlined text-[18px] text-secondary mt-0.5" data-icon="link">link</span>
+<span>审核报告 RR-20260729-018 仍绑定源版本 v4</span>
+</li>
+<li class="flex items-start gap-2">
+<span class="material-symbols-outlined text-[18px] text-secondary mt-0.5" data-icon="inventory_2">inventory_2</span>
+<span>本操作不会删除或覆盖任何历史版本</span>
+</li>
+<li class="flex items-start gap-2">
+<span class="material-symbols-outlined text-[18px] text-secondary mt-0.5" data-icon="pause_circle">pause_circle</span>
+<span>设为当前版本后不会自动触发重新审核</span>
+</li>
+</ul>
+<p class="font-body text-xs text-on-surface-variant/80 mt-2">
+                    之后仍可从版本历史切换回 v4。
+                </p>
+</div>
+<!-- Modal Footer -->
+<div class="px-6 py-4 border-t border-outline-variant/30 flex justify-end gap-3 bg-surface-container-lowest rounded-b-lg">
+<button class="px-4 py-2 font-label text-sm font-medium text-on-surface-variant hover:bg-surface-container-low rounded border border-outline-variant/50 transition-colors cursor-pointer">
+                    取消
+                </button>
+<button class="px-4 py-2 font-label text-sm font-medium text-white bg-[#5146E5] hover:bg-[#4338CA] rounded transition-colors shadow-sm cursor-pointer">
+                    设为当前版本
+                </button>
+</div>
+</div>
+</div>
+<!-- Background Base Page Content (Dimmed Representation) -->
+<!-- The actual background page elements would be here, but are obscured by the full-screen overlay above. -->
+<!-- SideNavBar (Immutable) -->
+<nav class="bg-white dark:bg-surface-container-lowest fixed left-0 top-0 h-full w-[244px] border-r border-outline-variant flex flex-col py-4 z-10">
+<div class="px-6 mb-8 flex items-center gap-3">
+<img alt="AI Content Factory Logo" class="w-8 h-8 rounded" data-alt="A minimalist and precise corporate logo for an AI Content Factory, featuring sharp geometric lines and a modern tech aesthetic. Soft, neutral lighting on a pristine white background. Subtle shades of deep blue and crisp white." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCY0jzZtFGvA31IOqiWzI6AKVYI34Hn7BHNHPsUxrk24n0stNL70lFO4J6SLFlPQtfD9-TIaXNiCf3Djucy8Mn_-9lbmXZiwsAfKi7NYMXn7zYIZzhkrtCQZbJFIIb38bn5OrBcds7A2SnEkgifXUgcmATSC7lcL1qvi_mdG_25lrOkLOwjLRxahQtZ-x3GUdwBTQBglfTHNgu1Vc5wllXLMEihqdRjuVc28TFKVd4KnpCPBFyfYM4LwvSu85QPC-vOuUS94sTI4vUc"/>
+<div>
+<h1 class="text-lg font-headline font-bold text-on-surface dark:text-on-surface">AI Content Factory</h1>
+<p class="text-xs text-on-surface-variant mt-0.5">内容创作平台</p>
+</div>
+</div>
+<div class="flex flex-col gap-1 px-3">
+<a class="text-on-surface-variant hover:bg-surface-container-low transition-colors cursor-pointer active:scale-95 flex items-center gap-3 px-3 py-2.5 rounded-lg font-body text-label-sm font-medium" href="#">
+<span class="material-symbols-outlined" data-icon="home">home</span>
+<span>首页</span>
+</a>
+<a class="bg-primary-container text-on-primary-container font-bold transition-colors cursor-pointer active:scale-95 flex items-center gap-3 px-3 py-2.5 rounded-lg font-body text-label-sm" href="#">
+<span class="material-symbols-outlined" data-icon="folder_open" data-weight="fill" style="font-variation-settings: 'FILL' 1;">folder_open</span>
+<span>项目</span>
+</a>
+<a class="text-on-surface-variant hover:bg-surface-container-low transition-colors cursor-pointer active:scale-95 flex items-center gap-3 px-3 py-2.5 rounded-lg font-body text-label-sm font-medium" href="#">
+<span class="material-symbols-outlined" data-icon="folder_zip">folder_zip</span>
+<span>素材</span>
+</a>
+<a class="text-on-surface-variant hover:bg-surface-container-low transition-colors cursor-pointer active:scale-95 flex items-center gap-3 px-3 py-2.5 rounded-lg font-body text-label-sm font-medium" href="#">
+<span class="material-symbols-outlined" data-icon="article">article</span>
+<span>作品</span>
+</a>
+<a class="text-on-surface-variant hover:bg-surface-container-low transition-colors cursor-pointer active:scale-95 flex items-center gap-3 px-3 py-2.5 rounded-lg font-body text-label-sm font-medium" href="#">
+<span class="material-symbols-outlined" data-icon="account_tree">account_tree</span>
+<span>流程</span>
+</a>
+</div>
+</nav>
+<!-- TopNavBar (Immutable) -->
+<header class="bg-white dark:bg-surface-container-lowest fixed top-0 right-0 w-[calc(100%-244px)] h-[60px] border-b border-outline-variant flex items-center justify-between px-6 z-10">
+<div class="flex items-center gap-6 h-full">
+<h2 class="text-on-surface font-headline font-semibold text-sm">项目 / acf18-rewrite-001</h2>
+<nav class="flex h-full items-end gap-6 font-body text-label-md">
+<a class="text-on-surface-variant hover:text-on-surface pb-[18px] hover:text-primary transition-all cursor-pointer" href="#">概览</a>
+<a class="text-on-surface-variant hover:text-on-surface pb-[18px] hover:text-primary transition-all cursor-pointer" href="#">策划</a>
+<a class="text-on-surface-variant hover:text-on-surface pb-[18px] hover:text-primary transition-all cursor-pointer" href="#">素材</a>
+<a class="text-on-surface-variant hover:text-on-surface pb-[18px] hover:text-primary transition-all cursor-pointer" href="#">故事线</a>
+<a class="text-on-surface-variant hover:text-on-surface pb-[18px] hover:text-primary transition-all cursor-pointer" href="#">章节规划</a>
+<a class="text-primary border-b-2 border-primary font-bold pb-[18px] hover:text-primary transition-all cursor-pointer" href="#">审核</a>
+<a class="text-on-surface-variant hover:text-on-surface pb-[18px] hover:text-primary transition-all cursor-pointer" href="#">作品</a>
+<a class="text-on-surface-variant hover:text-on-surface pb-[18px] hover:text-primary transition-all cursor-pointer" href="#">设置</a>
+</nav>
+</div>
+<div class="flex items-center gap-4">
+<div class="relative">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-sm" data-icon="search">search</span>
+<input class="pl-9 pr-3 py-1.5 text-sm bg-surface-container-low border border-transparent rounded focus:border-outline-variant focus:ring-0 focus:bg-surface-container-lowest w-48 transition-colors text-on-surface placeholder:text-on-surface-variant/70" disabled="" placeholder="搜索项目或素材…" type="text"/>
+</div>
+<button class="text-on-surface-variant hover:text-on-surface transition-colors">
+<span class="material-symbols-outlined text-[20px]" data-icon="help">help</span>
+</button>
+<button class="text-on-surface-variant hover:text-on-surface transition-colors">
+<span class="material-symbols-outlined text-[20px]" data-icon="notifications">notifications</span>
+</button>
+<div class="flex items-center gap-2 pl-2 border-l border-outline-variant/30">
+<img alt="CA avatar" class="w-7 h-7 rounded-full object-cover border border-outline-variant/20" data-alt="A small, professional user avatar portrait. Corporate headshot style, softly lit against a muted studio background. Serious yet approachable expression." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCsfMZRR4_YKHoAG376bZjbo0XEQrB4iHu0S2kXxPInwtq2mY8pTHYnnUor-HjoXBk2PL8eikXLryreWernqhrv0A_0OOTh0qPtpT4nawpKdikqlHSHzx5GnLitQBPF2KVLhyAEoxxd4oJ-rDWTYwQ4sUKJbf7phucMlYZPDEjV4CW9k8NM7wDzaVtxSykHKB93oKkjTGYw_rO6MQCHOTFSLHLtdQNACZslLN6x3hSisr8OQtqu3RR5is2C2L-z94JzkFji8t99SZ01"/>
+<span class="text-sm font-medium text-on-surface">创作管理员</span>
+</div>
+</div>
+</header>
+</body></html>

@@ -75,8 +75,16 @@ Iteration 11 UI 人工验收结论：
 | `D1_GENERATE_CONTENT_DRAWER` 生成正文抽屉 | `generate_content_drawer_ai_content_factory_2.0` | `generate_content_drawer_ai_content_factory_2.0` |
 | `D2_REVIEW_V2` 内容审核页 | `content_review_console_v2.0` | `content_review_console_v2.0` |
 | `D2_SUBMIT_REVIEW_DRAWER` 提交审核抽屉 | `submit_content_review_drawer` | `submit_content_review_drawer` |
-| `D4_CREATE_REWRITE_V2` 创建重写页 | `d1_editor_v2_create_rewrite_console` | `d1_editor_v2_create_rewrite_console` |
-| `D5_REWRITE_RESULT_V2` 重写结果页 | `d5_rewrite_result_v2_rewrite_result_console_1`；`d5_rewrite_result_v2_rewrite_result_console_2` | `d5_rewrite_result_v2_rewrite_result_console_2` |
+| `I18_D2_REVIEW_REWRITE_ENTRY` 审核结果：选择问题并创建重写 | `stitch_acf_iteration_18_ui_real_content_rewrite_frozen_shell/01` | `01` |
+| `I18_D4_CREATE_REWRITE` 创建正文重写 | `stitch_acf_iteration_18_ui_real_content_rewrite_frozen_shell/02` | `02` |
+| `I18_D4_REWRITE_CONFIG_DRAWER` 查看项目重写配置 | `stitch_acf_iteration_18_ui_real_content_rewrite_frozen_shell/03` | `03` |
+| `I18_D4_REWRITE_RUNNING` 正文重写运行中 | `stitch_acf_iteration_18_ui_real_content_rewrite_frozen_shell/04` | `04` |
+| `I18_D5_REWRITE_RESULT` 正文重写成功候选 | `stitch_acf_iteration_18_ui_real_content_rewrite_frozen_shell/05` | `05` |
+| `I18_D5_SET_CURRENT_CONFIRM` 设为当前版本确认 | `stitch_acf_iteration_18_ui_real_content_rewrite_frozen_shell/06` | `06` |
+| `I18_D5_RESULT_CONSUMPTION_FAILED` 重写结果提交失败 | `stitch_acf_iteration_18_ui_real_content_rewrite_frozen_shell/07` | `07` |
+| `I18_D4_REWRITE_FAILED` 重写任务执行失败 | `stitch_acf_iteration_18_ui_real_content_rewrite_frozen_shell/08` | `08` |
+| `I18_D4_REWRITE_AVAILABILITY` 未配置、配置失效与空状态 | `stitch_acf_iteration_18_ui_real_content_rewrite_frozen_shell/09` | `09` |
+
 | `STATE_TASK_RUNNING_BAR` 任务运行状态条 | `component_spec_state_task_running_bar` | `component_spec_state_task_running_bar` |
 | `STATE_TASK_FAILED_NOTICE` 任务失败提示 | `component_spec_state_task_failed_notice` | `component_spec_state_task_failed_notice` |
 | `STATE_NOT_CONFIGURED_EMPTY` 未配置/空状态 | `component_spec_state_not_configured_empty` | `component_spec_state_not_configured_empty` |
@@ -242,7 +250,6 @@ docs/development-inputs/p1/ui-master-manifest.json
 docs/development-inputs/p1/iterations/*/ui-manifest.json
 docs/development-inputs/p1/iterations/*/ui/frames/
 ```
-
 
 ## 9. Iteration 15 UI 基线覆盖（2026-07-23）
 
