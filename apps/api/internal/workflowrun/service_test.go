@@ -141,23 +141,13 @@ func fixtureService(t *testing.T) (*Service, *serviceStore, uuid.UUID) {
 	s.now = func() time.Time { return now }
 	return s, store, projectID
 }
-func TestCreateRunUsesLatestContractAndSafeSnapshot(t *testing.T) {
-	s, store, projectID := fixtureService(t)
-	r, e := s.CreateRun(context.Background(), CreateRunCommand{ProjectID: projectID, Stage: "review", InputPayload: json.RawMessage(`{"ok":true}`), IdempotencyKey: "key"})
-	if e != nil {
-		t.Fatal(e)
-	}
-	if r.Status != StatusQueued || r.TriggerSource != "manual" || len(store.events[r.ID]) != 1 {
-		t.Fatalf("run=%+v events=%d", r, len(store.events[r.ID]))
-	}
-	if string(r.ConfigurationSnapshot) == "" || string(r.ConfigurationSnapshot) == `{"token":"x"}` || !json.Valid(r.ConfigurationSnapshot) {
-		t.Fatal("unsafe snapshot")
-	}
-	if _, e = s.CreateRun(context.Background(), CreateRunCommand{ProjectID: projectID, Stage: "bad", InputPayload: json.RawMessage(`{}`), IdempotencyKey: "bad-stage"}); !errors.Is(e, ErrValidation) {
+func TestCreateRunProtectsDomainOwnedStages(t *testing.T) {
+	s, _, projectID := fixtureService(t)
+	if _, e := s.CreateRun(context.Background(), CreateRunCommand{ProjectID: projectID, Stage: "bad", InputPayload: json.RawMessage(`{}`), IdempotencyKey: "bad-stage"}); !errors.Is(e, ErrValidation) {
 		t.Fatalf("err=%v", e)
 	}
-	for _, stage := range []string{"content_generation", "chapter_planning"} {
-		if _, e = s.CreateRun(context.Background(), CreateRunCommand{ProjectID: projectID, Stage: stage, InputPayload: json.RawMessage(`{}`), IdempotencyKey: "protected-" + stage}); !errors.Is(e, ErrProtectedStage) { t.Fatalf("stage=%s err=%v", stage, e) }
+	for _, stage := range []string{"content_generation", "chapter_planning", "review"} {
+		if _, e := s.CreateRun(context.Background(), CreateRunCommand{ProjectID: projectID, Stage: stage, InputPayload: json.RawMessage(`{}`), IdempotencyKey: "protected-" + stage}); !errors.Is(e, ErrProtectedStage) { t.Fatalf("stage=%s err=%v", stage, e) }
 	}
 }
 
@@ -187,7 +177,7 @@ func TestContentGenerationRuntimeRetryEligibilityMatrix(t *testing.T) {
 		{name:"result consumed",status:StatusSucceeded,stage:"content_generation",events:[]Event{{EventType:EventTypeOutputValidationFailed},{EventType:EventTypeResultConsumed}}},
 		{name:"candidate exists",status:StatusSucceeded,stage:"content_generation",events:[]Event{{EventType:EventTypeOutputValidationFailed}},candidate:true},
 		{name:"failed with candidate",status:StatusFailed,stage:"content_generation",candidate:true},
-		{name:"other succeeded stage",status:StatusSucceeded,stage:"review",events:[]Event{{EventType:EventTypeOutputValidationFailed}}},
+		{name:"review output validation failed",status:StatusSucceeded,stage:"review",events:[]Event{{EventType:EventTypeOutputValidationFailed}},want:true},
 	} {
 		t.Run(tc.name,func(t *testing.T){
 			s,store,projectID:=fixtureService(t)
@@ -220,9 +210,12 @@ func TestRetryAndCancelVersionRules(t *testing.T) {
 	now := s.now()
 	original := WorkflowRun{ID: id, RunNumber: "WR-1", ProjectID: projectID, Stage: "review", WorkflowConfigurationID: uuid.New(), TriggerSource: "manual", Status: StatusFailed, ConfigurationSnapshot: json.RawMessage(`{}`), InputPayload: json.RawMessage(`{"a":1}`), ErrorCode: ptr("x"), ErrorMessage: ptr("safe"), ErrorDetails: json.RawMessage(`{}`), StartedAt: &now, FinishedAt: &now, CreatedAt: now, UpdatedAt: now, Version: 2}
 	store.runs[id] = original
-	r, e := s.RetryRun(context.Background(), RetryCommand{RunID: id, ExpectedVersion: 2, InputOverride: json.RawMessage(`{"b":2}`), IdempotencyKey: "x"})
-	if e != nil || r.TriggerSource != "retry" || r.RetryOfRunID == nil || string(r.InputPayload) != `{"b":2}` {
+	r, e := s.RetryRun(context.Background(), RetryCommand{RunID: id, ExpectedVersion: 2, IdempotencyKey: "x"})
+	if e != nil || r.TriggerSource != "retry" || r.RetryOfRunID == nil || string(r.InputPayload) != `{"a":1}` {
 		t.Fatalf("run=%+v err=%v", r, e)
+	}
+	if _, e = s.RetryRun(context.Background(), RetryCommand{RunID: id, ExpectedVersion: 2, InputOverride: json.RawMessage(`{"b":2}`), IdempotencyKey: "override"}); !errors.Is(e, ErrValidation) {
+		t.Fatalf("review input override error=%v", e)
 	}
 	q := WorkflowRun{ID: uuid.New(), RunNumber: "WR-2", ProjectID: projectID, Stage: "review", WorkflowConfigurationID: uuid.New(), TriggerSource: "manual", Status: StatusQueued, ConfigurationSnapshot: json.RawMessage(`{}`), InputPayload: json.RawMessage(`{}`), CreatedAt: now, UpdatedAt: now, Version: 1}
 	store.runs[q.ID] = q

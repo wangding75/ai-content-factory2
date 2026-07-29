@@ -57,6 +57,7 @@ type Store interface {
 
 type CreateRunCommand struct {
 	ProjectID      uuid.UUID
+	RunID          uuid.UUID
 	Stage          string
 	SubjectType    *string
 	SubjectID      *uuid.UUID
@@ -103,6 +104,7 @@ type Service struct {
 		ConsumeSucceededRun(context.Context, WorkflowRun) error
 	}
 	contentSucceededConsumer interface { ConsumeSucceededRun(context.Context, WorkflowRun) error }
+	reviewSucceededConsumer interface { ConsumeSucceededRun(context.Context, WorkflowRun) error }
 }
 
 func NewService(store Store, projects ProjectReader, bindings BindingReader, configurations ConfigurationReader, connections ConnectionReader) *Service {
@@ -122,6 +124,7 @@ func (s *Service) SetSucceededConsumer(consumer interface {
 	s.succeededConsumer = consumer
 }
 func (s *Service) SetContentSucceededConsumer(consumer interface { ConsumeSucceededRun(context.Context, WorkflowRun) error }) { s.contentSucceededConsumer = consumer }
+func (s *Service) SetReviewSucceededConsumer(consumer interface { ConsumeSucceededRun(context.Context, WorkflowRun) error }) { s.reviewSucceededConsumer = consumer }
 
 // ExecuteRun is an explicit application boundary. It never polls or schedules work.
 func (s *Service) ExecuteRun(ctx context.Context, runID uuid.UUID) (WorkflowRun, error) {
@@ -179,6 +182,7 @@ func (s *Service) applyExecutionResult(ctx context.Context, run WorkflowRun, res
 			}
 		}
 		if s.contentSucceededConsumer != nil && updated.Stage == "content_generation" { if err := s.contentSucceededConsumer.ConsumeSucceededRun(ctx,updated); err != nil { return updated,err } }
+		if s.reviewSucceededConsumer != nil && updated.Stage == "review" { if err := s.reviewSucceededConsumer.ConsumeSucceededRun(ctx,updated); err != nil { return updated,err } }
 		return updated, nil
 	}
 	if result.Status == ExecutionCancelled {
@@ -320,19 +324,41 @@ func (s *Service) CreateRunForPreflightToken(ctx context.Context, projectID uuid
 }
 
 func (s *Service) CreateRunForPreflightTokenIdempotent(ctx context.Context, projectID uuid.UUID, key, requestHash, nonce string, prepare CreateRunTxPreparation) (WorkflowRun, error) {
+	return s.CreateRunForPreflightTokenIdempotentForScope(ctx, "createContentGenerationRun", projectID, key, requestHash, nonce, prepare)
+}
+
+func (s *Service) CreateRunForPreflightTokenIdempotentForScope(ctx context.Context, operation string, projectID uuid.UUID, key, requestHash, nonce string, prepare CreateRunTxPreparation) (WorkflowRun, error) {
 	if projectID == uuid.Nil || strings.TrimSpace(key) == "" || strings.TrimSpace(requestHash) == "" || strings.TrimSpace(nonce) == "" || prepare == nil { return WorkflowRun{}, ErrValidation }
-	scope := "createContentGenerationRun:" + projectID.String()
+	if operation != "createContentGenerationRun" && operation != "createContentReviewRun" { return WorkflowRun{}, ErrValidation }
+	scope := operation + ":" + projectID.String()
 	return s.store.ExecuteIdempotent(ctx, scope, key, requestHash, func(store Store) (WorkflowRun, error) {
-		used, err := store.PreflightTokenUsed(ctx, nonce)
-		if err != nil { return WorkflowRun{}, err }
-		if used { return WorkflowRun{}, ErrPreflightTokenConsumed }
 		transactional, ok := store.(interface{ Transaction() pgx.Tx })
 		if !ok || transactional.Transaction() == nil { return WorkflowRun{}, ErrValidation }
+		if _, err := transactional.Transaction().Exec(ctx, "SELECT pg_advisory_xact_lock(hashtextextended($1, 0))", operation+":token:"+nonce); err != nil { return WorkflowRun{}, err }
+		if operation == "createContentReviewRun" {
+			var used bool
+			if err := transactional.Transaction().QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM idempotency_records WHERE scope=$1 AND idempotency_key=$2)", "consumeContentReviewPreflightToken:"+projectID.String(), nonce).Scan(&used); err != nil { return WorkflowRun{}, err }
+			if used { return WorkflowRun{}, ErrPreflightTokenConsumed }
+		} else {
+			used, err := store.PreflightTokenUsed(ctx, nonce)
+			if err != nil { return WorkflowRun{}, err }
+			if used { return WorkflowRun{}, ErrPreflightTokenConsumed }
+		}
 		command, err := prepare(transactional.Transaction())
 		if err != nil { return WorkflowRun{}, err }
 		if command.ProjectID != projectID { return WorkflowRun{}, ErrValidation }
 		if command.TriggerSource == "" { command.TriggerSource = "manual" }
-		return s.createRun(ctx, store, command)
+		created, err := s.createRun(ctx, store, command)
+		if err != nil { return WorkflowRun{}, err }
+		if operation == "createContentReviewRun" {
+			body, marshalErr := json.Marshal(struct {
+				RunID uuid.UUID `json:"runId"`
+			}{created.ID})
+			if marshalErr != nil { return WorkflowRun{}, marshalErr }
+			_, err = transactional.Transaction().Exec(ctx, "INSERT INTO idempotency_records(id,scope,idempotency_key,request_hash,response_status,response_body) VALUES($1,$2,$3,$4,201,$5)", uuid.New(), "consumeContentReviewPreflightToken:"+projectID.String(), nonce, requestHash, body)
+			if err != nil { return WorkflowRun{}, err }
+		}
+		return created, nil
 	})
 }
 
@@ -347,7 +373,7 @@ func (s *Service) createRun(ctx context.Context, store Store, command CreateRunC
 	var configurationID uuid.UUID
 	var snapshot json.RawMessage
 	if command.PreparedConfiguration != nil {
-		if stage != workflowbinding.StageContentGeneration || command.PreparedConfiguration.WorkflowConfigurationID == uuid.Nil || !validJSONObject(command.PreparedConfiguration.Snapshot) {
+		if (stage != workflowbinding.StageContentGeneration && stage != workflowbinding.StageReview) || command.PreparedConfiguration.WorkflowConfigurationID == uuid.Nil || !validJSONObject(command.PreparedConfiguration.Snapshot) {
 			return WorkflowRun{}, ErrValidation
 		}
 		configurationID = command.PreparedConfiguration.WorkflowConfigurationID
@@ -370,7 +396,9 @@ func (s *Service) createRun(ctx context.Context, store Store, command CreateRunC
 		}
 		configurationID = configuration.ID
 	}
-	run, err := New(s.newID(), command.ProjectID, configurationID, s.newRunNumber(), stage.String(), command.TriggerSource, snapshot, command.InputPayload)
+	runID := command.RunID
+	if runID == uuid.Nil { runID = s.newID() }
+	run, err := New(runID, command.ProjectID, configurationID, s.newRunNumber(), stage.String(), command.TriggerSource, snapshot, command.InputPayload)
 	if err != nil {
 		return WorkflowRun{}, err
 	}
@@ -470,10 +498,13 @@ func (s *Service) RetryRun(ctx context.Context, command RetryCommand) (WorkflowR
 		if original.Version != command.ExpectedVersion {
 			return WorkflowRun{}, ErrVersionConflict
 		}
-		if original.Stage == "content_generation" && command.InputOverride != nil {
+		if (original.Stage == "content_generation" || original.Stage == "review") && command.InputOverride != nil {
 			return WorkflowRun{}, ErrValidation
 		}
-		if original.Stage == "content_generation" {
+		if original.Stage == "review" && command.UseCurrentConfiguration {
+			return WorkflowRun{}, ErrValidation
+		}
+		if original.Stage == "content_generation" || original.Stage == "review" {
 			events, eventErr := store.ListEvents(ctx, original.ID)
 			if eventErr != nil {
 				return WorkflowRun{}, mapStoreError(eventErr)
@@ -489,19 +520,21 @@ func (s *Service) RetryRun(ctx context.Context, command RetryCommand) (WorkflowR
 					resultConsumed = true
 				}
 			}
-			candidateStore, ok := store.(interface {
-				HasContentGenerationCandidate(context.Context, uuid.UUID) (bool, error)
-			})
-			if !ok {
-				return WorkflowRun{}, ErrNotRetryable
+			hasResult := false
+			if original.Stage == "content_generation" {
+				candidateStore, ok := store.(interface {
+					HasContentGenerationCandidate(context.Context, uuid.UUID) (bool, error)
+				})
+				if !ok { return WorkflowRun{}, ErrNotRetryable }
+				hasResult, eventErr = candidateStore.HasContentGenerationCandidate(ctx, original.ID)
+			} else {
+				reportStore, ok := store.(interface {
+					HasReviewReport(context.Context, uuid.UUID) (bool, error)
+				})
+				if ok { hasResult, eventErr = reportStore.HasReviewReport(ctx, original.ID) }
 			}
-			hasCandidate, candidateErr := candidateStore.HasContentGenerationCandidate(ctx, original.ID)
-			if candidateErr != nil {
-				return WorkflowRun{}, candidateErr
-			}
-			if resultConsumptionFailed || resultConsumed || hasCandidate {
-				return WorkflowRun{}, ErrNotRetryable
-			}
+			if eventErr != nil { return WorkflowRun{}, eventErr }
+			if resultConsumptionFailed || resultConsumed || hasResult { return WorkflowRun{}, ErrNotRetryable }
 			if original.Status != StatusFailed && original.Status != StatusCancelled && (original.Status != StatusSucceeded || !outputValidationFailed || command.UseCurrentConfiguration) {
 				return WorkflowRun{}, ErrNotRetryable
 			}
@@ -548,7 +581,7 @@ func (s *Service) RetryRun(ctx context.Context, command RetryCommand) (WorkflowR
 }
 
 func protectedStage(stage string) bool {
-	return stage == "content_generation" || stage == "chapter_planning"
+	return stage == "content_generation" || stage == "chapter_planning" || stage == "review"
 }
 
 func (s *Service) GetProjectRunSummary(ctx context.Context, projectID uuid.UUID) (Summary, error) {

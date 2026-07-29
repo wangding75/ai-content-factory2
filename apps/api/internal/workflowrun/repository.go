@@ -116,6 +116,14 @@ func (r *Repository) HasContentGenerationCandidate(ctx context.Context, runID uu
 	}
 	return exists, nil
 }
+func (r *Repository) HasReviewReport(ctx context.Context, runID uuid.UUID) (bool, error) {
+	var exists bool
+	err := r.db.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM review_reports WHERE workflow_run_id=$1)", runID).Scan(&exists)
+	if err != nil {
+		return false, fmt.Errorf("find review report: %w", err)
+	}
+	return exists, nil
+}
 func (r *Repository) FindActive(ctx context.Context, projectID uuid.UUID, stage string, subjectType string, subjectID uuid.UUID) (WorkflowRun, error) {
 	value, err := scanRun(r.db.QueryRow(ctx, "SELECT "+runColumns+" FROM workflow_run_records WHERE project_id=$1 AND stage=$2 AND subject_type=$3 AND subject_id=$4 AND status IN ('queued','running') ORDER BY created_at DESC,id DESC LIMIT 1", projectID, stage, subjectType, subjectID))
 	if errors.Is(err, pgx.ErrNoRows) {
@@ -322,7 +330,7 @@ func (r *Repository) ExecuteIdempotent(ctx context.Context, scope, key, requestH
 	}
 	var tx pgx.Tx
 	var err error
-	if strings.HasPrefix(scope, "createContentGenerationRun:") {
+	if strings.HasPrefix(scope, "createContentGenerationRun:") || strings.HasPrefix(scope, "createContentReviewRun:") {
 		tx, err = r.pool.BeginTx(ctx, pgx.TxOptions{IsoLevel: pgx.Serializable})
 	} else {
 		tx, err = r.pool.Begin(ctx)

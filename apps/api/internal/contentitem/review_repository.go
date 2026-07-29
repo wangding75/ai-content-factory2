@@ -16,7 +16,15 @@ const findingColumns = "id,review_id,category,severity,title,description,locatio
 const recommendationColumns = "id,review_id,priority,title,description,sort_order,created_at"
 
 func scanReport(r pgx.Row) (v ReviewReport, err error) {
-	err = r.Scan(&v.ID, &v.ProjectID, &v.ContentItemID, &v.ContentVersionID, &v.WorkflowRunID, &v.ProviderKey, &v.Status, &v.Conclusion, &v.Score, &v.Summary, &v.CreatedAt, &v.CompletedAt)
+	var workflowRunID *uuid.UUID
+	var score *int
+	err = r.Scan(&v.ID, &v.ProjectID, &v.ContentItemID, &v.ContentVersionID, &workflowRunID, &v.ProviderKey, &v.Status, &v.Conclusion, &score, &v.Summary, &v.CreatedAt, &v.CompletedAt)
+	if workflowRunID != nil {
+		v.WorkflowRunID = *workflowRunID
+	}
+	if score != nil {
+		v.Score = *score
+	}
 	return
 }
 func scanFinding(r pgx.Row) (v ReviewFinding, err error) {
@@ -261,15 +269,25 @@ func (r *PostgresRepository) ListReviews(ctx context.Context, itemID uuid.UUID, 
 }
 
 func (r *PostgresRepository) GetReview(ctx context.Context, reviewID uuid.UUID) (out ReviewDetail, err error) {
-	row := r.db.QueryRow(ctx, "SELECT "+qualifiedColumns("rr", reportColumns)+","+qualifiedColumns("cv", versionColumns)+","+qualifiedColumns("wr", runColumns)+" FROM review_reports rr JOIN content_versions cv ON cv.id=rr.content_version_id JOIN workflow_runs wr ON wr.id=rr.workflow_run_id WHERE rr.id=$1", reviewID)
-	err = row.Scan(&out.Review.ID, &out.Review.ProjectID, &out.Review.ContentItemID, &out.Review.ContentVersionID, &out.Review.WorkflowRunID, &out.Review.ProviderKey, &out.Review.Status, &out.Review.Conclusion, &out.Review.Score, &out.Review.Summary, &out.Review.CreatedAt, &out.Review.CompletedAt, &out.ContentVersion.ID, &out.ContentVersion.ContentItemID, &out.ContentVersion.VersionNo, &out.ContentVersion.SourceContentVersionID, &out.ContentVersion.SourceContentVersionVersion, &out.ContentVersion.SourceWorkflowRunID, &out.ContentVersion.Title, &out.ContentVersion.Content, &out.ContentVersion.Summary, &out.ContentVersion.WordCount, &out.ContentVersion.Source, &out.ContentVersion.Status, &out.ContentVersion.GenerationParameters, &out.ContentVersion.Version, &out.ContentVersion.FrozenAt, &out.ContentVersion.CreatedAt, &out.ContentVersion.UpdatedAt, &out.WorkflowRun.ID, &out.WorkflowRun.ProjectID, &out.WorkflowRun.ContentItemID, &out.WorkflowRun.ContentVersionID, &out.WorkflowRun.ProviderKey, &out.WorkflowRun.WorkflowKey, &out.WorkflowRun.SubjectType, &out.WorkflowRun.SubjectID, &out.WorkflowRun.Status, &out.WorkflowRun.IdempotencyKey, &out.WorkflowRun.RequestFingerprint, &out.WorkflowRun.InputJSON, &out.WorkflowRun.OutputJSON, &out.WorkflowRun.ErrorCode, &out.WorkflowRun.ErrorSummary, &out.WorkflowRun.StartedAt, &out.WorkflowRun.FinishedAt, &out.WorkflowRun.CreatedAt, &out.WorkflowRun.UpdatedAt)
+	out.Review, err = scanReport(r.db.QueryRow(ctx, "SELECT "+reportColumns+" FROM review_reports WHERE id=$1 AND provider_key='mock'", reviewID))
 	if errors.Is(err, pgx.ErrNoRows) {
 		return out, ErrReviewNotFound
 	}
 	if err != nil {
 		return out, fmt.Errorf("review detail read: %w", err)
 	}
-	if out.Review.ContentVersionID != out.ContentVersion.ID || out.Review.WorkflowRunID != out.WorkflowRun.ID || out.WorkflowRun.ContentVersionID != out.ContentVersion.ID {
+	out.ContentVersion, err = scanVersion(r.db.QueryRow(ctx, "SELECT "+versionColumns+" FROM content_versions WHERE id=$1 AND content_item_id=$2", out.Review.ContentVersionID, out.Review.ContentItemID))
+	if err != nil {
+		return out, fmt.Errorf("review content version read: %w", err)
+	}
+	if out.Review.WorkflowRunID != uuid.Nil {
+		out.WorkflowRun, err = scanRun(r.db.QueryRow(ctx, "SELECT "+runColumns+" FROM workflow_runs WHERE id=$1", out.Review.WorkflowRunID))
+		if err != nil {
+			return out, fmt.Errorf("review workflow run read: %w", err)
+		}
+	}
+	if out.Review.ContentVersionID != out.ContentVersion.ID ||
+		(out.Review.WorkflowRunID != uuid.Nil && (out.Review.WorkflowRunID != out.WorkflowRun.ID || out.WorkflowRun.ContentVersionID != out.ContentVersion.ID)) {
 		return out, ErrCrossProjectRelation
 	}
 	findings, err := r.db.Query(ctx, "SELECT "+findingColumns+" FROM review_findings WHERE review_id=$1 ORDER BY sort_order,id", reviewID)

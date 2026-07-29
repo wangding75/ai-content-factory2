@@ -471,6 +471,17 @@ func listReviewsHandler(app contentItemApplication) http.HandlerFunc {
 				return
 			}
 		}
+		if runtimeReviews, ok := app.(interface {
+			ListReviewHistory(context.Context, uuid.UUID, int, int) (contentitem.ReviewHistoryPage, error)
+		}); ok {
+			out, historyErr := runtimeReviews.ListReviewHistory(r.Context(), itemID, limit, offset)
+			if historyErr != nil {
+				contentItemServiceError(w, r, historyErr)
+				return
+			}
+			writeJSON(w, r, 200, out)
+			return
+		}
 		out, err := app.ListReviews(r.Context(), contentitem.ListReviewsCommand{ContentItemID: itemID, Limit: limit, Offset: offset})
 		if err != nil {
 			contentItemServiceError(w, r, err)
@@ -496,6 +507,19 @@ func getReviewHandler(app contentItemApplication) http.HandlerFunc {
 			writeError(w, r, 400, "invalid_uuid", "reviewId must be a UUID", map[string]any{})
 			return
 		}
+		if runtimeReviews, ok := app.(interface {
+			GetRealReview(context.Context, uuid.UUID) (contentitem.RealReviewDetail, bool, error)
+		}); ok {
+			out, handled, runtimeErr := runtimeReviews.GetRealReview(r.Context(), id)
+			if runtimeErr != nil {
+				contentItemServiceError(w, r, runtimeErr)
+				return
+			}
+			if handled {
+				writeJSON(w, r, 200, out)
+				return
+			}
+		}
 		out, err := app.GetReview(r.Context(), contentitem.GetReviewCommand{ReviewID: id})
 		if err != nil {
 			contentItemServiceError(w, r, err)
@@ -506,7 +530,11 @@ func getReviewHandler(app contentItemApplication) http.HandlerFunc {
 			return
 		}
 		version := contentVersionSummaryResponse{out.ContentVersion.ID, out.ContentVersion.VersionNo, out.ContentVersion.Version, out.ContentVersion.Title, out.ContentVersion.WordCount, out.ContentVersion.Source, out.ContentVersion.FrozenAt.UTC().Format(time.RFC3339Nano)}
-		writeJSON(w, r, 200, map[string]any{"review": reviewResponse(out.Review), "content_version": version, "findings": findingsResponse(out.Findings), "recommendations": recommendationsResponse(out.Recommendations), "workflow_run": workflowResponse(out.WorkflowRun)})
+		var workflow any
+		if out.WorkflowRun.ID != uuid.Nil {
+			workflow = workflowResponse(out.WorkflowRun)
+		}
+		writeJSON(w, r, 200, map[string]any{"review": reviewResponse(out.Review), "content_version": version, "findings": findingsResponse(out.Findings), "recommendations": recommendationsResponse(out.Recommendations), "workflow_run": workflow})
 	}
 }
 

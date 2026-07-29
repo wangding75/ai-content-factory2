@@ -84,6 +84,8 @@ func New(address string, projects *project.Service, services ...any) *Server {
 			}
 		case *contentitem.GenerationService:
 			if value != nil { registerContentGenerationRoutes(mux, value) }
+		case *contentitem.RealReviewService:
+			if value != nil { registerRealReviewRoutes(mux, value) }
 		case *material.ProjectMaterialService:
 			if value != nil {
 				mux.HandleFunc("GET /api/v1/projects/{projectId}/materials", listProjectMaterialsHandler(value))

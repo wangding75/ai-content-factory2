@@ -352,19 +352,19 @@ func TestWorkflowRunPersistentIdempotencyReplayConcurrencyAndRestart(t *testing.
 	p, w := fixture(t, ctx, db)
 	newService := func() *Service {
 		connectionID := uuid.New()
-		return NewService(NewPostgresRepository(db), serviceProjects{p: project.Project{ID: p}}, serviceBindings{b: workflowbinding.ProjectWorkflowBinding{ID: uuid.New(), ProjectID: p, Stage: workflowbinding.StageReview, WorkflowConfigurationID: w, Version: 1}}, serviceConfigs{w: globalconfig.Workflow{Common: globalconfig.Common{ID: w, Version: 1, Enabled: true, IntegrationStatus: "verified"}, ConnectionID: connectionID, ApplicableStages: []string{"review"}, TypeConfig: json.RawMessage(`{}`), DefaultParameters: json.RawMessage(`{}`)}}, serviceConnections{c: globalconfig.Connection{Common: globalconfig.Common{ID: connectionID, Version: 1, Enabled: true, IntegrationStatus: "verified"}, ConnectionType: "n8n", TypeConfig: json.RawMessage(`{}`)}})
+		return NewService(NewPostgresRepository(db), serviceProjects{p: project.Project{ID: p}}, serviceBindings{b: workflowbinding.ProjectWorkflowBinding{ID: uuid.New(), ProjectID: p, Stage: workflowbinding.StageRewrite, WorkflowConfigurationID: w, Version: 1}}, serviceConfigs{w: globalconfig.Workflow{Common: globalconfig.Common{ID: w, Version: 1, Enabled: true, IntegrationStatus: "verified"}, ConnectionID: connectionID, ApplicableStages: []string{"rewrite"}, TypeConfig: json.RawMessage(`{}`), DefaultParameters: json.RawMessage(`{}`)}}, serviceConnections{c: globalconfig.Connection{Common: globalconfig.Common{ID: connectionID, Version: 1, Enabled: true, IntegrationStatus: "verified"}, ConnectionType: "n8n", TypeConfig: json.RawMessage(`{}`)}})
 	}
 	first := newService()
-	command := CreateRunCommand{ProjectID: p, Stage: "review", InputPayload: json.RawMessage(`{"z":1,"a":{"b":2}}`), TriggerSource: "api", IdempotencyKey: "workflow-run-replay"}
+	command := CreateRunCommand{ProjectID: p, Stage: "rewrite", InputPayload: json.RawMessage(`{"z":1,"a":{"b":2}}`), TriggerSource: "api", IdempotencyKey: "workflow-run-replay"}
 	created, err := first.CreateRun(ctx, command)
 	if err != nil {
 		t.Fatal(err)
 	}
-	replayed, err := newService().CreateRun(ctx, CreateRunCommand{ProjectID: p, Stage: "review", InputPayload: json.RawMessage(` { "a" : { "b" : 2 }, "z" : 1 } `), TriggerSource: "api", IdempotencyKey: "workflow-run-replay"})
+	replayed, err := newService().CreateRun(ctx, CreateRunCommand{ProjectID: p, Stage: "rewrite", InputPayload: json.RawMessage(` { "a" : { "b" : 2 }, "z" : 1 } `), TriggerSource: "api", IdempotencyKey: "workflow-run-replay"})
 	if err != nil || replayed.ID != created.ID {
 		t.Fatalf("restart replay=%+v err=%v", replayed, err)
 	}
-	if _, err = newService().CreateRun(ctx, CreateRunCommand{ProjectID: p, Stage: "review", InputPayload: json.RawMessage(`{"z":2}`), TriggerSource: "api", IdempotencyKey: "workflow-run-replay"}); !errors.Is(err, ErrIdempotencyConflict) {
+	if _, err = newService().CreateRun(ctx, CreateRunCommand{ProjectID: p, Stage: "rewrite", InputPayload: json.RawMessage(`{"z":2}`), TriggerSource: "api", IdempotencyKey: "workflow-run-replay"}); !errors.Is(err, ErrIdempotencyConflict) {
 		t.Fatalf("conflict=%v", err)
 	}
 	var wg sync.WaitGroup
@@ -374,7 +374,7 @@ func TestWorkflowRunPersistentIdempotencyReplayConcurrencyAndRestart(t *testing.
 		wg.Add(1)
 		go func(i int) {
 			defer wg.Done()
-			results[i], errs[i] = newService().CreateRun(context.Background(), CreateRunCommand{ProjectID: p, Stage: "review", InputPayload: json.RawMessage(`{"concurrent":true}`), TriggerSource: "system", IdempotencyKey: "workflow-run-concurrent"})
+			results[i], errs[i] = newService().CreateRun(context.Background(), CreateRunCommand{ProjectID: p, Stage: "rewrite", InputPayload: json.RawMessage(`{"concurrent":true}`), TriggerSource: "system", IdempotencyKey: "workflow-run-concurrent"})
 		}(i)
 	}
 	wg.Wait()

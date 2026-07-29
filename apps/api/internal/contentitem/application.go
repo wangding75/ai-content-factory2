@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/google/uuid"
 )
@@ -79,6 +80,38 @@ type Application struct {
 	store           contentStore
 	generator       Generator
 	reviewGenerator ReviewGenerator
+	realReview      *RealReviewService
+}
+
+func (a *Application) SetRealReviewService(service *RealReviewService) {
+	a.realReview = service
+}
+
+func (a *Application) ListReviewHistory(ctx context.Context, itemID uuid.UUID, limit, offset int) (ReviewHistoryPage, error) {
+	if a.realReview == nil {
+		list, err := a.ListReviews(ctx, ListReviewsCommand{ContentItemID: itemID, Limit: limit, Offset: offset})
+		if err != nil {
+			return ReviewHistoryPage{}, err
+		}
+		page := ReviewHistoryPage{Items: []any{}, Total: list.Total, Limit: list.Limit, Offset: list.Offset}
+		for _, report := range list.Items {
+			page.Items = append(page.Items, map[string]any{
+				"id": report.ID, "content_item_id": report.ContentItemID,
+				"content_version_id": report.ContentVersionID, "provider_key": report.ProviderKey,
+				"status": report.Status, "conclusion": report.Conclusion, "score": report.Score,
+				"summary": report.Summary, "created_at": report.CreatedAt.UTC().Format(time.RFC3339Nano),
+			})
+		}
+		return page, nil
+	}
+	return a.realReview.ListReviewHistory(ctx, itemID, limit, offset)
+}
+
+func (a *Application) GetRealReview(ctx context.Context, reviewID uuid.UUID) (RealReviewDetail, bool, error) {
+	if a.realReview == nil {
+		return RealReviewDetail{}, false, nil
+	}
+	return a.realReview.GetRealReview(ctx, reviewID)
 }
 
 func NewApplication(store contentStore, generator Generator) *Application {
