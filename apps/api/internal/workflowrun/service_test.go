@@ -16,11 +16,23 @@ import (
 type serviceStore struct {
 	runs   map[uuid.UUID]WorkflowRun
 	events map[uuid.UUID][]Event
+	candidates map[uuid.UUID]bool
+	idempotency map[string]struct {
+		hash string
+		run  WorkflowRun
+	}
 	createErr error
 }
 
-func (s *serviceStore) ExecuteIdempotent(_ context.Context, _ string, _ string, _ string, fn func(Store) (WorkflowRun, error)) (WorkflowRun, error) {
-	return fn(s)
+func (s *serviceStore) ExecuteIdempotent(_ context.Context, scope string, key string, hash string, fn func(Store) (WorkflowRun, error)) (WorkflowRun, error) {
+	id := scope+":"+key
+	if record, ok := s.idempotency[id]; ok {
+		if record.hash != hash { return WorkflowRun{},ErrIdempotencyConflict }
+		return record.run,nil
+	}
+	run, err := fn(s)
+	if err==nil { s.idempotency[id]=struct{hash string;run WorkflowRun}{hash,run} }
+	return run,err
 }
 func (s *serviceStore) PreflightTokenUsed(_ context.Context, nonce string) (bool, error) {
 	for _, run := range s.runs {
@@ -30,6 +42,9 @@ func (s *serviceStore) PreflightTokenUsed(_ context.Context, nonce string) (bool
 		}
 	}
 	return false, nil
+}
+func (s *serviceStore) HasContentGenerationCandidate(_ context.Context, runID uuid.UUID) (bool,error) {
+	return s.candidates[runID],nil
 }
 func (s *serviceStore) CreateWithInitialEvent(_ context.Context, run WorkflowRun, event Event) (WorkflowRun, Event, error) {
 	if s.createErr != nil { return WorkflowRun{}, Event{}, s.createErr }
@@ -121,7 +136,7 @@ func fixtureService(t *testing.T) (*Service, *serviceStore, uuid.UUID) {
 	t.Helper()
 	projectID, configID, connectionID, bindingID := uuid.New(), uuid.New(), uuid.New(), uuid.New()
 	now := time.Date(2026, 7, 22, 12, 0, 0, 0, time.UTC)
-	store := &serviceStore{runs: map[uuid.UUID]WorkflowRun{}, events: map[uuid.UUID][]Event{}}
+	store := &serviceStore{runs: map[uuid.UUID]WorkflowRun{}, events: map[uuid.UUID][]Event{},candidates:map[uuid.UUID]bool{},idempotency:map[string]struct{hash string;run WorkflowRun}{}}
 	s := NewService(store, serviceProjects{p: project.Project{ID: projectID}}, serviceBindings{b: workflowbinding.ProjectWorkflowBinding{ID: bindingID, ProjectID: projectID, Stage: workflowbinding.StageReview, WorkflowConfigurationID: configID, Version: 4}}, serviceConfigs{w: globalconfig.Workflow{Common: globalconfig.Common{ID: configID, Version: 3, Enabled: true, IntegrationStatus: "verified"}, ConnectionID: connectionID, ApplicableStages: []string{"review"}, TypeConfig: json.RawMessage(`{"webhook_secret":"x"}`), DefaultParameters: json.RawMessage(`{"token":"x"}`)}}, serviceConnections{c: globalconfig.Connection{Common: globalconfig.Common{ID: connectionID, Version: 2, Enabled: true, IntegrationStatus: "verified"}, ConnectionType: "n8n", TypeConfig: json.RawMessage(`{"api_key":"x"}`)}})
 	s.now = func() time.Time { return now }
 	return s, store, projectID
@@ -138,7 +153,7 @@ func TestCreateRunUsesLatestContractAndSafeSnapshot(t *testing.T) {
 	if string(r.ConfigurationSnapshot) == "" || string(r.ConfigurationSnapshot) == `{"token":"x"}` || !json.Valid(r.ConfigurationSnapshot) {
 		t.Fatal("unsafe snapshot")
 	}
-	if _, e = s.CreateRun(context.Background(), CreateRunCommand{ProjectID: projectID, Stage: "bad", InputPayload: json.RawMessage(`{}`), IdempotencyKey: "key"}); !errors.Is(e, ErrValidation) {
+	if _, e = s.CreateRun(context.Background(), CreateRunCommand{ProjectID: projectID, Stage: "bad", InputPayload: json.RawMessage(`{}`), IdempotencyKey: "bad-stage"}); !errors.Is(e, ErrValidation) {
 		t.Fatalf("err=%v", e)
 	}
 	for _, stage := range []string{"content_generation", "chapter_planning"} {
@@ -153,6 +168,51 @@ func TestContentGenerationRetryRejectsInputOverride(t *testing.T) {
 	store.runs[id] = WorkflowRun{ID:id,RunNumber:"WR-CONTENT",ProjectID:projectID,Stage:"content_generation",WorkflowConfigurationID:uuid.New(),TriggerSource:"manual",Status:StatusFailed,ConfigurationSnapshot:json.RawMessage(`{}`),InputPayload:json.RawMessage(`{"sourceContentVersionId":"11111111-1111-4111-8111-111111111111","sourceContentVersionVersion":1}`),ErrorCode:ptr("x"),ErrorMessage:ptr("safe"),ErrorDetails:json.RawMessage(`{}`),StartedAt:&now,FinishedAt:&now,CreatedAt:now,UpdatedAt:now,Version:2}
 	if _, err := s.RetryRun(context.Background(), RetryCommand{RunID:id,ExpectedVersion:2,InputOverride:json.RawMessage(`{"sourceContentVersionId":"22222222-2222-4222-8222-222222222222"}`),IdempotencyKey:"override"}); !errors.Is(err, ErrValidation) { t.Fatalf("err=%v",err) }
 	if len(store.runs) != 1 { t.Fatal("content generation retry was created") }
+}
+
+func TestContentGenerationRuntimeRetryEligibilityMatrix(t *testing.T) {
+	for _, tc := range []struct{
+		name string
+		status Status
+		stage string
+		events []Event
+		candidate bool
+		want bool
+	}{
+		{name:"failed",status:StatusFailed,stage:"content_generation",want:true},
+		{name:"cancelled",status:StatusCancelled,stage:"content_generation",want:true},
+		{name:"output validation failed",status:StatusSucceeded,stage:"content_generation",events:[]Event{{EventType:EventTypeOutputValidationFailed}},want:true},
+		{name:"ordinary succeeded",status:StatusSucceeded,stage:"content_generation"},
+		{name:"result consumption failed",status:StatusSucceeded,stage:"content_generation",events:[]Event{{EventType:EventTypeOutputValidationFailed},{EventType:EventTypeResultConsumptionFailed}}},
+		{name:"result consumed",status:StatusSucceeded,stage:"content_generation",events:[]Event{{EventType:EventTypeOutputValidationFailed},{EventType:EventTypeResultConsumed}}},
+		{name:"candidate exists",status:StatusSucceeded,stage:"content_generation",events:[]Event{{EventType:EventTypeOutputValidationFailed}},candidate:true},
+		{name:"failed with candidate",status:StatusFailed,stage:"content_generation",candidate:true},
+		{name:"other succeeded stage",status:StatusSucceeded,stage:"review",events:[]Event{{EventType:EventTypeOutputValidationFailed}}},
+	} {
+		t.Run(tc.name,func(t *testing.T){
+			s,store,projectID:=fixtureService(t)
+			id,subjectID:=uuid.New(),uuid.New()
+			subjectType:="content_item"
+			now:=s.now()
+			original:=WorkflowRun{ID:id,RunNumber:"WR-ORIGINAL",ProjectID:projectID,Stage:tc.stage,WorkflowConfigurationID:uuid.New(),TriggerSource:"manual",Status:tc.status,SubjectType:&subjectType,SubjectID:&subjectID,ConfigurationSnapshot:json.RawMessage(`{"frozen":true}`),InputPayload:json.RawMessage(`{"sourceContentVersionId":"11111111-1111-4111-8111-111111111111","sourceContentVersionVersion":1}`),CreatedAt:now,UpdatedAt:now,Version:2}
+			if tc.status==StatusFailed { original.ErrorCode=ptr("failed");original.ErrorMessage=ptr("safe");original.ErrorDetails=json.RawMessage(`{}`);original.StartedAt=&now;original.FinishedAt=&now }
+			if tc.status==StatusCancelled { original.StartedAt=&now;original.FinishedAt=&now;original.CancelledAt=&now }
+			if tc.status==StatusSucceeded { original.StartedAt=&now;original.FinishedAt=&now;original.OutputPayload=json.RawMessage(`{"invalid":true}`) }
+			store.runs[id]=original
+			store.events[id]=tc.events
+			store.candidates[id]=tc.candidate
+			retried,err:=s.RetryRun(context.Background(),RetryCommand{RunID:id,ExpectedVersion:2,IdempotencyKey:"retry"})
+			if !tc.want {
+				if !errors.Is(err,ErrNotRetryable){t.Fatalf("RetryRun error=%v",err)}
+				if len(store.runs)!=1{t.Fatalf("run count=%d",len(store.runs))}
+				return
+			}
+			if err!=nil{t.Fatal(err)}
+			if retried.ID==id||retried.RetryOfRunID==nil||*retried.RetryOfRunID!=id||retried.SubjectType==nil||*retried.SubjectType!=subjectType||retried.SubjectID==nil||*retried.SubjectID!=subjectID||string(retried.ConfigurationSnapshot)!=string(original.ConfigurationSnapshot)||string(retried.InputPayload)!=string(original.InputPayload){t.Fatalf("retried=%+v original=%+v",retried,original)}
+			replay,replayErr:=s.RetryRun(context.Background(),RetryCommand{RunID:id,ExpectedVersion:2,IdempotencyKey:"retry"})
+			if replayErr!=nil||replay.ID!=retried.ID||len(store.runs)!=2{t.Fatalf("replay=%+v err=%v runs=%d",replay,replayErr,len(store.runs))}
+		})
+	}
 }
 func TestRetryAndCancelVersionRules(t *testing.T) {
 	s, store, projectID := fixtureService(t)

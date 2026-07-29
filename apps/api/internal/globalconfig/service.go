@@ -459,6 +459,12 @@ func (s *Service) GetConnection(ctx context.Context, id uuid.UUID) (Connection, 
 	e := scanConnection(s.pool.QueryRow(ctx, "SELECT "+connectionColumns+" FROM workflow_connections WHERE id=$1", id), &x)
 	return x, notFound(e)
 }
+
+func GetConnectionForShare(ctx context.Context, tx pgx.Tx, id uuid.UUID) (Connection, error) {
+	var x Connection
+	e := scanConnection(tx.QueryRow(ctx, "SELECT "+connectionColumns+" FROM workflow_connections WHERE id=$1 FOR SHARE", id), &x)
+	return x, notFound(e)
+}
 func (s *Service) ListConnections(ctx context.Context, o ListOptions) ([]Connection, int, error) {
 	q, args := where(o, "connection_type", nil)
 	var n int
@@ -697,6 +703,12 @@ func (s *Service) CreateWorkflow(ctx context.Context, r WorkflowCreate, key stri
 func (s *Service) GetWorkflow(ctx context.Context, id uuid.UUID) (Workflow, error) {
 	var x Workflow
 	e := scanWorkflow(s.pool.QueryRow(ctx, "SELECT "+workflowColumns+" FROM workflow_configurations w JOIN workflow_connections c ON c.id=w.connection_id WHERE w.id=$1", id), &x)
+	return x, notFound(e)
+}
+
+func GetWorkflowForShare(ctx context.Context, tx pgx.Tx, id uuid.UUID) (Workflow, error) {
+	var x Workflow
+	e := scanWorkflow(tx.QueryRow(ctx, "SELECT "+workflowColumns+" FROM workflow_configurations w JOIN workflow_connections c ON c.id=w.connection_id WHERE w.id=$1 FOR SHARE OF w", id), &x)
 	return x, notFound(e)
 }
 func (s *Service) ListWorkflows(ctx context.Context, o ListOptions) ([]Workflow, int, error) {

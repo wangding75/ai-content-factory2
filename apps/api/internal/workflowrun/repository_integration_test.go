@@ -11,8 +11,10 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/local/ai-content-factory/apps/api/internal/globalconfig"
+	"github.com/local/ai-content-factory/apps/api/internal/idempotency"
 	"github.com/local/ai-content-factory/apps/api/internal/project"
 	"github.com/local/ai-content-factory/apps/api/internal/workflowbinding"
 )
@@ -296,6 +298,28 @@ func TestRepositoryAtomicRunAndEventWrites(t *testing.T) {
 	if _, _, err = repo.UpdateStatusWithEvent(ctx, run, next, Event{ID: uuid.New(), RunID: run.ID, EventType: "worker_started", Status: StatusRunning, Payload: json.RawMessage(`{}`), CreatedAt: time.Now().UTC()}); !errors.Is(err, ErrVersionConflict) {
 		t.Fatalf("conflict=%v", err)
 	}
+}
+
+func TestRepositoryIdempotencyResultFailureRollsBackRunEventAndRecord(t *testing.T) {
+	db,ctx:=openDB(t)
+	repo:=NewPostgresRepository(db)
+	projectID,workflowID:=fixture(t,ctx,db)
+	scope,key,hash:="createContentGenerationRun:"+projectID.String(),"idem-write-failure",strings.Repeat("a",64)
+	run:=newRun(t,projectID,workflowID,"WR-IDEM-ROLLBACK")
+	_,err:=repo.ExecuteIdempotent(ctx,scope,key,hash,func(store Store)(WorkflowRun,error){
+		created,_,createErr:=store.CreateWithInitialEvent(ctx,run,Event{ID:uuid.New(),RunID:run.ID,EventType:"queued",Status:StatusQueued,Payload:json.RawMessage(`{}`),CreatedAt:time.Now().UTC()})
+		if createErr!=nil{return WorkflowRun{},createErr}
+		transactional,ok:=store.(interface{Transaction() pgx.Tx})
+		if !ok{return WorkflowRun{},ErrValidation}
+		_,createErr=idempotency.NewPostgresRepositoryTx(transactional.Transaction()).Create(ctx,idempotency.Record{ID:uuid.New(),Scope:scope,Key:key,RequestHash:strings.Repeat("b",64),ResponseStatus:201,ResponseBody:json.RawMessage(`{}`)})
+		return created,createErr
+	})
+	if err==nil{t.Fatal("expected idempotency result write failure")}
+	var runs,events,records int
+	if e:=db.QueryRow(ctx,"SELECT count(*) FROM workflow_run_records WHERE id=$1",run.ID).Scan(&runs);e!=nil{t.Fatal(e)}
+	if e:=db.QueryRow(ctx,"SELECT count(*) FROM workflow_run_events WHERE run_id=$1",run.ID).Scan(&events);e!=nil{t.Fatal(e)}
+	if e:=db.QueryRow(ctx,"SELECT count(*) FROM idempotency_records WHERE scope=$1 AND idempotency_key=$2",scope,key).Scan(&records);e!=nil{t.Fatal(e)}
+	if runs!=0||events!=0||records!=0{t.Fatalf("runs=%d events=%d records=%d",runs,events,records)}
 }
 
 func TestRepositoryListEventsHasStableCreatedAtIDOrder(t *testing.T) {

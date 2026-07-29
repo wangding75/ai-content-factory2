@@ -27,6 +27,10 @@ type Repository struct {
 
 func NewPostgresRepository(pool *pgxpool.Pool) *Repository { return &Repository{db: pool, pool: pool} }
 func NewPostgresRepositoryTx(tx pgx.Tx) *Repository        { return &Repository{db: tx} }
+func (r *Repository) Transaction() pgx.Tx {
+	tx, _ := r.db.(pgx.Tx)
+	return tx
+}
 
 const runColumns = "id, run_number, project_id, stage, subject_type, subject_id, workflow_configuration_id, trigger_source, status, configuration_snapshot, input_payload, output_payload, error_code, error_message, error_details, retry_of_run_id, started_at, finished_at, cancelled_at, created_at, updated_at, version"
 
@@ -86,6 +90,16 @@ func (r *Repository) GetByID(ctx context.Context, id uuid.UUID) (WorkflowRun, er
 	}
 	return value, nil
 }
+func (r *Repository) GetByIDForUpdate(ctx context.Context, id uuid.UUID) (WorkflowRun, error) {
+	value, err := scanRun(r.db.QueryRow(ctx, "SELECT "+runColumns+" FROM workflow_run_records WHERE id=$1 FOR UPDATE", id))
+	if errors.Is(err, pgx.ErrNoRows) {
+		return WorkflowRun{}, ErrNotFound
+	}
+	if err != nil {
+		return WorkflowRun{}, fmt.Errorf("lock workflow run: %w", err)
+	}
+	return value, nil
+}
 func (r *Repository) PreflightTokenUsed(ctx context.Context, nonce string) (bool, error) {
 	var used bool
 	err := r.db.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM workflow_run_records WHERE input_payload->>'preflightTokenNonce'=$1)", nonce).Scan(&used)
@@ -93,6 +107,14 @@ func (r *Repository) PreflightTokenUsed(ctx context.Context, nonce string) (bool
 		return false, fmt.Errorf("find workflow run preflight token: %w", err)
 	}
 	return used, nil
+}
+func (r *Repository) HasContentGenerationCandidate(ctx context.Context, runID uuid.UUID) (bool, error) {
+	var exists bool
+	err := r.db.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM content_versions WHERE source_workflow_run_id=$1)", runID).Scan(&exists)
+	if err != nil {
+		return false, fmt.Errorf("find content generation candidate: %w", err)
+	}
+	return exists, nil
 }
 func (r *Repository) FindActive(ctx context.Context, projectID uuid.UUID, stage string, subjectType string, subjectID uuid.UUID) (WorkflowRun, error) {
 	value, err := scanRun(r.db.QueryRow(ctx, "SELECT "+runColumns+" FROM workflow_run_records WHERE project_id=$1 AND stage=$2 AND subject_type=$3 AND subject_id=$4 AND status IN ('queued','running') ORDER BY created_at DESC,id DESC LIMIT 1", projectID, stage, subjectType, subjectID))
@@ -298,7 +320,13 @@ func (r *Repository) ExecuteIdempotent(ctx context.Context, scope, key, requestH
 	if r.pool == nil || scope == "" || key == "" || requestHash == "" {
 		return WorkflowRun{}, ErrValidation
 	}
-	tx, err := r.pool.Begin(ctx)
+	var tx pgx.Tx
+	var err error
+	if strings.HasPrefix(scope, "createContentGenerationRun:") {
+		tx, err = r.pool.BeginTx(ctx, pgx.TxOptions{IsoLevel: pgx.Serializable})
+	} else {
+		tx, err = r.pool.Begin(ctx)
+	}
 	if err != nil {
 		return WorkflowRun{}, fmt.Errorf("begin workflow run idempotency transaction: %w", err)
 	}

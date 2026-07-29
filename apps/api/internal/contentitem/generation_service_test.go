@@ -49,7 +49,7 @@ type generationSummaryRuns struct {
 
 func (f *generationSummaryRuns) CreateRunIdempotentForScope(context.Context, string, uuid.UUID, string, string, workflowrun.CreateRunPreparation) (workflowrun.WorkflowRun, error) { return workflowrun.WorkflowRun{}, errors.New("unexpected create") }
 func (f *generationSummaryRuns) CreateRunForPreflightToken(context.Context, uuid.UUID, string, string, workflowrun.CreateRunPreparation) (workflowrun.WorkflowRun, error) { return workflowrun.WorkflowRun{}, errors.New("unexpected create") }
-func (f *generationSummaryRuns) CreateRunForPreflightTokenIdempotent(context.Context, uuid.UUID, string, string, string, workflowrun.CreateRunPreparation) (workflowrun.WorkflowRun, error) { return workflowrun.WorkflowRun{}, errors.New("unexpected create") }
+func (f *generationSummaryRuns) CreateRunForPreflightTokenIdempotent(context.Context, uuid.UUID, string, string, string, workflowrun.CreateRunTxPreparation) (workflowrun.WorkflowRun, error) { return workflowrun.WorkflowRun{}, errors.New("unexpected create") }
 func (f *generationSummaryRuns) ListRuns(context.Context, workflowrun.ListRunsQuery) (workflowrun.RunList, error) { return f.list, f.listErr }
 func (f *generationSummaryRuns) ListRunEvents(context.Context, uuid.UUID) ([]workflowrun.Event, error) { if f.cancel != nil { f.cancel() }; return f.events, f.eventsErr }
 func (f *generationSummaryRuns) GetRun(context.Context, uuid.UUID) (workflowrun.WorkflowRun, error) { return workflowrun.WorkflowRun{}, errors.New("unexpected get") }
@@ -98,6 +98,31 @@ func TestGenerationSummaryErrorPropagation(t *testing.T) {
 	}
 }
 
+func TestGenerationPreflightRunnableErrorPropagation(t *testing.T) {
+	repo,ctx,_,item,spy:=generationFixture(t)
+	binding:=workflowbinding.ProjectWorkflowBinding{ID:uuid.New(),ProjectID:item.Detail.Item.ProjectID,Stage:workflowbinding.StageContentGeneration,WorkflowConfigurationID:uuid.New(),Version:1}
+	connectionID:=uuid.New()
+	ready:=generationSummaryConfigs{workflow:globalconfig.Workflow{Common:globalconfig.Common{ID:binding.WorkflowConfigurationID,Enabled:true,Version:1},ConnectionID:connectionID},connection:globalconfig.Connection{Common:globalconfig.Common{ID:connectionID,Enabled:true,IntegrationStatus:"connected",Version:1}}}
+	ordinary:=errors.New("repository unavailable")
+	beforeRuns:=count(t,ctx,repo.db,"SELECT count(*) FROM workflow_run_records WHERE project_id=$1",item.Detail.Item.ProjectID)
+	beforeEvents:=count(t,ctx,repo.db,"SELECT count(*) FROM workflow_run_events e JOIN workflow_run_records r ON r.id=e.run_id WHERE r.project_id=$1",item.Detail.Item.ProjectID)
+	beforeCandidates:=count(t,ctx,repo.db,"SELECT count(*) FROM content_versions WHERE content_item_id=$1 AND source='workflow_generated'",item.Detail.Item.ID)
+	for _,tc:=range []struct{name string;bindings generationSummaryBindings;configs generationSummaryConfigs;wantBlocked bool;want error}{
+		{name:"binding missing",bindings:generationSummaryBindings{err:workflowbinding.ErrNotFound},configs:ready,wantBlocked:true},
+		{name:"configuration missing",bindings:generationSummaryBindings{binding:binding},configs:generationSummaryConfigs{workflowErr:globalconfig.ErrNotFound},wantBlocked:true},
+		{name:"connection unavailable",bindings:generationSummaryBindings{binding:binding},configs:generationSummaryConfigs{workflow:ready.workflow,connection:globalconfig.Connection{Common:globalconfig.Common{ID:connectionID,Enabled:false,Version:1}}},wantBlocked:true},
+		{name:"binding infrastructure error",bindings:generationSummaryBindings{err:ordinary},configs:ready,want:ordinary},
+		{name:"configuration infrastructure error",bindings:generationSummaryBindings{binding:binding},configs:generationSummaryConfigs{workflowErr:ordinary},want:ordinary},
+		{name:"connection infrastructure error",bindings:generationSummaryBindings{binding:binding},configs:generationSummaryConfigs{workflow:ready.workflow,connectionErr:ordinary},want:ordinary},
+	}{
+		t.Run(tc.name,func(t *testing.T){svc:=NewGenerationService(repo,tc.bindings,tc.configs,&generationSummaryRuns{},"x");result,err:=svc.Preflight(ctx,item.Detail.Item.ID,GenerationPreflightRequest{ExpectedCurrentVersionID:item.Detail.CurrentVersion.ID,ExpectedCurrentVersion:item.Detail.CurrentVersion.Version,ActorID:"actor"});if tc.want!=nil{if !errors.Is(err,tc.want){t.Fatalf("error=%v want=%v",err,tc.want)};if result.Passed{t.Fatal("infrastructure error passed")}}else if err!=nil||result.Passed||len(result.Checks)==0{t.Fatalf("result=%+v err=%v",result,err)}})
+	}
+	if got:=count(t,ctx,repo.db,"SELECT count(*) FROM workflow_run_records WHERE project_id=$1",item.Detail.Item.ProjectID);got!=beforeRuns{t.Fatalf("runs=%d before=%d",got,beforeRuns)}
+	if got:=count(t,ctx,repo.db,"SELECT count(*) FROM workflow_run_events e JOIN workflow_run_records r ON r.id=e.run_id WHERE r.project_id=$1",item.Detail.Item.ProjectID);got!=beforeEvents{t.Fatalf("events=%d before=%d",got,beforeEvents)}
+	if got:=count(t,ctx,repo.db,"SELECT count(*) FROM content_versions WHERE content_item_id=$1 AND source='workflow_generated'",item.Detail.Item.ID);got!=beforeCandidates{t.Fatalf("candidates=%d before=%d",got,beforeCandidates)}
+	_ = spy
+}
+
 func TestGenerationSummaryRestoresPersistentStatesAndSafeErrors(t *testing.T) {
 	repo, ctx, _, item, spy := generationFixture(t)
 	missing := generationSummaryBindings{err: workflowbinding.ErrNotFound}
@@ -120,10 +145,19 @@ type generationFailureTx struct {
 	pgx.Tx
 	eventErr error
 	commitErr error
+	sourceErr error
 	eventAttempts int
 	commitCalls int
 	rollbackCalls int
 	innerRolledBack bool
+}
+
+type generationErrorRow struct{ err error }
+func (r generationErrorRow) Scan(...any) error{return r.err}
+
+func (tx *generationFailureTx) QueryRow(ctx context.Context, sql string, args ...any) pgx.Row {
+	if strings.Contains(sql,"SELECT v.content_item_id,i.project_id,v.version FROM content_versions")&&tx.sourceErr!=nil{return generationErrorRow{tx.sourceErr}}
+	return tx.Tx.QueryRow(ctx,sql,args...)
 }
 
 func (tx *generationFailureTx) Exec(ctx context.Context, sql string, args ...any) (pgconn.CommandTag, error) {

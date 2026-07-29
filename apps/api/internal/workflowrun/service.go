@@ -15,6 +15,7 @@ import (
 	"github.com/local/ai-content-factory/apps/api/internal/globalconfig"
 	"github.com/local/ai-content-factory/apps/api/internal/project"
 	"github.com/local/ai-content-factory/apps/api/internal/workflowbinding"
+	"github.com/jackc/pgx/v5"
 )
 
 var (
@@ -62,8 +63,14 @@ type CreateRunCommand struct {
 	InputPayload   json.RawMessage
 	TriggerSource  string
 	IdempotencyKey string
+	PreparedConfiguration *PreparedRunConfiguration
 }
 type CreateRunPreparation func() (CreateRunCommand, error)
+type CreateRunTxPreparation func(pgx.Tx) (CreateRunCommand, error)
+type PreparedRunConfiguration struct {
+	WorkflowConfigurationID uuid.UUID
+	Snapshot                json.RawMessage
+}
 type RunCommand struct {
 	RunID           uuid.UUID
 	ExpectedVersion int
@@ -312,14 +319,16 @@ func (s *Service) CreateRunForPreflightToken(ctx context.Context, projectID uuid
 	})
 }
 
-func (s *Service) CreateRunForPreflightTokenIdempotent(ctx context.Context, projectID uuid.UUID, key, requestHash, nonce string, prepare CreateRunPreparation) (WorkflowRun, error) {
+func (s *Service) CreateRunForPreflightTokenIdempotent(ctx context.Context, projectID uuid.UUID, key, requestHash, nonce string, prepare CreateRunTxPreparation) (WorkflowRun, error) {
 	if projectID == uuid.Nil || strings.TrimSpace(key) == "" || strings.TrimSpace(requestHash) == "" || strings.TrimSpace(nonce) == "" || prepare == nil { return WorkflowRun{}, ErrValidation }
 	scope := "createContentGenerationRun:" + projectID.String()
 	return s.store.ExecuteIdempotent(ctx, scope, key, requestHash, func(store Store) (WorkflowRun, error) {
 		used, err := store.PreflightTokenUsed(ctx, nonce)
 		if err != nil { return WorkflowRun{}, err }
 		if used { return WorkflowRun{}, ErrPreflightTokenConsumed }
-		command, err := prepare()
+		transactional, ok := store.(interface{ Transaction() pgx.Tx })
+		if !ok || transactional.Transaction() == nil { return WorkflowRun{}, ErrValidation }
+		command, err := prepare(transactional.Transaction())
 		if err != nil { return WorkflowRun{}, err }
 		if command.ProjectID != projectID { return WorkflowRun{}, ErrValidation }
 		if command.TriggerSource == "" { command.TriggerSource = "manual" }
@@ -335,22 +344,33 @@ func (s *Service) createRun(ctx context.Context, store Store, command CreateRunC
 	if err != nil {
 		return WorkflowRun{}, ErrValidation
 	}
-	if _, err = s.projects.Get(ctx, command.ProjectID); err != nil {
-		return WorkflowRun{}, mapProjectError(err)
+	var configurationID uuid.UUID
+	var snapshot json.RawMessage
+	if command.PreparedConfiguration != nil {
+		if stage != workflowbinding.StageContentGeneration || command.PreparedConfiguration.WorkflowConfigurationID == uuid.Nil || !validJSONObject(command.PreparedConfiguration.Snapshot) {
+			return WorkflowRun{}, ErrValidation
+		}
+		configurationID = command.PreparedConfiguration.WorkflowConfigurationID
+		snapshot = RedactJSON(command.PreparedConfiguration.Snapshot)
+	} else {
+		if _, err = s.projects.Get(ctx, command.ProjectID); err != nil {
+			return WorkflowRun{}, mapProjectError(err)
+		}
+		binding, bindingErr := s.bindings.GetByProjectAndStage(ctx, command.ProjectID, stage)
+		if bindingErr != nil {
+			return WorkflowRun{}, mapBindingError(bindingErr)
+		}
+		configuration, connection, configurationErr := s.runnableConfiguration(ctx, binding.WorkflowConfigurationID, stage)
+		if configurationErr != nil {
+			return WorkflowRun{}, configurationErr
+		}
+		snapshot, err = configurationSnapshot(binding, configuration, connection, s.now())
+		if err != nil {
+			return WorkflowRun{}, fmt.Errorf("build workflow run snapshot: %w", err)
+		}
+		configurationID = configuration.ID
 	}
-	binding, err := s.bindings.GetByProjectAndStage(ctx, command.ProjectID, stage)
-	if err != nil {
-		return WorkflowRun{}, mapBindingError(err)
-	}
-	configuration, connection, err := s.runnableConfiguration(ctx, binding.WorkflowConfigurationID, stage)
-	if err != nil {
-		return WorkflowRun{}, err
-	}
-	snapshot, err := configurationSnapshot(binding, configuration, connection, s.now())
-	if err != nil {
-		return WorkflowRun{}, fmt.Errorf("build workflow run snapshot: %w", err)
-	}
-	run, err := New(s.newID(), command.ProjectID, configuration.ID, s.newRunNumber(), stage.String(), command.TriggerSource, snapshot, command.InputPayload)
+	run, err := New(s.newID(), command.ProjectID, configurationID, s.newRunNumber(), stage.String(), command.TriggerSource, snapshot, command.InputPayload)
 	if err != nil {
 		return WorkflowRun{}, err
 	}
@@ -437,18 +457,56 @@ func (s *Service) RetryRun(ctx context.Context, command RetryCommand) (WorkflowR
 		Input   json.RawMessage
 	}{command.RunID, command.ExpectedVersion, command.UseCurrentConfiguration, canonicalJSON(command.InputOverride)})
 	return s.store.ExecuteIdempotent(ctx, scope, command.IdempotencyKey, fingerprint, func(store Store) (WorkflowRun, error) {
-		original, err := store.GetByID(ctx, command.RunID)
+		var original WorkflowRun
+		var err error
+		if lockingStore, ok := store.(interface{ GetByIDForUpdate(context.Context,uuid.UUID)(WorkflowRun,error) }); ok {
+			original, err = lockingStore.GetByIDForUpdate(ctx,command.RunID)
+		} else {
+			original, err = store.GetByID(ctx, command.RunID)
+		}
 		if err != nil {
 			return WorkflowRun{}, mapStoreError(err)
 		}
 		if original.Version != command.ExpectedVersion {
 			return WorkflowRun{}, ErrVersionConflict
 		}
-		if original.Status != StatusFailed && original.Status != StatusCancelled {
-			return WorkflowRun{}, ErrNotRetryable
-		}
 		if original.Stage == "content_generation" && command.InputOverride != nil {
 			return WorkflowRun{}, ErrValidation
+		}
+		if original.Stage == "content_generation" {
+			events, eventErr := store.ListEvents(ctx, original.ID)
+			if eventErr != nil {
+				return WorkflowRun{}, mapStoreError(eventErr)
+			}
+			outputValidationFailed, resultConsumptionFailed, resultConsumed := false, false, false
+			for _, event := range events {
+				switch event.EventType {
+				case EventTypeOutputValidationFailed:
+					outputValidationFailed = true
+				case EventTypeResultConsumptionFailed:
+					resultConsumptionFailed = true
+				case EventTypeResultConsumed:
+					resultConsumed = true
+				}
+			}
+			candidateStore, ok := store.(interface {
+				HasContentGenerationCandidate(context.Context, uuid.UUID) (bool, error)
+			})
+			if !ok {
+				return WorkflowRun{}, ErrNotRetryable
+			}
+			hasCandidate, candidateErr := candidateStore.HasContentGenerationCandidate(ctx, original.ID)
+			if candidateErr != nil {
+				return WorkflowRun{}, candidateErr
+			}
+			if resultConsumptionFailed || resultConsumed || hasCandidate {
+				return WorkflowRun{}, ErrNotRetryable
+			}
+			if original.Status != StatusFailed && original.Status != StatusCancelled && (original.Status != StatusSucceeded || !outputValidationFailed || command.UseCurrentConfiguration) {
+				return WorkflowRun{}, ErrNotRetryable
+			}
+		} else if original.Status != StatusFailed && original.Status != StatusCancelled {
+			return WorkflowRun{}, ErrNotRetryable
 		}
 		input := original.InputPayload
 		if command.InputOverride != nil {
@@ -526,6 +584,10 @@ func configurationSnapshot(binding workflowbinding.ProjectWorkflowBinding, confi
 		return nil, err
 	}
 	return RedactJSON(b), nil
+}
+
+func BuildConfigurationSnapshot(binding workflowbinding.ProjectWorkflowBinding, configuration globalconfig.Workflow, connection globalconfig.Connection, createdAt time.Time) (json.RawMessage, error) {
+	return configurationSnapshot(binding, configuration, connection, createdAt)
 }
 
 func safeBaseURL(raw string) string {
