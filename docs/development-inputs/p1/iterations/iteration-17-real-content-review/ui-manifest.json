@@ -1,6 +1,6 @@
 {
   "iteration": "iteration-17-real-content-review",
-  "status": "rebuild_candidate_2026_07_29",
+  "status": "frozen_cf_17_01",
   "canonicalRoutes": {
     "editor": "/projects/{projectId}/works/{workId}",
     "review": "/projects/{projectId}/works/{workId}/review",
@@ -29,7 +29,7 @@
         "idle",
         "not_configured"
       ],
-      "developmentTask": "CF-17-03A",
+      "developmentTask": "CF-17-03",
       "acceptance": "未保存修改阻止提交；点击只打开抽屉"
     },
     {
@@ -49,7 +49,7 @@
         "idle",
         "queued"
       ],
-      "developmentTask": "CF-17-03A",
+      "developmentTask": "CF-17-03",
       "acceptance": "固定版本、只读工作流和维度、取消无副作用"
     },
     {
@@ -70,7 +70,7 @@
         "queued",
         "running"
       ],
-      "developmentTask": "CF-17-03B",
+      "developmentTask": "CF-17-03",
       "acceptance": "可离开页面并从持久化 Run/Event 恢复"
     },
     {
@@ -83,13 +83,13 @@
       "screenPath": "ui/frames/D2_REVIEW_V2/screen.png",
       "htmlPath": "ui/frames/D2_REVIEW_V2/code.html",
       "api": [
-        "getReviewDetail",
+        "getReview",
         "updateReviewIssue"
       ],
       "summaryStates": [
         "review_ready"
       ],
-      "developmentTask": "CF-17-03B",
+      "developmentTask": "CF-17-03",
       "acceptance": "Report/Issue 来源完整；重写入口禁用"
     },
     {
@@ -102,14 +102,14 @@
       "screenPath": "ui/frames/I17_D2_REVIEW_ISSUE_DETAIL/screen.png",
       "htmlPath": "ui/frames/I17_D2_REVIEW_ISSUE_DETAIL/code.html",
       "api": [
-        "getReviewDetail",
+        "getReview",
         "getContentVersion",
         "updateReviewIssue"
       ],
       "summaryStates": [
         "review_ready"
       ],
-      "developmentTask": "CF-17-03B",
+      "developmentTask": "CF-17-03",
       "acceptance": "读取来源版本只读快照，不以当前正文替换"
     },
     {
@@ -131,7 +131,7 @@
         "output_validation_failed",
         "result_consumption_failed"
       ],
-      "developmentTask": "CF-17-03B",
+      "developmentTask": "CF-17-03",
       "acceptance": "区分重试类型；技术详情脱敏"
     },
     {
@@ -150,7 +150,7 @@
       "summaryStates": [
         "not_configured"
       ],
-      "developmentTask": "CF-17-03B",
+      "developmentTask": "CF-17-03",
       "acceptance": "阻止创建并跳转项目工作流设置"
     },
     {
@@ -164,7 +164,7 @@
       "htmlPath": "ui/frames/I17_D2_REVIEW_HISTORY/code.html",
       "api": [
         "listContentItemReviews",
-        "getReviewDetail",
+        "getReview",
         "getWorkflowRunDetail"
       ],
       "summaryStates": [
@@ -175,7 +175,7 @@
         "output_validation_failed",
         "result_consumption_failed"
       ],
-      "developmentTask": "CF-17-03B",
+      "developmentTask": "CF-17-03",
       "acceptance": "多版本、多次 Run 和失败记录均保留"
     }
   ]

@@ -1,6 +1,8 @@
 iteration: iteration-17-real-content-review
-status: rebuild_candidate_2026_07_29
+status: frozen_cf_17_01
 runtime_stage: review
+subject_type: content_version
+trigger_source: manual
 input_contract: review.input.v1
 output_contract: review.output.v1
 canonical_routes:
@@ -8,43 +10,50 @@ canonical_routes:
   review: /projects/{projectId}/works/{workId}/review
   history: /projects/{projectId}/works/{workId}/review/history
 apis:
-  - method: POST
+  - operationId: preflightContentReviewRun
+    method: POST
     path: /api/v1/content-versions/{contentVersionId}/review-runs/preflight
     success: 200
     command: false
     side_effects: none
     body: [sourceContentVersionVersion, optionalInstructions]
-    returns: [status, checks, reviewDimensions, configurationSummary, preflightToken, expiresAt]
-  - method: POST
+    returns: [status, checks, sourceContentVersionSummary, reviewDimensions, configurationSummary, preflightToken, expiresAt]
+  - operationId: createContentReviewRun
+    method: POST
     path: /api/v1/content-versions/{contentVersionId}/review-runs
     success: [201, 200]
     command: true
     required_headers: [Idempotency-Key]
     body: [preflightToken]
-    server_fixed: {stage: review, triggerSource: manual, subjectType: content_version}
-  - method: GET
+    server_fixed: {stage: review, triggerSource: manual, subjectType: content_version, subjectId: contentVersionId}
+  - operationId: getContentReviewSummary
+    method: GET
     path: /api/v1/content-items/{contentItemId}/review-summary
     success: 200
     returns: [state, canStartReview, activeRun, latestRun, latestReport, issueSummary, latestError, configurationSummary]
-  - method: GET
+  - operationId: listContentItemReviews
+    method: GET
     path: /api/v1/content-items/{contentItemId}/reviews
     success: 200
     reuse: p0
     sort: created_at DESC, id DESC
-    includes: [workflowRunSummary, sourceContentVersionSummary, reportSummary]
-  - method: GET
+    includes: [workflowRun, sourceContentVersionSummary, reportSummary]
+  - operationId: getReview
+    method: GET
     path: /api/v1/reviews/{reviewId}
     success: 200
     reuse: p0
     includes: [report, sourceContentVersionSummary, issues, recommendations, workflowRunSummary]
-  - method: PATCH
+  - operationId: updateReviewIssue
+    method: PATCH
     path: /api/v1/reviews/{reviewId}/issues/{issueId}
     success: 200
     command: true
     required_headers: [Idempotency-Key]
     body: [disposition, expectedVersion]
     allowed_disposition: [open, ignored]
-  - method: POST
+  - operationId: retryReviewResultConsumption
+    method: POST
     path: /api/v1/workflow-runs/{workflowRunId}/review-result-consumption-retries
     success: 200
     command: true
@@ -66,14 +75,15 @@ summary_states:
   - output_validation_failed
   - result_consumption_failed
 common_requirements:
-  - OpenAPI is the single HTTP contract source after CF-17-01B
+  - OpenAPI is the single HTTP contract source after CF-17-01
   - all commands use persistent Idempotency-Key semantics
-  - errors use the shared ErrorEnvelope
+  - errors use the shared ErrorEnvelope shape with review-specific safe codes
   - source version, project ownership and optimistic locks are checked server-side
   - secrets, raw upstream responses, SQL, stacks, internal nodes and internal URLs are never returned
-  - business pages cannot override stage, subject, workflow binding or configuration snapshot
+  - business pages cannot override stage, subject, workflow binding, configuration or connection snapshots
+  - succeeded without a same-Run ReviewReport is not review_ready
 excluded:
-  - POST rewrite-runs implementation
+  - Iteration 18 rewrite-run APIs
   - temporary workflow selection in review drawer
-  - parallel content_review stage
-  - changes to P0 mock review API semantics
+  - parallel Review Stage
+  - changes to P0 Mock Review API semantics

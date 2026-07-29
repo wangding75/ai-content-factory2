@@ -1,6 +1,6 @@
 # Iteration 17 — 事务、并发与 Migration 设计
 
-**状态：`rebuild_candidate_2026_07_29`。** 目标是固定版本、Run、Report 和 Issue 的原子一致性；所有失败均不得留下部分审核结果。
+**状态：`frozen_cf_17_01`。** 目标是固定版本、Run、Report 和 Issue 的原子一致性；所有失败均不得留下部分审核结果。
 
 ## 1. Preflight
 
@@ -14,15 +14,15 @@ Preflight 不冻结版本、不创建 Run/Event/Report/Issue、不写幂等记�
 
 1. 检查命令幂等记录；
 2. 校验并锁定 Preflight Token nonce；
-3. 锁定 ContentVersion 与所属 ContentItem；
-4. 校验 source ID/version/hash 与 Token 一致；
-5. 确认没有未保存内容对应的版本漂移；
-6. 必要时只冻结来源版本元数据，正文内容不变；
-7. 复核 `review` Binding、Configuration、Connection 版本；
-8. 检查同版本 active review Run；
-9. 创建 queued Run、subject、input/configuration 快照；
-10. 创建初始 Event；
-11. 保存 Token 消费和命令幂等结果；
+3. 锁定 ContentVersion；
+4. 锁定所属 ContentItem；
+5. 校验 source ID/version/hash 与 Token 一致；
+6. 复核 `review` Binding、Configuration、Connection 版本；
+7. 检查同版本 active review Run；
+8. 创建 queued Run、subject、input/configuration 快照；
+9. 创建初始 Event；
+10. 保存 Token 消费；
+11. 保存命令幂等结果；
 12. Commit。
 
 提交后才交给 Runtime。任一步失败均无 Run、孤立 Event、Token 误消费或成功幂等记录。部分唯一索引是并发最终保证。
@@ -44,15 +44,17 @@ Runtime succeeded 后，在写事务前严格验证 `review.output.v1`：
 事务内：
 
 1. 锁定 WorkflowRun；
-2. 校验 stage=review、status=succeeded、subjectType=content_version；
-3. 锁定来源 ContentVersion 与 ContentItem；
-4. 查询该 Run 是否已有 Report；已有则幂等返回；
-5. 创建 ReviewReport；
-6. 按输出顺序批量创建 ReviewIssue；
-7. 创建可选报告级 ReviewRecommendation；
-8. 根据“来源是否仍为当前版本 + conclusion”条件更新 ContentItem 状态；
-9. 追加 `result_consumed` Event；
-10. Commit。
+2. 校验 stage=review；
+3. 校验 status=succeeded；
+4. 校验 subjectType=content_version；
+5. 锁定来源 ContentVersion 与 ContentItem；
+6. 查询该 Run 是否已有 Report；已有则幂等返回；
+7. 创建 ReviewReport；
+8. 按 position 批量创建全部 ReviewIssue；
+9. 创建可选报告级 ReviewRecommendation；
+10. 根据“来源是否仍为当前版本 + conclusion”条件更新 ContentItem 状态；
+11. 追加 `result_consumed` Event；
+12. Commit。
 
 任一 Report、Issue、Recommendation、ContentItem 或 Event 写入失败全部回滚。回滚后使用独立安全事务追加 `result_consumption_failed`，不得产生部分 Report 或 Issue。
 
@@ -82,7 +84,7 @@ failed、cancelled 或 output_validation_failed 走 Iteration 14 Runtime Retry�
 
 `open ↔ ignored` 命令包含 `expectedVersion` 与 `Idempotency-Key`。事务内锁定 Issue，校验 Report/Project 归属和版本，更新 disposition、ignored_at/by、version 和幂等结果。
 
-处置不得修改 Report conclusion、score_json、原始 issue 内容、正文或 WorkflowRun。
+处置不得修改 Report conclusion、P0 score、原始 issue 内容、正文或 WorkflowRun。
 
 ## 8. 历史与 Summary 并发
 
@@ -95,4 +97,4 @@ failed、cancelled 或 output_validation_failed 走 Iteration 14 Runtime Retry�
 
 ## 9. Migration 执行规则
 
-新增一个向前 Migration并在唯一开发数据库持续演进。禁止修改历史 Migration、downgrade、空库重放要求、删除 Volume、`down -v` 或手工篡改业务数据。
+Migration 17 在唯一开发数据库从 16 向前演进：增加 active review subject 索引、ReviewReport 兼容列与双 Runtime 延迟归属校验、ReviewIssue 字段/约束/索引。现有 `workflow_run_id` 同时承担 P0 与 P1 关联，因此不新增同义列：`mock` 报告校验旧 `workflow_runs`，`runtime` 报告校验 `workflow_run_records`。禁止修改历史 Migration、执行 downgrade、空库重放、删除 Volume、`down -v` 或手工篡改业务数据。

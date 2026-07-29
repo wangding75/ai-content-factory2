@@ -1,5 +1,7 @@
 # Iteration 17 — Stitch 原型来源映射
 
+**状态：`frozen_cf_17_01`。**
+
 ## 1. 来源
 
 - 上传包：`stitch_acf_iteration_17_ui_final_rebuild_frozen_existing_shell.zip`

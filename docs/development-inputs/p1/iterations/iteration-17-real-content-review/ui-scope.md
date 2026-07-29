@@ -1,5 +1,7 @@
 # Iteration 17 — 真实内容审核 UI Scope
 
+**状态：`frozen_cf_17_01`。**
+
 ## 1. Frame 映射
 
 | Order | Frame | 页面/状态 | 正式路由 | Screenshot | HTML |

@@ -1,6 +1,6 @@
 # Iteration 17 — 真实内容审核
 
-**状态：`rebuild_candidate_2026_07_29`。** 本目录用于替换原 Iteration 17 开发输入。业务、数据、事务、API、UI 和原型已经重新对齐；正式实现前仍需按 `development-plan.md` 完成 OpenAPI 与 Migration 冻结。
+**状态：`frozen_cf_17_01`。** 业务、Runtime 输入输出、数据、事务、API、UI 和原型已按 CF-17-01 冻结；后续实现只以本任务最终 Commit 为基线。
 
 ## 1. 迭代目标
 
@@ -27,7 +27,7 @@
 
 ## 3. 核心业务边界
 
-- Runtime Stage 固定为 `review`，与 Iteration 13 的项目工作流绑定枚举一致；不得使用 `content_review` 新建第二套 Stage。
+- Runtime Stage 固定为 `review`，与 Iteration 13 的项目工作流绑定枚举一致；不得新建平行 Review Stage。
 - 审核来源固定为 `ContentVersion.id`。提交后正文 ID、乐观锁版本和内容摘要必须保持可追溯。
 - 同一版本允许多次历史审核，但同一版本最多一个 `queued/running` 审核 Run。
 - 每个成功 Run 最多生成一个 ReviewReport；失败 Run 不得留下部分 Report 或 Issue。
@@ -78,7 +78,7 @@ Iteration 17 采用 8 张按用户链路排序的桌面原型：
 
 ## 7. 实施顺序
 
-严格按 `development-plan.md` 执行：契约 → 数据与后端 → 前端 → 真实 n8n → 异常与最终回归。不得在契约冻结前直接实现 Iteration 17。
+严格按 `development-plan.md` 的四任务执行：CF-17-01 契约与数据基础冻结 → CF-17-02 后端开发 → CF-17-03 前端开发 → CF-17-04 真实 n8n 联调与最终收口。
 
 ## 8. 不在范围
 

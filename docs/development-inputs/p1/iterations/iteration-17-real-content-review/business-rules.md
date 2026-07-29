@@ -1,6 +1,6 @@
 # Iteration 17 — 真实内容审核业务规则与状态机
 
-**状态：`rebuild_candidate_2026_07_29`。** 本文件是 Iteration 17 业务语义的权威来源；HTTP 字段由后续 OpenAPI 冻结，表结构与事务由 `data-model.md`、`transaction-and-migration-design.md` 固定。
+**状态：`frozen_cf_17_01`。** 本文件是 Iteration 17 业务语义的权威来源；HTTP 字段由正式 OpenAPI 冻结，表结构与事务由 `data-model.md`、`transaction-and-migration-design.md` 固定。
 
 ## 1. 审核对象与固定版本
 
@@ -24,7 +24,7 @@
 - 审核说明长度不超过 2,000 个 Unicode 字符；
 - 当前配置声明 `review.input.v1` / `review.output.v1`。
 
-通过时签发 10 分钟有效的 Preflight Token，绑定 actor、project、contentItem、sourceContentVersion ID/version/hash、审核说明摘要、审核维度摘要、Binding/Configuration/Connection 版本。
+通过时签发 10 分钟有效的 Preflight Token，绑定 actor、projectId、contentItemId、sourceContentVersionId/version/hash、optionalInstructions、reviewDimensions、Binding/Configuration/Connection 版本、input digest、nonce 与 expiresAt。
 
 创建命令必须使用 `Idempotency-Key`。服务端固定：
 
@@ -39,14 +39,13 @@
 
 ### 3.1 `review.input.v1`
 
-安全输入快照至少包含：
+安全输入按固定顺序包含：
 
-- projectId、contentItemId、sourceContentVersionId、sourceContentVersionVersion；
-- title、content、summary、wordCount 的固定快照或经授权的完整正文；
-- reviewDimensions；
-- optionalInstructions；
-- configurationSnapshot；
-- inputSchemaVersion=`review.input.v1`。
+- schemaVersion=`review.input.v1`；
+- projectId、contentItemId、sourceContentVersionId、sourceContentVersionVersion、sourceContentHash；
+- sourceTitle、sourceContent、optionalInstructions；
+- reviewDimensions，键固定为 `compliance/factual_consistency/language_quality/structural_logic/character_consistency`；
+- workflowRunId、correlationId。
 
 Run/Event/日志不得记录 Preflight Token、Idempotency-Key 原文、凭据、Authorization、Cookie 或内部地址。
 
@@ -57,20 +56,21 @@ Run/Event/日志不得记录 Preflight Token、Idempotency-Key 原文、凭据�
 ```json
 {
   "schemaVersion": "review.output.v1",
-  "conclusion": "passed | needs_changes",
-  "summary": "string",
+  "conclusion": "passed",
+  "summary": "审核通过",
   "passedRuleCount": 0,
   "issues": [
     {
-      "issueKey": "string",
-      "severity": "critical | warning | suggestion",
-      "categoryKey": "string",
-      "categoryLabel": "string",
-      "title": "string",
-      "description": "string",
+      "issueKey": "character-consistency-1",
+      "position": 1,
+      "categoryKey": "character_consistency",
+      "categoryLabel": "角色一致性",
+      "severity": "warning",
+      "title": "人物行为与设定不一致",
+      "description": "问题说明",
       "evidence": {
-        "quote": "string",
-        "sourceRefs": ["string"]
+        "quote": "必要短引文",
+        "sourceRefs": ["sourceContentVersion"]
       },
       "location": {
         "paragraphStart": 1,
@@ -78,7 +78,15 @@ Run/Event/日志不得记录 Preflight Token、Idempotency-Key 原文、凭据�
         "sentenceStart": 1,
         "sentenceEnd": 1
       },
-      "suggestion": "string"
+      "suggestion": "修改建议"
+    }
+  ],
+  "recommendations": [
+    {
+      "position": 1,
+      "priority": "medium",
+      "title": "报告级建议",
+      "description": "建议说明"
     }
   ]
 }
@@ -87,9 +95,11 @@ Run/Event/日志不得记录 Preflight Token、Idempotency-Key 原文、凭据�
 规则：
 
 - `summary` 必填；`issues` 可为空，空数组只允许 `conclusion=passed`；
-- 每个 Report 最多 200 个 Issue；`issueKey` 在 Report 内唯一；
+- 每个 Report 最多 200 个 Issue；`issueKey` 与从 1 开始连续的 `position` 在 Report 内分别唯一；
+- `recommendations` 最多 100 条，使用从 1 开始的稳定 position，只保存报告级建议；
 - 所有字符串使用 Unicode 长度限制；正文证据只能保存必要短片段；
-- severity、location 和 evidence 必须满足结构约束；
+- severity 仅允许 `critical/warning/suggestion`；location 可空，非空时必须满足段落和句子范围；evidence 必须是固定对象；
+- 顶层和嵌套对象拒绝未知字段，解析器拒绝尾随 JSON、非法枚举、重复 issueKey/position 与任何凭据或内部信息字段；
 - Provider 不得返回 issue disposition，系统创建时统一为 `open`。
 
 ## 4. Report、Issue 与处置

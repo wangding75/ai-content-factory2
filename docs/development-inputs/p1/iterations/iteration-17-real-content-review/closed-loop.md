@@ -1,5 +1,7 @@
 # Iteration 17 — 真实内容审核 Closed Loop
 
+**状态：`frozen_cf_17_01`。**
+
 ## 1. 入口：正文编辑器
 
 `I17_D1_EDITOR_REVIEW_ENTRY` 复用 Iteration 16 编辑器。页面显示当前已保存版本、保存状态和审核配置状态。

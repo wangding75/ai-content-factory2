@@ -769,6 +769,40 @@ paths:
         "404": {$ref: "#/components/responses/NotFound"}
         "409": {description: "Run state, output validation, version or idempotency conflict.", content: {application/json: {schema: {$ref: "#/components/schemas/ContentGenerationErrorEnvelope"}}}}
         "500": {description: Atomic result consumption failed safely and created no ContentVersion., content: {application/json: {schema: {$ref: "#/components/schemas/ContentGenerationErrorEnvelope"}}}}
+  /api/v1/content-versions/{contentVersionId}/review-runs/preflight:
+    parameters: [{$ref: "#/components/parameters/ContentReviewVersionId"}]
+    post:
+      operationId: preflightContentReviewRun
+      description: Read-only preflight for a saved ContentVersion. It creates no Run, Event, Report, Issue or idempotency record and performs no Runtime or n8n call. A passed token is actor, project, item, source-version, review-input and configuration-version bound and expires after 10 minutes.
+      requestBody: {required: true, content: {application/json: {schema: {$ref: "#/components/schemas/ContentReviewPreflightRequest"}}}}
+      responses:
+        "200": {description: Passed or blocked content-review preflight report., content: {application/json: {schema: {$ref: "#/components/schemas/ContentReviewPreflightEnvelope"}}}}
+        "400": {$ref: "#/components/responses/BadRequest"}
+        "404": {$ref: "#/components/responses/NotFound"}
+        "500": {$ref: "#/components/responses/InternalServerError"}
+  /api/v1/content-versions/{contentVersionId}/review-runs:
+    parameters: [{$ref: "#/components/parameters/ContentReviewVersionId"}, {$ref: "#/components/parameters/IdempotencyKey"}]
+    post:
+      operationId: createContentReviewRun
+      description: Creates a queued Runtime Run with server-fixed stage=review, triggerSource=manual, subjectType=content_version and subjectId=contentVersionId. The client cannot override the project, subject, binding, configuration, connection or protected review.input.v1 fields. Same-key same-request replay returns the original Run; same-key different-request use conflicts.
+      requestBody: {required: true, content: {application/json: {schema: {$ref: "#/components/schemas/CreateContentReviewRunRequest"}}}}
+      responses:
+        "200": {description: Idempotent replay of the originally queued Review Run., content: {application/json: {schema: {$ref: "#/components/schemas/Iteration14WorkflowRunEnvelope"}}}}
+        "201": {description: Newly queued Review Run., content: {application/json: {schema: {$ref: "#/components/schemas/Iteration14WorkflowRunEnvelope"}}}}
+        "400": {$ref: "#/components/responses/BadRequest"}
+        "404": {$ref: "#/components/responses/NotFound"}
+        "409": {description: "Source drift, active Review Run or idempotency conflict.", content: {application/json: {schema: {$ref: "#/components/schemas/ContentReviewErrorEnvelope"}}}}
+        "422": {description: Invalid token or unavailable review prerequisite., content: {application/json: {schema: {$ref: "#/components/schemas/ContentReviewErrorEnvelope"}}}}
+  /api/v1/content-items/{contentItemId}/review-summary:
+    parameters: [{$ref: "#/components/parameters/ContentItemId"}]
+    get:
+      operationId: getContentReviewSummary
+      description: Read-only persisted aggregation. Existing Run, failure and Report facts take precedence over later configuration unavailability; succeeded without a Report is never review_ready.
+      responses:
+        "200": {description: Content-review workspace summary., content: {application/json: {schema: {$ref: "#/components/schemas/ContentReviewSummaryEnvelope"}}}}
+        "400": {$ref: "#/components/responses/BadRequest"}
+        "404": {$ref: "#/components/responses/NotFound"}
+        "500": {$ref: "#/components/responses/InternalServerError"}
   /api/v1/content-items/{contentItemId}/mock-generate:
     parameters: [{$ref: "#/components/parameters/ContentItemId"}, {$ref: "#/components/parameters/IdempotencyKey"}]
     post:
@@ -906,7 +940,7 @@ paths:
     parameters: [{$ref: "#/components/parameters/ReviewId"}]
     get:
       operationId: getReview
-      description: Returns the completed ReviewReport, its immutable ContentVersion summary, Findings, Recommendations and WorkflowRun summary.
+      description: Returns either the P0 Mock Review tree or a real ReviewReport tree with its immutable source ContentVersion, ReviewIssues, report-level Recommendations and Runtime WorkflowRun summary.
       responses:
         "200": {description: Review detail., content: {application/json: {schema: {$ref: "#/components/schemas/ReviewDetailEnvelope"}, example: {data: {review: {id: "55555555-5555-4555-8555-555555555555", content_item_id: "11111111-1111-4111-8111-111111111111", content_version_id: "33333333-3333-4333-8333-333333333333", provider_key: mock, status: completed, conclusion: revise, score: 70, summary: "Review", created_at: "2026-07-15T12:03:00Z"}, content_version: {id: "33333333-3333-4333-8333-333333333333", version_no: 1, version: 3, title: "Chapter", word_count: 2, source: mock_generated, frozen_at: "2026-07-15T12:03:00Z"}, findings: [], recommendations: [], workflow_run: {id: "44444444-4444-4444-8444-444444444444", provider_key: mock, workflow_key: content_mock_review, status: succeeded, started_at: "2026-07-15T12:03:00Z", finished_at: "2026-07-15T12:03:00Z"}}, request_id: req_07}}}}
         "400": {$ref: "#/components/responses/BadRequest"}
@@ -914,6 +948,29 @@ paths:
         "409": {$ref: "#/components/responses/Conflict"}
         "422": {$ref: "#/components/responses/UnprocessableEntity"}
         "500": {$ref: "#/components/responses/InternalServerError"}
+  /api/v1/reviews/{reviewId}/issues/{issueId}:
+    parameters: [{$ref: "#/components/parameters/ReviewId"}, {$ref: "#/components/parameters/ReviewIssueId"}, {$ref: "#/components/parameters/IdempotencyKey"}]
+    patch:
+      operationId: updateReviewIssue
+      description: Changes only disposition, ignoredAt, ignoredBy, version and updatedAt. It never changes the Report conclusion, score, original Issue content/evidence/suggestion, source content or WorkflowRun.
+      requestBody: {required: true, content: {application/json: {schema: {$ref: "#/components/schemas/UpdateReviewIssueRequest"}}}}
+      responses:
+        "200": {description: Updated or idempotently replayed ReviewIssue., content: {application/json: {schema: {$ref: "#/components/schemas/RealReviewIssueEnvelope"}}}}
+        "400": {$ref: "#/components/responses/BadRequest"}
+        "404": {$ref: "#/components/responses/NotFound"}
+        "409": {description: Issue version or idempotency conflict., content: {application/json: {schema: {$ref: "#/components/schemas/ContentReviewErrorEnvelope"}}}}
+  /api/v1/workflow-runs/{workflowRunId}/review-result-consumption-retries:
+    parameters: [{$ref: "#/components/parameters/WorkflowRunId"}, {$ref: "#/components/parameters/IdempotencyKey"}]
+    post:
+      operationId: retryReviewResultConsumption
+      description: Reconsumes the persisted, valid review.output.v1 of a succeeded review Run after result_consumption_failed. It requires no existing ReviewReport, performs no n8n call and creates no new Run. Same-key same-request replay returns the first Report.
+      requestBody: {required: true, content: {application/json: {schema: {$ref: "#/components/schemas/RetryReviewResultConsumptionRequest"}}}}
+      responses:
+        "200": {description: Existing or newly consumed real ReviewReport tree., content: {application/json: {schema: {$ref: "#/components/schemas/RealReviewResultEnvelope"}}}}
+        "400": {$ref: "#/components/responses/BadRequest"}
+        "404": {$ref: "#/components/responses/NotFound"}
+        "409": {description: "Run state, output, version or idempotency conflict.", content: {application/json: {schema: {$ref: "#/components/schemas/ContentReviewErrorEnvelope"}}}}
+        "500": {description: Atomic Report and Issue consumption failed safely with no partial review tree., content: {application/json: {schema: {$ref: "#/components/schemas/ContentReviewErrorEnvelope"}}}}
   /api/v1/workflow-runs:
     get:
       operationId: listWorkflowRuns
@@ -1440,6 +1497,11 @@ components:
       in: path
       required: true
       schema: {type: string, format: uuid}
+    ContentReviewVersionId:
+      name: contentVersionId
+      in: path
+      required: true
+      schema: {type: string, format: uuid}
     WorkId:
       name: workId
       in: path
@@ -1447,6 +1509,11 @@ components:
       schema: {type: string, format: uuid}
     ReviewId:
       name: reviewId
+      in: path
+      required: true
+      schema: {type: string, format: uuid}
+    ReviewIssueId:
+      name: issueId
       in: path
       required: true
       schema: {type: string, format: uuid}
@@ -2199,6 +2266,11 @@ components:
         score: {type: integer, minimum: 0, maximum: 100}
         summary: {type: string, maxLength: 5000}
         created_at: {type: string, format: date-time}
+        workflowRunId: {type: [string, "null"], format: uuid, description: Optional P1 Runtime link; historical P0 Mock reports may omit it or expose null.}
+        schemaVersion: {type: [string, "null"], maxLength: 40}
+        sourceContentVersionVersion: {type: [integer, "null"], minimum: 1}
+        sourceContentHash: {type: [string, "null"], pattern: "^[0-9a-f]{64}$"}
+        completedAt: {type: [string, "null"], format: date-time}
     ReviewFinding:
       type: object
       additionalProperties: false
@@ -2440,7 +2512,7 @@ components:
       type: object
       additionalProperties: false
       required: [items, total, limit, offset]
-      properties: {items: {type: array, items: {$ref: "#/components/schemas/ReviewReport"}}, total: {type: integer, minimum: 0}, limit: {type: integer, minimum: 1, maximum: 100}, offset: {type: integer, minimum: 0}}
+      properties: {items: {type: array, items: {oneOf: [{$ref: "#/components/schemas/ReviewReport"}, {$ref: "#/components/schemas/ContentReviewHistoryItem"}]}}, total: {type: integer, minimum: 0}, limit: {type: integer, minimum: 1, maximum: 100}, offset: {type: integer, minimum: 0}}
     ReviewListEnvelope:
       type: object
       additionalProperties: false
@@ -2455,7 +2527,7 @@ components:
       type: object
       additionalProperties: false
       required: [data, request_id]
-      properties: {data: {$ref: "#/components/schemas/ReviewDetail"}, request_id: {type: string}}
+      properties: {data: {oneOf: [{$ref: "#/components/schemas/ReviewDetail"}, {$ref: "#/components/schemas/RealReviewDetail"}]}, request_id: {type: string}}
     RewriteInputSummary:
       type: object
       additionalProperties: false
@@ -3737,8 +3809,8 @@ components:
         workflowConfigurationId: {type: string, format: uuid}
         triggerSource: {$ref: "#/components/schemas/WorkflowRunTriggerSource"}
         status: {$ref: "#/components/schemas/Iteration14WorkflowRunStatus", description: WorkflowRun status snapshot after this event is written; event status is not an independent lifecycle.}
-        inputPayload: {type: object, additionalProperties: true, description: "Redacted, schema-validated input."}
-        outputPayload: {type: [object, "null"], additionalProperties: true, description: "Redacted, schema-validated output."}
+        inputPayload: {anyOf: [{$ref: "#/components/schemas/ReviewRuntimeInputV1"}, {type: object, additionalProperties: true}], description: "Redacted, schema-validated input; review Runs use ReviewRuntimeInputV1."}
+        outputPayload: {anyOf: [{$ref: "#/components/schemas/ReviewRuntimeOutputV1"}, {type: object, additionalProperties: true}, {type: "null"}], description: "Redacted, schema-validated output; review Runs use ReviewRuntimeOutputV1."}
         errorCode: {type: [string, "null"], maxLength: 80}
         errorMessage: {type: [string, "null"], maxLength: 300}
         errorDetails: {type: [object, "null"], additionalProperties: true, description: Redacted display-safe details only.}
@@ -3795,6 +3867,318 @@ components:
       additionalProperties: false
       required: [data, request_id]
       properties: {data: {$ref: "#/components/schemas/ProjectWorkflowRunSummary"}, request_id: {type: string}}
+    ReviewDimensionKey:
+      type: string
+      enum: [compliance, factual_consistency, language_quality, structural_logic, character_consistency]
+    ContentReviewPreflightRequest:
+      type: object
+      additionalProperties: false
+      required: [sourceContentVersionVersion, optionalInstructions]
+      properties:
+        sourceContentVersionVersion: {type: integer, minimum: 1, description: Optimistic-lock version of contentVersionId.}
+        optionalInstructions: {type: [string, "null"], maxLength: 2000}
+    ContentReviewPreflightStatus: {type: string, enum: [passed, blocked]}
+    ContentReviewCheckStatus: {type: string, enum: [passed, warning, blocked]}
+    ContentReviewCheckCode:
+      type: string
+      enum: [source_version_saved, source_version_unchanged, project_binding_available, workflow_configuration_available, workflow_connection_available, active_review_run_absent, review_input_valid]
+    ContentReviewCheck:
+      type: object
+      additionalProperties: false
+      required: [code, status, message]
+      properties:
+        code: {$ref: "#/components/schemas/ContentReviewCheckCode"}
+        status: {$ref: "#/components/schemas/ContentReviewCheckStatus"}
+        message: {type: string, minLength: 1, maxLength: 300}
+    ContentReviewSourceVersionSummary:
+      type: object
+      additionalProperties: false
+      required: [id, contentItemId, versionNo, version, title, wordCount, contentHash, frozen]
+      properties:
+        id: {type: string, format: uuid}
+        contentItemId: {type: string, format: uuid}
+        versionNo: {type: integer, minimum: 1}
+        version: {type: integer, minimum: 1}
+        title: {type: string, minLength: 1, maxLength: 120}
+        wordCount: {type: integer, minimum: 0}
+        contentHash: {type: string, pattern: "^[0-9a-f]{64}$"}
+        frozen: {type: boolean}
+    ContentReviewConfigurationSummary:
+      type: object
+      additionalProperties: false
+      required: [bindingVersion, workflowConfigurationId, workflowConfigurationName, workflowConfigurationVersion, connectionId, connectionVersion, inputContract, outputContract]
+      properties:
+        bindingVersion: {type: integer, minimum: 1}
+        workflowConfigurationId: {type: string, format: uuid}
+        workflowConfigurationName: {type: string, minLength: 1, maxLength: 160}
+        workflowConfigurationVersion: {type: integer, minimum: 1}
+        connectionId: {type: string, format: uuid}
+        connectionVersion: {type: integer, minimum: 1}
+        inputContract: {type: string, const: review.input.v1}
+        outputContract: {type: string, const: review.output.v1}
+    ContentReviewPreflightReport:
+      type: object
+      additionalProperties: false
+      required: [status, checks, sourceContentVersionSummary, reviewDimensions, configurationSummary, preflightToken, expiresAt]
+      properties:
+        status: {$ref: "#/components/schemas/ContentReviewPreflightStatus"}
+        checks: {type: array, minItems: 1, items: {$ref: "#/components/schemas/ContentReviewCheck"}}
+        sourceContentVersionSummary: {$ref: "#/components/schemas/ContentReviewSourceVersionSummary"}
+        reviewDimensions: {type: array, minItems: 1, maxItems: 5, uniqueItems: true, items: {$ref: "#/components/schemas/ReviewDimensionKey"}}
+        configurationSummary: {anyOf: [{$ref: "#/components/schemas/ContentReviewConfigurationSummary"}, {type: "null"}]}
+        preflightToken: {type: [string, "null"], minLength: 1, maxLength: 4096, description: "Present only when status=passed; never persisted in Run, Event or logs."}
+        expiresAt: {type: [string, "null"], format: date-time, description: Present only when status=passed; default token TTL is 10 minutes.}
+    ContentReviewPreflightEnvelope:
+      type: object
+      additionalProperties: false
+      required: [data, request_id]
+      properties: {data: {$ref: "#/components/schemas/ContentReviewPreflightReport"}, request_id: {type: string}}
+    CreateContentReviewRunRequest:
+      type: object
+      additionalProperties: false
+      required: [preflightToken]
+      properties:
+        preflightToken: {type: string, minLength: 1, maxLength: 4096}
+    ReviewRuntimeInputV1:
+      type: object
+      additionalProperties: false
+      description: Canonical serialization order is the property order below. The persisted Run input snapshot contains only these business fields and safe digests; credentials, Authorization, Cookie, Idempotency-Key and Preflight Token are forbidden.
+      required: [schemaVersion, projectId, contentItemId, sourceContentVersionId, sourceContentVersionVersion, sourceContentHash, sourceTitle, sourceContent, optionalInstructions, reviewDimensions, workflowRunId, correlationId]
+      properties:
+        schemaVersion: {type: string, const: review.input.v1}
+        projectId: {type: string, format: uuid}
+        contentItemId: {type: string, format: uuid}
+        sourceContentVersionId: {type: string, format: uuid}
+        sourceContentVersionVersion: {type: integer, minimum: 1}
+        sourceContentHash: {type: string, pattern: "^[0-9a-f]{64}$"}
+        sourceTitle: {type: string, minLength: 1, maxLength: 120}
+        sourceContent: {type: string, maxLength: 200000}
+        optionalInstructions: {type: [string, "null"], maxLength: 2000}
+        reviewDimensions: {type: array, minItems: 1, maxItems: 5, uniqueItems: true, items: {$ref: "#/components/schemas/ReviewDimensionKey"}}
+        workflowRunId: {type: string, format: uuid}
+        correlationId: {type: string, minLength: 1, maxLength: 128}
+    ReviewRuntimeEvidenceV1:
+      type: object
+      additionalProperties: false
+      required: [quote, sourceRefs]
+      properties:
+        quote: {type: [string, "null"], maxLength: 1000}
+        sourceRefs: {type: array, maxItems: 20, uniqueItems: true, items: {type: string, minLength: 1, maxLength: 200}}
+    ReviewRuntimeLocationV1:
+      type: object
+      additionalProperties: false
+      required: [paragraphStart, paragraphEnd, sentenceStart, sentenceEnd]
+      properties:
+        paragraphStart: {type: integer, minimum: 1}
+        paragraphEnd: {type: integer, minimum: 1}
+        sentenceStart: {type: integer, minimum: 1}
+        sentenceEnd: {type: integer, minimum: 1}
+      description: paragraphStart must not exceed paragraphEnd and sentenceStart must not exceed sentenceEnd.
+    ReviewRuntimeIssueV1:
+      type: object
+      additionalProperties: false
+      required: [issueKey, position, categoryKey, categoryLabel, severity, title, description, evidence, location, suggestion]
+      properties:
+        issueKey: {type: string, minLength: 1, maxLength: 120, pattern: "^[a-zA-Z0-9][a-zA-Z0-9._:-]*$"}
+        position: {type: integer, minimum: 1, maximum: 200}
+        categoryKey: {type: string, minLength: 1, maxLength: 80, pattern: "^[a-z][a-z0-9_]*$"}
+        categoryLabel: {type: string, minLength: 1, maxLength: 120}
+        severity: {type: string, enum: [critical, warning, suggestion]}
+        title: {type: string, minLength: 1, maxLength: 200}
+        description: {type: string, minLength: 1, maxLength: 5000}
+        evidence: {$ref: "#/components/schemas/ReviewRuntimeEvidenceV1"}
+        location: {anyOf: [{$ref: "#/components/schemas/ReviewRuntimeLocationV1"}, {type: "null"}]}
+        suggestion: {type: [string, "null"], maxLength: 5000}
+    ReviewRuntimeRecommendationV1:
+      type: object
+      additionalProperties: false
+      required: [position, priority, title, description]
+      properties:
+        position: {type: integer, minimum: 1, maximum: 100}
+        priority: {type: string, enum: [low, medium, high]}
+        title: {type: string, minLength: 1, maxLength: 200}
+        description: {type: string, minLength: 1, maxLength: 5000}
+    ReviewRuntimeOutputV1:
+      type: object
+      additionalProperties: false
+      description: A single JSON object with no trailing JSON is required. issueKey and position are each unique; positions are contiguous from 1. Empty issues is legal only when conclusion=passed. Credential, token, Authorization, Cookie, SQL, stack, internal-node, internal-URL and raw-upstream fields are forbidden by additionalProperties=false and the fixed nested schemas.
+      required: [schemaVersion, conclusion, summary, passedRuleCount, issues, recommendations]
+      properties:
+        schemaVersion: {type: string, const: review.output.v1}
+        conclusion: {type: string, enum: [passed, needs_changes]}
+        summary: {type: string, minLength: 1, maxLength: 5000}
+        passedRuleCount: {type: integer, minimum: 0, maximum: 10000}
+        issues: {type: array, maxItems: 200, uniqueItems: true, items: {$ref: "#/components/schemas/ReviewRuntimeIssueV1"}}
+        recommendations: {type: array, maxItems: 100, uniqueItems: true, items: {$ref: "#/components/schemas/ReviewRuntimeRecommendationV1"}}
+    ContentReviewResultState: {type: string, enum: [idle, not_configured, queued, running, review_ready, runtime_failed, output_validation_failed, result_consumption_failed]}
+    RealReviewReport:
+      type: object
+      additionalProperties: false
+      required: [id, contentItemId, sourceContentVersionId, sourceContentVersionVersion, sourceContentHash, workflowRunId, schemaVersion, conclusion, summary, passedRuleCount, createdAt, completedAt]
+      properties:
+        id: {type: string, format: uuid}
+        contentItemId: {type: string, format: uuid}
+        sourceContentVersionId: {type: string, format: uuid}
+        sourceContentVersionVersion: {type: integer, minimum: 1}
+        sourceContentHash: {type: string, pattern: "^[0-9a-f]{64}$"}
+        workflowRunId: {type: string, format: uuid}
+        schemaVersion: {type: string, const: review.output.v1}
+        conclusion: {type: string, enum: [passed, needs_changes]}
+        summary: {type: string, minLength: 1, maxLength: 5000}
+        passedRuleCount: {type: integer, minimum: 0, maximum: 10000}
+        createdAt: {type: string, format: date-time}
+        completedAt: {type: string, format: date-time}
+    ReviewIssueDisposition: {type: string, enum: [open, ignored]}
+    RealReviewIssue:
+      type: object
+      additionalProperties: false
+      required: [id, reviewId, issueKey, position, categoryKey, categoryLabel, severity, title, description, evidence, location, suggestion, disposition, version, ignoredAt, ignoredBy, createdAt, updatedAt]
+      properties:
+        id: {type: string, format: uuid}
+        reviewId: {type: string, format: uuid}
+        issueKey: {type: string, minLength: 1, maxLength: 120}
+        position: {type: integer, minimum: 1, maximum: 200}
+        categoryKey: {type: string, minLength: 1, maxLength: 80}
+        categoryLabel: {type: string, minLength: 1, maxLength: 120}
+        severity: {type: string, enum: [critical, warning, suggestion]}
+        title: {type: string, minLength: 1, maxLength: 200}
+        description: {type: string, minLength: 1, maxLength: 5000}
+        evidence: {$ref: "#/components/schemas/ReviewRuntimeEvidenceV1"}
+        location: {anyOf: [{$ref: "#/components/schemas/ReviewRuntimeLocationV1"}, {type: "null"}]}
+        suggestion: {type: [string, "null"], maxLength: 5000}
+        disposition: {$ref: "#/components/schemas/ReviewIssueDisposition"}
+        version: {type: integer, minimum: 1}
+        ignoredAt: {type: [string, "null"], format: date-time}
+        ignoredBy: {type: [string, "null"], maxLength: 160}
+        createdAt: {type: string, format: date-time}
+        updatedAt: {type: string, format: date-time}
+    RealReviewRecommendation:
+      type: object
+      additionalProperties: false
+      required: [id, reviewId, position, priority, title, description, createdAt]
+      properties:
+        id: {type: string, format: uuid}
+        reviewId: {type: string, format: uuid}
+        position: {type: integer, minimum: 1, maximum: 100}
+        priority: {type: string, enum: [low, medium, high]}
+        title: {type: string, minLength: 1, maxLength: 200}
+        description: {type: string, minLength: 1, maxLength: 5000}
+        createdAt: {type: string, format: date-time}
+    RealReviewReportSummary:
+      type: object
+      additionalProperties: false
+      required: [id, workflowRunId, sourceContentVersionId, conclusion, summary, completedAt]
+      properties:
+        id: {type: string, format: uuid}
+        workflowRunId: {type: string, format: uuid}
+        sourceContentVersionId: {type: string, format: uuid}
+        conclusion: {type: string, enum: [passed, needs_changes]}
+        summary: {type: string, minLength: 1, maxLength: 5000}
+        completedAt: {type: string, format: date-time}
+    ContentReviewIssueSummary:
+      type: object
+      additionalProperties: false
+      required: [total, critical, warning, suggestion, open, ignored]
+      properties:
+        total: {type: integer, minimum: 0, maximum: 200}
+        critical: {type: integer, minimum: 0, maximum: 200}
+        warning: {type: integer, minimum: 0, maximum: 200}
+        suggestion: {type: integer, minimum: 0, maximum: 200}
+        open: {type: integer, minimum: 0, maximum: 200}
+        ignored: {type: integer, minimum: 0, maximum: 200}
+    ContentReviewSafeError:
+      type: object
+      additionalProperties: false
+      required: [code, message, correlationId, attemptCount, occurredAt]
+      properties:
+        code: {type: string, enum: [runtime_failed, output_validation_failed, result_consumption_failed]}
+        message: {type: string, minLength: 1, maxLength: 300}
+        correlationId: {type: string, minLength: 1, maxLength: 128}
+        attemptCount: {type: integer, minimum: 1}
+        occurredAt: {type: string, format: date-time}
+    ContentReviewSummary:
+      type: object
+      additionalProperties: false
+      required: [contentItemId, state, canStartReview, activeRun, latestRun, latestReport, issueSummary, latestError, configurationSummary]
+      properties:
+        contentItemId: {type: string, format: uuid}
+        state: {$ref: "#/components/schemas/ContentReviewResultState"}
+        canStartReview: {type: boolean}
+        activeRun: {anyOf: [{$ref: "#/components/schemas/Iteration14WorkflowRun"}, {type: "null"}]}
+        latestRun: {anyOf: [{$ref: "#/components/schemas/Iteration14WorkflowRun"}, {type: "null"}]}
+        latestReport: {anyOf: [{$ref: "#/components/schemas/RealReviewReportSummary"}, {type: "null"}]}
+        issueSummary: {anyOf: [{$ref: "#/components/schemas/ContentReviewIssueSummary"}, {type: "null"}]}
+        latestError: {anyOf: [{$ref: "#/components/schemas/ContentReviewSafeError"}, {type: "null"}]}
+        configurationSummary: {anyOf: [{$ref: "#/components/schemas/ContentReviewConfigurationSummary"}, {type: "null"}]}
+    ContentReviewSummaryEnvelope:
+      type: object
+      additionalProperties: false
+      required: [data, request_id]
+      properties: {data: {$ref: "#/components/schemas/ContentReviewSummary"}, request_id: {type: string}}
+    ContentReviewHistoryItem:
+      type: object
+      additionalProperties: false
+      required: [workflowRun, sourceContentVersionSummary, reportSummary]
+      properties:
+        workflowRun: {$ref: "#/components/schemas/Iteration14WorkflowRun"}
+        sourceContentVersionSummary: {$ref: "#/components/schemas/ContentReviewSourceVersionSummary"}
+        reportSummary: {anyOf: [{$ref: "#/components/schemas/RealReviewReportSummary"}, {type: "null"}]}
+    RealReviewDetail:
+      type: object
+      additionalProperties: false
+      required: [report, sourceContentVersionSummary, issues, recommendations, workflowRunSummary]
+      properties:
+        report: {$ref: "#/components/schemas/RealReviewReport"}
+        sourceContentVersionSummary: {$ref: "#/components/schemas/ContentReviewSourceVersionSummary"}
+        issues: {type: array, maxItems: 200, items: {$ref: "#/components/schemas/RealReviewIssue"}}
+        recommendations: {type: array, maxItems: 100, items: {$ref: "#/components/schemas/RealReviewRecommendation"}}
+        workflowRunSummary: {$ref: "#/components/schemas/Iteration14WorkflowRun"}
+    UpdateReviewIssueRequest:
+      type: object
+      additionalProperties: false
+      required: [disposition, expectedVersion]
+      properties:
+        disposition: {$ref: "#/components/schemas/ReviewIssueDisposition"}
+        expectedVersion: {type: integer, minimum: 1}
+    RealReviewIssueEnvelope:
+      type: object
+      additionalProperties: false
+      required: [data, request_id]
+      properties: {data: {$ref: "#/components/schemas/RealReviewIssue"}, request_id: {type: string}}
+    RetryReviewResultConsumptionRequest:
+      type: object
+      additionalProperties: false
+      required: [expectedRunVersion]
+      properties:
+        expectedRunVersion: {type: integer, minimum: 1}
+    RealReviewResult:
+      type: object
+      additionalProperties: false
+      required: [report, issues, recommendations, workflowRun]
+      properties:
+        report: {$ref: "#/components/schemas/RealReviewReport"}
+        issues: {type: array, maxItems: 200, items: {$ref: "#/components/schemas/RealReviewIssue"}}
+        recommendations: {type: array, maxItems: 100, items: {$ref: "#/components/schemas/RealReviewRecommendation"}}
+        workflowRun: {$ref: "#/components/schemas/Iteration14WorkflowRun"}
+    RealReviewResultEnvelope:
+      type: object
+      additionalProperties: false
+      required: [data, request_id]
+      properties: {data: {$ref: "#/components/schemas/RealReviewResult"}, request_id: {type: string}}
+    ContentReviewErrorCode:
+      type: string
+      enum: [review_not_configured, execution_integration_unavailable, content_version_not_reviewable, active_review_conflict, preflight_token_invalid, preflight_token_expired, preflight_token_consumed, preflight_input_changed, source_content_version_changed, review_issue_version_conflict, review_result_not_retryable, run_already_consumed, output_validation_failed, result_consumption_failed, idempotency_key_reused_with_different_payload]
+    ContentReviewError:
+      allOf:
+        - {$ref: "#/components/schemas/Error"}
+        - {type: object, properties: {code: {$ref: "#/components/schemas/ContentReviewErrorCode"}}}
+    ContentReviewErrorEnvelope:
+      type: object
+      additionalProperties: false
+      required: [error, request_id]
+      properties:
+        error: {$ref: "#/components/schemas/ContentReviewError"}
+        request_id: {type: string}
     ContentGenerationContextOptions:
       type: object
       additionalProperties: false
