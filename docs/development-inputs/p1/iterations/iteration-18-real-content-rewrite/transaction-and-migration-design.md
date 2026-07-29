@@ -114,15 +114,16 @@ Candidate、来源关系和 `result_consumed` 原子提交。事务不更新 `cu
 
 Runtime Retry 复用既有 WorkflowRun Retry 命令，在一个幂等事务中：
 
-1. 幂等回放优先；
-2. 锁定原 WorkflowRun；
-3. 仅允许 `failed`、`cancelled` 或具有 `output_validation_failed` Event 的 Rewrite Run；
-4. 拒绝普通 succeeded、`result_consumption_failed`、`result_consumed` 或已有 Candidate；
-5. 取得 Item/active subject advisory lock并检查 active Run；
-6. 创建新的 queued Rewrite Run，`retry_of_run_id` 指向原 Run；
-7. 继承固定 source ContentVersion、ReviewReport、selected Issue 业务快照与 Binding/Configuration/Connection 快照；新 Run 只更新自身 `workflowRunId/correlationId`；
-8. 禁止 `inputOverride`，`useCurrentConfiguration` 必须缺省或 false；
-9. 创建初始 Event、保存首次 201 幂等响应并 Commit。
+1. 取得幂等 advisory lock；同 Key 同请求幂等回放优先；
+2. 普通一致性读取（normal consistent read）原 WorkflowRun，只用于发现 ContentItem、ReviewReport 和冻结 subject 标识；此步不得取得任何 row lock；
+3. 取得 ContentItem advisory lock；
+4. 取得 active subject advisory lock；
+5. `FOR UPDATE` 重新读取并锁定原 WorkflowRun；
+6. 在锁内重新校验原 Run、固定 source ContentVersion、ReviewReport、selected Issue 快照和 Retry 资格：仅允许 `failed`、`cancelled` 或具有 `output_validation_failed` Event 的 Rewrite Run；拒绝普通 succeeded、`result_consumption_failed`、`result_consumed` 或已有 Candidate；
+7. 按统一 row lock 顺序锁定 source ContentVersion、ContentItem、ReviewReport 与按 `position ASC, id ASC` 排序的 ReviewIssue；
+8. 检查 active Rewrite Run；
+9. 创建新的 queued Rewrite Run，`retry_of_run_id` 指向原 Run；继承固定 source ContentVersion、ReviewReport、selected Issue 业务快照与 Binding/Configuration/Connection 快照；新 Run 只更新自身 `workflowRunId/correlationId`；禁止 `inputOverride`，`useCurrentConfiguration` 必须缺省或 false；创建初始 Event、保存首次 201 幂等响应；
+10. Commit。
 
 Runtime Retry 不重新消费原 Preflight Token，也不允许客户端改变冻结输入；新 Run 通过同一 active 部分唯一索引。
 

@@ -237,6 +237,17 @@ foreach ($section in @(
 )) {
     Assert-Contract ($transaction.Contains($section)) "CF-18-01B transaction boundary is missing: $section"
 }
+$runtimeRetryMatch = [regex]::Match($transaction, '(?ms)^### 6\.1 Runtime Retry\r?\n(.*?)(?=^### 6\.2 Result Consumption Retry)')
+Assert-Contract $runtimeRetryMatch.Success 'Runtime Retry transaction section cannot be located.'
+$runtimeRetry = $runtimeRetryMatch.Groups[1].Value
+$runtimeRetryDiscoveryRead = $runtimeRetry.IndexOf('normal consistent read')
+$runtimeRetryContentItemAdvisory = $runtimeRetry.IndexOf('ContentItem advisory lock')
+$runtimeRetryActiveSubjectAdvisory = $runtimeRetry.IndexOf('active subject advisory lock')
+$runtimeRetryRunRowLock = $runtimeRetry.IndexOf('`FOR UPDATE`')
+Assert-Contract ($runtimeRetryDiscoveryRead -ge 0) 'Runtime Retry must retain its normal consistent discovery read.'
+Assert-Contract ($runtimeRetryContentItemAdvisory -ge 0 -and $runtimeRetryActiveSubjectAdvisory -ge 0 -and $runtimeRetryRunRowLock -ge 0) 'Runtime Retry lock-order terms are missing.'
+Assert-Contract ($runtimeRetryDiscoveryRead -lt $runtimeRetryContentItemAdvisory -and $runtimeRetryContentItemAdvisory -lt $runtimeRetryActiveSubjectAdvisory -and $runtimeRetryActiveSubjectAdvisory -lt $runtimeRetryRunRowLock) 'Runtime Retry must acquire ContentItem and active subject advisory locks before WorkflowRun FOR UPDATE.'
+Assert-Contract (-not ($runtimeRetry -match '(?s)`FOR UPDATE`.*(?:ContentItem advisory lock|active subject advisory lock)')) 'Runtime Retry retains the obsolete WorkflowRun-before-advisory-lock order.'
 foreach ($term in @('SERIALIZABLE', 'FOR UPDATE', 'advisory lock', 'Runtime/n8n', 'candidateIsCurrent=true')) {
     Assert-Contract (($dataModel + $transaction).Contains($term)) "CF-18-01B atomicity or lock rule is missing: $term"
 }
