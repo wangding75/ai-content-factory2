@@ -141,6 +141,18 @@ func TestCreateRunUsesLatestContractAndSafeSnapshot(t *testing.T) {
 	if _, e = s.CreateRun(context.Background(), CreateRunCommand{ProjectID: projectID, Stage: "bad", InputPayload: json.RawMessage(`{}`), IdempotencyKey: "key"}); !errors.Is(e, ErrValidation) {
 		t.Fatalf("err=%v", e)
 	}
+	for _, stage := range []string{"content_generation", "chapter_planning"} {
+		if _, e = s.CreateRun(context.Background(), CreateRunCommand{ProjectID: projectID, Stage: stage, InputPayload: json.RawMessage(`{}`), IdempotencyKey: "protected-" + stage}); !errors.Is(e, ErrProtectedStage) { t.Fatalf("stage=%s err=%v", stage, e) }
+	}
+}
+
+func TestContentGenerationRetryRejectsInputOverride(t *testing.T) {
+	s, store, projectID := fixtureService(t)
+	now := s.now()
+	id := uuid.New()
+	store.runs[id] = WorkflowRun{ID:id,RunNumber:"WR-CONTENT",ProjectID:projectID,Stage:"content_generation",WorkflowConfigurationID:uuid.New(),TriggerSource:"manual",Status:StatusFailed,ConfigurationSnapshot:json.RawMessage(`{}`),InputPayload:json.RawMessage(`{"sourceContentVersionId":"11111111-1111-4111-8111-111111111111","sourceContentVersionVersion":1}`),ErrorCode:ptr("x"),ErrorMessage:ptr("safe"),ErrorDetails:json.RawMessage(`{}`),StartedAt:&now,FinishedAt:&now,CreatedAt:now,UpdatedAt:now,Version:2}
+	if _, err := s.RetryRun(context.Background(), RetryCommand{RunID:id,ExpectedVersion:2,InputOverride:json.RawMessage(`{"sourceContentVersionId":"22222222-2222-4222-8222-222222222222"}`),IdempotencyKey:"override"}); !errors.Is(err, ErrValidation) { t.Fatalf("err=%v",err) }
+	if len(store.runs) != 1 { t.Fatal("content generation retry was created") }
 }
 func TestRetryAndCancelVersionRules(t *testing.T) {
 	s, store, projectID := fixtureService(t)

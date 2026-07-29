@@ -197,6 +197,7 @@ func workflowRunTriggerSource(value string) bool { return value == "manual" || v
 func workflowRunServiceError(w http.ResponseWriter, r *http.Request, err error) {
 	switch {
 	case errors.Is(err, workflowrun.ErrValidation): workflowRunValidationError(w, r, "invalid workflow run request")
+	case errors.Is(err, workflowrun.ErrProtectedStage): writeError(w, r, http.StatusConflict, "validation_error", "workflow stage requires its dedicated command", map[string]any{})
 	case errors.Is(err, workflowrun.ErrProjectNotFound): writeError(w, r, http.StatusNotFound, "project_not_found", "project not found", map[string]any{})
 	case errors.Is(err, workflowrun.ErrBindingNotFound): writeError(w, r, http.StatusNotFound, "workflow_binding_not_found", "workflow binding not found", map[string]any{})
 	case errors.Is(err, workflowrun.ErrConfigurationNotFound): writeError(w, r, http.StatusNotFound, "workflow_configuration_not_found", "workflow configuration not found", map[string]any{})

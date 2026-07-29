@@ -3771,7 +3771,7 @@ components:
       properties:
         id: {type: string, format: uuid}
         runId: {type: string, format: uuid}
-        eventType: {type: string, enum: [queued, worker_started, request_sent, response_received, output_validated, result_consumed, result_consumption_failed, succeeded, failed, cancelled, retry_created]}
+        eventType: {type: string, enum: [queued, worker_started, request_sent, response_received, output_validated, output_validation_failed, result_consumed, result_consumption_failed, succeeded, failed, cancelled, retry_created]}
         status: {$ref: "#/components/schemas/Iteration14WorkflowRunStatus", description: WorkflowRun status snapshot after this event is written; event status is not an independent lifecycle.}
         payload: {type: object, additionalProperties: true, description: Redacted event payload.}
         createdAt: {type: string, format: date-time}

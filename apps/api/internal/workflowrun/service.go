@@ -26,6 +26,7 @@ var (
 	ErrNotCancellable        = errors.New("workflow run is not cancellable")
 	ErrNotRetryable          = errors.New("workflow run is not retryable")
 	ErrIdempotencyConflict   = errors.New("idempotency key reused with different payload")
+	ErrProtectedStage        = errors.New("workflow stage requires its domain command")
 )
 
 type ProjectReader interface {
@@ -245,6 +246,9 @@ func (s *Service) CreateRun(ctx context.Context, command CreateRunCommand) (Work
 	if !validTriggerSource(command.TriggerSource) {
 		return WorkflowRun{}, ErrValidation
 	}
+	if protectedStage(command.Stage) {
+		return WorkflowRun{}, ErrProtectedStage
+	}
 	scope, fingerprint := commandScope("createWorkflowRun", command.ProjectID.String(), struct {
 		ProjectID uuid.UUID
 		Stage     string
@@ -443,6 +447,9 @@ func (s *Service) RetryRun(ctx context.Context, command RetryCommand) (WorkflowR
 		if original.Status != StatusFailed && original.Status != StatusCancelled {
 			return WorkflowRun{}, ErrNotRetryable
 		}
+		if original.Stage == "content_generation" && command.InputOverride != nil {
+			return WorkflowRun{}, ErrValidation
+		}
 		input := original.InputPayload
 		if command.InputOverride != nil {
 			if !validJSONObject(command.InputOverride) {
@@ -480,6 +487,10 @@ func (s *Service) RetryRun(ctx context.Context, command RetryCommand) (WorkflowR
 		created, _, err := store.CreateWithInitialEvent(ctx, run, Event{ID: s.newID(), RunID: run.ID, EventType: "queued", Status: StatusQueued, Payload: json.RawMessage(`{}`), CreatedAt: now})
 		return created, mapStoreError(err)
 	})
+}
+
+func protectedStage(stage string) bool {
+	return stage == "content_generation" || stage == "chapter_planning"
 }
 
 func (s *Service) GetProjectRunSummary(ctx context.Context, projectID uuid.UUID) (Summary, error) {

@@ -2,6 +2,7 @@ package contentitem
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"strings"
 	"testing"
@@ -172,4 +173,16 @@ func TestGenerationConsumeCommitFailure(t *testing.T) {
 	spy.mu.Lock()
 	defer spy.mu.Unlock()
 	if len(spy.events) != 1 || spy.events[0].EventType != workflowrun.EventTypeResultConsumptionFailed { t.Fatalf("independent failure events = %+v", spy.events) }
+}
+
+func TestDecodeGenerationOutputStrictJSON(t *testing.T) {
+	valid := json.RawMessage(`{"title":"标题","content":"正文","summary":"摘要","wordCount":2}`)
+	if _, err := decodeGenerationOutput(valid); err != nil { t.Fatalf("valid output: %v", err) }
+	for _, raw := range []json.RawMessage{
+		json.RawMessage(`{"title":"标题","content":"正文","summary":"摘要","wordCount":2,"extra":true}`),
+		json.RawMessage(`{"title":"标题","content":"正文","summary":"摘要","wordCount":2} {}`),
+		json.RawMessage(`{"title":"标题","content":"正文","wordCount":2}`),
+		json.RawMessage(`{"title":"标题","content":"","summary":"摘要","wordCount":0}`),
+		json.RawMessage(`{"title":"标题","content":"正文","summary":"摘要","wordCount":-1}`),
+	} { if _, err := decodeGenerationOutput(raw); !errors.Is(err, ErrValidation) { t.Fatalf("raw=%s err=%v", raw, err) } }
 }
