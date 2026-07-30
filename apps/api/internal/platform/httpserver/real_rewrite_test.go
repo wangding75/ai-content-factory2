@@ -192,11 +192,13 @@ func TestRealRewriteErrorMappingIsPreciseAndSafe(t *testing.T) {
 func TestRealRewriteSummaryHistoryResultAndConsumptionRetryRoutes(t *testing.T) {
 	now := time.Now().UTC()
 	reviewID, itemID, runID, sourceID, candidateID, issueID := uuid.New(), uuid.New(), uuid.New(), uuid.New(), uuid.New(), uuid.New()
+	parentRunID := uuid.New()
 	subjectType := "review_report"
 	run := workflowrun.WorkflowRun{
 		ID: runID, RunNumber: "WR-QUERY", ProjectID: uuid.New(), Stage: "rewrite",
 		WorkflowConfigurationID: uuid.New(), TriggerSource: "manual", Status: workflowrun.StatusSucceeded,
 		SubjectType: &subjectType, SubjectID: &reviewID,
+		RetryOfRunID: &parentRunID,
 		ConfigurationSnapshot: json.RawMessage(`{"baseUrl":"http://internal.example","credential":"secret"}`),
 		InputPayload: json.RawMessage(`{"sourceContent":"private full source","token":"secret"}`),
 		OutputPayload: json.RawMessage(`{"content":"private runtime output"}`),
@@ -279,5 +281,11 @@ func TestRealRewriteSummaryHistoryResultAndConsumptionRetryRoutes(t *testing.T) 
 				t.Fatalf("%s leaked %q: %s", test.path, forbidden, response.Body.String())
 			}
 		}
+	}
+	response := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/api/v1/content-items/"+itemID.String()+"/rewrite-history?limit=20&offset=0", nil)
+	mux.ServeHTTP(response, request)
+	if response.Code != http.StatusOK || !strings.Contains(response.Body.String(), `"retryOfRunId":"`+parentRunID.String()+`"`) {
+		t.Fatalf("history retry parent status=%d body=%s", response.Code, response.Body.String())
 	}
 }

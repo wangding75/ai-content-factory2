@@ -3890,6 +3890,7 @@ components:
         subjectId: {type: [string, "null"], format: uuid, description: Optional domain subject identifier; rewrite fixes the source ReviewReport ID for the Run lifetime.}
         workflowConfigurationId: {type: string, format: uuid}
         triggerSource: {$ref: "#/components/schemas/WorkflowRunTriggerSource"}
+        retryOfRunId: {type: [string, "null"], format: uuid, description: Direct parent WorkflowRun from which this Run was retried; null for a non-Retry Run.}
         status: {$ref: "#/components/schemas/Iteration14WorkflowRunStatus", description: WorkflowRun status snapshot after this event is written; event status is not an independent lifecycle.}
         inputPayload: {anyOf: [{$ref: "#/components/schemas/ReviewRuntimeInputV1"}, {$ref: "#/components/schemas/RewriteRuntimeInputV1"}, {type: object, additionalProperties: true}], description: "Redacted, schema-validated input; review and rewrite Runs use their respective v1 contracts."}
         outputPayload: {anyOf: [{$ref: "#/components/schemas/ReviewRuntimeOutputV1"}, {$ref: "#/components/schemas/RewriteRuntimeOutputV1"}, {type: object, additionalProperties: true}, {type: "null"}], description: "Redacted output; rewrite output is trusted for domain consumption only after strict RewriteRuntimeOutputV1 parsing and validation."}

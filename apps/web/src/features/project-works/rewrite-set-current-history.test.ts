@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
+import { rewriteHistoryRunHref, rewriteHistoryRunLabel } from "./rewrite-history-model.ts";
 
 const panel = readFileSync(new URL("./rewrite-result-panel.tsx", import.meta.url), "utf8");
 const history = readFileSync(new URL("./rewrite-history.tsx", import.meta.url), "utf8");
@@ -20,8 +21,18 @@ test("Set Current conflict reloads rather than force-overwriting and requires co
 
 test("Rewrite history uses its frozen endpoint, stable pages, safe state labels and route recovery", () => {
   assert.match(api, /rewrite-history/);
-  for (const value of ["PAGE_SIZE", "offset", "retryOfRunId", "candidateIsCurrent", "查看 Candidate", "查看运行"]) assert.match(history, new RegExp(value));
+  for (const value of ["PAGE_SIZE", "offset", "rewriteHistoryRunLabel", "candidateIsCurrent", "查看 Candidate", "查看运行"]) assert.match(history, new RegExp(value));
   assert.doesNotMatch(history, /inputPayload|outputPayload|configurationSnapshot|webhook|token/i);
+});
+
+test("Rewrite history renders Retry only from retryOfRunId and keeps the exact Run link across refresh", () => {
+  const ordinary = { id: "run-a", runNumber: "WR-A", retryOfRunId: null };
+  const retry = { id: "run-b", runNumber: "WR-B", retryOfRunId: "run-a" };
+  const base = "/projects/project/works/work/rewrite";
+  assert.equal(rewriteHistoryRunLabel(ordinary), "WR-A");
+  assert.equal(rewriteHistoryRunLabel(retry), "WR-B（重试）");
+  assert.equal(rewriteHistoryRunLabel({ ...retry }), "WR-B（重试）");
+  assert.equal(rewriteHistoryRunHref(base, retry.id), `${base}?workflowRunId=run-b`);
 });
 
 test("workflowRunId restores the exact validated Run instead of Summary active/latest", () => {

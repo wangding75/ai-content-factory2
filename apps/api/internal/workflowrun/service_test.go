@@ -230,6 +230,37 @@ func TestRetryAndCancelVersionRules(t *testing.T) {
 	}
 }
 
+func TestRuntimeRetryChainRecordsEachDirectParent(t *testing.T) {
+	s, store, projectID := fixtureService(t)
+	now := s.now()
+	a := WorkflowRun{
+		ID: uuid.New(), RunNumber: "WR-A", ProjectID: projectID, Stage: "review",
+		WorkflowConfigurationID: uuid.New(), TriggerSource: "manual", Status: StatusFailed,
+		ConfigurationSnapshot: json.RawMessage(`{}`), InputPayload: json.RawMessage(`{"a":1}`),
+		ErrorCode: ptr("failed"), ErrorMessage: ptr("safe"), ErrorDetails: json.RawMessage(`{}`),
+		StartedAt: &now, FinishedAt: &now, CreatedAt: now, UpdatedAt: now, Version: 2,
+	}
+	store.runs[a.ID] = a
+	b, err := s.RetryRun(context.Background(), RetryCommand{RunID: a.ID, ExpectedVersion: a.Version, IdempotencyKey: "retry-a-b"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	b.Status = StatusFailed
+	b.ErrorCode, b.ErrorMessage, b.ErrorDetails = ptr("failed"), ptr("safe"), json.RawMessage(`{}`)
+	b.StartedAt, b.FinishedAt, b.UpdatedAt, b.Version = &now, &now, now, 2
+	store.runs[b.ID] = b
+	c, err := s.RetryRun(context.Background(), RetryCommand{RunID: b.ID, ExpectedVersion: b.Version, IdempotencyKey: "retry-b-c"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if b.RetryOfRunID == nil || *b.RetryOfRunID != a.ID {
+		t.Fatalf("B retry parent = %v, want %s", b.RetryOfRunID, a.ID)
+	}
+	if c.RetryOfRunID == nil || *c.RetryOfRunID != b.ID {
+		t.Fatalf("C retry parent = %v, want %s", c.RetryOfRunID, b.ID)
+	}
+}
+
 func TestWorkerExecutesQueuedRuns(t *testing.T) {
 	s, store, projectID := fixtureService(t)
 	connectionID, runID := uuid.New(), uuid.New()

@@ -141,3 +141,21 @@ func TestWorkflowRunHTTPDetailsEventsAndSummary(t *testing.T) {
 	w = workflowRunHTTPRequest(handler, http.MethodGet, "/api/v1/workflow-runs/"+run.ID.String(), "", "")
 	if w.Code != http.StatusInternalServerError || strings.Contains(w.Body.String(), "unsafe") { t.Fatalf("internal error leaked: %d: %s", w.Code, w.Body.String()) }
 }
+
+func TestWorkflowRunHTTPDetailProjectsDirectRetryParent(t *testing.T) {
+	run := workflowRunHTTPFixture()
+	app := &fakeWorkflowRunApplication{run: run}
+	handler := workflowRunHTTPHandler(app)
+	w := workflowRunHTTPRequest(handler, http.MethodGet, "/api/v1/workflow-runs/"+run.ID.String(), "", "")
+	if w.Code != http.StatusOK || !strings.Contains(w.Body.String(), `"retryOfRunId":null`) {
+		t.Fatalf("ordinary run retry projection = %d: %s", w.Code, w.Body.String())
+	}
+
+	parentID := uuid.New()
+	run.RetryOfRunID = &parentID
+	app.run = run
+	w = workflowRunHTTPRequest(handler, http.MethodGet, "/api/v1/workflow-runs/"+run.ID.String(), "", "")
+	if w.Code != http.StatusOK || !strings.Contains(w.Body.String(), `"retryOfRunId":"`+parentID.String()+`"`) {
+		t.Fatalf("retry run parent projection = %d: %s", w.Code, w.Body.String())
+	}
+}

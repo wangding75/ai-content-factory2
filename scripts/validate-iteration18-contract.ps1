@@ -11,6 +11,10 @@ $transactionPath = Join-Path $iteration 'transaction-and-migration-design.md'
 $migrationUpPath = Join-Path $Root 'apps/api/migrations/000018_real_content_rewrite_foundation.up.sql'
 $migrationDownPath = Join-Path $Root 'apps/api/migrations/000018_real_content_rewrite_foundation.down.sql'
 $migration15Path = Join-Path $Root 'apps/api/migrations/000015_content_generation_data_foundation.up.sql'
+$workflowRunHttpPath = Join-Path $Root 'apps/api/internal/platform/httpserver/workflow_run.go'
+$workflowRunWebTypePath = Join-Path $Root 'apps/web/src/features/workflow-runs/workflow-run-api.ts'
+$rewriteHistoryPath = Join-Path $Root 'apps/web/src/features/project-works/rewrite-history.tsx'
+$rewriteHistoryModelPath = Join-Path $Root 'apps/web/src/features/project-works/rewrite-history-model.ts'
 
 function Assert-Contract([bool]$Condition, [string]$Message) {
     if (-not $Condition) { throw $Message }
@@ -46,6 +50,10 @@ $transaction = Get-Content -Raw -Encoding utf8 $transactionPath
 $migrationUp = Get-Content -Raw -Encoding utf8 $migrationUpPath
 $migrationDown = Get-Content -Raw -Encoding utf8 $migrationDownPath
 $migration15 = Get-Content -Raw -Encoding utf8 $migration15Path
+$workflowRunHttp = Get-Content -Raw -Encoding utf8 $workflowRunHttpPath
+$workflowRunWebType = Get-Content -Raw -Encoding utf8 $workflowRunWebTypePath
+$rewriteHistory = Get-Content -Raw -Encoding utf8 $rewriteHistoryPath
+$rewriteHistoryModel = Get-Content -Raw -Encoding utf8 $rewriteHistoryModelPath
 $manifest = Get-Content -Raw -Encoding utf8 $manifestPath | ConvertFrom-Json
 
 $operations = @(
@@ -125,6 +133,14 @@ foreach ($term in @('failed, cancelled or output_validation_failed', 'inputOverr
     Assert-Contract ($retryBlock.Contains($term)) "Runtime Retry rule is missing: $term"
 }
 Assert-Contract ($retryBlock.Contains('"201"') -and $retryBlock.Contains('"200"')) 'Runtime Retry must return 201 first and 200 on replay.'
+$workflowRunSchema = Get-OpenApiSchemaBlock 'Iteration14WorkflowRun'
+Assert-Contract ($workflowRunSchema.Contains('retryOfRunId: {type: [string, "null"], format: uuid, description: Direct parent WorkflowRun')) 'Iteration14WorkflowRun.retryOfRunId must be a nullable UUID describing the direct parent Run.'
+$workflowRunRequired = [regex]::Match($workflowRunSchema, '(?m)^      required: \[([^\]]+)\]$')
+Assert-Contract ($workflowRunRequired.Success -and -not $workflowRunRequired.Groups[1].Value.Contains('retryOfRunId')) 'Iteration14WorkflowRun.retryOfRunId must remain optional.'
+Assert-Contract ($workflowRunHttp -match 'RetryOfRunID\s+\*uuid\.UUID\s+`json:"retryOfRunId"`') 'WorkflowRun HTTP DTO is missing retryOfRunId.'
+Assert-Contract ($workflowRunHttp.Contains('RetryOfRunID: run.RetryOfRunID')) 'WorkflowRun HTTP mapping is missing RetryOfRunID.'
+Assert-Contract ($workflowRunWebType.Contains('retryOfRunId?: string | null')) 'Frontend WorkflowRunDto is missing retryOfRunId.'
+Assert-Contract ($rewriteHistory.Contains('rewriteHistoryRunLabel(entry.workflowRun)') -and $rewriteHistoryModel.Contains('run.retryOfRunId ?')) 'Rewrite History does not render Retry from retryOfRunId.'
 $consumptionRetryBlock = Get-OpenApiPathBlock '/api/v1/workflow-runs/{workflowRunId}/rewrite-result-consumption-retries'
 foreach ($term in @('never calls Runtime or n8n', 'creates no new Run')) {
     Assert-Contract ($consumptionRetryBlock.Contains($term)) "Result Consumption Retry rule is missing: $term"
@@ -265,12 +281,14 @@ foreach ($term in @(
 Assert-Contract (-not ($migrationDown -match '(?im)^\s*DROP\s+TABLE\b')) 'Migration 18 down must not drop an existing table.'
 
 $allowedChanges = @(
-    'apps/api/migrations/000018_real_content_rewrite_foundation.up.sql',
-    'apps/api/migrations/000018_real_content_rewrite_foundation.down.sql',
-    'docs/development-inputs/p1/iterations/iteration-18-real-content-rewrite/data-model.md',
-    'docs/development-inputs/p1/iterations/iteration-18-real-content-rewrite/transaction-and-migration-design.md',
-    'docs/development-inputs/p1/iterations/iteration-18-real-content-rewrite/development-plan.md',
-    'docs/development-inputs/p1/iterations/iteration-18-real-content-rewrite/iteration-plan.md',
+    'packages/contracts/openapi/openapi.yaml',
+    'apps/api/internal/platform/httpserver/workflow_run.go',
+    'apps/api/internal/platform/httpserver/workflow_run_test.go',
+    'apps/api/internal/platform/httpserver/real_rewrite_test.go',
+    'apps/api/internal/workflowrun/service_test.go',
+    'apps/web/src/features/project-works/rewrite-history.tsx',
+    'apps/web/src/features/project-works/rewrite-history-model.ts',
+    'apps/web/src/features/project-works/rewrite-set-current-history.test.ts',
     'scripts/validate-iteration18-contract.ps1'
 )
 $trackedChanges = @(& git -C $Root diff --name-only)
