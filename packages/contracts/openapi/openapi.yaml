@@ -4402,7 +4402,7 @@ components:
         rewriteOptions: {$ref: "#/components/schemas/ContentRewriteOptions"}
         optionalInstructions: {type: [string, "null"], maxLength: 2000}
         configurationSummary: {anyOf: [{$ref: "#/components/schemas/ContentRewriteConfigurationSummary"}, {type: "null"}]}
-        preflightToken: {type: [string, "null"], minLength: 1, maxLength: 4096, description: "Present only when status=passed. It is single-use, actor/request/snapshot bound, expires after 10 minutes and is never persisted in Run, Event or logs."}
+        preflightToken: {type: [string, "null"], minLength: 1, maxLength: 32768, description: "Present only when status=passed. It is single-use, actor/request/snapshot bound, expires after 10 minutes and is never persisted in Run, Event or logs."}
         expiresAt: {type: [string, "null"], format: date-time}
     ContentRewritePreflightEnvelope:
       type: object
@@ -4414,7 +4414,7 @@ components:
       additionalProperties: false
       required: [preflightToken]
       properties:
-        preflightToken: {type: string, minLength: 1, maxLength: 4096}
+        preflightToken: {type: string, minLength: 1, maxLength: 32768}
     RewriteRuntimeInputV1:
       type: object
       additionalProperties: false

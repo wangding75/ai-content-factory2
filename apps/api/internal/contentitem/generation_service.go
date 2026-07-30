@@ -315,10 +315,7 @@ func (s *GenerationService) SetCurrent(ctx context.Context, itemID uuid.UUID, re
 		}
 		return Detail{}, ErrVersionConflict
 	}
-	if *candidate.SourceContentVersionID != current.ID || *candidate.SourceContentVersionVersion != current.Version {
-		if isRewrite {
-			return Detail{}, ErrRewriteContentVersionConflict
-		}
+	if !isRewrite && (*candidate.SourceContentVersionID != current.ID || *candidate.SourceContentVersionVersion != current.Version) {
 		return Detail{}, ErrCandidateStale
 	}
 	if e = setCurrentContentItemPointer(ctx, tx, itemID, candidate.ID, request.ExpectedCurrentVersionID, item.Version); e != nil {

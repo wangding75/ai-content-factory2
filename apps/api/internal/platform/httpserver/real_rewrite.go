@@ -62,7 +62,20 @@ func realRewriteAvailabilityHandler(service realRewriteApplication) http.Handler
 			realRewriteError(w, r, err)
 			return
 		}
-		writeJSON(w, r, http.StatusOK, result)
+		var activeRun any
+		if result.ActiveRun != nil {
+			activeRun = realRewriteQueryRunResponse(*result.ActiveRun)
+		}
+		writeJSON(w, r, http.StatusOK, map[string]any{
+			"reviewReportId": result.ReviewReportID,
+			"contentItemId": result.ContentItemID,
+			"sourceContentVersionSummary": result.SourceContentVersionSummary,
+			"available": result.Available,
+			"reason": result.Reason,
+			"openIssueCount": result.OpenIssueCount,
+			"activeRun": activeRun,
+			"configurationSummary": result.ConfigurationSummary,
+		})
 	}
 }
 
@@ -93,7 +106,7 @@ func realRewriteCreateHandler(service realRewriteApplication) http.HandlerFunc {
 		if !ok { return }
 		key := strings.TrimSpace(r.Header.Get("Idempotency-Key"))
 		var body rewriteCreateRequest
-		if key == "" || len(key) > 128 || decodeBody(r, &body) != nil || strings.TrimSpace(body.PreflightToken) == "" || len(body.PreflightToken) > 4096 {
+		if key == "" || len(key) > 128 || decodeBody(r, &body) != nil || strings.TrimSpace(body.PreflightToken) == "" || len(body.PreflightToken) > contentitem.RewritePreflightTokenMaxLength {
 			writeError(w, r, http.StatusBadRequest, "validation_error", "invalid request body or Idempotency-Key", map[string]any{})
 			return
 		}

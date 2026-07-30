@@ -98,6 +98,8 @@ $inputRequired = 'required: [schemaVersion, workflowRunId, correlationId, projec
 Assert-Contract ($input.Contains($inputRequired)) 'rewrite.input.v1 required fields or canonical order changed.'
 Assert-Contract ($input.Contains('const: rewrite.input.v1')) 'rewrite.input.v1 schemaVersion is not frozen.'
 Assert-Contract ($input.Contains('minItems: 1, maxItems: 50') -or ($input.Contains('minItems: 1') -and $input.Contains('maxItems: 50'))) 'rewrite.input.v1 selected Issue bounds are missing.'
+Assert-Contract ((Get-OpenApiSchemaBlock 'ContentRewritePreflightReport').Contains('maxLength: 32768')) 'Rewrite Preflight response token maximum must be 32768.'
+Assert-Contract ((Get-OpenApiSchemaBlock 'CreateContentRewriteRunRequest').Contains('maxLength: 32768')) 'Rewrite Create request token maximum must be 32768.'
 
 $output = Get-OpenApiSchemaBlock 'RewriteRuntimeOutputV1'
 $outputRequired = 'required: [schemaVersion, title, content, summary, addressedIssues, unresolvedIssues, warnings, metadata]'

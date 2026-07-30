@@ -24,30 +24,70 @@ export function RewriteWorkspace({ projectId, workId, reportId: initialReportId,
   const [loading, setLoading] = useState(true); const [error, setError] = useState<ApiError | null>(null);
   const [retrying, setRetrying] = useState(false); const [cancelling, setCancelling] = useState(false); const [confirmCancel, setConfirmCancel] = useState(false);
   const runtimeKey = useRef<string | null>(null); const consumptionKey = useRef<string | null>(null); const retryUnknown = useRef(false);
+  const cancelKey = useRef<string | null>(null);
   const runUrl = useCallback((id: string) => `/projects/${projectId}/works/${workId}/rewrite?workflowRunId=${encodeURIComponent(id)}`, [projectId, workId]);
   const load = useCallback(async (signal?: AbortSignal) => {
     setError(null);
     try {
-      let reviewId = reportId;
-      if (!reviewId && workflowRunId) { const detail = await getWorkflowRun(workflowRunId, { signal }); reviewId = detail.subjectId ?? undefined; if (!reviewId) throw new ApiError("Missing review report.", 404); if (!signal?.aborted) setReportId(reviewId); }
+      let reviewId = reportId; let selectedRun: WorkflowRunDto | null = null;
+      if (workflowRunId) {
+        const detail = await getWorkflowRun(workflowRunId, { signal });
+        const inputItemId = typeof detail.inputPayload.contentItemId === "string" ? detail.inputPayload.contentItemId : null;
+        if (detail.stage !== "rewrite" || detail.subjectType !== "review_report" || detail.projectId !== projectId || inputItemId !== workId || !detail.subjectId) {
+          throw new ApiError("Workflow run does not belong to this rewrite workspace.", 404);
+        }
+        selectedRun = detail; reviewId = detail.subjectId;
+        if (!signal?.aborted) setReportId(reviewId);
+      }
       if (!reviewId) { setLoading(false); return; }
       const next = await getContentRewriteSummary(reviewId, { signal });
       if (signal?.aborted) return;
-      setSummary(next); const current = next.activeRun ?? next.latestRun;
-      if (current) { setRun(current); try { setEvents(await listWorkflowRunEvents(current.id, { signal })); } catch { setEvents([]); } }
+      const current = selectedRun ?? next.activeRun ?? next.latestRun;
+      if (current) {
+        setRun(current);
+        let nextEvents: WorkflowRunEventVm[] = [];
+        try { nextEvents = await listWorkflowRunEvents(current.id, { signal }); } catch { nextEvents = []; }
+        setEvents(nextEvents);
+        setSummary(selectedRun ? exactRunSummary(next, selectedRun, nextEvents) : next);
+      } else {
+        setRun(null); setEvents([]); setSummary(next);
+      }
     } catch (cause) { if (!signal?.aborted) setError(cause as ApiError); } finally { if (!signal?.aborted) setLoading(false); }
-  }, [reportId, workflowRunId]);
+  }, [projectId, reportId, workId, workflowRunId]);
   useEffect(() => { const controller = new AbortController(); void load(controller.signal); return () => controller.abort(); }, [load]);
   useEffect(() => { if (!summary || !active(summary.state)) return; const timer = window.setTimeout(() => void load(), summary.state === "queued" ? 5000 : 3000); return () => window.clearTimeout(timer); }, [summary, load]);
   const refresh = () => void load();
   const retryRuntime = async () => { if (!run || retrying) return; const key = runtimeKey.current ?? crypto.randomUUID(); runtimeKey.current = key; setRetrying(true); setError(null); try { const next = await retryWorkflowRun(run.id, run.version, key); runtimeKey.current = null; retryUnknown.current = false; router.replace(runUrl(next.id)); } catch (cause) { const api = cause as ApiError; retryUnknown.current = api.code === "timeout" || api.code === "network_error"; if (!retryUnknown.current) runtimeKey.current = null; if (api.code === "active_rewrite_run_conflict" && typeof api.details.workflowRunId === "string") router.replace(runUrl(api.details.workflowRunId)); else setError(api); } finally { setRetrying(false); } };
   const retryConsumption = async () => { if (!run || retrying) return; const key = consumptionKey.current ?? crypto.randomUUID(); consumptionKey.current = key; setRetrying(true); setError(null); try { await retryContentRewriteResultConsumption(run.id, run.version, key); consumptionKey.current = null; await load(); } catch (cause) { const api = cause as ApiError; if (api.code !== "timeout" && api.code !== "network_error") consumptionKey.current = null; if (api.code === "workflow_run_version_conflict") await load(); else setError(api); } finally { setRetrying(false); } };
-  const cancel = async () => { if (!run || cancelling) return; setCancelling(true); setError(null); try { await cancelWorkflowRun(run.id, run.version, crypto.randomUUID()); setConfirmCancel(false); await load(); } catch (cause) { setError(cause as ApiError); setConfirmCancel(false); await load(); } finally { setCancelling(false); } };
+  const requestCancel = () => { if (!cancelKey.current) cancelKey.current = crypto.randomUUID(); setConfirmCancel(true); };
+  const cancel = async () => { if (!run || cancelling || !cancelKey.current) return; const key = cancelKey.current; setCancelling(true); setError(null); try { await cancelWorkflowRun(run.id, run.version, key); cancelKey.current = null; setConfirmCancel(false); await load(); } catch (cause) { const api = cause as ApiError; if (api.code !== "timeout" && api.code !== "network_error") cancelKey.current = null; setError(api); setConfirmCancel(false); await load(); } finally { setCancelling(false); } };
   if (loading) return <State title="正在加载重写状态" />;
   if (error) return <State title="暂时无法读取重写状态" message={safeError(error)} retry={refresh} />;
   if (showHistory && summary) return <RewriteHistory projectId={projectId} workId={workId} contentItemId={summary.contentItemId} selectedRunId={workflowRunId} />;
-  if (summary && (active(summary.state) || summary.state === "runtime_failed" || summary.state === "output_validation_failed" || summary.state === "result_consumption_failed" || summary.state === "candidate_ready")) return <RewriteRunState projectId={projectId} workId={workId} summary={summary} run={run} events={events} retrying={retrying} cancelling={cancelling} confirmCancel={confirmCancel} onCancel={() => setConfirmCancel(true)} onDismissCancel={() => setConfirmCancel(false)} onConfirmCancel={cancel} onRetryRuntime={retryRuntime} onRetryConsumption={retryConsumption} onRefresh={refresh} />;
+  if (summary && (active(summary.state) || summary.state === "runtime_failed" || summary.state === "output_validation_failed" || summary.state === "result_consumption_failed" || summary.state === "candidate_ready")) return <RewriteRunState projectId={projectId} workId={workId} summary={summary} run={run} events={events} retrying={retrying} cancelling={cancelling} confirmCancel={confirmCancel} onCancel={requestCancel} onDismissCancel={() => setConfirmCancel(false)} onConfirmCancel={cancel} onRetryRuntime={retryRuntime} onRetryConsumption={retryConsumption} onRefresh={refresh} />;
   return <RewriteCreate projectId={projectId} workId={workId} reportId={reportId} runUrl={runUrl} />;
+}
+
+function exactRunSummary(summary: RewriteSummary, run: WorkflowRunDto, events: WorkflowRunEventVm[]): RewriteSummary {
+  const eventTypes = new Set(events.map(event => event.eventType));
+  const state: RewriteSummary["state"] =
+    run.status === "queued" ? "queued" :
+    run.status === "running" ? "running" :
+    eventTypes.has("result_consumed") ? "candidate_ready" :
+    eventTypes.has("result_consumption_failed") ? "result_consumption_failed" :
+    eventTypes.has("output_validation_failed") ? "output_validation_failed" :
+    run.status === "failed" || run.status === "cancelled" ? "runtime_failed" : "idle";
+  const selectedIssues = Array.isArray(run.inputPayload.selectedIssues) ? run.inputPayload.selectedIssues : null;
+  return {
+    ...summary,
+    state,
+    activeRun: state === "queued" || state === "running" ? run : null,
+    latestRun: run,
+    selectedIssueSummary: selectedIssues ? { total: selectedIssues.length, items: selectedIssues as NonNullable<RewriteSummary["selectedIssueSummary"]>["items"] } : null,
+    candidateVersion: state === "candidate_ready" ? summary.candidateVersion : null,
+    candidateIsCurrent: state === "candidate_ready" && summary.candidateVersion?.source_workflow_run_id === run.id ? summary.candidateIsCurrent : false,
+    canSetCurrent: state === "candidate_ready",
+  };
 }
 
 function RewriteRunState({ projectId, workId, summary, run, events, retrying, cancelling, confirmCancel, onCancel, onDismissCancel, onConfirmCancel, onRetryRuntime, onRetryConsumption, onRefresh }: { projectId: string; workId: string; summary: RewriteSummary; run: WorkflowRunDto | null; events: WorkflowRunEventVm[]; retrying: boolean; cancelling: boolean; confirmCancel: boolean; onCancel: () => void; onDismissCancel: () => void; onConfirmCancel: () => void; onRetryRuntime: () => void; onRetryConsumption: () => void; onRefresh: () => void }) {
@@ -64,10 +104,77 @@ function IssueOutcomes({ items }: { items: Array<{ reviewIssueId: string; summar
 function State({ title, message, retry }: { title: string; message?: string; retry?: () => void }) { return <main className="rewrite-page"><section className="rewrite-state"><h1>{title}</h1>{message && <p role="alert">{message}</p>}{retry && <button type="button" onClick={retry}>重试</button>}</section></main>; }
 
 function RewriteCreate({ projectId, workId, reportId, runUrl }: { projectId: string; workId: string; reportId?: string; runUrl: (id: string) => string }) {
- const router = useRouter(); const [availability, setAvailability] = useState<RewriteAvailability | null>(null); const [issues, setIssues] = useState<RealReviewIssue[]>([]); const [selected, setSelected] = useState<string[]>([]); const [instructions, setInstructions] = useState(""); const [options, setOptions] = useState<RewriteOptions>({ strategy: "targeted_fix" }); const [preflight, setPreflight] = useState<RewritePreflight | null>(null); const [error, setError] = useState<string | null>(null); const [checking, setChecking] = useState(false); const [creating, setCreating] = useState(false); const key = useRef<string | null>(null);
- const load = useCallback(async () => { if (!reportId) { setError("缺少审核报告，无法创建重写。"); return; } try { const [next, detail] = await Promise.all([getContentRewriteAvailability(reportId), getReview(reportId)]); setAvailability(next); if (isRealReviewDetail(detail)) { const ordered = [...detail.issues].sort((a, b) => a.position - b.position || a.id.localeCompare(b.id)); setIssues(ordered); setSelected(ordered.filter(x => x.disposition === "open").slice(0, 50).map(x => x.id)); } if (next.activeRun) router.replace(runUrl(next.activeRun.id)); } catch (cause) { setError(rewriteErrorMessage((cause as ApiError).code)); } }, [reportId, router, runUrl]);
- useEffect(() => { void load(); }, [load]); const changed = () => { setPreflight(null); key.current = null; }; const toggle = (id: string) => { const issue = issues.find(x => x.id === id); if (!issue || issue.disposition !== "open") return; setSelected(current => current.includes(id) ? current.filter(x => x !== id) : current.length >= 50 ? current : [...current, id]); changed(); };
- const check = async () => { if (!reportId) return; const invalid = validRewriteInput(selected, instructions, options); if (invalid) return setError(invalid); setChecking(true); try { const next = await preflightContentRewrite(reportId, { selectedIssueIds: selected, optionalInstructions: instructions.trim() || null, rewriteOptions: options }); setPreflight(next); } catch (cause) { setError(rewriteErrorMessage((cause as ApiError).code)); } finally { setChecking(false); } };
- const create = async () => { if (!reportId || !preflight?.preflightToken || creating) return; const submitKey = key.current ?? crypto.randomUUID(); key.current = submitKey; setCreating(true); try { const next = await createContentRewriteRun(reportId, preflight.preflightToken, submitKey); key.current = null; router.replace(runUrl(next.id)); } catch (cause) { const api = cause as ApiError; if (api.code === "active_rewrite_run_conflict" && typeof api.details.workflowRunId === "string") router.replace(runUrl(api.details.workflowRunId)); else setError(rewriteErrorMessage(api.code)); } finally { setCreating(false); } };
- return <main className="rewrite-page"><Link href={`/projects/${projectId}/works/${workId}/review?reportId=${encodeURIComponent(reportId ?? "")}`}>返回审核结果</Link><section className="rewrite-layout"><article><h1>创建正文重写</h1><p>重写将固定使用本次审核的来源版本，不会替换当前版本。</p><p>来源版本：{availability ? `V${availability.sourceContentVersionSummary.versionNo} · ${availability.sourceContentVersionSummary.title}` : "正在加载"}</p><div>{issues.map(issue => <label key={issue.id}><input type="checkbox" checked={selected.includes(issue.id)} disabled={issue.disposition !== "open"} onChange={() => toggle(issue.id)} />{issue.title}</label>)}</div></article><section><label>补充要求<textarea value={instructions} maxLength={2000} onChange={e => { setInstructions(e.target.value); changed(); }} /></label><label>重写策略<select value={options.strategy} onChange={e => { setOptions({ strategy: e.target.value as RewriteOptions["strategy"] }); changed(); }}><option value="targeted_fix">定向修复</option><option value="creative_rewrite">创意重写</option></select></label>{error && <p role="alert">{error}</p>}{preflight?.status === "passed" ? <button type="button" className="primary" disabled={creating} onClick={() => void create()}>{creating ? "创建中…" : "确认创建重写任务"}</button> : <button type="button" className="primary" disabled={checking || !availability?.available} onClick={() => void check()}>{checking ? "预检中…" : "进行预检"}</button>}</section></section></main>;
+  const router = useRouter();
+  const [availability, setAvailability] = useState<RewriteAvailability | null>(null);
+  const [issues, setIssues] = useState<RealReviewIssue[]>([]);
+  const [selected, setSelected] = useState<string[]>([]);
+  const [instructions, setInstructions] = useState("");
+  const [options, setOptions] = useState<RewriteOptions>({ strategy: "targeted_fix" });
+  const [preflight, setPreflight] = useState<RewritePreflight | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [checking, setChecking] = useState(false);
+  const [creating, setCreating] = useState(false);
+  const [showConfiguration, setShowConfiguration] = useState(false);
+  const [confirmCreate, setConfirmCreate] = useState(false);
+  const key = useRef<string | null>(null);
+  const clearPreflight = () => { setPreflight(null); setConfirmCreate(false); key.current = null; };
+  const load = useCallback(async () => {
+    if (!reportId) { setError("缺少审核报告，无法创建重写。"); return; }
+    try {
+      const [next, detail] = await Promise.all([getContentRewriteAvailability(reportId), getReview(reportId)]);
+      setAvailability(next);
+      if (isRealReviewDetail(detail)) {
+        const ordered = [...detail.issues].sort((a, b) => a.position - b.position || a.id.localeCompare(b.id));
+        setIssues(ordered); setSelected(ordered.filter(x => x.disposition === "open").slice(0, 50).map(x => x.id));
+      }
+      if (next.activeRun) router.replace(runUrl(next.activeRun.id));
+    } catch (cause) { setError(rewriteErrorMessage((cause as ApiError).code)); }
+  }, [reportId, router, runUrl]);
+  useEffect(() => { void load(); }, [load]);
+  const toggle = (id: string) => {
+    const issue = issues.find(x => x.id === id);
+    if (!issue || issue.disposition !== "open") return;
+    setSelected(current => current.includes(id) ? current.filter(x => x !== id) : current.length >= 50 ? current : [...current, id]);
+    clearPreflight();
+  };
+  const check = async () => {
+    if (!reportId) return;
+    const invalid = validRewriteInput(selected, instructions, options);
+    if (invalid) { setError(invalid); return; }
+    setChecking(true); setError(null);
+    try {
+      const next = await preflightContentRewrite(reportId, { selectedIssueIds: selected, optionalInstructions: instructions.trim() || null, rewriteOptions: options });
+      setPreflight(next); key.current = null;
+    } catch (cause) { setError(rewriteErrorMessage((cause as ApiError).code)); }
+    finally { setChecking(false); }
+  };
+  const create = async () => {
+    if (!reportId || !preflight?.preflightToken || creating) return;
+    const submitKey = key.current ?? crypto.randomUUID(); key.current = submitKey;
+    setCreating(true); setError(null);
+    try {
+      const next = await createContentRewriteRun(reportId, preflight.preflightToken, submitKey);
+      key.current = null; setConfirmCreate(false); router.replace(runUrl(next.id));
+    } catch (cause) {
+      const api = cause as ApiError;
+      if (api.code === "active_rewrite_run_conflict" && typeof api.details.workflowRunId === "string") {
+        key.current = null; router.replace(runUrl(api.details.workflowRunId));
+      } else {
+        if (["rewrite_preflight_expired", "rewrite_preflight_stale", "rewrite_preflight_consumed", "idempotency_conflict"].includes(api.code)) clearPreflight();
+        setError(rewriteErrorMessage(api.code));
+      }
+    } finally { setCreating(false); }
+  };
+  if (availability && !availability.available) {
+    const copy = {
+      review_not_completed: ["审核报告尚未完成", "返回审核结果并等待审核完成。"],
+      no_open_issues: ["没有可处理的开放问题", "返回审核结果选择仍为开放状态的问题。"],
+      rewrite_not_configured: ["项目重写配置不可用", "前往项目设置检查工作流与连接。"],
+      active_rewrite_run_conflict: ["已有重写任务正在运行", "恢复对应运行并查看进度。"],
+    }[availability.reason ?? "rewrite_not_configured"];
+    return <main className="rewrite-page"><section className="rewrite-state"><h1>{copy[0]}</h1><p>{copy[1]}</p>{availability.activeRun ? <button type="button" onClick={() => router.replace(runUrl(availability.activeRun!.id))}>恢复运行</button> : <><Link href={`/projects/${projectId}/works/${workId}/review?reportId=${encodeURIComponent(reportId ?? "")}`}>返回审核结果</Link><button type="button" onClick={() => void load()}>刷新可用性</button></>}</section></main>;
+  }
+  return <main className="rewrite-page"><Link href={`/projects/${projectId}/works/${workId}/review?reportId=${encodeURIComponent(reportId ?? "")}`}>返回审核结果</Link><section className="rewrite-layout"><article><h1>创建正文重写</h1><p>重写将固定使用本次审核的来源版本，不会替换当前版本。</p><p>来源版本：{availability ? `V${availability.sourceContentVersionSummary.versionNo} · ${availability.sourceContentVersionSummary.title}` : "正在加载"}</p><button type="button" onClick={() => setShowConfiguration(true)}>查看项目重写配置</button><div>{issues.map(issue => <label key={issue.id}><input type="checkbox" checked={selected.includes(issue.id)} disabled={issue.disposition !== "open"} onChange={() => toggle(issue.id)} />{issue.title}</label>)}</div></article><section><label>补充要求<textarea value={instructions} maxLength={2000} onChange={e => { setInstructions(e.target.value); clearPreflight(); }} /></label><label>重写策略<select value={options.strategy} onChange={e => { setOptions({ strategy: e.target.value as RewriteOptions["strategy"] }); clearPreflight(); }}><option value="targeted_fix">定向修复</option><option value="creative_rewrite">创意重写</option></select></label>{error && <p role="alert">{error}</p>}{preflight?.status === "passed" ? <section aria-label="预检结果"><h2>预检已通过</h2><ul>{preflight.checks.map(check => <li key={check.code}>{check.status === "passed" ? "通过" : "阻塞"}：{check.message}</li>)}</ul><dl><div><dt>来源</dt><dd>V{preflight.sourceContentVersionSummary.versionNo} · {preflight.sourceContentVersionSummary.title}</dd></div><div><dt>审核报告</dt><dd>{preflight.reviewReportSnapshot.summary}</dd></div><div><dt>问题</dt><dd>{preflight.selectedIssueSummary.total} 个</dd></div><div><dt>配置</dt><dd>{preflight.configurationSummary?.workflowConfigurationName ?? "不可用"}</dd></div><div><dt>过期时间</dt><dd>{preflight.expiresAt ? new Date(preflight.expiresAt).toLocaleString("zh-CN") : "—"}</dd></div></dl><button type="button" className="primary" onClick={() => setConfirmCreate(true)}>继续确认创建</button></section> : <button type="button" className="primary" disabled={checking || !availability?.available} onClick={() => void check()}>{checking ? "预检中…" : "进行预检"}</button>}</section></section>
+  {showConfiguration && <section role="dialog" aria-modal="true" aria-label="项目重写配置"><h2>项目重写配置</h2><p>此处只读，不能临时切换工作流或连接。</p><dl><div><dt>工作流</dt><dd>{availability?.configurationSummary?.workflowConfigurationName ?? "未配置"}</dd></div><div><dt>配置版本</dt><dd>{availability?.configurationSummary?.workflowConfigurationVersion ?? "—"}</dd></div><div><dt>输入契约</dt><dd>{availability?.configurationSummary?.inputContract ?? "—"}</dd></div><div><dt>输出契约</dt><dd>{availability?.configurationSummary?.outputContract ?? "—"}</dd></div></dl><button type="button" onClick={() => setShowConfiguration(false)}>关闭</button></section>}
+  {confirmCreate && preflight?.status === "passed" && <section role="dialog" aria-modal="true" aria-label="确认创建重写任务"><h2>确认创建重写任务</h2><p>将按以上来源、审核报告、{preflight.selectedIssueSummary.total} 个问题和只读配置创建一次重写运行。</p><button type="button" disabled={creating} onClick={() => setConfirmCreate(false)}>返回修改</button><button type="button" className="primary" disabled={creating} onClick={() => void create()}>{creating ? "创建中…" : "确认创建"}</button></section>}</main>;
 }

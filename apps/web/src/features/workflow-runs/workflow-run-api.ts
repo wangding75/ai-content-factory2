@@ -52,8 +52,8 @@ export async function listWorkflowRuns(query: WorkflowRunListQuery = {}, init?: 
 }
 
 export type WorkflowRunEventDto = { id: string; runId: string; eventType: string; status: string; payload: Record<string, unknown> | null; createdAt: string | null };
-export type WorkflowRunEventVm = { id: string; title: string; statusLabel: string; createdAtLabel: string; payload: Record<string, unknown> | null };
-export type WorkflowRunDetailVm = WorkflowRunVm & { subjectType: string | null; subjectId: string | null; version: number; inputPayload: Record<string, unknown>; outputPayload: Record<string, unknown> | null; errorCode: string | null; errorMessage: string | null; errorDetails: Record<string, unknown> | null; configurationSnapshot: Record<string, unknown>; canCancel: boolean; canRetry: boolean };
+export type WorkflowRunEventVm = { id: string; eventType: string; title: string; statusLabel: string; createdAtLabel: string; payload: Record<string, unknown> | null };
+export type WorkflowRunDetailVm = WorkflowRunDto & WorkflowRunVm & { canCancel: boolean; canRetry: boolean };
 const eventLabels: Record<string, string> = { queued: "已创建运行", worker_started: "开始执行", request_sent: "已发送请求", response_received: "已收到响应", output_validated: "已校验输出", succeeded: "运行成功", failed: "运行失败", cancelled: "已取消运行", retry_created: "已创建重试运行" };
 const redact = (value: unknown): unknown => {
   if (Array.isArray(value)) return value.map(redact);
@@ -61,8 +61,8 @@ const redact = (value: unknown): unknown => {
   return value;
 };
 export const formatWorkflowRunJson = (value: unknown) => value && typeof value === "object" && Object.keys(value).length ? JSON.stringify(redact(value), null, 2) : "暂无信息";
-export const mapWorkflowRunDetail = (item: WorkflowRunDto): WorkflowRunDetailVm => ({ ...mapWorkflowRun(item), subjectType: item.subjectType, subjectId: item.subjectId, version: item.version, inputPayload: item.inputPayload ?? {}, outputPayload: item.outputPayload, errorCode: item.errorCode, errorMessage: item.errorMessage, errorDetails: item.errorDetails, configurationSnapshot: item.configurationSnapshot ?? {}, canCancel: item.status === "queued" || item.status === "running", canRetry: item.status === "failed" || item.status === "cancelled" });
-export const mapWorkflowRunEvent = (item: WorkflowRunEventDto): WorkflowRunEventVm => ({ id: item.id, title: eventLabels[item.eventType] ?? "未知运行事件", statusLabel: isWorkflowRunStatus(item.status) ? statusLabels[item.status] : "未知状态", createdAtLabel: formatWorkflowRunTime(item.createdAt), payload: item.payload ?? null });
+export const mapWorkflowRunDetail = (item: WorkflowRunDto): WorkflowRunDetailVm => ({ ...item, ...mapWorkflowRun(item), inputPayload: item.inputPayload ?? {}, configurationSnapshot: item.configurationSnapshot ?? {}, canCancel: item.status === "queued" || item.status === "running", canRetry: item.status === "failed" || item.status === "cancelled" });
+export const mapWorkflowRunEvent = (item: WorkflowRunEventDto): WorkflowRunEventVm => ({ id: item.id, eventType: item.eventType, title: eventLabels[item.eventType] ?? "未知运行事件", statusLabel: isWorkflowRunStatus(item.status) ? statusLabels[item.status] : "未知状态", createdAtLabel: formatWorkflowRunTime(item.createdAt), payload: item.payload ?? null });
 const runPath = (runId: string) => `/workflow-runs/${encodeURIComponent(runId)}`;
 export const getWorkflowRun = async (runId: string, init?: ApiRequestInit) => mapWorkflowRunDetail(await apiRequest<WorkflowRunDto>(runPath(runId), init));
 export const listWorkflowRunEvents = async (runId: string, init?: ApiRequestInit) => (await apiRequest<{ items: WorkflowRunEventDto[] }>(`${runPath(runId)}/events`, init)).items.map(mapWorkflowRunEvent);

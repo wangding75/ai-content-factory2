@@ -12,12 +12,41 @@ import (
 )
 
 func TestRewriteRequestValidationAndTokenClaimsAreSafe(t *testing.T) {
-	instructions := "使用 Authorization: Bearer secret"
+	instructions := "Authorization: Bearer abcdefghijklmnop"
 	if validRewriteRequest(RewritePreflightRequest{
 		SelectedIssueIDs: []uuid.UUID{uuid.New()}, OptionalInstructions: &instructions,
 		RewriteOptions: RewriteOptions{Strategy: "targeted_fix"}, ActorID: "actor",
 	}) {
 		t.Fatal("sensitive instructions were accepted")
+	}
+	for _, allowed := range []string{
+		"故事中的 password 和 token 都是普通技术概念。",
+		"讨论 webhook、n8n、SQL 与 secret 的设计取舍。",
+	} {
+		if !validRewriteRequest(RewritePreflightRequest{
+			SelectedIssueIDs: []uuid.UUID{uuid.New()}, OptionalInstructions: &allowed,
+			RewriteOptions: RewriteOptions{Strategy: "targeted_fix"}, ActorID: "actor",
+		}) {
+			t.Fatalf("ordinary prose was rejected: %q", allowed)
+		}
+	}
+	for _, sensitive := range []string{
+		"Authorization: Bearer abcdefghijklmnop",
+		"Cookie: session=abcdef123456",
+		"password=correct-horse-battery",
+		"api_key: abcdefghijklmnop",
+		"postgres://user:pass@localhost/db",
+		"http://192.168.1.10/internal",
+		"https://internal-api/jobs",
+		"SELECT value FROM credentials",
+		"stack trace follows",
+	} {
+		if validRewriteRequest(RewritePreflightRequest{
+			SelectedIssueIDs: []uuid.UUID{uuid.New()}, OptionalInstructions: &sensitive,
+			RewriteOptions: RewriteOptions{Strategy: "targeted_fix"}, ActorID: "actor",
+		}) {
+			t.Fatalf("sensitive material was accepted: %q", sensitive)
+		}
 	}
 	duplicate := uuid.New()
 	if validRewriteRequest(RewritePreflightRequest{
@@ -92,5 +121,8 @@ func TestRewriteTokenExpiryAndTamperAreDistinct(t *testing.T) {
 	service := &RealRewriteService{secret: []byte("rewrite-secret"), now: time.Now}
 	if _, err := service.parseRewriteToken("invalid"); !errors.Is(err, ErrRewriteTokenInvalid) {
 		t.Fatalf("invalid token error=%v", err)
+	}
+	if _, err := service.parseRewriteToken(strings.Repeat("x", RewritePreflightTokenMaxLength+1)); !errors.Is(err, ErrRewriteTokenInvalid) {
+		t.Fatalf("oversized token error=%v", err)
 	}
 }

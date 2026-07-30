@@ -8,6 +8,7 @@ import (
 	"sync"
 	"testing"
 	"time"
+	"unicode/utf8"
 
 	"github.com/google/uuid"
 	"github.com/local/ai-content-factory/apps/api/internal/globalconfig"
@@ -167,6 +168,69 @@ func TestRealRewriteAvailabilityPreflightCreateReplaySnapshotAndDispatchDiscover
 		snapshot["stage"] != "rewrite" || strings.Contains(strings.ToLower(string(run.ConfigurationSnapshot)), "credential") {
 		t.Fatalf("configuration snapshot=%s", run.ConfigurationSnapshot)
 	}
+	if _, err = f.repo.db.Exec(f.ctx, "UPDATE review_findings SET disposition='ignored',ignored_at=NOW(),ignored_by='test' WHERE review_id=$1", f.report.ID); err != nil {
+		t.Fatal(err)
+	}
+	activeWithoutOpenIssues, err := f.service.Availability(f.ctx, f.report.ID)
+	if err != nil || activeWithoutOpenIssues.OpenIssueCount != 0 ||
+		activeWithoutOpenIssues.Reason == nil || *activeWithoutOpenIssues.Reason != "active_rewrite_run_conflict" ||
+		activeWithoutOpenIssues.ActiveRun == nil || activeWithoutOpenIssues.ActiveRun.ID != run.ID {
+		t.Fatalf("active without open issues=%+v err=%v", activeWithoutOpenIssues, err)
+	}
+}
+
+func TestRealRewritePreflightTokenMaximumBoundaryPreservesFullSnapshot(t *testing.T) {
+	f := newRealRewriteFixture(t)
+	rows, err := f.repo.db.Query(f.ctx, `
+		INSERT INTO review_findings(
+			id,review_id,issue_key,sort_order,category,category_label,severity,title,description,
+			evidence_json,location_json,suggestion,disposition,version,created_at,updated_at
+		)
+		SELECT gen_random_uuid(),review_id,'boundary-'||n,n,category,category_label,severity,
+			title||n,description,evidence_json,location_json,suggestion,'open',1,NOW(),NOW()
+		FROM review_findings CROSS JOIN generate_series(2,50) n
+		WHERE id=$1
+		RETURNING id`, f.issue.ID)
+	if err != nil { t.Fatal(err) }
+	ids := []uuid.UUID{f.issue.ID}
+	for rows.Next() {
+		var id uuid.UUID
+		if err = rows.Scan(&id); err != nil { rows.Close(); t.Fatal(err) }
+		ids = append(ids, id)
+	}
+	if err = rows.Err(); err != nil { rows.Close(); t.Fatal(err) }
+	rows.Close()
+	if len(ids) != 50 { t.Fatalf("issues=%d", len(ids)) }
+	instructions := strings.Repeat("界", 2000)
+	preflight, err := f.service.Preflight(f.ctx, f.report.ID, RewritePreflightRequest{
+		SelectedIssueIDs: ids, OptionalInstructions: &instructions,
+		RewriteOptions: RewriteOptions{Strategy: "targeted_fix"}, ActorID: "rewriter",
+	})
+	if err != nil || preflight.Status != "passed" || preflight.PreflightToken == nil {
+		t.Fatalf("preflight=%+v err=%v", preflight, err)
+	}
+	if size := len(*preflight.PreflightToken); size <= 4096 || size > RewritePreflightTokenMaxLength {
+		t.Fatalf("token length=%d", size)
+	}
+	run, replay, err := f.service.CreateRun(f.ctx, f.report.ID, "rewriter", *preflight.PreflightToken, "boundary-create")
+	if err != nil || replay { t.Fatalf("run=%+v replay=%v err=%v", run, replay, err) }
+	var input RewriteRuntimeInputV1
+	if err = json.Unmarshal(run.InputPayload, &input); err != nil { t.Fatal(err) }
+	if len(input.SelectedIssues) != 50 || input.OptionalInstructions == nil || *input.OptionalInstructions != instructions {
+		t.Fatalf("snapshot issues=%d instructions=%d", len(input.SelectedIssues), utf8.RuneCountInString(valueOrEmpty(input.OptionalInstructions)))
+	}
+	for index := 1; index < len(input.SelectedIssues); index++ {
+		previous, current := input.SelectedIssues[index-1], input.SelectedIssues[index]
+		if previous.Position > current.Position ||
+			(previous.Position == current.Position && previous.ReviewIssueID.String() > current.ReviewIssueID.String()) {
+			t.Fatalf("issue order drifted at %d", index)
+		}
+	}
+}
+
+func valueOrEmpty(value *string) string {
+	if value == nil { return "" }
+	return *value
 }
 
 func TestRealRewritePreflightValidationAndAvailabilityReasons(t *testing.T) {

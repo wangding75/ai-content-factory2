@@ -78,6 +78,21 @@ func TestRealRewriteRoutesAndFrozenTransportContract(t *testing.T) {
 	if response.Code != http.StatusOK || !strings.Contains(response.Body.String(), `"available":true`) {
 		t.Fatalf("availability status=%d body=%s", response.Code, response.Body.String())
 	}
+	stub.availability.ActiveRun = &stub.run
+	stub.availability.Available = false
+	reason := "active_rewrite_run_conflict"
+	stub.availability.Reason = &reason
+	response = httptest.NewRecorder()
+	request = httptest.NewRequest(http.MethodGet, "/api/v1/reviews/"+reviewID.String()+"/rewrite-availability", nil)
+	mux.ServeHTTP(response, request)
+	if response.Code != http.StatusOK || !strings.Contains(response.Body.String(), stub.run.ID.String()) ||
+		strings.Contains(response.Body.String(), "internal.example") || strings.Contains(response.Body.String(), "internal-webhook") ||
+		strings.Contains(response.Body.String(), `"sourceContent":`) {
+		t.Fatalf("unsafe availability status=%d body=%s", response.Code, response.Body.String())
+	}
+	stub.availability.ActiveRun = nil
+	stub.availability.Available = true
+	stub.availability.Reason = nil
 	body := `{"selectedIssueIds":["`+issueID.String()+`"],"optionalInstructions":null,"rewriteOptions":{"strategy":"targeted_fix"}}`
 	response = httptest.NewRecorder()
 	request = httptest.NewRequest(http.MethodPost, "/api/v1/reviews/"+reviewID.String()+"/rewrites/preflight", strings.NewReader(body))
@@ -118,6 +133,14 @@ func TestRealRewriteHandlersRejectUnknownMissingAndMalformedInput(t *testing.T) 
 		{http.MethodPost, "/api/v1/reviews/"+reviewID+"/rewrites/preflight", `{"selectedIssueIds":["not-a-uuid"],"optionalInstructions":null,"rewriteOptions":{"strategy":"targeted_fix"}}`, ""},
 		{http.MethodPost, "/api/v1/reviews/"+reviewID+"/rewrites", `{"preflightToken":"token"}`, ""},
 		{http.MethodPost, "/api/v1/reviews/"+reviewID+"/rewrites", `{"preflightToken":"token","sourceContent":"client"}`, "key"},
+	}
+	oversized := strings.Repeat("x", contentitem.RewritePreflightTokenMaxLength+1)
+	response := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodPost, "/api/v1/reviews/"+reviewID+"/rewrites", strings.NewReader(`{"preflightToken":"`+oversized+`"}`))
+	request.Header.Set("Idempotency-Key", "key")
+	mux.ServeHTTP(response, request)
+	if response.Code != http.StatusBadRequest {
+		t.Fatalf("oversized token status=%d body=%s", response.Code, response.Body.String())
 	}
 	for _, test := range cases {
 		response := httptest.NewRecorder()

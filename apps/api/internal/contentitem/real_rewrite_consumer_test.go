@@ -78,9 +78,8 @@ func TestDecodeRewriteRuntimeOutputRejectsFrozenInvalidShapes(t *testing.T) {
 		{"incomplete partition", json.RawMessage(strings.Replace(valid, `"addressedIssues":[{"reviewIssueId":"`+selected.String()+`","summary":"已修复人物设定冲突。"}]`, `"addressedIssues":[]`, 1)), []uuid.UUID{selected}},
 		{"metadata unknown", json.RawMessage(strings.Replace(valid, `"changeSummary":"保留原叙事视角。"`, `"changeSummary":"保留原叙事视角。","extra":true`, 1)), []uuid.UUID{selected}},
 		{"metadata missing field", json.RawMessage(strings.Replace(valid, `"metadata":{"changeSummary":"保留原叙事视角。"}`, `"metadata":{}`, 1)), []uuid.UUID{selected}},
-		{"sensitive secret", json.RawMessage(strings.Replace(valid, "修复选中的问题。", "secret token", 1)), []uuid.UUID{selected}},
+		{"sensitive secret assignment", json.RawMessage(strings.Replace(valid, "修复选中的问题。", "secret=abcdef123456", 1)), []uuid.UUID{selected}},
 		{"sensitive cookie", json.RawMessage(strings.Replace(valid, "修复选中的问题。", "Cookie: session=x", 1)), []uuid.UUID{selected}},
-		{"sensitive webhook", json.RawMessage(strings.Replace(valid, "修复选中的问题。", "webhook endpoint", 1)), []uuid.UUID{selected}},
 		{"database connection", json.RawMessage(strings.Replace(valid, "修复选中的问题。", "postgres://user:pass@127.0.0.1/db", 1)), []uuid.UUID{selected}},
 		{"internal URL", json.RawMessage(strings.Replace(valid, "修复选中的问题。", "http://127.0.0.1:5678/internal", 1)), []uuid.UUID{selected}},
 		{"SQL", json.RawMessage(strings.Replace(valid, "修复选中的问题。", "SELECT * FROM credentials", 1)), []uuid.UUID{selected}},
@@ -93,5 +92,19 @@ func TestDecodeRewriteRuntimeOutputRejectsFrozenInvalidShapes(t *testing.T) {
 				t.Fatalf("error=%v", decodeErr)
 			}
 		})
+	}
+}
+
+func TestDecodeRewriteRuntimeOutputAllowsOrdinaryTechnicalProse(t *testing.T) {
+	selected := uuid.New()
+	raw := validRewriteOutput(selected)
+	raw = json.RawMessage(strings.Replace(
+		string(raw),
+		"修复选中的问题。",
+		"正文讨论 password、token、webhook、n8n、SQL 与 secret 等普通概念。",
+		1,
+	))
+	if _, err := DecodeRewriteRuntimeOutput(raw, []uuid.UUID{selected}); err != nil {
+		t.Fatalf("ordinary technical prose rejected: %v", err)
 	}
 }

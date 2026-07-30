@@ -10,6 +10,7 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
+	"regexp"
 	"strings"
 	"time"
 	"unicode/utf8"
@@ -21,6 +22,8 @@ import (
 	"github.com/local/ai-content-factory/apps/api/internal/workflowbinding"
 	"github.com/local/ai-content-factory/apps/api/internal/workflowrun"
 )
+
+const RewritePreflightTokenMaxLength = 32768
 
 var (
 	ErrRewriteNotAvailable     = errors.New("rewrite is not available")
@@ -337,9 +340,22 @@ func normalizeRewriteInstructions(value *string) *string {
 
 func forbiddenRewriteInstructions(value *string) bool {
 	if value == nil { return false }
-	lower := strings.ToLower(*value)
-	for _, forbidden := range []string{"authorization:", "bearer ", "cookie:", "set-cookie", "password", "api_key", "apikey", "access_token", "refresh_token", "postgres://", "mysql://", "mongodb://", "webhook", "http://", "https://"} {
-		if strings.Contains(lower, forbidden) { return true }
+	return containsForbiddenRewriteMaterial(*value)
+}
+
+var forbiddenRewriteMaterialPatterns = []*regexp.Regexp{
+	regexp.MustCompile(`(?im)^\s*(authorization|cookie|set-cookie)\s*:`),
+	regexp.MustCompile(`(?i)\bbearer\s+[a-z0-9._~+/=-]{8,}`),
+	regexp.MustCompile(`(?i)\b(password|token|api[_-]?key|access[_-]?key|private[_-]?key|secret)\s*[:=]\s*["']?[^\s"',;]{4,}`),
+	regexp.MustCompile(`(?i)\b(postgres(?:ql)?|mysql|mongodb)://[^\s]+|\bjdbc:[^\s]+`),
+	regexp.MustCompile(`(?i)https?://(?:localhost|internal(?:[.-][a-z0-9-]+)*|127(?:\.\d{1,3}){3}|0\.0\.0\.0|10(?:\.\d{1,3}){3}|192\.168(?:\.\d{1,3}){2}|172\.(?:1[6-9]|2\d|3[01])(?:\.\d{1,3}){2}|[^/\s]+\.(?:internal|local))(?:[:/][^\s]*)?`),
+	regexp.MustCompile(`(?i)\b(select\s+.+\s+from|insert\s+into|update\s+\S+\s+set|delete\s+from|drop\s+table|alter\s+table|create\s+table|truncate\s+table)\b`),
+	regexp.MustCompile(`(?i)\b(sqlstate|stack\s+trace|traceback|panic:\s|goroutine\s+\d+\s+\[)`),
+}
+
+func containsForbiddenRewriteMaterial(value string) bool {
+	for _, pattern := range forbiddenRewriteMaterialPatterns {
+		if pattern.MatchString(value) { return true }
 	}
 	return false
 }
@@ -444,15 +460,15 @@ func (s *RealRewriteService) Availability(ctx context.Context, reportID uuid.UUI
 	}
 	err = s.repo.db.QueryRow(ctx, "SELECT COUNT(*) FROM review_findings WHERE review_id=$1 AND issue_key IS NOT NULL AND disposition='open'", reportID).Scan(&result.OpenIssueCount)
 	if err != nil { return result, err }
-	if result.OpenIssueCount == 0 {
-		reason := "no_open_issues"
-		result.Reason = &reason
-		return result, nil
-	}
 	result.ActiveRun, err = s.activeRun(ctx, report.ProjectID, report.ID)
 	if err != nil { return result, err }
 	if result.ActiveRun != nil {
 		reason := "active_rewrite_run_conflict"
+		result.Reason = &reason
+		return result, nil
+	}
+	if result.OpenIssueCount == 0 {
+		reason := "no_open_issues"
 		result.Reason = &reason
 		return result, nil
 	}
@@ -543,6 +559,7 @@ func (s *RealRewriteService) signRewriteToken(claims rewriteTokenClaims) (string
 
 func (s *RealRewriteService) parseRewriteToken(raw string) (rewriteTokenClaims, error) {
 	var claims rewriteTokenClaims
+	if len(raw) == 0 || len(raw) > RewritePreflightTokenMaxLength { return claims, ErrRewriteTokenInvalid }
 	parts := strings.Split(raw, ".")
 	if len(parts) != 2 || len(s.secret) == 0 { return claims, ErrRewriteTokenInvalid }
 	payload, err := base64.RawURLEncoding.DecodeString(parts[0])
@@ -639,7 +656,7 @@ func (s *RealRewriteService) Preflight(ctx context.Context, reportID uuid.UUID, 
 	for index := range issues { claims.SelectedIssueIDs[index] = issues[index].ReviewIssueID }
 	token, err := s.signRewriteToken(claims)
 	if err != nil { return result, err }
-	if len(token) > 4096 { return result, ErrRewriteTokenInvalid }
+	if len(token) > RewritePreflightTokenMaxLength { return result, ErrRewriteTokenInvalid }
 	expiresAt := time.Unix(claims.ExpiresAt, 0).UTC()
 	result.Status, result.PreflightToken, result.ExpiresAt = "passed", &token, &expiresAt
 	return result, nil

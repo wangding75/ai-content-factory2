@@ -175,29 +175,7 @@ func forbiddenRewriteOutput(output RewriteRuntimeOutputV1) bool {
 }
 
 func forbiddenRewriteOutputString(value string) bool {
-	lower := strings.ToLower(value)
-	for _, forbidden := range []string{
-		"authorization", "bearer ", "cookie", "set-cookie", "password", "credential",
-		"secret", "token", "api_key", "apikey", "access_key", "private_key",
-		"postgres://", "postgresql://", "mysql://", "mongodb://", "jdbc:",
-		"database_url", "database connection", "数据库连接", "数据库密码",
-		"webhook", "sqlstate", "stack trace", "traceback", "internal node", "n8n",
-		"http://localhost", "https://localhost", "http://127.", "https://127.",
-		"http://0.0.0.0", "https://0.0.0.0", ".internal/", ".local/",
-		"select * from ", "insert into ", "drop table ", "truncate table ",
-	} {
-		if strings.Contains(lower, forbidden) {
-			return true
-		}
-	}
-	for index := 16; index <= 31; index++ {
-		if strings.Contains(lower, "http://172."+string(rune('0'+index/10))+string(rune('0'+index%10))+".") ||
-			strings.Contains(lower, "https://172."+string(rune('0'+index/10))+string(rune('0'+index%10))+".") {
-			return true
-		}
-	}
-	return strings.Contains(lower, "http://10.") || strings.Contains(lower, "https://10.") ||
-		strings.Contains(lower, "http://192.168.") || strings.Contains(lower, "https://192.168.")
+	return containsForbiddenRewriteMaterial(value)
 }
 
 func decodeRewriteRuntimeInputForConsumption(raw json.RawMessage) (RewriteRuntimeInputV1, error) {

@@ -334,11 +334,7 @@ func (s *RealRewriteService) Summary(ctx context.Context, reportID uuid.UUID) (R
 		if displayed.Candidate != nil && displayed.ResultConsumed {
 			out.CandidateVersion = displayed.Candidate
 			out.CandidateIsCurrent = report.Source.Item.CurrentVersionID == displayed.Candidate.ID
-			out.CanSetCurrent = !out.CandidateIsCurrent &&
-				displayed.Candidate.SourceContentVersionID != nil &&
-				displayed.Candidate.SourceContentVersionVersion != nil &&
-				*displayed.Candidate.SourceContentVersionID == report.Source.Item.CurrentVersionID &&
-				*displayed.Candidate.SourceContentVersionVersion == report.Source.Version.Version
+			out.CanSetCurrent = !out.CandidateIsCurrent
 		}
 	}
 	if displayed == nil && errors.Is(configuredErr, ErrRewriteNotConfigured) {
@@ -535,9 +531,7 @@ func (s *RealRewriteService) Result(ctx context.Context, runID uuid.UUID) (Rewri
 		return RewriteResult{}, ErrRewriteCandidateNotReady
 	}
 	candidateIsCurrent := report.Source.Item.CurrentVersionID == candidate.ID
-	canSetCurrent := !candidateIsCurrent &&
-		report.Source.Item.CurrentVersionID == input.SourceContentVersionID &&
-		report.Source.Version.Version == input.SourceContentVersionVersion
+	canSetCurrent := !candidateIsCurrent
 	return RewriteResult{
 		ReviewReportSnapshot: input.ReportSnapshot,
 		SourceContentVersionSummary: rewriteSourceSummary(report),

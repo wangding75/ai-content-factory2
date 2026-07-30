@@ -579,6 +579,10 @@ func TestRealRewriteHistoryStablePaginationAndSummaryFindsActiveBeyondPage(t *te
 
 func TestRealRewriteSummaryKeepsFixedSourceAfterCurrentVersionDrift(t *testing.T) {
 	f := newRealRewriteFixture(t)
+	firstRun := succeededRewriteRun(t, f, validRewriteOutput(f.issue.ID))
+	if _, err := f.service.ConsumeRewriteResult(f.ctx, firstRun); err != nil {
+		t.Fatal(err)
+	}
 	run := succeededRewriteRun(t, f, validRewriteOutput(f.issue.ID))
 	candidate, err := f.service.ConsumeRewriteResult(f.ctx, run)
 	if err != nil {
@@ -598,13 +602,31 @@ func TestRealRewriteSummaryKeepsFixedSourceAfterCurrentVersionDrift(t *testing.T
 	}
 	summary, err := f.service.Summary(f.ctx, f.report.ID)
 	if err != nil || summary.State != "candidate_ready" || summary.CandidateVersion == nil ||
-		summary.CandidateVersion.ID != candidate.ID || summary.CandidateIsCurrent || summary.CanSetCurrent ||
+		summary.CandidateVersion.ID != candidate.ID || summary.CandidateIsCurrent || !summary.CanSetCurrent ||
 		summary.SourceContentVersionSummary.ID != f.report.SourceContentVersionID {
 		t.Fatalf("summary=%+v err=%v", summary, err)
 	}
 	result, err := f.service.Result(f.ctx, run.ID)
 	if err != nil || result.SourceContentVersionSummary.ID != f.report.SourceContentVersionID ||
-		result.CandidateVersion.ID != candidate.ID || result.CanSetCurrent {
+		result.CandidateVersion.ID != candidate.ID || !result.CanSetCurrent {
 		t.Fatalf("result=%+v err=%v", result, err)
+	}
+	generation := NewGenerationService(f.repo, nil, nil, nil, "set-current")
+	if _, err = generation.SetCurrent(f.ctx, current.Item.ID, SetCurrentRequest{
+		CandidateVersionID: candidate.ID, ExpectedCurrentVersionID: current.CurrentVersion.ID,
+		ExpectedCurrentVersion: current.CurrentVersion.Version, IdempotencyKey: "stale-expected",
+	}); !errors.Is(err, ErrRewriteContentVersionConflict) {
+		t.Fatalf("old expected current err=%v", err)
+	}
+	latest, err := f.repo.GetByID(f.ctx, current.Item.ID)
+	if err != nil || latest.CurrentVersion.ID != driftedID {
+		t.Fatalf("latest=%+v err=%v", latest, err)
+	}
+	promoted, err := generation.SetCurrent(f.ctx, current.Item.ID, SetCurrentRequest{
+		CandidateVersionID: candidate.ID, ExpectedCurrentVersionID: latest.CurrentVersion.ID,
+		ExpectedCurrentVersion: latest.CurrentVersion.Version, IdempotencyKey: "refreshed-expected",
+	})
+	if err != nil || promoted.CurrentVersion.ID != candidate.ID {
+		t.Fatalf("promoted=%+v err=%v", promoted, err)
 	}
 }
