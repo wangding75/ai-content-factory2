@@ -1,13 +1,18 @@
 {
   "project": "ai-content-factory-2.0",
-  "current_iteration": 14,
+  "branch": "feature/second-user-loop",
+  "current_iteration": 18,
   "status": "completed",
-  "acceptance": "accepted",
-  "next_iteration": 15,
+  "acceptance": "browser_ui_accepted",
+  "next_iteration": 19,
+  "next_iteration_status": "pending",
+  "second_user_loop_status": "not_closed",
+  "real_llm_end_to_end": "not_completed",
   "contract_version": "p1-v1",
   "ui_baseline": "p1-frozen",
   "technical_skeleton": "same-as-1.0",
-  "updated_at_utc": "2026-07-23T09:14:24.9049450Z",
+  "review_baseline_commit": "78e5927a05270c163a82929dcea227de7166f193",
+  "updated_at_utc": "2026-07-30T08:02:00Z",
   "development_inputs": {
     "package": "ai-content-factory-2.0-p0-full-initialization-package-v2.1.1",
     "version": "2.1.1",
@@ -16,9 +21,15 @@
     "product_docs": "docs/product",
     "business_docs": "docs/business",
     "technical_docs": "docs/architecture",
-    "frozen_inputs": "docs/development-inputs/p0"
+    "frozen_inputs": "docs/development-inputs/p1"
   },
-  "manual_ui_acceptance": "passed",
+  "database": {
+    "name": "ai_content_factory",
+    "mode": "single_database_incremental_migrations",
+    "historical_migrations_mutable": false,
+    "final_consistency_required": true
+  },
+  "manual_ui_acceptance": "passed_for_iterations_15_to_18",
   "iteration_04": {
     "contract": "completed",
     "backend": "completed",
@@ -110,5 +121,40 @@
       "CF-14-N8N-Integration: real n8n adapter, worker, queue consumption, callback server, external execution and status callbacks, connection/configuration verify-enable-disable"
     ],
     "db_rollback_acceptance_required": false
+  },
+  "iteration_15": {
+    "status": "completed",
+    "implementation": "completed",
+    "browser_ui_acceptance": "PASS",
+    "final_integration": "pending",
+    "acceptance_evidence": "report/iteration-15-18-browser-acceptance/iteration-15/"
+  },
+  "iteration_16": {
+    "status": "completed",
+    "implementation": "completed",
+    "browser_ui_acceptance": "PASS",
+    "final_integration": "pending",
+    "acceptance_evidence": "report/iteration-15-18-browser-acceptance/iteration-16/"
+  },
+  "iteration_17": {
+    "status": "completed",
+    "implementation": "completed",
+    "browser_ui_acceptance": "PASS",
+    "final_integration": "pending",
+    "acceptance_evidence": "report/iteration-15-18-browser-acceptance/iteration-17/"
+  },
+  "iteration_18": {
+    "status": "completed",
+    "implementation": "completed",
+    "browser_ui_acceptance": "PASS",
+    "browser_ui_acceptance_baseline_commit": "f05a31e64a437ea07f8f917eaf9e3f6dae3aed8a",
+    "browser_ui_acceptance_report": "report/iteration-15-18-browser-acceptance/browser-acceptance-report.md",
+    "final_integration": "pending",
+    "real_n8n_integration": "not_completed",
+    "real_llm_end_to_end": "not_completed"
+  },
+  "iteration_19": {
+    "status": "pending",
+    "acceptance": "not_started"
   }
 }
