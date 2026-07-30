@@ -159,3 +159,29 @@ func TestWorkflowRunHTTPDetailProjectsDirectRetryParent(t *testing.T) {
 		t.Fatalf("retry run parent projection = %d: %s", w.Code, w.Body.String())
 	}
 }
+
+func TestWorkflowRunHTTPRewriteResponseHidesRuntimePayloads(t *testing.T) {
+	run := workflowRunHTTPFixture()
+	run.Stage = "rewrite"
+	run.InputPayload = json.RawMessage(`{"contentItemId":"11111111-1111-4111-8111-111111111111","sourceContent":"private full source","optionalInstructions":"ordinary password token prose","selectedIssues":[{"reviewIssueId":"22222222-2222-4222-8222-222222222222","issueKey":"issue-1","position":1,"title":"安全标题","severity":"warning","description":"private issue evidence"}]}`)
+	run.OutputPayload = json.RawMessage(`{"content":"private runtime output","summary":"SQL stack internal.example"}`)
+	run.ErrorDetails = json.RawMessage(`{"stack":"private stack","sql":"select secret"}`)
+	run.ConfigurationSnapshot = json.RawMessage(`{"workflowConfiguration":{"defaultParameters":{"token":"secret"},"typeConfig":{"referenceValue":"private-webhook"}},"workflowConnection":{"baseUrl":"http://n8n:19090","typeConfig":{"referenceValue":"iteration18"}}}`)
+	app := &fakeWorkflowRunApplication{run: run}
+
+	w := workflowRunHTTPRequest(workflowRunHTTPHandler(app), http.MethodGet, "/api/v1/workflow-runs/"+run.ID.String(), "", "")
+	if w.Code != http.StatusOK {
+		t.Fatalf("status = %d: %s", w.Code, w.Body.String())
+	}
+	body := w.Body.String()
+	for _, expected := range []string{`"contentItemId":"11111111-1111-4111-8111-111111111111"`, `"reviewIssueId":"22222222-2222-4222-8222-222222222222"`, `"title":"安全标题"`, `"outputPayload":null`, `"errorDetails":null`, `"configurationSnapshot":{}`} {
+		if !strings.Contains(body, expected) {
+			t.Fatalf("rewrite safe response omitted %q: %s", expected, body)
+		}
+	}
+	for _, forbidden := range []string{"private full source", "ordinary password token prose", "private issue evidence", "private runtime output", "internal.example", "private stack", "select secret", "defaultParameters", "typeConfig", "baseUrl", "http://n8n:19090", "private-webhook"} {
+		if strings.Contains(body, forbidden) {
+			t.Fatalf("rewrite response leaked %q: %s", forbidden, body)
+		}
+	}
+}

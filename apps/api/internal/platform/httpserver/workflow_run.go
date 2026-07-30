@@ -193,7 +193,38 @@ func workflowRunListFilter(r *http.Request) (workflowrun.ListFilter, error) {
 }
 
 func iteration14WorkflowRunResponse(run workflowrun.WorkflowRun) workflowRunDTO {
-	return workflowRunDTO{ID: run.ID, RunNumber: run.RunNumber, ProjectID: run.ProjectID, Stage: run.Stage, SubjectType: run.SubjectType, SubjectID: run.SubjectID, WorkflowConfigurationID: run.WorkflowConfigurationID, TriggerSource: run.TriggerSource, RetryOfRunID: run.RetryOfRunID, Status: run.Status, InputPayload: workflowrun.RedactJSON(run.InputPayload), OutputPayload: workflowRunNullableJSON(run.OutputPayload), ErrorCode: run.ErrorCode, ErrorMessage: run.ErrorMessage, ErrorDetails: workflowRunNullableJSON(run.ErrorDetails), ConfigurationSnapshot: workflowrun.RedactJSON(run.ConfigurationSnapshot), StartedAt: run.StartedAt, FinishedAt: run.FinishedAt, CancelledAt: run.CancelledAt, CreatedAt: run.CreatedAt, UpdatedAt: run.UpdatedAt, Version: run.Version}
+	inputPayload := workflowrun.RedactJSON(run.InputPayload)
+	outputPayload := workflowRunNullableJSON(run.OutputPayload)
+	errorDetails := workflowRunNullableJSON(run.ErrorDetails)
+	configurationSnapshot := workflowrun.RedactJSON(run.ConfigurationSnapshot)
+	if run.Stage == "rewrite" {
+		inputPayload = safeRewriteRunInputPayload(run.InputPayload)
+		outputPayload = nil
+		errorDetails = nil
+		configurationSnapshot = json.RawMessage(`{}`)
+	}
+	return workflowRunDTO{ID: run.ID, RunNumber: run.RunNumber, ProjectID: run.ProjectID, Stage: run.Stage, SubjectType: run.SubjectType, SubjectID: run.SubjectID, WorkflowConfigurationID: run.WorkflowConfigurationID, TriggerSource: run.TriggerSource, RetryOfRunID: run.RetryOfRunID, Status: run.Status, InputPayload: inputPayload, OutputPayload: outputPayload, ErrorCode: run.ErrorCode, ErrorMessage: run.ErrorMessage, ErrorDetails: errorDetails, ConfigurationSnapshot: configurationSnapshot, StartedAt: run.StartedAt, FinishedAt: run.FinishedAt, CancelledAt: run.CancelledAt, CreatedAt: run.CreatedAt, UpdatedAt: run.UpdatedAt, Version: run.Version}
+}
+
+func safeRewriteRunInputPayload(value json.RawMessage) json.RawMessage {
+	var input struct {
+		ContentItemID  string `json:"contentItemId"`
+		SelectedIssues []struct {
+			ReviewIssueID string `json:"reviewIssueId"`
+			IssueKey      string `json:"issueKey"`
+			Position      int    `json:"position"`
+			Title         string `json:"title"`
+			Severity      string `json:"severity"`
+		} `json:"selectedIssues"`
+	}
+	if err := json.Unmarshal(value, &input); err != nil {
+		return json.RawMessage(`{}`)
+	}
+	payload, err := json.Marshal(input)
+	if err != nil {
+		return json.RawMessage(`{}`)
+	}
+	return payload
 }
 
 func workflowRunEventResponse(event workflowrun.Event) workflowRunEventDTO { return workflowRunEventDTO{ID: event.ID, RunID: event.RunID, EventType: event.EventType, Status: event.Status, Payload: workflowrun.RedactJSON(event.Payload), CreatedAt: event.CreatedAt} }
