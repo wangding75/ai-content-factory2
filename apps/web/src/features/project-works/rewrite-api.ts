@@ -1,5 +1,6 @@
 import { apiRequest, type ApiRequestInit } from "@/lib/api";
 import type { WorkflowRunDto } from "@/features/workflow-runs/workflow-run-api";
+import type { ContentVersion } from "@/features/content-items/content-item-http-api";
 
 export type RewriteStrategy = "targeted_fix" | "creative_rewrite";
 export type RewriteOptions = { strategy: RewriteStrategy };
@@ -12,15 +13,21 @@ export type RewritePreflight = { status: "passed" | "blocked"; checks: RewriteCh
 export type RewriteState = "idle" | "not_configured" | "queued" | "running" | "candidate_ready" | "runtime_failed" | "output_validation_failed" | "result_consumption_failed";
 export type RewriteSafeError = { code: "runtime_failed" | "output_validation_failed" | "result_consumption_failed"; message: string; correlationId: string; occurredAt: string };
 export type RewriteIssueOutcome = { reviewIssueId: string; summary: string };
-export type RewriteCandidate = { id: string; contentItemId: string; versionNo: number; version: number; title: string; content: string; summary: string; wordCount: number; isCurrent?: boolean };
+export type RewriteCandidate = ContentVersion & { contentItemId?: string; versionNo?: number; wordCount?: number; source_content_version_id?: string; source_content_version_version?: number; source_workflow_run_id?: string };
 export type RewriteSummary = { reviewReportId: string; contentItemId: string; state: RewriteState; canStartRewrite: boolean; activeRun: WorkflowRunDto | null; latestRun: WorkflowRunDto | null; sourceContentVersionSummary: RewriteSource; selectedIssueSummary: RewritePreflight["selectedIssueSummary"] | null; candidateVersion: RewriteCandidate | null; candidateIsCurrent: boolean; canSetCurrent: boolean; latestError: RewriteSafeError | null; configurationSummary: RewriteConfiguration | null };
 export type RewriteResult = { reviewReportSnapshot: { reviewReportId: string; conclusion: string; summary: string; completedAt: string }; sourceContentVersionSummary: RewriteSource; selectedIssueSummary: NonNullable<RewriteSummary["selectedIssueSummary"]>; workflowRun: WorkflowRunDto; output: { title: string; content: string; summary: string; addressedIssues: RewriteIssueOutcome[]; unresolvedIssues: RewriteIssueOutcome[]; warnings: string[]; metadata: { changeSummary: string | null } | null }; candidateVersion: RewriteCandidate; candidateIsCurrent: boolean; canSetCurrent: boolean };
+export type RewriteHistoryItem = { reviewReportSnapshot: RewriteResult["reviewReportSnapshot"]; sourceContentVersionSummary: RewriteSource; workflowRun: WorkflowRunDto; state: RewriteState; candidateVersion: RewriteCandidate | null; candidateIsCurrent: boolean; latestError: RewriteSafeError | null };
+export type RewriteHistoryPage = { items: RewriteHistoryItem[]; total: number; limit: number; offset: number };
 
 const reviewPath = (reviewId: string) => `/reviews/${encodeURIComponent(reviewId)}`;
 export const getContentRewriteAvailability = (reviewId: string, init?: ApiRequestInit) => apiRequest<RewriteAvailability>(`${reviewPath(reviewId)}/rewrite-availability`, init);
 export const preflightContentRewrite = (reviewId: string, body: { selectedIssueIds: string[]; optionalInstructions: string | null; rewriteOptions: RewriteOptions }, init?: ApiRequestInit) => apiRequest<RewritePreflight>(`${reviewPath(reviewId)}/rewrites/preflight`, { ...init, method: "POST", headers: { ...init?.headers, "Content-Type": "application/json" }, body: JSON.stringify(body) });
 export const createContentRewriteRun = (reviewId: string, preflightToken: string, key: string, init?: ApiRequestInit) => apiRequest<WorkflowRunDto>(`${reviewPath(reviewId)}/rewrites`, { ...init, method: "POST", headers: { ...init?.headers, "Content-Type": "application/json", "Idempotency-Key": key }, body: JSON.stringify({ preflightToken }) });
 export const getContentRewriteSummary = (reviewId: string, init?: ApiRequestInit) => apiRequest<RewriteSummary>(`${reviewPath(reviewId)}/rewrite-summary`, init);
+export const listContentRewriteHistory = (contentItemId: string, options: { limit?: number; offset?: number } = {}, init?: ApiRequestInit) => {
+  const query = new URLSearchParams({ limit: String(options.limit ?? 20), offset: String(options.offset ?? 0) });
+  return apiRequest<RewriteHistoryPage>(`/content-items/${encodeURIComponent(contentItemId)}/rewrite-history?${query}`, init);
+};
 export const getContentRewriteResult = (runId: string, init?: ApiRequestInit) => apiRequest<RewriteResult>(`/workflow-runs/${encodeURIComponent(runId)}/rewrite-result`, init);
 export const retryContentRewriteResultConsumption = (runId: string, expectedRunVersion: number, key: string, init?: ApiRequestInit) => apiRequest<RewriteResult>(`/workflow-runs/${encodeURIComponent(runId)}/rewrite-result-consumption-retries`, { ...init, method: "POST", headers: { ...init?.headers, "Content-Type": "application/json", "Idempotency-Key": key }, body: JSON.stringify({ expectedRunVersion }) });
 
