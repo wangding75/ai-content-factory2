@@ -31,16 +31,16 @@ type i06Envelope struct {
 
 func i06Open(t *testing.T) (*pgxpool.Pool, context.Context) {
 	t.Helper()
-	u := os.Getenv("TEST_DATABASE_URL")
+	u := os.Getenv("DATABASE_URL")
 	if u == "" {
-		t.Skip("TEST_DATABASE_URL is not set; Iteration 06 HTTP PostgreSQL integration test skipped outside its targeted run")
+		t.Fatal("DATABASE_URL is not set; Iteration 06 HTTP PostgreSQL integration test is required outside its targeted run")
 	}
 	cfg, err := pgxpool.ParseConfig(u)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if cfg.ConnConfig.Database != iteration06HTTPTestDatabase {
-		t.Fatalf("TEST_DATABASE_URL database=%q, want %q", cfg.ConnConfig.Database, iteration06HTTPTestDatabase)
+		t.Fatalf("DATABASE_URL database=%q, want %q", cfg.ConnConfig.Database, iteration06HTTPTestDatabase)
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	t.Cleanup(cancel)

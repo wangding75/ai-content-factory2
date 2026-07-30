@@ -21,9 +21,9 @@ import (
 
 func openDB(t *testing.T) (*pgxpool.Pool, context.Context) {
 	t.Helper()
-	raw := os.Getenv("TEST_DATABASE_URL")
+	raw := os.Getenv("DATABASE_URL")
 	if raw == "" {
-		t.Skip("TEST_DATABASE_URL is not set; PostgreSQL integration test skipped")
+		t.Fatal("DATABASE_URL is not set; PostgreSQL integration test is required")
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	t.Cleanup(cancel)

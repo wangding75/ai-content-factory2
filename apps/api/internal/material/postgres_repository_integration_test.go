@@ -16,9 +16,9 @@ import (
 )
 
 func TestPlanningMaterialsRepositoryIntegration(t *testing.T) {
-	databaseURL := os.Getenv("TEST_DATABASE_URL")
+	databaseURL := os.Getenv("DATABASE_URL")
 	if databaseURL == "" {
-		t.Skip("TEST_DATABASE_URL is not set")
+		t.Fatal("DATABASE_URL is not set")
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 	defer cancel()

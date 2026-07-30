@@ -54,16 +54,16 @@ type i05List struct {
 
 func openI05HTTP(t *testing.T) (*pgxpool.Pool, context.Context) {
 	t.Helper()
-	url := os.Getenv("TEST_DATABASE_URL")
+	url := os.Getenv("DATABASE_URL")
 	if url == "" {
-		t.Skip("TEST_DATABASE_URL is not set; Iteration 05 HTTP PostgreSQL integration test skipped")
+		t.Fatal("DATABASE_URL is not set; Iteration 05 HTTP PostgreSQL integration test is required")
 	}
 	cfg, err := pgxpool.ParseConfig(url)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if cfg.ConnConfig.Database != iteration05HTTPTestDatabase {
-		t.Skipf("TEST_DATABASE_URL targets database %q; expected %q; test skipped", cfg.ConnConfig.Database, iteration05HTTPTestDatabase)
+		t.Fatalf("DATABASE_URL targets database %q; expected %q; test is required", cfg.ConnConfig.Database, iteration05HTTPTestDatabase)
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	t.Cleanup(cancel)

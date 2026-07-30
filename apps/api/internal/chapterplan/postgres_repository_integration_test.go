@@ -13,20 +13,20 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-const integrationDatabase = "ai_content_factory_http_test"
+const integrationDatabase = "ai_content_factory"
 
 func openIntegrationDB(t *testing.T) (*pgxpool.Pool, context.Context) {
 	t.Helper()
-	u := os.Getenv("TEST_DATABASE_URL")
+	u := os.Getenv("DATABASE_URL")
 	if u == "" {
-		t.Skip("TEST_DATABASE_URL is not set; PostgreSQL integration test skipped")
+		t.Fatal("DATABASE_URL is not set; PostgreSQL integration test is required")
 	}
 	cfg, err := pgxpool.ParseConfig(u)
 	if err != nil {
-		t.Fatalf("parse TEST_DATABASE_URL: %v", err)
+		t.Fatalf("parse DATABASE_URL: %v", err)
 	}
 	if cfg.ConnConfig.Database != integrationDatabase {
-		t.Skipf("TEST_DATABASE_URL targets database %q, not %q; PostgreSQL integration test skipped", cfg.ConnConfig.Database, integrationDatabase)
+		t.Fatalf("DATABASE_URL targets database %q, not %q; PostgreSQL integration test is required", cfg.ConnConfig.Database, integrationDatabase)
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	t.Cleanup(cancel)

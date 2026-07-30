@@ -14,9 +14,9 @@ import (
 
 func highRiskPool(t *testing.T) (*pgxpool.Pool, context.Context) {
 	t.Helper()
-	url := os.Getenv("TEST_DATABASE_URL")
+	url := os.Getenv("DATABASE_URL")
 	if url == "" {
-		t.Skip("TEST_DATABASE_URL is not set")
+		t.Fatal("DATABASE_URL is not set")
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 	t.Cleanup(cancel)

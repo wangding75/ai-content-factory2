@@ -48,16 +48,16 @@ type i04FList struct {
 
 func openI04HTTP(t *testing.T) (*pgxpool.Pool, context.Context) {
 	t.Helper()
-	url := os.Getenv("TEST_DATABASE_URL")
+	url := os.Getenv("DATABASE_URL")
 	if url == "" {
-		t.Skip("TEST_DATABASE_URL is not set; Iteration 04 HTTP PostgreSQL integration test skipped")
+		t.Fatal("DATABASE_URL is not set; Iteration 04 HTTP PostgreSQL integration test is required")
 	}
 	c, e := pgxpool.ParseConfig(url)
 	if e != nil {
 		t.Fatal(e)
 	}
 	if c.ConnConfig.Database != iteration04HTTPTestDatabase {
-		t.Fatalf("TEST_DATABASE_URL must target isolated database %q; got database %q", iteration04HTTPTestDatabase, c.ConnConfig.Database)
+		t.Fatalf("DATABASE_URL must target database %q; got database %q", iteration04HTTPTestDatabase, c.ConnConfig.Database)
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	t.Cleanup(cancel)

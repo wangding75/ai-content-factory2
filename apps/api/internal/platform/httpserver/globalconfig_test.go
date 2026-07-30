@@ -9,15 +9,11 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
-	"os"
-	"path/filepath"
-	"sort"
 	"strings"
 	"testing"
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/local/ai-content-factory/apps/api/internal/globalconfig"
 	"github.com/local/ai-content-factory/apps/api/internal/project"
@@ -34,6 +30,7 @@ func globalConfigurationHandler(t *testing.T) http.Handler {
 
 func TestGlobalConfigurationProviderCRUDIntegration(t *testing.T) {
 	pool, ctx := globalConfigurationTestDatabase(t)
+	cleanupGlobalConfigurationCRUDFixtures(t, pool)
 	service, err := globalconfig.NewService(pool, "iteration-12-integration-key")
 	if err != nil {
 		t.Fatal(err)
@@ -126,6 +123,7 @@ func TestGlobalConfigurationProviderCRUDIntegration(t *testing.T) {
 
 func TestGlobalConfigurationConnectionWorkflowAndPlatformCRUDIntegration(t *testing.T) {
 	pool, ctx := globalConfigurationTestDatabase(t)
+	cleanupGlobalConfigurationCRUDFixtures(t, pool)
 	service, err := globalconfig.NewService(pool, "iteration-12-integration-key")
 	if err != nil {
 		t.Fatal(err)
@@ -300,45 +298,92 @@ func assertGlobalConfigurationCount(t *testing.T, ctx context.Context, pool *pgx
 	}
 }
 
-func globalConfigurationTestDatabase(t *testing.T) (*pgxpool.Pool, context.Context) {
+func cleanupGlobalConfigurationCRUDFixtures(
+	t *testing.T,
+	pool *pgxpool.Pool,
+) {
 	t.Helper()
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-	t.Cleanup(cancel)
-	database := fmt.Sprintf("ai_content_factory_i12_test_%d", time.Now().UTC().UnixNano())
-	admin, err := pgx.Connect(ctx, "postgres://postgres:postgres@127.0.0.1:15433/postgres?sslmode=disable")
-	if err != nil {
-		if os.Getenv("REQUIRE_POSTGRES_INTEGRATION") == "1" {
-			t.Fatalf("PostgreSQL integration is required: %v", err)
-		}
-		t.Skipf("PostgreSQL integration test skipped: %v", err)
+
+	cleanup := func() {
+		ctx, cancel := context.WithTimeout(
+			context.Background(),
+			10*time.Second,
+		)
+		defer cancel()
+
+		_, _ = pool.Exec(ctx, `
+			DELETE FROM audit_logs
+			WHERE subject_id IN (
+				SELECT id::text
+				FROM llm_provider_configurations
+				WHERE name IN ('provider-direct', 'provider-http')
+				UNION
+				SELECT id::text
+				FROM workflow_connections
+				WHERE name = 'connection-http'
+				UNION
+				SELECT id::text
+				FROM workflow_configurations
+				WHERE name IN ('workflow-http', 'workflow-http-updated')
+				UNION
+				SELECT id::text
+				FROM distribution_platform_configurations
+				WHERE name = 'platform-http'
+			)
+		`)
+
+		_, _ = pool.Exec(ctx, `
+			DELETE FROM idempotency_records
+			WHERE idempotency_key IN (
+				'provider-direct-create',
+				'provider-http-create',
+				'provider-update',
+				'provider-conflict',
+				'provider-missing',
+				'connection-create',
+				'connection-update',
+				'connection-missing',
+				'workflow-create',
+				'workflow-update',
+				'workflow-missing',
+				'workflow-conflict',
+				'platform-create',
+				'platform-update',
+				'platform-missing'
+			)
+		`)
+
+		_, _ = pool.Exec(
+			ctx,
+			`DELETE FROM workflow_configurations
+			 WHERE name IN ('workflow-http', 'workflow-http-updated')`,
+		)
+		_, _ = pool.Exec(
+			ctx,
+			`DELETE FROM workflow_connections
+			 WHERE name = 'connection-http'`,
+		)
+		_, _ = pool.Exec(
+			ctx,
+			`DELETE FROM distribution_platform_configurations
+			 WHERE name = 'platform-http'`,
+		)
+		_, _ = pool.Exec(
+			ctx,
+			`DELETE FROM llm_provider_configurations
+			 WHERE name IN ('provider-direct', 'provider-http')`,
+		)
 	}
-	if _, err = admin.Exec(ctx, "CREATE DATABASE "+database); err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() {
-		_, _ = admin.Exec(context.Background(), "DROP DATABASE IF EXISTS "+database+" WITH (FORCE)")
-		_ = admin.Close(context.Background())
-	})
-	pool, err := pgxpool.New(ctx, "postgres://postgres:postgres@127.0.0.1:15433/"+database+"?sslmode=disable")
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(pool.Close)
-	files, err := filepath.Glob(filepath.Join("..", "..", "..", "migrations", "*.up.sql"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	sort.Strings(files)
-	for _, file := range files {
-		sql, e := os.ReadFile(file)
-		if e != nil {
-			t.Fatal(e)
-		}
-		if _, e = pool.Exec(ctx, string(sql)); e != nil {
-			t.Fatalf("apply %s: %v", file, e)
-		}
-	}
-	return pool, ctx
+
+	cleanup()
+	t.Cleanup(cleanup)
+}
+
+func globalConfigurationTestDatabase(
+	t *testing.T,
+) (*pgxpool.Pool, context.Context) {
+	t.Helper()
+	return workflowBindingIntegrationDatabase(t)
 }
 
 func TestVerificationReplayHTTPIdempotency(t *testing.T) {

@@ -10,15 +10,12 @@ import (
 	"net"
 	"net/http"
 	"os"
-	"path/filepath"
-	"sort"
 	"sync"
 	"sync/atomic"
 	"testing"
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -247,16 +244,16 @@ func TestVerificationIdempotencyReplayBehavior(t *testing.T) {
 
 func verificationIntegrationDatabase(t *testing.T) (*pgxpool.Pool, context.Context) {
 	t.Helper()
-	databaseURL := os.Getenv("TEST_DATABASE_URL")
+	databaseURL := os.Getenv("DATABASE_URL")
 	if databaseURL == "" {
-		t.Skip("TEST_DATABASE_URL is not set; verification integration test skipped")
+		t.Fatal("DATABASE_URL is not set; verification integration test is required")
 	}
 	config, err := pgxpool.ParseConfig(databaseURL)
 	if err != nil {
-		t.Fatalf("parse TEST_DATABASE_URL: %v", err)
+		t.Fatalf("parse DATABASE_URL: %v", err)
 	}
 	if config.ConnConfig.Database != "ai_content_factory" {
-		t.Fatalf("TEST_DATABASE_URL database=%q, want ai_content_factory", config.ConnConfig.Database)
+		t.Fatalf("DATABASE_URL database=%q, want ai_content_factory", config.ConnConfig.Database)
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	t.Cleanup(cancel)
@@ -397,41 +394,5 @@ func assertVerificationRecordCount(t *testing.T, ctx context.Context, pool *pgxp
 
 func globalConfigIntegrationDatabase(t *testing.T) (*pgxpool.Pool, context.Context) {
 	t.Helper()
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-	t.Cleanup(cancel)
-	database := fmt.Sprintf("ai_content_factory_i12_globalconfig_%d", time.Now().UTC().UnixNano())
-	admin, err := pgx.Connect(ctx, "postgres://postgres:postgres@127.0.0.1:15433/postgres?sslmode=disable")
-	if err != nil {
-		if os.Getenv("REQUIRE_POSTGRES_INTEGRATION") == "1" {
-			t.Fatalf("PostgreSQL integration is required: %v", err)
-		}
-		t.Skipf("PostgreSQL integration test skipped: %v", err)
-	}
-	if _, err = admin.Exec(ctx, "CREATE DATABASE "+database); err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() {
-		_, _ = admin.Exec(context.Background(), "DROP DATABASE IF EXISTS "+database+" WITH (FORCE)")
-		_ = admin.Close(context.Background())
-	})
-	pool, err := pgxpool.New(ctx, "postgres://postgres:postgres@127.0.0.1:15433/"+database+"?sslmode=disable")
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(pool.Close)
-	files, err := filepath.Glob(filepath.Join("..", "..", "migrations", "*.up.sql"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	sort.Strings(files)
-	for _, file := range files {
-		sql, readErr := os.ReadFile(file)
-		if readErr != nil {
-			t.Fatal(readErr)
-		}
-		if _, execErr := pool.Exec(ctx, string(sql)); execErr != nil {
-			t.Fatalf("apply %s: %v", file, execErr)
-		}
-	}
-	return pool, ctx
+	return verificationIntegrationDatabase(t)
 }

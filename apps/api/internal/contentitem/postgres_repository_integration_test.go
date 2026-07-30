@@ -16,16 +16,16 @@ const integrationDatabase = "ai_content_factory"
 
 func openDB(t *testing.T) (*pgxpool.Pool, context.Context) {
 	t.Helper()
-	u := os.Getenv("TEST_DATABASE_URL")
+	u := os.Getenv("DATABASE_URL")
 	if u == "" {
-		t.Skip("TEST_DATABASE_URL is not set; PostgreSQL integration test skipped")
+		t.Fatal("DATABASE_URL is not set; PostgreSQL integration test is required")
 	}
 	cfg, e := pgxpool.ParseConfig(u)
 	if e != nil {
 		t.Fatal(e)
 	}
 	if cfg.ConnConfig.Database != integrationDatabase {
-		t.Skipf("TEST_DATABASE_URL targets %q, not %q", cfg.ConnConfig.Database, integrationDatabase)
+		t.Fatalf("DATABASE_URL targets %q, not %q", cfg.ConnConfig.Database, integrationDatabase)
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	t.Cleanup(cancel)
