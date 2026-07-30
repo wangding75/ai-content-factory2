@@ -1,0 +1,89 @@
+{
+  "result": "passed",
+  "checkedAt": "2026-07-30T03:21:17.006Z",
+  "results": [
+    {
+      "route": "/projects/13362446-e528-4071-a9d1-5260cc1fcd78/works/9ea091d1-b63e-409c-92dd-9b1271c508c7",
+      "url": "http://127.0.0.1:13001/projects/13362446-e528-4071-a9d1-5260cc1fcd78/works/9ea091d1-b63e-409c-92dd-9b1271c508c7",
+      "title": "AI Content Factory",
+      "horizontalOverflow": false,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "failedResponses": [],
+      "failedRequests": [],
+      "forbiddenMatches": []
+    },
+    {
+      "route": "/projects/13362446-e528-4071-a9d1-5260cc1fcd78/works/9ea091d1-b63e-409c-92dd-9b1271c508c7",
+      "evidenceState": "not_configured",
+      "browserFixture": false,
+      "assertions": [
+        "passed"
+      ],
+      "errors": []
+    },
+    {
+      "route": "/projects/13362446-e528-4071-a9d1-5260cc1fcd78/works/9ea091d1-b63e-409c-92dd-9b1271c508c7",
+      "evidenceState": "queued",
+      "browserFixture": true,
+      "assertions": [
+        "passed"
+      ],
+      "errors": []
+    },
+    {
+      "route": "/projects/13362446-e528-4071-a9d1-5260cc1fcd78/works/9ea091d1-b63e-409c-92dd-9b1271c508c7",
+      "evidenceState": "running",
+      "browserFixture": true,
+      "assertions": [
+        "passed"
+      ],
+      "errors": []
+    },
+    {
+      "route": "/projects/13362446-e528-4071-a9d1-5260cc1fcd78/works/9ea091d1-b63e-409c-92dd-9b1271c508c7",
+      "evidenceState": "runtime_failed",
+      "browserFixture": true,
+      "assertions": [
+        "passed"
+      ],
+      "errors": []
+    },
+    {
+      "route": "/projects/13362446-e528-4071-a9d1-5260cc1fcd78/works/9ea091d1-b63e-409c-92dd-9b1271c508c7",
+      "evidenceState": "output_validation_failed",
+      "browserFixture": true,
+      "assertions": [
+        "passed"
+      ],
+      "errors": []
+    },
+    {
+      "route": "/projects/13362446-e528-4071-a9d1-5260cc1fcd78/works/9ea091d1-b63e-409c-92dd-9b1271c508c7",
+      "evidenceState": "result_consumption_failed",
+      "browserFixture": true,
+      "assertions": [
+        "passed"
+      ],
+      "errors": []
+    },
+    {
+      "route": "/projects/13362446-e528-4071-a9d1-5260cc1fcd78/works/9ea091d1-b63e-409c-92dd-9b1271c508c7",
+      "evidenceState": "candidate_ready",
+      "browserFixture": true,
+      "assertions": [
+        "passed"
+      ],
+      "errors": []
+    },
+    {
+      "route": "/projects/13362446-e528-4071-a9d1-5260cc1fcd78/works/9ea091d1-b63e-409c-92dd-9b1271c508c7",
+      "evidenceState": "stale_candidate",
+      "browserFixture": true,
+      "assertions": [
+        "passed"
+      ],
+      "errors": []
+    }
+  ]
+}

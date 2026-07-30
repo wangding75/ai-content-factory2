@@ -1,0 +1,1400 @@
+{
+  "baselineCommit": "f05a31e64a437ea07f8f917eaf9e3f6dae3aed8a",
+  "frameCount": 49,
+  "iterations": {
+    "15": 21,
+    "16": 11,
+    "17": 8,
+    "18": 9
+  },
+  "initialPass": 41,
+  "initialFail": 8,
+  "fixed": 8,
+  "unfixed": 0,
+  "consoleErrors": 0,
+  "finalStatus": "修复成功",
+  "modifiedFiles": [
+    "apps/web/e2e/iteration17/review-ui.spec.ts",
+    "apps/web/src/app/globals.css",
+    "apps/web/src/features/project-works/rewrite-history.tsx",
+    "apps/web/src/features/project-works/rewrite-result-panel.tsx",
+    "apps/web/src/features/project-works/rewrite-workspace.tsx",
+    "scripts/agent/browser-smoke.mjs",
+    "scripts/browser-acceptance/build-report.py",
+    "scripts/browser-acceptance/capture-iteration18.mjs",
+    "scripts/browser-acceptance/iteration16-config.json"
+  ],
+  "frames": [
+    {
+      "iteration": 15,
+      "frameId": "P15_C1_RUNNING_MAINLINE_EXPANSION",
+      "title": "章节规划：主线扩写运行中",
+      "actualUrl": "http://127.0.0.1:13001/projects/13a13e7e-656e-4174-bc96-c301692ebced/chapters",
+      "prototypeScreenUrl": "http://127.0.0.1:13002/iteration-15-real-chapter-planning/ui/frames/P15_C1_RUNNING_MAINLINE_EXPANSION/screen.png",
+      "prototypeCodeUrl": "http://127.0.0.1:13002/iteration-15-real-chapter-planning/ui/frames/P15_C1_RUNNING_MAINLINE_EXPANSION/code.html",
+      "ids": {
+        "projectId": "13a13e7e-656e-4174-bc96-c301692ebced"
+      },
+      "stateConstruction": "复用基线提交中已审计的真实 PostgreSQL/Chromium 逐帧证据；在 1440×900 固定环境重新打开章节工作区、候选批次列表与详情，核验当前实现未回归且 Console error=0。",
+      "beforeResult": "PASS",
+      "difference": "仅动态 ID、时间、真实业务数据、中文文案与当前 AppShell 合理差异；结构、状态和交互顺序一致。",
+      "allowedDifference": true,
+      "modifiedFiles": [],
+      "afterResult": "PASS",
+      "result": "PASS",
+      "screenshots": {
+        "prototype": "iteration-15/screenshots/P15_C1_RUNNING_MAINLINE_EXPANSION/prototype.png",
+        "actualBefore": "iteration-15/screenshots/P15_C1_RUNNING_MAINLINE_EXPANSION/actual-before.png",
+        "diffBefore": "iteration-15/screenshots/P15_C1_RUNNING_MAINLINE_EXPANSION/diff-before.png",
+        "actualAfter": "iteration-15/screenshots/P15_C1_RUNNING_MAINLINE_EXPANSION/actual-after.png",
+        "diffAfter": "iteration-15/screenshots/P15_C1_RUNNING_MAINLINE_EXPANSION/diff-after.png",
+        "fullPage": "iteration-15/screenshots/P15_C1_RUNNING_MAINLINE_EXPANSION/full-page.png"
+      }
+    },
+    {
+      "iteration": 15,
+      "frameId": "P15_C1_RUNNING_PARTIAL_RANGE",
+      "title": "章节规划：部分范围运行中",
+      "actualUrl": "http://127.0.0.1:13001/projects/13a13e7e-656e-4174-bc96-c301692ebced/chapters",
+      "prototypeScreenUrl": "http://127.0.0.1:13002/iteration-15-real-chapter-planning/ui/frames/P15_C1_RUNNING_PARTIAL_RANGE/screen.png",
+      "prototypeCodeUrl": "http://127.0.0.1:13002/iteration-15-real-chapter-planning/ui/frames/P15_C1_RUNNING_PARTIAL_RANGE/code.html",
+      "ids": {
+        "projectId": "13a13e7e-656e-4174-bc96-c301692ebced"
+      },
+      "stateConstruction": "复用基线提交中已审计的真实 PostgreSQL/Chromium 逐帧证据；在 1440×900 固定环境重新打开章节工作区、候选批次列表与详情，核验当前实现未回归且 Console error=0。",
+      "beforeResult": "PASS",
+      "difference": "仅动态 ID、时间、真实业务数据、中文文案与当前 AppShell 合理差异；结构、状态和交互顺序一致。",
+      "allowedDifference": true,
+      "modifiedFiles": [],
+      "afterResult": "PASS",
+      "result": "PASS",
+      "screenshots": {
+        "prototype": "iteration-15/screenshots/P15_C1_RUNNING_PARTIAL_RANGE/prototype.png",
+        "actualBefore": "iteration-15/screenshots/P15_C1_RUNNING_PARTIAL_RANGE/actual-before.png",
+        "diffBefore": "iteration-15/screenshots/P15_C1_RUNNING_PARTIAL_RANGE/diff-before.png",
+        "actualAfter": "iteration-15/screenshots/P15_C1_RUNNING_PARTIAL_RANGE/actual-after.png",
+        "diffAfter": "iteration-15/screenshots/P15_C1_RUNNING_PARTIAL_RANGE/diff-after.png",
+        "fullPage": "iteration-15/screenshots/P15_C1_RUNNING_PARTIAL_RANGE/full-page.png"
+      }
+    },
+    {
+      "iteration": 15,
+      "frameId": "P15_C1_RUNNING_FULL_PLAN",
+      "title": "章节规划：完整规划运行中",
+      "actualUrl": "http://127.0.0.1:13001/projects/13a13e7e-656e-4174-bc96-c301692ebced/chapters",
+      "prototypeScreenUrl": "http://127.0.0.1:13002/iteration-15-real-chapter-planning/ui/frames/P15_C1_RUNNING_FULL_PLAN/screen.png",
+      "prototypeCodeUrl": "http://127.0.0.1:13002/iteration-15-real-chapter-planning/ui/frames/P15_C1_RUNNING_FULL_PLAN/code.html",
+      "ids": {
+        "projectId": "13a13e7e-656e-4174-bc96-c301692ebced"
+      },
+      "stateConstruction": "复用基线提交中已审计的真实 PostgreSQL/Chromium 逐帧证据；在 1440×900 固定环境重新打开章节工作区、候选批次列表与详情，核验当前实现未回归且 Console error=0。",
+      "beforeResult": "PASS",
+      "difference": "仅动态 ID、时间、真实业务数据、中文文案与当前 AppShell 合理差异；结构、状态和交互顺序一致。",
+      "allowedDifference": true,
+      "modifiedFiles": [],
+      "afterResult": "PASS",
+      "result": "PASS",
+      "screenshots": {
+        "prototype": "iteration-15/screenshots/P15_C1_RUNNING_FULL_PLAN/prototype.png",
+        "actualBefore": "iteration-15/screenshots/P15_C1_RUNNING_FULL_PLAN/actual-before.png",
+        "diffBefore": "iteration-15/screenshots/P15_C1_RUNNING_FULL_PLAN/diff-before.png",
+        "actualAfter": "iteration-15/screenshots/P15_C1_RUNNING_FULL_PLAN/actual-after.png",
+        "diffAfter": "iteration-15/screenshots/P15_C1_RUNNING_FULL_PLAN/diff-after.png",
+        "fullPage": "iteration-15/screenshots/P15_C1_RUNNING_FULL_PLAN/full-page.png"
+      }
+    },
+    {
+      "iteration": 15,
+      "frameId": "P15_C1_RUNNING_PARTIAL_ETA",
+      "title": "章节规划：剩余时间",
+      "actualUrl": "http://127.0.0.1:13001/projects/13a13e7e-656e-4174-bc96-c301692ebced/chapters",
+      "prototypeScreenUrl": "http://127.0.0.1:13002/iteration-15-real-chapter-planning/ui/frames/P15_C1_RUNNING_PARTIAL_ETA/screen.png",
+      "prototypeCodeUrl": "http://127.0.0.1:13002/iteration-15-real-chapter-planning/ui/frames/P15_C1_RUNNING_PARTIAL_ETA/code.html",
+      "ids": {
+        "projectId": "13a13e7e-656e-4174-bc96-c301692ebced"
+      },
+      "stateConstruction": "复用基线提交中已审计的真实 PostgreSQL/Chromium 逐帧证据；在 1440×900 固定环境重新打开章节工作区、候选批次列表与详情，核验当前实现未回归且 Console error=0。",
+      "beforeResult": "PASS",
+      "difference": "仅动态 ID、时间、真实业务数据、中文文案与当前 AppShell 合理差异；结构、状态和交互顺序一致。",
+      "allowedDifference": true,
+      "modifiedFiles": [],
+      "afterResult": "PASS",
+      "result": "PASS",
+      "screenshots": {
+        "prototype": "iteration-15/screenshots/P15_C1_RUNNING_PARTIAL_ETA/prototype.png",
+        "actualBefore": "iteration-15/screenshots/P15_C1_RUNNING_PARTIAL_ETA/actual-before.png",
+        "diffBefore": "iteration-15/screenshots/P15_C1_RUNNING_PARTIAL_ETA/diff-before.png",
+        "actualAfter": "iteration-15/screenshots/P15_C1_RUNNING_PARTIAL_ETA/actual-after.png",
+        "diffAfter": "iteration-15/screenshots/P15_C1_RUNNING_PARTIAL_ETA/diff-after.png",
+        "fullPage": "iteration-15/screenshots/P15_C1_RUNNING_PARTIAL_ETA/full-page.png"
+      }
+    },
+    {
+      "iteration": 15,
+      "frameId": "P15_C1_RUNNING_PARTIAL_VALIDATING",
+      "title": "章节规划：结果校验中",
+      "actualUrl": "http://127.0.0.1:13001/projects/13a13e7e-656e-4174-bc96-c301692ebced/chapters",
+      "prototypeScreenUrl": "http://127.0.0.1:13002/iteration-15-real-chapter-planning/ui/frames/P15_C1_RUNNING_PARTIAL_VALIDATING/screen.png",
+      "prototypeCodeUrl": "http://127.0.0.1:13002/iteration-15-real-chapter-planning/ui/frames/P15_C1_RUNNING_PARTIAL_VALIDATING/code.html",
+      "ids": {
+        "projectId": "13a13e7e-656e-4174-bc96-c301692ebced"
+      },
+      "stateConstruction": "复用基线提交中已审计的真实 PostgreSQL/Chromium 逐帧证据；在 1440×900 固定环境重新打开章节工作区、候选批次列表与详情，核验当前实现未回归且 Console error=0。",
+      "beforeResult": "PASS",
+      "difference": "仅动态 ID、时间、真实业务数据、中文文案与当前 AppShell 合理差异；结构、状态和交互顺序一致。",
+      "allowedDifference": true,
+      "modifiedFiles": [],
+      "afterResult": "PASS",
+      "result": "PASS",
+      "screenshots": {
+        "prototype": "iteration-15/screenshots/P15_C1_RUNNING_PARTIAL_VALIDATING/prototype.png",
+        "actualBefore": "iteration-15/screenshots/P15_C1_RUNNING_PARTIAL_VALIDATING/actual-before.png",
+        "diffBefore": "iteration-15/screenshots/P15_C1_RUNNING_PARTIAL_VALIDATING/diff-before.png",
+        "actualAfter": "iteration-15/screenshots/P15_C1_RUNNING_PARTIAL_VALIDATING/actual-after.png",
+        "diffAfter": "iteration-15/screenshots/P15_C1_RUNNING_PARTIAL_VALIDATING/diff-after.png",
+        "fullPage": "iteration-15/screenshots/P15_C1_RUNNING_PARTIAL_VALIDATING/full-page.png"
+      }
+    },
+    {
+      "iteration": 15,
+      "frameId": "P15_C1_RUNNING_DATA_VARIANT",
+      "title": "章节规划：数据变体",
+      "actualUrl": "http://127.0.0.1:13001/projects/13a13e7e-656e-4174-bc96-c301692ebced/chapters",
+      "prototypeScreenUrl": "http://127.0.0.1:13002/iteration-15-real-chapter-planning/ui/frames/P15_C1_RUNNING_DATA_VARIANT/screen.png",
+      "prototypeCodeUrl": "http://127.0.0.1:13002/iteration-15-real-chapter-planning/ui/frames/P15_C1_RUNNING_DATA_VARIANT/code.html",
+      "ids": {
+        "projectId": "13a13e7e-656e-4174-bc96-c301692ebced"
+      },
+      "stateConstruction": "复用基线提交中已审计的真实 PostgreSQL/Chromium 逐帧证据；在 1440×900 固定环境重新打开章节工作区、候选批次列表与详情，核验当前实现未回归且 Console error=0。",
+      "beforeResult": "PASS",
+      "difference": "仅动态 ID、时间、真实业务数据、中文文案与当前 AppShell 合理差异；结构、状态和交互顺序一致。",
+      "allowedDifference": true,
+      "modifiedFiles": [],
+      "afterResult": "PASS",
+      "result": "PASS",
+      "screenshots": {
+        "prototype": "iteration-15/screenshots/P15_C1_RUNNING_DATA_VARIANT/prototype.png",
+        "actualBefore": "iteration-15/screenshots/P15_C1_RUNNING_DATA_VARIANT/actual-before.png",
+        "diffBefore": "iteration-15/screenshots/P15_C1_RUNNING_DATA_VARIANT/diff-before.png",
+        "actualAfter": "iteration-15/screenshots/P15_C1_RUNNING_DATA_VARIANT/actual-after.png",
+        "diffAfter": "iteration-15/screenshots/P15_C1_RUNNING_DATA_VARIANT/diff-after.png",
+        "fullPage": "iteration-15/screenshots/P15_C1_RUNNING_DATA_VARIANT/full-page.png"
+      }
+    },
+    {
+      "iteration": 15,
+      "frameId": "P15_C1_FAILED_ATOMIC",
+      "title": "章节规划：原子失败",
+      "actualUrl": "http://127.0.0.1:13001/projects/13a13e7e-656e-4174-bc96-c301692ebced/chapters",
+      "prototypeScreenUrl": "http://127.0.0.1:13002/iteration-15-real-chapter-planning/ui/frames/P15_C1_FAILED_ATOMIC/screen.png",
+      "prototypeCodeUrl": "http://127.0.0.1:13002/iteration-15-real-chapter-planning/ui/frames/P15_C1_FAILED_ATOMIC/code.html",
+      "ids": {
+        "projectId": "13a13e7e-656e-4174-bc96-c301692ebced"
+      },
+      "stateConstruction": "复用基线提交中已审计的真实 PostgreSQL/Chromium 逐帧证据；在 1440×900 固定环境重新打开章节工作区、候选批次列表与详情，核验当前实现未回归且 Console error=0。",
+      "beforeResult": "PASS",
+      "difference": "仅动态 ID、时间、真实业务数据、中文文案与当前 AppShell 合理差异；结构、状态和交互顺序一致。",
+      "allowedDifference": true,
+      "modifiedFiles": [],
+      "afterResult": "PASS",
+      "result": "PASS",
+      "screenshots": {
+        "prototype": "iteration-15/screenshots/P15_C1_FAILED_ATOMIC/prototype.png",
+        "actualBefore": "iteration-15/screenshots/P15_C1_FAILED_ATOMIC/actual-before.png",
+        "diffBefore": "iteration-15/screenshots/P15_C1_FAILED_ATOMIC/diff-before.png",
+        "actualAfter": "iteration-15/screenshots/P15_C1_FAILED_ATOMIC/actual-after.png",
+        "diffAfter": "iteration-15/screenshots/P15_C1_FAILED_ATOMIC/diff-after.png",
+        "fullPage": "iteration-15/screenshots/P15_C1_FAILED_ATOMIC/full-page.png"
+      }
+    },
+    {
+      "iteration": 15,
+      "frameId": "P15_C1_NOT_CONFIGURED",
+      "title": "章节规划：未配置",
+      "actualUrl": "http://127.0.0.1:13001/projects/13a13e7e-656e-4174-bc96-c301692ebced/chapters",
+      "prototypeScreenUrl": "http://127.0.0.1:13002/iteration-15-real-chapter-planning/ui/frames/P15_C1_NOT_CONFIGURED/screen.png",
+      "prototypeCodeUrl": "http://127.0.0.1:13002/iteration-15-real-chapter-planning/ui/frames/P15_C1_NOT_CONFIGURED/code.html",
+      "ids": {
+        "projectId": "13a13e7e-656e-4174-bc96-c301692ebced"
+      },
+      "stateConstruction": "复用基线提交中已审计的真实 PostgreSQL/Chromium 逐帧证据；在 1440×900 固定环境重新打开章节工作区、候选批次列表与详情，核验当前实现未回归且 Console error=0。",
+      "beforeResult": "PASS",
+      "difference": "仅动态 ID、时间、真实业务数据、中文文案与当前 AppShell 合理差异；结构、状态和交互顺序一致。",
+      "allowedDifference": true,
+      "modifiedFiles": [],
+      "afterResult": "PASS",
+      "result": "PASS",
+      "screenshots": {
+        "prototype": "iteration-15/screenshots/P15_C1_NOT_CONFIGURED/prototype.png",
+        "actualBefore": "iteration-15/screenshots/P15_C1_NOT_CONFIGURED/actual-before.png",
+        "diffBefore": "iteration-15/screenshots/P15_C1_NOT_CONFIGURED/diff-before.png",
+        "actualAfter": "iteration-15/screenshots/P15_C1_NOT_CONFIGURED/actual-after.png",
+        "diffAfter": "iteration-15/screenshots/P15_C1_NOT_CONFIGURED/diff-after.png",
+        "fullPage": "iteration-15/screenshots/P15_C1_NOT_CONFIGURED/full-page.png"
+      }
+    },
+    {
+      "iteration": 15,
+      "frameId": "P15_C2_GENERATION_SETTINGS",
+      "title": "生成章节规划设置",
+      "actualUrl": "http://127.0.0.1:13001/projects/13a13e7e-656e-4174-bc96-c301692ebced/chapters",
+      "prototypeScreenUrl": "http://127.0.0.1:13002/iteration-15-real-chapter-planning/ui/frames/P15_C2_GENERATION_SETTINGS/screen.png",
+      "prototypeCodeUrl": "http://127.0.0.1:13002/iteration-15-real-chapter-planning/ui/frames/P15_C2_GENERATION_SETTINGS/code.html",
+      "ids": {
+        "projectId": "13a13e7e-656e-4174-bc96-c301692ebced"
+      },
+      "stateConstruction": "复用基线提交中已审计的真实 PostgreSQL/Chromium 逐帧证据；在 1440×900 固定环境重新打开章节工作区、候选批次列表与详情，核验当前实现未回归且 Console error=0。",
+      "beforeResult": "PASS",
+      "difference": "仅动态 ID、时间、真实业务数据、中文文案与当前 AppShell 合理差异；结构、状态和交互顺序一致。",
+      "allowedDifference": true,
+      "modifiedFiles": [],
+      "afterResult": "PASS",
+      "result": "PASS",
+      "screenshots": {
+        "prototype": "iteration-15/screenshots/P15_C2_GENERATION_SETTINGS/prototype.png",
+        "actualBefore": "iteration-15/screenshots/P15_C2_GENERATION_SETTINGS/actual-before.png",
+        "diffBefore": "iteration-15/screenshots/P15_C2_GENERATION_SETTINGS/diff-before.png",
+        "actualAfter": "iteration-15/screenshots/P15_C2_GENERATION_SETTINGS/actual-after.png",
+        "diffAfter": "iteration-15/screenshots/P15_C2_GENERATION_SETTINGS/diff-after.png",
+        "fullPage": "iteration-15/screenshots/P15_C2_GENERATION_SETTINGS/full-page.png"
+      }
+    },
+    {
+      "iteration": 15,
+      "frameId": "P15_C2_PREFLIGHT_PROGRESS",
+      "title": "章节规划预检进行中",
+      "actualUrl": "http://127.0.0.1:13001/projects/13a13e7e-656e-4174-bc96-c301692ebced/chapters",
+      "prototypeScreenUrl": "http://127.0.0.1:13002/iteration-15-real-chapter-planning/ui/frames/P15_C2_PREFLIGHT_PROGRESS/screen.png",
+      "prototypeCodeUrl": "http://127.0.0.1:13002/iteration-15-real-chapter-planning/ui/frames/P15_C2_PREFLIGHT_PROGRESS/code.html",
+      "ids": {
+        "projectId": "13a13e7e-656e-4174-bc96-c301692ebced"
+      },
+      "stateConstruction": "复用基线提交中已审计的真实 PostgreSQL/Chromium 逐帧证据；在 1440×900 固定环境重新打开章节工作区、候选批次列表与详情，核验当前实现未回归且 Console error=0。",
+      "beforeResult": "PASS",
+      "difference": "仅动态 ID、时间、真实业务数据、中文文案与当前 AppShell 合理差异；结构、状态和交互顺序一致。",
+      "allowedDifference": true,
+      "modifiedFiles": [],
+      "afterResult": "PASS",
+      "result": "PASS",
+      "screenshots": {
+        "prototype": "iteration-15/screenshots/P15_C2_PREFLIGHT_PROGRESS/prototype.png",
+        "actualBefore": "iteration-15/screenshots/P15_C2_PREFLIGHT_PROGRESS/actual-before.png",
+        "diffBefore": "iteration-15/screenshots/P15_C2_PREFLIGHT_PROGRESS/diff-before.png",
+        "actualAfter": "iteration-15/screenshots/P15_C2_PREFLIGHT_PROGRESS/actual-after.png",
+        "diffAfter": "iteration-15/screenshots/P15_C2_PREFLIGHT_PROGRESS/diff-after.png",
+        "fullPage": "iteration-15/screenshots/P15_C2_PREFLIGHT_PROGRESS/full-page.png"
+      }
+    },
+    {
+      "iteration": 15,
+      "frameId": "P15_C3_PREFLIGHT_PASS",
+      "title": "章节规划预检通过",
+      "actualUrl": "http://127.0.0.1:13001/projects/13a13e7e-656e-4174-bc96-c301692ebced/chapters",
+      "prototypeScreenUrl": "http://127.0.0.1:13002/iteration-15-real-chapter-planning/ui/frames/P15_C3_PREFLIGHT_PASS/screen.png",
+      "prototypeCodeUrl": "http://127.0.0.1:13002/iteration-15-real-chapter-planning/ui/frames/P15_C3_PREFLIGHT_PASS/code.html",
+      "ids": {
+        "projectId": "13a13e7e-656e-4174-bc96-c301692ebced"
+      },
+      "stateConstruction": "复用基线提交中已审计的真实 PostgreSQL/Chromium 逐帧证据；在 1440×900 固定环境重新打开章节工作区、候选批次列表与详情，核验当前实现未回归且 Console error=0。",
+      "beforeResult": "PASS",
+      "difference": "仅动态 ID、时间、真实业务数据、中文文案与当前 AppShell 合理差异；结构、状态和交互顺序一致。",
+      "allowedDifference": true,
+      "modifiedFiles": [],
+      "afterResult": "PASS",
+      "result": "PASS",
+      "screenshots": {
+        "prototype": "iteration-15/screenshots/P15_C3_PREFLIGHT_PASS/prototype.png",
+        "actualBefore": "iteration-15/screenshots/P15_C3_PREFLIGHT_PASS/actual-before.png",
+        "diffBefore": "iteration-15/screenshots/P15_C3_PREFLIGHT_PASS/diff-before.png",
+        "actualAfter": "iteration-15/screenshots/P15_C3_PREFLIGHT_PASS/actual-after.png",
+        "diffAfter": "iteration-15/screenshots/P15_C3_PREFLIGHT_PASS/diff-after.png",
+        "fullPage": "iteration-15/screenshots/P15_C3_PREFLIGHT_PASS/full-page.png"
+      }
+    },
+    {
+      "iteration": 15,
+      "frameId": "P15_C3_PREFLIGHT_BLOCKED",
+      "title": "章节规划预检阻断",
+      "actualUrl": "http://127.0.0.1:13001/projects/13a13e7e-656e-4174-bc96-c301692ebced/chapters",
+      "prototypeScreenUrl": "http://127.0.0.1:13002/iteration-15-real-chapter-planning/ui/frames/P15_C3_PREFLIGHT_BLOCKED/screen.png",
+      "prototypeCodeUrl": "http://127.0.0.1:13002/iteration-15-real-chapter-planning/ui/frames/P15_C3_PREFLIGHT_BLOCKED/code.html",
+      "ids": {
+        "projectId": "13a13e7e-656e-4174-bc96-c301692ebced"
+      },
+      "stateConstruction": "复用基线提交中已审计的真实 PostgreSQL/Chromium 逐帧证据；在 1440×900 固定环境重新打开章节工作区、候选批次列表与详情，核验当前实现未回归且 Console error=0。",
+      "beforeResult": "PASS",
+      "difference": "仅动态 ID、时间、真实业务数据、中文文案与当前 AppShell 合理差异；结构、状态和交互顺序一致。",
+      "allowedDifference": true,
+      "modifiedFiles": [],
+      "afterResult": "PASS",
+      "result": "PASS",
+      "screenshots": {
+        "prototype": "iteration-15/screenshots/P15_C3_PREFLIGHT_BLOCKED/prototype.png",
+        "actualBefore": "iteration-15/screenshots/P15_C3_PREFLIGHT_BLOCKED/actual-before.png",
+        "diffBefore": "iteration-15/screenshots/P15_C3_PREFLIGHT_BLOCKED/diff-before.png",
+        "actualAfter": "iteration-15/screenshots/P15_C3_PREFLIGHT_BLOCKED/actual-after.png",
+        "diffAfter": "iteration-15/screenshots/P15_C3_PREFLIGHT_BLOCKED/diff-after.png",
+        "fullPage": "iteration-15/screenshots/P15_C3_PREFLIGHT_BLOCKED/full-page.png"
+      }
+    },
+    {
+      "iteration": 15,
+      "frameId": "P15_C3_RUN_CREATED",
+      "title": "章节规划任务已创建",
+      "actualUrl": "http://127.0.0.1:13001/projects/13a13e7e-656e-4174-bc96-c301692ebced/chapters",
+      "prototypeScreenUrl": "http://127.0.0.1:13002/iteration-15-real-chapter-planning/ui/frames/P15_C3_RUN_CREATED/screen.png",
+      "prototypeCodeUrl": "http://127.0.0.1:13002/iteration-15-real-chapter-planning/ui/frames/P15_C3_RUN_CREATED/code.html",
+      "ids": {
+        "projectId": "13a13e7e-656e-4174-bc96-c301692ebced"
+      },
+      "stateConstruction": "复用基线提交中已审计的真实 PostgreSQL/Chromium 逐帧证据；在 1440×900 固定环境重新打开章节工作区、候选批次列表与详情，核验当前实现未回归且 Console error=0。",
+      "beforeResult": "PASS",
+      "difference": "仅动态 ID、时间、真实业务数据、中文文案与当前 AppShell 合理差异；结构、状态和交互顺序一致。",
+      "allowedDifference": true,
+      "modifiedFiles": [],
+      "afterResult": "PASS",
+      "result": "PASS",
+      "screenshots": {
+        "prototype": "iteration-15/screenshots/P15_C3_RUN_CREATED/prototype.png",
+        "actualBefore": "iteration-15/screenshots/P15_C3_RUN_CREATED/actual-before.png",
+        "diffBefore": "iteration-15/screenshots/P15_C3_RUN_CREATED/diff-before.png",
+        "actualAfter": "iteration-15/screenshots/P15_C3_RUN_CREATED/actual-after.png",
+        "diffAfter": "iteration-15/screenshots/P15_C3_RUN_CREATED/diff-after.png",
+        "fullPage": "iteration-15/screenshots/P15_C3_RUN_CREATED/full-page.png"
+      }
+    },
+    {
+      "iteration": 15,
+      "frameId": "P15_C4_CANDIDATE_BATCH_LIST",
+      "title": "候选批次列表",
+      "actualUrl": "http://127.0.0.1:13001/projects/13a13e7e-656e-4174-bc96-c301692ebced/chapter-plan-candidate-batches",
+      "prototypeScreenUrl": "http://127.0.0.1:13002/iteration-15-real-chapter-planning/ui/frames/P15_C4_CANDIDATE_BATCH_LIST/screen.png",
+      "prototypeCodeUrl": "http://127.0.0.1:13002/iteration-15-real-chapter-planning/ui/frames/P15_C4_CANDIDATE_BATCH_LIST/code.html",
+      "ids": {
+        "projectId": "13a13e7e-656e-4174-bc96-c301692ebced"
+      },
+      "stateConstruction": "复用基线提交中已审计的真实 PostgreSQL/Chromium 逐帧证据；在 1440×900 固定环境重新打开章节工作区、候选批次列表与详情，核验当前实现未回归且 Console error=0。",
+      "beforeResult": "PASS",
+      "difference": "仅动态 ID、时间、真实业务数据、中文文案与当前 AppShell 合理差异；结构、状态和交互顺序一致。",
+      "allowedDifference": true,
+      "modifiedFiles": [],
+      "afterResult": "PASS",
+      "result": "PASS",
+      "screenshots": {
+        "prototype": "iteration-15/screenshots/P15_C4_CANDIDATE_BATCH_LIST/prototype.png",
+        "actualBefore": "iteration-15/screenshots/P15_C4_CANDIDATE_BATCH_LIST/actual-before.png",
+        "diffBefore": "iteration-15/screenshots/P15_C4_CANDIDATE_BATCH_LIST/diff-before.png",
+        "actualAfter": "iteration-15/screenshots/P15_C4_CANDIDATE_BATCH_LIST/actual-after.png",
+        "diffAfter": "iteration-15/screenshots/P15_C4_CANDIDATE_BATCH_LIST/diff-after.png",
+        "fullPage": "iteration-15/screenshots/P15_C4_CANDIDATE_BATCH_LIST/full-page.png"
+      }
+    },
+    {
+      "iteration": 15,
+      "frameId": "P15_C5_CANDIDATE_BATCH_DETAIL",
+      "title": "候选批次详情",
+      "actualUrl": "http://127.0.0.1:13001/chapter-plan-candidate-batches/f7b2889d-b5bc-400e-aeeb-ef8d75c4f9a7",
+      "prototypeScreenUrl": "http://127.0.0.1:13002/iteration-15-real-chapter-planning/ui/frames/P15_C5_CANDIDATE_BATCH_DETAIL/screen.png",
+      "prototypeCodeUrl": "http://127.0.0.1:13002/iteration-15-real-chapter-planning/ui/frames/P15_C5_CANDIDATE_BATCH_DETAIL/code.html",
+      "ids": {
+        "projectId": "13a13e7e-656e-4174-bc96-c301692ebced",
+        "batchId": "f7b2889d-b5bc-400e-aeeb-ef8d75c4f9a7"
+      },
+      "stateConstruction": "复用基线提交中已审计的真实 PostgreSQL/Chromium 逐帧证据；在 1440×900 固定环境重新打开章节工作区、候选批次列表与详情，核验当前实现未回归且 Console error=0。",
+      "beforeResult": "PASS",
+      "difference": "仅动态 ID、时间、真实业务数据、中文文案与当前 AppShell 合理差异；结构、状态和交互顺序一致。",
+      "allowedDifference": true,
+      "modifiedFiles": [],
+      "afterResult": "PASS",
+      "result": "PASS",
+      "screenshots": {
+        "prototype": "iteration-15/screenshots/P15_C5_CANDIDATE_BATCH_DETAIL/prototype.png",
+        "actualBefore": "iteration-15/screenshots/P15_C5_CANDIDATE_BATCH_DETAIL/actual-before.png",
+        "diffBefore": "iteration-15/screenshots/P15_C5_CANDIDATE_BATCH_DETAIL/diff-before.png",
+        "actualAfter": "iteration-15/screenshots/P15_C5_CANDIDATE_BATCH_DETAIL/actual-after.png",
+        "diffAfter": "iteration-15/screenshots/P15_C5_CANDIDATE_BATCH_DETAIL/diff-after.png",
+        "fullPage": "iteration-15/screenshots/P15_C5_CANDIDATE_BATCH_DETAIL/full-page.png"
+      }
+    },
+    {
+      "iteration": 15,
+      "frameId": "P15_C6_CANDIDATE_EDIT_DRAWER",
+      "title": "编辑章节候选抽屉",
+      "actualUrl": "http://127.0.0.1:13001/chapter-plan-candidate-batches/f7b2889d-b5bc-400e-aeeb-ef8d75c4f9a7",
+      "prototypeScreenUrl": "http://127.0.0.1:13002/iteration-15-real-chapter-planning/ui/frames/P15_C6_CANDIDATE_EDIT_DRAWER/screen.png",
+      "prototypeCodeUrl": "http://127.0.0.1:13002/iteration-15-real-chapter-planning/ui/frames/P15_C6_CANDIDATE_EDIT_DRAWER/code.html",
+      "ids": {
+        "projectId": "13a13e7e-656e-4174-bc96-c301692ebced",
+        "batchId": "f7b2889d-b5bc-400e-aeeb-ef8d75c4f9a7"
+      },
+      "stateConstruction": "复用基线提交中已审计的真实 PostgreSQL/Chromium 逐帧证据；在 1440×900 固定环境重新打开章节工作区、候选批次列表与详情，核验当前实现未回归且 Console error=0。",
+      "beforeResult": "PASS",
+      "difference": "仅动态 ID、时间、真实业务数据、中文文案与当前 AppShell 合理差异；结构、状态和交互顺序一致。",
+      "allowedDifference": true,
+      "modifiedFiles": [],
+      "afterResult": "PASS",
+      "result": "PASS",
+      "screenshots": {
+        "prototype": "iteration-15/screenshots/P15_C6_CANDIDATE_EDIT_DRAWER/prototype.png",
+        "actualBefore": "iteration-15/screenshots/P15_C6_CANDIDATE_EDIT_DRAWER/actual-before.png",
+        "diffBefore": "iteration-15/screenshots/P15_C6_CANDIDATE_EDIT_DRAWER/diff-before.png",
+        "actualAfter": "iteration-15/screenshots/P15_C6_CANDIDATE_EDIT_DRAWER/actual-after.png",
+        "diffAfter": "iteration-15/screenshots/P15_C6_CANDIDATE_EDIT_DRAWER/diff-after.png",
+        "fullPage": "iteration-15/screenshots/P15_C6_CANDIDATE_EDIT_DRAWER/full-page.png"
+      }
+    },
+    {
+      "iteration": 15,
+      "frameId": "P15_C7_CANDIDATE_COMPARE_DIALOG",
+      "title": "章节候选对比弹窗",
+      "actualUrl": "http://127.0.0.1:13001/chapter-plan-candidate-batches/f7b2889d-b5bc-400e-aeeb-ef8d75c4f9a7",
+      "prototypeScreenUrl": "http://127.0.0.1:13002/iteration-15-real-chapter-planning/ui/frames/P15_C7_CANDIDATE_COMPARE_DIALOG/screen.png",
+      "prototypeCodeUrl": "http://127.0.0.1:13002/iteration-15-real-chapter-planning/ui/frames/P15_C7_CANDIDATE_COMPARE_DIALOG/code.html",
+      "ids": {
+        "projectId": "13a13e7e-656e-4174-bc96-c301692ebced",
+        "batchId": "f7b2889d-b5bc-400e-aeeb-ef8d75c4f9a7"
+      },
+      "stateConstruction": "复用基线提交中已审计的真实 PostgreSQL/Chromium 逐帧证据；在 1440×900 固定环境重新打开章节工作区、候选批次列表与详情，核验当前实现未回归且 Console error=0。",
+      "beforeResult": "PASS",
+      "difference": "仅动态 ID、时间、真实业务数据、中文文案与当前 AppShell 合理差异；结构、状态和交互顺序一致。",
+      "allowedDifference": true,
+      "modifiedFiles": [],
+      "afterResult": "PASS",
+      "result": "PASS",
+      "screenshots": {
+        "prototype": "iteration-15/screenshots/P15_C7_CANDIDATE_COMPARE_DIALOG/prototype.png",
+        "actualBefore": "iteration-15/screenshots/P15_C7_CANDIDATE_COMPARE_DIALOG/actual-before.png",
+        "diffBefore": "iteration-15/screenshots/P15_C7_CANDIDATE_COMPARE_DIALOG/diff-before.png",
+        "actualAfter": "iteration-15/screenshots/P15_C7_CANDIDATE_COMPARE_DIALOG/actual-after.png",
+        "diffAfter": "iteration-15/screenshots/P15_C7_CANDIDATE_COMPARE_DIALOG/diff-after.png",
+        "fullPage": "iteration-15/screenshots/P15_C7_CANDIDATE_COMPARE_DIALOG/full-page.png"
+      }
+    },
+    {
+      "iteration": 15,
+      "frameId": "P15_C8_BATCH_ADOPT_DIALOG",
+      "title": "批量采用确认",
+      "actualUrl": "http://127.0.0.1:13001/chapter-plan-candidate-batches/f7b2889d-b5bc-400e-aeeb-ef8d75c4f9a7",
+      "prototypeScreenUrl": "http://127.0.0.1:13002/iteration-15-real-chapter-planning/ui/frames/P15_C8_BATCH_ADOPT_DIALOG/screen.png",
+      "prototypeCodeUrl": "http://127.0.0.1:13002/iteration-15-real-chapter-planning/ui/frames/P15_C8_BATCH_ADOPT_DIALOG/code.html",
+      "ids": {
+        "projectId": "13a13e7e-656e-4174-bc96-c301692ebced",
+        "batchId": "f7b2889d-b5bc-400e-aeeb-ef8d75c4f9a7"
+      },
+      "stateConstruction": "复用基线提交中已审计的真实 PostgreSQL/Chromium 逐帧证据；在 1440×900 固定环境重新打开章节工作区、候选批次列表与详情，核验当前实现未回归且 Console error=0。",
+      "beforeResult": "PASS",
+      "difference": "仅动态 ID、时间、真实业务数据、中文文案与当前 AppShell 合理差异；结构、状态和交互顺序一致。",
+      "allowedDifference": true,
+      "modifiedFiles": [],
+      "afterResult": "PASS",
+      "result": "PASS",
+      "screenshots": {
+        "prototype": "iteration-15/screenshots/P15_C8_BATCH_ADOPT_DIALOG/prototype.png",
+        "actualBefore": "iteration-15/screenshots/P15_C8_BATCH_ADOPT_DIALOG/actual-before.png",
+        "diffBefore": "iteration-15/screenshots/P15_C8_BATCH_ADOPT_DIALOG/diff-before.png",
+        "actualAfter": "iteration-15/screenshots/P15_C8_BATCH_ADOPT_DIALOG/actual-after.png",
+        "diffAfter": "iteration-15/screenshots/P15_C8_BATCH_ADOPT_DIALOG/diff-after.png",
+        "fullPage": "iteration-15/screenshots/P15_C8_BATCH_ADOPT_DIALOG/full-page.png"
+      }
+    },
+    {
+      "iteration": 15,
+      "frameId": "P15_C9_BATCH_ABANDON_DIALOG",
+      "title": "放弃候选批次确认",
+      "actualUrl": "http://127.0.0.1:13001/chapter-plan-candidate-batches/f7b2889d-b5bc-400e-aeeb-ef8d75c4f9a7",
+      "prototypeScreenUrl": "http://127.0.0.1:13002/iteration-15-real-chapter-planning/ui/frames/P15_C9_BATCH_ABANDON_DIALOG/screen.png",
+      "prototypeCodeUrl": "http://127.0.0.1:13002/iteration-15-real-chapter-planning/ui/frames/P15_C9_BATCH_ABANDON_DIALOG/code.html",
+      "ids": {
+        "projectId": "13a13e7e-656e-4174-bc96-c301692ebced",
+        "batchId": "f7b2889d-b5bc-400e-aeeb-ef8d75c4f9a7"
+      },
+      "stateConstruction": "复用基线提交中已审计的真实 PostgreSQL/Chromium 逐帧证据；在 1440×900 固定环境重新打开章节工作区、候选批次列表与详情，核验当前实现未回归且 Console error=0。",
+      "beforeResult": "PASS",
+      "difference": "仅动态 ID、时间、真实业务数据、中文文案与当前 AppShell 合理差异；结构、状态和交互顺序一致。",
+      "allowedDifference": true,
+      "modifiedFiles": [],
+      "afterResult": "PASS",
+      "result": "PASS",
+      "screenshots": {
+        "prototype": "iteration-15/screenshots/P15_C9_BATCH_ABANDON_DIALOG/prototype.png",
+        "actualBefore": "iteration-15/screenshots/P15_C9_BATCH_ABANDON_DIALOG/actual-before.png",
+        "diffBefore": "iteration-15/screenshots/P15_C9_BATCH_ABANDON_DIALOG/diff-before.png",
+        "actualAfter": "iteration-15/screenshots/P15_C9_BATCH_ABANDON_DIALOG/actual-after.png",
+        "diffAfter": "iteration-15/screenshots/P15_C9_BATCH_ABANDON_DIALOG/diff-after.png",
+        "fullPage": "iteration-15/screenshots/P15_C9_BATCH_ABANDON_DIALOG/full-page.png"
+      }
+    },
+    {
+      "iteration": 15,
+      "frameId": "P15_C10_STALE_CONFLICT_DIALOG",
+      "title": "候选基线过期冲突",
+      "actualUrl": "http://127.0.0.1:13001/chapter-plan-candidate-batches/f7b2889d-b5bc-400e-aeeb-ef8d75c4f9a7",
+      "prototypeScreenUrl": "http://127.0.0.1:13002/iteration-15-real-chapter-planning/ui/frames/P15_C10_STALE_CONFLICT_DIALOG/screen.png",
+      "prototypeCodeUrl": "http://127.0.0.1:13002/iteration-15-real-chapter-planning/ui/frames/P15_C10_STALE_CONFLICT_DIALOG/code.html",
+      "ids": {
+        "projectId": "13a13e7e-656e-4174-bc96-c301692ebced",
+        "batchId": "f7b2889d-b5bc-400e-aeeb-ef8d75c4f9a7"
+      },
+      "stateConstruction": "复用基线提交中已审计的真实 PostgreSQL/Chromium 逐帧证据；在 1440×900 固定环境重新打开章节工作区、候选批次列表与详情，核验当前实现未回归且 Console error=0。",
+      "beforeResult": "PASS",
+      "difference": "仅动态 ID、时间、真实业务数据、中文文案与当前 AppShell 合理差异；结构、状态和交互顺序一致。",
+      "allowedDifference": true,
+      "modifiedFiles": [],
+      "afterResult": "PASS",
+      "result": "PASS",
+      "screenshots": {
+        "prototype": "iteration-15/screenshots/P15_C10_STALE_CONFLICT_DIALOG/prototype.png",
+        "actualBefore": "iteration-15/screenshots/P15_C10_STALE_CONFLICT_DIALOG/actual-before.png",
+        "diffBefore": "iteration-15/screenshots/P15_C10_STALE_CONFLICT_DIALOG/diff-before.png",
+        "actualAfter": "iteration-15/screenshots/P15_C10_STALE_CONFLICT_DIALOG/actual-after.png",
+        "diffAfter": "iteration-15/screenshots/P15_C10_STALE_CONFLICT_DIALOG/diff-after.png",
+        "fullPage": "iteration-15/screenshots/P15_C10_STALE_CONFLICT_DIALOG/full-page.png"
+      }
+    },
+    {
+      "iteration": 15,
+      "frameId": "P15_S1_STORYLINE_RELATION_READONLY",
+      "title": "故事线与章节关系只读",
+      "actualUrl": "http://127.0.0.1:13001/projects/13a13e7e-656e-4174-bc96-c301692ebced/storylines",
+      "prototypeScreenUrl": "http://127.0.0.1:13002/iteration-15-real-chapter-planning/ui/frames/P15_S1_STORYLINE_RELATION_READONLY/screen.png",
+      "prototypeCodeUrl": "http://127.0.0.1:13002/iteration-15-real-chapter-planning/ui/frames/P15_S1_STORYLINE_RELATION_READONLY/code.html",
+      "ids": {
+        "projectId": "13a13e7e-656e-4174-bc96-c301692ebced"
+      },
+      "stateConstruction": "复用基线提交中已审计的真实 PostgreSQL/Chromium 逐帧证据；在 1440×900 固定环境重新打开章节工作区、候选批次列表与详情，核验当前实现未回归且 Console error=0。",
+      "beforeResult": "PASS",
+      "difference": "仅动态 ID、时间、真实业务数据、中文文案与当前 AppShell 合理差异；结构、状态和交互顺序一致。",
+      "allowedDifference": true,
+      "modifiedFiles": [],
+      "afterResult": "PASS",
+      "result": "PASS",
+      "screenshots": {
+        "prototype": "iteration-15/screenshots/P15_S1_STORYLINE_RELATION_READONLY/prototype.png",
+        "actualBefore": "iteration-15/screenshots/P15_S1_STORYLINE_RELATION_READONLY/actual-before.png",
+        "diffBefore": "iteration-15/screenshots/P15_S1_STORYLINE_RELATION_READONLY/diff-before.png",
+        "actualAfter": "iteration-15/screenshots/P15_S1_STORYLINE_RELATION_READONLY/actual-after.png",
+        "diffAfter": "iteration-15/screenshots/P15_S1_STORYLINE_RELATION_READONLY/diff-after.png",
+        "fullPage": "iteration-15/screenshots/P15_S1_STORYLINE_RELATION_READONLY/full-page.png"
+      }
+    },
+    {
+      "iteration": 16,
+      "frameId": "I16_D1_EDITOR_CHAPTER_GOAL",
+      "title": "正文编辑器：章节目标",
+      "actualUrl": "http://127.0.0.1:13001/projects/13362446-e528-4071-a9d1-5260cc1fcd78/works/9ea091d1-b63e-409c-92dd-9b1271c508c7",
+      "prototypeScreenUrl": "http://127.0.0.1:13002/iteration-16-real-content-generation/ui/frames/I16_D1_EDITOR_CHAPTER_GOAL/screen.png",
+      "prototypeCodeUrl": "http://127.0.0.1:13002/iteration-16-real-content-generation/ui/frames/I16_D1_EDITOR_CHAPTER_GOAL/code.html",
+      "ids": {
+        "projectId": "13362446-e528-4071-a9d1-5260cc1fcd78",
+        "workId": "9ea091d1-b63e-409c-92dd-9b1271c508c7"
+      },
+      "stateConstruction": "通过仓库既有 Content Generation 浏览器 Fixture 构造 Summary/Run/Candidate 状态，使用正式生产组件与路由渲染；未修改 DOM。",
+      "beforeResult": "PASS",
+      "difference": "仅动态 ID、时间、真实业务数据、中文文案与当前 AppShell 合理差异；结构、状态和交互顺序一致。",
+      "allowedDifference": true,
+      "modifiedFiles": [],
+      "afterResult": "PASS",
+      "result": "PASS",
+      "screenshots": {
+        "prototype": "iteration-16/screenshots/I16_D1_EDITOR_CHAPTER_GOAL/prototype.png",
+        "actualBefore": "iteration-16/screenshots/I16_D1_EDITOR_CHAPTER_GOAL/actual-before.png",
+        "diffBefore": "iteration-16/screenshots/I16_D1_EDITOR_CHAPTER_GOAL/diff-before.png",
+        "actualAfter": "iteration-16/screenshots/I16_D1_EDITOR_CHAPTER_GOAL/actual-after.png",
+        "diffAfter": "iteration-16/screenshots/I16_D1_EDITOR_CHAPTER_GOAL/diff-after.png",
+        "fullPage": "iteration-16/screenshots/I16_D1_EDITOR_CHAPTER_GOAL/full-page.png"
+      }
+    },
+    {
+      "iteration": 16,
+      "frameId": "I16_D1_EDITOR_STORY_CONTEXT",
+      "title": "正文编辑器：故事情报",
+      "actualUrl": "http://127.0.0.1:13001/projects/13362446-e528-4071-a9d1-5260cc1fcd78/works/9ea091d1-b63e-409c-92dd-9b1271c508c7",
+      "prototypeScreenUrl": "http://127.0.0.1:13002/iteration-16-real-content-generation/ui/frames/I16_D1_EDITOR_STORY_CONTEXT/screen.png",
+      "prototypeCodeUrl": "http://127.0.0.1:13002/iteration-16-real-content-generation/ui/frames/I16_D1_EDITOR_STORY_CONTEXT/code.html",
+      "ids": {
+        "projectId": "13362446-e528-4071-a9d1-5260cc1fcd78",
+        "workId": "9ea091d1-b63e-409c-92dd-9b1271c508c7"
+      },
+      "stateConstruction": "通过仓库既有 Content Generation 浏览器 Fixture 构造 Summary/Run/Candidate 状态，使用正式生产组件与路由渲染；未修改 DOM。",
+      "beforeResult": "PASS",
+      "difference": "仅动态 ID、时间、真实业务数据、中文文案与当前 AppShell 合理差异；结构、状态和交互顺序一致。",
+      "allowedDifference": true,
+      "modifiedFiles": [],
+      "afterResult": "PASS",
+      "result": "PASS",
+      "screenshots": {
+        "prototype": "iteration-16/screenshots/I16_D1_EDITOR_STORY_CONTEXT/prototype.png",
+        "actualBefore": "iteration-16/screenshots/I16_D1_EDITOR_STORY_CONTEXT/actual-before.png",
+        "diffBefore": "iteration-16/screenshots/I16_D1_EDITOR_STORY_CONTEXT/diff-before.png",
+        "actualAfter": "iteration-16/screenshots/I16_D1_EDITOR_STORY_CONTEXT/actual-after.png",
+        "diffAfter": "iteration-16/screenshots/I16_D1_EDITOR_STORY_CONTEXT/diff-after.png",
+        "fullPage": "iteration-16/screenshots/I16_D1_EDITOR_STORY_CONTEXT/full-page.png"
+      }
+    },
+    {
+      "iteration": 16,
+      "frameId": "I16_D1_EDITOR_MATERIALS",
+      "title": "正文编辑器：素材库",
+      "actualUrl": "http://127.0.0.1:13001/projects/13362446-e528-4071-a9d1-5260cc1fcd78/works/9ea091d1-b63e-409c-92dd-9b1271c508c7",
+      "prototypeScreenUrl": "http://127.0.0.1:13002/iteration-16-real-content-generation/ui/frames/I16_D1_EDITOR_MATERIALS/screen.png",
+      "prototypeCodeUrl": "http://127.0.0.1:13002/iteration-16-real-content-generation/ui/frames/I16_D1_EDITOR_MATERIALS/code.html",
+      "ids": {
+        "projectId": "13362446-e528-4071-a9d1-5260cc1fcd78",
+        "workId": "9ea091d1-b63e-409c-92dd-9b1271c508c7"
+      },
+      "stateConstruction": "通过仓库既有 Content Generation 浏览器 Fixture 构造 Summary/Run/Candidate 状态，使用正式生产组件与路由渲染；未修改 DOM。",
+      "beforeResult": "PASS",
+      "difference": "仅动态 ID、时间、真实业务数据、中文文案与当前 AppShell 合理差异；结构、状态和交互顺序一致。",
+      "allowedDifference": true,
+      "modifiedFiles": [],
+      "afterResult": "PASS",
+      "result": "PASS",
+      "screenshots": {
+        "prototype": "iteration-16/screenshots/I16_D1_EDITOR_MATERIALS/prototype.png",
+        "actualBefore": "iteration-16/screenshots/I16_D1_EDITOR_MATERIALS/actual-before.png",
+        "diffBefore": "iteration-16/screenshots/I16_D1_EDITOR_MATERIALS/diff-before.png",
+        "actualAfter": "iteration-16/screenshots/I16_D1_EDITOR_MATERIALS/actual-after.png",
+        "diffAfter": "iteration-16/screenshots/I16_D1_EDITOR_MATERIALS/diff-after.png",
+        "fullPage": "iteration-16/screenshots/I16_D1_EDITOR_MATERIALS/full-page.png"
+      }
+    },
+    {
+      "iteration": 16,
+      "frameId": "I16_D2_GENERATE_CONFIRM",
+      "title": "生成正文：运行前确认",
+      "actualUrl": "http://127.0.0.1:13001/projects/13362446-e528-4071-a9d1-5260cc1fcd78/works/9ea091d1-b63e-409c-92dd-9b1271c508c7",
+      "prototypeScreenUrl": "http://127.0.0.1:13002/iteration-16-real-content-generation/ui/frames/I16_D2_GENERATE_CONFIRM/screen.png",
+      "prototypeCodeUrl": "http://127.0.0.1:13002/iteration-16-real-content-generation/ui/frames/I16_D2_GENERATE_CONFIRM/code.html",
+      "ids": {
+        "projectId": "13362446-e528-4071-a9d1-5260cc1fcd78",
+        "workId": "9ea091d1-b63e-409c-92dd-9b1271c508c7"
+      },
+      "stateConstruction": "通过仓库既有 Content Generation 浏览器 Fixture 构造 Summary/Run/Candidate 状态，使用正式生产组件与路由渲染；未修改 DOM。",
+      "beforeResult": "PASS",
+      "difference": "仅动态 ID、时间、真实业务数据、中文文案与当前 AppShell 合理差异；结构、状态和交互顺序一致。",
+      "allowedDifference": true,
+      "modifiedFiles": [],
+      "afterResult": "PASS",
+      "result": "PASS",
+      "screenshots": {
+        "prototype": "iteration-16/screenshots/I16_D2_GENERATE_CONFIRM/prototype.png",
+        "actualBefore": "iteration-16/screenshots/I16_D2_GENERATE_CONFIRM/actual-before.png",
+        "diffBefore": "iteration-16/screenshots/I16_D2_GENERATE_CONFIRM/diff-before.png",
+        "actualAfter": "iteration-16/screenshots/I16_D2_GENERATE_CONFIRM/actual-after.png",
+        "diffAfter": "iteration-16/screenshots/I16_D2_GENERATE_CONFIRM/diff-after.png",
+        "fullPage": "iteration-16/screenshots/I16_D2_GENERATE_CONFIRM/full-page.png"
+      }
+    },
+    {
+      "iteration": 16,
+      "frameId": "I16_D2_GENERATE_REQUIREMENTS",
+      "title": "生成正文：补充要求",
+      "actualUrl": "http://127.0.0.1:13001/projects/13362446-e528-4071-a9d1-5260cc1fcd78/works/9ea091d1-b63e-409c-92dd-9b1271c508c7",
+      "prototypeScreenUrl": "http://127.0.0.1:13002/iteration-16-real-content-generation/ui/frames/I16_D2_GENERATE_REQUIREMENTS/screen.png",
+      "prototypeCodeUrl": "http://127.0.0.1:13002/iteration-16-real-content-generation/ui/frames/I16_D2_GENERATE_REQUIREMENTS/code.html",
+      "ids": {
+        "projectId": "13362446-e528-4071-a9d1-5260cc1fcd78",
+        "workId": "9ea091d1-b63e-409c-92dd-9b1271c508c7"
+      },
+      "stateConstruction": "通过仓库既有 Content Generation 浏览器 Fixture 构造 Summary/Run/Candidate 状态，使用正式生产组件与路由渲染；未修改 DOM。",
+      "beforeResult": "PASS",
+      "difference": "仅动态 ID、时间、真实业务数据、中文文案与当前 AppShell 合理差异；结构、状态和交互顺序一致。",
+      "allowedDifference": true,
+      "modifiedFiles": [],
+      "afterResult": "PASS",
+      "result": "PASS",
+      "screenshots": {
+        "prototype": "iteration-16/screenshots/I16_D2_GENERATE_REQUIREMENTS/prototype.png",
+        "actualBefore": "iteration-16/screenshots/I16_D2_GENERATE_REQUIREMENTS/actual-before.png",
+        "diffBefore": "iteration-16/screenshots/I16_D2_GENERATE_REQUIREMENTS/diff-before.png",
+        "actualAfter": "iteration-16/screenshots/I16_D2_GENERATE_REQUIREMENTS/actual-after.png",
+        "diffAfter": "iteration-16/screenshots/I16_D2_GENERATE_REQUIREMENTS/diff-after.png",
+        "fullPage": "iteration-16/screenshots/I16_D2_GENERATE_REQUIREMENTS/full-page.png"
+      }
+    },
+    {
+      "iteration": 16,
+      "frameId": "I16_D3_RUN_QUEUED",
+      "title": "正文生成任务：排队中",
+      "actualUrl": "http://127.0.0.1:13001/projects/13362446-e528-4071-a9d1-5260cc1fcd78/works/9ea091d1-b63e-409c-92dd-9b1271c508c7",
+      "prototypeScreenUrl": "http://127.0.0.1:13002/iteration-16-real-content-generation/ui/frames/I16_D3_RUN_QUEUED/screen.png",
+      "prototypeCodeUrl": "http://127.0.0.1:13002/iteration-16-real-content-generation/ui/frames/I16_D3_RUN_QUEUED/code.html",
+      "ids": {
+        "projectId": "13362446-e528-4071-a9d1-5260cc1fcd78",
+        "workId": "9ea091d1-b63e-409c-92dd-9b1271c508c7"
+      },
+      "stateConstruction": "通过仓库既有 Content Generation 浏览器 Fixture 构造 Summary/Run/Candidate 状态，使用正式生产组件与路由渲染；未修改 DOM。",
+      "beforeResult": "PASS",
+      "difference": "仅动态 ID、时间、真实业务数据、中文文案与当前 AppShell 合理差异；结构、状态和交互顺序一致。",
+      "allowedDifference": true,
+      "modifiedFiles": [],
+      "afterResult": "PASS",
+      "result": "PASS",
+      "screenshots": {
+        "prototype": "iteration-16/screenshots/I16_D3_RUN_QUEUED/prototype.png",
+        "actualBefore": "iteration-16/screenshots/I16_D3_RUN_QUEUED/actual-before.png",
+        "diffBefore": "iteration-16/screenshots/I16_D3_RUN_QUEUED/diff-before.png",
+        "actualAfter": "iteration-16/screenshots/I16_D3_RUN_QUEUED/actual-after.png",
+        "diffAfter": "iteration-16/screenshots/I16_D3_RUN_QUEUED/diff-after.png",
+        "fullPage": "iteration-16/screenshots/I16_D3_RUN_QUEUED/full-page.png"
+      }
+    },
+    {
+      "iteration": 16,
+      "frameId": "I16_D3_RUN_RUNNING",
+      "title": "正文生成任务：运行中",
+      "actualUrl": "http://127.0.0.1:13001/projects/13362446-e528-4071-a9d1-5260cc1fcd78/works/9ea091d1-b63e-409c-92dd-9b1271c508c7",
+      "prototypeScreenUrl": "http://127.0.0.1:13002/iteration-16-real-content-generation/ui/frames/I16_D3_RUN_RUNNING/screen.png",
+      "prototypeCodeUrl": "http://127.0.0.1:13002/iteration-16-real-content-generation/ui/frames/I16_D3_RUN_RUNNING/code.html",
+      "ids": {
+        "projectId": "13362446-e528-4071-a9d1-5260cc1fcd78",
+        "workId": "9ea091d1-b63e-409c-92dd-9b1271c508c7"
+      },
+      "stateConstruction": "通过仓库既有 Content Generation 浏览器 Fixture 构造 Summary/Run/Candidate 状态，使用正式生产组件与路由渲染；未修改 DOM。",
+      "beforeResult": "PASS",
+      "difference": "仅动态 ID、时间、真实业务数据、中文文案与当前 AppShell 合理差异；结构、状态和交互顺序一致。",
+      "allowedDifference": true,
+      "modifiedFiles": [],
+      "afterResult": "PASS",
+      "result": "PASS",
+      "screenshots": {
+        "prototype": "iteration-16/screenshots/I16_D3_RUN_RUNNING/prototype.png",
+        "actualBefore": "iteration-16/screenshots/I16_D3_RUN_RUNNING/actual-before.png",
+        "diffBefore": "iteration-16/screenshots/I16_D3_RUN_RUNNING/diff-before.png",
+        "actualAfter": "iteration-16/screenshots/I16_D3_RUN_RUNNING/actual-after.png",
+        "diffAfter": "iteration-16/screenshots/I16_D3_RUN_RUNNING/diff-after.png",
+        "fullPage": "iteration-16/screenshots/I16_D3_RUN_RUNNING/full-page.png"
+      }
+    },
+    {
+      "iteration": 16,
+      "frameId": "I16_D3_RUN_SUCCEEDED",
+      "title": "正文生成任务：候选已创建",
+      "actualUrl": "http://127.0.0.1:13001/projects/13362446-e528-4071-a9d1-5260cc1fcd78/works/9ea091d1-b63e-409c-92dd-9b1271c508c7",
+      "prototypeScreenUrl": "http://127.0.0.1:13002/iteration-16-real-content-generation/ui/frames/I16_D3_RUN_SUCCEEDED/screen.png",
+      "prototypeCodeUrl": "http://127.0.0.1:13002/iteration-16-real-content-generation/ui/frames/I16_D3_RUN_SUCCEEDED/code.html",
+      "ids": {
+        "projectId": "13362446-e528-4071-a9d1-5260cc1fcd78",
+        "workId": "9ea091d1-b63e-409c-92dd-9b1271c508c7"
+      },
+      "stateConstruction": "通过仓库既有 Content Generation 浏览器 Fixture 构造 Summary/Run/Candidate 状态，使用正式生产组件与路由渲染；未修改 DOM。",
+      "beforeResult": "PASS",
+      "difference": "仅动态 ID、时间、真实业务数据、中文文案与当前 AppShell 合理差异；结构、状态和交互顺序一致。",
+      "allowedDifference": true,
+      "modifiedFiles": [],
+      "afterResult": "PASS",
+      "result": "PASS",
+      "screenshots": {
+        "prototype": "iteration-16/screenshots/I16_D3_RUN_SUCCEEDED/prototype.png",
+        "actualBefore": "iteration-16/screenshots/I16_D3_RUN_SUCCEEDED/actual-before.png",
+        "diffBefore": "iteration-16/screenshots/I16_D3_RUN_SUCCEEDED/diff-before.png",
+        "actualAfter": "iteration-16/screenshots/I16_D3_RUN_SUCCEEDED/actual-after.png",
+        "diffAfter": "iteration-16/screenshots/I16_D3_RUN_SUCCEEDED/diff-after.png",
+        "fullPage": "iteration-16/screenshots/I16_D3_RUN_SUCCEEDED/full-page.png"
+      }
+    },
+    {
+      "iteration": 16,
+      "frameId": "I16_D3_RUN_FAILED",
+      "title": "正文生成任务：失败",
+      "actualUrl": "http://127.0.0.1:13001/projects/13362446-e528-4071-a9d1-5260cc1fcd78/works/9ea091d1-b63e-409c-92dd-9b1271c508c7",
+      "prototypeScreenUrl": "http://127.0.0.1:13002/iteration-16-real-content-generation/ui/frames/I16_D3_RUN_FAILED/screen.png",
+      "prototypeCodeUrl": "http://127.0.0.1:13002/iteration-16-real-content-generation/ui/frames/I16_D3_RUN_FAILED/code.html",
+      "ids": {
+        "projectId": "13362446-e528-4071-a9d1-5260cc1fcd78",
+        "workId": "9ea091d1-b63e-409c-92dd-9b1271c508c7"
+      },
+      "stateConstruction": "通过仓库既有 Content Generation 浏览器 Fixture 构造 Summary/Run/Candidate 状态，使用正式生产组件与路由渲染；未修改 DOM。",
+      "beforeResult": "PASS",
+      "difference": "仅动态 ID、时间、真实业务数据、中文文案与当前 AppShell 合理差异；结构、状态和交互顺序一致。",
+      "allowedDifference": true,
+      "modifiedFiles": [],
+      "afterResult": "PASS",
+      "result": "PASS",
+      "screenshots": {
+        "prototype": "iteration-16/screenshots/I16_D3_RUN_FAILED/prototype.png",
+        "actualBefore": "iteration-16/screenshots/I16_D3_RUN_FAILED/actual-before.png",
+        "diffBefore": "iteration-16/screenshots/I16_D3_RUN_FAILED/diff-before.png",
+        "actualAfter": "iteration-16/screenshots/I16_D3_RUN_FAILED/actual-after.png",
+        "diffAfter": "iteration-16/screenshots/I16_D3_RUN_FAILED/diff-after.png",
+        "fullPage": "iteration-16/screenshots/I16_D3_RUN_FAILED/full-page.png"
+      }
+    },
+    {
+      "iteration": 16,
+      "frameId": "I16_D4_CANDIDATE_VERSION",
+      "title": "正文候选版本",
+      "actualUrl": "http://127.0.0.1:13001/projects/13362446-e528-4071-a9d1-5260cc1fcd78/works/9ea091d1-b63e-409c-92dd-9b1271c508c7",
+      "prototypeScreenUrl": "http://127.0.0.1:13002/iteration-16-real-content-generation/ui/frames/I16_D4_CANDIDATE_VERSION/screen.png",
+      "prototypeCodeUrl": "http://127.0.0.1:13002/iteration-16-real-content-generation/ui/frames/I16_D4_CANDIDATE_VERSION/code.html",
+      "ids": {
+        "projectId": "13362446-e528-4071-a9d1-5260cc1fcd78",
+        "workId": "9ea091d1-b63e-409c-92dd-9b1271c508c7"
+      },
+      "stateConstruction": "通过仓库既有 Content Generation 浏览器 Fixture 构造 Summary/Run/Candidate 状态，使用正式生产组件与路由渲染；未修改 DOM。",
+      "beforeResult": "PASS",
+      "difference": "仅动态 ID、时间、真实业务数据、中文文案与当前 AppShell 合理差异；结构、状态和交互顺序一致。",
+      "allowedDifference": true,
+      "modifiedFiles": [],
+      "afterResult": "PASS",
+      "result": "PASS",
+      "screenshots": {
+        "prototype": "iteration-16/screenshots/I16_D4_CANDIDATE_VERSION/prototype.png",
+        "actualBefore": "iteration-16/screenshots/I16_D4_CANDIDATE_VERSION/actual-before.png",
+        "diffBefore": "iteration-16/screenshots/I16_D4_CANDIDATE_VERSION/diff-before.png",
+        "actualAfter": "iteration-16/screenshots/I16_D4_CANDIDATE_VERSION/actual-after.png",
+        "diffAfter": "iteration-16/screenshots/I16_D4_CANDIDATE_VERSION/diff-after.png",
+        "fullPage": "iteration-16/screenshots/I16_D4_CANDIDATE_VERSION/full-page.png"
+      }
+    },
+    {
+      "iteration": 16,
+      "frameId": "I16_D5_NOT_CONFIGURED",
+      "title": "正文生成工作流未配置",
+      "actualUrl": "http://127.0.0.1:13001/projects/13362446-e528-4071-a9d1-5260cc1fcd78/works/9ea091d1-b63e-409c-92dd-9b1271c508c7",
+      "prototypeScreenUrl": "http://127.0.0.1:13002/iteration-16-real-content-generation/ui/frames/I16_D5_NOT_CONFIGURED/screen.png",
+      "prototypeCodeUrl": "http://127.0.0.1:13002/iteration-16-real-content-generation/ui/frames/I16_D5_NOT_CONFIGURED/code.html",
+      "ids": {
+        "projectId": "13362446-e528-4071-a9d1-5260cc1fcd78",
+        "workId": "9ea091d1-b63e-409c-92dd-9b1271c508c7"
+      },
+      "stateConstruction": "通过仓库既有 Content Generation 浏览器 Fixture 构造 Summary/Run/Candidate 状态，使用正式生产组件与路由渲染；未修改 DOM。",
+      "beforeResult": "PASS",
+      "difference": "仅动态 ID、时间、真实业务数据、中文文案与当前 AppShell 合理差异；结构、状态和交互顺序一致。",
+      "allowedDifference": true,
+      "modifiedFiles": [],
+      "afterResult": "PASS",
+      "result": "PASS",
+      "screenshots": {
+        "prototype": "iteration-16/screenshots/I16_D5_NOT_CONFIGURED/prototype.png",
+        "actualBefore": "iteration-16/screenshots/I16_D5_NOT_CONFIGURED/actual-before.png",
+        "diffBefore": "iteration-16/screenshots/I16_D5_NOT_CONFIGURED/diff-before.png",
+        "actualAfter": "iteration-16/screenshots/I16_D5_NOT_CONFIGURED/actual-after.png",
+        "diffAfter": "iteration-16/screenshots/I16_D5_NOT_CONFIGURED/diff-after.png",
+        "fullPage": "iteration-16/screenshots/I16_D5_NOT_CONFIGURED/full-page.png"
+      }
+    },
+    {
+      "iteration": 17,
+      "frameId": "I17_D1_EDITOR_REVIEW_ENTRY",
+      "title": "正文编辑器与审核入口",
+      "actualUrl": "http://127.0.0.1:13001/projects/11111111-1111-4111-8111-111111111111/works/22222222-2222-4222-8222-222222222222",
+      "prototypeScreenUrl": "http://127.0.0.1:13002/iteration-17-real-content-review/ui/frames/I17_D1_EDITOR_REVIEW_ENTRY/screen.png",
+      "prototypeCodeUrl": "http://127.0.0.1:13002/iteration-17-real-content-review/ui/frames/I17_D1_EDITOR_REVIEW_ENTRY/code.html",
+      "ids": {
+        "projectId": "11111111-1111-4111-8111-111111111111",
+        "workId": "22222222-2222-4222-8222-222222222222"
+      },
+      "stateConstruction": "通过仓库既有 Review Playwright E2E Fixture 构造状态，使用正式生产组件与路由渲染；Issue Detail 已滚动到底复验。",
+      "beforeResult": "PASS",
+      "difference": "仅动态 ID、时间、真实业务数据、中文文案与当前 AppShell 合理差异；结构、状态和交互顺序一致。",
+      "allowedDifference": true,
+      "modifiedFiles": [],
+      "afterResult": "PASS",
+      "result": "PASS",
+      "screenshots": {
+        "prototype": "iteration-17/screenshots/I17_D1_EDITOR_REVIEW_ENTRY/prototype.png",
+        "actualBefore": "iteration-17/screenshots/I17_D1_EDITOR_REVIEW_ENTRY/actual-before.png",
+        "diffBefore": "iteration-17/screenshots/I17_D1_EDITOR_REVIEW_ENTRY/diff-before.png",
+        "actualAfter": "iteration-17/screenshots/I17_D1_EDITOR_REVIEW_ENTRY/actual-after.png",
+        "diffAfter": "iteration-17/screenshots/I17_D1_EDITOR_REVIEW_ENTRY/diff-after.png",
+        "fullPage": "iteration-17/screenshots/I17_D1_EDITOR_REVIEW_ENTRY/full-page.png"
+      }
+    },
+    {
+      "iteration": 17,
+      "frameId": "D2_SUBMIT_REVIEW_DRAWER",
+      "title": "发起内容审核抽屉",
+      "actualUrl": "http://127.0.0.1:13001/projects/11111111-1111-4111-8111-111111111111/works/22222222-2222-4222-8222-222222222222",
+      "prototypeScreenUrl": "http://127.0.0.1:13002/iteration-17-real-content-review/ui/frames/D2_SUBMIT_REVIEW_DRAWER/screen.png",
+      "prototypeCodeUrl": "http://127.0.0.1:13002/iteration-17-real-content-review/ui/frames/D2_SUBMIT_REVIEW_DRAWER/code.html",
+      "ids": {
+        "projectId": "11111111-1111-4111-8111-111111111111",
+        "workId": "22222222-2222-4222-8222-222222222222"
+      },
+      "stateConstruction": "通过仓库既有 Review Playwright E2E Fixture 构造状态，使用正式生产组件与路由渲染；Issue Detail 已滚动到底复验。",
+      "beforeResult": "PASS",
+      "difference": "仅动态 ID、时间、真实业务数据、中文文案与当前 AppShell 合理差异；结构、状态和交互顺序一致。",
+      "allowedDifference": true,
+      "modifiedFiles": [],
+      "afterResult": "PASS",
+      "result": "PASS",
+      "screenshots": {
+        "prototype": "iteration-17/screenshots/D2_SUBMIT_REVIEW_DRAWER/prototype.png",
+        "actualBefore": "iteration-17/screenshots/D2_SUBMIT_REVIEW_DRAWER/actual-before.png",
+        "diffBefore": "iteration-17/screenshots/D2_SUBMIT_REVIEW_DRAWER/diff-before.png",
+        "actualAfter": "iteration-17/screenshots/D2_SUBMIT_REVIEW_DRAWER/actual-after.png",
+        "diffAfter": "iteration-17/screenshots/D2_SUBMIT_REVIEW_DRAWER/diff-after.png",
+        "fullPage": "iteration-17/screenshots/D2_SUBMIT_REVIEW_DRAWER/full-page.png"
+      }
+    },
+    {
+      "iteration": 17,
+      "frameId": "STATE_TASK_RUNNING_BAR",
+      "title": "内容审核运行中",
+      "actualUrl": "http://127.0.0.1:13001/projects/11111111-1111-4111-8111-111111111111/works/22222222-2222-4222-8222-222222222222/review",
+      "prototypeScreenUrl": "http://127.0.0.1:13002/iteration-17-real-content-review/ui/frames/STATE_TASK_RUNNING_BAR/screen.png",
+      "prototypeCodeUrl": "http://127.0.0.1:13002/iteration-17-real-content-review/ui/frames/STATE_TASK_RUNNING_BAR/code.html",
+      "ids": {
+        "projectId": "11111111-1111-4111-8111-111111111111",
+        "workId": "22222222-2222-4222-8222-222222222222"
+      },
+      "stateConstruction": "通过仓库既有 Review Playwright E2E Fixture 构造状态，使用正式生产组件与路由渲染；Issue Detail 已滚动到底复验。",
+      "beforeResult": "PASS",
+      "difference": "仅动态 ID、时间、真实业务数据、中文文案与当前 AppShell 合理差异；结构、状态和交互顺序一致。",
+      "allowedDifference": true,
+      "modifiedFiles": [],
+      "afterResult": "PASS",
+      "result": "PASS",
+      "screenshots": {
+        "prototype": "iteration-17/screenshots/STATE_TASK_RUNNING_BAR/prototype.png",
+        "actualBefore": "iteration-17/screenshots/STATE_TASK_RUNNING_BAR/actual-before.png",
+        "diffBefore": "iteration-17/screenshots/STATE_TASK_RUNNING_BAR/diff-before.png",
+        "actualAfter": "iteration-17/screenshots/STATE_TASK_RUNNING_BAR/actual-after.png",
+        "diffAfter": "iteration-17/screenshots/STATE_TASK_RUNNING_BAR/diff-after.png",
+        "fullPage": "iteration-17/screenshots/STATE_TASK_RUNNING_BAR/full-page.png"
+      }
+    },
+    {
+      "iteration": 17,
+      "frameId": "STATE_TASK_FAILED_NOTICE",
+      "title": "内容审核任务失败",
+      "actualUrl": "http://127.0.0.1:13001/projects/11111111-1111-4111-8111-111111111111/works/22222222-2222-4222-8222-222222222222/review",
+      "prototypeScreenUrl": "http://127.0.0.1:13002/iteration-17-real-content-review/ui/frames/STATE_TASK_FAILED_NOTICE/screen.png",
+      "prototypeCodeUrl": "http://127.0.0.1:13002/iteration-17-real-content-review/ui/frames/STATE_TASK_FAILED_NOTICE/code.html",
+      "ids": {
+        "projectId": "11111111-1111-4111-8111-111111111111",
+        "workId": "22222222-2222-4222-8222-222222222222"
+      },
+      "stateConstruction": "通过仓库既有 Review Playwright E2E Fixture 构造状态，使用正式生产组件与路由渲染；Issue Detail 已滚动到底复验。",
+      "beforeResult": "PASS",
+      "difference": "仅动态 ID、时间、真实业务数据、中文文案与当前 AppShell 合理差异；结构、状态和交互顺序一致。",
+      "allowedDifference": true,
+      "modifiedFiles": [],
+      "afterResult": "PASS",
+      "result": "PASS",
+      "screenshots": {
+        "prototype": "iteration-17/screenshots/STATE_TASK_FAILED_NOTICE/prototype.png",
+        "actualBefore": "iteration-17/screenshots/STATE_TASK_FAILED_NOTICE/actual-before.png",
+        "diffBefore": "iteration-17/screenshots/STATE_TASK_FAILED_NOTICE/diff-before.png",
+        "actualAfter": "iteration-17/screenshots/STATE_TASK_FAILED_NOTICE/actual-after.png",
+        "diffAfter": "iteration-17/screenshots/STATE_TASK_FAILED_NOTICE/diff-after.png",
+        "fullPage": "iteration-17/screenshots/STATE_TASK_FAILED_NOTICE/full-page.png"
+      }
+    },
+    {
+      "iteration": 17,
+      "frameId": "STATE_NOT_CONFIGURED_EMPTY",
+      "title": "审核工作流未配置",
+      "actualUrl": "http://127.0.0.1:13001/projects/11111111-1111-4111-8111-111111111111/works/22222222-2222-4222-8222-222222222222/review",
+      "prototypeScreenUrl": "http://127.0.0.1:13002/iteration-17-real-content-review/ui/frames/STATE_NOT_CONFIGURED_EMPTY/screen.png",
+      "prototypeCodeUrl": "http://127.0.0.1:13002/iteration-17-real-content-review/ui/frames/STATE_NOT_CONFIGURED_EMPTY/code.html",
+      "ids": {
+        "projectId": "11111111-1111-4111-8111-111111111111",
+        "workId": "22222222-2222-4222-8222-222222222222"
+      },
+      "stateConstruction": "通过仓库既有 Review Playwright E2E Fixture 构造状态，使用正式生产组件与路由渲染；Issue Detail 已滚动到底复验。",
+      "beforeResult": "PASS",
+      "difference": "仅动态 ID、时间、真实业务数据、中文文案与当前 AppShell 合理差异；结构、状态和交互顺序一致。",
+      "allowedDifference": true,
+      "modifiedFiles": [],
+      "afterResult": "PASS",
+      "result": "PASS",
+      "screenshots": {
+        "prototype": "iteration-17/screenshots/STATE_NOT_CONFIGURED_EMPTY/prototype.png",
+        "actualBefore": "iteration-17/screenshots/STATE_NOT_CONFIGURED_EMPTY/actual-before.png",
+        "diffBefore": "iteration-17/screenshots/STATE_NOT_CONFIGURED_EMPTY/diff-before.png",
+        "actualAfter": "iteration-17/screenshots/STATE_NOT_CONFIGURED_EMPTY/actual-after.png",
+        "diffAfter": "iteration-17/screenshots/STATE_NOT_CONFIGURED_EMPTY/diff-after.png",
+        "fullPage": "iteration-17/screenshots/STATE_NOT_CONFIGURED_EMPTY/full-page.png"
+      }
+    },
+    {
+      "iteration": 17,
+      "frameId": "D2_REVIEW_V2",
+      "title": "审核结果总览",
+      "actualUrl": "http://127.0.0.1:13001/projects/11111111-1111-4111-8111-111111111111/works/22222222-2222-4222-8222-222222222222/review?reportId=44444444-4444-4444-8444-444444444444",
+      "prototypeScreenUrl": "http://127.0.0.1:13002/iteration-17-real-content-review/ui/frames/D2_REVIEW_V2/screen.png",
+      "prototypeCodeUrl": "http://127.0.0.1:13002/iteration-17-real-content-review/ui/frames/D2_REVIEW_V2/code.html",
+      "ids": {
+        "projectId": "11111111-1111-4111-8111-111111111111",
+        "workId": "22222222-2222-4222-8222-222222222222",
+        "reportId": "44444444-4444-4444-8444-444444444444"
+      },
+      "stateConstruction": "通过仓库既有 Review Playwright E2E Fixture 构造状态，使用正式生产组件与路由渲染；Issue Detail 已滚动到底复验。",
+      "beforeResult": "PASS",
+      "difference": "仅动态 ID、时间、真实业务数据、中文文案与当前 AppShell 合理差异；结构、状态和交互顺序一致。",
+      "allowedDifference": true,
+      "modifiedFiles": [],
+      "afterResult": "PASS",
+      "result": "PASS",
+      "screenshots": {
+        "prototype": "iteration-17/screenshots/D2_REVIEW_V2/prototype.png",
+        "actualBefore": "iteration-17/screenshots/D2_REVIEW_V2/actual-before.png",
+        "diffBefore": "iteration-17/screenshots/D2_REVIEW_V2/diff-before.png",
+        "actualAfter": "iteration-17/screenshots/D2_REVIEW_V2/actual-after.png",
+        "diffAfter": "iteration-17/screenshots/D2_REVIEW_V2/diff-after.png",
+        "fullPage": "iteration-17/screenshots/D2_REVIEW_V2/full-page.png"
+      }
+    },
+    {
+      "iteration": 17,
+      "frameId": "I17_D2_REVIEW_ISSUE_DETAIL",
+      "title": "问题详情与全文定位",
+      "actualUrl": "http://127.0.0.1:13001/projects/11111111-1111-4111-8111-111111111111/works/22222222-2222-4222-8222-222222222222/review?reportId=44444444-4444-4444-8444-444444444444&issueId=55555555-5555-4555-8555-555555555555&view=source",
+      "prototypeScreenUrl": "http://127.0.0.1:13002/iteration-17-real-content-review/ui/frames/I17_D2_REVIEW_ISSUE_DETAIL/screen.png",
+      "prototypeCodeUrl": "http://127.0.0.1:13002/iteration-17-real-content-review/ui/frames/I17_D2_REVIEW_ISSUE_DETAIL/code.html",
+      "ids": {
+        "projectId": "11111111-1111-4111-8111-111111111111",
+        "workId": "22222222-2222-4222-8222-222222222222",
+        "reportId": "44444444-4444-4444-8444-444444444444",
+        "issueId": "55555555-5555-4555-8555-555555555555"
+      },
+      "stateConstruction": "通过仓库既有 Review Playwright E2E Fixture 构造状态，使用正式生产组件与路由渲染；Issue Detail 已滚动到底复验。",
+      "beforeResult": "PASS",
+      "difference": "仅动态 ID、时间、真实业务数据、中文文案与当前 AppShell 合理差异；结构、状态和交互顺序一致。",
+      "allowedDifference": true,
+      "modifiedFiles": [],
+      "afterResult": "PASS",
+      "result": "PASS",
+      "screenshots": {
+        "prototype": "iteration-17/screenshots/I17_D2_REVIEW_ISSUE_DETAIL/prototype.png",
+        "actualBefore": "iteration-17/screenshots/I17_D2_REVIEW_ISSUE_DETAIL/actual-before.png",
+        "diffBefore": "iteration-17/screenshots/I17_D2_REVIEW_ISSUE_DETAIL/diff-before.png",
+        "actualAfter": "iteration-17/screenshots/I17_D2_REVIEW_ISSUE_DETAIL/actual-after.png",
+        "diffAfter": "iteration-17/screenshots/I17_D2_REVIEW_ISSUE_DETAIL/diff-after.png",
+        "fullPage": "iteration-17/screenshots/I17_D2_REVIEW_ISSUE_DETAIL/full-page.png"
+      }
+    },
+    {
+      "iteration": 17,
+      "frameId": "I17_D2_REVIEW_HISTORY",
+      "title": "审核历史",
+      "actualUrl": "http://127.0.0.1:13001/projects/11111111-1111-4111-8111-111111111111/works/22222222-2222-4222-8222-222222222222/review/history",
+      "prototypeScreenUrl": "http://127.0.0.1:13002/iteration-17-real-content-review/ui/frames/I17_D2_REVIEW_HISTORY/screen.png",
+      "prototypeCodeUrl": "http://127.0.0.1:13002/iteration-17-real-content-review/ui/frames/I17_D2_REVIEW_HISTORY/code.html",
+      "ids": {
+        "projectId": "11111111-1111-4111-8111-111111111111",
+        "workId": "22222222-2222-4222-8222-222222222222"
+      },
+      "stateConstruction": "通过仓库既有 Review Playwright E2E Fixture 构造状态，使用正式生产组件与路由渲染；Issue Detail 已滚动到底复验。",
+      "beforeResult": "PASS",
+      "difference": "仅动态 ID、时间、真实业务数据、中文文案与当前 AppShell 合理差异；结构、状态和交互顺序一致。",
+      "allowedDifference": true,
+      "modifiedFiles": [],
+      "afterResult": "PASS",
+      "result": "PASS",
+      "screenshots": {
+        "prototype": "iteration-17/screenshots/I17_D2_REVIEW_HISTORY/prototype.png",
+        "actualBefore": "iteration-17/screenshots/I17_D2_REVIEW_HISTORY/actual-before.png",
+        "diffBefore": "iteration-17/screenshots/I17_D2_REVIEW_HISTORY/diff-before.png",
+        "actualAfter": "iteration-17/screenshots/I17_D2_REVIEW_HISTORY/actual-after.png",
+        "diffAfter": "iteration-17/screenshots/I17_D2_REVIEW_HISTORY/diff-after.png",
+        "fullPage": "iteration-17/screenshots/I17_D2_REVIEW_HISTORY/full-page.png"
+      }
+    },
+    {
+      "iteration": 18,
+      "frameId": "I18_D2_REVIEW_REWRITE_ENTRY",
+      "title": "审核结果：创建重写入口",
+      "actualUrl": "http://127.0.0.1:13001/projects/973d7f23-3430-4a17-96e0-c8190535a87d/works/6b7c451c-d3e2-4b75-a0e5-f67647200444/review?reportId=c4292128-bcc3-4ff4-aaf1-4bf8ae2cdf0a",
+      "prototypeScreenUrl": "http://127.0.0.1:13002/iteration-18-real-content-rewrite/ui/frames/I18_D2_REVIEW_REWRITE_ENTRY/screen.png",
+      "prototypeCodeUrl": "http://127.0.0.1:13002/iteration-18-real-content-rewrite/ui/frames/I18_D2_REVIEW_REWRITE_ENTRY/code.html",
+      "ids": {
+        "projectId": "973d7f23-3430-4a17-96e0-c8190535a87d",
+        "workId": "6b7c451c-d3e2-4b75-a0e5-f67647200444",
+        "reportId": "c4292128-bcc3-4ff4-aaf1-4bf8ae2cdf0a",
+        "issueId": "e6f4bd38-7291-4218-b449-8f382832666b"
+      },
+      "stateConstruction": "通过 workflowRunId 精确恢复 PostgreSQL 中已持久化的真实 Run/Event，由正式 API 与生产 UI 渲染。",
+      "beforeResult": "PASS",
+      "difference": "仅动态 ID、时间、真实业务数据、中文文案与当前 AppShell 合理差异；结构、状态和交互顺序一致。",
+      "allowedDifference": true,
+      "modifiedFiles": [],
+      "afterResult": "PASS",
+      "result": "PASS",
+      "screenshots": {
+        "prototype": "iteration-18/screenshots/I18_D2_REVIEW_REWRITE_ENTRY/prototype.png",
+        "actualBefore": "iteration-18/screenshots/I18_D2_REVIEW_REWRITE_ENTRY/actual-before.png",
+        "diffBefore": "iteration-18/screenshots/I18_D2_REVIEW_REWRITE_ENTRY/diff-before.png",
+        "actualAfter": "iteration-18/screenshots/I18_D2_REVIEW_REWRITE_ENTRY/actual-after.png",
+        "diffAfter": "iteration-18/screenshots/I18_D2_REVIEW_REWRITE_ENTRY/diff-after.png",
+        "fullPage": "iteration-18/screenshots/I18_D2_REVIEW_REWRITE_ENTRY/full-page.png"
+      }
+    },
+    {
+      "iteration": 18,
+      "frameId": "I18_D4_REWRITE_AVAILABILITY",
+      "title": "重写可用性",
+      "actualUrl": "http://127.0.0.1:13001/projects/973d7f23-3430-4a17-96e0-c8190535a87d/works/6b7c451c-d3e2-4b75-a0e5-f67647200444/rewrite?reportId=c4292128-bcc3-4ff4-aaf1-4bf8ae2cdf0a",
+      "prototypeScreenUrl": "http://127.0.0.1:13002/iteration-18-real-content-rewrite/ui/frames/I18_D4_REWRITE_AVAILABILITY/screen.png",
+      "prototypeCodeUrl": "http://127.0.0.1:13002/iteration-18-real-content-rewrite/ui/frames/I18_D4_REWRITE_AVAILABILITY/code.html",
+      "ids": {
+        "projectId": "973d7f23-3430-4a17-96e0-c8190535a87d",
+        "workId": "6b7c451c-d3e2-4b75-a0e5-f67647200444",
+        "reportId": "c4292128-bcc3-4ff4-aaf1-4bf8ae2cdf0a",
+        "issueId": "e6f4bd38-7291-4218-b449-8f382832666b"
+      },
+      "stateConstruction": "使用确定性网络 Fixture 复用真实 Report/Issue/ContentVersion 形状，仅在浏览器网络边界恢复目标状态，生产 DOM 与组件未被修改。",
+      "beforeResult": "FAIL",
+      "difference": "业务结构存在但未应用 Rewrite 卡片、状态与弹层样式，配置 dialog 呈内联区域；该差异不允许。",
+      "allowedDifference": false,
+      "modifiedFiles": [
+        "apps/web/src/app/globals.css",
+        "apps/web/src/features/project-works/rewrite-workspace.tsx",
+        "apps/web/src/features/project-works/rewrite-result-panel.tsx",
+        "apps/web/src/features/project-works/rewrite-history.tsx"
+      ],
+      "afterResult": "PASS",
+      "result": "PASS",
+      "screenshots": {
+        "prototype": "iteration-18/screenshots/I18_D4_REWRITE_AVAILABILITY/prototype.png",
+        "actualBefore": "iteration-18/screenshots/I18_D4_REWRITE_AVAILABILITY/actual-before.png",
+        "diffBefore": "iteration-18/screenshots/I18_D4_REWRITE_AVAILABILITY/diff-before.png",
+        "actualAfter": "iteration-18/screenshots/I18_D4_REWRITE_AVAILABILITY/actual-after.png",
+        "diffAfter": "iteration-18/screenshots/I18_D4_REWRITE_AVAILABILITY/diff-after.png",
+        "fullPage": "iteration-18/screenshots/I18_D4_REWRITE_AVAILABILITY/full-page.png"
+      }
+    },
+    {
+      "iteration": 18,
+      "frameId": "I18_D4_CREATE_REWRITE",
+      "title": "创建正文重写",
+      "actualUrl": "http://127.0.0.1:13001/projects/973d7f23-3430-4a17-96e0-c8190535a87d/works/6b7c451c-d3e2-4b75-a0e5-f67647200444/rewrite?reportId=c4292128-bcc3-4ff4-aaf1-4bf8ae2cdf0a",
+      "prototypeScreenUrl": "http://127.0.0.1:13002/iteration-18-real-content-rewrite/ui/frames/I18_D4_CREATE_REWRITE/screen.png",
+      "prototypeCodeUrl": "http://127.0.0.1:13002/iteration-18-real-content-rewrite/ui/frames/I18_D4_CREATE_REWRITE/code.html",
+      "ids": {
+        "projectId": "973d7f23-3430-4a17-96e0-c8190535a87d",
+        "workId": "6b7c451c-d3e2-4b75-a0e5-f67647200444",
+        "reportId": "c4292128-bcc3-4ff4-aaf1-4bf8ae2cdf0a",
+        "issueId": "e6f4bd38-7291-4218-b449-8f382832666b"
+      },
+      "stateConstruction": "使用确定性网络 Fixture 复用真实 Report/Issue/ContentVersion 形状，仅在浏览器网络边界恢复目标状态，生产 DOM 与组件未被修改。",
+      "beforeResult": "FAIL",
+      "difference": "业务结构存在但未应用 Rewrite 卡片、状态与弹层样式，配置 dialog 呈内联区域；该差异不允许。",
+      "allowedDifference": false,
+      "modifiedFiles": [
+        "apps/web/src/app/globals.css",
+        "apps/web/src/features/project-works/rewrite-workspace.tsx",
+        "apps/web/src/features/project-works/rewrite-result-panel.tsx",
+        "apps/web/src/features/project-works/rewrite-history.tsx"
+      ],
+      "afterResult": "PASS",
+      "result": "PASS",
+      "screenshots": {
+        "prototype": "iteration-18/screenshots/I18_D4_CREATE_REWRITE/prototype.png",
+        "actualBefore": "iteration-18/screenshots/I18_D4_CREATE_REWRITE/actual-before.png",
+        "diffBefore": "iteration-18/screenshots/I18_D4_CREATE_REWRITE/diff-before.png",
+        "actualAfter": "iteration-18/screenshots/I18_D4_CREATE_REWRITE/actual-after.png",
+        "diffAfter": "iteration-18/screenshots/I18_D4_CREATE_REWRITE/diff-after.png",
+        "fullPage": "iteration-18/screenshots/I18_D4_CREATE_REWRITE/full-page.png"
+      }
+    },
+    {
+      "iteration": 18,
+      "frameId": "I18_D4_REWRITE_CONFIG_DRAWER",
+      "title": "项目重写配置抽屉",
+      "actualUrl": "http://127.0.0.1:13001/projects/973d7f23-3430-4a17-96e0-c8190535a87d/works/6b7c451c-d3e2-4b75-a0e5-f67647200444/rewrite?reportId=c4292128-bcc3-4ff4-aaf1-4bf8ae2cdf0a",
+      "prototypeScreenUrl": "http://127.0.0.1:13002/iteration-18-real-content-rewrite/ui/frames/I18_D4_REWRITE_CONFIG_DRAWER/screen.png",
+      "prototypeCodeUrl": "http://127.0.0.1:13002/iteration-18-real-content-rewrite/ui/frames/I18_D4_REWRITE_CONFIG_DRAWER/code.html",
+      "ids": {
+        "projectId": "973d7f23-3430-4a17-96e0-c8190535a87d",
+        "workId": "6b7c451c-d3e2-4b75-a0e5-f67647200444",
+        "reportId": "c4292128-bcc3-4ff4-aaf1-4bf8ae2cdf0a",
+        "issueId": "e6f4bd38-7291-4218-b449-8f382832666b"
+      },
+      "stateConstruction": "使用确定性网络 Fixture 复用真实 Report/Issue/ContentVersion 形状，仅在浏览器网络边界恢复目标状态，生产 DOM 与组件未被修改。",
+      "beforeResult": "FAIL",
+      "difference": "业务结构存在但未应用 Rewrite 卡片、状态与弹层样式，配置 dialog 呈内联区域；该差异不允许。",
+      "allowedDifference": false,
+      "modifiedFiles": [
+        "apps/web/src/app/globals.css",
+        "apps/web/src/features/project-works/rewrite-workspace.tsx",
+        "apps/web/src/features/project-works/rewrite-result-panel.tsx",
+        "apps/web/src/features/project-works/rewrite-history.tsx"
+      ],
+      "afterResult": "PASS",
+      "result": "PASS",
+      "screenshots": {
+        "prototype": "iteration-18/screenshots/I18_D4_REWRITE_CONFIG_DRAWER/prototype.png",
+        "actualBefore": "iteration-18/screenshots/I18_D4_REWRITE_CONFIG_DRAWER/actual-before.png",
+        "diffBefore": "iteration-18/screenshots/I18_D4_REWRITE_CONFIG_DRAWER/diff-before.png",
+        "actualAfter": "iteration-18/screenshots/I18_D4_REWRITE_CONFIG_DRAWER/actual-after.png",
+        "diffAfter": "iteration-18/screenshots/I18_D4_REWRITE_CONFIG_DRAWER/diff-after.png",
+        "fullPage": "iteration-18/screenshots/I18_D4_REWRITE_CONFIG_DRAWER/full-page.png"
+      }
+    },
+    {
+      "iteration": 18,
+      "frameId": "I18_D4_REWRITE_FAILED",
+      "title": "重写任务执行失败",
+      "actualUrl": "http://127.0.0.1:13001/projects/f82f3d9b-22e0-4259-8484-7215dd36d0ed/works/7d05c348-bdd6-4136-a7ce-e1adf27fa1c0/rewrite?workflowRunId=4bc64cf7-1fed-401c-b295-9dc5eb22a759",
+      "prototypeScreenUrl": "http://127.0.0.1:13002/iteration-18-real-content-rewrite/ui/frames/I18_D4_REWRITE_FAILED/screen.png",
+      "prototypeCodeUrl": "http://127.0.0.1:13002/iteration-18-real-content-rewrite/ui/frames/I18_D4_REWRITE_FAILED/code.html",
+      "ids": {
+        "projectId": "f82f3d9b-22e0-4259-8484-7215dd36d0ed",
+        "workId": "7d05c348-bdd6-4136-a7ce-e1adf27fa1c0",
+        "reportId": "276e66f2-f890-4871-8ab7-1eab7c4bb227",
+        "runId": "4bc64cf7-1fed-401c-b295-9dc5eb22a759"
+      },
+      "stateConstruction": "通过 workflowRunId 精确恢复 PostgreSQL 中已持久化的真实 Run/Event，由正式 API 与生产 UI 渲染。",
+      "beforeResult": "FAIL",
+      "difference": "业务结构存在但未应用 Rewrite 卡片、状态与弹层样式，配置 dialog 呈内联区域；该差异不允许。",
+      "allowedDifference": false,
+      "modifiedFiles": [
+        "apps/web/src/app/globals.css",
+        "apps/web/src/features/project-works/rewrite-workspace.tsx",
+        "apps/web/src/features/project-works/rewrite-result-panel.tsx",
+        "apps/web/src/features/project-works/rewrite-history.tsx"
+      ],
+      "afterResult": "PASS",
+      "result": "PASS",
+      "screenshots": {
+        "prototype": "iteration-18/screenshots/I18_D4_REWRITE_FAILED/prototype.png",
+        "actualBefore": "iteration-18/screenshots/I18_D4_REWRITE_FAILED/actual-before.png",
+        "diffBefore": "iteration-18/screenshots/I18_D4_REWRITE_FAILED/diff-before.png",
+        "actualAfter": "iteration-18/screenshots/I18_D4_REWRITE_FAILED/actual-after.png",
+        "diffAfter": "iteration-18/screenshots/I18_D4_REWRITE_FAILED/diff-after.png",
+        "fullPage": "iteration-18/screenshots/I18_D4_REWRITE_FAILED/full-page.png"
+      }
+    },
+    {
+      "iteration": 18,
+      "frameId": "I18_D4_REWRITE_RUNNING",
+      "title": "正文重写运行中",
+      "actualUrl": "http://127.0.0.1:13001/projects/973d7f23-3430-4a17-96e0-c8190535a87d/works/6b7c451c-d3e2-4b75-a0e5-f67647200444/rewrite?workflowRunId=9f657d73-7a11-4144-b5e9-a9bc9fe2d306",
+      "prototypeScreenUrl": "http://127.0.0.1:13002/iteration-18-real-content-rewrite/ui/frames/I18_D4_REWRITE_RUNNING/screen.png",
+      "prototypeCodeUrl": "http://127.0.0.1:13002/iteration-18-real-content-rewrite/ui/frames/I18_D4_REWRITE_RUNNING/code.html",
+      "ids": {
+        "projectId": "973d7f23-3430-4a17-96e0-c8190535a87d",
+        "workId": "6b7c451c-d3e2-4b75-a0e5-f67647200444",
+        "reportId": "c4292128-bcc3-4ff4-aaf1-4bf8ae2cdf0a",
+        "runId": "9f657d73-7a11-4144-b5e9-a9bc9fe2d306"
+      },
+      "stateConstruction": "使用确定性网络 Fixture 复用真实 Report/Issue/ContentVersion 形状，仅在浏览器网络边界恢复目标状态，生产 DOM 与组件未被修改。",
+      "beforeResult": "FAIL",
+      "difference": "业务结构存在但未应用 Rewrite 卡片、状态与弹层样式，配置 dialog 呈内联区域；该差异不允许。",
+      "allowedDifference": false,
+      "modifiedFiles": [
+        "apps/web/src/app/globals.css",
+        "apps/web/src/features/project-works/rewrite-workspace.tsx",
+        "apps/web/src/features/project-works/rewrite-result-panel.tsx",
+        "apps/web/src/features/project-works/rewrite-history.tsx"
+      ],
+      "afterResult": "PASS",
+      "result": "PASS",
+      "screenshots": {
+        "prototype": "iteration-18/screenshots/I18_D4_REWRITE_RUNNING/prototype.png",
+        "actualBefore": "iteration-18/screenshots/I18_D4_REWRITE_RUNNING/actual-before.png",
+        "diffBefore": "iteration-18/screenshots/I18_D4_REWRITE_RUNNING/diff-before.png",
+        "actualAfter": "iteration-18/screenshots/I18_D4_REWRITE_RUNNING/actual-after.png",
+        "diffAfter": "iteration-18/screenshots/I18_D4_REWRITE_RUNNING/diff-after.png",
+        "fullPage": "iteration-18/screenshots/I18_D4_REWRITE_RUNNING/full-page.png"
+      }
+    },
+    {
+      "iteration": 18,
+      "frameId": "I18_D5_RESULT_CONSUMPTION_FAILED",
+      "title": "重写结果提交失败",
+      "actualUrl": "http://127.0.0.1:13001/projects/f82f3d9b-22e0-4259-8484-7215dd36d0ed/works/7d05c348-bdd6-4136-a7ce-e1adf27fa1c0/rewrite?workflowRunId=9f33d131-c285-4205-ba6e-477f24ed734f",
+      "prototypeScreenUrl": "http://127.0.0.1:13002/iteration-18-real-content-rewrite/ui/frames/I18_D5_RESULT_CONSUMPTION_FAILED/screen.png",
+      "prototypeCodeUrl": "http://127.0.0.1:13002/iteration-18-real-content-rewrite/ui/frames/I18_D5_RESULT_CONSUMPTION_FAILED/code.html",
+      "ids": {
+        "projectId": "f82f3d9b-22e0-4259-8484-7215dd36d0ed",
+        "workId": "7d05c348-bdd6-4136-a7ce-e1adf27fa1c0",
+        "reportId": "276e66f2-f890-4871-8ab7-1eab7c4bb227",
+        "runId": "9f33d131-c285-4205-ba6e-477f24ed734f"
+      },
+      "stateConstruction": "通过 workflowRunId 精确恢复 PostgreSQL 中已持久化的真实 Run/Event，由正式 API 与生产 UI 渲染。",
+      "beforeResult": "FAIL",
+      "difference": "业务结构存在但未应用 Rewrite 卡片、状态与弹层样式，配置 dialog 呈内联区域；该差异不允许。",
+      "allowedDifference": false,
+      "modifiedFiles": [
+        "apps/web/src/app/globals.css",
+        "apps/web/src/features/project-works/rewrite-workspace.tsx",
+        "apps/web/src/features/project-works/rewrite-result-panel.tsx",
+        "apps/web/src/features/project-works/rewrite-history.tsx"
+      ],
+      "afterResult": "PASS",
+      "result": "PASS",
+      "screenshots": {
+        "prototype": "iteration-18/screenshots/I18_D5_RESULT_CONSUMPTION_FAILED/prototype.png",
+        "actualBefore": "iteration-18/screenshots/I18_D5_RESULT_CONSUMPTION_FAILED/actual-before.png",
+        "diffBefore": "iteration-18/screenshots/I18_D5_RESULT_CONSUMPTION_FAILED/diff-before.png",
+        "actualAfter": "iteration-18/screenshots/I18_D5_RESULT_CONSUMPTION_FAILED/actual-after.png",
+        "diffAfter": "iteration-18/screenshots/I18_D5_RESULT_CONSUMPTION_FAILED/diff-after.png",
+        "fullPage": "iteration-18/screenshots/I18_D5_RESULT_CONSUMPTION_FAILED/full-page.png"
+      }
+    },
+    {
+      "iteration": 18,
+      "frameId": "I18_D5_REWRITE_RESULT",
+      "title": "正文重写候选结果",
+      "actualUrl": "http://127.0.0.1:13001/projects/973d7f23-3430-4a17-96e0-c8190535a87d/works/6b7c451c-d3e2-4b75-a0e5-f67647200444/rewrite?workflowRunId=5f626467-8dc3-4106-ba27-1ce481ae6406",
+      "prototypeScreenUrl": "http://127.0.0.1:13002/iteration-18-real-content-rewrite/ui/frames/I18_D5_REWRITE_RESULT/screen.png",
+      "prototypeCodeUrl": "http://127.0.0.1:13002/iteration-18-real-content-rewrite/ui/frames/I18_D5_REWRITE_RESULT/code.html",
+      "ids": {
+        "projectId": "973d7f23-3430-4a17-96e0-c8190535a87d",
+        "workId": "6b7c451c-d3e2-4b75-a0e5-f67647200444",
+        "reportId": "c4292128-bcc3-4ff4-aaf1-4bf8ae2cdf0a",
+        "issueId": "e6f4bd38-7291-4218-b449-8f382832666b",
+        "runId": "5f626467-8dc3-4106-ba27-1ce481ae6406"
+      },
+      "stateConstruction": "通过 workflowRunId 精确恢复 PostgreSQL 中已持久化的真实 Run/Event，由正式 API 与生产 UI 渲染。",
+      "beforeResult": "FAIL",
+      "difference": "业务结构存在但未应用 Rewrite 卡片、状态与弹层样式，配置 dialog 呈内联区域；该差异不允许。",
+      "allowedDifference": false,
+      "modifiedFiles": [
+        "apps/web/src/app/globals.css",
+        "apps/web/src/features/project-works/rewrite-workspace.tsx",
+        "apps/web/src/features/project-works/rewrite-result-panel.tsx",
+        "apps/web/src/features/project-works/rewrite-history.tsx"
+      ],
+      "afterResult": "PASS",
+      "result": "PASS",
+      "screenshots": {
+        "prototype": "iteration-18/screenshots/I18_D5_REWRITE_RESULT/prototype.png",
+        "actualBefore": "iteration-18/screenshots/I18_D5_REWRITE_RESULT/actual-before.png",
+        "diffBefore": "iteration-18/screenshots/I18_D5_REWRITE_RESULT/diff-before.png",
+        "actualAfter": "iteration-18/screenshots/I18_D5_REWRITE_RESULT/actual-after.png",
+        "diffAfter": "iteration-18/screenshots/I18_D5_REWRITE_RESULT/diff-after.png",
+        "fullPage": "iteration-18/screenshots/I18_D5_REWRITE_RESULT/full-page.png"
+      }
+    },
+    {
+      "iteration": 18,
+      "frameId": "I18_D5_SET_CURRENT_CONFIRM",
+      "title": "设为当前版本确认",
+      "actualUrl": "http://127.0.0.1:13001/projects/973d7f23-3430-4a17-96e0-c8190535a87d/works/6b7c451c-d3e2-4b75-a0e5-f67647200444/rewrite?workflowRunId=5f626467-8dc3-4106-ba27-1ce481ae6406",
+      "prototypeScreenUrl": "http://127.0.0.1:13002/iteration-18-real-content-rewrite/ui/frames/I18_D5_SET_CURRENT_CONFIRM/screen.png",
+      "prototypeCodeUrl": "http://127.0.0.1:13002/iteration-18-real-content-rewrite/ui/frames/I18_D5_SET_CURRENT_CONFIRM/code.html",
+      "ids": {
+        "projectId": "973d7f23-3430-4a17-96e0-c8190535a87d",
+        "workId": "6b7c451c-d3e2-4b75-a0e5-f67647200444",
+        "reportId": "c4292128-bcc3-4ff4-aaf1-4bf8ae2cdf0a",
+        "issueId": "e6f4bd38-7291-4218-b449-8f382832666b",
+        "runId": "5f626467-8dc3-4106-ba27-1ce481ae6406"
+      },
+      "stateConstruction": "按 workflowRunId 精确恢复真实成功 Run，点击“设为当前版本”打开确认弹窗并截图，随后取消；未执行 Set Current 写入。",
+      "beforeResult": "FAIL",
+      "difference": "业务结构存在但未应用 Rewrite 卡片、状态与弹层样式，配置 dialog 呈内联区域；该差异不允许。",
+      "allowedDifference": false,
+      "modifiedFiles": [
+        "apps/web/src/app/globals.css",
+        "apps/web/src/features/project-works/rewrite-workspace.tsx",
+        "apps/web/src/features/project-works/rewrite-result-panel.tsx",
+        "apps/web/src/features/project-works/rewrite-history.tsx"
+      ],
+      "afterResult": "PASS",
+      "result": "PASS",
+      "screenshots": {
+        "prototype": "iteration-18/screenshots/I18_D5_SET_CURRENT_CONFIRM/prototype.png",
+        "actualBefore": "iteration-18/screenshots/I18_D5_SET_CURRENT_CONFIRM/actual-before.png",
+        "diffBefore": "iteration-18/screenshots/I18_D5_SET_CURRENT_CONFIRM/diff-before.png",
+        "actualAfter": "iteration-18/screenshots/I18_D5_SET_CURRENT_CONFIRM/actual-after.png",
+        "diffAfter": "iteration-18/screenshots/I18_D5_SET_CURRENT_CONFIRM/diff-after.png",
+        "fullPage": "iteration-18/screenshots/I18_D5_SET_CURRENT_CONFIRM/full-page.png"
+      }
+    }
+  ]
+}

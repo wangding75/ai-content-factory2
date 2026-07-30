@@ -1,0 +1,25 @@
+{
+  "baseUrl": "http://127.0.0.1:13001",
+  "routes": [
+    "/projects/13362446-e528-4071-a9d1-5260cc1fcd78/works/9ea091d1-b63e-409c-92dd-9b1271c508c7"
+  ],
+  "allowedFailurePatterns": [
+    "favicon\\.ico",
+    "net::ERR_ABORTED",
+    "fonts\\.googleapis\\.com",
+    "fonts\\.gstatic\\.com",
+    "net::ERR_CONNECTION_CLOSED"
+  ],
+  "viewport": {
+    "width": 1440,
+    "height": 900
+  },
+  "timeoutMs": 45000,
+  "settleMs": 500,
+  "outputPath": "report/iteration-15-18-browser-acceptance/iteration-16/browser-check.json",
+  "playwrightPackageJson": "apps/web/package.json",
+  "contentGenerationEvidence": {
+    "route": "/projects/13362446-e528-4071-a9d1-5260cc1fcd78/works/9ea091d1-b63e-409c-92dd-9b1271c508c7",
+    "visualOutputDir": "report/iteration-15-18-browser-acceptance/iteration-16/capture"
+  }
+}

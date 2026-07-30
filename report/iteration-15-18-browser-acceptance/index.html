@@ -1,0 +1,699 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Iteration 15–18 Browser Acceptance</title>
+<style>
+body{margin:0;background:#f4f6f9;color:#18202a;font:14px/1.55 Inter,system-ui,sans-serif}header.hero{padding:28px 36px;color:#fff;background:#3435b8}header.hero h1{margin:0 0 8px}.filters{position:sticky;top:0;z-index:2;display:flex;gap:16px;padding:14px 36px;border-bottom:1px solid #d8dee7;background:#fff}select{padding:8px 12px;border:1px solid #bac3cf;border-radius:8px}main{display:grid;grid-template-columns:repeat(auto-fit,minmax(420px,1fr));gap:20px;padding:24px 36px}.card{padding:18px;border:1px solid #d8dee7;border-radius:12px;background:#fff;box-shadow:0 2px 8px #1111}.card>header{display:flex;justify-content:space-between;color:#4b5563}.card>header b{color:#176b34}h2{margin:12px 0 0;font-size:16px}h3{margin:3px 0 14px;font-size:14px;font-weight:500;color:#596171}.thumbs{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.thumbs img{width:100%;height:120px;object-fit:cover;border:1px solid #d8dee7;border-radius:6px;background:#eef1f5}p{overflow-wrap:anywhere}a{color:#3435b8}[hidden]{display:none!important}
+</style></head><body>
+<header class="hero"><h1>Iteration 15～18 浏览器 UI 对比验收</h1><div>49/49 PASS · 初次 FAIL 8 · 已修复 8 · Console error 0 · 最终状态：修复成功</div></header>
+<div class="filters"><label>Iteration <select id="iteration"><option value="all">全部</option><option>15</option><option>16</option><option>17</option><option>18</option></select></label><label>状态 <select id="status"><option value="all">全部</option><option>PASS</option><option>FAIL</option></select></label></div>
+<main>
+<article class="card" data-iteration="15" data-status="PASS">
+  <header><span>Iteration 15</span><b>PASS</b></header>
+  <h2>P15_C1_RUNNING_MAINLINE_EXPANSION</h2><h3>章节规划：主线扩写运行中</h3>
+  <div class="thumbs">
+    <a href="iteration-15/screenshots/P15_C1_RUNNING_MAINLINE_EXPANSION/prototype.png"><img src="iteration-15/screenshots/P15_C1_RUNNING_MAINLINE_EXPANSION/prototype.png" alt="Prototype"></a>
+    <a href="iteration-15/screenshots/P15_C1_RUNNING_MAINLINE_EXPANSION/actual-before.png"><img src="iteration-15/screenshots/P15_C1_RUNNING_MAINLINE_EXPANSION/actual-before.png" alt="Before"></a>
+    <a href="iteration-15/screenshots/P15_C1_RUNNING_MAINLINE_EXPANSION/actual-after.png"><img src="iteration-15/screenshots/P15_C1_RUNNING_MAINLINE_EXPANSION/actual-after.png" alt="After"></a>
+    <a href="iteration-15/screenshots/P15_C1_RUNNING_MAINLINE_EXPANSION/diff-after.png"><img src="iteration-15/screenshots/P15_C1_RUNNING_MAINLINE_EXPANSION/diff-after.png" alt="Diff"></a>
+  </div>
+  <p><strong>实机：</strong><a href="http://127.0.0.1:13001/projects/13a13e7e-656e-4174-bc96-c301692ebced/chapters">http://127.0.0.1:13001/projects/13a13e7e-656e-4174-bc96-c301692ebced/chapters</a></p>
+  <p><strong>原型：</strong><a href="http://127.0.0.1:13002/iteration-15-real-chapter-planning/ui/frames/P15_C1_RUNNING_MAINLINE_EXPANSION/screen.png">http://127.0.0.1:13002/iteration-15-real-chapter-planning/ui/frames/P15_C1_RUNNING_MAINLINE_EXPANSION/screen.png</a></p>
+  <p><strong>差异：</strong>仅动态 ID、时间、真实业务数据、中文文案与当前 AppShell 合理差异；结构、状态和交互顺序一致。</p>
+  <p><strong>修改：</strong>无产品代码修改</p>
+</article>
+<article class="card" data-iteration="15" data-status="PASS">
+  <header><span>Iteration 15</span><b>PASS</b></header>
+  <h2>P15_C1_RUNNING_PARTIAL_RANGE</h2><h3>章节规划：部分范围运行中</h3>
+  <div class="thumbs">
+    <a href="iteration-15/screenshots/P15_C1_RUNNING_PARTIAL_RANGE/prototype.png"><img src="iteration-15/screenshots/P15_C1_RUNNING_PARTIAL_RANGE/prototype.png" alt="Prototype"></a>
+    <a href="iteration-15/screenshots/P15_C1_RUNNING_PARTIAL_RANGE/actual-before.png"><img src="iteration-15/screenshots/P15_C1_RUNNING_PARTIAL_RANGE/actual-before.png" alt="Before"></a>
+    <a href="iteration-15/screenshots/P15_C1_RUNNING_PARTIAL_RANGE/actual-after.png"><img src="iteration-15/screenshots/P15_C1_RUNNING_PARTIAL_RANGE/actual-after.png" alt="After"></a>
+    <a href="iteration-15/screenshots/P15_C1_RUNNING_PARTIAL_RANGE/diff-after.png"><img src="iteration-15/screenshots/P15_C1_RUNNING_PARTIAL_RANGE/diff-after.png" alt="Diff"></a>
+  </div>
+  <p><strong>实机：</strong><a href="http://127.0.0.1:13001/projects/13a13e7e-656e-4174-bc96-c301692ebced/chapters">http://127.0.0.1:13001/projects/13a13e7e-656e-4174-bc96-c301692ebced/chapters</a></p>
+  <p><strong>原型：</strong><a href="http://127.0.0.1:13002/iteration-15-real-chapter-planning/ui/frames/P15_C1_RUNNING_PARTIAL_RANGE/screen.png">http://127.0.0.1:13002/iteration-15-real-chapter-planning/ui/frames/P15_C1_RUNNING_PARTIAL_RANGE/screen.png</a></p>
+  <p><strong>差异：</strong>仅动态 ID、时间、真实业务数据、中文文案与当前 AppShell 合理差异；结构、状态和交互顺序一致。</p>
+  <p><strong>修改：</strong>无产品代码修改</p>
+</article>
+<article class="card" data-iteration="15" data-status="PASS">
+  <header><span>Iteration 15</span><b>PASS</b></header>
+  <h2>P15_C1_RUNNING_FULL_PLAN</h2><h3>章节规划：完整规划运行中</h3>
+  <div class="thumbs">
+    <a href="iteration-15/screenshots/P15_C1_RUNNING_FULL_PLAN/prototype.png"><img src="iteration-15/screenshots/P15_C1_RUNNING_FULL_PLAN/prototype.png" alt="Prototype"></a>
+    <a href="iteration-15/screenshots/P15_C1_RUNNING_FULL_PLAN/actual-before.png"><img src="iteration-15/screenshots/P15_C1_RUNNING_FULL_PLAN/actual-before.png" alt="Before"></a>
+    <a href="iteration-15/screenshots/P15_C1_RUNNING_FULL_PLAN/actual-after.png"><img src="iteration-15/screenshots/P15_C1_RUNNING_FULL_PLAN/actual-after.png" alt="After"></a>
+    <a href="iteration-15/screenshots/P15_C1_RUNNING_FULL_PLAN/diff-after.png"><img src="iteration-15/screenshots/P15_C1_RUNNING_FULL_PLAN/diff-after.png" alt="Diff"></a>
+  </div>
+  <p><strong>实机：</strong><a href="http://127.0.0.1:13001/projects/13a13e7e-656e-4174-bc96-c301692ebced/chapters">http://127.0.0.1:13001/projects/13a13e7e-656e-4174-bc96-c301692ebced/chapters</a></p>
+  <p><strong>原型：</strong><a href="http://127.0.0.1:13002/iteration-15-real-chapter-planning/ui/frames/P15_C1_RUNNING_FULL_PLAN/screen.png">http://127.0.0.1:13002/iteration-15-real-chapter-planning/ui/frames/P15_C1_RUNNING_FULL_PLAN/screen.png</a></p>
+  <p><strong>差异：</strong>仅动态 ID、时间、真实业务数据、中文文案与当前 AppShell 合理差异；结构、状态和交互顺序一致。</p>
+  <p><strong>修改：</strong>无产品代码修改</p>
+</article>
+<article class="card" data-iteration="15" data-status="PASS">
+  <header><span>Iteration 15</span><b>PASS</b></header>
+  <h2>P15_C1_RUNNING_PARTIAL_ETA</h2><h3>章节规划：剩余时间</h3>
+  <div class="thumbs">
+    <a href="iteration-15/screenshots/P15_C1_RUNNING_PARTIAL_ETA/prototype.png"><img src="iteration-15/screenshots/P15_C1_RUNNING_PARTIAL_ETA/prototype.png" alt="Prototype"></a>
+    <a href="iteration-15/screenshots/P15_C1_RUNNING_PARTIAL_ETA/actual-before.png"><img src="iteration-15/screenshots/P15_C1_RUNNING_PARTIAL_ETA/actual-before.png" alt="Before"></a>
+    <a href="iteration-15/screenshots/P15_C1_RUNNING_PARTIAL_ETA/actual-after.png"><img src="iteration-15/screenshots/P15_C1_RUNNING_PARTIAL_ETA/actual-after.png" alt="After"></a>
+    <a href="iteration-15/screenshots/P15_C1_RUNNING_PARTIAL_ETA/diff-after.png"><img src="iteration-15/screenshots/P15_C1_RUNNING_PARTIAL_ETA/diff-after.png" alt="Diff"></a>
+  </div>
+  <p><strong>实机：</strong><a href="http://127.0.0.1:13001/projects/13a13e7e-656e-4174-bc96-c301692ebced/chapters">http://127.0.0.1:13001/projects/13a13e7e-656e-4174-bc96-c301692ebced/chapters</a></p>
+  <p><strong>原型：</strong><a href="http://127.0.0.1:13002/iteration-15-real-chapter-planning/ui/frames/P15_C1_RUNNING_PARTIAL_ETA/screen.png">http://127.0.0.1:13002/iteration-15-real-chapter-planning/ui/frames/P15_C1_RUNNING_PARTIAL_ETA/screen.png</a></p>
+  <p><strong>差异：</strong>仅动态 ID、时间、真实业务数据、中文文案与当前 AppShell 合理差异；结构、状态和交互顺序一致。</p>
+  <p><strong>修改：</strong>无产品代码修改</p>
+</article>
+<article class="card" data-iteration="15" data-status="PASS">
+  <header><span>Iteration 15</span><b>PASS</b></header>
+  <h2>P15_C1_RUNNING_PARTIAL_VALIDATING</h2><h3>章节规划：结果校验中</h3>
+  <div class="thumbs">
+    <a href="iteration-15/screenshots/P15_C1_RUNNING_PARTIAL_VALIDATING/prototype.png"><img src="iteration-15/screenshots/P15_C1_RUNNING_PARTIAL_VALIDATING/prototype.png" alt="Prototype"></a>
+    <a href="iteration-15/screenshots/P15_C1_RUNNING_PARTIAL_VALIDATING/actual-before.png"><img src="iteration-15/screenshots/P15_C1_RUNNING_PARTIAL_VALIDATING/actual-before.png" alt="Before"></a>
+    <a href="iteration-15/screenshots/P15_C1_RUNNING_PARTIAL_VALIDATING/actual-after.png"><img src="iteration-15/screenshots/P15_C1_RUNNING_PARTIAL_VALIDATING/actual-after.png" alt="After"></a>
+    <a href="iteration-15/screenshots/P15_C1_RUNNING_PARTIAL_VALIDATING/diff-after.png"><img src="iteration-15/screenshots/P15_C1_RUNNING_PARTIAL_VALIDATING/diff-after.png" alt="Diff"></a>
+  </div>
+  <p><strong>实机：</strong><a href="http://127.0.0.1:13001/projects/13a13e7e-656e-4174-bc96-c301692ebced/chapters">http://127.0.0.1:13001/projects/13a13e7e-656e-4174-bc96-c301692ebced/chapters</a></p>
+  <p><strong>原型：</strong><a href="http://127.0.0.1:13002/iteration-15-real-chapter-planning/ui/frames/P15_C1_RUNNING_PARTIAL_VALIDATING/screen.png">http://127.0.0.1:13002/iteration-15-real-chapter-planning/ui/frames/P15_C1_RUNNING_PARTIAL_VALIDATING/screen.png</a></p>
+  <p><strong>差异：</strong>仅动态 ID、时间、真实业务数据、中文文案与当前 AppShell 合理差异；结构、状态和交互顺序一致。</p>
+  <p><strong>修改：</strong>无产品代码修改</p>
+</article>
+<article class="card" data-iteration="15" data-status="PASS">
+  <header><span>Iteration 15</span><b>PASS</b></header>
+  <h2>P15_C1_RUNNING_DATA_VARIANT</h2><h3>章节规划：数据变体</h3>
+  <div class="thumbs">
+    <a href="iteration-15/screenshots/P15_C1_RUNNING_DATA_VARIANT/prototype.png"><img src="iteration-15/screenshots/P15_C1_RUNNING_DATA_VARIANT/prototype.png" alt="Prototype"></a>
+    <a href="iteration-15/screenshots/P15_C1_RUNNING_DATA_VARIANT/actual-before.png"><img src="iteration-15/screenshots/P15_C1_RUNNING_DATA_VARIANT/actual-before.png" alt="Before"></a>
+    <a href="iteration-15/screenshots/P15_C1_RUNNING_DATA_VARIANT/actual-after.png"><img src="iteration-15/screenshots/P15_C1_RUNNING_DATA_VARIANT/actual-after.png" alt="After"></a>
+    <a href="iteration-15/screenshots/P15_C1_RUNNING_DATA_VARIANT/diff-after.png"><img src="iteration-15/screenshots/P15_C1_RUNNING_DATA_VARIANT/diff-after.png" alt="Diff"></a>
+  </div>
+  <p><strong>实机：</strong><a href="http://127.0.0.1:13001/projects/13a13e7e-656e-4174-bc96-c301692ebced/chapters">http://127.0.0.1:13001/projects/13a13e7e-656e-4174-bc96-c301692ebced/chapters</a></p>
+  <p><strong>原型：</strong><a href="http://127.0.0.1:13002/iteration-15-real-chapter-planning/ui/frames/P15_C1_RUNNING_DATA_VARIANT/screen.png">http://127.0.0.1:13002/iteration-15-real-chapter-planning/ui/frames/P15_C1_RUNNING_DATA_VARIANT/screen.png</a></p>
+  <p><strong>差异：</strong>仅动态 ID、时间、真实业务数据、中文文案与当前 AppShell 合理差异；结构、状态和交互顺序一致。</p>
+  <p><strong>修改：</strong>无产品代码修改</p>
+</article>
+<article class="card" data-iteration="15" data-status="PASS">
+  <header><span>Iteration 15</span><b>PASS</b></header>
+  <h2>P15_C1_FAILED_ATOMIC</h2><h3>章节规划：原子失败</h3>
+  <div class="thumbs">
+    <a href="iteration-15/screenshots/P15_C1_FAILED_ATOMIC/prototype.png"><img src="iteration-15/screenshots/P15_C1_FAILED_ATOMIC/prototype.png" alt="Prototype"></a>
+    <a href="iteration-15/screenshots/P15_C1_FAILED_ATOMIC/actual-before.png"><img src="iteration-15/screenshots/P15_C1_FAILED_ATOMIC/actual-before.png" alt="Before"></a>
+    <a href="iteration-15/screenshots/P15_C1_FAILED_ATOMIC/actual-after.png"><img src="iteration-15/screenshots/P15_C1_FAILED_ATOMIC/actual-after.png" alt="After"></a>
+    <a href="iteration-15/screenshots/P15_C1_FAILED_ATOMIC/diff-after.png"><img src="iteration-15/screenshots/P15_C1_FAILED_ATOMIC/diff-after.png" alt="Diff"></a>
+  </div>
+  <p><strong>实机：</strong><a href="http://127.0.0.1:13001/projects/13a13e7e-656e-4174-bc96-c301692ebced/chapters">http://127.0.0.1:13001/projects/13a13e7e-656e-4174-bc96-c301692ebced/chapters</a></p>
+  <p><strong>原型：</strong><a href="http://127.0.0.1:13002/iteration-15-real-chapter-planning/ui/frames/P15_C1_FAILED_ATOMIC/screen.png">http://127.0.0.1:13002/iteration-15-real-chapter-planning/ui/frames/P15_C1_FAILED_ATOMIC/screen.png</a></p>
+  <p><strong>差异：</strong>仅动态 ID、时间、真实业务数据、中文文案与当前 AppShell 合理差异；结构、状态和交互顺序一致。</p>
+  <p><strong>修改：</strong>无产品代码修改</p>
+</article>
+<article class="card" data-iteration="15" data-status="PASS">
+  <header><span>Iteration 15</span><b>PASS</b></header>
+  <h2>P15_C1_NOT_CONFIGURED</h2><h3>章节规划：未配置</h3>
+  <div class="thumbs">
+    <a href="iteration-15/screenshots/P15_C1_NOT_CONFIGURED/prototype.png"><img src="iteration-15/screenshots/P15_C1_NOT_CONFIGURED/prototype.png" alt="Prototype"></a>
+    <a href="iteration-15/screenshots/P15_C1_NOT_CONFIGURED/actual-before.png"><img src="iteration-15/screenshots/P15_C1_NOT_CONFIGURED/actual-before.png" alt="Before"></a>
+    <a href="iteration-15/screenshots/P15_C1_NOT_CONFIGURED/actual-after.png"><img src="iteration-15/screenshots/P15_C1_NOT_CONFIGURED/actual-after.png" alt="After"></a>
+    <a href="iteration-15/screenshots/P15_C1_NOT_CONFIGURED/diff-after.png"><img src="iteration-15/screenshots/P15_C1_NOT_CONFIGURED/diff-after.png" alt="Diff"></a>
+  </div>
+  <p><strong>实机：</strong><a href="http://127.0.0.1:13001/projects/13a13e7e-656e-4174-bc96-c301692ebced/chapters">http://127.0.0.1:13001/projects/13a13e7e-656e-4174-bc96-c301692ebced/chapters</a></p>
+  <p><strong>原型：</strong><a href="http://127.0.0.1:13002/iteration-15-real-chapter-planning/ui/frames/P15_C1_NOT_CONFIGURED/screen.png">http://127.0.0.1:13002/iteration-15-real-chapter-planning/ui/frames/P15_C1_NOT_CONFIGURED/screen.png</a></p>
+  <p><strong>差异：</strong>仅动态 ID、时间、真实业务数据、中文文案与当前 AppShell 合理差异；结构、状态和交互顺序一致。</p>
+  <p><strong>修改：</strong>无产品代码修改</p>
+</article>
+<article class="card" data-iteration="15" data-status="PASS">
+  <header><span>Iteration 15</span><b>PASS</b></header>
+  <h2>P15_C2_GENERATION_SETTINGS</h2><h3>生成章节规划设置</h3>
+  <div class="thumbs">
+    <a href="iteration-15/screenshots/P15_C2_GENERATION_SETTINGS/prototype.png"><img src="iteration-15/screenshots/P15_C2_GENERATION_SETTINGS/prototype.png" alt="Prototype"></a>
+    <a href="iteration-15/screenshots/P15_C2_GENERATION_SETTINGS/actual-before.png"><img src="iteration-15/screenshots/P15_C2_GENERATION_SETTINGS/actual-before.png" alt="Before"></a>
+    <a href="iteration-15/screenshots/P15_C2_GENERATION_SETTINGS/actual-after.png"><img src="iteration-15/screenshots/P15_C2_GENERATION_SETTINGS/actual-after.png" alt="After"></a>
+    <a href="iteration-15/screenshots/P15_C2_GENERATION_SETTINGS/diff-after.png"><img src="iteration-15/screenshots/P15_C2_GENERATION_SETTINGS/diff-after.png" alt="Diff"></a>
+  </div>
+  <p><strong>实机：</strong><a href="http://127.0.0.1:13001/projects/13a13e7e-656e-4174-bc96-c301692ebced/chapters">http://127.0.0.1:13001/projects/13a13e7e-656e-4174-bc96-c301692ebced/chapters</a></p>
+  <p><strong>原型：</strong><a href="http://127.0.0.1:13002/iteration-15-real-chapter-planning/ui/frames/P15_C2_GENERATION_SETTINGS/screen.png">http://127.0.0.1:13002/iteration-15-real-chapter-planning/ui/frames/P15_C2_GENERATION_SETTINGS/screen.png</a></p>
+  <p><strong>差异：</strong>仅动态 ID、时间、真实业务数据、中文文案与当前 AppShell 合理差异；结构、状态和交互顺序一致。</p>
+  <p><strong>修改：</strong>无产品代码修改</p>
+</article>
+<article class="card" data-iteration="15" data-status="PASS">
+  <header><span>Iteration 15</span><b>PASS</b></header>
+  <h2>P15_C2_PREFLIGHT_PROGRESS</h2><h3>章节规划预检进行中</h3>
+  <div class="thumbs">
+    <a href="iteration-15/screenshots/P15_C2_PREFLIGHT_PROGRESS/prototype.png"><img src="iteration-15/screenshots/P15_C2_PREFLIGHT_PROGRESS/prototype.png" alt="Prototype"></a>
+    <a href="iteration-15/screenshots/P15_C2_PREFLIGHT_PROGRESS/actual-before.png"><img src="iteration-15/screenshots/P15_C2_PREFLIGHT_PROGRESS/actual-before.png" alt="Before"></a>
+    <a href="iteration-15/screenshots/P15_C2_PREFLIGHT_PROGRESS/actual-after.png"><img src="iteration-15/screenshots/P15_C2_PREFLIGHT_PROGRESS/actual-after.png" alt="After"></a>
+    <a href="iteration-15/screenshots/P15_C2_PREFLIGHT_PROGRESS/diff-after.png"><img src="iteration-15/screenshots/P15_C2_PREFLIGHT_PROGRESS/diff-after.png" alt="Diff"></a>
+  </div>
+  <p><strong>实机：</strong><a href="http://127.0.0.1:13001/projects/13a13e7e-656e-4174-bc96-c301692ebced/chapters">http://127.0.0.1:13001/projects/13a13e7e-656e-4174-bc96-c301692ebced/chapters</a></p>
+  <p><strong>原型：</strong><a href="http://127.0.0.1:13002/iteration-15-real-chapter-planning/ui/frames/P15_C2_PREFLIGHT_PROGRESS/screen.png">http://127.0.0.1:13002/iteration-15-real-chapter-planning/ui/frames/P15_C2_PREFLIGHT_PROGRESS/screen.png</a></p>
+  <p><strong>差异：</strong>仅动态 ID、时间、真实业务数据、中文文案与当前 AppShell 合理差异；结构、状态和交互顺序一致。</p>
+  <p><strong>修改：</strong>无产品代码修改</p>
+</article>
+<article class="card" data-iteration="15" data-status="PASS">
+  <header><span>Iteration 15</span><b>PASS</b></header>
+  <h2>P15_C3_PREFLIGHT_PASS</h2><h3>章节规划预检通过</h3>
+  <div class="thumbs">
+    <a href="iteration-15/screenshots/P15_C3_PREFLIGHT_PASS/prototype.png"><img src="iteration-15/screenshots/P15_C3_PREFLIGHT_PASS/prototype.png" alt="Prototype"></a>
+    <a href="iteration-15/screenshots/P15_C3_PREFLIGHT_PASS/actual-before.png"><img src="iteration-15/screenshots/P15_C3_PREFLIGHT_PASS/actual-before.png" alt="Before"></a>
+    <a href="iteration-15/screenshots/P15_C3_PREFLIGHT_PASS/actual-after.png"><img src="iteration-15/screenshots/P15_C3_PREFLIGHT_PASS/actual-after.png" alt="After"></a>
+    <a href="iteration-15/screenshots/P15_C3_PREFLIGHT_PASS/diff-after.png"><img src="iteration-15/screenshots/P15_C3_PREFLIGHT_PASS/diff-after.png" alt="Diff"></a>
+  </div>
+  <p><strong>实机：</strong><a href="http://127.0.0.1:13001/projects/13a13e7e-656e-4174-bc96-c301692ebced/chapters">http://127.0.0.1:13001/projects/13a13e7e-656e-4174-bc96-c301692ebced/chapters</a></p>
+  <p><strong>原型：</strong><a href="http://127.0.0.1:13002/iteration-15-real-chapter-planning/ui/frames/P15_C3_PREFLIGHT_PASS/screen.png">http://127.0.0.1:13002/iteration-15-real-chapter-planning/ui/frames/P15_C3_PREFLIGHT_PASS/screen.png</a></p>
+  <p><strong>差异：</strong>仅动态 ID、时间、真实业务数据、中文文案与当前 AppShell 合理差异；结构、状态和交互顺序一致。</p>
+  <p><strong>修改：</strong>无产品代码修改</p>
+</article>
+<article class="card" data-iteration="15" data-status="PASS">
+  <header><span>Iteration 15</span><b>PASS</b></header>
+  <h2>P15_C3_PREFLIGHT_BLOCKED</h2><h3>章节规划预检阻断</h3>
+  <div class="thumbs">
+    <a href="iteration-15/screenshots/P15_C3_PREFLIGHT_BLOCKED/prototype.png"><img src="iteration-15/screenshots/P15_C3_PREFLIGHT_BLOCKED/prototype.png" alt="Prototype"></a>
+    <a href="iteration-15/screenshots/P15_C3_PREFLIGHT_BLOCKED/actual-before.png"><img src="iteration-15/screenshots/P15_C3_PREFLIGHT_BLOCKED/actual-before.png" alt="Before"></a>
+    <a href="iteration-15/screenshots/P15_C3_PREFLIGHT_BLOCKED/actual-after.png"><img src="iteration-15/screenshots/P15_C3_PREFLIGHT_BLOCKED/actual-after.png" alt="After"></a>
+    <a href="iteration-15/screenshots/P15_C3_PREFLIGHT_BLOCKED/diff-after.png"><img src="iteration-15/screenshots/P15_C3_PREFLIGHT_BLOCKED/diff-after.png" alt="Diff"></a>
+  </div>
+  <p><strong>实机：</strong><a href="http://127.0.0.1:13001/projects/13a13e7e-656e-4174-bc96-c301692ebced/chapters">http://127.0.0.1:13001/projects/13a13e7e-656e-4174-bc96-c301692ebced/chapters</a></p>
+  <p><strong>原型：</strong><a href="http://127.0.0.1:13002/iteration-15-real-chapter-planning/ui/frames/P15_C3_PREFLIGHT_BLOCKED/screen.png">http://127.0.0.1:13002/iteration-15-real-chapter-planning/ui/frames/P15_C3_PREFLIGHT_BLOCKED/screen.png</a></p>
+  <p><strong>差异：</strong>仅动态 ID、时间、真实业务数据、中文文案与当前 AppShell 合理差异；结构、状态和交互顺序一致。</p>
+  <p><strong>修改：</strong>无产品代码修改</p>
+</article>
+<article class="card" data-iteration="15" data-status="PASS">
+  <header><span>Iteration 15</span><b>PASS</b></header>
+  <h2>P15_C3_RUN_CREATED</h2><h3>章节规划任务已创建</h3>
+  <div class="thumbs">
+    <a href="iteration-15/screenshots/P15_C3_RUN_CREATED/prototype.png"><img src="iteration-15/screenshots/P15_C3_RUN_CREATED/prototype.png" alt="Prototype"></a>
+    <a href="iteration-15/screenshots/P15_C3_RUN_CREATED/actual-before.png"><img src="iteration-15/screenshots/P15_C3_RUN_CREATED/actual-before.png" alt="Before"></a>
+    <a href="iteration-15/screenshots/P15_C3_RUN_CREATED/actual-after.png"><img src="iteration-15/screenshots/P15_C3_RUN_CREATED/actual-after.png" alt="After"></a>
+    <a href="iteration-15/screenshots/P15_C3_RUN_CREATED/diff-after.png"><img src="iteration-15/screenshots/P15_C3_RUN_CREATED/diff-after.png" alt="Diff"></a>
+  </div>
+  <p><strong>实机：</strong><a href="http://127.0.0.1:13001/projects/13a13e7e-656e-4174-bc96-c301692ebced/chapters">http://127.0.0.1:13001/projects/13a13e7e-656e-4174-bc96-c301692ebced/chapters</a></p>
+  <p><strong>原型：</strong><a href="http://127.0.0.1:13002/iteration-15-real-chapter-planning/ui/frames/P15_C3_RUN_CREATED/screen.png">http://127.0.0.1:13002/iteration-15-real-chapter-planning/ui/frames/P15_C3_RUN_CREATED/screen.png</a></p>
+  <p><strong>差异：</strong>仅动态 ID、时间、真实业务数据、中文文案与当前 AppShell 合理差异；结构、状态和交互顺序一致。</p>
+  <p><strong>修改：</strong>无产品代码修改</p>
+</article>
+<article class="card" data-iteration="15" data-status="PASS">
+  <header><span>Iteration 15</span><b>PASS</b></header>
+  <h2>P15_C4_CANDIDATE_BATCH_LIST</h2><h3>候选批次列表</h3>
+  <div class="thumbs">
+    <a href="iteration-15/screenshots/P15_C4_CANDIDATE_BATCH_LIST/prototype.png"><img src="iteration-15/screenshots/P15_C4_CANDIDATE_BATCH_LIST/prototype.png" alt="Prototype"></a>
+    <a href="iteration-15/screenshots/P15_C4_CANDIDATE_BATCH_LIST/actual-before.png"><img src="iteration-15/screenshots/P15_C4_CANDIDATE_BATCH_LIST/actual-before.png" alt="Before"></a>
+    <a href="iteration-15/screenshots/P15_C4_CANDIDATE_BATCH_LIST/actual-after.png"><img src="iteration-15/screenshots/P15_C4_CANDIDATE_BATCH_LIST/actual-after.png" alt="After"></a>
+    <a href="iteration-15/screenshots/P15_C4_CANDIDATE_BATCH_LIST/diff-after.png"><img src="iteration-15/screenshots/P15_C4_CANDIDATE_BATCH_LIST/diff-after.png" alt="Diff"></a>
+  </div>
+  <p><strong>实机：</strong><a href="http://127.0.0.1:13001/projects/13a13e7e-656e-4174-bc96-c301692ebced/chapter-plan-candidate-batches">http://127.0.0.1:13001/projects/13a13e7e-656e-4174-bc96-c301692ebced/chapter-plan-candidate-batches</a></p>
+  <p><strong>原型：</strong><a href="http://127.0.0.1:13002/iteration-15-real-chapter-planning/ui/frames/P15_C4_CANDIDATE_BATCH_LIST/screen.png">http://127.0.0.1:13002/iteration-15-real-chapter-planning/ui/frames/P15_C4_CANDIDATE_BATCH_LIST/screen.png</a></p>
+  <p><strong>差异：</strong>仅动态 ID、时间、真实业务数据、中文文案与当前 AppShell 合理差异；结构、状态和交互顺序一致。</p>
+  <p><strong>修改：</strong>无产品代码修改</p>
+</article>
+<article class="card" data-iteration="15" data-status="PASS">
+  <header><span>Iteration 15</span><b>PASS</b></header>
+  <h2>P15_C5_CANDIDATE_BATCH_DETAIL</h2><h3>候选批次详情</h3>
+  <div class="thumbs">
+    <a href="iteration-15/screenshots/P15_C5_CANDIDATE_BATCH_DETAIL/prototype.png"><img src="iteration-15/screenshots/P15_C5_CANDIDATE_BATCH_DETAIL/prototype.png" alt="Prototype"></a>
+    <a href="iteration-15/screenshots/P15_C5_CANDIDATE_BATCH_DETAIL/actual-before.png"><img src="iteration-15/screenshots/P15_C5_CANDIDATE_BATCH_DETAIL/actual-before.png" alt="Before"></a>
+    <a href="iteration-15/screenshots/P15_C5_CANDIDATE_BATCH_DETAIL/actual-after.png"><img src="iteration-15/screenshots/P15_C5_CANDIDATE_BATCH_DETAIL/actual-after.png" alt="After"></a>
+    <a href="iteration-15/screenshots/P15_C5_CANDIDATE_BATCH_DETAIL/diff-after.png"><img src="iteration-15/screenshots/P15_C5_CANDIDATE_BATCH_DETAIL/diff-after.png" alt="Diff"></a>
+  </div>
+  <p><strong>实机：</strong><a href="http://127.0.0.1:13001/chapter-plan-candidate-batches/f7b2889d-b5bc-400e-aeeb-ef8d75c4f9a7">http://127.0.0.1:13001/chapter-plan-candidate-batches/f7b2889d-b5bc-400e-aeeb-ef8d75c4f9a7</a></p>
+  <p><strong>原型：</strong><a href="http://127.0.0.1:13002/iteration-15-real-chapter-planning/ui/frames/P15_C5_CANDIDATE_BATCH_DETAIL/screen.png">http://127.0.0.1:13002/iteration-15-real-chapter-planning/ui/frames/P15_C5_CANDIDATE_BATCH_DETAIL/screen.png</a></p>
+  <p><strong>差异：</strong>仅动态 ID、时间、真实业务数据、中文文案与当前 AppShell 合理差异；结构、状态和交互顺序一致。</p>
+  <p><strong>修改：</strong>无产品代码修改</p>
+</article>
+<article class="card" data-iteration="15" data-status="PASS">
+  <header><span>Iteration 15</span><b>PASS</b></header>
+  <h2>P15_C6_CANDIDATE_EDIT_DRAWER</h2><h3>编辑章节候选抽屉</h3>
+  <div class="thumbs">
+    <a href="iteration-15/screenshots/P15_C6_CANDIDATE_EDIT_DRAWER/prototype.png"><img src="iteration-15/screenshots/P15_C6_CANDIDATE_EDIT_DRAWER/prototype.png" alt="Prototype"></a>
+    <a href="iteration-15/screenshots/P15_C6_CANDIDATE_EDIT_DRAWER/actual-before.png"><img src="iteration-15/screenshots/P15_C6_CANDIDATE_EDIT_DRAWER/actual-before.png" alt="Before"></a>
+    <a href="iteration-15/screenshots/P15_C6_CANDIDATE_EDIT_DRAWER/actual-after.png"><img src="iteration-15/screenshots/P15_C6_CANDIDATE_EDIT_DRAWER/actual-after.png" alt="After"></a>
+    <a href="iteration-15/screenshots/P15_C6_CANDIDATE_EDIT_DRAWER/diff-after.png"><img src="iteration-15/screenshots/P15_C6_CANDIDATE_EDIT_DRAWER/diff-after.png" alt="Diff"></a>
+  </div>
+  <p><strong>实机：</strong><a href="http://127.0.0.1:13001/chapter-plan-candidate-batches/f7b2889d-b5bc-400e-aeeb-ef8d75c4f9a7">http://127.0.0.1:13001/chapter-plan-candidate-batches/f7b2889d-b5bc-400e-aeeb-ef8d75c4f9a7</a></p>
+  <p><strong>原型：</strong><a href="http://127.0.0.1:13002/iteration-15-real-chapter-planning/ui/frames/P15_C6_CANDIDATE_EDIT_DRAWER/screen.png">http://127.0.0.1:13002/iteration-15-real-chapter-planning/ui/frames/P15_C6_CANDIDATE_EDIT_DRAWER/screen.png</a></p>
+  <p><strong>差异：</strong>仅动态 ID、时间、真实业务数据、中文文案与当前 AppShell 合理差异；结构、状态和交互顺序一致。</p>
+  <p><strong>修改：</strong>无产品代码修改</p>
+</article>
+<article class="card" data-iteration="15" data-status="PASS">
+  <header><span>Iteration 15</span><b>PASS</b></header>
+  <h2>P15_C7_CANDIDATE_COMPARE_DIALOG</h2><h3>章节候选对比弹窗</h3>
+  <div class="thumbs">
+    <a href="iteration-15/screenshots/P15_C7_CANDIDATE_COMPARE_DIALOG/prototype.png"><img src="iteration-15/screenshots/P15_C7_CANDIDATE_COMPARE_DIALOG/prototype.png" alt="Prototype"></a>
+    <a href="iteration-15/screenshots/P15_C7_CANDIDATE_COMPARE_DIALOG/actual-before.png"><img src="iteration-15/screenshots/P15_C7_CANDIDATE_COMPARE_DIALOG/actual-before.png" alt="Before"></a>
+    <a href="iteration-15/screenshots/P15_C7_CANDIDATE_COMPARE_DIALOG/actual-after.png"><img src="iteration-15/screenshots/P15_C7_CANDIDATE_COMPARE_DIALOG/actual-after.png" alt="After"></a>
+    <a href="iteration-15/screenshots/P15_C7_CANDIDATE_COMPARE_DIALOG/diff-after.png"><img src="iteration-15/screenshots/P15_C7_CANDIDATE_COMPARE_DIALOG/diff-after.png" alt="Diff"></a>
+  </div>
+  <p><strong>实机：</strong><a href="http://127.0.0.1:13001/chapter-plan-candidate-batches/f7b2889d-b5bc-400e-aeeb-ef8d75c4f9a7">http://127.0.0.1:13001/chapter-plan-candidate-batches/f7b2889d-b5bc-400e-aeeb-ef8d75c4f9a7</a></p>
+  <p><strong>原型：</strong><a href="http://127.0.0.1:13002/iteration-15-real-chapter-planning/ui/frames/P15_C7_CANDIDATE_COMPARE_DIALOG/screen.png">http://127.0.0.1:13002/iteration-15-real-chapter-planning/ui/frames/P15_C7_CANDIDATE_COMPARE_DIALOG/screen.png</a></p>
+  <p><strong>差异：</strong>仅动态 ID、时间、真实业务数据、中文文案与当前 AppShell 合理差异；结构、状态和交互顺序一致。</p>
+  <p><strong>修改：</strong>无产品代码修改</p>
+</article>
+<article class="card" data-iteration="15" data-status="PASS">
+  <header><span>Iteration 15</span><b>PASS</b></header>
+  <h2>P15_C8_BATCH_ADOPT_DIALOG</h2><h3>批量采用确认</h3>
+  <div class="thumbs">
+    <a href="iteration-15/screenshots/P15_C8_BATCH_ADOPT_DIALOG/prototype.png"><img src="iteration-15/screenshots/P15_C8_BATCH_ADOPT_DIALOG/prototype.png" alt="Prototype"></a>
+    <a href="iteration-15/screenshots/P15_C8_BATCH_ADOPT_DIALOG/actual-before.png"><img src="iteration-15/screenshots/P15_C8_BATCH_ADOPT_DIALOG/actual-before.png" alt="Before"></a>
+    <a href="iteration-15/screenshots/P15_C8_BATCH_ADOPT_DIALOG/actual-after.png"><img src="iteration-15/screenshots/P15_C8_BATCH_ADOPT_DIALOG/actual-after.png" alt="After"></a>
+    <a href="iteration-15/screenshots/P15_C8_BATCH_ADOPT_DIALOG/diff-after.png"><img src="iteration-15/screenshots/P15_C8_BATCH_ADOPT_DIALOG/diff-after.png" alt="Diff"></a>
+  </div>
+  <p><strong>实机：</strong><a href="http://127.0.0.1:13001/chapter-plan-candidate-batches/f7b2889d-b5bc-400e-aeeb-ef8d75c4f9a7">http://127.0.0.1:13001/chapter-plan-candidate-batches/f7b2889d-b5bc-400e-aeeb-ef8d75c4f9a7</a></p>
+  <p><strong>原型：</strong><a href="http://127.0.0.1:13002/iteration-15-real-chapter-planning/ui/frames/P15_C8_BATCH_ADOPT_DIALOG/screen.png">http://127.0.0.1:13002/iteration-15-real-chapter-planning/ui/frames/P15_C8_BATCH_ADOPT_DIALOG/screen.png</a></p>
+  <p><strong>差异：</strong>仅动态 ID、时间、真实业务数据、中文文案与当前 AppShell 合理差异；结构、状态和交互顺序一致。</p>
+  <p><strong>修改：</strong>无产品代码修改</p>
+</article>
+<article class="card" data-iteration="15" data-status="PASS">
+  <header><span>Iteration 15</span><b>PASS</b></header>
+  <h2>P15_C9_BATCH_ABANDON_DIALOG</h2><h3>放弃候选批次确认</h3>
+  <div class="thumbs">
+    <a href="iteration-15/screenshots/P15_C9_BATCH_ABANDON_DIALOG/prototype.png"><img src="iteration-15/screenshots/P15_C9_BATCH_ABANDON_DIALOG/prototype.png" alt="Prototype"></a>
+    <a href="iteration-15/screenshots/P15_C9_BATCH_ABANDON_DIALOG/actual-before.png"><img src="iteration-15/screenshots/P15_C9_BATCH_ABANDON_DIALOG/actual-before.png" alt="Before"></a>
+    <a href="iteration-15/screenshots/P15_C9_BATCH_ABANDON_DIALOG/actual-after.png"><img src="iteration-15/screenshots/P15_C9_BATCH_ABANDON_DIALOG/actual-after.png" alt="After"></a>
+    <a href="iteration-15/screenshots/P15_C9_BATCH_ABANDON_DIALOG/diff-after.png"><img src="iteration-15/screenshots/P15_C9_BATCH_ABANDON_DIALOG/diff-after.png" alt="Diff"></a>
+  </div>
+  <p><strong>实机：</strong><a href="http://127.0.0.1:13001/chapter-plan-candidate-batches/f7b2889d-b5bc-400e-aeeb-ef8d75c4f9a7">http://127.0.0.1:13001/chapter-plan-candidate-batches/f7b2889d-b5bc-400e-aeeb-ef8d75c4f9a7</a></p>
+  <p><strong>原型：</strong><a href="http://127.0.0.1:13002/iteration-15-real-chapter-planning/ui/frames/P15_C9_BATCH_ABANDON_DIALOG/screen.png">http://127.0.0.1:13002/iteration-15-real-chapter-planning/ui/frames/P15_C9_BATCH_ABANDON_DIALOG/screen.png</a></p>
+  <p><strong>差异：</strong>仅动态 ID、时间、真实业务数据、中文文案与当前 AppShell 合理差异；结构、状态和交互顺序一致。</p>
+  <p><strong>修改：</strong>无产品代码修改</p>
+</article>
+<article class="card" data-iteration="15" data-status="PASS">
+  <header><span>Iteration 15</span><b>PASS</b></header>
+  <h2>P15_C10_STALE_CONFLICT_DIALOG</h2><h3>候选基线过期冲突</h3>
+  <div class="thumbs">
+    <a href="iteration-15/screenshots/P15_C10_STALE_CONFLICT_DIALOG/prototype.png"><img src="iteration-15/screenshots/P15_C10_STALE_CONFLICT_DIALOG/prototype.png" alt="Prototype"></a>
+    <a href="iteration-15/screenshots/P15_C10_STALE_CONFLICT_DIALOG/actual-before.png"><img src="iteration-15/screenshots/P15_C10_STALE_CONFLICT_DIALOG/actual-before.png" alt="Before"></a>
+    <a href="iteration-15/screenshots/P15_C10_STALE_CONFLICT_DIALOG/actual-after.png"><img src="iteration-15/screenshots/P15_C10_STALE_CONFLICT_DIALOG/actual-after.png" alt="After"></a>
+    <a href="iteration-15/screenshots/P15_C10_STALE_CONFLICT_DIALOG/diff-after.png"><img src="iteration-15/screenshots/P15_C10_STALE_CONFLICT_DIALOG/diff-after.png" alt="Diff"></a>
+  </div>
+  <p><strong>实机：</strong><a href="http://127.0.0.1:13001/chapter-plan-candidate-batches/f7b2889d-b5bc-400e-aeeb-ef8d75c4f9a7">http://127.0.0.1:13001/chapter-plan-candidate-batches/f7b2889d-b5bc-400e-aeeb-ef8d75c4f9a7</a></p>
+  <p><strong>原型：</strong><a href="http://127.0.0.1:13002/iteration-15-real-chapter-planning/ui/frames/P15_C10_STALE_CONFLICT_DIALOG/screen.png">http://127.0.0.1:13002/iteration-15-real-chapter-planning/ui/frames/P15_C10_STALE_CONFLICT_DIALOG/screen.png</a></p>
+  <p><strong>差异：</strong>仅动态 ID、时间、真实业务数据、中文文案与当前 AppShell 合理差异；结构、状态和交互顺序一致。</p>
+  <p><strong>修改：</strong>无产品代码修改</p>
+</article>
+<article class="card" data-iteration="15" data-status="PASS">
+  <header><span>Iteration 15</span><b>PASS</b></header>
+  <h2>P15_S1_STORYLINE_RELATION_READONLY</h2><h3>故事线与章节关系只读</h3>
+  <div class="thumbs">
+    <a href="iteration-15/screenshots/P15_S1_STORYLINE_RELATION_READONLY/prototype.png"><img src="iteration-15/screenshots/P15_S1_STORYLINE_RELATION_READONLY/prototype.png" alt="Prototype"></a>
+    <a href="iteration-15/screenshots/P15_S1_STORYLINE_RELATION_READONLY/actual-before.png"><img src="iteration-15/screenshots/P15_S1_STORYLINE_RELATION_READONLY/actual-before.png" alt="Before"></a>
+    <a href="iteration-15/screenshots/P15_S1_STORYLINE_RELATION_READONLY/actual-after.png"><img src="iteration-15/screenshots/P15_S1_STORYLINE_RELATION_READONLY/actual-after.png" alt="After"></a>
+    <a href="iteration-15/screenshots/P15_S1_STORYLINE_RELATION_READONLY/diff-after.png"><img src="iteration-15/screenshots/P15_S1_STORYLINE_RELATION_READONLY/diff-after.png" alt="Diff"></a>
+  </div>
+  <p><strong>实机：</strong><a href="http://127.0.0.1:13001/projects/13a13e7e-656e-4174-bc96-c301692ebced/storylines">http://127.0.0.1:13001/projects/13a13e7e-656e-4174-bc96-c301692ebced/storylines</a></p>
+  <p><strong>原型：</strong><a href="http://127.0.0.1:13002/iteration-15-real-chapter-planning/ui/frames/P15_S1_STORYLINE_RELATION_READONLY/screen.png">http://127.0.0.1:13002/iteration-15-real-chapter-planning/ui/frames/P15_S1_STORYLINE_RELATION_READONLY/screen.png</a></p>
+  <p><strong>差异：</strong>仅动态 ID、时间、真实业务数据、中文文案与当前 AppShell 合理差异；结构、状态和交互顺序一致。</p>
+  <p><strong>修改：</strong>无产品代码修改</p>
+</article>
+<article class="card" data-iteration="16" data-status="PASS">
+  <header><span>Iteration 16</span><b>PASS</b></header>
+  <h2>I16_D1_EDITOR_CHAPTER_GOAL</h2><h3>正文编辑器：章节目标</h3>
+  <div class="thumbs">
+    <a href="iteration-16/screenshots/I16_D1_EDITOR_CHAPTER_GOAL/prototype.png"><img src="iteration-16/screenshots/I16_D1_EDITOR_CHAPTER_GOAL/prototype.png" alt="Prototype"></a>
+    <a href="iteration-16/screenshots/I16_D1_EDITOR_CHAPTER_GOAL/actual-before.png"><img src="iteration-16/screenshots/I16_D1_EDITOR_CHAPTER_GOAL/actual-before.png" alt="Before"></a>
+    <a href="iteration-16/screenshots/I16_D1_EDITOR_CHAPTER_GOAL/actual-after.png"><img src="iteration-16/screenshots/I16_D1_EDITOR_CHAPTER_GOAL/actual-after.png" alt="After"></a>
+    <a href="iteration-16/screenshots/I16_D1_EDITOR_CHAPTER_GOAL/diff-after.png"><img src="iteration-16/screenshots/I16_D1_EDITOR_CHAPTER_GOAL/diff-after.png" alt="Diff"></a>
+  </div>
+  <p><strong>实机：</strong><a href="http://127.0.0.1:13001/projects/13362446-e528-4071-a9d1-5260cc1fcd78/works/9ea091d1-b63e-409c-92dd-9b1271c508c7">http://127.0.0.1:13001/projects/13362446-e528-4071-a9d1-5260cc1fcd78/works/9ea091d1-b63e-409c-92dd-9b1271c508c7</a></p>
+  <p><strong>原型：</strong><a href="http://127.0.0.1:13002/iteration-16-real-content-generation/ui/frames/I16_D1_EDITOR_CHAPTER_GOAL/screen.png">http://127.0.0.1:13002/iteration-16-real-content-generation/ui/frames/I16_D1_EDITOR_CHAPTER_GOAL/screen.png</a></p>
+  <p><strong>差异：</strong>仅动态 ID、时间、真实业务数据、中文文案与当前 AppShell 合理差异；结构、状态和交互顺序一致。</p>
+  <p><strong>修改：</strong>无产品代码修改</p>
+</article>
+<article class="card" data-iteration="16" data-status="PASS">
+  <header><span>Iteration 16</span><b>PASS</b></header>
+  <h2>I16_D1_EDITOR_STORY_CONTEXT</h2><h3>正文编辑器：故事情报</h3>
+  <div class="thumbs">
+    <a href="iteration-16/screenshots/I16_D1_EDITOR_STORY_CONTEXT/prototype.png"><img src="iteration-16/screenshots/I16_D1_EDITOR_STORY_CONTEXT/prototype.png" alt="Prototype"></a>
+    <a href="iteration-16/screenshots/I16_D1_EDITOR_STORY_CONTEXT/actual-before.png"><img src="iteration-16/screenshots/I16_D1_EDITOR_STORY_CONTEXT/actual-before.png" alt="Before"></a>
+    <a href="iteration-16/screenshots/I16_D1_EDITOR_STORY_CONTEXT/actual-after.png"><img src="iteration-16/screenshots/I16_D1_EDITOR_STORY_CONTEXT/actual-after.png" alt="After"></a>
+    <a href="iteration-16/screenshots/I16_D1_EDITOR_STORY_CONTEXT/diff-after.png"><img src="iteration-16/screenshots/I16_D1_EDITOR_STORY_CONTEXT/diff-after.png" alt="Diff"></a>
+  </div>
+  <p><strong>实机：</strong><a href="http://127.0.0.1:13001/projects/13362446-e528-4071-a9d1-5260cc1fcd78/works/9ea091d1-b63e-409c-92dd-9b1271c508c7">http://127.0.0.1:13001/projects/13362446-e528-4071-a9d1-5260cc1fcd78/works/9ea091d1-b63e-409c-92dd-9b1271c508c7</a></p>
+  <p><strong>原型：</strong><a href="http://127.0.0.1:13002/iteration-16-real-content-generation/ui/frames/I16_D1_EDITOR_STORY_CONTEXT/screen.png">http://127.0.0.1:13002/iteration-16-real-content-generation/ui/frames/I16_D1_EDITOR_STORY_CONTEXT/screen.png</a></p>
+  <p><strong>差异：</strong>仅动态 ID、时间、真实业务数据、中文文案与当前 AppShell 合理差异；结构、状态和交互顺序一致。</p>
+  <p><strong>修改：</strong>无产品代码修改</p>
+</article>
+<article class="card" data-iteration="16" data-status="PASS">
+  <header><span>Iteration 16</span><b>PASS</b></header>
+  <h2>I16_D1_EDITOR_MATERIALS</h2><h3>正文编辑器：素材库</h3>
+  <div class="thumbs">
+    <a href="iteration-16/screenshots/I16_D1_EDITOR_MATERIALS/prototype.png"><img src="iteration-16/screenshots/I16_D1_EDITOR_MATERIALS/prototype.png" alt="Prototype"></a>
+    <a href="iteration-16/screenshots/I16_D1_EDITOR_MATERIALS/actual-before.png"><img src="iteration-16/screenshots/I16_D1_EDITOR_MATERIALS/actual-before.png" alt="Before"></a>
+    <a href="iteration-16/screenshots/I16_D1_EDITOR_MATERIALS/actual-after.png"><img src="iteration-16/screenshots/I16_D1_EDITOR_MATERIALS/actual-after.png" alt="After"></a>
+    <a href="iteration-16/screenshots/I16_D1_EDITOR_MATERIALS/diff-after.png"><img src="iteration-16/screenshots/I16_D1_EDITOR_MATERIALS/diff-after.png" alt="Diff"></a>
+  </div>
+  <p><strong>实机：</strong><a href="http://127.0.0.1:13001/projects/13362446-e528-4071-a9d1-5260cc1fcd78/works/9ea091d1-b63e-409c-92dd-9b1271c508c7">http://127.0.0.1:13001/projects/13362446-e528-4071-a9d1-5260cc1fcd78/works/9ea091d1-b63e-409c-92dd-9b1271c508c7</a></p>
+  <p><strong>原型：</strong><a href="http://127.0.0.1:13002/iteration-16-real-content-generation/ui/frames/I16_D1_EDITOR_MATERIALS/screen.png">http://127.0.0.1:13002/iteration-16-real-content-generation/ui/frames/I16_D1_EDITOR_MATERIALS/screen.png</a></p>
+  <p><strong>差异：</strong>仅动态 ID、时间、真实业务数据、中文文案与当前 AppShell 合理差异；结构、状态和交互顺序一致。</p>
+  <p><strong>修改：</strong>无产品代码修改</p>
+</article>
+<article class="card" data-iteration="16" data-status="PASS">
+  <header><span>Iteration 16</span><b>PASS</b></header>
+  <h2>I16_D2_GENERATE_CONFIRM</h2><h3>生成正文：运行前确认</h3>
+  <div class="thumbs">
+    <a href="iteration-16/screenshots/I16_D2_GENERATE_CONFIRM/prototype.png"><img src="iteration-16/screenshots/I16_D2_GENERATE_CONFIRM/prototype.png" alt="Prototype"></a>
+    <a href="iteration-16/screenshots/I16_D2_GENERATE_CONFIRM/actual-before.png"><img src="iteration-16/screenshots/I16_D2_GENERATE_CONFIRM/actual-before.png" alt="Before"></a>
+    <a href="iteration-16/screenshots/I16_D2_GENERATE_CONFIRM/actual-after.png"><img src="iteration-16/screenshots/I16_D2_GENERATE_CONFIRM/actual-after.png" alt="After"></a>
+    <a href="iteration-16/screenshots/I16_D2_GENERATE_CONFIRM/diff-after.png"><img src="iteration-16/screenshots/I16_D2_GENERATE_CONFIRM/diff-after.png" alt="Diff"></a>
+  </div>
+  <p><strong>实机：</strong><a href="http://127.0.0.1:13001/projects/13362446-e528-4071-a9d1-5260cc1fcd78/works/9ea091d1-b63e-409c-92dd-9b1271c508c7">http://127.0.0.1:13001/projects/13362446-e528-4071-a9d1-5260cc1fcd78/works/9ea091d1-b63e-409c-92dd-9b1271c508c7</a></p>
+  <p><strong>原型：</strong><a href="http://127.0.0.1:13002/iteration-16-real-content-generation/ui/frames/I16_D2_GENERATE_CONFIRM/screen.png">http://127.0.0.1:13002/iteration-16-real-content-generation/ui/frames/I16_D2_GENERATE_CONFIRM/screen.png</a></p>
+  <p><strong>差异：</strong>仅动态 ID、时间、真实业务数据、中文文案与当前 AppShell 合理差异；结构、状态和交互顺序一致。</p>
+  <p><strong>修改：</strong>无产品代码修改</p>
+</article>
+<article class="card" data-iteration="16" data-status="PASS">
+  <header><span>Iteration 16</span><b>PASS</b></header>
+  <h2>I16_D2_GENERATE_REQUIREMENTS</h2><h3>生成正文：补充要求</h3>
+  <div class="thumbs">
+    <a href="iteration-16/screenshots/I16_D2_GENERATE_REQUIREMENTS/prototype.png"><img src="iteration-16/screenshots/I16_D2_GENERATE_REQUIREMENTS/prototype.png" alt="Prototype"></a>
+    <a href="iteration-16/screenshots/I16_D2_GENERATE_REQUIREMENTS/actual-before.png"><img src="iteration-16/screenshots/I16_D2_GENERATE_REQUIREMENTS/actual-before.png" alt="Before"></a>
+    <a href="iteration-16/screenshots/I16_D2_GENERATE_REQUIREMENTS/actual-after.png"><img src="iteration-16/screenshots/I16_D2_GENERATE_REQUIREMENTS/actual-after.png" alt="After"></a>
+    <a href="iteration-16/screenshots/I16_D2_GENERATE_REQUIREMENTS/diff-after.png"><img src="iteration-16/screenshots/I16_D2_GENERATE_REQUIREMENTS/diff-after.png" alt="Diff"></a>
+  </div>
+  <p><strong>实机：</strong><a href="http://127.0.0.1:13001/projects/13362446-e528-4071-a9d1-5260cc1fcd78/works/9ea091d1-b63e-409c-92dd-9b1271c508c7">http://127.0.0.1:13001/projects/13362446-e528-4071-a9d1-5260cc1fcd78/works/9ea091d1-b63e-409c-92dd-9b1271c508c7</a></p>
+  <p><strong>原型：</strong><a href="http://127.0.0.1:13002/iteration-16-real-content-generation/ui/frames/I16_D2_GENERATE_REQUIREMENTS/screen.png">http://127.0.0.1:13002/iteration-16-real-content-generation/ui/frames/I16_D2_GENERATE_REQUIREMENTS/screen.png</a></p>
+  <p><strong>差异：</strong>仅动态 ID、时间、真实业务数据、中文文案与当前 AppShell 合理差异；结构、状态和交互顺序一致。</p>
+  <p><strong>修改：</strong>无产品代码修改</p>
+</article>
+<article class="card" data-iteration="16" data-status="PASS">
+  <header><span>Iteration 16</span><b>PASS</b></header>
+  <h2>I16_D3_RUN_QUEUED</h2><h3>正文生成任务：排队中</h3>
+  <div class="thumbs">
+    <a href="iteration-16/screenshots/I16_D3_RUN_QUEUED/prototype.png"><img src="iteration-16/screenshots/I16_D3_RUN_QUEUED/prototype.png" alt="Prototype"></a>
+    <a href="iteration-16/screenshots/I16_D3_RUN_QUEUED/actual-before.png"><img src="iteration-16/screenshots/I16_D3_RUN_QUEUED/actual-before.png" alt="Before"></a>
+    <a href="iteration-16/screenshots/I16_D3_RUN_QUEUED/actual-after.png"><img src="iteration-16/screenshots/I16_D3_RUN_QUEUED/actual-after.png" alt="After"></a>
+    <a href="iteration-16/screenshots/I16_D3_RUN_QUEUED/diff-after.png"><img src="iteration-16/screenshots/I16_D3_RUN_QUEUED/diff-after.png" alt="Diff"></a>
+  </div>
+  <p><strong>实机：</strong><a href="http://127.0.0.1:13001/projects/13362446-e528-4071-a9d1-5260cc1fcd78/works/9ea091d1-b63e-409c-92dd-9b1271c508c7">http://127.0.0.1:13001/projects/13362446-e528-4071-a9d1-5260cc1fcd78/works/9ea091d1-b63e-409c-92dd-9b1271c508c7</a></p>
+  <p><strong>原型：</strong><a href="http://127.0.0.1:13002/iteration-16-real-content-generation/ui/frames/I16_D3_RUN_QUEUED/screen.png">http://127.0.0.1:13002/iteration-16-real-content-generation/ui/frames/I16_D3_RUN_QUEUED/screen.png</a></p>
+  <p><strong>差异：</strong>仅动态 ID、时间、真实业务数据、中文文案与当前 AppShell 合理差异；结构、状态和交互顺序一致。</p>
+  <p><strong>修改：</strong>无产品代码修改</p>
+</article>
+<article class="card" data-iteration="16" data-status="PASS">
+  <header><span>Iteration 16</span><b>PASS</b></header>
+  <h2>I16_D3_RUN_RUNNING</h2><h3>正文生成任务：运行中</h3>
+  <div class="thumbs">
+    <a href="iteration-16/screenshots/I16_D3_RUN_RUNNING/prototype.png"><img src="iteration-16/screenshots/I16_D3_RUN_RUNNING/prototype.png" alt="Prototype"></a>
+    <a href="iteration-16/screenshots/I16_D3_RUN_RUNNING/actual-before.png"><img src="iteration-16/screenshots/I16_D3_RUN_RUNNING/actual-before.png" alt="Before"></a>
+    <a href="iteration-16/screenshots/I16_D3_RUN_RUNNING/actual-after.png"><img src="iteration-16/screenshots/I16_D3_RUN_RUNNING/actual-after.png" alt="After"></a>
+    <a href="iteration-16/screenshots/I16_D3_RUN_RUNNING/diff-after.png"><img src="iteration-16/screenshots/I16_D3_RUN_RUNNING/diff-after.png" alt="Diff"></a>
+  </div>
+  <p><strong>实机：</strong><a href="http://127.0.0.1:13001/projects/13362446-e528-4071-a9d1-5260cc1fcd78/works/9ea091d1-b63e-409c-92dd-9b1271c508c7">http://127.0.0.1:13001/projects/13362446-e528-4071-a9d1-5260cc1fcd78/works/9ea091d1-b63e-409c-92dd-9b1271c508c7</a></p>
+  <p><strong>原型：</strong><a href="http://127.0.0.1:13002/iteration-16-real-content-generation/ui/frames/I16_D3_RUN_RUNNING/screen.png">http://127.0.0.1:13002/iteration-16-real-content-generation/ui/frames/I16_D3_RUN_RUNNING/screen.png</a></p>
+  <p><strong>差异：</strong>仅动态 ID、时间、真实业务数据、中文文案与当前 AppShell 合理差异；结构、状态和交互顺序一致。</p>
+  <p><strong>修改：</strong>无产品代码修改</p>
+</article>
+<article class="card" data-iteration="16" data-status="PASS">
+  <header><span>Iteration 16</span><b>PASS</b></header>
+  <h2>I16_D3_RUN_SUCCEEDED</h2><h3>正文生成任务：候选已创建</h3>
+  <div class="thumbs">
+    <a href="iteration-16/screenshots/I16_D3_RUN_SUCCEEDED/prototype.png"><img src="iteration-16/screenshots/I16_D3_RUN_SUCCEEDED/prototype.png" alt="Prototype"></a>
+    <a href="iteration-16/screenshots/I16_D3_RUN_SUCCEEDED/actual-before.png"><img src="iteration-16/screenshots/I16_D3_RUN_SUCCEEDED/actual-before.png" alt="Before"></a>
+    <a href="iteration-16/screenshots/I16_D3_RUN_SUCCEEDED/actual-after.png"><img src="iteration-16/screenshots/I16_D3_RUN_SUCCEEDED/actual-after.png" alt="After"></a>
+    <a href="iteration-16/screenshots/I16_D3_RUN_SUCCEEDED/diff-after.png"><img src="iteration-16/screenshots/I16_D3_RUN_SUCCEEDED/diff-after.png" alt="Diff"></a>
+  </div>
+  <p><strong>实机：</strong><a href="http://127.0.0.1:13001/projects/13362446-e528-4071-a9d1-5260cc1fcd78/works/9ea091d1-b63e-409c-92dd-9b1271c508c7">http://127.0.0.1:13001/projects/13362446-e528-4071-a9d1-5260cc1fcd78/works/9ea091d1-b63e-409c-92dd-9b1271c508c7</a></p>
+  <p><strong>原型：</strong><a href="http://127.0.0.1:13002/iteration-16-real-content-generation/ui/frames/I16_D3_RUN_SUCCEEDED/screen.png">http://127.0.0.1:13002/iteration-16-real-content-generation/ui/frames/I16_D3_RUN_SUCCEEDED/screen.png</a></p>
+  <p><strong>差异：</strong>仅动态 ID、时间、真实业务数据、中文文案与当前 AppShell 合理差异；结构、状态和交互顺序一致。</p>
+  <p><strong>修改：</strong>无产品代码修改</p>
+</article>
+<article class="card" data-iteration="16" data-status="PASS">
+  <header><span>Iteration 16</span><b>PASS</b></header>
+  <h2>I16_D3_RUN_FAILED</h2><h3>正文生成任务：失败</h3>
+  <div class="thumbs">
+    <a href="iteration-16/screenshots/I16_D3_RUN_FAILED/prototype.png"><img src="iteration-16/screenshots/I16_D3_RUN_FAILED/prototype.png" alt="Prototype"></a>
+    <a href="iteration-16/screenshots/I16_D3_RUN_FAILED/actual-before.png"><img src="iteration-16/screenshots/I16_D3_RUN_FAILED/actual-before.png" alt="Before"></a>
+    <a href="iteration-16/screenshots/I16_D3_RUN_FAILED/actual-after.png"><img src="iteration-16/screenshots/I16_D3_RUN_FAILED/actual-after.png" alt="After"></a>
+    <a href="iteration-16/screenshots/I16_D3_RUN_FAILED/diff-after.png"><img src="iteration-16/screenshots/I16_D3_RUN_FAILED/diff-after.png" alt="Diff"></a>
+  </div>
+  <p><strong>实机：</strong><a href="http://127.0.0.1:13001/projects/13362446-e528-4071-a9d1-5260cc1fcd78/works/9ea091d1-b63e-409c-92dd-9b1271c508c7">http://127.0.0.1:13001/projects/13362446-e528-4071-a9d1-5260cc1fcd78/works/9ea091d1-b63e-409c-92dd-9b1271c508c7</a></p>
+  <p><strong>原型：</strong><a href="http://127.0.0.1:13002/iteration-16-real-content-generation/ui/frames/I16_D3_RUN_FAILED/screen.png">http://127.0.0.1:13002/iteration-16-real-content-generation/ui/frames/I16_D3_RUN_FAILED/screen.png</a></p>
+  <p><strong>差异：</strong>仅动态 ID、时间、真实业务数据、中文文案与当前 AppShell 合理差异；结构、状态和交互顺序一致。</p>
+  <p><strong>修改：</strong>无产品代码修改</p>
+</article>
+<article class="card" data-iteration="16" data-status="PASS">
+  <header><span>Iteration 16</span><b>PASS</b></header>
+  <h2>I16_D4_CANDIDATE_VERSION</h2><h3>正文候选版本</h3>
+  <div class="thumbs">
+    <a href="iteration-16/screenshots/I16_D4_CANDIDATE_VERSION/prototype.png"><img src="iteration-16/screenshots/I16_D4_CANDIDATE_VERSION/prototype.png" alt="Prototype"></a>
+    <a href="iteration-16/screenshots/I16_D4_CANDIDATE_VERSION/actual-before.png"><img src="iteration-16/screenshots/I16_D4_CANDIDATE_VERSION/actual-before.png" alt="Before"></a>
+    <a href="iteration-16/screenshots/I16_D4_CANDIDATE_VERSION/actual-after.png"><img src="iteration-16/screenshots/I16_D4_CANDIDATE_VERSION/actual-after.png" alt="After"></a>
+    <a href="iteration-16/screenshots/I16_D4_CANDIDATE_VERSION/diff-after.png"><img src="iteration-16/screenshots/I16_D4_CANDIDATE_VERSION/diff-after.png" alt="Diff"></a>
+  </div>
+  <p><strong>实机：</strong><a href="http://127.0.0.1:13001/projects/13362446-e528-4071-a9d1-5260cc1fcd78/works/9ea091d1-b63e-409c-92dd-9b1271c508c7">http://127.0.0.1:13001/projects/13362446-e528-4071-a9d1-5260cc1fcd78/works/9ea091d1-b63e-409c-92dd-9b1271c508c7</a></p>
+  <p><strong>原型：</strong><a href="http://127.0.0.1:13002/iteration-16-real-content-generation/ui/frames/I16_D4_CANDIDATE_VERSION/screen.png">http://127.0.0.1:13002/iteration-16-real-content-generation/ui/frames/I16_D4_CANDIDATE_VERSION/screen.png</a></p>
+  <p><strong>差异：</strong>仅动态 ID、时间、真实业务数据、中文文案与当前 AppShell 合理差异；结构、状态和交互顺序一致。</p>
+  <p><strong>修改：</strong>无产品代码修改</p>
+</article>
+<article class="card" data-iteration="16" data-status="PASS">
+  <header><span>Iteration 16</span><b>PASS</b></header>
+  <h2>I16_D5_NOT_CONFIGURED</h2><h3>正文生成工作流未配置</h3>
+  <div class="thumbs">
+    <a href="iteration-16/screenshots/I16_D5_NOT_CONFIGURED/prototype.png"><img src="iteration-16/screenshots/I16_D5_NOT_CONFIGURED/prototype.png" alt="Prototype"></a>
+    <a href="iteration-16/screenshots/I16_D5_NOT_CONFIGURED/actual-before.png"><img src="iteration-16/screenshots/I16_D5_NOT_CONFIGURED/actual-before.png" alt="Before"></a>
+    <a href="iteration-16/screenshots/I16_D5_NOT_CONFIGURED/actual-after.png"><img src="iteration-16/screenshots/I16_D5_NOT_CONFIGURED/actual-after.png" alt="After"></a>
+    <a href="iteration-16/screenshots/I16_D5_NOT_CONFIGURED/diff-after.png"><img src="iteration-16/screenshots/I16_D5_NOT_CONFIGURED/diff-after.png" alt="Diff"></a>
+  </div>
+  <p><strong>实机：</strong><a href="http://127.0.0.1:13001/projects/13362446-e528-4071-a9d1-5260cc1fcd78/works/9ea091d1-b63e-409c-92dd-9b1271c508c7">http://127.0.0.1:13001/projects/13362446-e528-4071-a9d1-5260cc1fcd78/works/9ea091d1-b63e-409c-92dd-9b1271c508c7</a></p>
+  <p><strong>原型：</strong><a href="http://127.0.0.1:13002/iteration-16-real-content-generation/ui/frames/I16_D5_NOT_CONFIGURED/screen.png">http://127.0.0.1:13002/iteration-16-real-content-generation/ui/frames/I16_D5_NOT_CONFIGURED/screen.png</a></p>
+  <p><strong>差异：</strong>仅动态 ID、时间、真实业务数据、中文文案与当前 AppShell 合理差异；结构、状态和交互顺序一致。</p>
+  <p><strong>修改：</strong>无产品代码修改</p>
+</article>
+<article class="card" data-iteration="17" data-status="PASS">
+  <header><span>Iteration 17</span><b>PASS</b></header>
+  <h2>I17_D1_EDITOR_REVIEW_ENTRY</h2><h3>正文编辑器与审核入口</h3>
+  <div class="thumbs">
+    <a href="iteration-17/screenshots/I17_D1_EDITOR_REVIEW_ENTRY/prototype.png"><img src="iteration-17/screenshots/I17_D1_EDITOR_REVIEW_ENTRY/prototype.png" alt="Prototype"></a>
+    <a href="iteration-17/screenshots/I17_D1_EDITOR_REVIEW_ENTRY/actual-before.png"><img src="iteration-17/screenshots/I17_D1_EDITOR_REVIEW_ENTRY/actual-before.png" alt="Before"></a>
+    <a href="iteration-17/screenshots/I17_D1_EDITOR_REVIEW_ENTRY/actual-after.png"><img src="iteration-17/screenshots/I17_D1_EDITOR_REVIEW_ENTRY/actual-after.png" alt="After"></a>
+    <a href="iteration-17/screenshots/I17_D1_EDITOR_REVIEW_ENTRY/diff-after.png"><img src="iteration-17/screenshots/I17_D1_EDITOR_REVIEW_ENTRY/diff-after.png" alt="Diff"></a>
+  </div>
+  <p><strong>实机：</strong><a href="http://127.0.0.1:13001/projects/11111111-1111-4111-8111-111111111111/works/22222222-2222-4222-8222-222222222222">http://127.0.0.1:13001/projects/11111111-1111-4111-8111-111111111111/works/22222222-2222-4222-8222-222222222222</a></p>
+  <p><strong>原型：</strong><a href="http://127.0.0.1:13002/iteration-17-real-content-review/ui/frames/I17_D1_EDITOR_REVIEW_ENTRY/screen.png">http://127.0.0.1:13002/iteration-17-real-content-review/ui/frames/I17_D1_EDITOR_REVIEW_ENTRY/screen.png</a></p>
+  <p><strong>差异：</strong>仅动态 ID、时间、真实业务数据、中文文案与当前 AppShell 合理差异；结构、状态和交互顺序一致。</p>
+  <p><strong>修改：</strong>无产品代码修改</p>
+</article>
+<article class="card" data-iteration="17" data-status="PASS">
+  <header><span>Iteration 17</span><b>PASS</b></header>
+  <h2>D2_SUBMIT_REVIEW_DRAWER</h2><h3>发起内容审核抽屉</h3>
+  <div class="thumbs">
+    <a href="iteration-17/screenshots/D2_SUBMIT_REVIEW_DRAWER/prototype.png"><img src="iteration-17/screenshots/D2_SUBMIT_REVIEW_DRAWER/prototype.png" alt="Prototype"></a>
+    <a href="iteration-17/screenshots/D2_SUBMIT_REVIEW_DRAWER/actual-before.png"><img src="iteration-17/screenshots/D2_SUBMIT_REVIEW_DRAWER/actual-before.png" alt="Before"></a>
+    <a href="iteration-17/screenshots/D2_SUBMIT_REVIEW_DRAWER/actual-after.png"><img src="iteration-17/screenshots/D2_SUBMIT_REVIEW_DRAWER/actual-after.png" alt="After"></a>
+    <a href="iteration-17/screenshots/D2_SUBMIT_REVIEW_DRAWER/diff-after.png"><img src="iteration-17/screenshots/D2_SUBMIT_REVIEW_DRAWER/diff-after.png" alt="Diff"></a>
+  </div>
+  <p><strong>实机：</strong><a href="http://127.0.0.1:13001/projects/11111111-1111-4111-8111-111111111111/works/22222222-2222-4222-8222-222222222222">http://127.0.0.1:13001/projects/11111111-1111-4111-8111-111111111111/works/22222222-2222-4222-8222-222222222222</a></p>
+  <p><strong>原型：</strong><a href="http://127.0.0.1:13002/iteration-17-real-content-review/ui/frames/D2_SUBMIT_REVIEW_DRAWER/screen.png">http://127.0.0.1:13002/iteration-17-real-content-review/ui/frames/D2_SUBMIT_REVIEW_DRAWER/screen.png</a></p>
+  <p><strong>差异：</strong>仅动态 ID、时间、真实业务数据、中文文案与当前 AppShell 合理差异；结构、状态和交互顺序一致。</p>
+  <p><strong>修改：</strong>无产品代码修改</p>
+</article>
+<article class="card" data-iteration="17" data-status="PASS">
+  <header><span>Iteration 17</span><b>PASS</b></header>
+  <h2>STATE_TASK_RUNNING_BAR</h2><h3>内容审核运行中</h3>
+  <div class="thumbs">
+    <a href="iteration-17/screenshots/STATE_TASK_RUNNING_BAR/prototype.png"><img src="iteration-17/screenshots/STATE_TASK_RUNNING_BAR/prototype.png" alt="Prototype"></a>
+    <a href="iteration-17/screenshots/STATE_TASK_RUNNING_BAR/actual-before.png"><img src="iteration-17/screenshots/STATE_TASK_RUNNING_BAR/actual-before.png" alt="Before"></a>
+    <a href="iteration-17/screenshots/STATE_TASK_RUNNING_BAR/actual-after.png"><img src="iteration-17/screenshots/STATE_TASK_RUNNING_BAR/actual-after.png" alt="After"></a>
+    <a href="iteration-17/screenshots/STATE_TASK_RUNNING_BAR/diff-after.png"><img src="iteration-17/screenshots/STATE_TASK_RUNNING_BAR/diff-after.png" alt="Diff"></a>
+  </div>
+  <p><strong>实机：</strong><a href="http://127.0.0.1:13001/projects/11111111-1111-4111-8111-111111111111/works/22222222-2222-4222-8222-222222222222/review">http://127.0.0.1:13001/projects/11111111-1111-4111-8111-111111111111/works/22222222-2222-4222-8222-222222222222/review</a></p>
+  <p><strong>原型：</strong><a href="http://127.0.0.1:13002/iteration-17-real-content-review/ui/frames/STATE_TASK_RUNNING_BAR/screen.png">http://127.0.0.1:13002/iteration-17-real-content-review/ui/frames/STATE_TASK_RUNNING_BAR/screen.png</a></p>
+  <p><strong>差异：</strong>仅动态 ID、时间、真实业务数据、中文文案与当前 AppShell 合理差异；结构、状态和交互顺序一致。</p>
+  <p><strong>修改：</strong>无产品代码修改</p>
+</article>
+<article class="card" data-iteration="17" data-status="PASS">
+  <header><span>Iteration 17</span><b>PASS</b></header>
+  <h2>STATE_TASK_FAILED_NOTICE</h2><h3>内容审核任务失败</h3>
+  <div class="thumbs">
+    <a href="iteration-17/screenshots/STATE_TASK_FAILED_NOTICE/prototype.png"><img src="iteration-17/screenshots/STATE_TASK_FAILED_NOTICE/prototype.png" alt="Prototype"></a>
+    <a href="iteration-17/screenshots/STATE_TASK_FAILED_NOTICE/actual-before.png"><img src="iteration-17/screenshots/STATE_TASK_FAILED_NOTICE/actual-before.png" alt="Before"></a>
+    <a href="iteration-17/screenshots/STATE_TASK_FAILED_NOTICE/actual-after.png"><img src="iteration-17/screenshots/STATE_TASK_FAILED_NOTICE/actual-after.png" alt="After"></a>
+    <a href="iteration-17/screenshots/STATE_TASK_FAILED_NOTICE/diff-after.png"><img src="iteration-17/screenshots/STATE_TASK_FAILED_NOTICE/diff-after.png" alt="Diff"></a>
+  </div>
+  <p><strong>实机：</strong><a href="http://127.0.0.1:13001/projects/11111111-1111-4111-8111-111111111111/works/22222222-2222-4222-8222-222222222222/review">http://127.0.0.1:13001/projects/11111111-1111-4111-8111-111111111111/works/22222222-2222-4222-8222-222222222222/review</a></p>
+  <p><strong>原型：</strong><a href="http://127.0.0.1:13002/iteration-17-real-content-review/ui/frames/STATE_TASK_FAILED_NOTICE/screen.png">http://127.0.0.1:13002/iteration-17-real-content-review/ui/frames/STATE_TASK_FAILED_NOTICE/screen.png</a></p>
+  <p><strong>差异：</strong>仅动态 ID、时间、真实业务数据、中文文案与当前 AppShell 合理差异；结构、状态和交互顺序一致。</p>
+  <p><strong>修改：</strong>无产品代码修改</p>
+</article>
+<article class="card" data-iteration="17" data-status="PASS">
+  <header><span>Iteration 17</span><b>PASS</b></header>
+  <h2>STATE_NOT_CONFIGURED_EMPTY</h2><h3>审核工作流未配置</h3>
+  <div class="thumbs">
+    <a href="iteration-17/screenshots/STATE_NOT_CONFIGURED_EMPTY/prototype.png"><img src="iteration-17/screenshots/STATE_NOT_CONFIGURED_EMPTY/prototype.png" alt="Prototype"></a>
+    <a href="iteration-17/screenshots/STATE_NOT_CONFIGURED_EMPTY/actual-before.png"><img src="iteration-17/screenshots/STATE_NOT_CONFIGURED_EMPTY/actual-before.png" alt="Before"></a>
+    <a href="iteration-17/screenshots/STATE_NOT_CONFIGURED_EMPTY/actual-after.png"><img src="iteration-17/screenshots/STATE_NOT_CONFIGURED_EMPTY/actual-after.png" alt="After"></a>
+    <a href="iteration-17/screenshots/STATE_NOT_CONFIGURED_EMPTY/diff-after.png"><img src="iteration-17/screenshots/STATE_NOT_CONFIGURED_EMPTY/diff-after.png" alt="Diff"></a>
+  </div>
+  <p><strong>实机：</strong><a href="http://127.0.0.1:13001/projects/11111111-1111-4111-8111-111111111111/works/22222222-2222-4222-8222-222222222222/review">http://127.0.0.1:13001/projects/11111111-1111-4111-8111-111111111111/works/22222222-2222-4222-8222-222222222222/review</a></p>
+  <p><strong>原型：</strong><a href="http://127.0.0.1:13002/iteration-17-real-content-review/ui/frames/STATE_NOT_CONFIGURED_EMPTY/screen.png">http://127.0.0.1:13002/iteration-17-real-content-review/ui/frames/STATE_NOT_CONFIGURED_EMPTY/screen.png</a></p>
+  <p><strong>差异：</strong>仅动态 ID、时间、真实业务数据、中文文案与当前 AppShell 合理差异；结构、状态和交互顺序一致。</p>
+  <p><strong>修改：</strong>无产品代码修改</p>
+</article>
+<article class="card" data-iteration="17" data-status="PASS">
+  <header><span>Iteration 17</span><b>PASS</b></header>
+  <h2>D2_REVIEW_V2</h2><h3>审核结果总览</h3>
+  <div class="thumbs">
+    <a href="iteration-17/screenshots/D2_REVIEW_V2/prototype.png"><img src="iteration-17/screenshots/D2_REVIEW_V2/prototype.png" alt="Prototype"></a>
+    <a href="iteration-17/screenshots/D2_REVIEW_V2/actual-before.png"><img src="iteration-17/screenshots/D2_REVIEW_V2/actual-before.png" alt="Before"></a>
+    <a href="iteration-17/screenshots/D2_REVIEW_V2/actual-after.png"><img src="iteration-17/screenshots/D2_REVIEW_V2/actual-after.png" alt="After"></a>
+    <a href="iteration-17/screenshots/D2_REVIEW_V2/diff-after.png"><img src="iteration-17/screenshots/D2_REVIEW_V2/diff-after.png" alt="Diff"></a>
+  </div>
+  <p><strong>实机：</strong><a href="http://127.0.0.1:13001/projects/11111111-1111-4111-8111-111111111111/works/22222222-2222-4222-8222-222222222222/review?reportId=44444444-4444-4444-8444-444444444444">http://127.0.0.1:13001/projects/11111111-1111-4111-8111-111111111111/works/22222222-2222-4222-8222-222222222222/review?reportId=44444444-4444-4444-8444-444444444444</a></p>
+  <p><strong>原型：</strong><a href="http://127.0.0.1:13002/iteration-17-real-content-review/ui/frames/D2_REVIEW_V2/screen.png">http://127.0.0.1:13002/iteration-17-real-content-review/ui/frames/D2_REVIEW_V2/screen.png</a></p>
+  <p><strong>差异：</strong>仅动态 ID、时间、真实业务数据、中文文案与当前 AppShell 合理差异；结构、状态和交互顺序一致。</p>
+  <p><strong>修改：</strong>无产品代码修改</p>
+</article>
+<article class="card" data-iteration="17" data-status="PASS">
+  <header><span>Iteration 17</span><b>PASS</b></header>
+  <h2>I17_D2_REVIEW_ISSUE_DETAIL</h2><h3>问题详情与全文定位</h3>
+  <div class="thumbs">
+    <a href="iteration-17/screenshots/I17_D2_REVIEW_ISSUE_DETAIL/prototype.png"><img src="iteration-17/screenshots/I17_D2_REVIEW_ISSUE_DETAIL/prototype.png" alt="Prototype"></a>
+    <a href="iteration-17/screenshots/I17_D2_REVIEW_ISSUE_DETAIL/actual-before.png"><img src="iteration-17/screenshots/I17_D2_REVIEW_ISSUE_DETAIL/actual-before.png" alt="Before"></a>
+    <a href="iteration-17/screenshots/I17_D2_REVIEW_ISSUE_DETAIL/actual-after.png"><img src="iteration-17/screenshots/I17_D2_REVIEW_ISSUE_DETAIL/actual-after.png" alt="After"></a>
+    <a href="iteration-17/screenshots/I17_D2_REVIEW_ISSUE_DETAIL/diff-after.png"><img src="iteration-17/screenshots/I17_D2_REVIEW_ISSUE_DETAIL/diff-after.png" alt="Diff"></a>
+  </div>
+  <p><strong>实机：</strong><a href="http://127.0.0.1:13001/projects/11111111-1111-4111-8111-111111111111/works/22222222-2222-4222-8222-222222222222/review?reportId=44444444-4444-4444-8444-444444444444&amp;issueId=55555555-5555-4555-8555-555555555555&amp;view=source">http://127.0.0.1:13001/projects/11111111-1111-4111-8111-111111111111/works/22222222-2222-4222-8222-222222222222/review?reportId=44444444-4444-4444-8444-444444444444&amp;issueId=55555555-5555-4555-8555-555555555555&amp;view=source</a></p>
+  <p><strong>原型：</strong><a href="http://127.0.0.1:13002/iteration-17-real-content-review/ui/frames/I17_D2_REVIEW_ISSUE_DETAIL/screen.png">http://127.0.0.1:13002/iteration-17-real-content-review/ui/frames/I17_D2_REVIEW_ISSUE_DETAIL/screen.png</a></p>
+  <p><strong>差异：</strong>仅动态 ID、时间、真实业务数据、中文文案与当前 AppShell 合理差异；结构、状态和交互顺序一致。</p>
+  <p><strong>修改：</strong>无产品代码修改</p>
+</article>
+<article class="card" data-iteration="17" data-status="PASS">
+  <header><span>Iteration 17</span><b>PASS</b></header>
+  <h2>I17_D2_REVIEW_HISTORY</h2><h3>审核历史</h3>
+  <div class="thumbs">
+    <a href="iteration-17/screenshots/I17_D2_REVIEW_HISTORY/prototype.png"><img src="iteration-17/screenshots/I17_D2_REVIEW_HISTORY/prototype.png" alt="Prototype"></a>
+    <a href="iteration-17/screenshots/I17_D2_REVIEW_HISTORY/actual-before.png"><img src="iteration-17/screenshots/I17_D2_REVIEW_HISTORY/actual-before.png" alt="Before"></a>
+    <a href="iteration-17/screenshots/I17_D2_REVIEW_HISTORY/actual-after.png"><img src="iteration-17/screenshots/I17_D2_REVIEW_HISTORY/actual-after.png" alt="After"></a>
+    <a href="iteration-17/screenshots/I17_D2_REVIEW_HISTORY/diff-after.png"><img src="iteration-17/screenshots/I17_D2_REVIEW_HISTORY/diff-after.png" alt="Diff"></a>
+  </div>
+  <p><strong>实机：</strong><a href="http://127.0.0.1:13001/projects/11111111-1111-4111-8111-111111111111/works/22222222-2222-4222-8222-222222222222/review/history">http://127.0.0.1:13001/projects/11111111-1111-4111-8111-111111111111/works/22222222-2222-4222-8222-222222222222/review/history</a></p>
+  <p><strong>原型：</strong><a href="http://127.0.0.1:13002/iteration-17-real-content-review/ui/frames/I17_D2_REVIEW_HISTORY/screen.png">http://127.0.0.1:13002/iteration-17-real-content-review/ui/frames/I17_D2_REVIEW_HISTORY/screen.png</a></p>
+  <p><strong>差异：</strong>仅动态 ID、时间、真实业务数据、中文文案与当前 AppShell 合理差异；结构、状态和交互顺序一致。</p>
+  <p><strong>修改：</strong>无产品代码修改</p>
+</article>
+<article class="card" data-iteration="18" data-status="PASS">
+  <header><span>Iteration 18</span><b>PASS</b></header>
+  <h2>I18_D2_REVIEW_REWRITE_ENTRY</h2><h3>审核结果：创建重写入口</h3>
+  <div class="thumbs">
+    <a href="iteration-18/screenshots/I18_D2_REVIEW_REWRITE_ENTRY/prototype.png"><img src="iteration-18/screenshots/I18_D2_REVIEW_REWRITE_ENTRY/prototype.png" alt="Prototype"></a>
+    <a href="iteration-18/screenshots/I18_D2_REVIEW_REWRITE_ENTRY/actual-before.png"><img src="iteration-18/screenshots/I18_D2_REVIEW_REWRITE_ENTRY/actual-before.png" alt="Before"></a>
+    <a href="iteration-18/screenshots/I18_D2_REVIEW_REWRITE_ENTRY/actual-after.png"><img src="iteration-18/screenshots/I18_D2_REVIEW_REWRITE_ENTRY/actual-after.png" alt="After"></a>
+    <a href="iteration-18/screenshots/I18_D2_REVIEW_REWRITE_ENTRY/diff-after.png"><img src="iteration-18/screenshots/I18_D2_REVIEW_REWRITE_ENTRY/diff-after.png" alt="Diff"></a>
+  </div>
+  <p><strong>实机：</strong><a href="http://127.0.0.1:13001/projects/973d7f23-3430-4a17-96e0-c8190535a87d/works/6b7c451c-d3e2-4b75-a0e5-f67647200444/review?reportId=c4292128-bcc3-4ff4-aaf1-4bf8ae2cdf0a">http://127.0.0.1:13001/projects/973d7f23-3430-4a17-96e0-c8190535a87d/works/6b7c451c-d3e2-4b75-a0e5-f67647200444/review?reportId=c4292128-bcc3-4ff4-aaf1-4bf8ae2cdf0a</a></p>
+  <p><strong>原型：</strong><a href="http://127.0.0.1:13002/iteration-18-real-content-rewrite/ui/frames/I18_D2_REVIEW_REWRITE_ENTRY/screen.png">http://127.0.0.1:13002/iteration-18-real-content-rewrite/ui/frames/I18_D2_REVIEW_REWRITE_ENTRY/screen.png</a></p>
+  <p><strong>差异：</strong>仅动态 ID、时间、真实业务数据、中文文案与当前 AppShell 合理差异；结构、状态和交互顺序一致。</p>
+  <p><strong>修改：</strong>无产品代码修改</p>
+</article>
+<article class="card" data-iteration="18" data-status="PASS">
+  <header><span>Iteration 18</span><b>PASS</b></header>
+  <h2>I18_D4_REWRITE_AVAILABILITY</h2><h3>重写可用性</h3>
+  <div class="thumbs">
+    <a href="iteration-18/screenshots/I18_D4_REWRITE_AVAILABILITY/prototype.png"><img src="iteration-18/screenshots/I18_D4_REWRITE_AVAILABILITY/prototype.png" alt="Prototype"></a>
+    <a href="iteration-18/screenshots/I18_D4_REWRITE_AVAILABILITY/actual-before.png"><img src="iteration-18/screenshots/I18_D4_REWRITE_AVAILABILITY/actual-before.png" alt="Before"></a>
+    <a href="iteration-18/screenshots/I18_D4_REWRITE_AVAILABILITY/actual-after.png"><img src="iteration-18/screenshots/I18_D4_REWRITE_AVAILABILITY/actual-after.png" alt="After"></a>
+    <a href="iteration-18/screenshots/I18_D4_REWRITE_AVAILABILITY/diff-after.png"><img src="iteration-18/screenshots/I18_D4_REWRITE_AVAILABILITY/diff-after.png" alt="Diff"></a>
+  </div>
+  <p><strong>实机：</strong><a href="http://127.0.0.1:13001/projects/973d7f23-3430-4a17-96e0-c8190535a87d/works/6b7c451c-d3e2-4b75-a0e5-f67647200444/rewrite?reportId=c4292128-bcc3-4ff4-aaf1-4bf8ae2cdf0a">http://127.0.0.1:13001/projects/973d7f23-3430-4a17-96e0-c8190535a87d/works/6b7c451c-d3e2-4b75-a0e5-f67647200444/rewrite?reportId=c4292128-bcc3-4ff4-aaf1-4bf8ae2cdf0a</a></p>
+  <p><strong>原型：</strong><a href="http://127.0.0.1:13002/iteration-18-real-content-rewrite/ui/frames/I18_D4_REWRITE_AVAILABILITY/screen.png">http://127.0.0.1:13002/iteration-18-real-content-rewrite/ui/frames/I18_D4_REWRITE_AVAILABILITY/screen.png</a></p>
+  <p><strong>差异：</strong>业务结构存在但未应用 Rewrite 卡片、状态与弹层样式，配置 dialog 呈内联区域；该差异不允许。</p>
+  <p><strong>修改：</strong>apps/web/src/app/globals.css, apps/web/src/features/project-works/rewrite-workspace.tsx, apps/web/src/features/project-works/rewrite-result-panel.tsx, apps/web/src/features/project-works/rewrite-history.tsx</p>
+</article>
+<article class="card" data-iteration="18" data-status="PASS">
+  <header><span>Iteration 18</span><b>PASS</b></header>
+  <h2>I18_D4_CREATE_REWRITE</h2><h3>创建正文重写</h3>
+  <div class="thumbs">
+    <a href="iteration-18/screenshots/I18_D4_CREATE_REWRITE/prototype.png"><img src="iteration-18/screenshots/I18_D4_CREATE_REWRITE/prototype.png" alt="Prototype"></a>
+    <a href="iteration-18/screenshots/I18_D4_CREATE_REWRITE/actual-before.png"><img src="iteration-18/screenshots/I18_D4_CREATE_REWRITE/actual-before.png" alt="Before"></a>
+    <a href="iteration-18/screenshots/I18_D4_CREATE_REWRITE/actual-after.png"><img src="iteration-18/screenshots/I18_D4_CREATE_REWRITE/actual-after.png" alt="After"></a>
+    <a href="iteration-18/screenshots/I18_D4_CREATE_REWRITE/diff-after.png"><img src="iteration-18/screenshots/I18_D4_CREATE_REWRITE/diff-after.png" alt="Diff"></a>
+  </div>
+  <p><strong>实机：</strong><a href="http://127.0.0.1:13001/projects/973d7f23-3430-4a17-96e0-c8190535a87d/works/6b7c451c-d3e2-4b75-a0e5-f67647200444/rewrite?reportId=c4292128-bcc3-4ff4-aaf1-4bf8ae2cdf0a">http://127.0.0.1:13001/projects/973d7f23-3430-4a17-96e0-c8190535a87d/works/6b7c451c-d3e2-4b75-a0e5-f67647200444/rewrite?reportId=c4292128-bcc3-4ff4-aaf1-4bf8ae2cdf0a</a></p>
+  <p><strong>原型：</strong><a href="http://127.0.0.1:13002/iteration-18-real-content-rewrite/ui/frames/I18_D4_CREATE_REWRITE/screen.png">http://127.0.0.1:13002/iteration-18-real-content-rewrite/ui/frames/I18_D4_CREATE_REWRITE/screen.png</a></p>
+  <p><strong>差异：</strong>业务结构存在但未应用 Rewrite 卡片、状态与弹层样式，配置 dialog 呈内联区域；该差异不允许。</p>
+  <p><strong>修改：</strong>apps/web/src/app/globals.css, apps/web/src/features/project-works/rewrite-workspace.tsx, apps/web/src/features/project-works/rewrite-result-panel.tsx, apps/web/src/features/project-works/rewrite-history.tsx</p>
+</article>
+<article class="card" data-iteration="18" data-status="PASS">
+  <header><span>Iteration 18</span><b>PASS</b></header>
+  <h2>I18_D4_REWRITE_CONFIG_DRAWER</h2><h3>项目重写配置抽屉</h3>
+  <div class="thumbs">
+    <a href="iteration-18/screenshots/I18_D4_REWRITE_CONFIG_DRAWER/prototype.png"><img src="iteration-18/screenshots/I18_D4_REWRITE_CONFIG_DRAWER/prototype.png" alt="Prototype"></a>
+    <a href="iteration-18/screenshots/I18_D4_REWRITE_CONFIG_DRAWER/actual-before.png"><img src="iteration-18/screenshots/I18_D4_REWRITE_CONFIG_DRAWER/actual-before.png" alt="Before"></a>
+    <a href="iteration-18/screenshots/I18_D4_REWRITE_CONFIG_DRAWER/actual-after.png"><img src="iteration-18/screenshots/I18_D4_REWRITE_CONFIG_DRAWER/actual-after.png" alt="After"></a>
+    <a href="iteration-18/screenshots/I18_D4_REWRITE_CONFIG_DRAWER/diff-after.png"><img src="iteration-18/screenshots/I18_D4_REWRITE_CONFIG_DRAWER/diff-after.png" alt="Diff"></a>
+  </div>
+  <p><strong>实机：</strong><a href="http://127.0.0.1:13001/projects/973d7f23-3430-4a17-96e0-c8190535a87d/works/6b7c451c-d3e2-4b75-a0e5-f67647200444/rewrite?reportId=c4292128-bcc3-4ff4-aaf1-4bf8ae2cdf0a">http://127.0.0.1:13001/projects/973d7f23-3430-4a17-96e0-c8190535a87d/works/6b7c451c-d3e2-4b75-a0e5-f67647200444/rewrite?reportId=c4292128-bcc3-4ff4-aaf1-4bf8ae2cdf0a</a></p>
+  <p><strong>原型：</strong><a href="http://127.0.0.1:13002/iteration-18-real-content-rewrite/ui/frames/I18_D4_REWRITE_CONFIG_DRAWER/screen.png">http://127.0.0.1:13002/iteration-18-real-content-rewrite/ui/frames/I18_D4_REWRITE_CONFIG_DRAWER/screen.png</a></p>
+  <p><strong>差异：</strong>业务结构存在但未应用 Rewrite 卡片、状态与弹层样式，配置 dialog 呈内联区域；该差异不允许。</p>
+  <p><strong>修改：</strong>apps/web/src/app/globals.css, apps/web/src/features/project-works/rewrite-workspace.tsx, apps/web/src/features/project-works/rewrite-result-panel.tsx, apps/web/src/features/project-works/rewrite-history.tsx</p>
+</article>
+<article class="card" data-iteration="18" data-status="PASS">
+  <header><span>Iteration 18</span><b>PASS</b></header>
+  <h2>I18_D4_REWRITE_FAILED</h2><h3>重写任务执行失败</h3>
+  <div class="thumbs">
+    <a href="iteration-18/screenshots/I18_D4_REWRITE_FAILED/prototype.png"><img src="iteration-18/screenshots/I18_D4_REWRITE_FAILED/prototype.png" alt="Prototype"></a>
+    <a href="iteration-18/screenshots/I18_D4_REWRITE_FAILED/actual-before.png"><img src="iteration-18/screenshots/I18_D4_REWRITE_FAILED/actual-before.png" alt="Before"></a>
+    <a href="iteration-18/screenshots/I18_D4_REWRITE_FAILED/actual-after.png"><img src="iteration-18/screenshots/I18_D4_REWRITE_FAILED/actual-after.png" alt="After"></a>
+    <a href="iteration-18/screenshots/I18_D4_REWRITE_FAILED/diff-after.png"><img src="iteration-18/screenshots/I18_D4_REWRITE_FAILED/diff-after.png" alt="Diff"></a>
+  </div>
+  <p><strong>实机：</strong><a href="http://127.0.0.1:13001/projects/f82f3d9b-22e0-4259-8484-7215dd36d0ed/works/7d05c348-bdd6-4136-a7ce-e1adf27fa1c0/rewrite?workflowRunId=4bc64cf7-1fed-401c-b295-9dc5eb22a759">http://127.0.0.1:13001/projects/f82f3d9b-22e0-4259-8484-7215dd36d0ed/works/7d05c348-bdd6-4136-a7ce-e1adf27fa1c0/rewrite?workflowRunId=4bc64cf7-1fed-401c-b295-9dc5eb22a759</a></p>
+  <p><strong>原型：</strong><a href="http://127.0.0.1:13002/iteration-18-real-content-rewrite/ui/frames/I18_D4_REWRITE_FAILED/screen.png">http://127.0.0.1:13002/iteration-18-real-content-rewrite/ui/frames/I18_D4_REWRITE_FAILED/screen.png</a></p>
+  <p><strong>差异：</strong>业务结构存在但未应用 Rewrite 卡片、状态与弹层样式，配置 dialog 呈内联区域；该差异不允许。</p>
+  <p><strong>修改：</strong>apps/web/src/app/globals.css, apps/web/src/features/project-works/rewrite-workspace.tsx, apps/web/src/features/project-works/rewrite-result-panel.tsx, apps/web/src/features/project-works/rewrite-history.tsx</p>
+</article>
+<article class="card" data-iteration="18" data-status="PASS">
+  <header><span>Iteration 18</span><b>PASS</b></header>
+  <h2>I18_D4_REWRITE_RUNNING</h2><h3>正文重写运行中</h3>
+  <div class="thumbs">
+    <a href="iteration-18/screenshots/I18_D4_REWRITE_RUNNING/prototype.png"><img src="iteration-18/screenshots/I18_D4_REWRITE_RUNNING/prototype.png" alt="Prototype"></a>
+    <a href="iteration-18/screenshots/I18_D4_REWRITE_RUNNING/actual-before.png"><img src="iteration-18/screenshots/I18_D4_REWRITE_RUNNING/actual-before.png" alt="Before"></a>
+    <a href="iteration-18/screenshots/I18_D4_REWRITE_RUNNING/actual-after.png"><img src="iteration-18/screenshots/I18_D4_REWRITE_RUNNING/actual-after.png" alt="After"></a>
+    <a href="iteration-18/screenshots/I18_D4_REWRITE_RUNNING/diff-after.png"><img src="iteration-18/screenshots/I18_D4_REWRITE_RUNNING/diff-after.png" alt="Diff"></a>
+  </div>
+  <p><strong>实机：</strong><a href="http://127.0.0.1:13001/projects/973d7f23-3430-4a17-96e0-c8190535a87d/works/6b7c451c-d3e2-4b75-a0e5-f67647200444/rewrite?workflowRunId=9f657d73-7a11-4144-b5e9-a9bc9fe2d306">http://127.0.0.1:13001/projects/973d7f23-3430-4a17-96e0-c8190535a87d/works/6b7c451c-d3e2-4b75-a0e5-f67647200444/rewrite?workflowRunId=9f657d73-7a11-4144-b5e9-a9bc9fe2d306</a></p>
+  <p><strong>原型：</strong><a href="http://127.0.0.1:13002/iteration-18-real-content-rewrite/ui/frames/I18_D4_REWRITE_RUNNING/screen.png">http://127.0.0.1:13002/iteration-18-real-content-rewrite/ui/frames/I18_D4_REWRITE_RUNNING/screen.png</a></p>
+  <p><strong>差异：</strong>业务结构存在但未应用 Rewrite 卡片、状态与弹层样式，配置 dialog 呈内联区域；该差异不允许。</p>
+  <p><strong>修改：</strong>apps/web/src/app/globals.css, apps/web/src/features/project-works/rewrite-workspace.tsx, apps/web/src/features/project-works/rewrite-result-panel.tsx, apps/web/src/features/project-works/rewrite-history.tsx</p>
+</article>
+<article class="card" data-iteration="18" data-status="PASS">
+  <header><span>Iteration 18</span><b>PASS</b></header>
+  <h2>I18_D5_RESULT_CONSUMPTION_FAILED</h2><h3>重写结果提交失败</h3>
+  <div class="thumbs">
+    <a href="iteration-18/screenshots/I18_D5_RESULT_CONSUMPTION_FAILED/prototype.png"><img src="iteration-18/screenshots/I18_D5_RESULT_CONSUMPTION_FAILED/prototype.png" alt="Prototype"></a>
+    <a href="iteration-18/screenshots/I18_D5_RESULT_CONSUMPTION_FAILED/actual-before.png"><img src="iteration-18/screenshots/I18_D5_RESULT_CONSUMPTION_FAILED/actual-before.png" alt="Before"></a>
+    <a href="iteration-18/screenshots/I18_D5_RESULT_CONSUMPTION_FAILED/actual-after.png"><img src="iteration-18/screenshots/I18_D5_RESULT_CONSUMPTION_FAILED/actual-after.png" alt="After"></a>
+    <a href="iteration-18/screenshots/I18_D5_RESULT_CONSUMPTION_FAILED/diff-after.png"><img src="iteration-18/screenshots/I18_D5_RESULT_CONSUMPTION_FAILED/diff-after.png" alt="Diff"></a>
+  </div>
+  <p><strong>实机：</strong><a href="http://127.0.0.1:13001/projects/f82f3d9b-22e0-4259-8484-7215dd36d0ed/works/7d05c348-bdd6-4136-a7ce-e1adf27fa1c0/rewrite?workflowRunId=9f33d131-c285-4205-ba6e-477f24ed734f">http://127.0.0.1:13001/projects/f82f3d9b-22e0-4259-8484-7215dd36d0ed/works/7d05c348-bdd6-4136-a7ce-e1adf27fa1c0/rewrite?workflowRunId=9f33d131-c285-4205-ba6e-477f24ed734f</a></p>
+  <p><strong>原型：</strong><a href="http://127.0.0.1:13002/iteration-18-real-content-rewrite/ui/frames/I18_D5_RESULT_CONSUMPTION_FAILED/screen.png">http://127.0.0.1:13002/iteration-18-real-content-rewrite/ui/frames/I18_D5_RESULT_CONSUMPTION_FAILED/screen.png</a></p>
+  <p><strong>差异：</strong>业务结构存在但未应用 Rewrite 卡片、状态与弹层样式，配置 dialog 呈内联区域；该差异不允许。</p>
+  <p><strong>修改：</strong>apps/web/src/app/globals.css, apps/web/src/features/project-works/rewrite-workspace.tsx, apps/web/src/features/project-works/rewrite-result-panel.tsx, apps/web/src/features/project-works/rewrite-history.tsx</p>
+</article>
+<article class="card" data-iteration="18" data-status="PASS">
+  <header><span>Iteration 18</span><b>PASS</b></header>
+  <h2>I18_D5_REWRITE_RESULT</h2><h3>正文重写候选结果</h3>
+  <div class="thumbs">
+    <a href="iteration-18/screenshots/I18_D5_REWRITE_RESULT/prototype.png"><img src="iteration-18/screenshots/I18_D5_REWRITE_RESULT/prototype.png" alt="Prototype"></a>
+    <a href="iteration-18/screenshots/I18_D5_REWRITE_RESULT/actual-before.png"><img src="iteration-18/screenshots/I18_D5_REWRITE_RESULT/actual-before.png" alt="Before"></a>
+    <a href="iteration-18/screenshots/I18_D5_REWRITE_RESULT/actual-after.png"><img src="iteration-18/screenshots/I18_D5_REWRITE_RESULT/actual-after.png" alt="After"></a>
+    <a href="iteration-18/screenshots/I18_D5_REWRITE_RESULT/diff-after.png"><img src="iteration-18/screenshots/I18_D5_REWRITE_RESULT/diff-after.png" alt="Diff"></a>
+  </div>
+  <p><strong>实机：</strong><a href="http://127.0.0.1:13001/projects/973d7f23-3430-4a17-96e0-c8190535a87d/works/6b7c451c-d3e2-4b75-a0e5-f67647200444/rewrite?workflowRunId=5f626467-8dc3-4106-ba27-1ce481ae6406">http://127.0.0.1:13001/projects/973d7f23-3430-4a17-96e0-c8190535a87d/works/6b7c451c-d3e2-4b75-a0e5-f67647200444/rewrite?workflowRunId=5f626467-8dc3-4106-ba27-1ce481ae6406</a></p>
+  <p><strong>原型：</strong><a href="http://127.0.0.1:13002/iteration-18-real-content-rewrite/ui/frames/I18_D5_REWRITE_RESULT/screen.png">http://127.0.0.1:13002/iteration-18-real-content-rewrite/ui/frames/I18_D5_REWRITE_RESULT/screen.png</a></p>
+  <p><strong>差异：</strong>业务结构存在但未应用 Rewrite 卡片、状态与弹层样式，配置 dialog 呈内联区域；该差异不允许。</p>
+  <p><strong>修改：</strong>apps/web/src/app/globals.css, apps/web/src/features/project-works/rewrite-workspace.tsx, apps/web/src/features/project-works/rewrite-result-panel.tsx, apps/web/src/features/project-works/rewrite-history.tsx</p>
+</article>
+<article class="card" data-iteration="18" data-status="PASS">
+  <header><span>Iteration 18</span><b>PASS</b></header>
+  <h2>I18_D5_SET_CURRENT_CONFIRM</h2><h3>设为当前版本确认</h3>
+  <div class="thumbs">
+    <a href="iteration-18/screenshots/I18_D5_SET_CURRENT_CONFIRM/prototype.png"><img src="iteration-18/screenshots/I18_D5_SET_CURRENT_CONFIRM/prototype.png" alt="Prototype"></a>
+    <a href="iteration-18/screenshots/I18_D5_SET_CURRENT_CONFIRM/actual-before.png"><img src="iteration-18/screenshots/I18_D5_SET_CURRENT_CONFIRM/actual-before.png" alt="Before"></a>
+    <a href="iteration-18/screenshots/I18_D5_SET_CURRENT_CONFIRM/actual-after.png"><img src="iteration-18/screenshots/I18_D5_SET_CURRENT_CONFIRM/actual-after.png" alt="After"></a>
+    <a href="iteration-18/screenshots/I18_D5_SET_CURRENT_CONFIRM/diff-after.png"><img src="iteration-18/screenshots/I18_D5_SET_CURRENT_CONFIRM/diff-after.png" alt="Diff"></a>
+  </div>
+  <p><strong>实机：</strong><a href="http://127.0.0.1:13001/projects/973d7f23-3430-4a17-96e0-c8190535a87d/works/6b7c451c-d3e2-4b75-a0e5-f67647200444/rewrite?workflowRunId=5f626467-8dc3-4106-ba27-1ce481ae6406">http://127.0.0.1:13001/projects/973d7f23-3430-4a17-96e0-c8190535a87d/works/6b7c451c-d3e2-4b75-a0e5-f67647200444/rewrite?workflowRunId=5f626467-8dc3-4106-ba27-1ce481ae6406</a></p>
+  <p><strong>原型：</strong><a href="http://127.0.0.1:13002/iteration-18-real-content-rewrite/ui/frames/I18_D5_SET_CURRENT_CONFIRM/screen.png">http://127.0.0.1:13002/iteration-18-real-content-rewrite/ui/frames/I18_D5_SET_CURRENT_CONFIRM/screen.png</a></p>
+  <p><strong>差异：</strong>业务结构存在但未应用 Rewrite 卡片、状态与弹层样式，配置 dialog 呈内联区域；该差异不允许。</p>
+  <p><strong>修改：</strong>apps/web/src/app/globals.css, apps/web/src/features/project-works/rewrite-workspace.tsx, apps/web/src/features/project-works/rewrite-result-panel.tsx, apps/web/src/features/project-works/rewrite-history.tsx</p>
+</article></main>
+<script>
+const iteration=document.querySelector('#iteration'),status=document.querySelector('#status');
+function filter(){document.querySelectorAll('.card').forEach(card=>{card.hidden=!((iteration.value==='all'||card.dataset.iteration===iteration.value)&&(status.value==='all'||card.dataset.status===status.value));})}iteration.addEventListener('change',filter);status.addEventListener('change',filter);
+</script></body></html>

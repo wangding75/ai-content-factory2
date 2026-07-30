@@ -1,0 +1,25 @@
+{
+  "result": "passed",
+  "browser": "Chromium",
+  "viewport": "1440x900",
+  "deviceScaleFactor": 1,
+  "locale": "zh-CN",
+  "timezone": "Asia/Shanghai",
+  "colorScheme": "light",
+  "reducedMotion": true,
+  "stateConstruction": "deterministic network fixture over current production UI; no DOM mutation",
+  "results": [
+    {
+      "frameId": "I18_D4_REWRITE_AVAILABILITY",
+      "errors": []
+    },
+    {
+      "frameId": "I18_D4_CREATE_REWRITE",
+      "errors": []
+    },
+    {
+      "frameId": "I18_D4_REWRITE_CONFIG_DRAWER",
+      "errors": []
+    }
+  ]
+}

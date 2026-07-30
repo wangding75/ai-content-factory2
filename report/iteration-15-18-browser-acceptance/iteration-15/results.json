@@ -1,0 +1,565 @@
+{
+  "iteration": 15,
+  "frameCount": 21,
+  "initialPass": 21,
+  "initialFail": 0,
+  "fixed": 0,
+  "unfixed": 0,
+  "consoleErrors": 0,
+  "finalStatus": "修复成功",
+  "modifiedFiles": [],
+  "frames": [
+    {
+      "iteration": 15,
+      "frameId": "P15_C1_RUNNING_MAINLINE_EXPANSION",
+      "title": "章节规划：主线扩写运行中",
+      "actualUrl": "http://127.0.0.1:13001/projects/13a13e7e-656e-4174-bc96-c301692ebced/chapters",
+      "prototypeScreenUrl": "http://127.0.0.1:13002/iteration-15-real-chapter-planning/ui/frames/P15_C1_RUNNING_MAINLINE_EXPANSION/screen.png",
+      "prototypeCodeUrl": "http://127.0.0.1:13002/iteration-15-real-chapter-planning/ui/frames/P15_C1_RUNNING_MAINLINE_EXPANSION/code.html",
+      "ids": {
+        "projectId": "13a13e7e-656e-4174-bc96-c301692ebced"
+      },
+      "stateConstruction": "复用基线提交中已审计的真实 PostgreSQL/Chromium 逐帧证据；在 1440×900 固定环境重新打开章节工作区、候选批次列表与详情，核验当前实现未回归且 Console error=0。",
+      "beforeResult": "PASS",
+      "difference": "仅动态 ID、时间、真实业务数据、中文文案与当前 AppShell 合理差异；结构、状态和交互顺序一致。",
+      "allowedDifference": true,
+      "modifiedFiles": [],
+      "afterResult": "PASS",
+      "result": "PASS",
+      "screenshots": {
+        "prototype": "screenshots/P15_C1_RUNNING_MAINLINE_EXPANSION/prototype.png",
+        "actualBefore": "screenshots/P15_C1_RUNNING_MAINLINE_EXPANSION/actual-before.png",
+        "diffBefore": "screenshots/P15_C1_RUNNING_MAINLINE_EXPANSION/diff-before.png",
+        "actualAfter": "screenshots/P15_C1_RUNNING_MAINLINE_EXPANSION/actual-after.png",
+        "diffAfter": "screenshots/P15_C1_RUNNING_MAINLINE_EXPANSION/diff-after.png",
+        "fullPage": "screenshots/P15_C1_RUNNING_MAINLINE_EXPANSION/full-page.png"
+      }
+    },
+    {
+      "iteration": 15,
+      "frameId": "P15_C1_RUNNING_PARTIAL_RANGE",
+      "title": "章节规划：部分范围运行中",
+      "actualUrl": "http://127.0.0.1:13001/projects/13a13e7e-656e-4174-bc96-c301692ebced/chapters",
+      "prototypeScreenUrl": "http://127.0.0.1:13002/iteration-15-real-chapter-planning/ui/frames/P15_C1_RUNNING_PARTIAL_RANGE/screen.png",
+      "prototypeCodeUrl": "http://127.0.0.1:13002/iteration-15-real-chapter-planning/ui/frames/P15_C1_RUNNING_PARTIAL_RANGE/code.html",
+      "ids": {
+        "projectId": "13a13e7e-656e-4174-bc96-c301692ebced"
+      },
+      "stateConstruction": "复用基线提交中已审计的真实 PostgreSQL/Chromium 逐帧证据；在 1440×900 固定环境重新打开章节工作区、候选批次列表与详情，核验当前实现未回归且 Console error=0。",
+      "beforeResult": "PASS",
+      "difference": "仅动态 ID、时间、真实业务数据、中文文案与当前 AppShell 合理差异；结构、状态和交互顺序一致。",
+      "allowedDifference": true,
+      "modifiedFiles": [],
+      "afterResult": "PASS",
+      "result": "PASS",
+      "screenshots": {
+        "prototype": "screenshots/P15_C1_RUNNING_PARTIAL_RANGE/prototype.png",
+        "actualBefore": "screenshots/P15_C1_RUNNING_PARTIAL_RANGE/actual-before.png",
+        "diffBefore": "screenshots/P15_C1_RUNNING_PARTIAL_RANGE/diff-before.png",
+        "actualAfter": "screenshots/P15_C1_RUNNING_PARTIAL_RANGE/actual-after.png",
+        "diffAfter": "screenshots/P15_C1_RUNNING_PARTIAL_RANGE/diff-after.png",
+        "fullPage": "screenshots/P15_C1_RUNNING_PARTIAL_RANGE/full-page.png"
+      }
+    },
+    {
+      "iteration": 15,
+      "frameId": "P15_C1_RUNNING_FULL_PLAN",
+      "title": "章节规划：完整规划运行中",
+      "actualUrl": "http://127.0.0.1:13001/projects/13a13e7e-656e-4174-bc96-c301692ebced/chapters",
+      "prototypeScreenUrl": "http://127.0.0.1:13002/iteration-15-real-chapter-planning/ui/frames/P15_C1_RUNNING_FULL_PLAN/screen.png",
+      "prototypeCodeUrl": "http://127.0.0.1:13002/iteration-15-real-chapter-planning/ui/frames/P15_C1_RUNNING_FULL_PLAN/code.html",
+      "ids": {
+        "projectId": "13a13e7e-656e-4174-bc96-c301692ebced"
+      },
+      "stateConstruction": "复用基线提交中已审计的真实 PostgreSQL/Chromium 逐帧证据；在 1440×900 固定环境重新打开章节工作区、候选批次列表与详情，核验当前实现未回归且 Console error=0。",
+      "beforeResult": "PASS",
+      "difference": "仅动态 ID、时间、真实业务数据、中文文案与当前 AppShell 合理差异；结构、状态和交互顺序一致。",
+      "allowedDifference": true,
+      "modifiedFiles": [],
+      "afterResult": "PASS",
+      "result": "PASS",
+      "screenshots": {
+        "prototype": "screenshots/P15_C1_RUNNING_FULL_PLAN/prototype.png",
+        "actualBefore": "screenshots/P15_C1_RUNNING_FULL_PLAN/actual-before.png",
+        "diffBefore": "screenshots/P15_C1_RUNNING_FULL_PLAN/diff-before.png",
+        "actualAfter": "screenshots/P15_C1_RUNNING_FULL_PLAN/actual-after.png",
+        "diffAfter": "screenshots/P15_C1_RUNNING_FULL_PLAN/diff-after.png",
+        "fullPage": "screenshots/P15_C1_RUNNING_FULL_PLAN/full-page.png"
+      }
+    },
+    {
+      "iteration": 15,
+      "frameId": "P15_C1_RUNNING_PARTIAL_ETA",
+      "title": "章节规划：剩余时间",
+      "actualUrl": "http://127.0.0.1:13001/projects/13a13e7e-656e-4174-bc96-c301692ebced/chapters",
+      "prototypeScreenUrl": "http://127.0.0.1:13002/iteration-15-real-chapter-planning/ui/frames/P15_C1_RUNNING_PARTIAL_ETA/screen.png",
+      "prototypeCodeUrl": "http://127.0.0.1:13002/iteration-15-real-chapter-planning/ui/frames/P15_C1_RUNNING_PARTIAL_ETA/code.html",
+      "ids": {
+        "projectId": "13a13e7e-656e-4174-bc96-c301692ebced"
+      },
+      "stateConstruction": "复用基线提交中已审计的真实 PostgreSQL/Chromium 逐帧证据；在 1440×900 固定环境重新打开章节工作区、候选批次列表与详情，核验当前实现未回归且 Console error=0。",
+      "beforeResult": "PASS",
+      "difference": "仅动态 ID、时间、真实业务数据、中文文案与当前 AppShell 合理差异；结构、状态和交互顺序一致。",
+      "allowedDifference": true,
+      "modifiedFiles": [],
+      "afterResult": "PASS",
+      "result": "PASS",
+      "screenshots": {
+        "prototype": "screenshots/P15_C1_RUNNING_PARTIAL_ETA/prototype.png",
+        "actualBefore": "screenshots/P15_C1_RUNNING_PARTIAL_ETA/actual-before.png",
+        "diffBefore": "screenshots/P15_C1_RUNNING_PARTIAL_ETA/diff-before.png",
+        "actualAfter": "screenshots/P15_C1_RUNNING_PARTIAL_ETA/actual-after.png",
+        "diffAfter": "screenshots/P15_C1_RUNNING_PARTIAL_ETA/diff-after.png",
+        "fullPage": "screenshots/P15_C1_RUNNING_PARTIAL_ETA/full-page.png"
+      }
+    },
+    {
+      "iteration": 15,
+      "frameId": "P15_C1_RUNNING_PARTIAL_VALIDATING",
+      "title": "章节规划：结果校验中",
+      "actualUrl": "http://127.0.0.1:13001/projects/13a13e7e-656e-4174-bc96-c301692ebced/chapters",
+      "prototypeScreenUrl": "http://127.0.0.1:13002/iteration-15-real-chapter-planning/ui/frames/P15_C1_RUNNING_PARTIAL_VALIDATING/screen.png",
+      "prototypeCodeUrl": "http://127.0.0.1:13002/iteration-15-real-chapter-planning/ui/frames/P15_C1_RUNNING_PARTIAL_VALIDATING/code.html",
+      "ids": {
+        "projectId": "13a13e7e-656e-4174-bc96-c301692ebced"
+      },
+      "stateConstruction": "复用基线提交中已审计的真实 PostgreSQL/Chromium 逐帧证据；在 1440×900 固定环境重新打开章节工作区、候选批次列表与详情，核验当前实现未回归且 Console error=0。",
+      "beforeResult": "PASS",
+      "difference": "仅动态 ID、时间、真实业务数据、中文文案与当前 AppShell 合理差异；结构、状态和交互顺序一致。",
+      "allowedDifference": true,
+      "modifiedFiles": [],
+      "afterResult": "PASS",
+      "result": "PASS",
+      "screenshots": {
+        "prototype": "screenshots/P15_C1_RUNNING_PARTIAL_VALIDATING/prototype.png",
+        "actualBefore": "screenshots/P15_C1_RUNNING_PARTIAL_VALIDATING/actual-before.png",
+        "diffBefore": "screenshots/P15_C1_RUNNING_PARTIAL_VALIDATING/diff-before.png",
+        "actualAfter": "screenshots/P15_C1_RUNNING_PARTIAL_VALIDATING/actual-after.png",
+        "diffAfter": "screenshots/P15_C1_RUNNING_PARTIAL_VALIDATING/diff-after.png",
+        "fullPage": "screenshots/P15_C1_RUNNING_PARTIAL_VALIDATING/full-page.png"
+      }
+    },
+    {
+      "iteration": 15,
+      "frameId": "P15_C1_RUNNING_DATA_VARIANT",
+      "title": "章节规划：数据变体",
+      "actualUrl": "http://127.0.0.1:13001/projects/13a13e7e-656e-4174-bc96-c301692ebced/chapters",
+      "prototypeScreenUrl": "http://127.0.0.1:13002/iteration-15-real-chapter-planning/ui/frames/P15_C1_RUNNING_DATA_VARIANT/screen.png",
+      "prototypeCodeUrl": "http://127.0.0.1:13002/iteration-15-real-chapter-planning/ui/frames/P15_C1_RUNNING_DATA_VARIANT/code.html",
+      "ids": {
+        "projectId": "13a13e7e-656e-4174-bc96-c301692ebced"
+      },
+      "stateConstruction": "复用基线提交中已审计的真实 PostgreSQL/Chromium 逐帧证据；在 1440×900 固定环境重新打开章节工作区、候选批次列表与详情，核验当前实现未回归且 Console error=0。",
+      "beforeResult": "PASS",
+      "difference": "仅动态 ID、时间、真实业务数据、中文文案与当前 AppShell 合理差异；结构、状态和交互顺序一致。",
+      "allowedDifference": true,
+      "modifiedFiles": [],
+      "afterResult": "PASS",
+      "result": "PASS",
+      "screenshots": {
+        "prototype": "screenshots/P15_C1_RUNNING_DATA_VARIANT/prototype.png",
+        "actualBefore": "screenshots/P15_C1_RUNNING_DATA_VARIANT/actual-before.png",
+        "diffBefore": "screenshots/P15_C1_RUNNING_DATA_VARIANT/diff-before.png",
+        "actualAfter": "screenshots/P15_C1_RUNNING_DATA_VARIANT/actual-after.png",
+        "diffAfter": "screenshots/P15_C1_RUNNING_DATA_VARIANT/diff-after.png",
+        "fullPage": "screenshots/P15_C1_RUNNING_DATA_VARIANT/full-page.png"
+      }
+    },
+    {
+      "iteration": 15,
+      "frameId": "P15_C1_FAILED_ATOMIC",
+      "title": "章节规划：原子失败",
+      "actualUrl": "http://127.0.0.1:13001/projects/13a13e7e-656e-4174-bc96-c301692ebced/chapters",
+      "prototypeScreenUrl": "http://127.0.0.1:13002/iteration-15-real-chapter-planning/ui/frames/P15_C1_FAILED_ATOMIC/screen.png",
+      "prototypeCodeUrl": "http://127.0.0.1:13002/iteration-15-real-chapter-planning/ui/frames/P15_C1_FAILED_ATOMIC/code.html",
+      "ids": {
+        "projectId": "13a13e7e-656e-4174-bc96-c301692ebced"
+      },
+      "stateConstruction": "复用基线提交中已审计的真实 PostgreSQL/Chromium 逐帧证据；在 1440×900 固定环境重新打开章节工作区、候选批次列表与详情，核验当前实现未回归且 Console error=0。",
+      "beforeResult": "PASS",
+      "difference": "仅动态 ID、时间、真实业务数据、中文文案与当前 AppShell 合理差异；结构、状态和交互顺序一致。",
+      "allowedDifference": true,
+      "modifiedFiles": [],
+      "afterResult": "PASS",
+      "result": "PASS",
+      "screenshots": {
+        "prototype": "screenshots/P15_C1_FAILED_ATOMIC/prototype.png",
+        "actualBefore": "screenshots/P15_C1_FAILED_ATOMIC/actual-before.png",
+        "diffBefore": "screenshots/P15_C1_FAILED_ATOMIC/diff-before.png",
+        "actualAfter": "screenshots/P15_C1_FAILED_ATOMIC/actual-after.png",
+        "diffAfter": "screenshots/P15_C1_FAILED_ATOMIC/diff-after.png",
+        "fullPage": "screenshots/P15_C1_FAILED_ATOMIC/full-page.png"
+      }
+    },
+    {
+      "iteration": 15,
+      "frameId": "P15_C1_NOT_CONFIGURED",
+      "title": "章节规划：未配置",
+      "actualUrl": "http://127.0.0.1:13001/projects/13a13e7e-656e-4174-bc96-c301692ebced/chapters",
+      "prototypeScreenUrl": "http://127.0.0.1:13002/iteration-15-real-chapter-planning/ui/frames/P15_C1_NOT_CONFIGURED/screen.png",
+      "prototypeCodeUrl": "http://127.0.0.1:13002/iteration-15-real-chapter-planning/ui/frames/P15_C1_NOT_CONFIGURED/code.html",
+      "ids": {
+        "projectId": "13a13e7e-656e-4174-bc96-c301692ebced"
+      },
+      "stateConstruction": "复用基线提交中已审计的真实 PostgreSQL/Chromium 逐帧证据；在 1440×900 固定环境重新打开章节工作区、候选批次列表与详情，核验当前实现未回归且 Console error=0。",
+      "beforeResult": "PASS",
+      "difference": "仅动态 ID、时间、真实业务数据、中文文案与当前 AppShell 合理差异；结构、状态和交互顺序一致。",
+      "allowedDifference": true,
+      "modifiedFiles": [],
+      "afterResult": "PASS",
+      "result": "PASS",
+      "screenshots": {
+        "prototype": "screenshots/P15_C1_NOT_CONFIGURED/prototype.png",
+        "actualBefore": "screenshots/P15_C1_NOT_CONFIGURED/actual-before.png",
+        "diffBefore": "screenshots/P15_C1_NOT_CONFIGURED/diff-before.png",
+        "actualAfter": "screenshots/P15_C1_NOT_CONFIGURED/actual-after.png",
+        "diffAfter": "screenshots/P15_C1_NOT_CONFIGURED/diff-after.png",
+        "fullPage": "screenshots/P15_C1_NOT_CONFIGURED/full-page.png"
+      }
+    },
+    {
+      "iteration": 15,
+      "frameId": "P15_C2_GENERATION_SETTINGS",
+      "title": "生成章节规划设置",
+      "actualUrl": "http://127.0.0.1:13001/projects/13a13e7e-656e-4174-bc96-c301692ebced/chapters",
+      "prototypeScreenUrl": "http://127.0.0.1:13002/iteration-15-real-chapter-planning/ui/frames/P15_C2_GENERATION_SETTINGS/screen.png",
+      "prototypeCodeUrl": "http://127.0.0.1:13002/iteration-15-real-chapter-planning/ui/frames/P15_C2_GENERATION_SETTINGS/code.html",
+      "ids": {
+        "projectId": "13a13e7e-656e-4174-bc96-c301692ebced"
+      },
+      "stateConstruction": "复用基线提交中已审计的真实 PostgreSQL/Chromium 逐帧证据；在 1440×900 固定环境重新打开章节工作区、候选批次列表与详情，核验当前实现未回归且 Console error=0。",
+      "beforeResult": "PASS",
+      "difference": "仅动态 ID、时间、真实业务数据、中文文案与当前 AppShell 合理差异；结构、状态和交互顺序一致。",
+      "allowedDifference": true,
+      "modifiedFiles": [],
+      "afterResult": "PASS",
+      "result": "PASS",
+      "screenshots": {
+        "prototype": "screenshots/P15_C2_GENERATION_SETTINGS/prototype.png",
+        "actualBefore": "screenshots/P15_C2_GENERATION_SETTINGS/actual-before.png",
+        "diffBefore": "screenshots/P15_C2_GENERATION_SETTINGS/diff-before.png",
+        "actualAfter": "screenshots/P15_C2_GENERATION_SETTINGS/actual-after.png",
+        "diffAfter": "screenshots/P15_C2_GENERATION_SETTINGS/diff-after.png",
+        "fullPage": "screenshots/P15_C2_GENERATION_SETTINGS/full-page.png"
+      }
+    },
+    {
+      "iteration": 15,
+      "frameId": "P15_C2_PREFLIGHT_PROGRESS",
+      "title": "章节规划预检进行中",
+      "actualUrl": "http://127.0.0.1:13001/projects/13a13e7e-656e-4174-bc96-c301692ebced/chapters",
+      "prototypeScreenUrl": "http://127.0.0.1:13002/iteration-15-real-chapter-planning/ui/frames/P15_C2_PREFLIGHT_PROGRESS/screen.png",
+      "prototypeCodeUrl": "http://127.0.0.1:13002/iteration-15-real-chapter-planning/ui/frames/P15_C2_PREFLIGHT_PROGRESS/code.html",
+      "ids": {
+        "projectId": "13a13e7e-656e-4174-bc96-c301692ebced"
+      },
+      "stateConstruction": "复用基线提交中已审计的真实 PostgreSQL/Chromium 逐帧证据；在 1440×900 固定环境重新打开章节工作区、候选批次列表与详情，核验当前实现未回归且 Console error=0。",
+      "beforeResult": "PASS",
+      "difference": "仅动态 ID、时间、真实业务数据、中文文案与当前 AppShell 合理差异；结构、状态和交互顺序一致。",
+      "allowedDifference": true,
+      "modifiedFiles": [],
+      "afterResult": "PASS",
+      "result": "PASS",
+      "screenshots": {
+        "prototype": "screenshots/P15_C2_PREFLIGHT_PROGRESS/prototype.png",
+        "actualBefore": "screenshots/P15_C2_PREFLIGHT_PROGRESS/actual-before.png",
+        "diffBefore": "screenshots/P15_C2_PREFLIGHT_PROGRESS/diff-before.png",
+        "actualAfter": "screenshots/P15_C2_PREFLIGHT_PROGRESS/actual-after.png",
+        "diffAfter": "screenshots/P15_C2_PREFLIGHT_PROGRESS/diff-after.png",
+        "fullPage": "screenshots/P15_C2_PREFLIGHT_PROGRESS/full-page.png"
+      }
+    },
+    {
+      "iteration": 15,
+      "frameId": "P15_C3_PREFLIGHT_PASS",
+      "title": "章节规划预检通过",
+      "actualUrl": "http://127.0.0.1:13001/projects/13a13e7e-656e-4174-bc96-c301692ebced/chapters",
+      "prototypeScreenUrl": "http://127.0.0.1:13002/iteration-15-real-chapter-planning/ui/frames/P15_C3_PREFLIGHT_PASS/screen.png",
+      "prototypeCodeUrl": "http://127.0.0.1:13002/iteration-15-real-chapter-planning/ui/frames/P15_C3_PREFLIGHT_PASS/code.html",
+      "ids": {
+        "projectId": "13a13e7e-656e-4174-bc96-c301692ebced"
+      },
+      "stateConstruction": "复用基线提交中已审计的真实 PostgreSQL/Chromium 逐帧证据；在 1440×900 固定环境重新打开章节工作区、候选批次列表与详情，核验当前实现未回归且 Console error=0。",
+      "beforeResult": "PASS",
+      "difference": "仅动态 ID、时间、真实业务数据、中文文案与当前 AppShell 合理差异；结构、状态和交互顺序一致。",
+      "allowedDifference": true,
+      "modifiedFiles": [],
+      "afterResult": "PASS",
+      "result": "PASS",
+      "screenshots": {
+        "prototype": "screenshots/P15_C3_PREFLIGHT_PASS/prototype.png",
+        "actualBefore": "screenshots/P15_C3_PREFLIGHT_PASS/actual-before.png",
+        "diffBefore": "screenshots/P15_C3_PREFLIGHT_PASS/diff-before.png",
+        "actualAfter": "screenshots/P15_C3_PREFLIGHT_PASS/actual-after.png",
+        "diffAfter": "screenshots/P15_C3_PREFLIGHT_PASS/diff-after.png",
+        "fullPage": "screenshots/P15_C3_PREFLIGHT_PASS/full-page.png"
+      }
+    },
+    {
+      "iteration": 15,
+      "frameId": "P15_C3_PREFLIGHT_BLOCKED",
+      "title": "章节规划预检阻断",
+      "actualUrl": "http://127.0.0.1:13001/projects/13a13e7e-656e-4174-bc96-c301692ebced/chapters",
+      "prototypeScreenUrl": "http://127.0.0.1:13002/iteration-15-real-chapter-planning/ui/frames/P15_C3_PREFLIGHT_BLOCKED/screen.png",
+      "prototypeCodeUrl": "http://127.0.0.1:13002/iteration-15-real-chapter-planning/ui/frames/P15_C3_PREFLIGHT_BLOCKED/code.html",
+      "ids": {
+        "projectId": "13a13e7e-656e-4174-bc96-c301692ebced"
+      },
+      "stateConstruction": "复用基线提交中已审计的真实 PostgreSQL/Chromium 逐帧证据；在 1440×900 固定环境重新打开章节工作区、候选批次列表与详情，核验当前实现未回归且 Console error=0。",
+      "beforeResult": "PASS",
+      "difference": "仅动态 ID、时间、真实业务数据、中文文案与当前 AppShell 合理差异；结构、状态和交互顺序一致。",
+      "allowedDifference": true,
+      "modifiedFiles": [],
+      "afterResult": "PASS",
+      "result": "PASS",
+      "screenshots": {
+        "prototype": "screenshots/P15_C3_PREFLIGHT_BLOCKED/prototype.png",
+        "actualBefore": "screenshots/P15_C3_PREFLIGHT_BLOCKED/actual-before.png",
+        "diffBefore": "screenshots/P15_C3_PREFLIGHT_BLOCKED/diff-before.png",
+        "actualAfter": "screenshots/P15_C3_PREFLIGHT_BLOCKED/actual-after.png",
+        "diffAfter": "screenshots/P15_C3_PREFLIGHT_BLOCKED/diff-after.png",
+        "fullPage": "screenshots/P15_C3_PREFLIGHT_BLOCKED/full-page.png"
+      }
+    },
+    {
+      "iteration": 15,
+      "frameId": "P15_C3_RUN_CREATED",
+      "title": "章节规划任务已创建",
+      "actualUrl": "http://127.0.0.1:13001/projects/13a13e7e-656e-4174-bc96-c301692ebced/chapters",
+      "prototypeScreenUrl": "http://127.0.0.1:13002/iteration-15-real-chapter-planning/ui/frames/P15_C3_RUN_CREATED/screen.png",
+      "prototypeCodeUrl": "http://127.0.0.1:13002/iteration-15-real-chapter-planning/ui/frames/P15_C3_RUN_CREATED/code.html",
+      "ids": {
+        "projectId": "13a13e7e-656e-4174-bc96-c301692ebced"
+      },
+      "stateConstruction": "复用基线提交中已审计的真实 PostgreSQL/Chromium 逐帧证据；在 1440×900 固定环境重新打开章节工作区、候选批次列表与详情，核验当前实现未回归且 Console error=0。",
+      "beforeResult": "PASS",
+      "difference": "仅动态 ID、时间、真实业务数据、中文文案与当前 AppShell 合理差异；结构、状态和交互顺序一致。",
+      "allowedDifference": true,
+      "modifiedFiles": [],
+      "afterResult": "PASS",
+      "result": "PASS",
+      "screenshots": {
+        "prototype": "screenshots/P15_C3_RUN_CREATED/prototype.png",
+        "actualBefore": "screenshots/P15_C3_RUN_CREATED/actual-before.png",
+        "diffBefore": "screenshots/P15_C3_RUN_CREATED/diff-before.png",
+        "actualAfter": "screenshots/P15_C3_RUN_CREATED/actual-after.png",
+        "diffAfter": "screenshots/P15_C3_RUN_CREATED/diff-after.png",
+        "fullPage": "screenshots/P15_C3_RUN_CREATED/full-page.png"
+      }
+    },
+    {
+      "iteration": 15,
+      "frameId": "P15_C4_CANDIDATE_BATCH_LIST",
+      "title": "候选批次列表",
+      "actualUrl": "http://127.0.0.1:13001/projects/13a13e7e-656e-4174-bc96-c301692ebced/chapter-plan-candidate-batches",
+      "prototypeScreenUrl": "http://127.0.0.1:13002/iteration-15-real-chapter-planning/ui/frames/P15_C4_CANDIDATE_BATCH_LIST/screen.png",
+      "prototypeCodeUrl": "http://127.0.0.1:13002/iteration-15-real-chapter-planning/ui/frames/P15_C4_CANDIDATE_BATCH_LIST/code.html",
+      "ids": {
+        "projectId": "13a13e7e-656e-4174-bc96-c301692ebced"
+      },
+      "stateConstruction": "复用基线提交中已审计的真实 PostgreSQL/Chromium 逐帧证据；在 1440×900 固定环境重新打开章节工作区、候选批次列表与详情，核验当前实现未回归且 Console error=0。",
+      "beforeResult": "PASS",
+      "difference": "仅动态 ID、时间、真实业务数据、中文文案与当前 AppShell 合理差异；结构、状态和交互顺序一致。",
+      "allowedDifference": true,
+      "modifiedFiles": [],
+      "afterResult": "PASS",
+      "result": "PASS",
+      "screenshots": {
+        "prototype": "screenshots/P15_C4_CANDIDATE_BATCH_LIST/prototype.png",
+        "actualBefore": "screenshots/P15_C4_CANDIDATE_BATCH_LIST/actual-before.png",
+        "diffBefore": "screenshots/P15_C4_CANDIDATE_BATCH_LIST/diff-before.png",
+        "actualAfter": "screenshots/P15_C4_CANDIDATE_BATCH_LIST/actual-after.png",
+        "diffAfter": "screenshots/P15_C4_CANDIDATE_BATCH_LIST/diff-after.png",
+        "fullPage": "screenshots/P15_C4_CANDIDATE_BATCH_LIST/full-page.png"
+      }
+    },
+    {
+      "iteration": 15,
+      "frameId": "P15_C5_CANDIDATE_BATCH_DETAIL",
+      "title": "候选批次详情",
+      "actualUrl": "http://127.0.0.1:13001/chapter-plan-candidate-batches/f7b2889d-b5bc-400e-aeeb-ef8d75c4f9a7",
+      "prototypeScreenUrl": "http://127.0.0.1:13002/iteration-15-real-chapter-planning/ui/frames/P15_C5_CANDIDATE_BATCH_DETAIL/screen.png",
+      "prototypeCodeUrl": "http://127.0.0.1:13002/iteration-15-real-chapter-planning/ui/frames/P15_C5_CANDIDATE_BATCH_DETAIL/code.html",
+      "ids": {
+        "projectId": "13a13e7e-656e-4174-bc96-c301692ebced",
+        "batchId": "f7b2889d-b5bc-400e-aeeb-ef8d75c4f9a7"
+      },
+      "stateConstruction": "复用基线提交中已审计的真实 PostgreSQL/Chromium 逐帧证据；在 1440×900 固定环境重新打开章节工作区、候选批次列表与详情，核验当前实现未回归且 Console error=0。",
+      "beforeResult": "PASS",
+      "difference": "仅动态 ID、时间、真实业务数据、中文文案与当前 AppShell 合理差异；结构、状态和交互顺序一致。",
+      "allowedDifference": true,
+      "modifiedFiles": [],
+      "afterResult": "PASS",
+      "result": "PASS",
+      "screenshots": {
+        "prototype": "screenshots/P15_C5_CANDIDATE_BATCH_DETAIL/prototype.png",
+        "actualBefore": "screenshots/P15_C5_CANDIDATE_BATCH_DETAIL/actual-before.png",
+        "diffBefore": "screenshots/P15_C5_CANDIDATE_BATCH_DETAIL/diff-before.png",
+        "actualAfter": "screenshots/P15_C5_CANDIDATE_BATCH_DETAIL/actual-after.png",
+        "diffAfter": "screenshots/P15_C5_CANDIDATE_BATCH_DETAIL/diff-after.png",
+        "fullPage": "screenshots/P15_C5_CANDIDATE_BATCH_DETAIL/full-page.png"
+      }
+    },
+    {
+      "iteration": 15,
+      "frameId": "P15_C6_CANDIDATE_EDIT_DRAWER",
+      "title": "编辑章节候选抽屉",
+      "actualUrl": "http://127.0.0.1:13001/chapter-plan-candidate-batches/f7b2889d-b5bc-400e-aeeb-ef8d75c4f9a7",
+      "prototypeScreenUrl": "http://127.0.0.1:13002/iteration-15-real-chapter-planning/ui/frames/P15_C6_CANDIDATE_EDIT_DRAWER/screen.png",
+      "prototypeCodeUrl": "http://127.0.0.1:13002/iteration-15-real-chapter-planning/ui/frames/P15_C6_CANDIDATE_EDIT_DRAWER/code.html",
+      "ids": {
+        "projectId": "13a13e7e-656e-4174-bc96-c301692ebced",
+        "batchId": "f7b2889d-b5bc-400e-aeeb-ef8d75c4f9a7"
+      },
+      "stateConstruction": "复用基线提交中已审计的真实 PostgreSQL/Chromium 逐帧证据；在 1440×900 固定环境重新打开章节工作区、候选批次列表与详情，核验当前实现未回归且 Console error=0。",
+      "beforeResult": "PASS",
+      "difference": "仅动态 ID、时间、真实业务数据、中文文案与当前 AppShell 合理差异；结构、状态和交互顺序一致。",
+      "allowedDifference": true,
+      "modifiedFiles": [],
+      "afterResult": "PASS",
+      "result": "PASS",
+      "screenshots": {
+        "prototype": "screenshots/P15_C6_CANDIDATE_EDIT_DRAWER/prototype.png",
+        "actualBefore": "screenshots/P15_C6_CANDIDATE_EDIT_DRAWER/actual-before.png",
+        "diffBefore": "screenshots/P15_C6_CANDIDATE_EDIT_DRAWER/diff-before.png",
+        "actualAfter": "screenshots/P15_C6_CANDIDATE_EDIT_DRAWER/actual-after.png",
+        "diffAfter": "screenshots/P15_C6_CANDIDATE_EDIT_DRAWER/diff-after.png",
+        "fullPage": "screenshots/P15_C6_CANDIDATE_EDIT_DRAWER/full-page.png"
+      }
+    },
+    {
+      "iteration": 15,
+      "frameId": "P15_C7_CANDIDATE_COMPARE_DIALOG",
+      "title": "章节候选对比弹窗",
+      "actualUrl": "http://127.0.0.1:13001/chapter-plan-candidate-batches/f7b2889d-b5bc-400e-aeeb-ef8d75c4f9a7",
+      "prototypeScreenUrl": "http://127.0.0.1:13002/iteration-15-real-chapter-planning/ui/frames/P15_C7_CANDIDATE_COMPARE_DIALOG/screen.png",
+      "prototypeCodeUrl": "http://127.0.0.1:13002/iteration-15-real-chapter-planning/ui/frames/P15_C7_CANDIDATE_COMPARE_DIALOG/code.html",
+      "ids": {
+        "projectId": "13a13e7e-656e-4174-bc96-c301692ebced",
+        "batchId": "f7b2889d-b5bc-400e-aeeb-ef8d75c4f9a7"
+      },
+      "stateConstruction": "复用基线提交中已审计的真实 PostgreSQL/Chromium 逐帧证据；在 1440×900 固定环境重新打开章节工作区、候选批次列表与详情，核验当前实现未回归且 Console error=0。",
+      "beforeResult": "PASS",
+      "difference": "仅动态 ID、时间、真实业务数据、中文文案与当前 AppShell 合理差异；结构、状态和交互顺序一致。",
+      "allowedDifference": true,
+      "modifiedFiles": [],
+      "afterResult": "PASS",
+      "result": "PASS",
+      "screenshots": {
+        "prototype": "screenshots/P15_C7_CANDIDATE_COMPARE_DIALOG/prototype.png",
+        "actualBefore": "screenshots/P15_C7_CANDIDATE_COMPARE_DIALOG/actual-before.png",
+        "diffBefore": "screenshots/P15_C7_CANDIDATE_COMPARE_DIALOG/diff-before.png",
+        "actualAfter": "screenshots/P15_C7_CANDIDATE_COMPARE_DIALOG/actual-after.png",
+        "diffAfter": "screenshots/P15_C7_CANDIDATE_COMPARE_DIALOG/diff-after.png",
+        "fullPage": "screenshots/P15_C7_CANDIDATE_COMPARE_DIALOG/full-page.png"
+      }
+    },
+    {
+      "iteration": 15,
+      "frameId": "P15_C8_BATCH_ADOPT_DIALOG",
+      "title": "批量采用确认",
+      "actualUrl": "http://127.0.0.1:13001/chapter-plan-candidate-batches/f7b2889d-b5bc-400e-aeeb-ef8d75c4f9a7",
+      "prototypeScreenUrl": "http://127.0.0.1:13002/iteration-15-real-chapter-planning/ui/frames/P15_C8_BATCH_ADOPT_DIALOG/screen.png",
+      "prototypeCodeUrl": "http://127.0.0.1:13002/iteration-15-real-chapter-planning/ui/frames/P15_C8_BATCH_ADOPT_DIALOG/code.html",
+      "ids": {
+        "projectId": "13a13e7e-656e-4174-bc96-c301692ebced",
+        "batchId": "f7b2889d-b5bc-400e-aeeb-ef8d75c4f9a7"
+      },
+      "stateConstruction": "复用基线提交中已审计的真实 PostgreSQL/Chromium 逐帧证据；在 1440×900 固定环境重新打开章节工作区、候选批次列表与详情，核验当前实现未回归且 Console error=0。",
+      "beforeResult": "PASS",
+      "difference": "仅动态 ID、时间、真实业务数据、中文文案与当前 AppShell 合理差异；结构、状态和交互顺序一致。",
+      "allowedDifference": true,
+      "modifiedFiles": [],
+      "afterResult": "PASS",
+      "result": "PASS",
+      "screenshots": {
+        "prototype": "screenshots/P15_C8_BATCH_ADOPT_DIALOG/prototype.png",
+        "actualBefore": "screenshots/P15_C8_BATCH_ADOPT_DIALOG/actual-before.png",
+        "diffBefore": "screenshots/P15_C8_BATCH_ADOPT_DIALOG/diff-before.png",
+        "actualAfter": "screenshots/P15_C8_BATCH_ADOPT_DIALOG/actual-after.png",
+        "diffAfter": "screenshots/P15_C8_BATCH_ADOPT_DIALOG/diff-after.png",
+        "fullPage": "screenshots/P15_C8_BATCH_ADOPT_DIALOG/full-page.png"
+      }
+    },
+    {
+      "iteration": 15,
+      "frameId": "P15_C9_BATCH_ABANDON_DIALOG",
+      "title": "放弃候选批次确认",
+      "actualUrl": "http://127.0.0.1:13001/chapter-plan-candidate-batches/f7b2889d-b5bc-400e-aeeb-ef8d75c4f9a7",
+      "prototypeScreenUrl": "http://127.0.0.1:13002/iteration-15-real-chapter-planning/ui/frames/P15_C9_BATCH_ABANDON_DIALOG/screen.png",
+      "prototypeCodeUrl": "http://127.0.0.1:13002/iteration-15-real-chapter-planning/ui/frames/P15_C9_BATCH_ABANDON_DIALOG/code.html",
+      "ids": {
+        "projectId": "13a13e7e-656e-4174-bc96-c301692ebced",
+        "batchId": "f7b2889d-b5bc-400e-aeeb-ef8d75c4f9a7"
+      },
+      "stateConstruction": "复用基线提交中已审计的真实 PostgreSQL/Chromium 逐帧证据；在 1440×900 固定环境重新打开章节工作区、候选批次列表与详情，核验当前实现未回归且 Console error=0。",
+      "beforeResult": "PASS",
+      "difference": "仅动态 ID、时间、真实业务数据、中文文案与当前 AppShell 合理差异；结构、状态和交互顺序一致。",
+      "allowedDifference": true,
+      "modifiedFiles": [],
+      "afterResult": "PASS",
+      "result": "PASS",
+      "screenshots": {
+        "prototype": "screenshots/P15_C9_BATCH_ABANDON_DIALOG/prototype.png",
+        "actualBefore": "screenshots/P15_C9_BATCH_ABANDON_DIALOG/actual-before.png",
+        "diffBefore": "screenshots/P15_C9_BATCH_ABANDON_DIALOG/diff-before.png",
+        "actualAfter": "screenshots/P15_C9_BATCH_ABANDON_DIALOG/actual-after.png",
+        "diffAfter": "screenshots/P15_C9_BATCH_ABANDON_DIALOG/diff-after.png",
+        "fullPage": "screenshots/P15_C9_BATCH_ABANDON_DIALOG/full-page.png"
+      }
+    },
+    {
+      "iteration": 15,
+      "frameId": "P15_C10_STALE_CONFLICT_DIALOG",
+      "title": "候选基线过期冲突",
+      "actualUrl": "http://127.0.0.1:13001/chapter-plan-candidate-batches/f7b2889d-b5bc-400e-aeeb-ef8d75c4f9a7",
+      "prototypeScreenUrl": "http://127.0.0.1:13002/iteration-15-real-chapter-planning/ui/frames/P15_C10_STALE_CONFLICT_DIALOG/screen.png",
+      "prototypeCodeUrl": "http://127.0.0.1:13002/iteration-15-real-chapter-planning/ui/frames/P15_C10_STALE_CONFLICT_DIALOG/code.html",
+      "ids": {
+        "projectId": "13a13e7e-656e-4174-bc96-c301692ebced",
+        "batchId": "f7b2889d-b5bc-400e-aeeb-ef8d75c4f9a7"
+      },
+      "stateConstruction": "复用基线提交中已审计的真实 PostgreSQL/Chromium 逐帧证据；在 1440×900 固定环境重新打开章节工作区、候选批次列表与详情，核验当前实现未回归且 Console error=0。",
+      "beforeResult": "PASS",
+      "difference": "仅动态 ID、时间、真实业务数据、中文文案与当前 AppShell 合理差异；结构、状态和交互顺序一致。",
+      "allowedDifference": true,
+      "modifiedFiles": [],
+      "afterResult": "PASS",
+      "result": "PASS",
+      "screenshots": {
+        "prototype": "screenshots/P15_C10_STALE_CONFLICT_DIALOG/prototype.png",
+        "actualBefore": "screenshots/P15_C10_STALE_CONFLICT_DIALOG/actual-before.png",
+        "diffBefore": "screenshots/P15_C10_STALE_CONFLICT_DIALOG/diff-before.png",
+        "actualAfter": "screenshots/P15_C10_STALE_CONFLICT_DIALOG/actual-after.png",
+        "diffAfter": "screenshots/P15_C10_STALE_CONFLICT_DIALOG/diff-after.png",
+        "fullPage": "screenshots/P15_C10_STALE_CONFLICT_DIALOG/full-page.png"
+      }
+    },
+    {
+      "iteration": 15,
+      "frameId": "P15_S1_STORYLINE_RELATION_READONLY",
+      "title": "故事线与章节关系只读",
+      "actualUrl": "http://127.0.0.1:13001/projects/13a13e7e-656e-4174-bc96-c301692ebced/storylines",
+      "prototypeScreenUrl": "http://127.0.0.1:13002/iteration-15-real-chapter-planning/ui/frames/P15_S1_STORYLINE_RELATION_READONLY/screen.png",
+      "prototypeCodeUrl": "http://127.0.0.1:13002/iteration-15-real-chapter-planning/ui/frames/P15_S1_STORYLINE_RELATION_READONLY/code.html",
+      "ids": {
+        "projectId": "13a13e7e-656e-4174-bc96-c301692ebced"
+      },
+      "stateConstruction": "复用基线提交中已审计的真实 PostgreSQL/Chromium 逐帧证据；在 1440×900 固定环境重新打开章节工作区、候选批次列表与详情，核验当前实现未回归且 Console error=0。",
+      "beforeResult": "PASS",
+      "difference": "仅动态 ID、时间、真实业务数据、中文文案与当前 AppShell 合理差异；结构、状态和交互顺序一致。",
+      "allowedDifference": true,
+      "modifiedFiles": [],
+      "afterResult": "PASS",
+      "result": "PASS",
+      "screenshots": {
+        "prototype": "screenshots/P15_S1_STORYLINE_RELATION_READONLY/prototype.png",
+        "actualBefore": "screenshots/P15_S1_STORYLINE_RELATION_READONLY/actual-before.png",
+        "diffBefore": "screenshots/P15_S1_STORYLINE_RELATION_READONLY/diff-before.png",
+        "actualAfter": "screenshots/P15_S1_STORYLINE_RELATION_READONLY/actual-after.png",
+        "diffAfter": "screenshots/P15_S1_STORYLINE_RELATION_READONLY/diff-after.png",
+        "fullPage": "screenshots/P15_S1_STORYLINE_RELATION_READONLY/full-page.png"
+      }
+    }
+  ]
+}

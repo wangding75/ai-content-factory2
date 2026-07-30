@@ -1,0 +1,218 @@
+[
+  {
+    "iteration": 15,
+    "frameId": "P15_C1_RUNNING_MAINLINE_EXPANSION",
+    "actualUrl": "http://127.0.0.1:13001/projects/13a13e7e-656e-4174-bc96-c301692ebced/chapters",
+    "prototypeScreenUrl": "http://127.0.0.1:13002/iteration-15-real-chapter-planning/ui/frames/P15_C1_RUNNING_MAINLINE_EXPANSION/screen.png",
+    "prototypeCodeUrl": "http://127.0.0.1:13002/iteration-15-real-chapter-planning/ui/frames/P15_C1_RUNNING_MAINLINE_EXPANSION/code.html",
+    "ids": {
+      "projectId": "13a13e7e-656e-4174-bc96-c301692ebced"
+    }
+  },
+  {
+    "iteration": 15,
+    "frameId": "P15_C1_RUNNING_PARTIAL_RANGE",
+    "actualUrl": "http://127.0.0.1:13001/projects/13a13e7e-656e-4174-bc96-c301692ebced/chapters",
+    "prototypeScreenUrl": "http://127.0.0.1:13002/iteration-15-real-chapter-planning/ui/frames/P15_C1_RUNNING_PARTIAL_RANGE/screen.png",
+    "prototypeCodeUrl": "http://127.0.0.1:13002/iteration-15-real-chapter-planning/ui/frames/P15_C1_RUNNING_PARTIAL_RANGE/code.html",
+    "ids": {
+      "projectId": "13a13e7e-656e-4174-bc96-c301692ebced"
+    }
+  },
+  {
+    "iteration": 15,
+    "frameId": "P15_C1_RUNNING_FULL_PLAN",
+    "actualUrl": "http://127.0.0.1:13001/projects/13a13e7e-656e-4174-bc96-c301692ebced/chapters",
+    "prototypeScreenUrl": "http://127.0.0.1:13002/iteration-15-real-chapter-planning/ui/frames/P15_C1_RUNNING_FULL_PLAN/screen.png",
+    "prototypeCodeUrl": "http://127.0.0.1:13002/iteration-15-real-chapter-planning/ui/frames/P15_C1_RUNNING_FULL_PLAN/code.html",
+    "ids": {
+      "projectId": "13a13e7e-656e-4174-bc96-c301692ebced"
+    }
+  },
+  {
+    "iteration": 15,
+    "frameId": "P15_C1_RUNNING_PARTIAL_ETA",
+    "actualUrl": "http://127.0.0.1:13001/projects/13a13e7e-656e-4174-bc96-c301692ebced/chapters",
+    "prototypeScreenUrl": "http://127.0.0.1:13002/iteration-15-real-chapter-planning/ui/frames/P15_C1_RUNNING_PARTIAL_ETA/screen.png",
+    "prototypeCodeUrl": "http://127.0.0.1:13002/iteration-15-real-chapter-planning/ui/frames/P15_C1_RUNNING_PARTIAL_ETA/code.html",
+    "ids": {
+      "projectId": "13a13e7e-656e-4174-bc96-c301692ebced"
+    }
+  },
+  {
+    "iteration": 15,
+    "frameId": "P15_C1_RUNNING_PARTIAL_VALIDATING",
+    "actualUrl": "http://127.0.0.1:13001/projects/13a13e7e-656e-4174-bc96-c301692ebced/chapters",
+    "prototypeScreenUrl": "http://127.0.0.1:13002/iteration-15-real-chapter-planning/ui/frames/P15_C1_RUNNING_PARTIAL_VALIDATING/screen.png",
+    "prototypeCodeUrl": "http://127.0.0.1:13002/iteration-15-real-chapter-planning/ui/frames/P15_C1_RUNNING_PARTIAL_VALIDATING/code.html",
+    "ids": {
+      "projectId": "13a13e7e-656e-4174-bc96-c301692ebced"
+    }
+  },
+  {
+    "iteration": 15,
+    "frameId": "P15_C1_RUNNING_DATA_VARIANT",
+    "actualUrl": "http://127.0.0.1:13001/projects/13a13e7e-656e-4174-bc96-c301692ebced/chapters",
+    "prototypeScreenUrl": "http://127.0.0.1:13002/iteration-15-real-chapter-planning/ui/frames/P15_C1_RUNNING_DATA_VARIANT/screen.png",
+    "prototypeCodeUrl": "http://127.0.0.1:13002/iteration-15-real-chapter-planning/ui/frames/P15_C1_RUNNING_DATA_VARIANT/code.html",
+    "ids": {
+      "projectId": "13a13e7e-656e-4174-bc96-c301692ebced"
+    }
+  },
+  {
+    "iteration": 15,
+    "frameId": "P15_C1_FAILED_ATOMIC",
+    "actualUrl": "http://127.0.0.1:13001/projects/13a13e7e-656e-4174-bc96-c301692ebced/chapters",
+    "prototypeScreenUrl": "http://127.0.0.1:13002/iteration-15-real-chapter-planning/ui/frames/P15_C1_FAILED_ATOMIC/screen.png",
+    "prototypeCodeUrl": "http://127.0.0.1:13002/iteration-15-real-chapter-planning/ui/frames/P15_C1_FAILED_ATOMIC/code.html",
+    "ids": {
+      "projectId": "13a13e7e-656e-4174-bc96-c301692ebced"
+    }
+  },
+  {
+    "iteration": 15,
+    "frameId": "P15_C1_NOT_CONFIGURED",
+    "actualUrl": "http://127.0.0.1:13001/projects/13a13e7e-656e-4174-bc96-c301692ebced/chapters",
+    "prototypeScreenUrl": "http://127.0.0.1:13002/iteration-15-real-chapter-planning/ui/frames/P15_C1_NOT_CONFIGURED/screen.png",
+    "prototypeCodeUrl": "http://127.0.0.1:13002/iteration-15-real-chapter-planning/ui/frames/P15_C1_NOT_CONFIGURED/code.html",
+    "ids": {
+      "projectId": "13a13e7e-656e-4174-bc96-c301692ebced"
+    }
+  },
+  {
+    "iteration": 15,
+    "frameId": "P15_C2_GENERATION_SETTINGS",
+    "actualUrl": "http://127.0.0.1:13001/projects/13a13e7e-656e-4174-bc96-c301692ebced/chapters",
+    "prototypeScreenUrl": "http://127.0.0.1:13002/iteration-15-real-chapter-planning/ui/frames/P15_C2_GENERATION_SETTINGS/screen.png",
+    "prototypeCodeUrl": "http://127.0.0.1:13002/iteration-15-real-chapter-planning/ui/frames/P15_C2_GENERATION_SETTINGS/code.html",
+    "ids": {
+      "projectId": "13a13e7e-656e-4174-bc96-c301692ebced"
+    }
+  },
+  {
+    "iteration": 15,
+    "frameId": "P15_C2_PREFLIGHT_PROGRESS",
+    "actualUrl": "http://127.0.0.1:13001/projects/13a13e7e-656e-4174-bc96-c301692ebced/chapters",
+    "prototypeScreenUrl": "http://127.0.0.1:13002/iteration-15-real-chapter-planning/ui/frames/P15_C2_PREFLIGHT_PROGRESS/screen.png",
+    "prototypeCodeUrl": "http://127.0.0.1:13002/iteration-15-real-chapter-planning/ui/frames/P15_C2_PREFLIGHT_PROGRESS/code.html",
+    "ids": {
+      "projectId": "13a13e7e-656e-4174-bc96-c301692ebced"
+    }
+  },
+  {
+    "iteration": 15,
+    "frameId": "P15_C3_PREFLIGHT_PASS",
+    "actualUrl": "http://127.0.0.1:13001/projects/13a13e7e-656e-4174-bc96-c301692ebced/chapters",
+    "prototypeScreenUrl": "http://127.0.0.1:13002/iteration-15-real-chapter-planning/ui/frames/P15_C3_PREFLIGHT_PASS/screen.png",
+    "prototypeCodeUrl": "http://127.0.0.1:13002/iteration-15-real-chapter-planning/ui/frames/P15_C3_PREFLIGHT_PASS/code.html",
+    "ids": {
+      "projectId": "13a13e7e-656e-4174-bc96-c301692ebced"
+    }
+  },
+  {
+    "iteration": 15,
+    "frameId": "P15_C3_PREFLIGHT_BLOCKED",
+    "actualUrl": "http://127.0.0.1:13001/projects/13a13e7e-656e-4174-bc96-c301692ebced/chapters",
+    "prototypeScreenUrl": "http://127.0.0.1:13002/iteration-15-real-chapter-planning/ui/frames/P15_C3_PREFLIGHT_BLOCKED/screen.png",
+    "prototypeCodeUrl": "http://127.0.0.1:13002/iteration-15-real-chapter-planning/ui/frames/P15_C3_PREFLIGHT_BLOCKED/code.html",
+    "ids": {
+      "projectId": "13a13e7e-656e-4174-bc96-c301692ebced"
+    }
+  },
+  {
+    "iteration": 15,
+    "frameId": "P15_C3_RUN_CREATED",
+    "actualUrl": "http://127.0.0.1:13001/projects/13a13e7e-656e-4174-bc96-c301692ebced/chapters",
+    "prototypeScreenUrl": "http://127.0.0.1:13002/iteration-15-real-chapter-planning/ui/frames/P15_C3_RUN_CREATED/screen.png",
+    "prototypeCodeUrl": "http://127.0.0.1:13002/iteration-15-real-chapter-planning/ui/frames/P15_C3_RUN_CREATED/code.html",
+    "ids": {
+      "projectId": "13a13e7e-656e-4174-bc96-c301692ebced"
+    }
+  },
+  {
+    "iteration": 15,
+    "frameId": "P15_C4_CANDIDATE_BATCH_LIST",
+    "actualUrl": "http://127.0.0.1:13001/projects/13a13e7e-656e-4174-bc96-c301692ebced/chapter-plan-candidate-batches",
+    "prototypeScreenUrl": "http://127.0.0.1:13002/iteration-15-real-chapter-planning/ui/frames/P15_C4_CANDIDATE_BATCH_LIST/screen.png",
+    "prototypeCodeUrl": "http://127.0.0.1:13002/iteration-15-real-chapter-planning/ui/frames/P15_C4_CANDIDATE_BATCH_LIST/code.html",
+    "ids": {
+      "projectId": "13a13e7e-656e-4174-bc96-c301692ebced"
+    }
+  },
+  {
+    "iteration": 15,
+    "frameId": "P15_C5_CANDIDATE_BATCH_DETAIL",
+    "actualUrl": "http://127.0.0.1:13001/chapter-plan-candidate-batches/f7b2889d-b5bc-400e-aeeb-ef8d75c4f9a7",
+    "prototypeScreenUrl": "http://127.0.0.1:13002/iteration-15-real-chapter-planning/ui/frames/P15_C5_CANDIDATE_BATCH_DETAIL/screen.png",
+    "prototypeCodeUrl": "http://127.0.0.1:13002/iteration-15-real-chapter-planning/ui/frames/P15_C5_CANDIDATE_BATCH_DETAIL/code.html",
+    "ids": {
+      "projectId": "13a13e7e-656e-4174-bc96-c301692ebced",
+      "batchId": "f7b2889d-b5bc-400e-aeeb-ef8d75c4f9a7"
+    }
+  },
+  {
+    "iteration": 15,
+    "frameId": "P15_C6_CANDIDATE_EDIT_DRAWER",
+    "actualUrl": "http://127.0.0.1:13001/chapter-plan-candidate-batches/f7b2889d-b5bc-400e-aeeb-ef8d75c4f9a7",
+    "prototypeScreenUrl": "http://127.0.0.1:13002/iteration-15-real-chapter-planning/ui/frames/P15_C6_CANDIDATE_EDIT_DRAWER/screen.png",
+    "prototypeCodeUrl": "http://127.0.0.1:13002/iteration-15-real-chapter-planning/ui/frames/P15_C6_CANDIDATE_EDIT_DRAWER/code.html",
+    "ids": {
+      "projectId": "13a13e7e-656e-4174-bc96-c301692ebced",
+      "batchId": "f7b2889d-b5bc-400e-aeeb-ef8d75c4f9a7"
+    }
+  },
+  {
+    "iteration": 15,
+    "frameId": "P15_C7_CANDIDATE_COMPARE_DIALOG",
+    "actualUrl": "http://127.0.0.1:13001/chapter-plan-candidate-batches/f7b2889d-b5bc-400e-aeeb-ef8d75c4f9a7",
+    "prototypeScreenUrl": "http://127.0.0.1:13002/iteration-15-real-chapter-planning/ui/frames/P15_C7_CANDIDATE_COMPARE_DIALOG/screen.png",
+    "prototypeCodeUrl": "http://127.0.0.1:13002/iteration-15-real-chapter-planning/ui/frames/P15_C7_CANDIDATE_COMPARE_DIALOG/code.html",
+    "ids": {
+      "projectId": "13a13e7e-656e-4174-bc96-c301692ebced",
+      "batchId": "f7b2889d-b5bc-400e-aeeb-ef8d75c4f9a7"
+    }
+  },
+  {
+    "iteration": 15,
+    "frameId": "P15_C8_BATCH_ADOPT_DIALOG",
+    "actualUrl": "http://127.0.0.1:13001/chapter-plan-candidate-batches/f7b2889d-b5bc-400e-aeeb-ef8d75c4f9a7",
+    "prototypeScreenUrl": "http://127.0.0.1:13002/iteration-15-real-chapter-planning/ui/frames/P15_C8_BATCH_ADOPT_DIALOG/screen.png",
+    "prototypeCodeUrl": "http://127.0.0.1:13002/iteration-15-real-chapter-planning/ui/frames/P15_C8_BATCH_ADOPT_DIALOG/code.html",
+    "ids": {
+      "projectId": "13a13e7e-656e-4174-bc96-c301692ebced",
+      "batchId": "f7b2889d-b5bc-400e-aeeb-ef8d75c4f9a7"
+    }
+  },
+  {
+    "iteration": 15,
+    "frameId": "P15_C9_BATCH_ABANDON_DIALOG",
+    "actualUrl": "http://127.0.0.1:13001/chapter-plan-candidate-batches/f7b2889d-b5bc-400e-aeeb-ef8d75c4f9a7",
+    "prototypeScreenUrl": "http://127.0.0.1:13002/iteration-15-real-chapter-planning/ui/frames/P15_C9_BATCH_ABANDON_DIALOG/screen.png",
+    "prototypeCodeUrl": "http://127.0.0.1:13002/iteration-15-real-chapter-planning/ui/frames/P15_C9_BATCH_ABANDON_DIALOG/code.html",
+    "ids": {
+      "projectId": "13a13e7e-656e-4174-bc96-c301692ebced",
+      "batchId": "f7b2889d-b5bc-400e-aeeb-ef8d75c4f9a7"
+    }
+  },
+  {
+    "iteration": 15,
+    "frameId": "P15_C10_STALE_CONFLICT_DIALOG",
+    "actualUrl": "http://127.0.0.1:13001/chapter-plan-candidate-batches/f7b2889d-b5bc-400e-aeeb-ef8d75c4f9a7",
+    "prototypeScreenUrl": "http://127.0.0.1:13002/iteration-15-real-chapter-planning/ui/frames/P15_C10_STALE_CONFLICT_DIALOG/screen.png",
+    "prototypeCodeUrl": "http://127.0.0.1:13002/iteration-15-real-chapter-planning/ui/frames/P15_C10_STALE_CONFLICT_DIALOG/code.html",
+    "ids": {
+      "projectId": "13a13e7e-656e-4174-bc96-c301692ebced",
+      "batchId": "f7b2889d-b5bc-400e-aeeb-ef8d75c4f9a7"
+    }
+  },
+  {
+    "iteration": 15,
+    "frameId": "P15_S1_STORYLINE_RELATION_READONLY",
+    "actualUrl": "http://127.0.0.1:13001/projects/13a13e7e-656e-4174-bc96-c301692ebced/storylines",
+    "prototypeScreenUrl": "http://127.0.0.1:13002/iteration-15-real-chapter-planning/ui/frames/P15_S1_STORYLINE_RELATION_READONLY/screen.png",
+    "prototypeCodeUrl": "http://127.0.0.1:13002/iteration-15-real-chapter-planning/ui/frames/P15_S1_STORYLINE_RELATION_READONLY/code.html",
+    "ids": {
+      "projectId": "13a13e7e-656e-4174-bc96-c301692ebced"
+    }
+  }
+]

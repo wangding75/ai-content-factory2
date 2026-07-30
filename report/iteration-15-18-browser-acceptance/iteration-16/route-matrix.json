@@ -1,0 +1,123 @@
+[
+  {
+    "iteration": 16,
+    "frameId": "I16_D1_EDITOR_CHAPTER_GOAL",
+    "actualUrl": "http://127.0.0.1:13001/projects/13362446-e528-4071-a9d1-5260cc1fcd78/works/9ea091d1-b63e-409c-92dd-9b1271c508c7",
+    "prototypeScreenUrl": "http://127.0.0.1:13002/iteration-16-real-content-generation/ui/frames/I16_D1_EDITOR_CHAPTER_GOAL/screen.png",
+    "prototypeCodeUrl": "http://127.0.0.1:13002/iteration-16-real-content-generation/ui/frames/I16_D1_EDITOR_CHAPTER_GOAL/code.html",
+    "ids": {
+      "projectId": "13362446-e528-4071-a9d1-5260cc1fcd78",
+      "workId": "9ea091d1-b63e-409c-92dd-9b1271c508c7"
+    }
+  },
+  {
+    "iteration": 16,
+    "frameId": "I16_D1_EDITOR_STORY_CONTEXT",
+    "actualUrl": "http://127.0.0.1:13001/projects/13362446-e528-4071-a9d1-5260cc1fcd78/works/9ea091d1-b63e-409c-92dd-9b1271c508c7",
+    "prototypeScreenUrl": "http://127.0.0.1:13002/iteration-16-real-content-generation/ui/frames/I16_D1_EDITOR_STORY_CONTEXT/screen.png",
+    "prototypeCodeUrl": "http://127.0.0.1:13002/iteration-16-real-content-generation/ui/frames/I16_D1_EDITOR_STORY_CONTEXT/code.html",
+    "ids": {
+      "projectId": "13362446-e528-4071-a9d1-5260cc1fcd78",
+      "workId": "9ea091d1-b63e-409c-92dd-9b1271c508c7"
+    }
+  },
+  {
+    "iteration": 16,
+    "frameId": "I16_D1_EDITOR_MATERIALS",
+    "actualUrl": "http://127.0.0.1:13001/projects/13362446-e528-4071-a9d1-5260cc1fcd78/works/9ea091d1-b63e-409c-92dd-9b1271c508c7",
+    "prototypeScreenUrl": "http://127.0.0.1:13002/iteration-16-real-content-generation/ui/frames/I16_D1_EDITOR_MATERIALS/screen.png",
+    "prototypeCodeUrl": "http://127.0.0.1:13002/iteration-16-real-content-generation/ui/frames/I16_D1_EDITOR_MATERIALS/code.html",
+    "ids": {
+      "projectId": "13362446-e528-4071-a9d1-5260cc1fcd78",
+      "workId": "9ea091d1-b63e-409c-92dd-9b1271c508c7"
+    }
+  },
+  {
+    "iteration": 16,
+    "frameId": "I16_D2_GENERATE_CONFIRM",
+    "actualUrl": "http://127.0.0.1:13001/projects/13362446-e528-4071-a9d1-5260cc1fcd78/works/9ea091d1-b63e-409c-92dd-9b1271c508c7",
+    "prototypeScreenUrl": "http://127.0.0.1:13002/iteration-16-real-content-generation/ui/frames/I16_D2_GENERATE_CONFIRM/screen.png",
+    "prototypeCodeUrl": "http://127.0.0.1:13002/iteration-16-real-content-generation/ui/frames/I16_D2_GENERATE_CONFIRM/code.html",
+    "ids": {
+      "projectId": "13362446-e528-4071-a9d1-5260cc1fcd78",
+      "workId": "9ea091d1-b63e-409c-92dd-9b1271c508c7"
+    }
+  },
+  {
+    "iteration": 16,
+    "frameId": "I16_D2_GENERATE_REQUIREMENTS",
+    "actualUrl": "http://127.0.0.1:13001/projects/13362446-e528-4071-a9d1-5260cc1fcd78/works/9ea091d1-b63e-409c-92dd-9b1271c508c7",
+    "prototypeScreenUrl": "http://127.0.0.1:13002/iteration-16-real-content-generation/ui/frames/I16_D2_GENERATE_REQUIREMENTS/screen.png",
+    "prototypeCodeUrl": "http://127.0.0.1:13002/iteration-16-real-content-generation/ui/frames/I16_D2_GENERATE_REQUIREMENTS/code.html",
+    "ids": {
+      "projectId": "13362446-e528-4071-a9d1-5260cc1fcd78",
+      "workId": "9ea091d1-b63e-409c-92dd-9b1271c508c7"
+    }
+  },
+  {
+    "iteration": 16,
+    "frameId": "I16_D3_RUN_QUEUED",
+    "actualUrl": "http://127.0.0.1:13001/projects/13362446-e528-4071-a9d1-5260cc1fcd78/works/9ea091d1-b63e-409c-92dd-9b1271c508c7",
+    "prototypeScreenUrl": "http://127.0.0.1:13002/iteration-16-real-content-generation/ui/frames/I16_D3_RUN_QUEUED/screen.png",
+    "prototypeCodeUrl": "http://127.0.0.1:13002/iteration-16-real-content-generation/ui/frames/I16_D3_RUN_QUEUED/code.html",
+    "ids": {
+      "projectId": "13362446-e528-4071-a9d1-5260cc1fcd78",
+      "workId": "9ea091d1-b63e-409c-92dd-9b1271c508c7"
+    }
+  },
+  {
+    "iteration": 16,
+    "frameId": "I16_D3_RUN_RUNNING",
+    "actualUrl": "http://127.0.0.1:13001/projects/13362446-e528-4071-a9d1-5260cc1fcd78/works/9ea091d1-b63e-409c-92dd-9b1271c508c7",
+    "prototypeScreenUrl": "http://127.0.0.1:13002/iteration-16-real-content-generation/ui/frames/I16_D3_RUN_RUNNING/screen.png",
+    "prototypeCodeUrl": "http://127.0.0.1:13002/iteration-16-real-content-generation/ui/frames/I16_D3_RUN_RUNNING/code.html",
+    "ids": {
+      "projectId": "13362446-e528-4071-a9d1-5260cc1fcd78",
+      "workId": "9ea091d1-b63e-409c-92dd-9b1271c508c7"
+    }
+  },
+  {
+    "iteration": 16,
+    "frameId": "I16_D3_RUN_SUCCEEDED",
+    "actualUrl": "http://127.0.0.1:13001/projects/13362446-e528-4071-a9d1-5260cc1fcd78/works/9ea091d1-b63e-409c-92dd-9b1271c508c7",
+    "prototypeScreenUrl": "http://127.0.0.1:13002/iteration-16-real-content-generation/ui/frames/I16_D3_RUN_SUCCEEDED/screen.png",
+    "prototypeCodeUrl": "http://127.0.0.1:13002/iteration-16-real-content-generation/ui/frames/I16_D3_RUN_SUCCEEDED/code.html",
+    "ids": {
+      "projectId": "13362446-e528-4071-a9d1-5260cc1fcd78",
+      "workId": "9ea091d1-b63e-409c-92dd-9b1271c508c7"
+    }
+  },
+  {
+    "iteration": 16,
+    "frameId": "I16_D3_RUN_FAILED",
+    "actualUrl": "http://127.0.0.1:13001/projects/13362446-e528-4071-a9d1-5260cc1fcd78/works/9ea091d1-b63e-409c-92dd-9b1271c508c7",
+    "prototypeScreenUrl": "http://127.0.0.1:13002/iteration-16-real-content-generation/ui/frames/I16_D3_RUN_FAILED/screen.png",
+    "prototypeCodeUrl": "http://127.0.0.1:13002/iteration-16-real-content-generation/ui/frames/I16_D3_RUN_FAILED/code.html",
+    "ids": {
+      "projectId": "13362446-e528-4071-a9d1-5260cc1fcd78",
+      "workId": "9ea091d1-b63e-409c-92dd-9b1271c508c7"
+    }
+  },
+  {
+    "iteration": 16,
+    "frameId": "I16_D4_CANDIDATE_VERSION",
+    "actualUrl": "http://127.0.0.1:13001/projects/13362446-e528-4071-a9d1-5260cc1fcd78/works/9ea091d1-b63e-409c-92dd-9b1271c508c7",
+    "prototypeScreenUrl": "http://127.0.0.1:13002/iteration-16-real-content-generation/ui/frames/I16_D4_CANDIDATE_VERSION/screen.png",
+    "prototypeCodeUrl": "http://127.0.0.1:13002/iteration-16-real-content-generation/ui/frames/I16_D4_CANDIDATE_VERSION/code.html",
+    "ids": {
+      "projectId": "13362446-e528-4071-a9d1-5260cc1fcd78",
+      "workId": "9ea091d1-b63e-409c-92dd-9b1271c508c7"
+    }
+  },
+  {
+    "iteration": 16,
+    "frameId": "I16_D5_NOT_CONFIGURED",
+    "actualUrl": "http://127.0.0.1:13001/projects/13362446-e528-4071-a9d1-5260cc1fcd78/works/9ea091d1-b63e-409c-92dd-9b1271c508c7",
+    "prototypeScreenUrl": "http://127.0.0.1:13002/iteration-16-real-content-generation/ui/frames/I16_D5_NOT_CONFIGURED/screen.png",
+    "prototypeCodeUrl": "http://127.0.0.1:13002/iteration-16-real-content-generation/ui/frames/I16_D5_NOT_CONFIGURED/code.html",
+    "ids": {
+      "projectId": "13362446-e528-4071-a9d1-5260cc1fcd78",
+      "workId": "9ea091d1-b63e-409c-92dd-9b1271c508c7"
+    }
+  }
+]

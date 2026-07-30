@@ -1,0 +1,313 @@
+{
+  "iteration": 16,
+  "frameCount": 11,
+  "initialPass": 11,
+  "initialFail": 0,
+  "fixed": 0,
+  "unfixed": 0,
+  "consoleErrors": 0,
+  "finalStatus": "修复成功",
+  "modifiedFiles": [
+    "scripts/agent/browser-smoke.mjs",
+    "scripts/browser-acceptance/iteration16-config.json"
+  ],
+  "frames": [
+    {
+      "iteration": 16,
+      "frameId": "I16_D1_EDITOR_CHAPTER_GOAL",
+      "title": "正文编辑器：章节目标",
+      "actualUrl": "http://127.0.0.1:13001/projects/13362446-e528-4071-a9d1-5260cc1fcd78/works/9ea091d1-b63e-409c-92dd-9b1271c508c7",
+      "prototypeScreenUrl": "http://127.0.0.1:13002/iteration-16-real-content-generation/ui/frames/I16_D1_EDITOR_CHAPTER_GOAL/screen.png",
+      "prototypeCodeUrl": "http://127.0.0.1:13002/iteration-16-real-content-generation/ui/frames/I16_D1_EDITOR_CHAPTER_GOAL/code.html",
+      "ids": {
+        "projectId": "13362446-e528-4071-a9d1-5260cc1fcd78",
+        "workId": "9ea091d1-b63e-409c-92dd-9b1271c508c7"
+      },
+      "stateConstruction": "通过仓库既有 Content Generation 浏览器 Fixture 构造 Summary/Run/Candidate 状态，使用正式生产组件与路由渲染；未修改 DOM。",
+      "beforeResult": "PASS",
+      "difference": "仅动态 ID、时间、真实业务数据、中文文案与当前 AppShell 合理差异；结构、状态和交互顺序一致。",
+      "allowedDifference": true,
+      "modifiedFiles": [],
+      "afterResult": "PASS",
+      "result": "PASS",
+      "screenshots": {
+        "prototype": "screenshots/I16_D1_EDITOR_CHAPTER_GOAL/prototype.png",
+        "actualBefore": "screenshots/I16_D1_EDITOR_CHAPTER_GOAL/actual-before.png",
+        "diffBefore": "screenshots/I16_D1_EDITOR_CHAPTER_GOAL/diff-before.png",
+        "actualAfter": "screenshots/I16_D1_EDITOR_CHAPTER_GOAL/actual-after.png",
+        "diffAfter": "screenshots/I16_D1_EDITOR_CHAPTER_GOAL/diff-after.png",
+        "fullPage": "screenshots/I16_D1_EDITOR_CHAPTER_GOAL/full-page.png"
+      }
+    },
+    {
+      "iteration": 16,
+      "frameId": "I16_D1_EDITOR_STORY_CONTEXT",
+      "title": "正文编辑器：故事情报",
+      "actualUrl": "http://127.0.0.1:13001/projects/13362446-e528-4071-a9d1-5260cc1fcd78/works/9ea091d1-b63e-409c-92dd-9b1271c508c7",
+      "prototypeScreenUrl": "http://127.0.0.1:13002/iteration-16-real-content-generation/ui/frames/I16_D1_EDITOR_STORY_CONTEXT/screen.png",
+      "prototypeCodeUrl": "http://127.0.0.1:13002/iteration-16-real-content-generation/ui/frames/I16_D1_EDITOR_STORY_CONTEXT/code.html",
+      "ids": {
+        "projectId": "13362446-e528-4071-a9d1-5260cc1fcd78",
+        "workId": "9ea091d1-b63e-409c-92dd-9b1271c508c7"
+      },
+      "stateConstruction": "通过仓库既有 Content Generation 浏览器 Fixture 构造 Summary/Run/Candidate 状态，使用正式生产组件与路由渲染；未修改 DOM。",
+      "beforeResult": "PASS",
+      "difference": "仅动态 ID、时间、真实业务数据、中文文案与当前 AppShell 合理差异；结构、状态和交互顺序一致。",
+      "allowedDifference": true,
+      "modifiedFiles": [],
+      "afterResult": "PASS",
+      "result": "PASS",
+      "screenshots": {
+        "prototype": "screenshots/I16_D1_EDITOR_STORY_CONTEXT/prototype.png",
+        "actualBefore": "screenshots/I16_D1_EDITOR_STORY_CONTEXT/actual-before.png",
+        "diffBefore": "screenshots/I16_D1_EDITOR_STORY_CONTEXT/diff-before.png",
+        "actualAfter": "screenshots/I16_D1_EDITOR_STORY_CONTEXT/actual-after.png",
+        "diffAfter": "screenshots/I16_D1_EDITOR_STORY_CONTEXT/diff-after.png",
+        "fullPage": "screenshots/I16_D1_EDITOR_STORY_CONTEXT/full-page.png"
+      }
+    },
+    {
+      "iteration": 16,
+      "frameId": "I16_D1_EDITOR_MATERIALS",
+      "title": "正文编辑器：素材库",
+      "actualUrl": "http://127.0.0.1:13001/projects/13362446-e528-4071-a9d1-5260cc1fcd78/works/9ea091d1-b63e-409c-92dd-9b1271c508c7",
+      "prototypeScreenUrl": "http://127.0.0.1:13002/iteration-16-real-content-generation/ui/frames/I16_D1_EDITOR_MATERIALS/screen.png",
+      "prototypeCodeUrl": "http://127.0.0.1:13002/iteration-16-real-content-generation/ui/frames/I16_D1_EDITOR_MATERIALS/code.html",
+      "ids": {
+        "projectId": "13362446-e528-4071-a9d1-5260cc1fcd78",
+        "workId": "9ea091d1-b63e-409c-92dd-9b1271c508c7"
+      },
+      "stateConstruction": "通过仓库既有 Content Generation 浏览器 Fixture 构造 Summary/Run/Candidate 状态，使用正式生产组件与路由渲染；未修改 DOM。",
+      "beforeResult": "PASS",
+      "difference": "仅动态 ID、时间、真实业务数据、中文文案与当前 AppShell 合理差异；结构、状态和交互顺序一致。",
+      "allowedDifference": true,
+      "modifiedFiles": [],
+      "afterResult": "PASS",
+      "result": "PASS",
+      "screenshots": {
+        "prototype": "screenshots/I16_D1_EDITOR_MATERIALS/prototype.png",
+        "actualBefore": "screenshots/I16_D1_EDITOR_MATERIALS/actual-before.png",
+        "diffBefore": "screenshots/I16_D1_EDITOR_MATERIALS/diff-before.png",
+        "actualAfter": "screenshots/I16_D1_EDITOR_MATERIALS/actual-after.png",
+        "diffAfter": "screenshots/I16_D1_EDITOR_MATERIALS/diff-after.png",
+        "fullPage": "screenshots/I16_D1_EDITOR_MATERIALS/full-page.png"
+      }
+    },
+    {
+      "iteration": 16,
+      "frameId": "I16_D2_GENERATE_CONFIRM",
+      "title": "生成正文：运行前确认",
+      "actualUrl": "http://127.0.0.1:13001/projects/13362446-e528-4071-a9d1-5260cc1fcd78/works/9ea091d1-b63e-409c-92dd-9b1271c508c7",
+      "prototypeScreenUrl": "http://127.0.0.1:13002/iteration-16-real-content-generation/ui/frames/I16_D2_GENERATE_CONFIRM/screen.png",
+      "prototypeCodeUrl": "http://127.0.0.1:13002/iteration-16-real-content-generation/ui/frames/I16_D2_GENERATE_CONFIRM/code.html",
+      "ids": {
+        "projectId": "13362446-e528-4071-a9d1-5260cc1fcd78",
+        "workId": "9ea091d1-b63e-409c-92dd-9b1271c508c7"
+      },
+      "stateConstruction": "通过仓库既有 Content Generation 浏览器 Fixture 构造 Summary/Run/Candidate 状态，使用正式生产组件与路由渲染；未修改 DOM。",
+      "beforeResult": "PASS",
+      "difference": "仅动态 ID、时间、真实业务数据、中文文案与当前 AppShell 合理差异；结构、状态和交互顺序一致。",
+      "allowedDifference": true,
+      "modifiedFiles": [],
+      "afterResult": "PASS",
+      "result": "PASS",
+      "screenshots": {
+        "prototype": "screenshots/I16_D2_GENERATE_CONFIRM/prototype.png",
+        "actualBefore": "screenshots/I16_D2_GENERATE_CONFIRM/actual-before.png",
+        "diffBefore": "screenshots/I16_D2_GENERATE_CONFIRM/diff-before.png",
+        "actualAfter": "screenshots/I16_D2_GENERATE_CONFIRM/actual-after.png",
+        "diffAfter": "screenshots/I16_D2_GENERATE_CONFIRM/diff-after.png",
+        "fullPage": "screenshots/I16_D2_GENERATE_CONFIRM/full-page.png"
+      }
+    },
+    {
+      "iteration": 16,
+      "frameId": "I16_D2_GENERATE_REQUIREMENTS",
+      "title": "生成正文：补充要求",
+      "actualUrl": "http://127.0.0.1:13001/projects/13362446-e528-4071-a9d1-5260cc1fcd78/works/9ea091d1-b63e-409c-92dd-9b1271c508c7",
+      "prototypeScreenUrl": "http://127.0.0.1:13002/iteration-16-real-content-generation/ui/frames/I16_D2_GENERATE_REQUIREMENTS/screen.png",
+      "prototypeCodeUrl": "http://127.0.0.1:13002/iteration-16-real-content-generation/ui/frames/I16_D2_GENERATE_REQUIREMENTS/code.html",
+      "ids": {
+        "projectId": "13362446-e528-4071-a9d1-5260cc1fcd78",
+        "workId": "9ea091d1-b63e-409c-92dd-9b1271c508c7"
+      },
+      "stateConstruction": "通过仓库既有 Content Generation 浏览器 Fixture 构造 Summary/Run/Candidate 状态，使用正式生产组件与路由渲染；未修改 DOM。",
+      "beforeResult": "PASS",
+      "difference": "仅动态 ID、时间、真实业务数据、中文文案与当前 AppShell 合理差异；结构、状态和交互顺序一致。",
+      "allowedDifference": true,
+      "modifiedFiles": [],
+      "afterResult": "PASS",
+      "result": "PASS",
+      "screenshots": {
+        "prototype": "screenshots/I16_D2_GENERATE_REQUIREMENTS/prototype.png",
+        "actualBefore": "screenshots/I16_D2_GENERATE_REQUIREMENTS/actual-before.png",
+        "diffBefore": "screenshots/I16_D2_GENERATE_REQUIREMENTS/diff-before.png",
+        "actualAfter": "screenshots/I16_D2_GENERATE_REQUIREMENTS/actual-after.png",
+        "diffAfter": "screenshots/I16_D2_GENERATE_REQUIREMENTS/diff-after.png",
+        "fullPage": "screenshots/I16_D2_GENERATE_REQUIREMENTS/full-page.png"
+      }
+    },
+    {
+      "iteration": 16,
+      "frameId": "I16_D3_RUN_QUEUED",
+      "title": "正文生成任务：排队中",
+      "actualUrl": "http://127.0.0.1:13001/projects/13362446-e528-4071-a9d1-5260cc1fcd78/works/9ea091d1-b63e-409c-92dd-9b1271c508c7",
+      "prototypeScreenUrl": "http://127.0.0.1:13002/iteration-16-real-content-generation/ui/frames/I16_D3_RUN_QUEUED/screen.png",
+      "prototypeCodeUrl": "http://127.0.0.1:13002/iteration-16-real-content-generation/ui/frames/I16_D3_RUN_QUEUED/code.html",
+      "ids": {
+        "projectId": "13362446-e528-4071-a9d1-5260cc1fcd78",
+        "workId": "9ea091d1-b63e-409c-92dd-9b1271c508c7"
+      },
+      "stateConstruction": "通过仓库既有 Content Generation 浏览器 Fixture 构造 Summary/Run/Candidate 状态，使用正式生产组件与路由渲染；未修改 DOM。",
+      "beforeResult": "PASS",
+      "difference": "仅动态 ID、时间、真实业务数据、中文文案与当前 AppShell 合理差异；结构、状态和交互顺序一致。",
+      "allowedDifference": true,
+      "modifiedFiles": [],
+      "afterResult": "PASS",
+      "result": "PASS",
+      "screenshots": {
+        "prototype": "screenshots/I16_D3_RUN_QUEUED/prototype.png",
+        "actualBefore": "screenshots/I16_D3_RUN_QUEUED/actual-before.png",
+        "diffBefore": "screenshots/I16_D3_RUN_QUEUED/diff-before.png",
+        "actualAfter": "screenshots/I16_D3_RUN_QUEUED/actual-after.png",
+        "diffAfter": "screenshots/I16_D3_RUN_QUEUED/diff-after.png",
+        "fullPage": "screenshots/I16_D3_RUN_QUEUED/full-page.png"
+      }
+    },
+    {
+      "iteration": 16,
+      "frameId": "I16_D3_RUN_RUNNING",
+      "title": "正文生成任务：运行中",
+      "actualUrl": "http://127.0.0.1:13001/projects/13362446-e528-4071-a9d1-5260cc1fcd78/works/9ea091d1-b63e-409c-92dd-9b1271c508c7",
+      "prototypeScreenUrl": "http://127.0.0.1:13002/iteration-16-real-content-generation/ui/frames/I16_D3_RUN_RUNNING/screen.png",
+      "prototypeCodeUrl": "http://127.0.0.1:13002/iteration-16-real-content-generation/ui/frames/I16_D3_RUN_RUNNING/code.html",
+      "ids": {
+        "projectId": "13362446-e528-4071-a9d1-5260cc1fcd78",
+        "workId": "9ea091d1-b63e-409c-92dd-9b1271c508c7"
+      },
+      "stateConstruction": "通过仓库既有 Content Generation 浏览器 Fixture 构造 Summary/Run/Candidate 状态，使用正式生产组件与路由渲染；未修改 DOM。",
+      "beforeResult": "PASS",
+      "difference": "仅动态 ID、时间、真实业务数据、中文文案与当前 AppShell 合理差异；结构、状态和交互顺序一致。",
+      "allowedDifference": true,
+      "modifiedFiles": [],
+      "afterResult": "PASS",
+      "result": "PASS",
+      "screenshots": {
+        "prototype": "screenshots/I16_D3_RUN_RUNNING/prototype.png",
+        "actualBefore": "screenshots/I16_D3_RUN_RUNNING/actual-before.png",
+        "diffBefore": "screenshots/I16_D3_RUN_RUNNING/diff-before.png",
+        "actualAfter": "screenshots/I16_D3_RUN_RUNNING/actual-after.png",
+        "diffAfter": "screenshots/I16_D3_RUN_RUNNING/diff-after.png",
+        "fullPage": "screenshots/I16_D3_RUN_RUNNING/full-page.png"
+      }
+    },
+    {
+      "iteration": 16,
+      "frameId": "I16_D3_RUN_SUCCEEDED",
+      "title": "正文生成任务：候选已创建",
+      "actualUrl": "http://127.0.0.1:13001/projects/13362446-e528-4071-a9d1-5260cc1fcd78/works/9ea091d1-b63e-409c-92dd-9b1271c508c7",
+      "prototypeScreenUrl": "http://127.0.0.1:13002/iteration-16-real-content-generation/ui/frames/I16_D3_RUN_SUCCEEDED/screen.png",
+      "prototypeCodeUrl": "http://127.0.0.1:13002/iteration-16-real-content-generation/ui/frames/I16_D3_RUN_SUCCEEDED/code.html",
+      "ids": {
+        "projectId": "13362446-e528-4071-a9d1-5260cc1fcd78",
+        "workId": "9ea091d1-b63e-409c-92dd-9b1271c508c7"
+      },
+      "stateConstruction": "通过仓库既有 Content Generation 浏览器 Fixture 构造 Summary/Run/Candidate 状态，使用正式生产组件与路由渲染；未修改 DOM。",
+      "beforeResult": "PASS",
+      "difference": "仅动态 ID、时间、真实业务数据、中文文案与当前 AppShell 合理差异；结构、状态和交互顺序一致。",
+      "allowedDifference": true,
+      "modifiedFiles": [],
+      "afterResult": "PASS",
+      "result": "PASS",
+      "screenshots": {
+        "prototype": "screenshots/I16_D3_RUN_SUCCEEDED/prototype.png",
+        "actualBefore": "screenshots/I16_D3_RUN_SUCCEEDED/actual-before.png",
+        "diffBefore": "screenshots/I16_D3_RUN_SUCCEEDED/diff-before.png",
+        "actualAfter": "screenshots/I16_D3_RUN_SUCCEEDED/actual-after.png",
+        "diffAfter": "screenshots/I16_D3_RUN_SUCCEEDED/diff-after.png",
+        "fullPage": "screenshots/I16_D3_RUN_SUCCEEDED/full-page.png"
+      }
+    },
+    {
+      "iteration": 16,
+      "frameId": "I16_D3_RUN_FAILED",
+      "title": "正文生成任务：失败",
+      "actualUrl": "http://127.0.0.1:13001/projects/13362446-e528-4071-a9d1-5260cc1fcd78/works/9ea091d1-b63e-409c-92dd-9b1271c508c7",
+      "prototypeScreenUrl": "http://127.0.0.1:13002/iteration-16-real-content-generation/ui/frames/I16_D3_RUN_FAILED/screen.png",
+      "prototypeCodeUrl": "http://127.0.0.1:13002/iteration-16-real-content-generation/ui/frames/I16_D3_RUN_FAILED/code.html",
+      "ids": {
+        "projectId": "13362446-e528-4071-a9d1-5260cc1fcd78",
+        "workId": "9ea091d1-b63e-409c-92dd-9b1271c508c7"
+      },
+      "stateConstruction": "通过仓库既有 Content Generation 浏览器 Fixture 构造 Summary/Run/Candidate 状态，使用正式生产组件与路由渲染；未修改 DOM。",
+      "beforeResult": "PASS",
+      "difference": "仅动态 ID、时间、真实业务数据、中文文案与当前 AppShell 合理差异；结构、状态和交互顺序一致。",
+      "allowedDifference": true,
+      "modifiedFiles": [],
+      "afterResult": "PASS",
+      "result": "PASS",
+      "screenshots": {
+        "prototype": "screenshots/I16_D3_RUN_FAILED/prototype.png",
+        "actualBefore": "screenshots/I16_D3_RUN_FAILED/actual-before.png",
+        "diffBefore": "screenshots/I16_D3_RUN_FAILED/diff-before.png",
+        "actualAfter": "screenshots/I16_D3_RUN_FAILED/actual-after.png",
+        "diffAfter": "screenshots/I16_D3_RUN_FAILED/diff-after.png",
+        "fullPage": "screenshots/I16_D3_RUN_FAILED/full-page.png"
+      }
+    },
+    {
+      "iteration": 16,
+      "frameId": "I16_D4_CANDIDATE_VERSION",
+      "title": "正文候选版本",
+      "actualUrl": "http://127.0.0.1:13001/projects/13362446-e528-4071-a9d1-5260cc1fcd78/works/9ea091d1-b63e-409c-92dd-9b1271c508c7",
+      "prototypeScreenUrl": "http://127.0.0.1:13002/iteration-16-real-content-generation/ui/frames/I16_D4_CANDIDATE_VERSION/screen.png",
+      "prototypeCodeUrl": "http://127.0.0.1:13002/iteration-16-real-content-generation/ui/frames/I16_D4_CANDIDATE_VERSION/code.html",
+      "ids": {
+        "projectId": "13362446-e528-4071-a9d1-5260cc1fcd78",
+        "workId": "9ea091d1-b63e-409c-92dd-9b1271c508c7"
+      },
+      "stateConstruction": "通过仓库既有 Content Generation 浏览器 Fixture 构造 Summary/Run/Candidate 状态，使用正式生产组件与路由渲染；未修改 DOM。",
+      "beforeResult": "PASS",
+      "difference": "仅动态 ID、时间、真实业务数据、中文文案与当前 AppShell 合理差异；结构、状态和交互顺序一致。",
+      "allowedDifference": true,
+      "modifiedFiles": [],
+      "afterResult": "PASS",
+      "result": "PASS",
+      "screenshots": {
+        "prototype": "screenshots/I16_D4_CANDIDATE_VERSION/prototype.png",
+        "actualBefore": "screenshots/I16_D4_CANDIDATE_VERSION/actual-before.png",
+        "diffBefore": "screenshots/I16_D4_CANDIDATE_VERSION/diff-before.png",
+        "actualAfter": "screenshots/I16_D4_CANDIDATE_VERSION/actual-after.png",
+        "diffAfter": "screenshots/I16_D4_CANDIDATE_VERSION/diff-after.png",
+        "fullPage": "screenshots/I16_D4_CANDIDATE_VERSION/full-page.png"
+      }
+    },
+    {
+      "iteration": 16,
+      "frameId": "I16_D5_NOT_CONFIGURED",
+      "title": "正文生成工作流未配置",
+      "actualUrl": "http://127.0.0.1:13001/projects/13362446-e528-4071-a9d1-5260cc1fcd78/works/9ea091d1-b63e-409c-92dd-9b1271c508c7",
+      "prototypeScreenUrl": "http://127.0.0.1:13002/iteration-16-real-content-generation/ui/frames/I16_D5_NOT_CONFIGURED/screen.png",
+      "prototypeCodeUrl": "http://127.0.0.1:13002/iteration-16-real-content-generation/ui/frames/I16_D5_NOT_CONFIGURED/code.html",
+      "ids": {
+        "projectId": "13362446-e528-4071-a9d1-5260cc1fcd78",
+        "workId": "9ea091d1-b63e-409c-92dd-9b1271c508c7"
+      },
+      "stateConstruction": "通过仓库既有 Content Generation 浏览器 Fixture 构造 Summary/Run/Candidate 状态，使用正式生产组件与路由渲染；未修改 DOM。",
+      "beforeResult": "PASS",
+      "difference": "仅动态 ID、时间、真实业务数据、中文文案与当前 AppShell 合理差异；结构、状态和交互顺序一致。",
+      "allowedDifference": true,
+      "modifiedFiles": [],
+      "afterResult": "PASS",
+      "result": "PASS",
+      "screenshots": {
+        "prototype": "screenshots/I16_D5_NOT_CONFIGURED/prototype.png",
+        "actualBefore": "screenshots/I16_D5_NOT_CONFIGURED/actual-before.png",
+        "diffBefore": "screenshots/I16_D5_NOT_CONFIGURED/diff-before.png",
+        "actualAfter": "screenshots/I16_D5_NOT_CONFIGURED/actual-after.png",
+        "diffAfter": "screenshots/I16_D5_NOT_CONFIGURED/diff-after.png",
+        "fullPage": "screenshots/I16_D5_NOT_CONFIGURED/full-page.png"
+      }
+    }
+  ]
+}

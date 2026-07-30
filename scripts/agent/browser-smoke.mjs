@@ -35,6 +35,31 @@ try {
 
 const browser = await chromium.launch({ headless: true });
 const results = [];
+const exactPageOptions = {
+  viewport: {
+    width: config.viewport?.width ?? 1440,
+    height: config.viewport?.height ?? 900,
+  },
+  deviceScaleFactor: 1,
+  locale: "zh-CN",
+  timezoneId: "Asia/Shanghai",
+  colorScheme: "light",
+  reducedMotion: "reduce",
+};
+const disableMotion = async (page) => {
+  await page.addStyleTag({
+    content:
+      "*,*::before,*::after{animation-duration:0s!important;animation-delay:0s!important;transition:none!important;scroll-behavior:auto!important}",
+  });
+};
+const captureEvidence = async (page, outputDir, frameId, options = {}) => {
+  if (!outputDir) return;
+  fs.mkdirSync(path.resolve(outputDir), { recursive: true });
+  await page.screenshot({
+    path: path.join(path.resolve(outputDir), `${frameId}.png`),
+    fullPage: options.fullPage ?? false,
+  });
+};
 
 const assertVisible = async (page, text) => {
   const locator = page.getByText(text, { exact: false }).first();
@@ -92,19 +117,37 @@ const runContentGenerationEvidence = async (baseUrl, evidence) => {
   const requestedState = readArg("--content-generation-state");
   const states = requestedState ? [requestedState] : ["not_configured", "queued", "running", "runtime_failed", "output_validation_failed", "result_consumption_failed", "candidate_ready", "stale_candidate"];
   for (const state of states) {
-    const page = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
+    const page = await browser.newPage(exactPageOptions);
     const counters = { cas: 0 };
     const result = { route: evidence.route, evidenceState: state, browserFixture: state !== "not_configured", assertions: [], errors: [] };
     try {
       if (state !== "not_configured") await installContentGenerationFixture(page, itemId, state, counters);
       await page.goto(new URL(evidence.route, baseUrl).toString(), { waitUntil: "networkidle", timeout: 45000 });
+      await disableMotion(page);
       if (state === "not_configured") await assertVisible(page, "尚未配置正文生成工作流");
       if (state === "queued") await assertVisible(page, "排队中");
       if (state === "running") await assertVisible(page, "运行中");
       if (state.endsWith("failed")) { await assertVisible(page, "安全失败说明"); await assertVisible(page, state === "result_consumption_failed" ? "重试结果消费" : "重新执行 Runtime"); }
+      if (state === "candidate_ready" && evidence.visualOutputDir) {
+        await captureEvidence(page, evidence.visualOutputDir, "I16_D3_RUN_SUCCEEDED");
+        await captureEvidence(page, evidence.visualOutputDir, "I16_D1_EDITOR_CHAPTER_GOAL");
+        await page.getByRole("tab", { name: "故事情报" }).click();
+        await captureEvidence(page, evidence.visualOutputDir, "I16_D1_EDITOR_STORY_CONTEXT");
+        await page.getByRole("tab", { name: "素材库" }).click();
+        await captureEvidence(page, evidence.visualOutputDir, "I16_D1_EDITOR_MATERIALS");
+        await page.getByRole("button", { name: "生成正文" }).click();
+        await assertVisible(page, "预检通过");
+        await captureEvidence(page, evidence.visualOutputDir, "I16_D2_GENERATE_CONFIRM", { fullPage: true });
+        await page.getByPlaceholder("可选：补充本次创作要求").fill("保持叙事视角并强化人物动机");
+        await captureEvidence(page, evidence.visualOutputDir, "I16_D2_GENERATE_REQUIREMENTS", { fullPage: true });
+        await page.getByRole("button", { name: "关闭生成正文抽屉" }).click();
+      }
       if (state === "candidate_ready" || state === "stale_candidate") {
         await (await assertVisible(page, "查看候选")).click();
         await assertVisible(page, "候选正文用于浏览器 UI 状态验证");
+        if (state === "candidate_ready") {
+          await captureEvidence(page, evidence.visualOutputDir, "I16_D4_CANDIDATE_VERSION", { fullPage: true });
+        }
         const apply = await assertVisible(page, "设为当前版本");
         if (state === "stale_candidate") {
           if (await apply.isEnabled()) throw new Error("Stale candidate must not be applicable");
@@ -132,6 +175,18 @@ const runContentGenerationEvidence = async (baseUrl, evidence) => {
         const options = page.locator(".content-generation-drawer input[type=checkbox]");
         for (let index = 0; index < 4; index += 1) { await options.nth(index).click(); if (await page.getByText("确认创建生成任务", { exact: true }).isVisible()) throw new Error(`Context option ${index + 1} did not invalidate preflight`); await (await assertVisible(page, "重新预检")).click(); await assertVisible(page, "预检通过"); }
       }
+      const stateFrame = {
+        not_configured: "I16_D5_NOT_CONFIGURED",
+        queued: "I16_D3_RUN_QUEUED",
+        running: "I16_D3_RUN_RUNNING",
+        runtime_failed: "I16_D3_RUN_FAILED",
+        candidate_ready: "I16_D3_RUN_SUCCEEDED",
+      }[state];
+      if (stateFrame && state !== "candidate_ready") {
+        await captureEvidence(page, evidence.visualOutputDir, stateFrame, {
+          fullPage: state === "not_configured",
+        });
+      }
       result.assertions.push("passed");
     } catch (error) { result.errors.push(String(error)); }
     results.push(result);
@@ -142,10 +197,7 @@ const runContentGenerationEvidence = async (baseUrl, evidence) => {
 try {
   for (const route of config.routes) {
     const page = await browser.newPage({
-      viewport: {
-        width: config.viewport?.width ?? 1440,
-        height: config.viewport?.height ?? 1000,
-      },
+      ...exactPageOptions,
     });
 
     const consoleErrors = [];
@@ -177,6 +229,7 @@ try {
     }
 
     await page.waitForTimeout(config.settleMs ?? 500);
+    await disableMotion(page);
 
     const pageState = await page.evaluate(() => ({
       text: document.body?.innerText ?? "",

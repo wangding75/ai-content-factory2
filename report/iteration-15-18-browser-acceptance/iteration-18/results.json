@@ -1,0 +1,323 @@
+{
+  "iteration": 18,
+  "frameCount": 9,
+  "initialPass": 1,
+  "initialFail": 8,
+  "fixed": 8,
+  "unfixed": 0,
+  "consoleErrors": 0,
+  "finalStatus": "修复成功",
+  "modifiedFiles": [
+    "apps/web/src/app/globals.css",
+    "apps/web/src/features/project-works/rewrite-workspace.tsx",
+    "apps/web/src/features/project-works/rewrite-result-panel.tsx",
+    "apps/web/src/features/project-works/rewrite-history.tsx",
+    "scripts/browser-acceptance/capture-iteration18.mjs",
+    "scripts/browser-acceptance/build-report.py"
+  ],
+  "frames": [
+    {
+      "iteration": 18,
+      "frameId": "I18_D2_REVIEW_REWRITE_ENTRY",
+      "title": "审核结果：创建重写入口",
+      "actualUrl": "http://127.0.0.1:13001/projects/973d7f23-3430-4a17-96e0-c8190535a87d/works/6b7c451c-d3e2-4b75-a0e5-f67647200444/review?reportId=c4292128-bcc3-4ff4-aaf1-4bf8ae2cdf0a",
+      "prototypeScreenUrl": "http://127.0.0.1:13002/iteration-18-real-content-rewrite/ui/frames/I18_D2_REVIEW_REWRITE_ENTRY/screen.png",
+      "prototypeCodeUrl": "http://127.0.0.1:13002/iteration-18-real-content-rewrite/ui/frames/I18_D2_REVIEW_REWRITE_ENTRY/code.html",
+      "ids": {
+        "projectId": "973d7f23-3430-4a17-96e0-c8190535a87d",
+        "workId": "6b7c451c-d3e2-4b75-a0e5-f67647200444",
+        "reportId": "c4292128-bcc3-4ff4-aaf1-4bf8ae2cdf0a",
+        "issueId": "e6f4bd38-7291-4218-b449-8f382832666b"
+      },
+      "stateConstruction": "通过 workflowRunId 精确恢复 PostgreSQL 中已持久化的真实 Run/Event，由正式 API 与生产 UI 渲染。",
+      "beforeResult": "PASS",
+      "difference": "仅动态 ID、时间、真实业务数据、中文文案与当前 AppShell 合理差异；结构、状态和交互顺序一致。",
+      "allowedDifference": true,
+      "modifiedFiles": [],
+      "afterResult": "PASS",
+      "result": "PASS",
+      "screenshots": {
+        "prototype": "screenshots/I18_D2_REVIEW_REWRITE_ENTRY/prototype.png",
+        "actualBefore": "screenshots/I18_D2_REVIEW_REWRITE_ENTRY/actual-before.png",
+        "diffBefore": "screenshots/I18_D2_REVIEW_REWRITE_ENTRY/diff-before.png",
+        "actualAfter": "screenshots/I18_D2_REVIEW_REWRITE_ENTRY/actual-after.png",
+        "diffAfter": "screenshots/I18_D2_REVIEW_REWRITE_ENTRY/diff-after.png",
+        "fullPage": "screenshots/I18_D2_REVIEW_REWRITE_ENTRY/full-page.png"
+      }
+    },
+    {
+      "iteration": 18,
+      "frameId": "I18_D4_REWRITE_AVAILABILITY",
+      "title": "重写可用性",
+      "actualUrl": "http://127.0.0.1:13001/projects/973d7f23-3430-4a17-96e0-c8190535a87d/works/6b7c451c-d3e2-4b75-a0e5-f67647200444/rewrite?reportId=c4292128-bcc3-4ff4-aaf1-4bf8ae2cdf0a",
+      "prototypeScreenUrl": "http://127.0.0.1:13002/iteration-18-real-content-rewrite/ui/frames/I18_D4_REWRITE_AVAILABILITY/screen.png",
+      "prototypeCodeUrl": "http://127.0.0.1:13002/iteration-18-real-content-rewrite/ui/frames/I18_D4_REWRITE_AVAILABILITY/code.html",
+      "ids": {
+        "projectId": "973d7f23-3430-4a17-96e0-c8190535a87d",
+        "workId": "6b7c451c-d3e2-4b75-a0e5-f67647200444",
+        "reportId": "c4292128-bcc3-4ff4-aaf1-4bf8ae2cdf0a",
+        "issueId": "e6f4bd38-7291-4218-b449-8f382832666b"
+      },
+      "stateConstruction": "使用确定性网络 Fixture 复用真实 Report/Issue/ContentVersion 形状，仅在浏览器网络边界恢复目标状态，生产 DOM 与组件未被修改。",
+      "beforeResult": "FAIL",
+      "difference": "业务结构存在但未应用 Rewrite 卡片、状态与弹层样式，配置 dialog 呈内联区域；该差异不允许。",
+      "allowedDifference": false,
+      "modifiedFiles": [
+        "apps/web/src/app/globals.css",
+        "apps/web/src/features/project-works/rewrite-workspace.tsx",
+        "apps/web/src/features/project-works/rewrite-result-panel.tsx",
+        "apps/web/src/features/project-works/rewrite-history.tsx"
+      ],
+      "afterResult": "PASS",
+      "result": "PASS",
+      "screenshots": {
+        "prototype": "screenshots/I18_D4_REWRITE_AVAILABILITY/prototype.png",
+        "actualBefore": "screenshots/I18_D4_REWRITE_AVAILABILITY/actual-before.png",
+        "diffBefore": "screenshots/I18_D4_REWRITE_AVAILABILITY/diff-before.png",
+        "actualAfter": "screenshots/I18_D4_REWRITE_AVAILABILITY/actual-after.png",
+        "diffAfter": "screenshots/I18_D4_REWRITE_AVAILABILITY/diff-after.png",
+        "fullPage": "screenshots/I18_D4_REWRITE_AVAILABILITY/full-page.png"
+      }
+    },
+    {
+      "iteration": 18,
+      "frameId": "I18_D4_CREATE_REWRITE",
+      "title": "创建正文重写",
+      "actualUrl": "http://127.0.0.1:13001/projects/973d7f23-3430-4a17-96e0-c8190535a87d/works/6b7c451c-d3e2-4b75-a0e5-f67647200444/rewrite?reportId=c4292128-bcc3-4ff4-aaf1-4bf8ae2cdf0a",
+      "prototypeScreenUrl": "http://127.0.0.1:13002/iteration-18-real-content-rewrite/ui/frames/I18_D4_CREATE_REWRITE/screen.png",
+      "prototypeCodeUrl": "http://127.0.0.1:13002/iteration-18-real-content-rewrite/ui/frames/I18_D4_CREATE_REWRITE/code.html",
+      "ids": {
+        "projectId": "973d7f23-3430-4a17-96e0-c8190535a87d",
+        "workId": "6b7c451c-d3e2-4b75-a0e5-f67647200444",
+        "reportId": "c4292128-bcc3-4ff4-aaf1-4bf8ae2cdf0a",
+        "issueId": "e6f4bd38-7291-4218-b449-8f382832666b"
+      },
+      "stateConstruction": "使用确定性网络 Fixture 复用真实 Report/Issue/ContentVersion 形状，仅在浏览器网络边界恢复目标状态，生产 DOM 与组件未被修改。",
+      "beforeResult": "FAIL",
+      "difference": "业务结构存在但未应用 Rewrite 卡片、状态与弹层样式，配置 dialog 呈内联区域；该差异不允许。",
+      "allowedDifference": false,
+      "modifiedFiles": [
+        "apps/web/src/app/globals.css",
+        "apps/web/src/features/project-works/rewrite-workspace.tsx",
+        "apps/web/src/features/project-works/rewrite-result-panel.tsx",
+        "apps/web/src/features/project-works/rewrite-history.tsx"
+      ],
+      "afterResult": "PASS",
+      "result": "PASS",
+      "screenshots": {
+        "prototype": "screenshots/I18_D4_CREATE_REWRITE/prototype.png",
+        "actualBefore": "screenshots/I18_D4_CREATE_REWRITE/actual-before.png",
+        "diffBefore": "screenshots/I18_D4_CREATE_REWRITE/diff-before.png",
+        "actualAfter": "screenshots/I18_D4_CREATE_REWRITE/actual-after.png",
+        "diffAfter": "screenshots/I18_D4_CREATE_REWRITE/diff-after.png",
+        "fullPage": "screenshots/I18_D4_CREATE_REWRITE/full-page.png"
+      }
+    },
+    {
+      "iteration": 18,
+      "frameId": "I18_D4_REWRITE_CONFIG_DRAWER",
+      "title": "项目重写配置抽屉",
+      "actualUrl": "http://127.0.0.1:13001/projects/973d7f23-3430-4a17-96e0-c8190535a87d/works/6b7c451c-d3e2-4b75-a0e5-f67647200444/rewrite?reportId=c4292128-bcc3-4ff4-aaf1-4bf8ae2cdf0a",
+      "prototypeScreenUrl": "http://127.0.0.1:13002/iteration-18-real-content-rewrite/ui/frames/I18_D4_REWRITE_CONFIG_DRAWER/screen.png",
+      "prototypeCodeUrl": "http://127.0.0.1:13002/iteration-18-real-content-rewrite/ui/frames/I18_D4_REWRITE_CONFIG_DRAWER/code.html",
+      "ids": {
+        "projectId": "973d7f23-3430-4a17-96e0-c8190535a87d",
+        "workId": "6b7c451c-d3e2-4b75-a0e5-f67647200444",
+        "reportId": "c4292128-bcc3-4ff4-aaf1-4bf8ae2cdf0a",
+        "issueId": "e6f4bd38-7291-4218-b449-8f382832666b"
+      },
+      "stateConstruction": "使用确定性网络 Fixture 复用真实 Report/Issue/ContentVersion 形状，仅在浏览器网络边界恢复目标状态，生产 DOM 与组件未被修改。",
+      "beforeResult": "FAIL",
+      "difference": "业务结构存在但未应用 Rewrite 卡片、状态与弹层样式，配置 dialog 呈内联区域；该差异不允许。",
+      "allowedDifference": false,
+      "modifiedFiles": [
+        "apps/web/src/app/globals.css",
+        "apps/web/src/features/project-works/rewrite-workspace.tsx",
+        "apps/web/src/features/project-works/rewrite-result-panel.tsx",
+        "apps/web/src/features/project-works/rewrite-history.tsx"
+      ],
+      "afterResult": "PASS",
+      "result": "PASS",
+      "screenshots": {
+        "prototype": "screenshots/I18_D4_REWRITE_CONFIG_DRAWER/prototype.png",
+        "actualBefore": "screenshots/I18_D4_REWRITE_CONFIG_DRAWER/actual-before.png",
+        "diffBefore": "screenshots/I18_D4_REWRITE_CONFIG_DRAWER/diff-before.png",
+        "actualAfter": "screenshots/I18_D4_REWRITE_CONFIG_DRAWER/actual-after.png",
+        "diffAfter": "screenshots/I18_D4_REWRITE_CONFIG_DRAWER/diff-after.png",
+        "fullPage": "screenshots/I18_D4_REWRITE_CONFIG_DRAWER/full-page.png"
+      }
+    },
+    {
+      "iteration": 18,
+      "frameId": "I18_D4_REWRITE_FAILED",
+      "title": "重写任务执行失败",
+      "actualUrl": "http://127.0.0.1:13001/projects/f82f3d9b-22e0-4259-8484-7215dd36d0ed/works/7d05c348-bdd6-4136-a7ce-e1adf27fa1c0/rewrite?workflowRunId=4bc64cf7-1fed-401c-b295-9dc5eb22a759",
+      "prototypeScreenUrl": "http://127.0.0.1:13002/iteration-18-real-content-rewrite/ui/frames/I18_D4_REWRITE_FAILED/screen.png",
+      "prototypeCodeUrl": "http://127.0.0.1:13002/iteration-18-real-content-rewrite/ui/frames/I18_D4_REWRITE_FAILED/code.html",
+      "ids": {
+        "projectId": "f82f3d9b-22e0-4259-8484-7215dd36d0ed",
+        "workId": "7d05c348-bdd6-4136-a7ce-e1adf27fa1c0",
+        "reportId": "276e66f2-f890-4871-8ab7-1eab7c4bb227",
+        "runId": "4bc64cf7-1fed-401c-b295-9dc5eb22a759"
+      },
+      "stateConstruction": "通过 workflowRunId 精确恢复 PostgreSQL 中已持久化的真实 Run/Event，由正式 API 与生产 UI 渲染。",
+      "beforeResult": "FAIL",
+      "difference": "业务结构存在但未应用 Rewrite 卡片、状态与弹层样式，配置 dialog 呈内联区域；该差异不允许。",
+      "allowedDifference": false,
+      "modifiedFiles": [
+        "apps/web/src/app/globals.css",
+        "apps/web/src/features/project-works/rewrite-workspace.tsx",
+        "apps/web/src/features/project-works/rewrite-result-panel.tsx",
+        "apps/web/src/features/project-works/rewrite-history.tsx"
+      ],
+      "afterResult": "PASS",
+      "result": "PASS",
+      "screenshots": {
+        "prototype": "screenshots/I18_D4_REWRITE_FAILED/prototype.png",
+        "actualBefore": "screenshots/I18_D4_REWRITE_FAILED/actual-before.png",
+        "diffBefore": "screenshots/I18_D4_REWRITE_FAILED/diff-before.png",
+        "actualAfter": "screenshots/I18_D4_REWRITE_FAILED/actual-after.png",
+        "diffAfter": "screenshots/I18_D4_REWRITE_FAILED/diff-after.png",
+        "fullPage": "screenshots/I18_D4_REWRITE_FAILED/full-page.png"
+      }
+    },
+    {
+      "iteration": 18,
+      "frameId": "I18_D4_REWRITE_RUNNING",
+      "title": "正文重写运行中",
+      "actualUrl": "http://127.0.0.1:13001/projects/973d7f23-3430-4a17-96e0-c8190535a87d/works/6b7c451c-d3e2-4b75-a0e5-f67647200444/rewrite?workflowRunId=9f657d73-7a11-4144-b5e9-a9bc9fe2d306",
+      "prototypeScreenUrl": "http://127.0.0.1:13002/iteration-18-real-content-rewrite/ui/frames/I18_D4_REWRITE_RUNNING/screen.png",
+      "prototypeCodeUrl": "http://127.0.0.1:13002/iteration-18-real-content-rewrite/ui/frames/I18_D4_REWRITE_RUNNING/code.html",
+      "ids": {
+        "projectId": "973d7f23-3430-4a17-96e0-c8190535a87d",
+        "workId": "6b7c451c-d3e2-4b75-a0e5-f67647200444",
+        "reportId": "c4292128-bcc3-4ff4-aaf1-4bf8ae2cdf0a",
+        "runId": "9f657d73-7a11-4144-b5e9-a9bc9fe2d306"
+      },
+      "stateConstruction": "使用确定性网络 Fixture 复用真实 Report/Issue/ContentVersion 形状，仅在浏览器网络边界恢复目标状态，生产 DOM 与组件未被修改。",
+      "beforeResult": "FAIL",
+      "difference": "业务结构存在但未应用 Rewrite 卡片、状态与弹层样式，配置 dialog 呈内联区域；该差异不允许。",
+      "allowedDifference": false,
+      "modifiedFiles": [
+        "apps/web/src/app/globals.css",
+        "apps/web/src/features/project-works/rewrite-workspace.tsx",
+        "apps/web/src/features/project-works/rewrite-result-panel.tsx",
+        "apps/web/src/features/project-works/rewrite-history.tsx"
+      ],
+      "afterResult": "PASS",
+      "result": "PASS",
+      "screenshots": {
+        "prototype": "screenshots/I18_D4_REWRITE_RUNNING/prototype.png",
+        "actualBefore": "screenshots/I18_D4_REWRITE_RUNNING/actual-before.png",
+        "diffBefore": "screenshots/I18_D4_REWRITE_RUNNING/diff-before.png",
+        "actualAfter": "screenshots/I18_D4_REWRITE_RUNNING/actual-after.png",
+        "diffAfter": "screenshots/I18_D4_REWRITE_RUNNING/diff-after.png",
+        "fullPage": "screenshots/I18_D4_REWRITE_RUNNING/full-page.png"
+      }
+    },
+    {
+      "iteration": 18,
+      "frameId": "I18_D5_RESULT_CONSUMPTION_FAILED",
+      "title": "重写结果提交失败",
+      "actualUrl": "http://127.0.0.1:13001/projects/f82f3d9b-22e0-4259-8484-7215dd36d0ed/works/7d05c348-bdd6-4136-a7ce-e1adf27fa1c0/rewrite?workflowRunId=9f33d131-c285-4205-ba6e-477f24ed734f",
+      "prototypeScreenUrl": "http://127.0.0.1:13002/iteration-18-real-content-rewrite/ui/frames/I18_D5_RESULT_CONSUMPTION_FAILED/screen.png",
+      "prototypeCodeUrl": "http://127.0.0.1:13002/iteration-18-real-content-rewrite/ui/frames/I18_D5_RESULT_CONSUMPTION_FAILED/code.html",
+      "ids": {
+        "projectId": "f82f3d9b-22e0-4259-8484-7215dd36d0ed",
+        "workId": "7d05c348-bdd6-4136-a7ce-e1adf27fa1c0",
+        "reportId": "276e66f2-f890-4871-8ab7-1eab7c4bb227",
+        "runId": "9f33d131-c285-4205-ba6e-477f24ed734f"
+      },
+      "stateConstruction": "通过 workflowRunId 精确恢复 PostgreSQL 中已持久化的真实 Run/Event，由正式 API 与生产 UI 渲染。",
+      "beforeResult": "FAIL",
+      "difference": "业务结构存在但未应用 Rewrite 卡片、状态与弹层样式，配置 dialog 呈内联区域；该差异不允许。",
+      "allowedDifference": false,
+      "modifiedFiles": [
+        "apps/web/src/app/globals.css",
+        "apps/web/src/features/project-works/rewrite-workspace.tsx",
+        "apps/web/src/features/project-works/rewrite-result-panel.tsx",
+        "apps/web/src/features/project-works/rewrite-history.tsx"
+      ],
+      "afterResult": "PASS",
+      "result": "PASS",
+      "screenshots": {
+        "prototype": "screenshots/I18_D5_RESULT_CONSUMPTION_FAILED/prototype.png",
+        "actualBefore": "screenshots/I18_D5_RESULT_CONSUMPTION_FAILED/actual-before.png",
+        "diffBefore": "screenshots/I18_D5_RESULT_CONSUMPTION_FAILED/diff-before.png",
+        "actualAfter": "screenshots/I18_D5_RESULT_CONSUMPTION_FAILED/actual-after.png",
+        "diffAfter": "screenshots/I18_D5_RESULT_CONSUMPTION_FAILED/diff-after.png",
+        "fullPage": "screenshots/I18_D5_RESULT_CONSUMPTION_FAILED/full-page.png"
+      }
+    },
+    {
+      "iteration": 18,
+      "frameId": "I18_D5_REWRITE_RESULT",
+      "title": "正文重写候选结果",
+      "actualUrl": "http://127.0.0.1:13001/projects/973d7f23-3430-4a17-96e0-c8190535a87d/works/6b7c451c-d3e2-4b75-a0e5-f67647200444/rewrite?workflowRunId=5f626467-8dc3-4106-ba27-1ce481ae6406",
+      "prototypeScreenUrl": "http://127.0.0.1:13002/iteration-18-real-content-rewrite/ui/frames/I18_D5_REWRITE_RESULT/screen.png",
+      "prototypeCodeUrl": "http://127.0.0.1:13002/iteration-18-real-content-rewrite/ui/frames/I18_D5_REWRITE_RESULT/code.html",
+      "ids": {
+        "projectId": "973d7f23-3430-4a17-96e0-c8190535a87d",
+        "workId": "6b7c451c-d3e2-4b75-a0e5-f67647200444",
+        "reportId": "c4292128-bcc3-4ff4-aaf1-4bf8ae2cdf0a",
+        "issueId": "e6f4bd38-7291-4218-b449-8f382832666b",
+        "runId": "5f626467-8dc3-4106-ba27-1ce481ae6406"
+      },
+      "stateConstruction": "通过 workflowRunId 精确恢复 PostgreSQL 中已持久化的真实 Run/Event，由正式 API 与生产 UI 渲染。",
+      "beforeResult": "FAIL",
+      "difference": "业务结构存在但未应用 Rewrite 卡片、状态与弹层样式，配置 dialog 呈内联区域；该差异不允许。",
+      "allowedDifference": false,
+      "modifiedFiles": [
+        "apps/web/src/app/globals.css",
+        "apps/web/src/features/project-works/rewrite-workspace.tsx",
+        "apps/web/src/features/project-works/rewrite-result-panel.tsx",
+        "apps/web/src/features/project-works/rewrite-history.tsx"
+      ],
+      "afterResult": "PASS",
+      "result": "PASS",
+      "screenshots": {
+        "prototype": "screenshots/I18_D5_REWRITE_RESULT/prototype.png",
+        "actualBefore": "screenshots/I18_D5_REWRITE_RESULT/actual-before.png",
+        "diffBefore": "screenshots/I18_D5_REWRITE_RESULT/diff-before.png",
+        "actualAfter": "screenshots/I18_D5_REWRITE_RESULT/actual-after.png",
+        "diffAfter": "screenshots/I18_D5_REWRITE_RESULT/diff-after.png",
+        "fullPage": "screenshots/I18_D5_REWRITE_RESULT/full-page.png"
+      }
+    },
+    {
+      "iteration": 18,
+      "frameId": "I18_D5_SET_CURRENT_CONFIRM",
+      "title": "设为当前版本确认",
+      "actualUrl": "http://127.0.0.1:13001/projects/973d7f23-3430-4a17-96e0-c8190535a87d/works/6b7c451c-d3e2-4b75-a0e5-f67647200444/rewrite?workflowRunId=5f626467-8dc3-4106-ba27-1ce481ae6406",
+      "prototypeScreenUrl": "http://127.0.0.1:13002/iteration-18-real-content-rewrite/ui/frames/I18_D5_SET_CURRENT_CONFIRM/screen.png",
+      "prototypeCodeUrl": "http://127.0.0.1:13002/iteration-18-real-content-rewrite/ui/frames/I18_D5_SET_CURRENT_CONFIRM/code.html",
+      "ids": {
+        "projectId": "973d7f23-3430-4a17-96e0-c8190535a87d",
+        "workId": "6b7c451c-d3e2-4b75-a0e5-f67647200444",
+        "reportId": "c4292128-bcc3-4ff4-aaf1-4bf8ae2cdf0a",
+        "issueId": "e6f4bd38-7291-4218-b449-8f382832666b",
+        "runId": "5f626467-8dc3-4106-ba27-1ce481ae6406"
+      },
+      "stateConstruction": "按 workflowRunId 精确恢复真实成功 Run，点击“设为当前版本”打开确认弹窗并截图，随后取消；未执行 Set Current 写入。",
+      "beforeResult": "FAIL",
+      "difference": "业务结构存在但未应用 Rewrite 卡片、状态与弹层样式，配置 dialog 呈内联区域；该差异不允许。",
+      "allowedDifference": false,
+      "modifiedFiles": [
+        "apps/web/src/app/globals.css",
+        "apps/web/src/features/project-works/rewrite-workspace.tsx",
+        "apps/web/src/features/project-works/rewrite-result-panel.tsx",
+        "apps/web/src/features/project-works/rewrite-history.tsx"
+      ],
+      "afterResult": "PASS",
+      "result": "PASS",
+      "screenshots": {
+        "prototype": "screenshots/I18_D5_SET_CURRENT_CONFIRM/prototype.png",
+        "actualBefore": "screenshots/I18_D5_SET_CURRENT_CONFIRM/actual-before.png",
+        "diffBefore": "screenshots/I18_D5_SET_CURRENT_CONFIRM/diff-before.png",
+        "actualAfter": "screenshots/I18_D5_SET_CURRENT_CONFIRM/actual-after.png",
+        "diffAfter": "screenshots/I18_D5_SET_CURRENT_CONFIRM/diff-after.png",
+        "fullPage": "screenshots/I18_D5_SET_CURRENT_CONFIRM/full-page.png"
+      }
+    }
+  ]
+}

@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import path from "node:path";
 
 const projectId = "11111111-1111-4111-8111-111111111111";
 const workId = "22222222-2222-4222-8222-222222222222";
@@ -8,6 +9,35 @@ const reportId = "44444444-4444-4444-8444-444444444444";
 const issueId = "55555555-5555-4555-8555-555555555555";
 const secondIssueId = "99999999-9999-4999-8999-999999999999";
 const runId = "66666666-6666-4666-8666-666666666666";
+const acceptanceOutputDir = process.env.ACCEPTANCE_OUTPUT_DIR;
+
+test.use({
+  viewport: { width: 1440, height: 900 },
+  deviceScaleFactor: 1,
+  locale: "zh-CN",
+  timezoneId: "Asia/Shanghai",
+  colorScheme: "light",
+});
+
+test.beforeEach(async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce", colorScheme: "light" });
+});
+
+async function captureFrame(
+  page: Page,
+  frameId: string,
+  fullPage = false,
+) {
+  if (!acceptanceOutputDir) return;
+  await page.addStyleTag({
+    content:
+      "*,*::before,*::after{animation-duration:0s!important;animation-delay:0s!important;transition:none!important;scroll-behavior:auto!important}",
+  });
+  await page.screenshot({
+    path: path.join(acceptanceOutputDir, `${frameId}.png`),
+    fullPage,
+  });
+}
 
 const project = {
   id: projectId,
@@ -568,9 +598,11 @@ test("I17_D1_EDITOR_REVIEW_ENTRY and D2_SUBMIT_REVIEW_DRAWER enforce saved draft
   await assertHealthyPage(page);
   const submit = page.getByRole("button", { name: "提交审核" });
   await expect(submit).toBeEnabled();
+  await captureFrame(page, "I17_D1_EDITOR_REVIEW_ENTRY");
   await submit.click();
   await expect(page.getByRole("dialog", { name: "发起内容审核" })).toBeVisible();
   await expect(page.getByText("预检通过，可以发起审核。")).toBeVisible();
+  await captureFrame(page, "D2_SUBMIT_REVIEW_DRAWER", true);
   expect(counters.create).toBe(0);
   await page.getByRole("button", { name: "取消", exact: true }).click();
   expect(counters.create).toBe(0);
@@ -609,6 +641,8 @@ test("STATE_TASK_RUNNING_BAR restores queued and running from persisted summary"
     await expect(page.getByText("第08章 雨夜来客（V3 固定稿）", { exact: false }).first()).toBeVisible();
     await expect(page.getByText("V3", { exact: true }).first()).toBeVisible();
     await expect(page.getByText(/3,620 字/).first()).toBeVisible();
+    if (state === "running")
+      await captureFrame(page, "STATE_TASK_RUNNING_BAR", true);
   }
 });
 
@@ -621,6 +655,7 @@ test("D2_REVIEW_V2 renders the fixed report and updates issue disposition with v
   await expect(page.getByText("人物行为与前文设定冲突", { exact: true }).first()).toBeVisible();
   await expect(page.getByText("固定来源版本")).toBeVisible();
   await expect(page.getByRole("button", { name: "创建重写任务（Iteration 18）" }).last()).toBeDisabled();
+  await captureFrame(page, "D2_REVIEW_V2", true);
   await page.getByRole("button", { name: "标记为忽略" }).click();
   await expect.poll(() => counters.issue).toBe(1);
   await expect(page.getByText("已忽略", { exact: true })).toBeVisible();
@@ -635,6 +670,9 @@ test("I17_D2_REVIEW_ISSUE_DETAIL locates against the frozen source and keeps rep
   const back = page.getByRole("link", { name: "返回问题列表" });
   await expect(back).toHaveAttribute("href", new RegExp(`reportId=${reportId}`));
   await expect(page.getByRole("button", { name: "创建重写任务（Iteration 18）" })).toBeDisabled();
+  await captureFrame(page, "I17_D2_REVIEW_ISSUE_DETAIL", true);
+  await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+  await captureFrame(page, "I17_D2_REVIEW_ISSUE_DETAIL-scrolled-bottom");
 });
 
 test("ordinary Issue selection keeps issueId independent from source view", async ({ page }) => {
@@ -719,6 +757,8 @@ test("STATE_TASK_FAILED_NOTICE separates Runtime Retry from result-consumption R
     const counters = await installFixture(page, state);
     await page.goto(`/projects/${projectId}/works/${workId}/review`);
     await assertHealthyPage(page);
+    if (state === "output_validation_failed")
+      await captureFrame(page, "STATE_TASK_FAILED_NOTICE", true);
     if (state === "result_consumption_failed") {
       await expect(page.getByRole("button", { name: "重试保存结果" })).toBeVisible();
       await expect(page.getByRole("button", { name: "重新执行审核" })).toHaveCount(0);
@@ -746,6 +786,7 @@ test("STATE_NOT_CONFIGURED_EMPTY blocks create and links to project workflow set
     `/projects/${projectId}/settings?tab=workflow-bindings`,
   );
   await expect(page.getByRole("button", { name: "发起新审核" })).toBeDisabled();
+  await captureFrame(page, "STATE_NOT_CONFIGURED_EMPTY", true);
 });
 
 test("I17_D2_REVIEW_HISTORY keeps multi-version Runtime failures and P0 mock reports", async ({ page }) => {
@@ -758,6 +799,7 @@ test("I17_D2_REVIEW_HISTORY keeps multi-version Runtime failures and P0 mock rep
   await expect(page.getByText("输出校验失败", { exact: true }).first()).toBeVisible();
   await expect(page.getByText("P0 模拟审核", { exact: true }).first()).toBeVisible();
   await expect(page.locator(".review-history-counts")).toContainText("严重问题");
+  await captureFrame(page, "I17_D2_REVIEW_HISTORY", true);
   await page.getByText("V3", { exact: true }).click();
   await expect(page.getByText("审核输出未通过结构校验", { exact: true }).first()).toBeVisible();
 });

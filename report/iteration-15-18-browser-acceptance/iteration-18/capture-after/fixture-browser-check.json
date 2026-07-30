@@ -1,0 +1,55 @@
+{
+  "result": "passed",
+  "browser": "Chromium",
+  "viewport": "1440x900",
+  "deviceScaleFactor": 1,
+  "locale": "zh-CN",
+  "timezone": "Asia/Shanghai",
+  "colorScheme": "light",
+  "reducedMotion": true,
+  "stateConstruction": "deterministic network fixture over current production UI; no DOM mutation",
+  "results": [
+    {
+      "frameId": "I18_D4_REWRITE_AVAILABILITY",
+      "errors": []
+    },
+    {
+      "frameId": "I18_D4_CREATE_REWRITE",
+      "errors": []
+    },
+    {
+      "frameId": "I18_D4_REWRITE_CONFIG_DRAWER",
+      "errors": []
+    },
+    {
+      "frameId": "I18_D2_REVIEW_REWRITE_ENTRY",
+      "errors": [],
+      "url": "http://127.0.0.1:13001/projects/973d7f23-3430-4a17-96e0-c8190535a87d/works/6b7c451c-d3e2-4b75-a0e5-f67647200444/review?reportId=c4292128-bcc3-4ff4-aaf1-4bf8ae2cdf0a"
+    },
+    {
+      "frameId": "I18_D4_REWRITE_FAILED",
+      "errors": [],
+      "url": "http://127.0.0.1:13001/projects/f82f3d9b-22e0-4259-8484-7215dd36d0ed/works/7d05c348-bdd6-4136-a7ce-e1adf27fa1c0/rewrite?workflowRunId=4bc64cf7-1fed-401c-b295-9dc5eb22a759"
+    },
+    {
+      "frameId": "I18_D4_REWRITE_RUNNING",
+      "errors": [],
+      "stateConstruction": "deterministic persisted-shape fixture over production UI"
+    },
+    {
+      "frameId": "I18_D5_RESULT_CONSUMPTION_FAILED",
+      "errors": [],
+      "url": "http://127.0.0.1:13001/projects/f82f3d9b-22e0-4259-8484-7215dd36d0ed/works/7d05c348-bdd6-4136-a7ce-e1adf27fa1c0/rewrite?workflowRunId=9f33d131-c285-4205-ba6e-477f24ed734f"
+    },
+    {
+      "frameId": "I18_D5_REWRITE_RESULT",
+      "errors": [],
+      "url": "http://127.0.0.1:13001/projects/973d7f23-3430-4a17-96e0-c8190535a87d/works/6b7c451c-d3e2-4b75-a0e5-f67647200444/rewrite?workflowRunId=5f626467-8dc3-4106-ba27-1ce481ae6406"
+    },
+    {
+      "frameId": "I18_D5_SET_CURRENT_CONFIRM",
+      "errors": [],
+      "action": "opened and cancelled; no Set Current mutation"
+    }
+  ]
+}
