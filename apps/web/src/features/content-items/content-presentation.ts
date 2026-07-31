@@ -8,10 +8,9 @@ import type {
 const sources: Record<ContentVersionSource, string> = {
   manual_created: "手动创建",
   mock_generated: "模拟生成",
-  manual: "手动编辑",
-  generated: "生成内容",
   mock_rewrite: "模拟重写",
   workflow_generated: "工作流生成",
+  workflow_rewrite: "工作流重写",
 };
 const statuses: Record<ContentVersionStatus, string> = {
   editable_draft: "可编辑草稿",

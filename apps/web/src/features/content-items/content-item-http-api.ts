@@ -4,10 +4,9 @@ export type ContentVersionStatus = "editable_draft" | "frozen";
 export type ContentVersionSource =
   | "manual_created"
   | "mock_generated"
-  | "manual"
-  | "generated"
   | "mock_rewrite"
-  | "workflow_generated";
+  | "workflow_generated"
+  | "workflow_rewrite";
 export interface ContentItem {
   id: string;
   chapter_plan_id: string;
