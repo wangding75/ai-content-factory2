@@ -338,29 +338,44 @@ func (r *Repository) findTargetChapterPlan(ctx context.Context, tx pgx.Tx, proje
 	return &p, p.CurrentRevisionID, nil
 }
 
-func (r *Repository) getPlanSnapshotJSON(ctx context.Context, tx pgx.Tx, plan *Plan) []byte {
+func (r *Repository) getPlanSnapshotJSON(ctx context.Context, tx pgx.Tx, plan *Plan) ([]byte, error) {
 	if plan == nil {
-		return nil
+		return nil, nil
 	}
 	var revSnap []byte
 	err := tx.QueryRow(ctx, "SELECT snapshot FROM chapter_plan_revisions WHERE chapter_plan_id = $1 ORDER BY revision_no DESC LIMIT 1", plan.ID).Scan(&revSnap)
 	if err == nil && len(revSnap) > 0 {
-		return revSnap
+		return revSnap, nil
 	}
-	snapMap := map[string]any{
-		"chapterNo":         plan.ChapterNo,
-		"title":             plan.Title,
-		"summary":           plan.Summary,
-		"chapterPurpose":    "other",
-		"storylineRefs":     plan.Storylines,
-		"materialRefs":      plan.Materials,
-		"foreshadowingRefs": plan.Foreshadowings,
-		"generationBasis": map[string]any{
-			"contextSummary": "",
+	return buildCanonicalSnapshot(plan)
+}
+
+func buildCanonicalSnapshot(plan *Plan) ([]byte, error) {
+	snap := candidateSnapshotStruct{
+		ChapterNo:      plan.ChapterNo,
+		Title:          plan.Title,
+		Summary:        plan.Summary,
+		ChapterPurpose: "other",
+		GenerationBasis: GenerationBasis{
+			ContextSummary: "",
 		},
 	}
-	b, _ := json.Marshal(snapMap)
-	return b
+	for i, s := range plan.Storylines {
+		snap.StorylineRefs = append(snap.StorylineRefs, NormalizedReference{
+			ID: s.ID, Relation: s.Relation, Position: i,
+		})
+	}
+	for i, m := range plan.Materials {
+		snap.MaterialRefs = append(snap.MaterialRefs, NormalizedReference{
+			ID: m, Position: i,
+		})
+	}
+	for i, f := range plan.Foreshadowings {
+		snap.ForeshadowingRefs = append(snap.ForeshadowingRefs, NormalizedReference{
+			ID: f, Position: i,
+		})
+	}
+	return json.Marshal(snap)
 }
 
 func ComputeDiffTypeAndStale(currentSnap, baseSnap []byte, baseRevID *uuid.UUID, targetPlan *Plan, targetRevID *uuid.UUID) (diffType string, isStale bool) {

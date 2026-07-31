@@ -330,7 +330,10 @@ func (r *Repository) AdoptCandidate(ctx context.Context, cmd AdoptCandidateComma
 	currSnap := cand.CurrentSnapshot
 	var targetSnap []byte
 	if targetPlan != nil {
-		targetSnap = r.getPlanSnapshotJSON(ctx, tx, targetPlan)
+		targetSnap, err = r.getPlanSnapshotJSON(ctx, tx, targetPlan)
+		if err != nil {
+			return AdoptCandidateResult{}, fmt.Errorf("build target snapshot: %w", err)
+		}
 	}
 
 	if targetPlan != nil && len(targetSnap) > 0 && isSameSnapshot(currSnap, targetSnap) {

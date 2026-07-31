@@ -135,7 +135,7 @@ func seedCandidateForeignKeyPlans(t *testing.T, ctx context.Context, db *pgxpool
 func seedCandidateForeignKeyRevision(t *testing.T, ctx context.Context, db *pgxpool.Pool, plan Plan) uuid.UUID {
 	t.Helper()
 	revisionID := uuid.New()
-	if _, err := db.Exec(ctx, `INSERT INTO chapter_plan_revisions (id,chapter_plan_id,project_id,revision_no,snapshot,change_type,created_by) VALUES ($1,$2,$3,1,'{}'::jsonb,'manual_create','fk-test')`, revisionID, plan.ID, plan.ProjectID); err != nil {
+	if _, err := db.Exec(ctx, `INSERT INTO chapter_plan_revisions (id,chapter_plan_id,project_id,revision_no,snapshot,change_type,created_by) VALUES ($1,$2,$3,2,'{}'::jsonb,'manual_create','fk-test')`, revisionID, plan.ID, plan.ProjectID); err != nil {
 		t.Fatal(err)
 	}
 	return revisionID

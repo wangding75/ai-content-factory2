@@ -174,7 +174,43 @@ func (r *Repository) insert(c context.Context, tx pgx.Tx, p Plan) error {
 	if e != nil {
 		return e
 	}
-	return r.replace(c, tx, p)
+	if e = r.replace(c, tx, p); e != nil {
+		return e
+	}
+	// Build canonical snapshot from persisted plan and relations.
+	snap, e := buildCanonicalSnapshot(&p)
+	if e != nil {
+		return e
+	}
+	// Insert initial revision.
+	revID := uuid.New()
+	_, e = tx.Exec(c, `
+		INSERT INTO chapter_plan_revisions (
+			id, chapter_plan_id, project_id, revision_no, snapshot,
+			change_type, source_candidate_id, source_candidate_batch_id, source_workflow_run_id,
+			created_by, created_at
+		) VALUES (
+			$1, $2, $3, 1, $4,
+			'manual_create', NULL, NULL, NULL,
+			$5, NOW()
+		)
+	`, revID, p.ID, p.ProjectID, snap, p.CreatedBy)
+	if e != nil {
+		return e
+	}
+	// Update current_revision_id.
+	tag, e := tx.Exec(c, `
+		UPDATE chapter_plans
+		SET current_revision_id = $2, updated_at = NOW()
+		WHERE id = $1 AND project_id = $3
+	`, p.ID, revID, p.ProjectID)
+	if e != nil {
+		return e
+	}
+	if tag.RowsAffected() != 1 {
+		return fmt.Errorf("chapter plan repository: update current_revision_id affected %d rows, expected 1", tag.RowsAffected())
+	}
+	return nil
 }
 func (r *Repository) replace(c context.Context, tx pgx.Tx, p Plan) error {
 	for _, q := range []string{"DELETE FROM chapter_plan_storylines WHERE chapter_plan_id=$1", "DELETE FROM chapter_plan_materials WHERE chapter_plan_id=$1", "DELETE FROM chapter_plan_foreshadowings WHERE chapter_plan_id=$1"} {

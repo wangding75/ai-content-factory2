@@ -2,6 +2,7 @@ package chapterplan
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"os"
 	"slices"
@@ -415,5 +416,246 @@ func TestPostgresRepositoryPersistsAcrossReconnect(t *testing.T) {
 	requireStringPtr(t, "reconnected notes", got.Notes, &notes)
 	if !slices.Equal([]uuid.UUID{got.Storylines[0].ID, got.Storylines[1].ID}, []uuid.UUID{f.storylines[1], f.storylines[0]}) || !slices.Equal(got.Materials, p.Materials) || !slices.Equal(got.Foreshadowings, p.Foreshadowings) {
 		t.Fatalf("reconnected associations=%+v", got)
+	}
+}
+
+// --- SaveMock revision and snapshot tests ---
+
+func TestSaveMockCreatesRevisionAndSetsCurrentRevisionID(t *testing.T) {
+	db, ctx := openIntegrationDB(t)
+	f := newFixture(t, ctx, db)
+	r := mustNewRepo(t, db)
+
+	p := plan(f, 1)
+	goal, notes := "mock goal", "mock notes"
+	p.Goal, p.Notes = &goal, &notes
+	p.Storylines = []StorylineRef{{ID: f.storylines[0], Relation: "primary"}, {ID: f.storylines[1], Relation: "secondary"}}
+	p.Materials = []uuid.UUID{f.materials[0], f.materials[1]}
+	p.Foreshadowings = []uuid.UUID{f.foreshadowings[0]}
+
+	run := Run{ID: uuid.New(), ProjectID: f.project}
+	if err := r.SaveMock(ctx, run, []Plan{p}); err != nil {
+		t.Fatalf("SaveMock: %v", err)
+	}
+
+	// Verify plan has current_revision_id set.
+	got, err := r.GetByID(ctx, p.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got.CurrentRevisionID == nil {
+		t.Fatal("current_revision_id is nil")
+	}
+
+	// Verify revision exists in database.
+	var revID uuid.UUID
+	var revPlanID, revProjectID uuid.UUID
+	var revNo int
+	var revChangeType string
+	var revCreatedBy string
+	var revSnapshot []byte
+	if err := db.QueryRow(ctx, `
+		SELECT id, chapter_plan_id, project_id, revision_no, change_type, created_by, snapshot
+		FROM chapter_plan_revisions WHERE chapter_plan_id = $1
+	`, p.ID).Scan(&revID, &revPlanID, &revProjectID, &revNo, &revChangeType, &revCreatedBy, &revSnapshot); err != nil {
+		t.Fatalf("query revision: %v", err)
+	}
+
+	if revID != *got.CurrentRevisionID {
+		t.Fatalf("current_revision_id=%s, revision id=%s", got.CurrentRevisionID, revID)
+	}
+	if revPlanID != p.ID {
+		t.Fatalf("revision chapter_plan_id=%s, want=%s", revPlanID, p.ID)
+	}
+	if revProjectID != f.project {
+		t.Fatalf("revision project_id=%s, want=%s", revProjectID, f.project)
+	}
+	if revNo != 1 {
+		t.Fatalf("revision_no=%d, want=1", revNo)
+	}
+	if revChangeType != "manual_create" {
+		t.Fatalf("change_type=%s, want=manual_create", revChangeType)
+	}
+	if revCreatedBy != p.CreatedBy {
+		t.Fatalf("created_by=%s, want=%s", revCreatedBy, p.CreatedBy)
+	}
+}
+
+func TestSaveMockRevisionSnapshotCanonicalFormat(t *testing.T) {
+	db, ctx := openIntegrationDB(t)
+	f := newFixture(t, ctx, db)
+	r := mustNewRepo(t, db)
+
+	p := plan(f, 1)
+	p.Title = "Mock Title"
+	p.Summary = "Mock Summary"
+	p.Storylines = []StorylineRef{{ID: f.storylines[2], Relation: "secondary"}, {ID: f.storylines[0], Relation: "primary"}}
+	p.Materials = []uuid.UUID{f.materials[2], f.materials[0]}
+	p.Foreshadowings = []uuid.UUID{f.foreshadowings[1]}
+
+	if err := r.SaveMock(ctx, Run{ID: uuid.New(), ProjectID: f.project}, []Plan{p}); err != nil {
+		t.Fatalf("SaveMock: %v", err)
+	}
+
+	var rawSnap []byte
+	if err := db.QueryRow(ctx, "SELECT snapshot FROM chapter_plan_revisions WHERE chapter_plan_id = $1", p.ID).Scan(&rawSnap); err != nil {
+		t.Fatal(err)
+	}
+
+	var snap candidateSnapshotStruct
+	if err := json.Unmarshal(rawSnap, &snap); err != nil {
+		t.Fatalf("unmarshal snapshot: %v", err)
+	}
+
+	if snap.ChapterNo != 1 {
+		t.Fatalf("chapterNo=%d, want=1", snap.ChapterNo)
+	}
+	if snap.Title != "Mock Title" {
+		t.Fatalf("title=%s", snap.Title)
+	}
+	if snap.Summary != "Mock Summary" {
+		t.Fatalf("summary=%s", snap.Summary)
+	}
+	if snap.ChapterPurpose != "other" {
+		t.Fatalf("chapterPurpose=%s", snap.ChapterPurpose)
+	}
+
+	// Storyline order and relation.
+	if len(snap.StorylineRefs) != 2 {
+		t.Fatalf("storylineRefs len=%d, want=2", len(snap.StorylineRefs))
+	}
+	if snap.StorylineRefs[0].ID != f.storylines[2] || snap.StorylineRefs[0].Relation != "secondary" || snap.StorylineRefs[0].Position != 0 {
+		t.Fatalf("storylineRefs[0]=%+v", snap.StorylineRefs[0])
+	}
+	if snap.StorylineRefs[1].ID != f.storylines[0] || snap.StorylineRefs[1].Relation != "primary" || snap.StorylineRefs[1].Position != 1 {
+		t.Fatalf("storylineRefs[1]=%+v", snap.StorylineRefs[1])
+	}
+
+	// Material order.
+	if len(snap.MaterialRefs) != 2 {
+		t.Fatalf("materialRefs len=%d, want=2", len(snap.MaterialRefs))
+	}
+	if snap.MaterialRefs[0].ID != f.materials[2] || snap.MaterialRefs[0].Position != 0 {
+		t.Fatalf("materialRefs[0]=%+v", snap.MaterialRefs[0])
+	}
+	if snap.MaterialRefs[1].ID != f.materials[0] || snap.MaterialRefs[1].Position != 1 {
+		t.Fatalf("materialRefs[1]=%+v", snap.MaterialRefs[1])
+	}
+
+	// Foreshadowing order.
+	if len(snap.ForeshadowingRefs) != 1 {
+		t.Fatalf("foreshadowingRefs len=%d, want=1", len(snap.ForeshadowingRefs))
+	}
+	if snap.ForeshadowingRefs[0].ID != f.foreshadowings[1] || snap.ForeshadowingRefs[0].Position != 0 {
+		t.Fatalf("foreshadowingRefs[0]=%+v", snap.ForeshadowingRefs[0])
+	}
+}
+
+func TestSaveMockMultiplePlansEachHasOwnRevision(t *testing.T) {
+	db, ctx := openIntegrationDB(t)
+	f := newFixture(t, ctx, db)
+	r := mustNewRepo(t, db)
+
+	p1 := plan(f, 1)
+	p1.Storylines = []StorylineRef{{ID: f.storylines[0], Relation: "primary"}}
+	p2 := plan(f, 2)
+	p2.Storylines = []StorylineRef{{ID: f.storylines[1], Relation: "primary"}}
+	p3 := plan(f, 3)
+	p3.Storylines = []StorylineRef{{ID: f.storylines[2], Relation: "primary"}}
+
+	run := Run{ID: uuid.New(), ProjectID: f.project}
+	if err := r.SaveMock(ctx, run, []Plan{p1, p2, p3}); err != nil {
+		t.Fatalf("SaveMock: %v", err)
+	}
+
+	for i, p := range []Plan{p1, p2, p3} {
+		got, err := r.GetByID(ctx, p.ID)
+		if err != nil {
+			t.Fatalf("plan %d GetByID: %v", i, err)
+		}
+		if got.CurrentRevisionID == nil {
+			t.Fatalf("plan %d current_revision_id is nil", i)
+		}
+
+		var count int
+		if err := db.QueryRow(ctx, "SELECT COUNT(*) FROM chapter_plan_revisions WHERE chapter_plan_id = $1", p.ID).Scan(&count); err != nil {
+			t.Fatal(err)
+		}
+		if count != 1 {
+			t.Fatalf("plan %d has %d revisions, want 1", i, count)
+		}
+
+		var revID uuid.UUID
+		if err := db.QueryRow(ctx, "SELECT id FROM chapter_plan_revisions WHERE chapter_plan_id = $1", p.ID).Scan(&revID); err != nil {
+			t.Fatal(err)
+		}
+		if revID != *got.CurrentRevisionID {
+			t.Fatalf("plan %d current_revision_id=%s, revision.id=%s", i, got.CurrentRevisionID, revID)
+		}
+	}
+
+	// No cross-plan references.
+	for i, p := range []Plan{p1, p2, p3} {
+		var revChapterPlanID uuid.UUID
+		if err := db.QueryRow(ctx, "SELECT chapter_plan_id FROM chapter_plan_revisions WHERE chapter_plan_id = $1", p.ID).Scan(&revChapterPlanID); err != nil {
+			t.Fatal(err)
+		}
+		if revChapterPlanID != p.ID {
+			t.Fatalf("plan %d revision chapter_plan_id=%s, want=%s", i, revChapterPlanID, p.ID)
+		}
+	}
+}
+
+func TestSaveMockAtomicRollbackOnInvalidAssociation(t *testing.T) {
+	db, ctx := openIntegrationDB(t)
+	f := newFixture(t, ctx, db)
+	r := mustNewRepo(t, db)
+
+	// Create a storyline in otherProject (cross-project reference will fail).
+	otherStoryline := uuid.New()
+	if _, err := db.Exec(ctx, "INSERT INTO storylines(id,project_id,type,relation,name,status,sort_order,created_by) VALUES($1,$2,'main','root','foreign','active',0,'i05')", otherStoryline, f.otherProject); err != nil {
+		t.Fatal(err)
+	}
+
+	p := plan(f, 1)
+	p.Storylines = []StorylineRef{{ID: otherStoryline, Relation: "primary"}} // cross-project
+
+	run := Run{ID: uuid.New(), ProjectID: f.project}
+	err := r.SaveMock(ctx, run, []Plan{p})
+	if err == nil {
+		t.Fatal("expected error for cross-project association")
+	}
+
+	// Verify no residual records.
+	var runCount int
+	if err := db.QueryRow(ctx, "SELECT COUNT(*) FROM mock_generation_runs WHERE id = $1", run.ID).Scan(&runCount); err != nil {
+		t.Fatal(err)
+	}
+	if runCount != 0 {
+		t.Fatalf("mock_generation_runs residual count=%d, want=0", runCount)
+	}
+
+	var planCount int
+	if err := db.QueryRow(ctx, "SELECT COUNT(*) FROM chapter_plans WHERE id = $1", p.ID).Scan(&planCount); err != nil {
+		t.Fatal(err)
+	}
+	if planCount != 0 {
+		t.Fatalf("chapter_plans residual count=%d, want=0", planCount)
+	}
+
+	var revCount int
+	if err := db.QueryRow(ctx, "SELECT COUNT(*) FROM chapter_plan_revisions WHERE chapter_plan_id = $1", p.ID).Scan(&revCount); err != nil {
+		t.Fatal(err)
+	}
+	if revCount != 0 {
+		t.Fatalf("chapter_plan_revisions residual count=%d, want=0", revCount)
+	}
+
+	var storyCount int
+	if err := db.QueryRow(ctx, "SELECT COUNT(*) FROM chapter_plan_storylines WHERE chapter_plan_id = $1", p.ID).Scan(&storyCount); err != nil {
+		t.Fatal(err)
+	}
+	if storyCount != 0 {
+		t.Fatalf("chapter_plan_storylines residual count=%d, want=0", storyCount)
 	}
 }

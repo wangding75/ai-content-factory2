@@ -551,7 +551,7 @@ func TestPostgresPreflightCreateConsumeUsesFrozenBaseSnapshot(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err = db.Exec(ctx, `INSERT INTO chapter_plan_revisions(id,chapter_plan_id,project_id,revision_no,snapshot,change_type,created_by) VALUES($1,$2,$3,1,$4,'legacy_backfill','cf15-r04')`, revisionID, planID, f.project, baseSnapshot); err != nil {
+	if _, err = db.Exec(ctx, `INSERT INTO chapter_plan_revisions(id,chapter_plan_id,project_id,revision_no,snapshot,change_type,created_by) VALUES($1,$2,$3,2,$4,'legacy_backfill','cf15-r04')`, revisionID, planID, f.project, baseSnapshot); err != nil {
 		t.Fatal(err)
 	}
 	if _, err = db.Exec(ctx, "UPDATE chapter_plans SET current_revision_id=$2,title='current scalar must not replace revision' WHERE id=$1", planID, revisionID); err != nil {
