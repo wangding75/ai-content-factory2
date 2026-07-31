@@ -1,150 +1,109 @@
 # Iteration 19 — LLM 与工作流真实接入及第二用户闭环关闭
 
-## 1. 状态
+**状态：`ui_and_iteration_contract_frozen`。** 新 UI 已评审并冻结；迭代级 API、数据模型、状态机和安全边界已定义。主 OpenAPI、Migration 和代码尚未实施，开发必须先同步单一契约源再进入后端实现。
 
-- 当前状态：`planned`。
-- 前置完成：Iteration 12～18 已完成配置、绑定、WorkflowRun、章节规划、正文生成、审核和重写的业务能力。
-- 当前缺口：LLM Provider 与 n8n 工作流仍未形成完整、可验证、可运行、可追踪的真实执行闭环。
-- 本迭代先完成受影响 UI 的增量设计与人工冻结，再冻结契约并进入开发。
+## 1. 基线
 
-## 2. 核心业务目标
+- 分支基线：`feature/second-user-loop`。
+- 文档更新前 HEAD：`235917f9d74c1263093e06ec0629d71dfed9ee02`。
+- Iteration 12～18 已完成配置记录、项目绑定、WorkflowRun、章节规划、正文生成、审核和重写能力。
+- Iteration 14.5 已建立本地 n8n 连接、Workflow Verify、绑定和 Preflight 的真实基线；Iteration 19 不否定或重建该基线。
+- 当前开发目标：真实 LLM Provider、真实 n8n Runtime、明确 LLM 策略和四 Stage 完整闭环。
 
-Iteration 19 的核心目标不是单纯联调已有页面，也不是只补 UI 状态，而是完成以下三类真实接入：
+## 2. 产品决策冻结
 
-### 2.1 LLM Provider 真实接入
+1. WorkflowRun 详情保持 `/workflow-runs/{runId}` 独立页面。
+2. `/workflows` 本轮保留为内置 Mock 流程只读页，并引导到 `/workflow-runs`；不合并、不删除导航。
+3. 重试默认使用当前有效配置；原配置只有在完整、安全、可重放时才启用。
+4. Provider、Connection、Workflow Configuration 修改关键字段后：`enabled` 和项目绑定保留，验证状态转为 `stale`，执行资格立即失效；重新验证成功后自动恢复。
+5. LLM 策略固定在 Workflow Configuration 层，项目不得覆盖 Provider、模型或策略。
+6. 四个 Stage 共用绑定抽屉、运行前置检查和异常恢复组件，仅业务输入、契约摘要和结果名称不同。
+7. 默认模型从模型目录消失时不自动切换，配置进入不可执行状态。
 
-把 Iteration 12 中“仅保存”的 OpenAI-compatible LLM Provider 升级为可实际使用的执行依赖：
+## 3. UI 冻结范围
 
-1. 验证 Base URL、API Key 和超时配置；
-2. 获取或校验可用模型；
-3. 选择默认模型；
-4. 启用、停用并记录最后验证结果；
-5. 在运行时提供明确的 Provider、模型和参数来源；
-6. 密钥只在服务端安全使用，不向前端、日志、WorkflowRun 快照或错误响应暴露。
+正式开发输入为 `ui-manifest.json` 中 15 个 Frame：
 
-### 2.2 n8n 连接与工作流真实接入
+- 01～06：LLM Provider、n8n Connection、Workflow Configuration；
+- 07～09：项目四环节绑定；
+- 10～12：流程中心、独立运行详情、重试确认；
+- 13：旧 `/workflows` 的定位引导；
+- 14～15：四阶段共享 Preflight 阻断与运行恢复状态。
 
-把 Iteration 12～14 中保存的 n8n 连接和工作流配置升级为真实执行能力：
+AppShell、一级导航和 Iteration 15～18 主体布局保持不变。详见 `ui-review.md`、`ui-scope.md` 和 `prototype-source-mapping.md`。
 
-1. 验证 n8n 服务连接和认证；
-2. 验证 Workflow ID 或 Webhook Path；
-3. 启用、停用连接和工作流；
-4. 通过 n8n Adapter 发起真实工作流；
-5. 持久化远端执行标识和安全运行事件；
-6. 同步排队、运行、成功、失败、取消和重试状态；
-7. 校验输出 Schema 后再提交领域事务。
-
-### 2.3 LLM 与工作流运行关系
-
-每个用于第二用户闭环的工作流必须具有明确、可验证、可追踪的 LLM 使用策略：
-
-- 使用 ACF 管理的 LLM Provider 与模型；
-- 或明确声明由 n8n 工作流内部管理 LLM；
-- 或明确声明该工作流不需要 LLM。
-
-不得存在“工作流已启用，但实际使用哪个 LLM、模型或凭据来源不明确”的状态。
-
-具体的绑定层级、配置字段、密钥注入方式和运行协议，在 UI 增量设计确认后写入 OpenAPI、数据模型和执行契约；不得同时保留两套含义重叠的运行配置。
-
-## 3. 最终用户闭环
+## 4. 最终用户闭环
 
 ```text
-配置并验证 LLM Provider
-→ 选择可用模型并启用
-→ 配置并验证 n8n 连接
-→ 配置并验证四个生产环节工作流
-→ 明确每个工作流的 LLM 使用策略
-→ 在项目中绑定章节规划、正文生成、审核、重写工作流
-→ 发起真实章节规划
-→ 确认并进入真实正文生成
-→ 对固定正文版本执行真实审核
-→ 选择审核问题并执行真实重写
-→ 查看、比较并采用新版本
-→ 在流程中心追踪运行、诊断失败、取消或重试
-→ 完成第二用户闭环
+配置 LLM Provider
+→ 获取/校验模型并验证
+→ 启用 Provider
+→ 配置并验证 n8n Connection
+→ 配置 Workflow Configuration
+→ 固定 LLM 策略、输入/输出契约和 Stage
+→ 验证并启用 Workflow Configuration
+→ 项目绑定四个可执行 Stage
+→ 真实章节规划
+→ 真实正文生成
+→ 固定版本真实审核
+→ 选择问题真实重写
+→ 比较并采用新版本
+→ 流程中心追踪、取消、诊断和重试
+→ 第二用户闭环关闭
 ```
 
-四个生产环节：
+## 5. 执行资格
 
-| 环节 | Stage |
-|---|---|
-| 章节规划 | `chapter_planning` |
-| 正文生成 | `content_generation` |
-| 内容审核 | `review` |
-| 内容重写 | `rewrite` |
+```text
+enabled = true
++ current version verified
++ connection executable
++ workflow reference and contracts valid
++ LLM strategy complete
++ ACF-managed Provider/model executable when applicable
+= executable = true
+```
 
-## 4. UI 设计前置阶段
+`executable` 为服务端派生事实，不单独持久化。绑定存在不等于当前可执行。
 
-UI 增量设计是本迭代的第一实施阶段，但不是业务目标本身。
+## 6. 开发阶段
 
-需要先核对以下页面是否需要增量调整：
+| 阶段 | 任务 | 输出 |
+|---|---|---|
+| CF-19-01A | 主 OpenAPI 与生成类型同步 | Operation、Schema、错误码、状态枚举唯一 |
+| CF-19-01B | 数据模型与 Migration 19 | 最小向前 Migration、约束、索引、兼容迁移 |
+| CF-19-02A | LLM Provider Adapter | 模型发现、验证、启停、安全调用 |
+| CF-19-02B | n8n Connection/Workflow Adapter | 连接验证、工作流验证、真实调用、取消/状态同步 |
+| CF-19-02C | WorkflowRun 扩展 | cancelling/timed_out、失败阶段、快照、重试资格 |
+| CF-19-03A | 全局配置前端 | 01～06 Frame |
+| CF-19-03B | 项目绑定与 Preflight | 07～09、14 Frame |
+| CF-19-03C | 流程中心与恢复 | 10～13、15 Frame |
+| CF-19-04A | 四 Stage 真实接入 | 章节规划、正文生成、审核、重写移除最终 Mock 路径 |
+| CF-19-04B | 真实全链路联调 | 唯一数据库、真实 n8n、真实 LLM、真实 API |
+| CF-19-05 | 验收与 Review | E2E、安全、P0 回归、人工验收、独立 Code Review |
 
-1. LLM Provider 列表与编辑抽屉；
-2. n8n 连接列表与编辑抽屉；
-3. 工作流配置列表与编辑抽屉；
-4. 项目四环节工作流绑定；
-5. 章节规划、正文生成、审核和重写操作入口；
-6. 流程中心和运行详情；
-7. 未验证、验证失败、未启用、配置失效、运行失败和重试状态。
-
-设计约束：
-
-- AppShell、导航和整体视觉体系保持不变；
-- Iteration 15～18 已验收页面不整体重做；
-- 只增加 LLM、工作流真实接入和异常恢复所必需的业务信息与操作；
-- UI 人工验收通过后，才更新 `ui-scope.md`、`ui-manifest.json`、OpenAPI 和数据模型。
-
-## 5. 契约冻结重点
-
-UI 冻结后必须明确：
-
-1. LLM Provider 验证、模型发现、启用和停用接口；
-2. n8n 连接验证、工作流验证、启用和停用接口；
-3. 工作流与 LLM 使用策略的配置位置和优先级；
-4. 项目绑定、工作流配置和运行快照之间的关系；
-5. LLM 凭据的服务端安全使用方式；
-6. n8n 调用输入、认证、回调或轮询协议；
-7. 四个 Stage 的输入与输出 Schema；
-8. WorkflowRun 状态机、取消、重试和幂等规则；
-9. 输出校验失败与结果消费失败的恢复规则；
-10. 前端可见错误与内部错误的脱敏边界。
-
-## 6. 实施顺序
-
-1. 更新 Iteration 19 业务目标；
-2. 核对 LLM 与工作流接入对 UI 的影响；
-3. 完成必要 UI 增量设计、Review 和人工验收；
-4. 冻结 UI Scope、Manifest 和交互状态；
-5. 冻结 LLM、n8n、WorkflowRun、OpenAPI 和数据模型契约；
-6. 实现 LLM Provider Adapter 与真实验证能力；
-7. 实现 n8n Adapter、连接验证、工作流验证和真实执行；
-8. 建立工作流与 LLM 的运行关系；
-9. 调整四环节后端和前端实现；
-10. 使用真实 n8n、真实 LLM、真实 API 和唯一数据库完成全链路联调；
-11. 执行 E2E、安全测试、P0 回归、人工验收和独立 Code Review；
-12. 提交变更报告、测试报告并关闭第二用户闭环。
+任务必须按依赖拆小执行；不得在一个任务中同时修改 OpenAPI、Migration、四个 Stage 和全部前端。
 
 ## 7. 不在范围
 
-- 不接入 Coze、ComfyUI 或其他工作流平台；
-- 不建设 n8n 可视化编辑器；
-- 不实现多 n8n 实例自动路由；
-- 不实现自动模型路由、费用大盘或模型成本优化；
-- 不允许业务页面临时绕过项目绑定切换工作流；
-- 不实现真实内容分发；
-- 不把 LLM 或 n8n 凭据返回前端；
-- 不使用 Mock Adapter 作为最终闭环验收结果；
-- 不改变 Iteration 15～18 已冻结且不受影响的业务范围。
+- Coze、ComfyUI 或其他工作流平台；
+- n8n 可视化编辑器；
+- 多 n8n 实例自动路由；
+- 自动模型路由、成本大盘和计费优化；
+- 项目级 Provider/模型覆盖；
+- 自动审核—重写循环、自动 Set Current 或发布；
+- 删除或合并 `/workflows`；
+- 用 Mock Adapter 作为最终闭环验收；
+- 密钥版本历史库；原配置不能安全重放时必须禁用该选项。
 
-## 8. 完成定义
+## 8. 开发准备完成定义
 
-- [ ] LLM Provider 可真实验证、发现或校验模型、启用和停用；
-- [ ] n8n 连接与工作流引用可真实验证、启用和停用；
-- [ ] 四个生产环节的工作流具有明确的 LLM 使用策略；
-- [ ] WorkflowRun 可追踪所使用的连接、工作流、LLM Provider、模型和配置版本，但不保存密钥；
-- [ ] 章节规划、正文生成、审核和重写均通过真实 n8n 与真实 LLM 完成；
-- [ ] 输出 Schema 校验和领域事务边界通过；
-- [ ] 成功、失败、取消、超时、刷新恢复和重试状态通过；
-- [ ] UI、OpenAPI、后端 DTO、前端类型和数据库模型一致；
-- [ ] E2E、安全检查、P0 回归、人工验收和独立 Code Review 通过；
-- [ ] 第二用户闭环正式关闭。
+- [x] 新 UI 已评审并归档；
+- [x] 产品决策和强制开发修正已冻结；
+- [x] 迭代级 API Scope 已完整定义；
+- [x] 逻辑数据模型、状态机、快照和安全边界已定义；
+- [x] UI/API/数据模型追踪已建立；
+- [ ] 主 OpenAPI 已更新并通过生成类型验证；
+- [ ] Migration 19 已设计、实现并通过数据库门禁；
+- [ ] Iteration 19 后端与前端开发完成；
+- [ ] 真实 n8n、真实 LLM、四 Stage E2E 通过。

@@ -273,3 +273,20 @@ iterations/iteration-15-real-chapter-planning/ui/frames/P15_*/
 来源为 Stitch Project `10082349329835651109` 的 `full exact shell migration`，共 21 个 Frame。业务内容、抽屉/弹窗类型、表格列、树结构、警告与操作位置以新版 Frame 为准；应用外壳必须复用仓库现有 ACF Shell。
 
 旧版 Frame 只保留在 Git 历史和源压缩包中，不得继续作为 Iteration 15 页面选择候选。
+
+## 10. Iteration 19 UI 最终冻结（2026-07-31）
+
+Iteration 19 使用 `stitch_acf_iteration_19_ui_final_freeze_rebuild(1).zip` 中的 15 个正式 Frame，唯一清单为：
+
+```text
+iterations/iteration-19-second-loop-integration-acceptance/ui-manifest.json
+iterations/iteration-19-second-loop-integration-acceptance/ui/frames/I19_*/
+```
+
+关键选择：
+
+- n8n 编辑抽屉选择 `04_n8n_1`；`04_n8n_2` 不进入开发清单；
+- WorkflowRun 详情选择独立页面 `I19_11_WORKFLOW_RUN_DETAIL_PAGE`，旧 `E3_WORKFLOW_RUN_DETAIL_DRAWER` 不再约束 Iteration 19 页面形态；
+- Iteration 15～18 主页面不整体重画，统一使用 `I19_14_SHARED_PREFLIGHT_BLOCKED` 和 `I19_15_SHARED_RUNTIME_RECOVERY` 增量状态；
+- `/workflows` 保留为只读 Mock 流程说明页，`I19_13` 只增加真实流程中心引导；
+- 具体开发修正以 Iteration 19 `ui-review.md` 为准。

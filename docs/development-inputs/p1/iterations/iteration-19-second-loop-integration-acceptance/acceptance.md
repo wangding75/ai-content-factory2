@@ -1,97 +1,96 @@
-# Iteration 19 — LLM 与工作流真实接入及第二用户闭环关闭 — 验收标准
+# Iteration 19 — 验收标准
 
-## 1. UI 与契约前置验收
+## 1. 文档与 UI 冻结验收（已完成）
 
-- [ ] 已输出 LLM 与工作流真实接入的 UI 影响矩阵；
-- [ ] 只修改受真实接入、验证、启用、运行追踪和异常恢复影响的页面；
-- [ ] AppShell、导航和整体视觉保持不变；
-- [ ] 增量 UI 已完成 Review 和人工验收；
-- [ ] UI 冻结结果已写回 `ui-scope.md`、`ui-manifest.json` 和追踪文档；
-- [ ] OpenAPI、数据模型和开发任务在 UI 冻结后完成更新。
+- [x] 15 个正式 Frame 已归档，`04_n8n_2` 未进入正式 Manifest；
+- [x] 此前 6 个产品决策均有 UI 证据；
+- [x] WorkflowRun 使用独立详情页；
+- [x] `/workflows` 保留只读并引导 `/workflow-runs`；
+- [x] 四阶段共享 Preflight 和运行恢复组件；
+- [x] AppShell、导航和 Iteration 15～18 主体布局不变；
+- [x] UI、API Scope、数据模型和追踪文档已更新；
+- [x] 强制开发修正已记录，不要求再次生成 Stitch。
 
-## 2. LLM Provider 验收
+## 2. 契约同步门禁
 
-- [ ] OpenAI-compatible Provider 可真实验证；
-- [ ] 正确凭据验证成功，错误凭据返回安全错误；
-- [ ] 可获取或校验模型列表；
-- [ ] 可选择默认模型；
-- [ ] 可启用和停用 Provider；
-- [ ] 修改 Base URL、密钥或关键参数后验证状态失效；
-- [ ] 未验证、验证失败或停用的 Provider 不可被新运行使用；
-- [ ] API Key 不回显、不写日志、不进入 WorkflowRun 快照；
-- [ ] 超时、网络失败、认证失败和模型不存在均有明确状态。
+- [ ] 主 OpenAPI 与 `api-scope.yaml` 一致；
+- [ ] 每个 Operation 有唯一 operationId、路径、状态码和 ErrorEnvelope；
+- [ ] 后端 DTO、前端类型由冻结 OpenAPI 对齐；
+- [ ] Migration 19 只做最小向前变更，不修改历史 Migration；
+- [ ] `llmStrategy`、验证状态、Run 状态、失败阶段和 RetryMode 枚举唯一；
+- [ ] 不存在项目级 Provider/模型覆盖字段。
 
-## 3. n8n 连接验收
+## 3. LLM Provider
 
-- [ ] n8n Base URL 和凭据可真实验证；
-- [ ] 正确连接验证成功，错误连接返回安全错误；
-- [ ] 可启用和停用连接；
-- [ ] 修改连接地址或凭据后验证状态失效；
-- [ ] 未验证、验证失败或停用连接不可用于运行；
-- [ ] Credential、Authorization Header 和原始敏感响应不返回前端。
+- [ ] 可保存、发现模型、读取模型目录、验证、启用和停用；
+- [ ] 正确凭据成功，错误凭据返回安全错误；
+- [ ] 默认模型必须存在且可用；消失后不自动切换；
+- [ ] 关键字段变化转 `stale`，enabled 保留，executable=false；
+- [ ] API Key 不回显、不写日志、不进入快照或错误；
+- [ ] 超时、网络、认证、模型不存在、非法 Base URL 均有稳定错误码。
 
-## 4. 工作流配置验收
+## 4. n8n Connection
 
-- [ ] Workflow ID 或 Webhook Path 可真实验证；
-- [ ] 工作流适用 Stage 校验正确；
-- [ ] 输入和输出契约版本校验正确；
-- [ ] 工作流具有明确的 LLM 使用策略；
-- [ ] 使用 ACF LLM 时可选择已验证、已启用的 Provider 和模型；
-- [ ] n8n 内部管理 LLM 时有明确标识和运行追踪规则；
-- [ ] 不需要 LLM 的工作流必须显式声明；
-- [ ] LLM 策略不完整时不可启用工作流；
-- [ ] 工作流修改关键字段后验证状态失效；
-- [ ] 工作流可启用和停用。
+- [ ] 验证实例根 Base URL、认证和兼容性；
+- [ ] Workflow ID/Webhook Path 不保存在 Connection；
+- [ ] 可启用和停用；
+- [ ] 关键字段变化转 `stale`，依赖关系保留；
+- [ ] Credential 和原始敏感响应不返回前端；
+- [ ] 停用确认能返回受影响 Workflow/Binding 数量但不级联删除。
 
-## 5. 项目绑定验收
+## 5. Workflow Configuration
 
-- [ ] 章节规划、正文生成、审核和重写可分别绑定可用工作流；
-- [ ] 不可用工作流不会被误显示为可执行候选；
-- [ ] 适用 Stage 不匹配时禁止绑定；
-- [ ] LLM 策略失效时绑定状态显示异常；
-- [ ] 刷新后从真实 API 和 PostgreSQL 恢复绑定状态。
+- [ ] 支持 `acf_managed/n8n_managed/none` 三种且仅一种策略；
+- [ ] ACF-managed 必须选择可执行 Provider 和模型；
+- [ ] 项目不得覆盖策略；
+- [ ] Connection、引用、Stage、输入、输出、LLM 策略分层验证；
+- [ ] 关键字段变化创建新记录版本并使当前验证失效；
+- [ ] enabled 保留但 executable=false，重新验证后恢复；
+- [ ] 未验证或依赖失效时不可成为新绑定候选或新 Run 依赖。
 
-## 6. 真实第二用户闭环验收
+## 6. 项目绑定与 Preflight
 
-- [ ] 章节规划通过真实 n8n 和真实 LLM 创建候选批次；
-- [ ] 正文生成通过真实 n8n 和真实 LLM 创建新 ContentVersion；
-- [ ] 审核通过真实 n8n 和真实 LLM 创建审核报告、问题和建议；
-- [ ] 重写通过真实 n8n 和真实 LLM 创建新的 ContentVersion；
-- [ ] 四个环节均使用项目绑定的工作流；
-- [ ] 四个环节均能追踪所用连接、工作流、LLM Provider、模型和配置版本；
-- [ ] 最终验收不得使用 Mock Adapter 代替真实执行；
-- [ ] 用户可以完成章节确认、正文查看、问题选择、重写比较和版本采用；
-- [ ] 第二用户闭环正式关闭。
+- [ ] 四个 Stage 分别绑定且共用一套交互结构；
+- [ ] 只允许选择 Stage 匹配、已验证、已启用、依赖完整的候选；
+- [ ] 已绑定工作流后续失效时不自动解绑；
+- [ ] 返回绑定状态、执行资格、依赖摘要和精准原因；
+- [ ] 四阶段运行前检查失败时不创建 Run；
+- [ ] 修复依赖后无需重新绑定即可恢复。
 
-## 7. WorkflowRun 与异常验收
+## 7. WorkflowRun
 
-- [ ] 排队、运行、成功、失败、取消、超时和重试状态完整；
-- [ ] 页面刷新后可以恢复运行状态；
-- [ ] 运行详情显示安全的工作流和 LLM 配置快照；
-- [ ] 输出 Schema 非法时不写领域结果；
-- [ ] 结果消费失败时不留下部分领域数据；
-- [ ] 重试创建新运行并保留原运行追踪链；
-- [ ] 幂等请求不会创建重复业务结果；
-- [ ] 并发运行冲突按冻结规则处理；
-- [ ] 所有用户可见错误均为安全中文错误。
+- [ ] Runtime 生命周期支持 queued/running/cancelling/succeeded/failed/cancelled/timed_out；
+- [ ] displayStatus 支持 output_validation_failed/result_consumption_failed；
+- [ ] 独立详情页显示时间线、安全配置快照、外部执行 ID、领域影响和恢复动作；
+- [ ] 列表支持项目、Stage、状态、时间和高级配置筛选；
+- [ ] 刷新后恢复；取消和重试具备乐观锁与幂等；
+- [ ] 失败阶段、错误码、可重试性与用户文案稳定；
+- [ ] 结果消费重试不调用 n8n/LLM，不创建新 Runtime Run。
 
-## 8. 安全验收
+## 8. 配置重试
 
-- [ ] LLM 密钥和 n8n 凭据只在服务端使用；
-- [ ] 数据库仅保存加密凭据和安全指纹；
-- [ ] 日志、Audit、Event、快照和错误响应不包含明文凭据；
-- [ ] 上游原始响应经过过滤后才能持久化；
-- [ ] SSRF、非法 URL、超时、重定向和证书异常按安全规则处理；
-- [ ] 取消和重试不能绕过权限、绑定和启用状态检查。
+- [ ] 当前配置重试重新检查当前依赖；
+- [ ] 原配置重试只有完整可重放时启用；
+- [ ] 凭据指纹变化后原配置重试禁用；
+- [ ] 新 Run 设置 retryOfRunId，原 Run 保留；
+- [ ] 幂等重放不创建多个 Run 或多次领域结果。
 
-## 9. 工程验收
+## 9. 四 Stage 真实闭环
 
-- [ ] OpenAPI、后端 DTO、前端类型和数据库模型一致；
-- [ ] 先局部测试，再分组测试，最后总门禁；
-- [ ] 单元测试、Repository 集成测试、API 测试和真实外部联调通过；
-- [ ] 前端 typecheck、lint、unit test 和 build 通过；
-- [ ] E2E、安全测试和 P0 回归通过；
-- [ ] 数据库 Migration History、Schema 和数据一致性检查通过；
-- [ ] 不存在静默 Skip；
+- [ ] 章节规划真实创建候选批次；
+- [ ] 正文生成真实创建 ContentVersion；
+- [ ] 审核真实创建 Report/Findings/Recommendations；
+- [ ] 重写真实创建新 ContentVersion；
+- [ ] 四阶段最终验收不使用 Mock Adapter；
+- [ ] 输出校验失败和领域提交失败均满足零部分数据；
+- [ ] 第二用户闭环人工验收 PASS。
+
+## 10. 工程和安全
+
+- [ ] 单元、Repository、API、前端测试、E2E 和安全测试通过；
+- [ ] Migration History、Schema、Data consistency 全部 PASS；
+- [ ] 无静默 Skip；
+- [ ] SSRF、重定向、DNS 重绑定、证书、超时和凭据脱敏规则通过；
+- [ ] AppShell、导航、中文 locale 和 UI 人工验收通过；
 - [ ] 独立 Code Review 完成；
-- [ ] 变更报告、测试报告、人工验收结果和 Git 状态完整。
+- [ ] Git 状态 clean，报告和证据完整。

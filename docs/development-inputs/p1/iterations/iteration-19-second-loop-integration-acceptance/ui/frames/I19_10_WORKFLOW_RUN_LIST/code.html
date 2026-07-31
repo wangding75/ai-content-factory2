@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+
+<html class="light" lang="zh-CN"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>10｜流程中心—真实运行记录列表（最终） - ACF Enterprise</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "secondary-container": "#7df7b6",
+                        "surface-tint": "#4f43e3",
+                        "surface-container-highest": "#e1e2e6",
+                        "on-secondary-fixed-variant": "#005232",
+                        "surface-container-high": "#e7e8ec",
+                        "on-primary-container": "#dbd8ff",
+                        "surface-bright": "#f8f9fd",
+                        "on-secondary-container": "#007147",
+                        "on-secondary-fixed": "#002111",
+                        "outline": "#777587",
+                        "on-error": "#ffffff",
+                        "primary-fixed": "#e3dfff",
+                        "on-primary-fixed": "#100069",
+                        "inverse-on-surface": "#eff1f5",
+                        "on-primary": "#ffffff",
+                        "on-tertiary": "#ffffff",
+                        "inverse-surface": "#2e3134",
+                        "secondary-fixed": "#80fab9",
+                        "on-background": "#191c1f",
+                        "error-container": "#ffdad6",
+                        "surface-container-lowest": "#ffffff",
+                        "primary-fixed-dim": "#c3c0ff",
+                        "surface": "#f8f9fd",
+                        "inverse-primary": "#c3c0ff",
+                        "surface-dim": "#d9dade",
+                        "surface-container-low": "#f2f3f7",
+                        "tertiary-container": "#885500",
+                        "tertiary-fixed-dim": "#ffb95f",
+                        "surface-variant": "#e1e2e6",
+                        "on-primary-fixed-variant": "#3522cb",
+                        "tertiary": "#684000",
+                        "on-surface": "#191c1f",
+                        "error": "#ba1a1a",
+                        "background": "#f8f9fd",
+                        "secondary": "#006d44",
+                        "on-error-container": "#93000a",
+                        "on-surface-variant": "#464555",
+                        "outline-variant": "#c7c4d8",
+                        "primary-container": "#5146e5",
+                        "tertiary-fixed": "#ffddb8",
+                        "on-secondary": "#ffffff",
+                        "secondary-fixed-dim": "#62dd9e",
+                        "on-tertiary-fixed": "#2a1700",
+                        "surface-container": "#edeef2",
+                        "on-tertiary-container": "#ffd4a4",
+                        "primary": "#3725cd",
+                        "on-tertiary-fixed-variant": "#653e00",
+                        // Hardcoded values to match prompt requests for specific functional colors
+                        "canvas": "#F6F7FB",
+                        "success": "#16A36A",
+                        "warning": "#D98C10",
+                        "danger": "#D14343",
+                        "table-border": "#E7E9F0",
+                        "text-main": "#1A1C21",
+                        "text-secondary": "#6B7280"
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    fontFamily: {
+                        "headline": ["Inter", "sans-serif"],
+                        "display": ["Inter", "sans-serif"],
+                        "body": ["Inter", "sans-serif"],
+                        "label": ["Inter", "sans-serif"]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body {
+            background-color: theme('colors.canvas');
+            color: theme('colors.text-main');
+        }
+        /* Enterprise compact table styles */
+        .acf-table th {
+            font-weight: 500;
+            color: theme('colors.text-secondary');
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            padding: 8px 12px;
+            border-bottom: 1px solid theme('colors.table-border');
+            text-align: left;
+            background-color: theme('colors.surface');
+        }
+        .acf-table td {
+            padding: 10px 12px;
+            font-size: 0.875rem;
+            border-bottom: 1px solid theme('colors.table-border');
+            color: theme('colors.text-main');
+            white-space: nowrap;
+        }
+        .acf-table tbody tr:hover {
+            background-color: theme('colors.surface-container-lowest');
+        }
+        .acf-table tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        /* Status Badges/Dots */
+        .status-dot {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-right: 6px;
+        }
+        .status-green { background-color: theme('colors.success'); }
+        .status-blue { background-color: theme('colors.primary'); }
+        .status-blue-gray { background-color: theme('colors.outline'); }
+        .status-red { background-color: theme('colors.danger'); }
+        .status-orange { background-color: theme('colors.warning'); }
+        .status-red-gray { background-color: #9CA3AF; } /* Custom gray-red mix */
+
+        .status-text-green { color: theme('colors.success'); font-weight: 500; }
+        .status-text-blue { color: theme('colors.primary'); font-weight: 500; }
+        .status-text-blue-gray { color: theme('colors.outline'); font-weight: 500; }
+        .status-text-red { color: theme('colors.danger'); font-weight: 500; }
+        .status-text-orange { color: theme('colors.warning'); font-weight: 500; }
+        .status-text-red-gray { color: #9CA3AF; font-weight: 500; }
+
+        /* Form Controls */
+        .acf-select {
+            height: 32px;
+            padding: 0 28px 0 12px;
+            font-size: 0.75rem;
+            border: 1px solid theme('colors.table-border');
+            border-radius: theme('borderRadius.DEFAULT');
+            background-color: theme('colors.surface-container-lowest');
+            color: theme('colors.text-main');
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+            background-position: right 0.5rem center;
+            background-repeat: no-repeat;
+            background-size: 1.5em 1.5em;
+        }
+        .acf-select:focus {
+            outline: none;
+            border-color: theme('colors.primary');
+            box-shadow: 0 0 0 1px theme('colors.primary');
+        }
+        .acf-input {
+            height: 32px;
+            padding: 0 12px;
+            font-size: 0.75rem;
+            border: 1px solid theme('colors.table-border');
+            border-radius: theme('borderRadius.DEFAULT');
+            background-color: theme('colors.surface-container-lowest');
+            color: theme('colors.text-main');
+        }
+        .acf-input:focus {
+            outline: none;
+            border-color: theme('colors.primary');
+            box-shadow: 0 0 0 1px theme('colors.primary');
+        }
+        .acf-btn {
+            height: 32px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0 16px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            border-radius: theme('borderRadius.DEFAULT');
+            transition: all 0.2s;
+        }
+        .acf-btn-outline {
+            border: 1px solid theme('colors.table-border');
+            background-color: theme('colors.surface-container-lowest');
+            color: theme('colors.text-main');
+        }
+        .acf-btn-outline:hover {
+            background-color: theme('colors.surface-container-low');
+        }
+
+        .action-link {
+            color: theme('colors.primary');
+            text-decoration: none;
+        }
+        .action-link:hover {
+            text-decoration: underline;
+        }
+        .action-divider {
+            color: theme('colors.outline-variant');
+            margin: 0 4px;
+        }
+        .badge-gray {
+            background-color: theme('colors.surface-container');
+            color: theme('colors.text-secondary');
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.65rem;
+            margin-left: 4px;
+        }
+    </style>
+</head>
+<body class="font-body antialiased flex h-screen overflow-hidden">
+<!-- SideNavBar -->
+<nav class="bg-surface-container-lowest dark:bg-surface-dim font-body text-label-md fixed left-0 top-0 h-full w-[240px] border-r border-outline-variant dark:border-outline flex flex-col z-20">
+<!-- Header -->
+<div class="p-6 pb-8">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded bg-primary-container text-on-primary-container flex items-center justify-center font-bold text-sm">
+                    A
+                </div>
+<div>
+<h1 class="text-xl font-headline font-black text-primary dark:text-primary-fixed-dim leading-none tracking-tight">ACF Enterprise</h1>
+<p class="text-xs text-on-surface-variant dark:text-surface-variant mt-1">Management Console</p>
+</div>
+</div>
+</div>
+<!-- Navigation Links -->
+<div class="flex flex-col gap-1 flex-grow overflow-y-auto">
+<!-- 首页 -->
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant dark:text-surface-variant hover:bg-surface-container dark:hover:bg-surface-container-high transition-colors cursor-pointer active:opacity-80" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">home</span>
+<span>首页</span>
+</a>
+<!-- 项目 -->
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant dark:text-surface-variant hover:bg-surface-container dark:hover:bg-surface-container-high transition-colors cursor-pointer active:opacity-80" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">folder_open</span>
+<span>项目</span>
+</a>
+<!-- 素材 -->
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant dark:text-surface-variant hover:bg-surface-container dark:hover:bg-surface-container-high transition-colors cursor-pointer active:opacity-80" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">inventory_2</span>
+<span>素材</span>
+</a>
+<!-- 作品 -->
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant dark:text-surface-variant hover:bg-surface-container dark:hover:bg-surface-container-high transition-colors cursor-pointer active:opacity-80" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">auto_awesome_motion</span>
+<span>作品</span>
+</a>
+<!-- 流程 (ACTIVE) -->
+<a class="flex items-center gap-3 px-4 py-3 text-primary dark:text-primary-fixed-dim font-bold bg-primary-container/10 cursor-pointer active:opacity-80" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">account_tree</span>
+<span>流程</span>
+</a>
+<!-- 设置 -->
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant dark:text-surface-variant hover:bg-surface-container dark:hover:bg-surface-container-high transition-colors cursor-pointer active:opacity-80" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">settings</span>
+<span>设置</span>
+</a>
+</div>
+</nav>
+<!-- Main Content Wrapper -->
+<div class="flex-1 flex flex-col ml-[240px] relative w-[calc(100%-240px)]">
+<!-- TopNavBar -->
+<header class="bg-surface-container-lowest dark:bg-surface-dim font-body text-label-md fixed top-0 right-0 h-16 left-[240px] border-b border-outline-variant dark:border-outline flex justify-between items-center px-6 z-10">
+<div class="flex items-center gap-8">
+<div class="text-lg font-headline font-bold text-on-surface dark:text-on-surface-variant tracking-tight">流程中心</div>
+<nav class="hidden md:flex items-center gap-6 pt-4 h-full">
+<!-- 总览 (ACTIVE) -->
+<a class="text-primary dark:text-primary-fixed-dim border-b-2 border-primary dark:border-primary-fixed-dim pb-4 cursor-pointer active:scale-95 font-medium" href="#">总览</a>
+<a class="text-on-surface-variant dark:text-surface-variant pb-4 hover:text-primary dark:hover:text-primary-fixed-dim transition-colors cursor-pointer active:scale-95" href="#">内容</a>
+<a class="text-on-surface-variant dark:text-surface-variant pb-4 hover:text-primary dark:hover:text-primary-fixed-dim transition-colors cursor-pointer active:scale-95" href="#">资产</a>
+<a class="text-on-surface-variant dark:text-surface-variant pb-4 hover:text-primary dark:hover:text-primary-fixed-dim transition-colors cursor-pointer active:scale-95" href="#">设置</a>
+</nav>
+</div>
+<div class="flex items-center gap-4">
+<div class="relative w-64">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline text-sm">search</span>
+<input class="w-full h-8 pl-9 pr-3 text-xs bg-surface-container-low border-none rounded focus:ring-1 focus:ring-primary text-on-surface" placeholder="搜索..." type="text"/>
+</div>
+<button class="text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button class="text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined">help_outline</span>
+</button>
+<div class="w-8 h-8 rounded-full bg-surface-container-highest overflow-hidden border border-outline-variant ml-2">
+<img class="w-full h-full object-cover" data-alt="A professional corporate headshot of a person, minimalist lighting, white background, conveying trust and enterprise scale." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDUvdki21ri4zuX0VY94oriEg8Ve3nzai_GyNUojTjq2mF4YI5dzAkCnSKC3mRITuVPfdL3fw-4JgsmU_yrTMQ9zSJhiuCOgzl39LnREUMw8IuCQAxRkhVl8ceYFOeIznRBql55pspjdbcj8uGFQ3aVpn_DVmccTgL5AwqEysGZEMRGCweQlu8Nm0eFeMMDG_Ea6kqWvPJ_tKdkY4PmB_sP_HO5GMdiHRfi6yRgtUwmbxPRgu1De0fx-9H6GunMLqBhulNyNQpdatHa"/>
+</div>
+</div>
+</header>
+<!-- Main Canvas -->
+<main class="flex-1 overflow-y-auto mt-16 p-6">
+<!-- Page Header -->
+<div class="mb-6">
+<h2 class="text-2xl font-headline font-bold text-text-main mb-1 tracking-tight">流程中心</h2>
+<p class="text-sm text-text-secondary">查看项目业务工作流的真实运行状态与结果</p>
+</div>
+<!-- Filter Section (White Surface) -->
+<div class="bg-surface-container-lowest rounded-lg border border-table-border p-4 mb-6 shadow-sm">
+<!-- Row 1 -->
+<div class="flex flex-wrap gap-3 mb-3 items-center">
+<select class="acf-select w-40">
+<option value="">所有项目 (项目)</option>
+<option value="p1">霓港纪事</option>
+</select>
+<select class="acf-select w-40">
+<option value="">所有业务环节</option>
+<option value="s1">章节规划</option>
+<option value="s2">正文生成</option>
+<option value="s3">内容审核</option>
+<option value="s4">正文重写</option>
+</select>
+<select class="acf-select w-40">
+<option value="">所有执行状态</option>
+<option value="success">执行成功</option>
+<option value="running">执行中</option>
+<option value="failed">执行失败</option>
+</select>
+<select class="acf-select w-40">
+<option value="">时间范围</option>
+<option value="today">今天</option>
+<option value="week">最近7天</option>
+</select>
+<select class="acf-select w-40">
+<option value="">所有 Connection</option>
+<option value="n8n">本地 n8n</option>
+<option value="audit">审核自动化</option>
+</select>
+</div>
+<!-- Row 2 -->
+<div class="flex flex-wrap gap-3 items-center">
+<select class="acf-select w-40">
+<option value="">Workflow Config</option>
+</select>
+<select class="acf-select w-40">
+<option value="">Provider</option>
+<option value="openai">OpenAI</option>
+</select>
+<select class="acf-select w-40">
+<option value="">模型</option>
+<option value="gpt52">gpt-5.2</option>
+</select>
+<select class="acf-select w-40">
+<option value="">配置版本</option>
+</select>
+<select class="acf-select w-40">
+<option value="">可重试性</option>
+<option value="yes">可重试</option>
+<option value="no">不可重试</option>
+</select>
+<div class="flex-grow"></div>
+<div class="flex items-center gap-2">
+<div class="relative w-64">
+<span class="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-outline text-[16px]">search</span>
+<input class="acf-input w-full pl-8" placeholder="Run ID 或业务对象" type="text"/>
+</div>
+<button class="acf-btn acf-btn-outline gap-1">
+<span class="material-symbols-outlined text-[16px]">refresh</span>
+                            刷新
+                        </button>
+</div>
+</div>
+</div>
+<!-- Data Table Container -->
+<div class="bg-surface-container-lowest rounded-lg border border-table-border shadow-sm overflow-hidden">
+<div class="overflow-x-auto">
+<table class="w-full acf-table border-collapse">
+<thead>
+<tr>
+<th>Run ID</th>
+<th>项目与业务对象</th>
+<th>业务环节</th>
+<th>工作流/版本</th>
+<th>Connection</th>
+<th>模型策略</th>
+<th>状态</th>
+<th>开始时间</th>
+<th>耗时</th>
+<th>重试关系</th>
+<th class="text-right">操作</th>
+</tr>
+</thead>
+<tbody>
+<!-- Row 1: Success -->
+<tr>
+<td class="font-mono text-xs text-text-secondary">run-8F31</td>
+<td><div class="font-medium text-text-main">霓港纪事</div><div class="text-xs text-text-secondary">第12章规划</div></td>
+<td>章节规划</td>
+<td><div class="text-text-main">章节规划生成</div><div class="text-xs text-text-secondary">v7</div></td>
+<td>本地 n8n</td>
+<td>OpenAI gpt-5.2</td>
+<td>
+<div class="flex items-center status-text-green">
+<span class="status-dot status-green"></span>执行成功
+                                    </div>
+</td>
+<td class="text-text-secondary">13:30</td>
+<td class="text-text-secondary">42s</td>
+<td class="text-outline-variant">—</td>
+<td class="text-right">
+<a class="action-link" href="#">查看详情</a>
+</td>
+</tr>
+<!-- Row 2: Running -->
+<tr>
+<td class="font-mono text-xs text-text-secondary">run-8F32</td>
+<td><div class="font-medium text-text-main">霓港纪事</div><div class="text-xs text-text-secondary">第12章正文</div></td>
+<td>正文生成</td>
+<td><div class="text-text-main">正文生成</div><div class="text-xs text-text-secondary">v4</div></td>
+<td>本地 n8n</td>
+<td>gpt-5.2</td>
+<td>
+<div class="flex items-center status-text-blue">
+<span class="status-dot status-blue animate-pulse"></span>执行中
+                                    </div>
+</td>
+<td class="text-text-secondary">13:34</td>
+<td class="text-text-secondary">1m18s</td>
+<td class="text-outline-variant">—</td>
+<td class="text-right">
+<a class="action-link" href="#">查看详情</a>
+<span class="action-divider">/</span>
+<a class="action-link text-text-secondary hover:text-danger" href="#">取消</a>
+</td>
+</tr>
+<!-- Row 3: Canceling -->
+<tr>
+<td class="font-mono text-xs text-text-secondary">run-8F33</td>
+<td><div class="font-medium text-text-main">霓港纪事</div><div class="text-xs text-text-secondary">第12章审核</div></td>
+<td>内容审核</td>
+<td><div class="text-text-main">内容审核标准版</div><div class="text-xs text-text-secondary">v6</div></td>
+<td>本地 n8n</td>
+<td>gpt-5.2</td>
+<td>
+<div class="flex items-center status-text-blue-gray">
+<span class="status-dot status-blue-gray"></span>取消中
+                                    </div>
+</td>
+<td class="text-text-secondary">13:35</td>
+<td class="text-outline-variant">—</td>
+<td class="text-outline-variant">—</td>
+<td class="text-right">
+<a class="action-link" href="#">查看详情</a>
+</td>
+</tr>
+<!-- Row 4: Failed -->
+<tr>
+<td class="font-mono text-xs text-text-secondary">run-8F2A</td>
+<td><div class="font-medium text-text-main">霓港纪事</div><div class="text-xs text-text-secondary">第11章重写</div></td>
+<td>正文重写</td>
+<td><div class="text-text-main">正文重写</div><div class="text-xs text-text-secondary">v5</div></td>
+<td>本地 n8n</td>
+<td>n8n 内部模型</td>
+<td>
+<div class="flex items-center status-text-red">
+<span class="status-dot status-red"></span>执行失败
+                                    </div>
+</td>
+<td class="text-text-secondary">12:50</td>
+<td class="text-text-secondary">18s</td>
+<td class="text-outline-variant">—</td>
+<td class="text-right">
+<a class="action-link" href="#">查看详情</a>
+<span class="action-divider">/</span>
+<a class="action-link font-medium" href="#">重试</a>
+</td>
+</tr>
+<!-- Row 5: Orange Error 1 -->
+<tr>
+<td class="font-mono text-xs text-text-secondary">run-8F2B</td>
+<td><div class="font-medium text-text-main">霓港纪事</div><div class="text-xs text-text-secondary">第11章审核</div></td>
+<td>内容审核</td>
+<td><div class="text-text-main">内容审核旧版</div><div class="text-xs text-text-secondary">v3</div></td>
+<td>审核自动化</td>
+<td>gpt-4.1</td>
+<td>
+<div class="flex items-center status-text-orange">
+<span class="status-dot status-orange"></span>输出校验失败
+                                    </div>
+</td>
+<td class="text-text-secondary">12:42</td>
+<td class="text-text-secondary">36s</td>
+<td class="text-outline-variant">—</td>
+<td class="text-right">
+<a class="action-link" href="#">查看详情</a>
+<span class="action-divider">/</span>
+<a class="action-link font-medium" href="#">重试</a>
+</td>
+</tr>
+<!-- Row 6: Orange Error 2 -->
+<tr>
+<td class="font-mono text-xs text-text-secondary">run-8F2C</td>
+<td><div class="font-medium text-text-main">霓港纪事</div><div class="text-xs text-text-secondary">第10章正文</div></td>
+<td>正文生成</td>
+<td><div class="text-text-main">正文生成</div><div class="text-xs text-text-secondary">v4</div></td>
+<td>本地 n8n</td>
+<td>gpt-5.2</td>
+<td>
+<div class="flex items-center status-text-orange">
+<span class="status-dot status-orange"></span>结果消费失败
+                                    </div>
+</td>
+<td class="text-text-secondary">11:30</td>
+<td class="text-text-secondary">51s</td>
+<td class="text-outline-variant">—</td>
+<td class="text-right">
+<a class="action-link" href="#">查看详情</a>
+<span class="action-divider">/</span>
+<a class="action-link font-medium text-warning hover:text-orange-600" href="#">专用重试</a>
+</td>
+</tr>
+<!-- Row 7: Timeout -->
+<tr>
+<td class="font-mono text-xs text-text-secondary">run-8F1D</td>
+<td><div class="font-medium text-text-main">霓港纪事</div><div class="text-xs text-text-secondary">第9章规划</div></td>
+<td>章节规划</td>
+<td><div class="text-text-main">章节规划生成</div><div class="text-xs text-text-secondary">v7</div></td>
+<td>本地 n8n</td>
+<td>gpt-5.2</td>
+<td>
+<div class="flex items-center status-text-red-gray">
+<span class="status-dot status-red-gray"></span>已超时
+                                    </div>
+</td>
+<td class="text-text-secondary">10:20</td>
+<td class="text-text-secondary">5m</td>
+<td class="text-outline-variant">—</td>
+<td class="text-right flex justify-end items-center gap-2">
+<span class="badge-gray">不可重试</span>
+<a class="action-link" href="#">查看详情</a>
+</td>
+</tr>
+<!-- Row 8: Success (Retry Child) -->
+<tr>
+<td class="font-mono text-xs text-text-secondary">run-8F2D</td>
+<td><div class="font-medium text-text-main">霓港纪事</div><div class="text-xs text-text-secondary">第11章重写重试</div></td>
+<td>正文重写</td>
+<td><div class="text-text-main">正文重写</div><div class="text-xs text-text-secondary">v5</div></td>
+<td>本地 n8n</td>
+<td>n8n 内部模型</td>
+<td>
+<div class="flex items-center status-text-green">
+<span class="status-dot status-green"></span>执行成功
+                                    </div>
+</td>
+<td class="text-text-secondary">13:05</td>
+<td class="text-text-secondary">22s</td>
+<td><a class="font-mono text-xs action-link" href="#">retryOf run-8F2A</a></td>
+<td class="text-right">
+<a class="action-link" href="#">查看详情</a>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Pagination (Simulated) -->
+<div class="px-4 py-3 border-t border-table-border bg-surface flex items-center justify-between">
+<span class="text-xs text-text-secondary">显示 1 到 8 条记录，共 2,491 条</span>
+<div class="flex gap-1">
+<button class="w-8 h-8 flex items-center justify-center rounded border border-table-border text-outline-variant cursor-not-allowed bg-surface-container-lowest">
+<span class="material-symbols-outlined text-[16px]">chevron_left</span>
+</button>
+<button class="w-8 h-8 flex items-center justify-center rounded border border-primary bg-primary text-white text-xs font-medium">1</button>
+<button class="w-8 h-8 flex items-center justify-center rounded border border-table-border bg-surface-container-lowest text-text-main hover:bg-surface-container-low text-xs font-medium transition-colors">2</button>
+<button class="w-8 h-8 flex items-center justify-center rounded border border-table-border bg-surface-container-lowest text-text-main hover:bg-surface-container-low text-xs font-medium transition-colors">3</button>
+<span class="w-8 h-8 flex items-center justify-center text-text-secondary text-xs">...</span>
+<button class="w-8 h-8 flex items-center justify-center rounded border border-table-border bg-surface-container-lowest text-text-main hover:bg-surface-container-low transition-colors">
+<span class="material-symbols-outlined text-[16px]">chevron_right</span>
+</button>
+</div>
+</div>
+</div>
+<div class="h-12 w-full"></div> <!-- Bottom spacer -->
+</main>
+</div>
+</body></html>

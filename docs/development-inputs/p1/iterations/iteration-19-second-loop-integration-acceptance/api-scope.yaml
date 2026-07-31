@@ -1,10 +1,227 @@
 iteration: iteration-19-second-loop-integration-acceptance
-status: planned
+status: frozen_for_openapi_sync
+contract_source: packages/contracts/openapi/openapi.yaml
+baseline_commit: 235917f9d74c1263093e06ec0629d71dfed9ee02
+stages: [chapter_planning, content_generation, review, rewrite]
+validation_statuses: [unverified, verifying, verified, failed, stale]
+llm_strategies: [acf_managed, n8n_managed, none]
+runtime_statuses: [queued, running, cancelling, succeeded, failed, cancelled, timed_out]
+display_statuses: [queued, running, cancelling, succeeded, failed, cancelled, timed_out, output_validation_failed, result_consumption_failed]
+retry_modes: [current_configuration, original_configuration]
+
 apis:
-  - "全部第二闭环 API"
+  llm_provider_models:
+    - operationId: listLlmProviderModels
+      method: GET
+      path: /api/v1/llm-providers/{providerId}/models
+      purpose: Return safe discovered/manual model catalog.
+    - operationId: discoverLlmProviderModels
+      method: POST
+      path: /api/v1/llm-providers/{providerId}/models/discover
+      required_headers: [Idempotency-Key]
+      body: [expectedVersion]
+      purpose: Call the saved OpenAI-compatible endpoint and update the safe model catalog.
+
+  llm_provider_commands:
+    - operationId: verifyLlmProvider
+      method: POST
+      path: /api/v1/llm-providers/{providerId}/verify
+      required_headers: [Idempotency-Key]
+      body: [expectedVersion, optionalModel]
+      returns: [validationStatus, verifiedVersion, checkedAt, modelSummary, checks, executable, safeError]
+    - operationId: enableLlmProvider
+      method: POST
+      path: /api/v1/llm-providers/{providerId}/enable
+      required_headers: [Idempotency-Key]
+      body: [expectedVersion]
+    - operationId: disableLlmProvider
+      method: POST
+      path: /api/v1/llm-providers/{providerId}/disable
+      required_headers: [Idempotency-Key]
+      body: [expectedVersion]
+
+  workflow_connection_commands:
+    - operationId: verifyWorkflowConnection
+      method: POST
+      path: /api/v1/workflow-connections/{connectionId}/verify
+      required_headers: [Idempotency-Key]
+      body: [expectedVersion]
+      returns: [validationStatus, verifiedVersion, checkedAt, checks, executable, safeError]
+    - operationId: enableWorkflowConnection
+      method: POST
+      path: /api/v1/workflow-connections/{connectionId}/enable
+      required_headers: [Idempotency-Key]
+      body: [expectedVersion]
+    - operationId: disableWorkflowConnection
+      method: POST
+      path: /api/v1/workflow-connections/{connectionId}/disable
+      required_headers: [Idempotency-Key]
+      body: [expectedVersion]
+      returns: [enabled, executable, affectedWorkflowCount, affectedBindingCount]
+
+  workflow_configuration_commands:
+    - operationId: verifyWorkflowConfiguration
+      method: POST
+      path: /api/v1/workflow-configurations/{workflowConfigurationId}/verify
+      required_headers: [Idempotency-Key]
+      body: [expectedVersion]
+      checks: [connection, workflow_reference, stage, input_contract, output_contract, llm_strategy]
+    - operationId: enableWorkflowConfiguration
+      method: POST
+      path: /api/v1/workflow-configurations/{workflowConfigurationId}/enable
+      required_headers: [Idempotency-Key]
+      body: [expectedVersion]
+    - operationId: disableWorkflowConfiguration
+      method: POST
+      path: /api/v1/workflow-configurations/{workflowConfigurationId}/disable
+      required_headers: [Idempotency-Key]
+      body: [expectedVersion]
+
+  workflow_run_recovery:
+    - operationId: getWorkflowRunRetryOptions
+      method: GET
+      path: /api/v1/workflow-runs/{runId}/retry-options
+      returns: [currentConfiguration, originalConfiguration, retryability, reasons]
+    - operationId: retryWorkflowRun
+      method: POST
+      path: /api/v1/workflow-runs/{runId}/retries
+      required_headers: [Idempotency-Key]
+      body: [expectedVersion, mode, optionalReason]
+      success: [201, 200]
+      notes:
+        - mode=current_configuration recomputes current binding and dependencies.
+        - mode=original_configuration is accepted only when retry-options marks it replayable.
+        - result_consumption failure is rejected and uses the stage-specific consumption retry API.
+    - operationId: cancelWorkflowRun
+      method: POST
+      path: /api/v1/workflow-runs/{runId}/cancel
+      required_headers: [Idempotency-Key]
+      body: [expectedVersion]
+      returns: [runId, status, version, cancellationRequestedAt]
+
+reused_and_extended_apis:
+  - operationId: listLlmProviders
+    method: GET
+    path: /api/v1/llm-providers
+    added_query: [q, providerType, validationStatus, enabled, executable, limit, offset]
+    added_response: [modelCount, defaultModel, validationStatus, enabled, executable, lastVerifiedAt, safeError]
+  - operationId: createLlmProvider
+    method: POST
+    path: /api/v1/llm-providers
+    behavior: New records are unverified and disabled; no implicit verification.
+  - operationId: updateLlmProvider
+    method: PATCH
+    path: /api/v1/llm-providers/{providerId}
+    behavior: Key-field changes increment version and set stale while preserving enabled.
+  - operationId: listWorkflowConnections
+    method: GET
+    path: /api/v1/workflow-connections
+    added_query: [q, connectionType, validationStatus, enabled, executable, limit, offset]
+    added_response: [validationStatus, enabled, executable, lastVerifiedAt, affectedWorkflowCount, affectedBindingCount]
+  - operationId: updateWorkflowConnection
+    method: PATCH
+    path: /api/v1/workflow-connections/{connectionId}
+    behavior: Key-field changes increment version and set stale while preserving enabled and references.
+  - operationId: listWorkflowConfigurations
+    method: GET
+    path: /api/v1/workflow-configurations
+    added_query: [q, applicableStage, connectionId, llmStrategy, validationStatus, enabled, executable, limit, offset]
+    added_response: [llmPolicySummary, validationStatus, enabled, executable, version, ineligibilityReasons]
+  - operationId: createWorkflowConfiguration
+    method: POST
+    path: /api/v1/workflow-configurations
+    added_body: [llmStrategy, llmProviderId, llmModel]
+  - operationId: updateWorkflowConfiguration
+    method: PATCH
+    path: /api/v1/workflow-configurations/{workflowConfigurationId}
+    added_body: [llmStrategy, llmProviderId, llmModel]
+    behavior: Key-field changes increment version and set stale while preserving enabled and bindings.
+  - operationId: listProjectWorkflowBindings
+    method: GET
+    path: /api/v1/projects/{projectId}/workflow-bindings
+    added_response: [executable, ineligibilityReasons, connectionSummary, llmPolicySummary, workflowConfigurationVersion, lastVerifiedAt]
+  - operationId: putProjectWorkflowBinding
+    method: PUT
+    path: /api/v1/projects/{projectId}/workflow-bindings/{stage}
+    new_gate: Selected workflow configuration must be executable and stage-compatible at transaction time.
+  - operationId: listWorkflowRuns
+    method: GET
+    path: /api/v1/workflow-runs
+    added_query: [projectId, stage, displayStatus, workflowConfigurationId, connectionId, providerId, model, configurationVersion, retryability, from, to, q, limit, offset]
+    added_response: [displayStatus, workflowName, workflowConfigurationVersion, connectionSummary, llmPolicySummary, retryability, retryOfRunId]
+  - operationId: getWorkflowRunDetail
+    method: GET
+    path: /api/v1/workflow-runs/{runId}
+    added_response: [displayStatus, failurePhase, failureCode, safeError, domainImpact, configurationSnapshot, externalExecutionId, retryability, retryOfRunId]
+  - operationId: listWorkflowRunEvents
+    method: GET
+    path: /api/v1/workflow-runs/{runId}/events
+    added_events: [cancel_requested, timed_out, output_validation_failed, result_consumption_failed, retry_created]
+
+stage_preflight_requirements:
+  - Existing Iteration 15-18 preflight operations must evaluate current binding execution eligibility.
+  - A blocked preflight returns no WorkflowRun and no domain write.
+  - Checks expose safe identifiers and repair links, never credentials or raw upstream payloads.
+  - Active historical runs remain visible even if current configuration becomes stale.
+
+error_codes:
+  validation:
+    - configuration_unverified
+    - configuration_verification_in_progress
+    - configuration_verification_failed
+    - configuration_stale
+    - model_unavailable
+    - workflow_reference_not_found
+    - workflow_not_active
+    - workflow_stage_mismatch
+    - input_contract_incompatible
+    - output_contract_incompatible
+    - llm_strategy_incomplete
+  security_and_network:
+    - unsafe_base_url
+    - dns_resolution_failed
+    - tls_validation_failed
+    - redirect_not_allowed
+    - upstream_timeout
+    - upstream_authentication_failed
+    - upstream_unavailable
+  runtime:
+    - workflow_run_not_retryable
+    - workflow_run_not_cancellable
+    - original_configuration_not_replayable
+    - workflow_run_version_conflict
+    - active_workflow_run_conflict
+    - output_validation_failed
+    - result_consumption_failed
+  common:
+    - validation_error
+    - unauthenticated
+    - forbidden
+    - not_found
+    - version_conflict
+    - idempotency_conflict
+    - internal_error
+
 common_requirements:
-  - OpenAPI is the single contract source
-  - all commands use Idempotency-Key where applicable
-  - errors use the shared error envelope
-  - secrets and raw upstream responses are never returned
-  - optimistic locking is required for mutable configuration
+  - OpenAPI is the single HTTP contract source; this file is the iteration scope to synchronize into it.
+  - External commands use Idempotency-Key and optimistic locking.
+  - Verification always targets the saved expectedVersion; stale completion returns 409 and cannot overwrite a newer version.
+  - PATCH without a new secret or credential preserves the stored value; empty strings never clear it.
+  - Save does not imply verify; verify does not imply enable.
+  - Key-field changes preserve enabled and references but set validationStatus=stale and executable=false.
+  - executable is server-derived and never accepted from clients.
+  - Project bindings cannot override llmStrategy, provider, model, connection, contracts, or workflow reference.
+  - Secrets, encrypted values, credentials, authorization headers, cookies, raw upstream responses, SQL, stacks and internal nodes are never returned.
+  - original_configuration retry never uses credential history; it is disabled when current fingerprints differ from snapshots.
+  - Result-consumption retry never invokes n8n or LLM and never creates a new Runtime Run.
+  - All user-visible errors use the shared safe ErrorEnvelope.
+
+not_in_scope:
+  - project-level LLM overrides
+  - secret or credential history storage
+  - workflow visual editor
+  - multi-n8n automatic routing
+  - automatic model routing or cost optimization
+  - deleting or merging /workflows
+  - other workflow platforms
+  - real content distribution

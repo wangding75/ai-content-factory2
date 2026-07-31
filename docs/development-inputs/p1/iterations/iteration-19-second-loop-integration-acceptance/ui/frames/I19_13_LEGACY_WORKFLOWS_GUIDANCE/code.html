@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>ACF Enterprise - 内置流程</title>
+<!-- Google Fonts & Material Symbols -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Tailwind Configuration (Design System) -->
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary-fixed-dim": "#c3c0ff",
+                        "on-primary-fixed-variant": "#3522cb",
+                        "secondary-fixed": "#80fab9",
+                        "on-tertiary-fixed-variant": "#653e00",
+                        "error-container": "#ffdad6",
+                        "on-background": "#191c1f",
+                        "inverse-primary": "#c3c0ff",
+                        "on-secondary-fixed-variant": "#005232",
+                        "surface-container-high": "#e7e8ec",
+                        "on-secondary-container": "#007147",
+                        "outline-variant": "#c7c4d8",
+                        "on-surface": "#191c1f",
+                        "surface-dim": "#d9dade",
+                        "primary-container": "#5146e5",
+                        "on-primary": "#ffffff",
+                        "tertiary-fixed": "#ffddb8",
+                        "error": "#ba1a1a",
+                        "on-tertiary-fixed": "#2a1700",
+                        "on-tertiary-container": "#ffd4a4",
+                        "surface-container-low": "#f2f3f7",
+                        "primary-fixed": "#e3dfff",
+                        "inverse-on-surface": "#eff1f5",
+                        "on-primary-container": "#dbd8ff",
+                        "tertiary-container": "#885500",
+                        "secondary-fixed-dim": "#62dd9e",
+                        "on-error-container": "#93000a",
+                        "secondary": "#006d44",
+                        "surface": "#ffffff",
+                        "on-tertiary": "#ffffff",
+                        "outline": "#777587",
+                        "surface-variant": "#e1e2e6",
+                        "on-surface-variant": "#464555",
+                        "tertiary": "#684000",
+                        "on-secondary-fixed": "#002111",
+                        "background": "#f6f7fb",
+                        "primary": "#5146e5",
+                        "on-error": "#ffffff",
+                        "on-primary-fixed": "#100069",
+                        "tertiary-fixed-dim": "#ffb95f",
+                        "surface-tint": "#4f43e3",
+                        "secondary-container": "#7df7b6",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-container-highest": "#e1e2e6",
+                        "surface-bright": "#f8f9fd",
+                        "on-secondary": "#ffffff",
+                        "inverse-surface": "#2e3134",
+                        "surface-container": "#edeef2"
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    fontFamily: {
+                        "headline": ["Inter"],
+                        "display": ["Inter"],
+                        "body": ["Inter"],
+                        "label": ["Inter"]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background font-body antialiased flex h-screen overflow-hidden">
+<!-- SideNavBar (Shared Component) -->
+<aside class="fixed left-0 top-0 h-full w-[240px] flex flex-col py-4 px-2 bg-surface border-r border-outline-variant z-20">
+<!-- Header -->
+<div class="flex items-center gap-3 px-4 mb-8">
+<div class="w-8 h-8 rounded bg-primary-container flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-on-primary-container text-sm">enterprise</span>
+</div>
+<div>
+<h1 class="text-headline-sm font-black text-on-surface leading-tight">ACF Enterprise</h1>
+<p class="text-label-sm text-on-surface-variant font-medium">Management Console</p>
+</div>
+</div>
+<!-- Navigation Tabs -->
+<nav class="flex-1 space-y-1 font-body text-label-sm font-medium">
+<!-- Home -->
+<a class="flex items-center gap-3 px-4 py-2.5 rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors duration-200" href="#">
+<span class="material-symbols-outlined text-xl">home</span>
+<span>Home</span>
+</a>
+<!-- Projects -->
+<a class="flex items-center gap-3 px-4 py-2.5 rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors duration-200" href="#">
+<span class="material-symbols-outlined text-xl">folder_open</span>
+<span>Projects</span>
+</a>
+<!-- Assets -->
+<a class="flex items-center gap-3 px-4 py-2.5 rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors duration-200" href="#">
+<span class="material-symbols-outlined text-xl">inventory_2</span>
+<span>Assets</span>
+</a>
+<!-- Works -->
+<a class="flex items-center gap-3 px-4 py-2.5 rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors duration-200" href="#">
+<span class="material-symbols-outlined text-xl">task</span>
+<span>Works</span>
+</a>
+<!-- Workflows (Active) -->
+<a class="flex items-center gap-3 px-4 py-2.5 rounded-lg text-primary font-bold border-r-4 border-primary bg-surface-container-high transition-all opacity-90 scale-95 pointer-events-none" href="#">
+<span class="material-symbols-outlined text-xl">account_tree</span>
+<span>Workflows</span>
+</a>
+<!-- Settings -->
+<a class="flex items-center gap-3 px-4 py-2.5 rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors duration-200" href="#">
+<span class="material-symbols-outlined text-xl">settings</span>
+<span>Settings</span>
+</a>
+</nav>
+</aside>
+<!-- Main Workspace -->
+<div class="flex-1 flex flex-col ml-[240px] w-[calc(100%-240px)] h-full relative">
+<!-- TopNavBar (Shared Component) -->
+<header class="fixed top-0 right-0 left-[240px] h-16 flex items-center justify-between px-6 bg-surface border-b border-outline-variant z-10 font-body text-label-md">
+<!-- Brand/Product -->
+<div class="text-label-lg font-bold text-on-surface">
+                Workflow Center / run-8F2B
+            </div>
+<!-- Trailing Actions & Profile -->
+<div class="flex items-center gap-4">
+<button class="text-on-surface-variant hover:text-primary transition-colors duration-200 flex items-center justify-center p-2 rounded-full hover:bg-surface-container active:scale-95">
+<span class="material-symbols-outlined text-[20px]">notifications</span>
+</button>
+<button class="text-on-surface-variant hover:text-primary transition-colors duration-200 flex items-center justify-center p-2 rounded-full hover:bg-surface-container active:scale-95">
+<span class="material-symbols-outlined text-[20px]">help_outline</span>
+</button>
+<div class="w-8 h-8 rounded-full bg-surface-variant border border-outline-variant overflow-hidden shrink-0 ml-2">
+<img alt="User Avatar" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBSNXpeYnaTxDJqvla_laroMQMt1mCNHo9OWQm53d2x1ScmqEXl1NITTlgtXT70sVkTO_-dH4uNmoR2HReclXemVyDZt4qEMC-y-jSq4wCV7Bh-8BQH-OJ8XJj7TErnSZsMgEr60xPFTXQApCjMv0S7h8Swtp50qyo_VNL64cdIuU2-yoQvFIRswtyXB_7EqsjYk0V3TUabGYBXtN7nGA2Le6j1DjnoLyCVPjsbdAeVtqTAmVXIiXYKbrGFX9M3qH-qAw5JiHPpMCt-"/>
+</div>
+</div>
+</header>
+<!-- Page Canvas -->
+<main class="flex-1 overflow-y-auto mt-16 p-6">
+<div class="max-w-6xl mx-auto space-y-6">
+<!-- Page Header -->
+<div>
+<h2 class="text-2xl font-bold text-on-surface tracking-tight">内置流程</h2>
+<p class="text-on-surface-variant mt-1 text-sm">查看系统内置流程定义与说明</p>
+</div>
+<!-- Info Banner -->
+<div class="bg-inverse-on-surface border border-outline-variant rounded-lg p-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
+<div class="flex items-start gap-3">
+<span class="material-symbols-outlined text-primary mt-0.5">info</span>
+<div>
+<p class="text-sm text-on-surface font-medium leading-relaxed">此页面仅展示内置模拟流程，不用于真实外部执行。真实执行记录、状态追踪、取消与重试请前往流程中心。</p>
+</div>
+</div>
+<div class="flex items-center gap-4 shrink-0">
+<a class="text-sm font-medium text-primary hover:underline hover:text-primary-fixed-dim transition-colors" href="#">了解两类页面的区别</a>
+<button class="h-[32px] px-4 rounded-lg bg-primary text-on-primary text-sm font-medium hover:bg-primary-container hover:text-on-primary-container transition-colors shadow-sm">
+                            前往流程中心
+                        </button>
+</div>
+</div>
+<!-- Toolbar -->
+<div class="flex items-center justify-between gap-4 mb-4">
+<div class="relative w-full max-w-sm">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline text-[18px]">search</span>
+<input class="w-full h-[32px] pl-9 pr-3 rounded-lg border border-outline-variant bg-surface text-sm text-on-surface placeholder-outline focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-shadow" disabled="" placeholder="搜索流程名称" readonly="" type="text"/>
+</div>
+</div>
+<!-- Data Table -->
+<div class="bg-surface border border-outline-variant rounded-lg overflow-hidden shadow-sm">
+<table class="w-full text-left border-collapse text-sm">
+<thead>
+<tr class="bg-surface-container-low border-b border-outline-variant">
+<th class="py-3 px-4 font-medium text-on-surface-variant w-[25%]">流程名称</th>
+<th class="py-3 px-4 font-medium text-on-surface-variant w-[15%]">适用环节</th>
+<th class="py-3 px-4 font-medium text-on-surface-variant w-[20%]">输入摘要</th>
+<th class="py-3 px-4 font-medium text-on-surface-variant w-[20%]">输出摘要</th>
+<th class="py-3 px-4 font-medium text-on-surface-variant w-[10%]">状态</th>
+<th class="py-3 px-4 font-medium text-on-surface-variant text-right w-[10%]">操作</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-outline-variant">
+<!-- Row 1 -->
+<tr class="hover:bg-surface-container-lowest transition-colors group">
+<td class="py-3 px-4 font-medium text-on-surface flex items-center gap-2">
+<span class="material-symbols-outlined text-outline text-[16px]">account_tree</span>
+                                    章节规划模拟流程
+                                </td>
+<td class="py-3 px-4 text-on-surface-variant">章节规划</td>
+<td class="py-3 px-4 text-on-surface-variant truncate max-w-[150px]">模拟输入</td>
+<td class="py-3 px-4 text-on-surface-variant truncate max-w-[150px]">模拟输出</td>
+<td class="py-3 px-4">
+<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-surface-variant text-on-surface-variant border border-outline-variant/50">
+                                        内置只读
+                                    </span>
+</td>
+<td class="py-3 px-4 text-right">
+<button class="text-primary hover:text-primary-fixed-dim font-medium text-sm transition-colors">查看说明</button>
+</td>
+</tr>
+<!-- Row 2 -->
+<tr class="hover:bg-surface-container-lowest transition-colors group">
+<td class="py-3 px-4 font-medium text-on-surface flex items-center gap-2">
+<span class="material-symbols-outlined text-outline text-[16px]">account_tree</span>
+                                    正文生成模拟流程
+                                </td>
+<td class="py-3 px-4 text-on-surface-variant">正文生成</td>
+<td class="py-3 px-4 text-on-surface-variant truncate max-w-[150px]">模拟输入</td>
+<td class="py-3 px-4 text-on-surface-variant truncate max-w-[150px]">模拟输出</td>
+<td class="py-3 px-4">
+<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-surface-variant text-on-surface-variant border border-outline-variant/50">
+                                        内置只读
+                                    </span>
+</td>
+<td class="py-3 px-4 text-right">
+<button class="text-primary hover:text-primary-fixed-dim font-medium text-sm transition-colors">查看说明</button>
+</td>
+</tr>
+<!-- Row 3 -->
+<tr class="hover:bg-surface-container-lowest transition-colors group">
+<td class="py-3 px-4 font-medium text-on-surface flex items-center gap-2">
+<span class="material-symbols-outlined text-outline text-[16px]">account_tree</span>
+                                    内容审核模拟流程
+                                </td>
+<td class="py-3 px-4 text-on-surface-variant">内容审核</td>
+<td class="py-3 px-4 text-on-surface-variant truncate max-w-[150px]">模拟输入</td>
+<td class="py-3 px-4 text-on-surface-variant truncate max-w-[150px]">模拟输出</td>
+<td class="py-3 px-4">
+<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-surface-variant text-on-surface-variant border border-outline-variant/50">
+                                        内置只读
+                                    </span>
+</td>
+<td class="py-3 px-4 text-right">
+<button class="text-primary hover:text-primary-fixed-dim font-medium text-sm transition-colors">查看说明</button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Footer Note -->
+<div class="pt-8 pb-4 text-center">
+<p class="text-xs text-outline font-medium">
+                        本轮保留该路由与导航入口；信息架构清理由后续独立迭代处理。
+                    </p>
+</div>
+</div>
+</main>
+</div>
+</body></html>

@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+
+<html lang="zh-CN"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>ACF Enterprise - 全局设置</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "outline": "#777587",
+                    "on-tertiary-fixed": "#2a1700",
+                    "tertiary-fixed": "#ffddb8",
+                    "background": "#f8f9fd",
+                    "surface-container-lowest": "#ffffff",
+                    "on-error-container": "#93000a",
+                    "error-container": "#ffdad6",
+                    "on-secondary-fixed": "#002111",
+                    "tertiary-fixed-dim": "#ffb95f",
+                    "surface-container": "#edeef2",
+                    "on-tertiary-fixed-variant": "#653e00",
+                    "on-secondary-fixed-variant": "#005232",
+                    "surface-container-low": "#f2f3f7",
+                    "on-tertiary-container": "#ffd4a4",
+                    "on-surface": "#191c1f",
+                    "on-tertiary": "#ffffff",
+                    "on-primary": "#ffffff",
+                    "surface-tint": "#4f43e3",
+                    "surface-dim": "#d9dade",
+                    "on-primary-fixed-variant": "#3522cb",
+                    "secondary-fixed": "#80fab9",
+                    "surface-variant": "#e1e2e6",
+                    "secondary-container": "#7df7b6",
+                    "secondary": "#006d44",
+                    "on-error": "#ffffff",
+                    "inverse-primary": "#c3c0ff",
+                    "surface": "#f8f9fd",
+                    "on-primary-fixed": "#100069",
+                    "surface-container-highest": "#e1e2e6",
+                    "primary-fixed": "#e3dfff",
+                    "on-background": "#191c1f",
+                    "primary-container": "#5146e5",
+                    "inverse-on-surface": "#eff1f5",
+                    "tertiary": "#684000",
+                    "surface-container-high": "#e7e8ec",
+                    "on-secondary": "#ffffff",
+                    "tertiary-container": "#885500",
+                    "primary-fixed-dim": "#c3c0ff",
+                    "error": "#ba1a1a",
+                    "on-secondary-container": "#007147",
+                    "on-primary-container": "#dbd8ff",
+                    "secondary-fixed-dim": "#62dd9e",
+                    "on-surface-variant": "#464555",
+                    "inverse-surface": "#2e3134",
+                    "surface-bright": "#f8f9fd",
+                    "primary": "#3725cd",
+                    "outline-variant": "#c7c4d8"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.125rem",
+                    "lg": "0.25rem",
+                    "xl": "0.5rem",
+                    "full": "0.75rem"
+            },
+            "fontFamily": {
+                    "headline": ["Inter", "sans-serif"],
+                    "display": ["Inter", "sans-serif"],
+                    "body": ["Inter", "sans-serif"],
+                    "label": ["Inter", "sans-serif"]
+            }
+          }
+        }
+      }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-surface text-on-surface flex overflow-hidden">
+<!-- Screen Background Overlay -->
+<div class="fixed inset-0 z-0">
+<iframe class="w-full h-full border-none pointer-events-none opacity-40" src="{{DATA:SCREEN:SCREEN_2}}"></iframe>
+<div class="absolute inset-0 bg-surface/60 backdrop-blur-sm pointer-events-none"></div>
+</div>
+<!-- SideNavBar -->
+<nav class="fixed left-0 top-0 h-full w-[240px] bg-surface-container-lowest border-r border-outline-variant flex flex-col p-4 z-10 shadow-sm">
+<div class="flex items-center gap-3 mb-8 px-2">
+<div class="w-8 h-8 rounded bg-primary-container flex items-center justify-center text-on-primary-container font-headline font-bold">A</div>
+<div>
+<div class="text-xl font-headline font-bold text-on-surface">ACF</div>
+<div class="text-xs text-on-surface-variant font-medium">Enterprise</div>
+</div>
+</div>
+<div class="flex flex-col gap-1 font-body text-label-large">
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-on-surface-variant hover:bg-surface-container transition-colors opacity-80 duration-150" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">home</span>
+                首页
+            </a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-on-surface-variant hover:bg-surface-container transition-colors opacity-80 duration-150" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">folder_open</span>
+                项目
+            </a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-on-surface-variant hover:bg-surface-container transition-colors opacity-80 duration-150" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">folder_managed</span>
+                素材
+            </a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-on-surface-variant hover:bg-surface-container transition-colors opacity-80 duration-150" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">art_track</span>
+                作品
+            </a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-on-surface-variant hover:bg-surface-container transition-colors opacity-80 duration-150" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">account_tree</span>
+                流程
+            </a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-primary font-bold bg-primary-container/10 opacity-80 duration-150" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">settings</span>
+                设置
+            </a>
+</div>
+</nav>
+<!-- TopNavBar -->
+<header class="fixed top-0 right-0 h-[64px] left-[240px] bg-surface-container-lowest border-b border-outline-variant flex justify-between items-center px-6 z-10 shadow-sm">
+<div class="flex-1 max-w-md">
+<div class="relative">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-sm">search</span>
+<input class="w-full h-8 pl-9 pr-4 rounded-full bg-surface border-none text-sm focus:ring-2 focus:ring-primary transition-all" placeholder="Search..." type="text"/>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<button class="text-on-surface-variant hover:bg-surface-container rounded-full p-2 transition-colors">
+<span class="material-symbols-outlined text-[20px]">help</span>
+</button>
+<button class="text-on-surface-variant hover:bg-surface-container rounded-full p-2 transition-colors">
+<span class="material-symbols-outlined text-[20px]">notifications</span>
+</button>
+<div class="w-8 h-8 rounded-full bg-primary-container/20 flex items-center justify-center ml-2 border border-outline-variant cursor-pointer">
+<span class="material-symbols-outlined text-primary text-sm">person</span>
+</div>
+</div>
+</header>
+<!-- Main Content Canvas (Behind Drawer) -->
+<main class="ml-[240px] mt-[64px] p-6 w-full h-[calc(100vh-64px)] overflow-auto relative z-0">
+<!-- Content simulated by iframe background -->
+</main>
+<!-- Drawer Overlay -->
+<div class="fixed inset-0 bg-on-surface/20 z-40 transition-opacity"></div>
+<!-- Drawer -->
+<aside class="fixed right-0 top-0 h-full w-[620px] bg-surface-container-lowest shadow-2xl flex flex-col z-50 transform transition-transform duration-300 border-l border-outline-variant">
+<!-- Header -->
+<div class="px-6 py-5 border-b border-outline-variant flex justify-between items-start flex-shrink-0 bg-surface-container-lowest">
+<div>
+<h2 class="text-lg font-headline font-bold text-on-surface">编辑工作流</h2>
+<p class="text-xs text-on-surface-variant mt-1">LLM 策略固定在 Workflow Configuration 层，项目不可覆盖</p>
+</div>
+<button class="text-on-surface-variant hover:bg-surface-container rounded-full p-1.5 transition-colors mt-0.5">
+<span class="material-symbols-outlined text-lg">close</span>
+</button>
+</div>
+<!-- Body -->
+<div class="flex-1 overflow-y-auto p-6 space-y-8 bg-background">
+<!-- Section 1: 基本信息 -->
+<section class="space-y-4">
+<h3 class="text-sm font-semibold text-on-surface border-b border-outline-variant pb-2">基本信息</h3>
+<div class="grid grid-cols-2 gap-4">
+<div class="space-y-1.5 col-span-2">
+<label class="text-xs font-medium text-on-surface-variant">工作流名称</label>
+<input class="w-full h-8 px-3 rounded-md border border-outline-variant bg-surface-container-lowest text-sm focus:ring-1 focus:ring-primary focus:border-primary outline-none" type="text" value="Enterprise 章节规划 v7"/>
+</div>
+<div class="space-y-1.5">
+<label class="text-xs font-medium text-on-surface-variant">关联连接</label>
+<div class="relative">
+<select class="w-full h-8 pl-3 pr-8 rounded-md border border-outline-variant bg-surface-container-lowest text-sm appearance-none outline-none focus:ring-1 focus:ring-primary focus:border-primary">
+<option>Production n8n Cluster A</option>
+</select>
+<div class="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1 pointer-events-none">
+<span class="w-2 h-2 rounded-full bg-[#16A36A]"></span>
+<span class="material-symbols-outlined text-[16px] text-on-surface-variant">arrow_drop_down</span>
+</div>
+</div>
+</div>
+<div class="space-y-1.5">
+<label class="text-xs font-medium text-on-surface-variant">工作流类型</label>
+<div class="h-8 px-3 rounded-md border border-outline-variant bg-surface-container flex items-center">
+<span class="text-sm text-on-surface-variant">n8n</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Section 2: 业务契约 -->
+<section class="space-y-4">
+<h3 class="text-sm font-semibold text-on-surface border-b border-outline-variant pb-2">业务契约</h3>
+<div class="space-y-1.5">
+<label class="text-xs font-medium text-on-surface-variant">适用环节</label>
+<div class="flex gap-4 mt-1">
+<label class="flex items-center gap-2 cursor-pointer">
+<input checked="" class="text-primary focus:ring-primary w-3.5 h-3.5 border-outline-variant" name="stage" type="radio"/>
+<span class="text-sm text-on-surface">章节规划</span>
+</label>
+<label class="flex items-center gap-2 cursor-pointer">
+<input class="text-primary focus:ring-primary w-3.5 h-3.5 border-outline-variant" name="stage" type="radio"/>
+<span class="text-sm text-on-surface">正文生成</span>
+</label>
+<label class="flex items-center gap-2 cursor-pointer">
+<input class="text-primary focus:ring-primary w-3.5 h-3.5 border-outline-variant" name="stage" type="radio"/>
+<span class="text-sm text-on-surface">内容审核</span>
+</label>
+<label class="flex items-center gap-2 cursor-pointer">
+<input class="text-primary focus:ring-primary w-3.5 h-3.5 border-outline-variant" name="stage" type="radio"/>
+<span class="text-sm text-on-surface">正文重写</span>
+</label>
+</div>
+</div>
+<div class="grid grid-cols-2 gap-4">
+<div class="space-y-1.5">
+<label class="text-xs font-medium text-on-surface-variant">引用类型</label>
+<div class="relative">
+<select class="w-full h-8 pl-3 pr-8 rounded-md border border-outline-variant bg-surface-container-lowest text-sm appearance-none outline-none focus:ring-1 focus:ring-primary">
+<option>Workflow ID</option>
+<option>Webhook Path</option>
+</select>
+<span class="material-symbols-outlined absolute right-2 top-1/2 -translate-y-1/2 text-[16px] text-on-surface-variant pointer-events-none">arrow_drop_down</span>
+</div>
+</div>
+<div class="space-y-1.5">
+<label class="text-xs font-medium text-on-surface-variant">引用值</label>
+<input class="w-full h-8 px-3 rounded-md border border-outline-variant bg-surface-container-lowest text-sm focus:ring-1 focus:ring-primary outline-none" type="text" value="wf_prod_982xyz"/>
+</div>
+<div class="space-y-1.5">
+<label class="text-xs font-medium text-on-surface-variant">输入契约版本</label>
+<div class="relative">
+<select class="w-full h-8 pl-3 pr-8 rounded-md border border-outline-variant bg-surface-container-lowest text-sm appearance-none outline-none focus:ring-1 focus:ring-primary">
+<option>v3 - Article Context</option>
+</select>
+<span class="material-symbols-outlined absolute right-2 top-1/2 -translate-y-1/2 text-[16px] text-on-surface-variant pointer-events-none">arrow_drop_down</span>
+</div>
+</div>
+<div class="space-y-1.5">
+<label class="text-xs font-medium text-on-surface-variant">输出契约版本</label>
+<div class="relative">
+<select class="w-full h-8 pl-3 pr-8 rounded-md border border-outline-variant bg-surface-container-lowest text-sm appearance-none outline-none focus:ring-1 focus:ring-primary focus:border-error border-error text-error">
+<option>v2 - Outline Array</option>
+</select>
+<span class="material-symbols-outlined absolute right-2 top-1/2 -translate-y-1/2 text-[16px] text-on-surface-variant pointer-events-none">arrow_drop_down</span>
+</div>
+</div>
+</div>
+<div class="space-y-1.5 pt-2">
+<label class="text-xs font-medium text-on-surface-variant flex items-center justify-between">
+                        默认参数
+                        <button class="text-primary hover:underline text-[10px]">编辑 JSON</button>
+</label>
+<div class="bg-surface-container-low rounded-md border border-outline-variant p-3 text-xs text-on-surface space-y-2 font-mono">
+<div class="flex items-start">
+<span class="text-on-surface-variant w-24 flex-shrink-0">theme_style:</span>
+<span class="text-[#006d44]">"professional"</span>
+</div>
+<div class="flex items-start">
+<span class="text-on-surface-variant w-24 flex-shrink-0">max_sections:</span>
+<span class="text-[#3725cd]">5</span>
+</div>
+<div class="flex items-start">
+<span class="text-on-surface-variant w-24 flex-shrink-0">include_summary:</span>
+<span class="text-[#3725cd]">true</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Section 3: LLM 使用策略 -->
+<section class="space-y-4">
+<h3 class="text-sm font-semibold text-on-surface border-b border-outline-variant pb-2 flex items-center justify-between">
+                    LLM 使用策略
+                    <span class="text-[10px] text-on-surface-variant font-normal bg-surface-container px-2 py-0.5 rounded">项目绑定后不可覆盖 Provider、模型或策略</span>
+</h3>
+<div class="flex gap-4">
+<label class="flex items-center gap-2 cursor-pointer bg-primary-container/5 px-3 py-2 rounded border border-primary/20">
+<input checked="" class="text-primary focus:ring-primary w-3.5 h-3.5 border-outline-variant" name="llm_strategy" type="radio"/>
+<span class="text-sm text-on-surface font-medium">ACF 托管模型</span>
+</label>
+<label class="flex items-center gap-2 cursor-pointer bg-surface-container-lowest px-3 py-2 rounded border border-outline-variant">
+<input class="text-primary focus:ring-primary w-3.5 h-3.5 border-outline-variant" name="llm_strategy" type="radio"/>
+<span class="text-sm text-on-surface">n8n 内部模型</span>
+</label>
+<label class="flex items-center gap-2 cursor-pointer bg-surface-container-lowest px-3 py-2 rounded border border-outline-variant">
+<input class="text-primary focus:ring-primary w-3.5 h-3.5 border-outline-variant" name="llm_strategy" type="radio"/>
+<span class="text-sm text-on-surface">不使用模型</span>
+</label>
+</div>
+<div class="bg-surface-container-lowest rounded-lg border border-outline-variant p-4 grid grid-cols-2 gap-4">
+<div class="space-y-1.5">
+<label class="text-[11px] font-medium text-on-surface-variant">Provider</label>
+<div class="relative">
+<select class="w-full h-8 pl-3 pr-8 rounded-md border border-outline-variant bg-background text-sm appearance-none outline-none focus:ring-1 focus:ring-primary">
+<option>OpenAI 主模型</option>
+</select>
+<span class="material-symbols-outlined absolute right-2 top-1/2 -translate-y-1/2 text-[16px] text-on-surface-variant pointer-events-none">arrow_drop_down</span>
+</div>
+</div>
+<div class="space-y-1.5">
+<label class="text-[11px] font-medium text-on-surface-variant">Model</label>
+<div class="relative">
+<select class="w-full h-8 pl-3 pr-8 rounded-md border border-outline-variant bg-background text-sm appearance-none outline-none focus:ring-1 focus:ring-primary">
+<option>gpt-5.2</option>
+</select>
+<span class="material-symbols-outlined absolute right-2 top-1/2 -translate-y-1/2 text-[16px] text-on-surface-variant pointer-events-none">arrow_drop_down</span>
+</div>
+</div>
+<div class="space-y-1.5">
+<label class="text-[11px] font-medium text-on-surface-variant">温度 (Temperature): 0.7</label>
+<input class="w-full accent-primary" max="1" min="0" step="0.1" type="range" value="0.7"/>
+</div>
+<div class="space-y-1.5">
+<label class="text-[11px] font-medium text-on-surface-variant">最大输出 (Max Tokens): 2000</label>
+<input class="w-full accent-primary" max="4000" min="100" step="100" type="range" value="2000"/>
+</div>
+</div>
+</section>
+<!-- Section 4 & 5: Verification & Status Bento Grid -->
+<div class="grid grid-cols-5 gap-4">
+<!-- 状态与资格 -->
+<section class="col-span-2 bg-surface-container-lowest rounded-xl border border-outline-variant p-4 flex flex-col justify-between">
+<div class="space-y-4">
+<h3 class="text-sm font-semibold text-on-surface border-b border-outline-variant pb-2">状态与资格</h3>
+<div class="flex items-center justify-between">
+<span class="text-xs text-on-surface-variant">启用状态</span>
+<div class="flex items-center gap-2">
+<span class="text-[10px] text-on-surface-variant">已保留</span>
+<div class="w-8 h-4 bg-primary rounded-full relative cursor-pointer">
+<div class="absolute right-0.5 top-0.5 w-3 h-3 bg-white rounded-full"></div>
+</div>
+</div>
+</div>
+<div class="flex items-center justify-between">
+<span class="text-xs text-on-surface-variant">配置状态</span>
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-medium bg-[#D98C10]/10 text-[#D98C10]">
+<span class="material-symbols-outlined text-[12px]">warning</span>
+                                配置已变更
+                            </span>
+</div>
+<div class="flex items-center justify-between">
+<span class="text-xs text-on-surface-variant">执行资格</span>
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-medium bg-error/10 text-error">
+<span class="material-symbols-outlined text-[12px]">cancel</span>
+                                不可执行
+                            </span>
+</div>
+<div class="flex items-center justify-between">
+<span class="text-xs text-on-surface-variant">当前版本</span>
+<span class="text-xs font-mono font-medium text-on-surface">v7 <span class="text-outline-variant">→</span> <span class="text-primary">v8 (未验证)</span></span>
+</div>
+</div>
+<div class="mt-4 text-[10px] text-on-surface-variant bg-surface-container p-2 rounded leading-relaxed">
+                        编辑关键字段将创建新版本，使验证失效。启用状态和项目绑定已保留，但在重新验证通过前，此配置将阻止新的运行。
+                    </div>
+</section>
+<!-- 验证清单 -->
+<section class="col-span-3 bg-surface-container-lowest rounded-xl border border-outline-variant p-4 flex flex-col">
+<div class="flex items-center justify-between border-b border-outline-variant pb-2 mb-3">
+<h3 class="text-sm font-semibold text-on-surface">验证清单</h3>
+<button class="h-6 px-3 bg-primary text-white text-[11px] rounded hover:bg-primary/90 transition-colors">验证工作流</button>
+</div>
+<div class="space-y-2 flex-1">
+<div class="flex items-center gap-2 text-xs">
+<span class="material-symbols-outlined text-[16px] text-[#16A36A]">check_circle</span>
+<span class="text-on-surface">连接连通性</span>
+</div>
+<div class="flex items-center gap-2 text-xs">
+<span class="material-symbols-outlined text-[16px] text-[#16A36A]">check_circle</span>
+<span class="text-on-surface">工作流引用有效</span>
+</div>
+<div class="flex items-center gap-2 text-xs">
+<span class="material-symbols-outlined text-[16px] text-[#16A36A]">check_circle</span>
+<span class="text-on-surface">Stage 环节匹配</span>
+</div>
+<div class="flex items-center gap-2 text-xs">
+<span class="material-symbols-outlined text-[16px] text-[#16A36A]">check_circle</span>
+<span class="text-on-surface">输入契约兼容</span>
+</div>
+<div class="flex items-center gap-2 text-xs bg-error-container/30 p-1.5 rounded -mx-1.5">
+<span class="material-symbols-outlined text-[16px] text-error">error</span>
+<span class="text-on-surface font-medium">输出契约 v2 与章节规划环节不兼容</span>
+</div>
+<div class="flex items-center gap-2 text-xs text-on-surface-variant">
+<span class="material-symbols-outlined text-[16px]">pending</span>
+<span>LLM 策略检查 (待验证)</span>
+</div>
+</div>
+</section>
+</div>
+<!-- Section 6: 影响 -->
+<div class="bg-surface-container-low rounded-lg p-3 flex items-center gap-3 border border-outline-variant">
+<div class="w-8 h-8 rounded-full bg-primary-container/20 flex items-center justify-center flex-shrink-0 text-primary">
+<span class="material-symbols-outlined text-[18px]">info</span>
+</div>
+<div>
+<h4 class="text-xs font-semibold text-on-surface">影响 2 个项目绑定</h4>
+<p class="text-[11px] text-on-surface-variant mt-0.5">历史运行不受影响。重新验证并保存后，这两个项目的新运行将自动应用 v8 配置。</p>
+</div>
+</div>
+<!-- Spacer for fixed footer -->
+<div class="h-12"></div>
+</div>
+<!-- Footer -->
+<div class="px-6 py-4 border-t border-outline-variant bg-surface-container-lowest flex justify-end gap-3 flex-shrink-0 mt-auto shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
+<button class="h-8 px-4 text-sm text-on-surface-variant hover:bg-surface-container rounded transition-colors">取消</button>
+<button class="h-8 px-4 text-sm text-on-surface border border-outline-variant hover:bg-surface-container-low rounded transition-colors">保存草稿</button>
+<button class="h-8 px-5 text-sm text-white bg-primary hover:bg-primary/90 rounded font-medium transition-colors shadow-sm opacity-50 cursor-not-allowed">保存并验证</button>
+</div>
+</aside>
+</body></html>

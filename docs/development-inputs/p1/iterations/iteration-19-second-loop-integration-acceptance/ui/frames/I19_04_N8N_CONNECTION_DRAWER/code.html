@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+
+<html lang="zh-CN"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>04｜全局设置—添加/编辑 n8n 连接抽屉（最终）</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "secondary-fixed": "#80fab9",
+                      "secondary-container": "#7df7b6",
+                      "surface-variant": "#e1e2e6",
+                      "surface-container-low": "#f2f3f7",
+                      "on-tertiary-container": "#ffd4a4",
+                      "surface-bright": "#f8f9fd",
+                      "surface-container-highest": "#e1e2e6",
+                      "primary": "#3725cd",
+                      "inverse-on-surface": "#eff1f5",
+                      "surface-container-lowest": "#ffffff",
+                      "on-primary-fixed-variant": "#3522cb",
+                      "surface-container": "#edeef2",
+                      "on-secondary-fixed-variant": "#005232",
+                      "error-container": "#ffdad6",
+                      "surface-tint": "#4f43e3",
+                      "error": "#ba1a1a",
+                      "tertiary-container": "#885500",
+                      "surface": "#f8f9fd",
+                      "on-surface-variant": "#464555",
+                      "secondary-fixed-dim": "#62dd9e",
+                      "on-primary-container": "#dbd8ff",
+                      "on-tertiary-fixed": "#2a1700",
+                      "on-primary": "#ffffff",
+                      "secondary": "#006d44",
+                      "on-error": "#ffffff",
+                      "outline-variant": "#c7c4d8",
+                      "on-surface": "#191c1f",
+                      "inverse-surface": "#2e3134",
+                      "on-error-container": "#93000a",
+                      "on-background": "#191c1f",
+                      "on-tertiary-fixed-variant": "#653e00",
+                      "on-primary-fixed": "#100069",
+                      "primary-fixed": "#e3dfff",
+                      "tertiary-fixed-dim": "#ffb95f",
+                      "tertiary": "#684000",
+                      "primary-fixed-dim": "#c3c0ff",
+                      "on-secondary-fixed": "#002111",
+                      "on-tertiary": "#ffffff",
+                      "background": "#f8f9fd",
+                      "outline": "#777587",
+                      "primary-container": "#5146e5",
+                      "surface-container-high": "#e7e8ec",
+                      "surface-dim": "#d9dade",
+                      "on-secondary": "#ffffff",
+                      "tertiary-fixed": "#ffddb8",
+                      "on-secondary-container": "#007147",
+                      "inverse-primary": "#c3c0ff"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.125rem",
+                      "lg": "0.25rem",
+                      "xl": "0.5rem",
+                      "full": "0.75rem"
+              },
+              "spacing": {},
+              "fontFamily": {
+                      "headline": [
+                              "Inter"
+                      ],
+                      "display": [
+                              "Inter"
+                      ],
+                      "body": [
+                              "Inter"
+                      ],
+                      "label": [
+                              "Inter"
+                      ]
+              },
+              "fontSize": {}
+      },
+          },
+        }
+      </script>
+<style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #F6F7FB; /* Canvas */
+            color: #1A1C21;
+        }
+        .material-symbols-outlined {
+          font-variation-settings:
+          'FILL' 0,
+          'wght' 400,
+          'GRAD' 0,
+          'opsz' 20
+        }
+        .material-symbols-outlined.filled {
+          font-variation-settings: 'FILL' 1;
+        }
+
+        /* Form inputs styling */
+        .form-input {
+            border: 1px solid #E7E9F0;
+            border-radius: 6px;
+            height: 32px;
+            padding: 0 12px;
+            font-size: 14px;
+            color: #1A1C21;
+            width: 100%;
+            background-color: #FFFFFF;
+            transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+        }
+        .form-input:focus {
+            outline: none;
+            border-color: #5146E5;
+            box-shadow: 0 0 0 2px rgba(81, 70, 229, 0.1);
+        }
+        .form-input:disabled, .form-input.read-only {
+            background-color: #f2f3f7;
+            color: #6B7280;
+            cursor: not-allowed;
+        }
+
+        /* Select styling */
+        .form-select {
+            border: 1px solid #E7E9F0;
+            border-radius: 6px;
+            height: 32px;
+            padding: 0 32px 0 12px;
+            font-size: 14px;
+            color: #1A1C21;
+            width: 100%;
+            background-color: #FFFFFF;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236B7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+            background-position: right 8px center;
+            background-repeat: no-repeat;
+            background-size: 1.5em 1.5em;
+        }
+        .form-select:focus {
+             outline: none;
+             border-color: #5146E5;
+             box-shadow: 0 0 0 2px rgba(81, 70, 229, 0.1);
+        }
+        .form-select:disabled {
+             background-color: #f2f3f7;
+             color: #6B7280;
+             cursor: not-allowed;
+        }
+
+        /* Buttons */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            height: 32px;
+            padding: 0 16px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.15s ease-in-out;
+        }
+        .btn-primary {
+            background-color: #5146E5;
+            color: #FFFFFF;
+            border: 1px solid transparent;
+        }
+        .btn-primary:hover {
+            background-color: #4338ca;
+        }
+        .btn-secondary {
+            background-color: #FFFFFF;
+            color: #1A1C21;
+            border: 1px solid #E7E9F0;
+        }
+        .btn-secondary:hover {
+            background-color: #f9fafb;
+            border-color: #d1d5db;
+        }
+        .btn-danger-outline {
+             background-color: transparent;
+             color: #D14343;
+             border: 1px solid #D14343;
+        }
+        .btn-danger-outline:hover {
+             background-color: #fef2f2;
+        }
+
+        /* Toggle */
+        .toggle-checkbox:checked {
+            right: 0;
+            border-color: #5146E5;
+        }
+        .toggle-checkbox:checked + .toggle-label {
+            background-color: #5146E5;
+        }
+
+        /* Drawer Animation */
+        @keyframes slideIn {
+            from { transform: translateX(100%); }
+            to { transform: translateX(0); }
+        }
+        .drawer-slide-in {
+            animation: slideIn 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+        }
+
+        /* Custom scrollbar for drawer body */
+        .drawer-body::-webkit-scrollbar {
+            width: 6px;
+        }
+        .drawer-body::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .drawer-body::-webkit-scrollbar-thumb {
+            background-color: #d1d5db;
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body class="antialiased h-screen overflow-hidden text-sm">
+<!-- App Shell: SideNavBar -->
+<nav class="fixed left-0 top-0 h-full w-[240px] bg-surface-container-lowest border-r border-outline-variant flex flex-col p-4 z-10">
+<!-- Brand -->
+<div class="flex items-center gap-3 mb-8 px-2">
+<img class="w-8 h-8 rounded-md object-cover" data-alt="A minimalist tech logo consisting of geometric intersecting shapes in deep indigo and bright white, communicating enterprise software and AI factory concepts. The aesthetic is clean, sharp, and highly modern." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAmhR3tjVYRXN1d9SuAVPrWZ64X1JJUCSvnfdxoZdgZrNXJfG0AXEgm-8s-crCjfOlCj3D0U2AXFxYrKy5agymIoGJcjTtq9MVzrBQ799jzQYsaDf2YLEkhe2qmaElKOsfykEecrtSn3vJ0r1HNv8jKJt122np1JNodFmHkbgXR8bYxAprKk-s750XF2WEOrry5pTLCdwT3el9OkjJwcXAGClY1gRB0C-HO3Cg1dAWwBo5vtz3F39mQyHi2rI1OqFVKRyNh73d0GgZN"/>
+<div>
+<h1 class="text-xl font-headline font-bold text-on-surface tracking-tight">ACF</h1>
+<p class="text-xs text-on-surface-variant">Enterprise</p>
+</div>
+</div>
+<!-- Navigation Links -->
+<div class="flex flex-col gap-1 flex-1 font-body text-label-large">
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-on-surface-variant hover:bg-surface-container transition-colors" href="#">
+<span class="material-symbols-outlined text-[20px]">home</span>
+<span>首页</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-on-surface-variant hover:bg-surface-container transition-colors" href="#">
+<span class="material-symbols-outlined text-[20px]">folder_open</span>
+<span>项目</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-on-surface-variant hover:bg-surface-container transition-colors" href="#">
+<span class="material-symbols-outlined text-[20px]">folder_managed</span>
+<span>素材</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-on-surface-variant hover:bg-surface-container transition-colors" href="#">
+<span class="material-symbols-outlined text-[20px]">art_track</span>
+<span>作品</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-on-surface-variant hover:bg-surface-container transition-colors" href="#">
+<span class="material-symbols-outlined text-[20px]">account_tree</span>
+<span>流程</span>
+</a>
+<!-- Active State: 设置 -->
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-primary font-bold bg-primary-container/10 transition-colors opacity-80 duration-150" href="#">
+<span class="material-symbols-outlined filled text-[20px]">settings</span>
+<span>设置</span>
+</a>
+</div>
+</nav>
+<!-- App Shell: TopNavBar -->
+<header class="fixed top-0 right-0 h-[64px] left-[240px] bg-surface-container-lowest border-b border-outline-variant flex justify-between items-center px-6 z-10">
+<!-- Left Side / Search (Hidden here but structure exists, substituting breadcrumb/title) -->
+<div class="flex items-center gap-2 font-body text-body-medium">
+<span class="text-on-surface-variant cursor-pointer hover:text-on-surface transition-colors">全局设置</span>
+<span class="text-on-surface-variant material-symbols-outlined text-[16px]">chevron_right</span>
+<span class="text-on-surface-variant cursor-pointer hover:text-on-surface transition-colors">连接管理</span>
+<span class="text-on-surface-variant material-symbols-outlined text-[16px]">chevron_right</span>
+<span class="font-semibold text-primary">n8n 生产环境</span>
+</div>
+<!-- Right Side Actions -->
+<div class="flex items-center gap-4">
+<button class="text-on-surface-variant hover:bg-surface-container rounded-full p-2 transition-colors focus:ring-2 focus:ring-primary">
+<span class="material-symbols-outlined text-[20px]">help</span>
+</button>
+<button class="text-on-surface-variant hover:bg-surface-container rounded-full p-2 transition-colors focus:ring-2 focus:ring-primary relative">
+<span class="material-symbols-outlined text-[20px]">notifications</span>
+<span class="absolute top-2 right-2 w-2 h-2 bg-error rounded-full"></span>
+</button>
+<div class="w-px h-6 bg-outline-variant mx-1"></div>
+<img alt="User Avatar" class="w-8 h-8 rounded-full border border-outline-variant cursor-pointer object-cover" data-alt="A professional headshot of a corporate user, neutral lighting, solid gray background, representing an enterprise software user avatar." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDXOVtmgpm9mYzruE5qo6nE9XGrdEx0CvRu-mDvdJnQbPj5wevnysnQgg9I9hOq1L9YLn0JhcCOTcBI7HqTJ8JFRA8YS5Bk6MDRuTC5x3efbA0V7kFtlIcbHv20BXhdCKwAcQuFitZZaq3sTn39zqxZDxOggtgoncq6u77rrK4hJ0i29ROtMOV42-zS1EDs4Zty7S71FW2mOZHwkCg19WwJIIibfWKCQEhNeQ06uAoauEt-HC048Ne4mXm88j-l4wK2zPsO6PzTulrR"/>
+</div>
+</header>
+<!-- Main Content Area (Background List - Dimmed) -->
+<main class="fixed top-[64px] left-[240px] right-0 bottom-0 bg-[#F6F7FB] p-6 z-0 overflow-hidden">
+<!-- Mock Content representing the list underneath -->
+<div class="flex justify-between items-center mb-6">
+<h2 class="text-lg font-semibold text-[#1A1C21]">连接配置</h2>
+<button class="btn btn-primary gap-2">
+<span class="material-symbols-outlined text-[18px]">add</span>
+                新建连接
+            </button>
+</div>
+<div class="bg-white rounded-lg border border-[#E7E9F0] shadow-sm">
+<!-- Table Header -->
+<div class="grid grid-cols-12 gap-4 p-4 border-b border-[#E7E9F0] text-xs font-medium text-[#6B7280] bg-[#f9fafb] rounded-t-lg">
+<div class="col-span-3">名称 / 类型</div>
+<div class="col-span-3">地址 / 认证</div>
+<div class="col-span-2">状态</div>
+<div class="col-span-2">关联</div>
+<div class="col-span-2 text-right">操作</div>
+</div>
+<!-- Table Row 1 (The one being edited) -->
+<div class="grid grid-cols-12 gap-4 p-4 border-b border-[#E7E9F0] items-center">
+<div class="col-span-3 flex items-center gap-3">
+<div class="w-8 h-8 rounded bg-orange-100 flex items-center justify-center text-orange-600 font-bold text-xs">n8n</div>
+<div>
+<div class="font-medium text-[#1A1C21]">生产 n8n</div>
+<div class="text-xs text-[#6B7280]">类型: n8n</div>
+</div>
+</div>
+<div class="col-span-3">
+<div class="text-[#1A1C21] truncate">n8n.example.com</div>
+<div class="text-xs text-[#6B7280]">API Key</div>
+</div>
+<div class="col-span-2">
+<div class="flex items-center gap-1.5 text-xs text-[#D98C10] font-medium bg-[#fef3c7] px-2 py-1 rounded w-fit">
+<span class="material-symbols-outlined text-[14px]">warning</span>
+                         配置已变更
+                     </div>
+</div>
+<div class="col-span-2 text-xs text-[#6B7280]">
+                     3 工作流, 2 项目
+                </div>
+<div class="col-span-2 flex justify-end gap-2">
+<button class="text-[#6B7280] hover:text-[#1A1C21]"><span class="material-symbols-outlined text-[18px]">edit</span></button>
+<button class="text-[#6B7280] hover:text-[#1A1C21]"><span class="material-symbols-outlined text-[18px]">more_vert</span></button>
+</div>
+</div>
+<!-- Table Row 2 -->
+<div class="grid grid-cols-12 gap-4 p-4 items-center">
+<div class="col-span-3 flex items-center gap-3">
+<div class="w-8 h-8 rounded bg-blue-100 flex items-center justify-center text-blue-600 font-bold text-xs">OAI</div>
+<div>
+<div class="font-medium text-[#1A1C21]">OpenAI 默认</div>
+<div class="text-xs text-[#6B7280]">类型: LLM Provider</div>
+</div>
+</div>
+<div class="col-span-3">
+<div class="text-[#1A1C21] truncate">api.openai.com</div>
+<div class="text-xs text-[#6B7280]">Bearer Token</div>
+</div>
+<div class="col-span-2">
+<div class="flex items-center gap-1.5 text-xs text-[#16A36A] font-medium">
+<span class="w-2 h-2 rounded-full bg-[#16A36A]"></span>
+                         已验证 · 启用
+                     </div>
+</div>
+<div class="col-span-2 text-xs text-[#6B7280]">
+                     全局可用
+                </div>
+<div class="col-span-2 flex justify-end gap-2">
+<button class="text-[#6B7280] hover:text-[#1A1C21]"><span class="material-symbols-outlined text-[18px]">edit</span></button>
+<button class="text-[#6B7280] hover:text-[#1A1C21]"><span class="material-symbols-outlined text-[18px]">more_vert</span></button>
+</div>
+</div>
+</div>
+</main>
+<!-- Overlay -->
+<div class="fixed inset-0 bg-black/40 z-40 backdrop-blur-[1px] transition-opacity"></div>
+<!-- Right Drawer -->
+<aside class="fixed top-0 right-0 h-full w-[560px] bg-white shadow-2xl z-50 flex flex-col drawer-slide-in">
+<!-- Drawer Header (Fixed) -->
+<div class="px-6 py-5 border-b border-[#E7E9F0] flex justify-between items-start bg-white">
+<div>
+<h2 class="text-lg font-semibold text-[#1A1C21] flex items-center gap-2">
+                    编辑连接
+                    <span class="text-xs font-normal text-[#6B7280] bg-[#f2f3f7] px-2 py-0.5 rounded border border-[#E7E9F0]">ID: conn_8a9f2</span>
+</h2>
+<p class="text-xs text-[#6B7280] mt-1.5 leading-relaxed pr-4">关键字段变化后保留启用状态和所有绑定，但执行资格立即失效。</p>
+</div>
+<button class="text-[#6B7280] hover:text-[#1A1C21] transition-colors p-1 rounded hover:bg-[#f2f3f7]">
+<span class="material-symbols-outlined text-[20px]">close</span>
+</button>
+</div>
+<!-- Drawer Body (Scrollable) -->
+<div class="flex-1 overflow-y-auto drawer-body p-6 space-y-8 bg-[#F6F7FB]/30">
+<!-- Section 1: 基本信息 -->
+<section class="space-y-4">
+<h3 class="text-[13px] font-semibold text-[#1A1C21] uppercase tracking-wider flex items-center gap-2">
+<span class="w-1 h-3 bg-[#5146E5] rounded-sm"></span>基本信息
+                </h3>
+<div class="grid grid-cols-2 gap-4">
+<!-- 连接名称 -->
+<div class="space-y-1.5">
+<label class="block text-xs font-medium text-[#464555]">连接名称 <span class="text-[#D14343]">*</span></label>
+<input class="form-input" type="text" value="生产 n8n"/>
+</div>
+<!-- 类型 (Read-only) -->
+<div class="space-y-1.5">
+<label class="block text-xs font-medium text-[#464555]">类型</label>
+<select class="form-select read-only" disabled="">
+<option selected="">n8n</option>
+</select>
+</div>
+</div>
+<div class="grid grid-cols-12 gap-4">
+<!-- Base URL -->
+<div class="col-span-8 space-y-1.5">
+<label class="block text-xs font-medium text-[#464555]">Base URL <span class="text-[#D14343]">*</span></label>
+<input class="form-input font-mono text-[13px]" type="text" value="n8n.example.com"/>
+</div>
+<!-- 请求超时 -->
+<div class="col-span-4 space-y-1.5">
+<label class="block text-xs font-medium text-[#464555]">请求超时 (秒)</label>
+<input class="form-input" type="number" value="60"/>
+</div>
+</div>
+</section>
+<hr class="border-[#E7E9F0]"/>
+<!-- Section 2: 凭据 -->
+<section class="space-y-4">
+<h3 class="text-[13px] font-semibold text-[#1A1C21] uppercase tracking-wider flex items-center gap-2">
+<span class="w-1 h-3 bg-[#5146E5] rounded-sm"></span>凭据
+                </h3>
+<div class="space-y-4 bg-white p-4 rounded-lg border border-[#E7E9F0]">
+<div class="space-y-1.5 max-w-[50%]">
+<label class="block text-xs font-medium text-[#464555]">认证方式</label>
+<select class="form-select">
+<option selected="">API Key</option>
+<option>OAuth2</option>
+<option>Basic Auth</option>
+</select>
+</div>
+<!-- Secure state display -->
+<div class="flex items-center justify-between p-3 bg-[#f8f9fd] border border-[#E7E9F0] rounded-md">
+<div class="flex items-center gap-2 text-[13px] text-[#464555]">
+<span class="material-symbols-outlined text-[16px] text-[#16A36A]">lock</span>
+                            API Key：<span class="font-medium text-[#16A36A]">已安全保存</span>
+</div>
+<button class="btn btn-secondary !h-[28px] !px-3 !text-xs">更新凭据</button>
+</div>
+</div>
+</section>
+<hr class="border-[#E7E9F0]"/>
+<!-- Section 3: 验证与执行资格 -->
+<section class="space-y-4">
+<div class="flex justify-between items-center">
+<h3 class="text-[13px] font-semibold text-[#1A1C21] uppercase tracking-wider flex items-center gap-2">
+<span class="w-1 h-3 bg-[#5146E5] rounded-sm"></span>验证与执行资格
+                    </h3>
+<span class="px-2 py-0.5 rounded text-[11px] font-medium bg-[#fef3c7] text-[#D98C10] border border-[#fde68a]">配置已变更</span>
+</div>
+<div class="bg-white rounded-lg border border-[#E7E9F0] overflow-hidden">
+<!-- Status Grid -->
+<div class="grid grid-cols-2 divide-x divide-[#E7E9F0] border-b border-[#E7E9F0]">
+<!-- 启用状态 (Preserved) -->
+<div class="p-4 flex flex-col justify-center">
+<div class="flex justify-between items-center mb-1">
+<span class="text-xs text-[#6B7280]">启用状态</span>
+<!-- Toggle -->
+<div class="relative inline-block w-8 mr-2 align-middle select-none transition duration-200 ease-in">
+<input checked="" class="toggle-checkbox absolute block w-4 h-4 rounded-full bg-white border-2 border-[#5146E5] appearance-none cursor-pointer transition-transform duration-200 ease-in-out translate-x-[16px]" id="toggle1" name="toggle" type="checkbox"/>
+<label class="toggle-label block overflow-hidden h-4 rounded-full bg-[#5146E5] cursor-pointer" for="toggle1"></label>
+</div>
+</div>
+<div class="text-[13px] font-medium text-[#1A1C21] flex items-center gap-1.5 mt-1">
+<span class="w-2 h-2 rounded-full bg-[#16A36A]"></span>
+                                启用中
+                            </div>
+<p class="text-[11px] text-[#6B7280] mt-1">启用状态已保留</p>
+</div>
+<!-- 执行资格 (Lost due to config change) -->
+<div class="p-4 flex flex-col justify-center bg-[#fef2f2]">
+<div class="flex justify-between items-center mb-1">
+<span class="text-xs text-[#D14343] font-medium">执行资格</span>
+<span class="text-[11px] text-[#6B7280]">上次验证: 2 天前</span>
+</div>
+<div class="text-[13px] font-medium text-[#D14343] flex items-center gap-1.5 mt-1">
+<span class="w-2 h-2 rounded-full bg-[#D14343] animate-pulse"></span>
+                                不可执行
+                            </div>
+<div class="mt-2">
+<button class="btn btn-secondary !h-[26px] !px-3 !text-[11px] w-full !border-[#fca5a5] !text-[#b91c1c] hover:!bg-[#fee2e2]">重新验证连接</button>
+</div>
+</div>
+</div>
+<!-- Alerts -->
+<div class="p-4 space-y-3 bg-[#fafafa]">
+<!-- Error Sample -->
+<div class="flex items-start gap-2 text-[12px] bg-[#fef2f2] border border-[#fecaca] text-[#b91c1c] p-2.5 rounded">
+<span class="material-symbols-outlined text-[16px] mt-0.5">error</span>
+<div>
+<strong class="block font-medium mb-0.5">验证失败 (自动拦截)</strong>
+                                 认证失败，请更新凭据
+                             </div>
+</div>
+<!-- Info Box about rule -->
+<div class="flex items-start gap-2 text-[11px] bg-[#fffbeb] border border-[#fde68a] text-[#92400e] p-2.5 rounded">
+<span class="material-symbols-outlined text-[14px] mt-0.5">info</span>
+<p leading-tight="">
+                                 修改 Base URL、认证方式、凭据或超时会使原验证失效，但不会自动停用或解除工作流/项目绑定。
+                             </p>
+</div>
+</div>
+</div>
+</section>
+<!-- Section 4: 依赖影响 -->
+<section class="bg-[#f8f9fd] border border-[#E7E9F0] rounded-lg p-4 flex items-center justify-between">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-full bg-[#e1e2e6] flex items-center justify-center text-[#464555]">
+<span class="material-symbols-outlined text-[18px]">account_tree</span>
+</div>
+<div>
+<h4 class="text-[13px] font-medium text-[#1A1C21]">依赖影响</h4>
+<p class="text-xs text-[#6B7280] mt-0.5">影响 3 个工作流配置、2 个项目绑定；关系保留，新运行暂被阻断。</p>
+</div>
+</div>
+<a class="text-[13px] text-[#5146E5] font-medium hover:underline whitespace-nowrap" href="#">查看受影响项</a>
+</section>
+<!-- Section 5: 停用说明 (Danger Zone context) -->
+<section class="border border-[#fecaca] rounded-lg p-4 bg-white flex justify-between items-center">
+<div>
+<h4 class="text-[13px] font-medium text-[#1A1C21]">手动停用</h4>
+<p class="text-xs text-[#6B7280] mt-0.5">仅供手动停用；停用后绑定关系依然保留。</p>
+</div>
+<button class="btn btn-danger-outline">停用连接</button>
+</section>
+<!-- Padding for scrolling past footer -->
+<div class="h-4"></div>
+</div>
+<!-- Drawer Footer (Fixed) -->
+<div class="px-6 py-4 border-t border-[#E7E9F0] bg-white flex justify-end gap-3">
+<button class="btn btn-secondary">取消</button>
+<button class="btn btn-secondary">保存草稿</button>
+<button class="btn btn-primary">保存并验证</button>
+</div>
+</aside>
+</body></html>

@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>11｜WorkflowRun 独立详情页（失败，最终）</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                            "surface-container-low": "#f2f3f7",
+                            "on-surface-variant": "#464555",
+                            "on-primary": "#ffffff",
+                            "on-tertiary": "#ffffff",
+                            "on-error-container": "#93000a",
+                            "tertiary-fixed": "#ffddb8",
+                            "surface-container-lowest": "#ffffff",
+                            "on-secondary": "#ffffff",
+                            "surface-variant": "#e1e2e6",
+                            "on-secondary-container": "#007147",
+                            "error": "#ba1a1a",
+                            "tertiary-fixed-dim": "#ffb95f",
+                            "secondary-fixed": "#80fab9",
+                            "on-surface": "#191c1f",
+                            "on-secondary-fixed-variant": "#005232",
+                            "surface-container-high": "#e7e8ec",
+                            "error-container": "#ffdad6",
+                            "inverse-surface": "#2e3134",
+                            "on-tertiary-fixed": "#2a1700",
+                            "on-primary-container": "#dbd8ff",
+                            "surface-dim": "#d9dade",
+                            "surface-tint": "#4f43e3",
+                            "surface": "#f8f9fd",
+                            "surface-container": "#edeef2",
+                            "inverse-on-surface": "#eff1f5",
+                            "outline": "#777587",
+                            "on-tertiary-container": "#ffd4a4",
+                            "secondary-fixed-dim": "#62dd9e",
+                            "secondary": "#006d44",
+                            "on-background": "#191c1f",
+                            "inverse-primary": "#c3c0ff",
+                            "tertiary-container": "#885500",
+                            "tertiary": "#684000",
+                            "secondary-container": "#7df7b6",
+                            "outline-variant": "#c7c4d8",
+                            "on-primary-fixed": "#100069",
+                            "on-secondary-fixed": "#002111",
+                            "background": "#f8f9fd",
+                            "on-primary-fixed-variant": "#3522cb",
+                            "on-error": "#ffffff",
+                            "primary-fixed": "#e3dfff",
+                            "on-tertiary-fixed-variant": "#653e00",
+                            "surface-bright": "#f8f9fd",
+                            "surface-container-highest": "#e1e2e6",
+                            "primary-fixed-dim": "#c3c0ff",
+                            "primary": "#3725cd",
+                            "primary-container": "#5146e5"
+                    },
+                    "borderRadius": {
+                            "DEFAULT": "0.125rem",
+                            "lg": "0.25rem",
+                            "xl": "0.5rem",
+                            "full": "0.75rem"
+                    },
+                    "fontFamily": {
+                            "headline": ["Inter", "sans-serif"],
+                            "display": ["Inter", "sans-serif"],
+                            "body": ["Inter", "sans-serif"],
+                            "label": ["Inter", "sans-serif"]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; background-color: #F6F7FB; }
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+    </style>
+</head>
+<body class="bg-background text-on-surface antialiased overflow-hidden flex">
+<!-- AppShell Sidebar -->
+<nav class="fixed left-0 top-0 h-full w-[240px] bg-surface border-r border-outline-variant flex flex-col py-4 px-2 z-20">
+<!-- Brand -->
+<div class="px-4 mb-8 flex items-center gap-3">
+<div class="w-8 h-8 rounded bg-primary-container flex items-center justify-center text-on-primary font-bold text-lg">A</div>
+<div>
+<h1 class="text-headline-sm font-black text-on-surface leading-tight">ACF Enterprise</h1>
+<p class="text-xs text-on-surface-variant">Management Console</p>
+</div>
+</div>
+<!-- Nav Items -->
+<div class="flex-1 space-y-1">
+<a class="flex items-center gap-3 px-4 py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container transition-colors duration-200" href="#">
+<span class="material-symbols-outlined text-[20px]">home</span>
+<span class="font-medium text-sm">Home</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container transition-colors duration-200" href="#">
+<span class="material-symbols-outlined text-[20px]">folder_open</span>
+<span class="font-medium text-sm">Projects</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container transition-colors duration-200" href="#">
+<span class="material-symbols-outlined text-[20px]">inventory_2</span>
+<span class="font-medium text-sm">Assets</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container transition-colors duration-200" href="#">
+<span class="material-symbols-outlined text-[20px]">task</span>
+<span class="font-medium text-sm">Works</span>
+</a>
+<!-- Active state: Workflows -->
+<a class="flex items-center gap-3 px-4 py-2.5 rounded-lg bg-surface-container-high text-primary font-bold border-r-4 border-primary transition-colors duration-200" href="#">
+<span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'FILL' 1;">account_tree</span>
+<span class="text-sm">Workflows</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container transition-colors duration-200" href="#">
+<span class="material-symbols-outlined text-[20px]">settings</span>
+<span class="font-medium text-sm">Settings</span>
+</a>
+</div>
+<!-- Bottom User Area -->
+<div class="mt-auto pt-4 border-t border-outline-variant px-4 flex items-center gap-3">
+<div class="w-8 h-8 rounded-full bg-surface-container-high overflow-hidden shrink-0">
+<img alt="User Avatar" class="w-full h-full object-cover" data-alt="A small, professional corporate headshot of a person looking forward against a neutral grey background. The lighting is bright and even, suitable for an enterprise software avatar. 50-100 words." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAN_PycqiZTGZbKAQAZNNcfcYGXS1MSAdIFsqltFPPf24miPSK_ncMmxKDUUkGwKbdzq9uZyIxcwRig1XUnii1vnZsrxbD-5otYK80mlRqOVYrhpLzrsr_kD5ll3va4n6iydn8F31NSDEGkOeIlP2pVb0qmIb-nt470oWom38Cl6ufizAAooojuLvnupnoPzRTghooU8v9vPUxJpkM3dGuuK_nmN1x68Gl0cpMI_a5YugFinYRPGGge_emdn2kRN-OLnPmvlKv8d4m9"/>
+</div>
+<div class="overflow-hidden">
+<p class="text-sm font-medium text-on-surface truncate">Admin User</p>
+<p class="text-xs text-on-surface-variant truncate">admin@acf.enterprise</p>
+</div>
+</div>
+</nav>
+<!-- Main Content Area -->
+<div class="flex-1 ml-[240px] flex flex-col h-screen overflow-hidden">
+<!-- TopAppBar -->
+<header class="h-16 bg-surface border-b border-outline-variant flex items-center justify-between px-6 shrink-0 z-10">
+<!-- Left: Breadcrumb & Title -->
+<div class="flex items-center gap-2">
+<a class="text-on-surface-variant hover:text-primary text-sm font-medium transition-colors" href="#">流程中心</a>
+<span class="material-symbols-outlined text-outline-variant text-[16px]">chevron_right</span>
+<span class="text-sm font-semibold text-on-surface">run-8F2B</span>
+</div>
+<!-- Right: Actions & User -->
+<div class="flex items-center gap-4">
+<button class="w-8 h-8 flex items-center justify-center rounded-full text-on-surface-variant hover:bg-surface-container transition-colors">
+<span class="material-symbols-outlined text-[20px]">notifications</span>
+</button>
+<button class="w-8 h-8 flex items-center justify-center rounded-full text-on-surface-variant hover:bg-surface-container transition-colors">
+<span class="material-symbols-outlined text-[20px]">help_outline</span>
+</button>
+<div class="h-6 w-px bg-outline-variant mx-1"></div>
+<button class="flex items-center gap-2 text-sm font-medium text-on-surface hover:text-primary transition-colors">
+<span>反馈</span>
+</button>
+</div>
+</header>
+<!-- Canvas / Scrollable Content -->
+<main class="flex-1 overflow-y-auto p-6 flex flex-col gap-6 relative pb-24">
+<!-- Page Header Area -->
+<div class="flex flex-col gap-4">
+<div class="flex justify-between items-start">
+<div>
+<div class="flex items-center gap-3 mb-1">
+<h2 class="text-2xl font-bold text-on-surface tracking-tight">运行详情</h2>
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-error-container text-[#93000a] text-xs font-semibold">
+<span class="material-symbols-outlined text-[14px]">error</span>
+                                输出校验失败
+                            </span>
+</div>
+<p class="text-on-surface-variant text-sm">霓港纪事 · 第11章审核</p>
+</div>
+<div class="flex items-center gap-3">
+<button class="h-8 px-4 flex items-center justify-center rounded border border-outline-variant bg-surface text-on-surface text-sm font-medium hover:bg-surface-container transition-colors shadow-sm">
+                            返回列表
+                        </button>
+<button class="h-8 px-4 flex items-center justify-center rounded bg-primary-container text-on-primary text-sm font-medium hover:bg-primary transition-colors shadow-sm gap-2">
+<span class="material-symbols-outlined text-[16px]">refresh</span>
+                            使用当前配置重试
+                        </button>
+<button class="h-8 w-8 flex items-center justify-center rounded border border-outline-variant bg-surface text-on-surface hover:bg-surface-container transition-colors shadow-sm">
+<span class="material-symbols-outlined text-[18px]">more_vert</span>
+</button>
+</div>
+</div>
+<!-- Summary Strip -->
+<div class="bg-surface border border-outline-variant rounded-lg p-3 flex flex-wrap items-center gap-6 text-sm text-on-surface-variant shadow-sm">
+<div class="flex items-center gap-2">
+<span class="text-outline">Run ID:</span>
+<span class="font-mono text-on-surface bg-surface-container-low px-1.5 py-0.5 rounded">run-8F2B</span>
+<button class="text-outline hover:text-primary transition-colors" title="Copy">
+<span class="material-symbols-outlined text-[14px]">content_copy</span>
+</button>
+</div>
+<div class="w-px h-4 bg-outline-variant hidden sm:block"></div>
+<div class="flex items-center gap-2">
+<span class="text-outline">业务环节:</span>
+<span class="text-on-surface font-medium">内容审核</span>
+</div>
+<div class="w-px h-4 bg-outline-variant hidden sm:block"></div>
+<div class="flex items-center gap-2">
+<span class="text-outline">开始时间:</span>
+<span class="text-on-surface font-mono">12:42:05</span>
+</div>
+<div class="w-px h-4 bg-outline-variant hidden sm:block"></div>
+<div class="flex items-center gap-2">
+<span class="text-outline">结束时间:</span>
+<span class="text-on-surface font-mono">12:42:41</span>
+</div>
+<div class="w-px h-4 bg-outline-variant hidden sm:block"></div>
+<div class="flex items-center gap-2">
+<span class="text-outline">耗时:</span>
+<span class="text-on-surface font-medium">36s</span>
+</div>
+<div class="w-px h-4 bg-outline-variant hidden sm:block"></div>
+<div class="flex items-center gap-2">
+<span class="text-outline">重试关系:</span>
+<span class="text-on-surface">无</span>
+</div>
+</div>
+</div>
+<!-- Two Column Layout -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+<!-- Left Column (2/3) -->
+<div class="lg:col-span-2 flex flex-col gap-6">
+<!-- Card 1: 状态时间线 -->
+<div class="bg-surface rounded-xl border border-outline-variant shadow-sm overflow-hidden">
+<div class="px-5 py-4 border-b border-outline-variant bg-surface-container-lowest flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-[20px]">timeline</span>
+<h3 class="text-sm font-semibold text-on-surface">状态时间线</h3>
+</div>
+<div class="p-5">
+<!-- Horizontal Stepper -->
+<div class="relative flex items-center justify-between w-full">
+<div class="absolute left-0 top-1/2 -translate-y-1/2 w-full h-[2px] bg-surface-container-high -z-10 rounded-full"></div>
+<!-- Completed Line -->
+<div class="absolute left-0 top-1/2 -translate-y-1/2 w-[75%] h-[2px] bg-primary -z-10 rounded-full"></div>
+<!-- Step 1 -->
+<div class="flex flex-col items-center gap-2 bg-surface px-2">
+<div class="w-6 h-6 rounded-full bg-primary flex items-center justify-center text-on-primary">
+<span class="material-symbols-outlined text-[14px]">check</span>
+</div>
+<div class="text-center">
+<p class="text-xs font-medium text-on-surface">已创建</p>
+<p class="text-[10px] text-outline font-mono">12:42:00</p>
+</div>
+</div>
+<!-- Step 2 -->
+<div class="flex flex-col items-center gap-2 bg-surface px-2">
+<div class="w-6 h-6 rounded-full bg-primary flex items-center justify-center text-on-primary">
+<span class="material-symbols-outlined text-[14px]">check</span>
+</div>
+<div class="text-center">
+<p class="text-xs font-medium text-on-surface">排队中</p>
+<p class="text-[10px] text-outline font-mono">12:42:01</p>
+</div>
+</div>
+<!-- Step 3 -->
+<div class="flex flex-col items-center gap-2 bg-surface px-2">
+<div class="w-6 h-6 rounded-full bg-primary flex items-center justify-center text-on-primary">
+<span class="material-symbols-outlined text-[14px]">check</span>
+</div>
+<div class="text-center">
+<p class="text-xs font-medium text-on-surface">n8n 执行</p>
+<p class="text-[10px] text-outline font-mono">12:42:05</p>
+</div>
+</div>
+<!-- Step 4 -->
+<div class="flex flex-col items-center gap-2 bg-surface px-2">
+<div class="w-6 h-6 rounded-full bg-primary flex items-center justify-center text-on-primary">
+<span class="material-symbols-outlined text-[14px]">check</span>
+</div>
+<div class="text-center">
+<p class="text-xs font-medium text-on-surface">LLM 调用</p>
+<p class="text-[10px] text-outline font-mono">12:42:15</p>
+</div>
+</div>
+<!-- Step 5 (Error) -->
+<div class="flex flex-col items-center gap-2 bg-surface px-2">
+<div class="w-6 h-6 rounded-full bg-error flex items-center justify-center text-on-error relative">
+<span class="absolute inline-flex h-full w-full rounded-full bg-error opacity-20 animate-ping"></span>
+<span class="material-symbols-outlined text-[14px]">close</span>
+</div>
+<div class="text-center">
+<p class="text-xs font-bold text-error">输出校验失败</p>
+<p class="text-[10px] text-outline font-mono">12:42:41</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Card 2: 错误诊断 -->
+<div class="bg-[#FFF8F8] rounded-xl border border-[#FCA5A5] shadow-sm overflow-hidden">
+<div class="px-5 py-3 border-b border-[#FECACA] bg-[#FEF2F2] flex items-center gap-2">
+<span class="material-symbols-outlined text-error text-[20px]">warning</span>
+<h3 class="text-sm font-semibold text-[#991B1B]">错误诊断</h3>
+</div>
+<div class="p-5 space-y-4">
+<div class="flex items-start gap-3">
+<span class="text-xs font-semibold text-[#7F1D1D] bg-[#FEE2E2] px-2 py-0.5 rounded shrink-0">Category</span>
+<code class="text-sm text-[#991B1B] font-mono break-all">output_schema_validation_failed</code>
+</div>
+<div class="p-3 bg-white rounded-lg border border-[#FECACA]">
+<p class="text-sm text-[#7F1D1D] font-medium leading-relaxed">
+                                    “工作流返回结果不符合审核输出契约，未创建审核报告和问题记录”
+                                </p>
+</div>
+<div>
+<h4 class="text-xs font-semibold text-[#991B1B] mb-2 uppercase tracking-wider">Structured Errors</h4>
+<ul class="space-y-2">
+<li class="flex items-start gap-2 text-sm text-[#7F1D1D] bg-white p-2 rounded border border-[#FEE2E2]">
+<span class="material-symbols-outlined text-[16px] text-error mt-0.5 shrink-0">fiber_manual_record</span>
+<span><span class="font-mono font-medium">Missing</span> 'issues[].severity'</span>
+</li>
+<li class="flex items-start gap-2 text-sm text-[#7F1D1D] bg-white p-2 rounded border border-[#FEE2E2]">
+<span class="material-symbols-outlined text-[16px] text-error mt-0.5 shrink-0">fiber_manual_record</span>
+<span><span class="font-mono font-medium">Type error</span> in 'summary.score'</span>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<!-- Card 3: 输入与结果摘要 -->
+<div class="bg-surface rounded-xl border border-outline-variant shadow-sm overflow-hidden">
+<div class="px-5 py-3 border-b border-outline-variant bg-surface-container-lowest flex items-center gap-2">
+<span class="material-symbols-outlined text-on-surface-variant text-[20px]">data_object</span>
+<h3 class="text-sm font-semibold text-on-surface">输入与结果摘要</h3>
+</div>
+<div class="p-0 flex flex-col md:flex-row divide-y md:divide-y-0 md:divide-x divide-outline-variant">
+<!-- Input -->
+<div class="flex-1 p-5 space-y-2 bg-surface-container-lowest">
+<h4 class="text-xs font-medium text-outline uppercase tracking-wider mb-2">Input Summary</h4>
+<div class="bg-surface-container-low rounded-lg p-3 border border-outline-variant h-[120px] overflow-y-auto">
+<p class="text-sm text-on-surface-variant font-mono whitespace-pre-wrap">Chapter 11 text content
+[safe placeholder]
+...
+...</p>
+</div>
+</div>
+<!-- Result -->
+<div class="flex-1 p-5 space-y-2 bg-surface-container-lowest">
+<h4 class="text-xs font-medium text-outline uppercase tracking-wider mb-2">Result Data</h4>
+<div class="bg-error-container rounded-lg p-3 border border-[#FECACA] flex items-center justify-center h-[120px]">
+<div class="text-center">
+<span class="material-symbols-outlined text-error text-[28px] mb-1">cancel</span>
+<p class="text-sm font-bold text-error">Output Rejected</p>
+<p class="text-xs text-[#991B1B] mt-1 font-mono">Domain write: 0</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Card 4: 业务影响 -->
+<div class="bg-surface-container-low rounded-xl border border-outline-variant shadow-sm p-4 flex items-start gap-4">
+<div class="w-10 h-10 rounded-full bg-surface shadow-sm border border-outline-variant flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-on-surface-variant text-[20px]">policy</span>
+</div>
+<div>
+<h4 class="text-sm font-semibold text-on-surface mb-1">业务影响评估</h4>
+<p class="text-sm text-on-surface-variant leading-relaxed">
+                                领域结果零写入；现有正文版本未修改。系统状态保持安全一致。
+                            </p>
+</div>
+</div>
+</div>
+<!-- Right Column (1/3) -->
+<div class="flex flex-col gap-6">
+<!-- Card Right 1: 配置快照 -->
+<div class="bg-surface rounded-xl border border-outline-variant shadow-sm overflow-hidden">
+<div class="px-4 py-3 border-b border-outline-variant bg-surface-container-lowest flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-on-surface-variant text-[18px]">settings_backup_restore</span>
+<h3 class="text-sm font-semibold text-on-surface">配置快照</h3>
+</div>
+<span class="text-[10px] font-mono text-outline bg-surface-container px-1.5 py-0.5 rounded">READ ONLY</span>
+</div>
+<div class="p-4 space-y-4">
+<div class="grid grid-cols-[auto_1fr] gap-x-4 gap-y-3 text-sm">
+<div class="text-outline text-right font-medium">Connection</div>
+<div class="text-on-surface font-medium truncate">审核自动化 v4</div>
+<div class="text-outline text-right font-medium">Workflow</div>
+<div class="text-on-surface font-medium truncate">内容审核旧版 v3</div>
+<div class="text-outline text-right font-medium">Provider</div>
+<div class="text-on-surface font-medium truncate">内容审核模型 v5</div>
+<div class="text-outline text-right font-medium">Model</div>
+<div class="text-on-surface font-mono text-xs mt-0.5">gpt-4.1</div>
+<div class="col-span-2 h-px bg-outline-variant my-1"></div>
+<div class="text-outline text-right font-medium">Contracts</div>
+<div class="text-on-surface font-mono text-xs flex flex-col gap-1">
+<span class="bg-surface-container-low px-1 py-0.5 rounded inline-block w-fit border border-outline-variant">review-input-v2</span>
+<span class="bg-surface-container-low px-1 py-0.5 rounded inline-block w-fit border border-outline-variant">review-output-v2</span>
+</div>
+<div class="text-outline text-right font-medium">Ext ID</div>
+<div class="text-on-surface font-mono text-xs mt-0.5 text-primary">n8n-exec-7841</div>
+</div>
+</div>
+</div>
+<!-- Card Right 2: 重试资格 -->
+<div class="bg-surface rounded-xl border border-outline-variant shadow-sm overflow-hidden">
+<div class="px-4 py-3 border-b border-outline-variant bg-surface-container-lowest flex items-center gap-2">
+<span class="material-symbols-outlined text-on-surface-variant text-[18px]">replay</span>
+<h3 class="text-sm font-semibold text-on-surface">重试资格</h3>
+</div>
+<div class="p-4 space-y-4">
+<!-- Option 1 -->
+<div class="flex items-start justify-between gap-3 p-3 rounded-lg bg-[#F0FDF4] border border-[#BBF7D0]">
+<div>
+<p class="text-sm font-medium text-[#166534]">使用当前最新配置重试</p>
+</div>
+<span class="bg-[#16A36A] text-white text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0">可用</span>
+</div>
+<!-- Option 2 -->
+<div class="flex flex-col gap-2 p-3 rounded-lg bg-surface-container-low border border-outline-variant opacity-80">
+<div class="flex items-start justify-between gap-3">
+<div>
+<p class="text-sm font-medium text-on-surface-variant line-through">使用原配置重试</p>
+</div>
+<span class="bg-outline text-white text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0">禁用</span>
+</div>
+<div class="text-xs text-error flex items-start gap-1">
+<span class="material-symbols-outlined text-[14px] shrink-0">info</span>
+<span>凭据版本不可重放，无法安全恢复原执行环境。</span>
+</div>
+</div>
+<a class="inline-flex items-center gap-1 text-sm text-primary hover:text-primary-container font-medium transition-colors mt-2" href="#">
+                                查看当前工作流配置
+                                <span class="material-symbols-outlined text-[16px]">arrow_forward</span>
+</a>
+</div>
+</div>
+<!-- Card Right 3: 关联记录 -->
+<div class="bg-surface rounded-xl border border-outline-variant shadow-sm overflow-hidden p-4">
+<div class="flex items-center gap-2 mb-2">
+<span class="material-symbols-outlined text-outline text-[18px]">link</span>
+<h3 class="text-sm font-medium text-on-surface">关联记录</h3>
+</div>
+<p class="text-xs text-on-surface-variant leading-relaxed">
+                            尚未重试；重试后新运行记录将显示 <code class="bg-surface-container px-1 rounded text-[10px] border border-outline-variant text-on-surface">retryOf=run-8F2B</code> 并相互链接。
+                        </p>
+</div>
+</div>
+</div>
+</main>
+<!-- Fixed Bottom Action Bar -->
+<div class="fixed bottom-0 right-0 left-[240px] h-16 bg-surface border-t border-outline-variant shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] flex items-center justify-end px-6 z-20 gap-3">
+<button class="h-9 px-5 flex items-center justify-center rounded border border-outline-variant bg-surface text-on-surface text-sm font-medium hover:bg-surface-container transition-colors">
+                返回列表
+            </button>
+<button class="h-9 px-5 flex items-center justify-center rounded bg-primary-container text-on-primary text-sm font-medium hover:bg-primary transition-colors gap-2 shadow-sm">
+<span class="material-symbols-outlined text-[18px]">replay</span>
+                使用当前配置重试
+            </button>
+</div>
+</div>
+</body></html>

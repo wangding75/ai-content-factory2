@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+
+<html class="light" lang="zh-CN"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>07｜项目设置—四环节工作流绑定（全部可执行，最终）</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "primary-container": "#5146e5",
+                        "on-primary": "#ffffff",
+                        "tertiary-fixed-dim": "#ffb95f",
+                        "primary-fixed": "#e3dfff",
+                        "on-tertiary-fixed": "#2a1700",
+                        "on-primary-fixed-variant": "#3522cb",
+                        "secondary-fixed": "#80fab9",
+                        "inverse-surface": "#2e3134",
+                        "primary": "#3725cd",
+                        "surface": "#f8f9fd",
+                        "secondary-fixed-dim": "#62dd9e",
+                        "surface-container-high": "#e7e8ec",
+                        "background": "#f8f9fd",
+                        "primary-fixed-dim": "#c3c0ff",
+                        "surface-tint": "#4f43e3",
+                        "secondary": "#006d44",
+                        "on-background": "#191c1f",
+                        "secondary-container": "#7df7b6",
+                        "tertiary-container": "#885500",
+                        "on-secondary-fixed-variant": "#005232",
+                        "on-secondary-fixed": "#002111",
+                        "on-secondary-container": "#007147",
+                        "on-tertiary-container": "#ffd4a4",
+                        "inverse-on-surface": "#eff1f5",
+                        "surface-dim": "#d9dade",
+                        "on-tertiary-fixed-variant": "#653e00",
+                        "surface-container": "#edeef2",
+                        "on-error": "#ffffff",
+                        "surface-bright": "#f8f9fd",
+                        "on-primary-container": "#dbd8ff",
+                        "surface-container-highest": "#e1e2e6",
+                        "outline": "#777587",
+                        "error": "#ba1a1a",
+                        "tertiary": "#684000",
+                        "on-error-container": "#93000a",
+                        "on-surface-variant": "#464555",
+                        "error-container": "#ffdad6",
+                        "tertiary-fixed": "#ffddb8",
+                        "surface-container-low": "#f2f3f7",
+                        "surface-container-lowest": "#ffffff",
+                        "on-surface": "#191c1f",
+                        "on-primary-fixed": "#100069",
+                        "outline-variant": "#c7c4d8",
+                        "on-secondary": "#ffffff",
+                        "surface-variant": "#e1e2e6",
+                        "on-tertiary": "#ffffff",
+                        "inverse-primary": "#c3c0ff"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "fontFamily": {
+                        "headline": ["Inter", "sans-serif"],
+                        "display": ["Inter", "sans-serif"],
+                        "body": ["Inter", "sans-serif"],
+                        "label": ["Inter", "sans-serif"]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; background-color: #F6F7FB; }
+        .enterprise-card { background-color: #FFFFFF; border: 1px solid #E7E9F0; border-radius: 6px; }
+        .text-main { color: #1A1C21; }
+        .text-secondary { color: #6B7280; }
+        .bg-success { background-color: #16A36A; }
+        .text-success { color: #16A36A; }
+        .border-success { border-color: #16A36A; }
+    </style>
+</head>
+<body class="bg-background text-on-background font-body min-h-screen flex">
+<!-- SideNavBar -->
+<nav class="fixed left-0 top-0 h-full w-[240px] bg-surface-container-lowest dark:bg-surface-dim border-r border-outline-variant dark:border-outline flex flex-col z-20 font-body text-label-md">
+<div class="p-6">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded bg-primary text-on-primary flex items-center justify-center font-bold">A</div>
+<div>
+<h1 class="text-xl font-headline font-black text-primary dark:text-primary-fixed-dim leading-none tracking-tight">ACF Enterprise</h1>
+<p class="text-[10px] text-on-surface-variant uppercase tracking-wider mt-1">Management Console</p>
+</div>
+</div>
+</div>
+<div class="flex flex-col flex-1 px-2 py-4 gap-1">
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant dark:text-surface-variant hover:bg-surface-container dark:hover:bg-surface-container-high transition-colors rounded-lg cursor-pointer active:opacity-80" href="#">
+<span class="material-symbols-outlined" data-icon="home">home</span>
+<span>首页</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-primary dark:text-primary-fixed-dim font-bold bg-primary-container/10 hover:bg-surface-container dark:hover:bg-surface-container-high transition-colors rounded-lg cursor-pointer active:opacity-80" href="#">
+<span class="material-symbols-outlined" data-icon="folder_open" style="font-variation-settings: 'FILL' 1;">folder_open</span>
+<span>项目</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant dark:text-surface-variant hover:bg-surface-container dark:hover:bg-surface-container-high transition-colors rounded-lg cursor-pointer active:opacity-80" href="#">
+<span class="material-symbols-outlined" data-icon="inventory_2">inventory_2</span>
+<span>素材</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant dark:text-surface-variant hover:bg-surface-container dark:hover:bg-surface-container-high transition-colors rounded-lg cursor-pointer active:opacity-80" href="#">
+<span class="material-symbols-outlined" data-icon="auto_awesome_motion">auto_awesome_motion</span>
+<span>作品</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant dark:text-surface-variant hover:bg-surface-container dark:hover:bg-surface-container-high transition-colors rounded-lg cursor-pointer active:opacity-80" href="#">
+<span class="material-symbols-outlined" data-icon="account_tree">account_tree</span>
+<span>流程</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant dark:text-surface-variant hover:bg-surface-container dark:hover:bg-surface-container-high transition-colors rounded-lg cursor-pointer active:opacity-80" href="#">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+<span>设置</span>
+</a>
+</div>
+</nav>
+<!-- Main Content Wrapper -->
+<div class="ml-[240px] flex-1 flex flex-col min-h-screen">
+<!-- TopNavBar -->
+<header class="fixed top-0 right-0 h-16 left-[240px] bg-surface-container-lowest dark:bg-surface-dim border-b border-outline-variant dark:border-outline flex justify-between items-center px-6 z-10 font-body text-label-md">
+<div class="flex items-center gap-6">
+<h2 class="text-lg font-headline font-bold text-on-surface dark:text-on-surface-variant">霓港纪事</h2>
+<nav class="flex gap-6 mt-4">
+<a class="text-on-surface-variant dark:text-surface-variant pb-4 hover:text-primary dark:hover:text-primary-fixed-dim transition-colors cursor-pointer active:scale-95" href="#">总览</a>
+<a class="text-on-surface-variant dark:text-surface-variant pb-4 hover:text-primary dark:hover:text-primary-fixed-dim transition-colors cursor-pointer active:scale-95" href="#">内容</a>
+<a class="text-on-surface-variant dark:text-surface-variant pb-4 hover:text-primary dark:hover:text-primary-fixed-dim transition-colors cursor-pointer active:scale-95" href="#">资产</a>
+<a class="text-primary dark:text-primary-fixed-dim border-b-2 border-primary dark:border-primary-fixed-dim pb-4 hover:text-primary dark:hover:text-primary-fixed-dim transition-colors cursor-pointer active:scale-95 font-medium" href="#">设置</a>
+</nav>
+</div>
+<div class="flex items-center gap-4">
+<button class="text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+<button class="text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined" data-icon="help_outline">help_outline</span>
+</button>
+<div class="w-8 h-8 rounded-full bg-surface-container-highest overflow-hidden border border-outline-variant">
+<img alt="User Avatar" class="w-full h-full object-cover" data-alt="A professional corporate headshot of a person looking forward against a neutral background. Sharp focus, bright studio lighting. Professional attire." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAuQw08BhfpRqgxv-lr-sTl3E7gonetN4oPOpMXIodmTqA7-luoklxHDzdtGqKy3T9Swa0ETegm5ML2MZbOehtVV5CsvCoeMtw67IA73OhhW-J_yu89OY8BPMQq7lYeYymiGJJlAAi5QO_PnvWSr-ytj9liszNS2wJBs5gjzjDhU1xRmsZp2bZkGmcQYEtkeguXf5i9c7lr8c9_IP1bWcQq3WGS63I5_mNMHAfxnH4LQ4DSxB-K4AcTqSUS3ZmpFuqLtFAXPJ_huoxt"/>
+</div>
+</div>
+</header>
+<!-- Page Content -->
+<main class="flex-1 mt-16 p-6 overflow-auto">
+<!-- Sub-navigation -->
+<div class="flex gap-4 mb-6 text-sm">
+<a class="text-secondary hover:text-primary transition-colors px-3 py-1.5 rounded" href="#">基本信息</a>
+<a class="text-primary bg-primary-container/10 font-medium px-3 py-1.5 rounded" href="#">工作流绑定</a>
+<a class="text-secondary hover:text-primary transition-colors px-3 py-1.5 rounded" href="#">成员管理</a>
+</div>
+<!-- Page Header -->
+<div class="mb-6">
+<h3 class="text-2xl font-bold text-main mb-1">工作流绑定</h3>
+<p class="text-secondary text-sm">为项目的业务环节选择全局工作流配置</p>
+</div>
+<!-- Info Banner -->
+<div class="bg-blue-50 border border-blue-200 text-blue-800 rounded-lg p-4 mb-8 flex items-start gap-3">
+<span class="material-symbols-outlined text-blue-500" data-icon="info">info</span>
+<p class="text-sm">项目只绑定可执行工作流；LLM 策略、Provider 和模型固定在 Workflow Configuration 层，不允许项目级覆盖。</p>
+</div>
+<!-- 2x2 Grid of Cards -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+<!-- Card 1 -->
+<div class="enterprise-card p-5 flex flex-col gap-4">
+<div class="flex justify-between items-start">
+<div class="flex items-center gap-2">
+<h4 class="font-bold text-main text-base">章节规划</h4>
+</div>
+<div class="flex items-center gap-1.5 px-2 py-1 bg-green-50 border border-green-200 rounded text-success text-xs font-medium">
+<span class="w-1.5 h-1.5 rounded-full bg-success"></span>
+                            可执行
+                        </div>
+</div>
+<div class="space-y-3 text-sm">
+<div class="grid grid-cols-[100px_1fr] gap-2">
+<span class="text-secondary">工作流</span>
+<span class="text-main font-medium flex items-center gap-2">章节规划生成 <span class="text-xs text-secondary font-normal bg-surface-container px-1.5 py-0.5 rounded">uuid-1</span></span>
+</div>
+<div class="grid grid-cols-[100px_1fr] gap-2">
+<span class="text-secondary">连接类型</span>
+<span class="text-main">本地 n8n</span>
+</div>
+<div class="grid grid-cols-[100px_1fr] gap-2">
+<span class="text-secondary">LLM 配置</span>
+<span class="text-main bg-surface-container px-2 py-1 rounded border border-outline-variant/50 text-xs text-secondary">ACF 托管 · OpenAI 主模型 · gpt-5.2</span>
+</div>
+<div class="flex justify-between items-center pt-2 border-t border-outline-variant/30 mt-2">
+<div class="flex items-center gap-3 text-xs text-secondary">
+<span class="bg-surface-container px-1.5 py-0.5 rounded font-mono">v7</span>
+<span>验证成功 · 13:18</span>
+</div>
+<div class="flex gap-3">
+<button class="text-primary hover:text-primary-fixed-dim transition-colors text-sm font-medium">更换工作流</button>
+<button class="text-error hover:text-red-700 transition-colors text-sm font-medium">解除绑定</button>
+</div>
+</div>
+</div>
+</div>
+<!-- Card 2 -->
+<div class="enterprise-card p-5 flex flex-col gap-4">
+<div class="flex justify-between items-start">
+<div class="flex items-center gap-2">
+<h4 class="font-bold text-main text-base">正文生成</h4>
+</div>
+<div class="flex items-center gap-1.5 px-2 py-1 bg-green-50 border border-green-200 rounded text-success text-xs font-medium">
+<span class="w-1.5 h-1.5 rounded-full bg-success"></span>
+                            可执行
+                        </div>
+</div>
+<div class="space-y-3 text-sm">
+<div class="grid grid-cols-[100px_1fr] gap-2">
+<span class="text-secondary">工作流</span>
+<span class="text-main font-medium flex items-center gap-2">正文生成 <span class="text-xs text-secondary font-normal bg-surface-container px-1.5 py-0.5 rounded">uuid-2</span></span>
+</div>
+<div class="grid grid-cols-[100px_1fr] gap-2">
+<span class="text-secondary">连接类型</span>
+<span class="text-main">本地 n8n</span>
+</div>
+<div class="grid grid-cols-[100px_1fr] gap-2">
+<span class="text-secondary">LLM 配置</span>
+<span class="text-main bg-surface-container px-2 py-1 rounded border border-outline-variant/50 text-xs text-secondary">ACF 托管 · OpenAI 主模型 · gpt-5.2</span>
+</div>
+<div class="flex justify-between items-center pt-2 border-t border-outline-variant/30 mt-2">
+<div class="flex items-center gap-3 text-xs text-secondary">
+<span class="bg-surface-container px-1.5 py-0.5 rounded font-mono">v4</span>
+</div>
+<div class="flex gap-3">
+<button class="text-primary hover:text-primary-fixed-dim transition-colors text-sm font-medium">更换工作流</button>
+<button class="text-error hover:text-red-700 transition-colors text-sm font-medium">解除绑定</button>
+</div>
+</div>
+</div>
+</div>
+<!-- Card 3 -->
+<div class="enterprise-card p-5 flex flex-col gap-4">
+<div class="flex justify-between items-start">
+<div class="flex items-center gap-2">
+<h4 class="font-bold text-main text-base">内容审核</h4>
+</div>
+<div class="flex items-center gap-1.5 px-2 py-1 bg-green-50 border border-green-200 rounded text-success text-xs font-medium">
+<span class="w-1.5 h-1.5 rounded-full bg-success"></span>
+                            可执行
+                        </div>
+</div>
+<div class="space-y-3 text-sm">
+<div class="grid grid-cols-[100px_1fr] gap-2">
+<span class="text-secondary">工作流</span>
+<span class="text-main font-medium flex items-center gap-2">内容审核标准版 <span class="text-xs text-secondary font-normal bg-surface-container px-1.5 py-0.5 rounded">uuid-3</span></span>
+</div>
+<div class="grid grid-cols-[100px_1fr] gap-2">
+<span class="text-secondary">连接类型</span>
+<span class="text-main">审核自动化</span>
+</div>
+<div class="grid grid-cols-[100px_1fr] gap-2">
+<span class="text-secondary">LLM 配置</span>
+<span class="text-main bg-surface-container px-2 py-1 rounded border border-outline-variant/50 text-xs text-secondary">ACF 托管 · gpt-4.1</span>
+</div>
+<div class="flex justify-between items-center pt-2 border-t border-outline-variant/30 mt-2">
+<div class="flex items-center gap-3 text-xs text-secondary">
+<span class="bg-surface-container px-1.5 py-0.5 rounded font-mono">v6</span>
+</div>
+<div class="flex gap-3">
+<button class="text-primary hover:text-primary-fixed-dim transition-colors text-sm font-medium">更换工作流</button>
+<button class="text-error hover:text-red-700 transition-colors text-sm font-medium">解除绑定</button>
+</div>
+</div>
+</div>
+</div>
+<!-- Card 4 -->
+<div class="enterprise-card p-5 flex flex-col gap-4">
+<div class="flex justify-between items-start">
+<div class="flex items-center gap-2">
+<h4 class="font-bold text-main text-base">正文重写</h4>
+</div>
+<div class="flex items-center gap-1.5 px-2 py-1 bg-green-50 border border-green-200 rounded text-success text-xs font-medium">
+<span class="w-1.5 h-1.5 rounded-full bg-success"></span>
+                            可执行
+                        </div>
+</div>
+<div class="space-y-3 text-sm">
+<div class="grid grid-cols-[100px_1fr] gap-2">
+<span class="text-secondary">工作流</span>
+<span class="text-main font-medium flex items-center gap-2">正文重写 <span class="text-xs text-secondary font-normal bg-surface-container px-1.5 py-0.5 rounded">uuid-4</span></span>
+</div>
+<div class="grid grid-cols-[100px_1fr] gap-2">
+<span class="text-secondary">连接类型</span>
+<span class="text-main">本地 n8n</span>
+</div>
+<div class="grid grid-cols-[100px_1fr] gap-2">
+<span class="text-secondary">LLM 配置</span>
+<span class="text-main bg-surface-container px-2 py-1 rounded border border-outline-variant/50 text-xs text-secondary">n8n 内部模型</span>
+</div>
+<div class="flex justify-between items-center pt-2 border-t border-outline-variant/30 mt-2">
+<div class="flex items-center gap-3 text-xs text-secondary">
+<span class="bg-surface-container px-1.5 py-0.5 rounded font-mono">v5</span>
+</div>
+<div class="flex gap-3">
+<button class="text-primary hover:text-primary-fixed-dim transition-colors text-sm font-medium">更换工作流</button>
+<button class="text-error hover:text-red-700 transition-colors text-sm font-medium">解除绑定</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="mt-8 text-center">
+<p class="text-xs text-secondary italic">四个 Stage 使用同一套绑定组件，仅业务名称、输入说明和契约摘要不同。</p>
+</div>
+</main>
+</div>
+</body></html>

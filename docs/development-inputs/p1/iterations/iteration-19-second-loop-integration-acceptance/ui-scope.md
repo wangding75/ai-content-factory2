@@ -1,43 +1,66 @@
-# Iteration 19 — 第二用户闭环联调与关闭 — UI Scope
+# Iteration 19 — UI Scope（最终冻结）
 
-## 原型关联
+**UI 状态：`FROZEN_WITH_DEVELOPMENT_CORRECTIONS`。** 正式开发输入为 15 个 Frame；不新增路由，不改变 AppShell 和一级导航，不整体重做 Iteration 15～18。
 
-| Frame | 区域 | 用途 | 截图 | HTML |
-|---|---|---|---|---|
-| `E4_AI_CONNECTIONS_OVERVIEW` | 全局设置 | LLM Provider 与 n8n 连接总览 | `ui/frames/E4_AI_CONNECTIONS_OVERVIEW/screen.png` | `ui/frames/E4_AI_CONNECTIONS_OVERVIEW/code.html` |
-| `E4_LLM_PROVIDER_DRAWER` | 全局设置 | 新增/编辑/验证 LLM Provider | `ui/frames/E4_LLM_PROVIDER_DRAWER/screen.png` | `ui/frames/E4_LLM_PROVIDER_DRAWER/code.html` |
-| `E4_N8N_CONNECTION_DRAWER` | 全局设置 | 新增/编辑/验证 n8n Connection | `ui/frames/E4_N8N_CONNECTION_DRAWER/screen.png` | `ui/frames/E4_N8N_CONNECTION_DRAWER/code.html` |
-| `S02_PROJECT_WORKFLOW_SETTINGS` | 项目设置 | 四环节工作流绑定总览 | `ui/frames/S02_PROJECT_WORKFLOW_SETTINGS/screen.png` | `ui/frames/S02_PROJECT_WORKFLOW_SETTINGS/code.html` |
-| `S02_BIND_CHAPTER_WORKFLOW_DRAWER` | 项目设置 | 章节规划绑定与默认参数 | `ui/frames/S02_BIND_CHAPTER_WORKFLOW_DRAWER/screen.png` | `ui/frames/S02_BIND_CHAPTER_WORKFLOW_DRAWER/code.html` |
-| `S02_BIND_CONTENT_WORKFLOW_DRAWER` | 项目设置 | 正文生成绑定与默认参数 | `ui/frames/S02_BIND_CONTENT_WORKFLOW_DRAWER/screen.png` | `ui/frames/S02_BIND_CONTENT_WORKFLOW_DRAWER/code.html` |
-| `S02_BIND_REVIEW_WORKFLOW_DRAWER` | 项目设置 | 内容审核绑定与默认参数 | `ui/frames/S02_BIND_REVIEW_WORKFLOW_DRAWER/screen.png` | `ui/frames/S02_BIND_REVIEW_WORKFLOW_DRAWER/code.html` |
-| `S02_BIND_REWRITE_WORKFLOW_DRAWER` | 项目设置 | 正文重写绑定与默认参数 | `ui/frames/S02_BIND_REWRITE_WORKFLOW_DRAWER/screen.png` | `ui/frames/S02_BIND_REWRITE_WORKFLOW_DRAWER/code.html` |
-| `E3_WORKFLOW_CENTER_V2` | 流程中心 | 真实运行列表、筛选、统计 | `ui/frames/E3_WORKFLOW_CENTER_V2/screen.png` | `ui/frames/E3_WORKFLOW_CENTER_V2/code.html` |
-| `E3_WORKFLOW_RUN_DETAIL_DRAWER` | 流程中心 | 运行详情、失败诊断、绑定快照 | `ui/frames/E3_WORKFLOW_RUN_DETAIL_DRAWER/screen.png` | `ui/frames/E3_WORKFLOW_RUN_DETAIL_DRAWER/code.html` |
-| `E3_RETRY_RUN_CONFIRM_DIALOG` | 流程中心 | 重试确认与配置版本选择 | `ui/frames/E3_RETRY_RUN_CONFIRM_DIALOG/screen.png` | `ui/frames/E3_RETRY_RUN_CONFIRM_DIALOG/code.html` |
-| `C1_CHAPTER_PLANNING_V2` | 章节规划 | 真实候选列表与运行状态 | `ui/frames/C1_CHAPTER_PLANNING_V2/screen.png` | `ui/frames/C1_CHAPTER_PLANNING_V2/code.html` |
-| `C2_GENERATE_CHAPTER_PLAN_DRAWER_V2` | 章节规划 | 发起真实章节规划 | `ui/frames/C2_GENERATE_CHAPTER_PLAN_DRAWER_V2/screen.png` | `ui/frames/C2_GENERATE_CHAPTER_PLAN_DRAWER_V2/code.html` |
-| `D1_EDITOR_V2` | 正文 | 正文编辑器与真实生成状态 | `ui/frames/D1_EDITOR_V2/screen.png` | `ui/frames/D1_EDITOR_V2/code.html` |
-| `D1_GENERATE_CONTENT_DRAWER` | 正文 | 发起真实正文生成 | `ui/frames/D1_GENERATE_CONTENT_DRAWER/screen.png` | `ui/frames/D1_GENERATE_CONTENT_DRAWER/code.html` |
-| `D2_REVIEW_V2` | 审核 | 真实审核结果与问题选择 | `ui/frames/D2_REVIEW_V2/screen.png` | `ui/frames/D2_REVIEW_V2/code.html` |
-| `D2_SUBMIT_REVIEW_DRAWER` | 审核 | 发起固定版本审核 | `ui/frames/D2_SUBMIT_REVIEW_DRAWER/screen.png` | `ui/frames/D2_SUBMIT_REVIEW_DRAWER/code.html` |
-| `D4_CREATE_REWRITE_V2` | 重写 | 选择审核问题并发起重写 | `ui/frames/D4_CREATE_REWRITE_V2/screen.png` | `ui/frames/D4_CREATE_REWRITE_V2/code.html` |
-| `D5_REWRITE_RESULT_V2` | 重写 | 新旧版本关系与结果预览 | `ui/frames/D5_REWRITE_RESULT_V2/screen.png` | `ui/frames/D5_REWRITE_RESULT_V2/code.html` |
-| `STATE_TASK_RUNNING_BAR` | 共享组件 | 异步运行状态条 | `ui/frames/STATE_TASK_RUNNING_BAR/screen.png` | `ui/frames/STATE_TASK_RUNNING_BAR/code.html` |
-| `STATE_TASK_FAILED_NOTICE` | 共享组件 | 安全错误通知与恢复动作 | `ui/frames/STATE_TASK_FAILED_NOTICE/screen.png` | `ui/frames/STATE_TASK_FAILED_NOTICE/code.html` |
-| `STATE_NOT_CONFIGURED_EMPTY` | 共享组件 | 未配置、失效与空结果状态 | `ui/frames/STATE_NOT_CONFIGURED_EMPTY/screen.png` | `ui/frames/STATE_NOT_CONFIGURED_EMPTY/code.html` |
+## 1. Frame 清单
 
-## UI 条件通过与开发修正规则
+| 顺序 | Frame | 区域/形态 | 路由 | 冻结用途 |
+|---:|---|---|---|---|
+| 01 | `I19_01_LLM_PROVIDER_LIST` | 主页面 | `/settings?tab=llm` | Provider 列表、模型、验证、启用与执行资格 |
+| 02 | `I19_02_LLM_PROVIDER_DRAWER` | 抽屉 | 同上 | 保存凭据、模型发现/校验、默认模型、保存并验证 |
+| 03 | `I19_03_N8N_CONNECTION_LIST` | 主页面 | `/settings?tab=workflows&subtab=connections` | Connection 验证、启用、执行资格与依赖数量 |
+| 04 | `I19_04_N8N_CONNECTION_DRAWER` | 抽屉 | 同上 | 实例根 URL、凭据、验证和依赖影响 |
+| 05 | `I19_05_WORKFLOW_CONFIGURATION_LIST` | 主页面 | `/settings?tab=workflows&subtab=workflows` | Stage、LLM 策略、验证、启用、版本和执行资格 |
+| 06 | `I19_06_WORKFLOW_CONFIGURATION_DRAWER` | 抽屉 | 同上 | 引用/契约/默认参数、三种 LLM 策略和分层验证 |
+| 07 | `I19_07_PROJECT_BINDINGS_EXECUTABLE` | 主页面状态 | `/projects/{projectId}/settings?tab=workflow-bindings` | 四环节全部可执行 |
+| 08 | `I19_08_PROJECT_BINDINGS_DEPENDENCY_INVALID` | 主页面状态 | 同上 | 绑定保留但依赖失效或配置已变更 |
+| 09 | `I19_09_SELECT_WORKFLOW_DRAWER` | 共享抽屉 | 同上 | 四 Stage 候选、不可执行原因和换绑摘要 |
+| 10 | `I19_10_WORKFLOW_RUN_LIST` | 主页面 | `/workflow-runs` | 真实运行列表、状态、筛选、取消/重试入口 |
+| 11 | `I19_11_WORKFLOW_RUN_DETAIL_PAGE` | 独立页面 | `/workflow-runs/{runId}` | 时间线、错误诊断、安全快照、领域影响和恢复 |
+| 12 | `I19_12_RETRY_CONFIRM_DIALOG` | 弹窗 | 详情页内 | 当前配置与条件原配置重试 |
+| 13 | `I19_13_LEGACY_WORKFLOWS_GUIDANCE` | 主页面微调 | `/workflows` | 内置 Mock 只读说明和真实流程中心引导 |
+| 14 | `I19_14_SHARED_PREFLIGHT_BLOCKED` | 共享状态 | 四阶段发起抽屉 | 绑定/Connection/Workflow/LLM/契约检查 |
+| 15 | `I19_15_SHARED_RUNTIME_RECOVERY` | 共享状态 | 四阶段业务页 | 取消中、超时、输出校验失败、结果消费失败恢复 |
 
-Iteration 11 的人工验收结论为：**有条件通过**。
+每个 Frame 路径：`ui/frames/<FRAME_ID>/screen.png` 与 `code.html`。
 
-已知问题：部分 Stitch 原型文案为英文，尤其可能出现在左侧一级菜单、状态标签、表头、按钮、辅助说明和技术占位文案中。原型中的英文不构成最终产品文案冻结。
+## 2. 页面范围
 
-开发必须满足：
+- 5 个主要页面：01、03、05、07/08（同路由状态）、10、11；
+- 5 个抽屉/弹窗：02、04、06、09、12；
+- 1 个旧页面定位微调：13；
+- 2 个共享状态：14、15。
 
-1. 默认中文环境下，用户可见文案全部使用统一中文资源，不得直接复制 HTML 中的英文硬编码；
-2. 左侧一级菜单统一为：首页、项目、素材、作品、工作流、设置；
-3. 状态统一为：排队中、运行中、已成功、已失败、未验证、验证成功、已停用、配置异常；
-4. `Run ID`、`Workflow ID`、Schema 版本、模型名、API 名称等技术标识可以保留英文；
-5. 所有业务文案进入前端 i18n/locale 资源；组件不得内嵌不可替换英文；
-6. 人工 UI 验收增加“中文文案与术语一致性”专项，发现英文用户文案即不通过。
+统计仅用于设计交付，不代表新增路由数量。新增路由为 0。
+
+## 3. 统一状态词表
+
+配置：未验证、验证中、验证成功、验证失败、配置已变更、已启用、已停用、可执行、不可执行。
+
+运行：排队中、运行中、取消中、已取消、执行成功、执行失败、已超时、输出校验失败、结果消费失败。
+
+恢复：可重试、不可重试、重试提交结果、使用当前配置重试、使用原配置重试（条件可用）。
+
+## 4. 交互规则
+
+1. 保存、验证、启用分离。
+2. 配置关键字段变化保留 enabled 和 Binding，但立即不可执行。
+3. 项目只绑定可执行 Workflow Configuration，不覆盖 LLM 配置。
+4. 不可执行候选保留可见性和修复入口，但不可勾选。
+5. 业务发起必须先显示/执行共享 Preflight；失败不创建 Run。
+6. WorkflowRun 详情为独立页面，不使用旧详情抽屉形态。
+7. 原配置重试按 retry-options 返回结果启用或禁用。
+8. Result consumption failure 使用“重试提交结果”，不再次调用 Runtime。
+9. `/workflows` 保留只读，不用于外部执行。
+
+## 5. 强制开发修正
+
+详见 `ui-review.md` 第 4 节。关键项：现有 AppShell、中文 locale、列表高级筛选、独立详情页、敏感信息脱敏、抽屉滚动、13 页头修正、消费 Retry 文案。
+
+## 6. 不变范围
+
+- AppShell、顶部栏、一级导航；
+- 章节规划、正文生成、内容审核、正文重写的主体布局和核心业务操作；
+- Iteration 15～18 已冻结领域规则；
+- `/workflows` 路由和导航入口；
+- 项目四 Stage 的唯一绑定语义。

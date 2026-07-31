@@ -1,294 +1,222 @@
 {
   "iteration": "iteration-19-second-loop-integration-acceptance",
-  "uiAcceptance": "CONDITIONAL_PASS",
-  "knownIssues": [
-    "Some Stitch user-visible copy is English; development must use Chinese locale resources."
+  "uiAcceptance": "FROZEN_WITH_DEVELOPMENT_CORRECTIONS",
+  "reviewedAt": "2026-07-31",
+  "sourcePackage": "stitch_acf_iteration_19_ui_final_freeze_rebuild(1).zip",
+  "canonicalFrameCount": 15,
+  "excludedCandidates": [
+    {
+      "sourceFolder": "04_n8n_2",
+      "reason": "duplicate candidate; connection Base URL example conflates instance root and webhook path"
+    }
+  ],
+  "globalRules": [
+    "preserve existing AppShell and navigation",
+    "use Chinese locale for user-visible copy",
+    "do not expose secrets or raw upstream responses",
+    "do not redesign Iteration 15-18 main business layouts"
   ],
   "frames": [
     {
-      "frameId": "E4_AI_CONNECTIONS_OVERVIEW",
+      "frameId": "I19_01_LLM_PROVIDER_LIST",
       "area": "全局设置",
-      "purpose": "LLM Provider 与 n8n 连接总览",
-      "sourceFolder": "ai_connections_overview_2",
-      "screen": "ui/frames/E4_AI_CONNECTIONS_OVERVIEW/screen.png",
-      "html": "ui/frames/E4_AI_CONNECTIONS_OVERVIEW/code.html",
-      "acceptance": "CONDITIONAL_PASS",
+      "purpose": "LLM Provider 列表、验证状态、默认模型与执行资格",
+      "route": "/settings?tab=llm",
+      "sourceFolder": "01_llm_provider",
+      "screen": "ui/frames/I19_01_LLM_PROVIDER_LIST/screen.png",
+      "html": "ui/frames/I19_01_LLM_PROVIDER_LIST/code.html",
+      "acceptance": "FROZEN_WITH_DEVELOPMENT_CORRECTIONS",
       "developmentCorrections": [
-        "replace user-visible English copy with Chinese locale resources",
-        "preserve technical identifiers only when appropriate"
+        "use Chinese locale and existing AppShell"
       ]
     },
     {
-      "frameId": "E4_LLM_PROVIDER_DRAWER",
+      "frameId": "I19_02_LLM_PROVIDER_DRAWER",
       "area": "全局设置",
-      "purpose": "新增/编辑/验证 LLM Provider",
-      "sourceFolder": "e4_llm_provider_drawer",
-      "screen": "ui/frames/E4_LLM_PROVIDER_DRAWER/screen.png",
-      "html": "ui/frames/E4_LLM_PROVIDER_DRAWER/code.html",
-      "acceptance": "CONDITIONAL_PASS",
+      "purpose": "新增/编辑/发现模型/验证 LLM Provider",
+      "route": "/settings?tab=llm",
+      "sourceFolder": "02_llm_provider",
+      "screen": "ui/frames/I19_02_LLM_PROVIDER_DRAWER/screen.png",
+      "html": "ui/frames/I19_02_LLM_PROVIDER_DRAWER/code.html",
+      "acceptance": "FROZEN_WITH_DEVELOPMENT_CORRECTIONS",
       "developmentCorrections": [
-        "replace user-visible English copy with Chinese locale resources",
-        "preserve technical identifiers only when appropriate"
+        "use scrollable drawer content and sticky footer",
+        "use Chinese locale and existing AppShell"
       ]
     },
     {
-      "frameId": "E4_N8N_CONNECTION_DRAWER",
+      "frameId": "I19_03_N8N_CONNECTION_LIST",
       "area": "全局设置",
-      "purpose": "新增/编辑/验证 n8n Connection",
-      "sourceFolder": "e4_n8n_connection_drawer",
-      "screen": "ui/frames/E4_N8N_CONNECTION_DRAWER/screen.png",
-      "html": "ui/frames/E4_N8N_CONNECTION_DRAWER/code.html",
-      "acceptance": "CONDITIONAL_PASS",
+      "purpose": "n8n 连接列表、验证状态与依赖摘要",
+      "route": "/settings?tab=workflows&subtab=connections",
+      "sourceFolder": "03_n8n",
+      "screen": "ui/frames/I19_03_N8N_CONNECTION_LIST/screen.png",
+      "html": "ui/frames/I19_03_N8N_CONNECTION_LIST/code.html",
+      "acceptance": "FROZEN_WITH_DEVELOPMENT_CORRECTIONS",
       "developmentCorrections": [
-        "replace user-visible English copy with Chinese locale resources",
-        "preserve technical identifiers only when appropriate"
+        "use Chinese locale and existing AppShell"
       ]
     },
     {
-      "frameId": "S02_PROJECT_WORKFLOW_SETTINGS",
+      "frameId": "I19_04_N8N_CONNECTION_DRAWER",
+      "area": "全局设置",
+      "purpose": "新增/编辑/验证 n8n 连接与依赖影响",
+      "route": "/settings?tab=workflows&subtab=connections",
+      "sourceFolder": "04_n8n_1",
+      "screen": "ui/frames/I19_04_N8N_CONNECTION_DRAWER/screen.png",
+      "html": "ui/frames/I19_04_N8N_CONNECTION_DRAWER/code.html",
+      "acceptance": "FROZEN_WITH_DEVELOPMENT_CORRECTIONS",
+      "developmentCorrections": [
+        "use scrollable drawer content and sticky footer",
+        "use Chinese locale and existing AppShell"
+      ]
+    },
+    {
+      "frameId": "I19_05_WORKFLOW_CONFIGURATION_LIST",
+      "area": "全局设置",
+      "purpose": "Workflow Configuration 列表、LLM 策略与执行资格",
+      "route": "/settings?tab=workflows&subtab=workflows",
+      "sourceFolder": "05_workflow_configuration",
+      "screen": "ui/frames/I19_05_WORKFLOW_CONFIGURATION_LIST/screen.png",
+      "html": "ui/frames/I19_05_WORKFLOW_CONFIGURATION_LIST/code.html",
+      "acceptance": "FROZEN_WITH_DEVELOPMENT_CORRECTIONS",
+      "developmentCorrections": [
+        "use Chinese locale and existing AppShell"
+      ]
+    },
+    {
+      "frameId": "I19_06_WORKFLOW_CONFIGURATION_DRAWER",
+      "area": "全局设置",
+      "purpose": "Workflow Configuration 编辑、契约与 LLM 策略验证",
+      "route": "/settings?tab=workflows&subtab=workflows",
+      "sourceFolder": "06_workflow_configuration",
+      "screen": "ui/frames/I19_06_WORKFLOW_CONFIGURATION_DRAWER/screen.png",
+      "html": "ui/frames/I19_06_WORKFLOW_CONFIGURATION_DRAWER/code.html",
+      "acceptance": "FROZEN_WITH_DEVELOPMENT_CORRECTIONS",
+      "developmentCorrections": [
+        "use scrollable drawer content and sticky footer",
+        "use Chinese locale and existing AppShell"
+      ]
+    },
+    {
+      "frameId": "I19_07_PROJECT_BINDINGS_EXECUTABLE",
       "area": "项目设置",
-      "purpose": "四环节工作流绑定总览",
-      "sourceFolder": "project_workflow_settings",
-      "screen": "ui/frames/S02_PROJECT_WORKFLOW_SETTINGS/screen.png",
-      "html": "ui/frames/S02_PROJECT_WORKFLOW_SETTINGS/code.html",
-      "acceptance": "CONDITIONAL_PASS",
+      "purpose": "四环节已绑定且全部可执行",
+      "route": "/projects/{projectId}/settings?tab=workflow-bindings",
+      "sourceFolder": "07",
+      "screen": "ui/frames/I19_07_PROJECT_BINDINGS_EXECUTABLE/screen.png",
+      "html": "ui/frames/I19_07_PROJECT_BINDINGS_EXECUTABLE/code.html",
+      "acceptance": "FROZEN_WITH_DEVELOPMENT_CORRECTIONS",
       "developmentCorrections": [
-        "replace user-visible English copy with Chinese locale resources",
-        "preserve technical identifiers only when appropriate"
+        "use Chinese locale and existing AppShell"
       ]
     },
     {
-      "frameId": "S02_BIND_CHAPTER_WORKFLOW_DRAWER",
+      "frameId": "I19_08_PROJECT_BINDINGS_DEPENDENCY_INVALID",
       "area": "项目设置",
-      "purpose": "章节规划绑定与默认参数",
-      "sourceFolder": "s02_bind_chapter_workflow_drawer",
-      "screen": "ui/frames/S02_BIND_CHAPTER_WORKFLOW_DRAWER/screen.png",
-      "html": "ui/frames/S02_BIND_CHAPTER_WORKFLOW_DRAWER/code.html",
-      "acceptance": "CONDITIONAL_PASS",
+      "purpose": "绑定保留但依赖失效/配置已变更",
+      "route": "/projects/{projectId}/settings?tab=workflow-bindings",
+      "sourceFolder": "08",
+      "screen": "ui/frames/I19_08_PROJECT_BINDINGS_DEPENDENCY_INVALID/screen.png",
+      "html": "ui/frames/I19_08_PROJECT_BINDINGS_DEPENDENCY_INVALID/code.html",
+      "acceptance": "FROZEN_WITH_DEVELOPMENT_CORRECTIONS",
       "developmentCorrections": [
-        "replace user-visible English copy with Chinese locale resources",
-        "preserve technical identifiers only when appropriate"
+        "use Chinese locale and existing AppShell"
       ]
     },
     {
-      "frameId": "S02_BIND_CONTENT_WORKFLOW_DRAWER",
+      "frameId": "I19_09_SELECT_WORKFLOW_DRAWER",
       "area": "项目设置",
-      "purpose": "正文生成绑定与默认参数",
-      "sourceFolder": "s02_bind_content_workflow_drawer",
-      "screen": "ui/frames/S02_BIND_CONTENT_WORKFLOW_DRAWER/screen.png",
-      "html": "ui/frames/S02_BIND_CONTENT_WORKFLOW_DRAWER/code.html",
-      "acceptance": "CONDITIONAL_PASS",
+      "purpose": "四 Stage 共用的选择/更换工作流抽屉",
+      "route": "/projects/{projectId}/settings?tab=workflow-bindings",
+      "sourceFolder": "09",
+      "screen": "ui/frames/I19_09_SELECT_WORKFLOW_DRAWER/screen.png",
+      "html": "ui/frames/I19_09_SELECT_WORKFLOW_DRAWER/code.html",
+      "acceptance": "FROZEN_WITH_DEVELOPMENT_CORRECTIONS",
       "developmentCorrections": [
-        "replace user-visible English copy with Chinese locale resources",
-        "preserve technical identifiers only when appropriate"
+        "use Chinese locale and existing AppShell"
       ]
     },
     {
-      "frameId": "S02_BIND_REVIEW_WORKFLOW_DRAWER",
-      "area": "项目设置",
-      "purpose": "内容审核绑定与默认参数",
-      "sourceFolder": "s02_bind_review_workflow_drawer",
-      "screen": "ui/frames/S02_BIND_REVIEW_WORKFLOW_DRAWER/screen.png",
-      "html": "ui/frames/S02_BIND_REVIEW_WORKFLOW_DRAWER/code.html",
-      "acceptance": "CONDITIONAL_PASS",
-      "developmentCorrections": [
-        "replace user-visible English copy with Chinese locale resources",
-        "preserve technical identifiers only when appropriate"
-      ]
-    },
-    {
-      "frameId": "S02_BIND_REWRITE_WORKFLOW_DRAWER",
-      "area": "项目设置",
-      "purpose": "正文重写绑定与默认参数",
-      "sourceFolder": "s02_bind_rewrite_workflow_drawer",
-      "screen": "ui/frames/S02_BIND_REWRITE_WORKFLOW_DRAWER/screen.png",
-      "html": "ui/frames/S02_BIND_REWRITE_WORKFLOW_DRAWER/code.html",
-      "acceptance": "CONDITIONAL_PASS",
-      "developmentCorrections": [
-        "replace user-visible English copy with Chinese locale resources",
-        "preserve technical identifiers only when appropriate"
-      ]
-    },
-    {
-      "frameId": "E3_WORKFLOW_CENTER_V2",
+      "frameId": "I19_10_WORKFLOW_RUN_LIST",
       "area": "流程中心",
-      "purpose": "真实运行列表、筛选、统计",
-      "sourceFolder": "workflow_center_console_v2.0",
-      "screen": "ui/frames/E3_WORKFLOW_CENTER_V2/screen.png",
-      "html": "ui/frames/E3_WORKFLOW_CENTER_V2/code.html",
-      "acceptance": "CONDITIONAL_PASS",
+      "purpose": "真实 WorkflowRun 列表、筛选与恢复入口",
+      "route": "/workflow-runs",
+      "sourceFolder": "10",
+      "screen": "ui/frames/I19_10_WORKFLOW_RUN_LIST/screen.png",
+      "html": "ui/frames/I19_10_WORKFLOW_RUN_LIST/code.html",
+      "acceptance": "FROZEN_WITH_DEVELOPMENT_CORRECTIONS",
       "developmentCorrections": [
-        "replace user-visible English copy with Chinese locale resources",
-        "preserve technical identifiers only when appropriate"
+        "use primary filters plus advanced filters",
+        "keep action and retryOf visible without truncation"
       ]
     },
     {
-      "frameId": "E3_WORKFLOW_RUN_DETAIL_DRAWER",
+      "frameId": "I19_11_WORKFLOW_RUN_DETAIL_PAGE",
       "area": "流程中心",
-      "purpose": "运行详情、失败诊断、绑定快照",
-      "sourceFolder": "e3_workflow_run_detail_drawer",
-      "screen": "ui/frames/E3_WORKFLOW_RUN_DETAIL_DRAWER/screen.png",
-      "html": "ui/frames/E3_WORKFLOW_RUN_DETAIL_DRAWER/code.html",
-      "acceptance": "CONDITIONAL_PASS",
+      "purpose": "WorkflowRun 独立详情页、诊断与安全快照",
+      "route": "/workflow-runs/{runId}",
+      "sourceFolder": "11_workflowrun",
+      "screen": "ui/frames/I19_11_WORKFLOW_RUN_DETAIL_PAGE/screen.png",
+      "html": "ui/frames/I19_11_WORKFLOW_RUN_DETAIL_PAGE/code.html",
+      "acceptance": "FROZEN_WITH_DEVELOPMENT_CORRECTIONS",
       "developmentCorrections": [
-        "replace user-visible English copy with Chinese locale resources",
-        "preserve technical identifiers only when appropriate"
+        "preserve independent detail route",
+        "use one primary retry action",
+        "remove user-visible English shell copy"
       ]
     },
     {
-      "frameId": "E3_RETRY_RUN_CONFIRM_DIALOG",
+      "frameId": "I19_12_RETRY_CONFIRM_DIALOG",
       "area": "流程中心",
-      "purpose": "重试确认与配置版本选择",
-      "sourceFolder": "retry_run_confirmation_dialog",
-      "screen": "ui/frames/E3_RETRY_RUN_CONFIRM_DIALOG/screen.png",
-      "html": "ui/frames/E3_RETRY_RUN_CONFIRM_DIALOG/code.html",
-      "acceptance": "CONDITIONAL_PASS",
+      "purpose": "当前配置/原配置条件重试确认",
+      "route": "/workflow-runs/{runId}",
+      "sourceFolder": "12",
+      "screen": "ui/frames/I19_12_RETRY_CONFIRM_DIALOG/screen.png",
+      "html": "ui/frames/I19_12_RETRY_CONFIRM_DIALOG/code.html",
+      "acceptance": "FROZEN_WITH_DEVELOPMENT_CORRECTIONS",
       "developmentCorrections": [
-        "replace user-visible English copy with Chinese locale resources",
-        "preserve technical identifiers only when appropriate"
+        "use Chinese locale and existing AppShell"
       ]
     },
     {
-      "frameId": "C1_CHAPTER_PLANNING_V2",
-      "area": "章节规划",
-      "purpose": "真实候选列表与运行状态",
-      "sourceFolder": "chapter_planning_console_v2.0",
-      "screen": "ui/frames/C1_CHAPTER_PLANNING_V2/screen.png",
-      "html": "ui/frames/C1_CHAPTER_PLANNING_V2/code.html",
-      "acceptance": "CONDITIONAL_PASS",
+      "frameId": "I19_13_LEGACY_WORKFLOWS_GUIDANCE",
+      "area": "内置流程",
+      "purpose": "旧 /workflows 只读页与真实流程中心引导",
+      "route": "/workflows",
+      "sourceFolder": "13_workflows",
+      "screen": "ui/frames/I19_13_LEGACY_WORKFLOWS_GUIDANCE/screen.png",
+      "html": "ui/frames/I19_13_LEGACY_WORKFLOWS_GUIDANCE/code.html",
+      "acceptance": "FROZEN_WITH_DEVELOPMENT_CORRECTIONS",
       "developmentCorrections": [
-        "replace user-visible English copy with Chinese locale resources",
-        "preserve technical identifiers only when appropriate"
+        "remove Run breadcrumb from page header",
+        "use Chinese locale and existing AppShell"
       ]
     },
     {
-      "frameId": "C2_GENERATE_CHAPTER_PLAN_DRAWER_V2",
-      "area": "章节规划",
-      "purpose": "发起真实章节规划",
-      "sourceFolder": "generate_chapter_plan_drawer",
-      "screen": "ui/frames/C2_GENERATE_CHAPTER_PLAN_DRAWER_V2/screen.png",
-      "html": "ui/frames/C2_GENERATE_CHAPTER_PLAN_DRAWER_V2/code.html",
-      "acceptance": "CONDITIONAL_PASS",
+      "frameId": "I19_14_SHARED_PREFLIGHT_BLOCKED",
+      "area": "共享状态",
+      "purpose": "四阶段共享运行前置检查与阻断",
+      "route": "四阶段发起抽屉",
+      "sourceFolder": "14",
+      "screen": "ui/frames/I19_14_SHARED_PREFLIGHT_BLOCKED/screen.png",
+      "html": "ui/frames/I19_14_SHARED_PREFLIGHT_BLOCKED/code.html",
+      "acceptance": "FROZEN_WITH_DEVELOPMENT_CORRECTIONS",
       "developmentCorrections": [
-        "replace user-visible English copy with Chinese locale resources",
-        "preserve technical identifiers only when appropriate"
+        "use Chinese locale and existing AppShell"
       ]
     },
     {
-      "frameId": "D1_EDITOR_V2",
-      "area": "正文",
-      "purpose": "正文编辑器与真实生成状态",
-      "sourceFolder": "d1_editor_v2_ai_editor_console_3",
-      "screen": "ui/frames/D1_EDITOR_V2/screen.png",
-      "html": "ui/frames/D1_EDITOR_V2/code.html",
-      "acceptance": "CONDITIONAL_PASS",
+      "frameId": "I19_15_SHARED_RUNTIME_RECOVERY",
+      "area": "共享状态",
+      "purpose": "四阶段共享取消、超时、校验失败与消费失败恢复",
+      "route": "四阶段业务页",
+      "sourceFolder": "15",
+      "screen": "ui/frames/I19_15_SHARED_RUNTIME_RECOVERY/screen.png",
+      "html": "ui/frames/I19_15_SHARED_RUNTIME_RECOVERY/code.html",
+      "acceptance": "FROZEN_WITH_DEVELOPMENT_CORRECTIONS",
       "developmentCorrections": [
-        "replace user-visible English copy with Chinese locale resources",
-        "preserve technical identifiers only when appropriate"
-      ]
-    },
-    {
-      "frameId": "D1_GENERATE_CONTENT_DRAWER",
-      "area": "正文",
-      "purpose": "发起真实正文生成",
-      "sourceFolder": "generate_content_drawer_ai_content_factory_2.0",
-      "screen": "ui/frames/D1_GENERATE_CONTENT_DRAWER/screen.png",
-      "html": "ui/frames/D1_GENERATE_CONTENT_DRAWER/code.html",
-      "acceptance": "CONDITIONAL_PASS",
-      "developmentCorrections": [
-        "replace user-visible English copy with Chinese locale resources",
-        "preserve technical identifiers only when appropriate"
-      ]
-    },
-    {
-      "frameId": "D2_REVIEW_V2",
-      "area": "审核",
-      "purpose": "真实审核结果与问题选择",
-      "sourceFolder": "content_review_console_v2.0",
-      "screen": "ui/frames/D2_REVIEW_V2/screen.png",
-      "html": "ui/frames/D2_REVIEW_V2/code.html",
-      "acceptance": "CONDITIONAL_PASS",
-      "developmentCorrections": [
-        "replace user-visible English copy with Chinese locale resources",
-        "preserve technical identifiers only when appropriate"
-      ]
-    },
-    {
-      "frameId": "D2_SUBMIT_REVIEW_DRAWER",
-      "area": "审核",
-      "purpose": "发起固定版本审核",
-      "sourceFolder": "submit_content_review_drawer",
-      "screen": "ui/frames/D2_SUBMIT_REVIEW_DRAWER/screen.png",
-      "html": "ui/frames/D2_SUBMIT_REVIEW_DRAWER/code.html",
-      "acceptance": "CONDITIONAL_PASS",
-      "developmentCorrections": [
-        "replace user-visible English copy with Chinese locale resources",
-        "preserve technical identifiers only when appropriate"
-      ]
-    },
-    {
-      "frameId": "D4_CREATE_REWRITE_V2",
-      "area": "重写",
-      "purpose": "选择审核问题并发起重写",
-      "sourceFolder": "d1_editor_v2_create_rewrite_console",
-      "screen": "ui/frames/D4_CREATE_REWRITE_V2/screen.png",
-      "html": "ui/frames/D4_CREATE_REWRITE_V2/code.html",
-      "acceptance": "CONDITIONAL_PASS",
-      "developmentCorrections": [
-        "replace user-visible English copy with Chinese locale resources",
-        "preserve technical identifiers only when appropriate"
-      ]
-    },
-    {
-      "frameId": "D5_REWRITE_RESULT_V2",
-      "area": "重写",
-      "purpose": "新旧版本关系与结果预览",
-      "sourceFolder": "d5_rewrite_result_v2_rewrite_result_console_2",
-      "screen": "ui/frames/D5_REWRITE_RESULT_V2/screen.png",
-      "html": "ui/frames/D5_REWRITE_RESULT_V2/code.html",
-      "acceptance": "CONDITIONAL_PASS",
-      "developmentCorrections": [
-        "replace user-visible English copy with Chinese locale resources",
-        "preserve technical identifiers only when appropriate"
-      ]
-    },
-    {
-      "frameId": "STATE_TASK_RUNNING_BAR",
-      "area": "共享组件",
-      "purpose": "异步运行状态条",
-      "sourceFolder": "component_spec_state_task_running_bar",
-      "screen": "ui/frames/STATE_TASK_RUNNING_BAR/screen.png",
-      "html": "ui/frames/STATE_TASK_RUNNING_BAR/code.html",
-      "acceptance": "CONDITIONAL_PASS",
-      "developmentCorrections": [
-        "replace user-visible English copy with Chinese locale resources",
-        "preserve technical identifiers only when appropriate"
-      ]
-    },
-    {
-      "frameId": "STATE_TASK_FAILED_NOTICE",
-      "area": "共享组件",
-      "purpose": "安全错误通知与恢复动作",
-      "sourceFolder": "component_spec_state_task_failed_notice",
-      "screen": "ui/frames/STATE_TASK_FAILED_NOTICE/screen.png",
-      "html": "ui/frames/STATE_TASK_FAILED_NOTICE/code.html",
-      "acceptance": "CONDITIONAL_PASS",
-      "developmentCorrections": [
-        "replace user-visible English copy with Chinese locale resources",
-        "preserve technical identifiers only when appropriate"
-      ]
-    },
-    {
-      "frameId": "STATE_NOT_CONFIGURED_EMPTY",
-      "area": "共享组件",
-      "purpose": "未配置、失效与空结果状态",
-      "sourceFolder": "component_spec_state_not_configured_empty",
-      "screen": "ui/frames/STATE_NOT_CONFIGURED_EMPTY/screen.png",
-      "html": "ui/frames/STATE_NOT_CONFIGURED_EMPTY/code.html",
-      "acceptance": "CONDITIONAL_PASS",
-      "developmentCorrections": [
-        "replace user-visible English copy with Chinese locale resources",
-        "preserve technical identifiers only when appropriate"
+        "rename generic dedicated retry to retry result submission"
       ]
     }
   ]

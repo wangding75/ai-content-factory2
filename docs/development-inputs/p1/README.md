@@ -51,3 +51,13 @@ Iteration 15 真实章节规划与候选批次闭环：已完成开发输入升�
 ## 开发顺序
 
 契约冻结后，后端先完成数据、安全和 Application Service 基础；前端基于冻结 OpenAPI 和规范化 Frame 并行开发。真实 API 联调前先完成人工 UI 验收。
+
+## Iteration 19 开发输入状态（2026-07-31）
+
+Iteration 19 的 15 Frame UI、迭代级 API Scope、逻辑数据模型、状态机和追踪关系已冻结，状态为 `READY_FOR_CF_19_01A`。主 OpenAPI 和 Migration 19 尚未实施；开发必须从 OpenAPI 同步任务开始，不得直接跳到 Adapter 或四 Stage 联调。
+
+入口：
+
+```text
+iterations/iteration-19-second-loop-integration-acceptance/
+```
