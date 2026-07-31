@@ -30,6 +30,24 @@ type checkResult struct {
 	pass     bool
 }
 
+// dataCheck defines a domain data consistency check.
+type dataCheck struct {
+	ID          string // stable unique check ID
+	Name        string // short human-readable name
+	SQL         string // read-only SQL returning anomaly count and sample rows
+	Description string // what this check validates
+}
+
+// dataCheckResult holds the result of a data check.
+type dataCheckResult struct {
+	ID           string
+	Name         string
+	Pass         bool
+	AnomalyCount int
+	Samples      []string // up to 5 sample rows
+	Description  string
+}
+
 func main() {
 	os.Exit(run())
 }
@@ -80,6 +98,12 @@ func run() int {
 		return 1
 	}
 
+	// Set read-only transaction for data checks
+	if _, err := conn.Exec(ctx, "SET TRANSACTION READ ONLY"); err != nil {
+		fmt.Fprintf(os.Stderr, "FAIL: cannot set read-only transaction: %v\n", err)
+		return 1
+	}
+
 	// === Migration state check ===
 	dbVersion, dirty, err := checkMigrationState(ctx, conn)
 	if err != nil {
@@ -127,6 +151,44 @@ func run() int {
 	fmt.Printf("Schema checks: %d total, %d passed, %d failed\n", len(results), passCount, failCount)
 
 	if !allPass {
+		return 1
+	}
+
+	// === Domain data consistency checks ===
+	dataChecks := defineDataChecks()
+	if err := validateDataChecks(dataChecks); err != nil {
+		fmt.Fprintf(os.Stderr, "FAIL: data check definition error: %v\n", err)
+		return 1
+	}
+
+	dataResults := runDataChecks(ctx, conn, dataChecks)
+	dataAllPass := true
+	for _, dr := range dataResults {
+		status := "PASS"
+		if !dr.Pass {
+			status = "FAIL"
+			dataAllPass = false
+		}
+		fmt.Printf("  %s: %s (%s) - anomalies=%d\n", status, dr.ID, dr.Name, dr.AnomalyCount)
+		if !dr.Pass {
+			for _, s := range dr.Samples {
+				fmt.Fprintf(os.Stderr, "    sample: %s\n", s)
+			}
+		}
+	}
+
+	dataPassCount := 0
+	dataFailCount := 0
+	for _, dr := range dataResults {
+		if dr.Pass {
+			dataPassCount++
+		} else {
+			dataFailCount++
+		}
+	}
+	fmt.Printf("Data checks: %d total, %d passed, %d failed\n", len(dataResults), dataPassCount, dataFailCount)
+
+	if !dataAllPass {
 		return 1
 	}
 
@@ -197,7 +259,6 @@ func loadMigrations(directory string) ([]migration, error) {
 }
 
 func checkMigrationState(ctx context.Context, conn *pgx.Conn) (version int, dirty bool, err error) {
-	// Check if schema_migrations table exists
 	var exists bool
 	err = conn.QueryRow(ctx, "SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = current_schema() AND table_name = 'schema_migrations')").Scan(&exists)
 	if err != nil {
@@ -207,16 +268,11 @@ func checkMigrationState(ctx context.Context, conn *pgx.Conn) (version int, dirt
 		return 0, false, fmt.Errorf("schema_migrations table does not exist")
 	}
 
-	// Get current version (max version in schema_migrations)
 	err = conn.QueryRow(ctx, "SELECT COALESCE(MAX(version), 0) FROM schema_migrations").Scan(&version)
 	if err != nil {
 		return 0, false, fmt.Errorf("read current version: %w", err)
 	}
 
-	// The schema_migrations table has (version BIGINT PRIMARY KEY, applied_at TIMESTAMPTZ)
-	// There is no explicit dirty column. The framework is dirty if there is a gap
-	// in versions (i.e., some versions are missing while higher ones exist).
-	// Check for gaps: count should equal max - min + 1, or if empty, version 0.
 	if version > 0 {
 		var count int
 		err = conn.QueryRow(ctx, "SELECT COUNT(*) FROM schema_migrations").Scan(&count)
@@ -243,186 +299,83 @@ func runSchemaChecks(ctx context.Context, conn *pgx.Conn) []checkResult {
 
 	// --- 000015: content_generation_data_foundation ---
 
-	// workflow_run_records: subject_type column
 	results = append(results, checkColumn(ctx, conn, "workflow_run_records", "subject_type",
 		"character varying", "YES", "NULL"))
-
-	// workflow_run_records: subject_id column
 	results = append(results, checkColumn(ctx, conn, "workflow_run_records", "subject_id",
 		"uuid", "YES", "NULL"))
-
-	// workflow_run_records: subject_pair_check constraint
 	results = append(results, checkConstraintExists(ctx, conn, "workflow_run_records_subject_pair_check"))
-
-	// workflow_run_records: active_content_generation_subject unique index
 	results = append(results, checkIndexExists(ctx, conn, "workflow_run_records_active_content_generation_subject_idx"))
-
-	// workflow_run_records: project_subject_stage_created_at_id index
 	results = append(results, checkIndexExists(ctx, conn, "workflow_run_records_project_subject_stage_created_at_id_idx"))
-
-	// content_versions: source_content_version_id column
 	results = append(results, checkColumn(ctx, conn, "content_versions", "source_content_version_id",
 		"uuid", "YES", "NULL"))
-
-	// content_versions: source_content_version_version column
 	results = append(results, checkColumn(ctx, conn, "content_versions", "source_content_version_version",
 		"integer", "YES", "NULL"))
-
-	// content_versions: source_workflow_run_id column
 	results = append(results, checkColumn(ctx, conn, "content_versions", "source_workflow_run_id",
 		"uuid", "YES", "NULL"))
-
-	// content_versions: source_content_version_fk FK
 	results = append(results, checkConstraintExists(ctx, conn, "content_versions_source_content_version_fk"))
-
-	// content_versions: source_workflow_run_id_fkey FK
 	results = append(results, checkConstraintExists(ctx, conn, "content_versions_source_workflow_run_id_fkey"))
-
-	// content_versions: source_workflow_run_unique_idx unique index
 	results = append(results, checkIndexExists(ctx, conn, "content_versions_source_workflow_run_unique_idx"))
-
-	// content_versions: content_item_source_version_no_id index
 	results = append(results, checkIndexExists(ctx, conn, "content_versions_content_item_source_version_no_id_idx"))
-
-	// workflow_run_events: event_type_check constraint (includes 'output_validation_failed' from 000016)
 	results = append(results, checkConstraintExists(ctx, conn, "workflow_run_events_event_type_check"))
 
 	// --- 000017: real_content_review_foundation ---
 
-	// workflow_run_records: active_review_subject unique index
 	results = append(results, checkIndexExists(ctx, conn, "workflow_run_records_active_review_subject_idx"))
-
-	// review_reports: schema_version column
 	results = append(results, checkColumn(ctx, conn, "review_reports", "schema_version",
 		"character varying", "YES", "NULL"))
-
-	// review_reports: source_content_version_version column
 	results = append(results, checkColumn(ctx, conn, "review_reports", "source_content_version_version",
 		"integer", "YES", "NULL"))
-
-	// review_reports: source_content_hash column
 	results = append(results, checkColumn(ctx, conn, "review_reports", "source_content_hash",
 		"character", "YES", "NULL"))
-
-	// review_reports: workflow_run_id nullable (was changed to DROP NOT NULL)
 	results = append(results, checkColumn(ctx, conn, "review_reports", "workflow_run_id",
 		"uuid", "YES", "NULL"))
-
-	// review_reports: score nullable (was changed to DROP NOT NULL)
 	results = append(results, checkColumn(ctx, conn, "review_reports", "score",
 		"integer", "YES", "NULL"))
-
-	// review_reports: provider_key_check constraint
 	results = append(results, checkConstraintExists(ctx, conn, "review_reports_provider_key_check"))
-
-	// review_reports: conclusion_check constraint
 	results = append(results, checkConstraintExists(ctx, conn, "review_reports_conclusion_check"))
-
-	// review_reports: runtime_shape_check constraint
 	results = append(results, checkConstraintExists(ctx, conn, "review_reports_runtime_shape_check"))
-
-	// review_reports: trigger function
 	results = append(results, checkFunctionExists(ctx, conn, "enforce_review_report_workflow_run_scope"))
-
-	// review_reports: constraint trigger
 	results = append(results, checkTriggerExists(ctx, conn, "review_reports_workflow_run_scope_trigger"))
-
-	// review_findings: issue_key column
 	results = append(results, checkColumn(ctx, conn, "review_findings", "issue_key",
 		"character varying", "YES", "NULL"))
-
-	// review_findings: category_label column
 	results = append(results, checkColumn(ctx, conn, "review_findings", "category_label",
 		"character varying", "YES", "NULL"))
-
-	// review_findings: evidence_json column
 	results = append(results, checkColumn(ctx, conn, "review_findings", "evidence_json",
 		"jsonb", "YES", "NULL"))
-
-	// review_findings: suggestion column
 	results = append(results, checkColumn(ctx, conn, "review_findings", "suggestion",
 		"text", "YES", "NULL"))
-
-	// review_findings: disposition column
 	results = append(results, checkColumn(ctx, conn, "review_findings", "disposition",
 		"character varying", "NO", "'open'::character varying"))
-
-	// review_findings: version column
 	results = append(results, checkColumn(ctx, conn, "review_findings", "version",
 		"integer", "NO", "1"))
-
-	// review_findings: ignored_at column
 	results = append(results, checkColumn(ctx, conn, "review_findings", "ignored_at",
 		"timestamp with time zone", "YES", "NULL"))
-
-	// review_findings: ignored_by column
 	results = append(results, checkColumn(ctx, conn, "review_findings", "ignored_by",
 		"character varying", "YES", "NULL"))
-
-	// review_findings: updated_at column
 	results = append(results, checkColumn(ctx, conn, "review_findings", "updated_at",
 		"timestamp with time zone", "NO", "now()"))
-
-	// review_findings: category_check constraint
 	results = append(results, checkConstraintExists(ctx, conn, "review_findings_category_check"))
-
-	// review_findings: severity_check constraint
 	results = append(results, checkConstraintExists(ctx, conn, "review_findings_severity_check"))
-
-	// review_findings: position_check constraint
 	results = append(results, checkConstraintExists(ctx, conn, "review_findings_position_check"))
-
-	// review_findings: issue_key_check constraint
 	results = append(results, checkConstraintExists(ctx, conn, "review_findings_issue_key_check"))
-
-	// review_findings: category_label_check constraint
 	results = append(results, checkConstraintExists(ctx, conn, "review_findings_category_label_check"))
-
-	// review_findings: evidence_json_check constraint
 	results = append(results, checkConstraintExists(ctx, conn, "review_findings_evidence_json_check"))
-
-	// review_findings: suggestion_check constraint
 	results = append(results, checkConstraintExists(ctx, conn, "review_findings_suggestion_check"))
-
-	// review_findings: disposition_check constraint
 	results = append(results, checkConstraintExists(ctx, conn, "review_findings_disposition_check"))
-
-	// review_findings: version_check constraint
 	results = append(results, checkConstraintExists(ctx, conn, "review_findings_version_check"))
-
-	// review_findings: ignored_shape_check constraint
 	results = append(results, checkConstraintExists(ctx, conn, "review_findings_ignored_shape_check"))
-
-	// review_findings: runtime_shape_check constraint
 	results = append(results, checkConstraintExists(ctx, conn, "review_findings_runtime_shape_check"))
-
-	// review_findings: review_issue_key_unique unique constraint
 	results = append(results, checkConstraintExists(ctx, conn, "review_findings_review_issue_key_unique"))
-
-	// review_findings: review_severity_disposition_position index
 	results = append(results, checkIndexExists(ctx, conn, "review_findings_review_severity_disposition_position_idx"))
 
 	// --- 000018: real_content_rewrite_foundation ---
 
-	// workflow_run_records: rewrite_subject_shape_check constraint
 	results = append(results, checkConstraintExists(ctx, conn, "workflow_run_records_rewrite_subject_shape_check"))
-
-	// workflow_run_records: active_rewrite_subject unique index
 	results = append(results, checkIndexExists(ctx, conn, "workflow_run_records_active_rewrite_subject_idx"))
-
-	// workflow_run_records: enforce_rewrite_workflow_run_scope function
 	results = append(results, checkFunctionExists(ctx, conn, "enforce_rewrite_workflow_run_scope"))
-
-	// workflow_run_records: rewrite_scope_trigger constraint trigger
 	results = append(results, checkTriggerExists(ctx, conn, "workflow_run_records_rewrite_scope_trigger"))
-
-	// content_versions: enforce_workflow_rewrite_candidate_scope function
 	results = append(results, checkFunctionExists(ctx, conn, "enforce_workflow_rewrite_candidate_scope"))
-
-	// content_versions: workflow_rewrite_scope_trigger constraint trigger
 	results = append(results, checkTriggerExists(ctx, conn, "content_versions_workflow_rewrite_scope_trigger"))
-
-	// content_versions: workflow_rewrite_shape constraint
 	results = append(results, checkConstraintExists(ctx, conn, "content_versions_workflow_rewrite_shape"))
 
 	return results
@@ -457,8 +410,6 @@ func checkColumn(ctx context.Context, conn *pgx.Conn, table, column, expectedTyp
 
 	typeMatch := strings.EqualFold(dataType, expectedType)
 	nullableMatch := nullable == isNullable
-
-	// For default comparison, handle extra whitespace/casting
 	defaultMatch := defaultMatches(actualDefault, expectedDefault)
 
 	pass := typeMatch && nullableMatch && defaultMatch
@@ -469,19 +420,14 @@ func checkColumn(ctx context.Context, conn *pgx.Conn, table, column, expectedTyp
 }
 
 func defaultMatches(actual, expected string) bool {
-	// Normalize NULL
 	if expected == "NULL" {
 		return actual == "NULL" || actual == ""
 	}
-	// Strip ::type casting from actual for comparison
 	actual = strings.TrimSpace(actual)
 	expected = strings.TrimSpace(expected)
-	// Handle cases like 'open'::character varying vs 'open'::character varying
-	// and 1 vs 1
 	if strings.EqualFold(actual, expected) {
 		return true
 	}
-	// Strip type casting
 	actualNoCast := regexp.MustCompile(`::.*$`).ReplaceAllString(actual, "")
 	expectedNoCast := regexp.MustCompile(`::.*$`).ReplaceAllString(expected, "")
 	return strings.EqualFold(strings.TrimSpace(actualNoCast), strings.TrimSpace(expectedNoCast))
@@ -602,4 +548,840 @@ func checkTriggerExists(ctx context.Context, conn *pgx.Conn, triggerName string)
 		actual:   "exists",
 		pass:     true,
 	}
+}
+
+// === Data Check Framework ===
+
+// writeSQLPattern matches SQL write keywords for detection.
+var writeSQLPattern = regexp.MustCompile(`(?i)\b(INSERT|UPDATE|DELETE|TRUNCATE|DROP|CREATE|ALTER|GRANT|REVOKE|LOCK|VACUUM|REINDEX|CLUSTER|COPY|CALL|EXECUTE|DISCARD|LISTEN|NOTIFY|UNLISTEN|MOVE|FETCH|DECLARE|PREPARE|DEALLOCATE|REASSIGN|REFRESH|SECURITY|SET\s+(ROLE|SESSION AUTHORIZATION))\b`)
+
+// isWriteSQL checks if a SQL string contains write keywords.
+func isWriteSQL(sql string) bool {
+	return writeSQLPattern.MatchString(sql)
+}
+
+// validateDataChecks validates all data check definitions.
+func validateDataChecks(checks []dataCheck) error {
+	seenIDs := map[string]bool{}
+	for _, c := range checks {
+		if c.ID == "" {
+			return fmt.Errorf("data check has empty ID")
+		}
+		if c.Name == "" {
+			return fmt.Errorf("data check %s has empty name", c.ID)
+		}
+		if seenIDs[c.ID] {
+			return fmt.Errorf("duplicate data check ID: %s", c.ID)
+		}
+		seenIDs[c.ID] = true
+		if isWriteSQL(c.SQL) {
+			return fmt.Errorf("data check %s contains write SQL keywords", c.ID)
+		}
+	}
+	return nil
+}
+
+// runDataChecks executes all data checks and returns results.
+func runDataChecks(ctx context.Context, conn *pgx.Conn, checks []dataCheck) []dataCheckResult {
+	results := make([]dataCheckResult, 0, len(checks))
+	for _, c := range checks {
+		results = append(results, executeDataCheck(ctx, conn, c))
+	}
+	return results
+}
+
+// formatValue formats a pgx value for display, handling special types like UUID.
+func formatValue(v interface{}) string {
+	switch val := v.(type) {
+	case [16]uint8:
+		// UUID as [16]byte — format as standard UUID string
+		return fmt.Sprintf("%08x-%04x-%04x-%04x-%012x",
+			val[0:4], val[4:6], val[6:8], val[8:10], val[10:16])
+	default:
+		return fmt.Sprintf("%v", v)
+	}
+}
+
+// querier abstracts over *pgx.Conn and pgx.Tx for read-only queries.
+type querier interface {
+	Query(ctx context.Context, sql string, args ...any) (pgx.Rows, error)
+}
+
+// executeDataCheck runs a single data check and returns its result.
+// The SQL must return rows where the first column is the anomaly count,
+// and the remaining columns are sample identification fields.
+func executeDataCheck(ctx context.Context, q querier, c dataCheck) dataCheckResult {
+	result := dataCheckResult{
+		ID:          c.ID,
+		Name:        c.Name,
+		Description: c.Description,
+		Pass:        true,
+	}
+
+	rows, err := q.Query(ctx, c.SQL)
+	if err != nil {
+		result.Pass = false
+		result.AnomalyCount = -1
+		result.Samples = []string{fmt.Sprintf("query error: %v", err)}
+		return result
+	}
+	defer rows.Close()
+
+	// Read anomaly count from first row (first column).
+	if rows.Next() {
+		vals, err := rows.Values()
+		if err != nil {
+			result.Pass = false
+			result.AnomalyCount = -1
+			result.Samples = []string{fmt.Sprintf("scan error: %v", err)}
+			return result
+		}
+		if len(vals) == 0 {
+			result.Pass = false
+			result.AnomalyCount = -1
+			result.Samples = []string{"no columns returned"}
+			return result
+		}
+
+		// First column is the anomaly count
+		switch v := vals[0].(type) {
+		case int64:
+			result.AnomalyCount = int(v)
+		case int32:
+			result.AnomalyCount = int(v)
+		case int:
+			result.AnomalyCount = v
+		default:
+			result.Pass = false
+			result.AnomalyCount = -1
+			result.Samples = []string{fmt.Sprintf("unexpected count type: %T", vals[0])}
+			return result
+		}
+
+		if result.AnomalyCount > 0 {
+			result.Pass = false
+			// Use remaining columns from first row as first sample
+			parts := make([]string, len(vals)-1)
+			for i := 1; i < len(vals); i++ {
+				parts[i-1] = formatValue(vals[i])
+			}
+			result.Samples = append(result.Samples, strings.Join(parts, " | "))
+		}
+	}
+
+	// Read additional sample rows (up to 5 total)
+	for rows.Next() && len(result.Samples) < 5 {
+		vals, err := rows.Values()
+		if err != nil {
+			result.Samples = append(result.Samples, fmt.Sprintf("row error: %v", err))
+			continue
+		}
+		// Skip first column (count) and use remaining columns
+		parts := make([]string, len(vals)-1)
+		for i := 1; i < len(vals); i++ {
+			parts[i-1] = formatValue(vals[i])
+		}
+		result.Samples = append(result.Samples, strings.Join(parts, " | "))
+	}
+
+	return result
+}
+
+// sampleQuery builds a SQL fragment for sample row retrieval.
+// For checks that use WITH ... SELECT count, we return sample rows.
+// The SQL must return: count, then sample columns.
+
+// === Data Check Definitions ===
+
+func defineDataChecks() []dataCheck {
+	checks := []dataCheck{
+		// === FK Orphan Checks ===
+
+		{
+			ID:   "DC-ORPHAN-001",
+			Name: "content_items current_version_id orphan",
+			SQL: `WITH orphans AS (
+				SELECT ci.id, ci.project_id, ci.current_version_id
+				FROM content_items ci
+				LEFT JOIN content_versions cv ON cv.id = ci.current_version_id
+				WHERE ci.current_version_id IS NOT NULL AND cv.id IS NULL
+			)
+			SELECT (SELECT COUNT(*) FROM orphans) AS cnt,
+			       id, project_id, current_version_id
+			FROM orphans LIMIT 5`,
+			Description: "content_items.current_version_id must reference an existing content_versions row",
+		},
+		{
+			ID:   "DC-ORPHAN-002",
+			Name: "review_reports content_version_id orphan",
+			SQL: `WITH orphans AS (
+				SELECT rr.id, rr.project_id, rr.content_version_id
+				FROM review_reports rr
+				LEFT JOIN content_versions cv ON cv.id = rr.content_version_id
+				WHERE cv.id IS NULL
+			)
+			SELECT (SELECT COUNT(*) FROM orphans) AS cnt,
+			       id, project_id, content_version_id
+			FROM orphans LIMIT 5`,
+			Description: "review_reports.content_version_id must reference an existing content_versions row",
+		},
+		{
+			ID:   "DC-ORPHAN-003",
+			Name: "review_findings review_id orphan",
+			SQL: `WITH orphans AS (
+				SELECT rf.id, rf.review_id
+				FROM review_findings rf
+				LEFT JOIN review_reports rr ON rr.id = rf.review_id
+				WHERE rr.id IS NULL
+			)
+			SELECT (SELECT COUNT(*) FROM orphans) AS cnt,
+			       id, review_id
+			FROM orphans LIMIT 5`,
+			Description: "review_findings.review_id must reference an existing review_reports row",
+		},
+		{
+			ID:   "DC-ORPHAN-004",
+			Name: "review_recommendations review_id orphan",
+			SQL: `WITH orphans AS (
+				SELECT rec.id, rec.review_id
+				FROM review_recommendations rec
+				LEFT JOIN review_reports rr ON rr.id = rec.review_id
+				WHERE rr.id IS NULL
+			)
+			SELECT (SELECT COUNT(*) FROM orphans) AS cnt,
+			       id, review_id
+			FROM orphans LIMIT 5`,
+			Description: "review_recommendations.review_id must reference an existing review_reports row",
+		},
+		{
+			ID:   "DC-ORPHAN-005",
+			Name: "chapter_plan_candidates batch_id orphan",
+			SQL: `WITH orphans AS (
+				SELECT cpc.id, cpc.batch_id, cpc.project_id
+				FROM chapter_plan_candidates cpc
+				LEFT JOIN chapter_plan_candidate_batches cpb ON cpb.id = cpc.batch_id
+				WHERE cpb.id IS NULL
+			)
+			SELECT (SELECT COUNT(*) FROM orphans) AS cnt,
+			       id, batch_id, project_id
+			FROM orphans LIMIT 5`,
+			Description: "chapter_plan_candidates.batch_id must reference an existing candidate_batches row",
+		},
+		{
+			ID:   "DC-ORPHAN-006",
+			Name: "chapter_plan_result_consumptions workflow_run_id orphan",
+			SQL: `WITH orphans AS (
+				SELECT cprc.workflow_run_id, cprc.project_id, cprc.status
+				FROM chapter_plan_result_consumptions cprc
+				LEFT JOIN workflow_run_records wrr ON wrr.id = cprc.workflow_run_id
+				WHERE wrr.id IS NULL
+			)
+			SELECT (SELECT COUNT(*) FROM orphans) AS cnt,
+			       workflow_run_id, project_id, status
+			FROM orphans LIMIT 5`,
+			Description: "chapter_plan_result_consumptions.workflow_run_id must reference an existing workflow_run_records row",
+		},
+		{
+			ID:   "DC-ORPHAN-007",
+			Name: "workflow_run_events run_id orphan",
+			SQL: `WITH orphans AS (
+				SELECT wre.id, wre.run_id
+				FROM workflow_run_events wre
+				LEFT JOIN workflow_run_records wrr ON wrr.id = wre.run_id
+				WHERE wrr.id IS NULL
+			)
+			SELECT (SELECT COUNT(*) FROM orphans) AS cnt,
+			       id, run_id
+			FROM orphans LIMIT 5`,
+			Description: "workflow_run_events.run_id must reference an existing workflow_run_records row",
+		},
+		{
+			ID:   "DC-ORPHAN-008",
+			Name: "workflow_run_records workflow_configuration_id orphan",
+			SQL: `WITH orphans AS (
+				SELECT wrr.id, wrr.project_id, wrr.workflow_configuration_id
+				FROM workflow_run_records wrr
+				LEFT JOIN workflow_configurations wc ON wc.id = wrr.workflow_configuration_id
+				WHERE wc.id IS NULL
+			)
+			SELECT (SELECT COUNT(*) FROM orphans) AS cnt,
+			       id, project_id, workflow_configuration_id
+			FROM orphans LIMIT 5`,
+			Description: "workflow_run_records.workflow_configuration_id must reference an existing workflow_configurations row",
+		},
+		{
+			ID:   "DC-ORPHAN-009",
+			Name: "content_versions content_item_id orphan",
+			SQL: `WITH orphans AS (
+				SELECT cv.id, cv.content_item_id
+				FROM content_versions cv
+				LEFT JOIN content_items ci ON ci.id = cv.content_item_id
+				WHERE ci.id IS NULL
+			)
+			SELECT (SELECT COUNT(*) FROM orphans) AS cnt,
+			       id, content_item_id
+			FROM orphans LIMIT 5`,
+			Description: "content_versions.content_item_id must reference an existing content_items row",
+		},
+
+		// === Cross-Project Checks ===
+
+		{
+			ID:   "DC-CROSS-001",
+			Name: "content_items / chapter_plans project mismatch",
+			SQL: `WITH mismatches AS (
+				SELECT ci.id, ci.project_id AS ci_project, cp.project_id AS cp_project
+				FROM content_items ci
+				JOIN chapter_plans cp ON cp.id = ci.chapter_plan_id
+				WHERE ci.project_id <> cp.project_id
+			)
+			SELECT (SELECT COUNT(*) FROM mismatches) AS cnt,
+			       id, ci_project, cp_project
+			FROM mismatches LIMIT 5`,
+			Description: "content_items.project_id must match its chapter_plan.project_id",
+		},
+		{
+			ID:   "DC-CROSS-002",
+			Name: "review_reports / content_items project mismatch",
+			SQL: `WITH mismatches AS (
+				SELECT rr.id, rr.project_id AS rr_project, ci.project_id AS ci_project
+				FROM review_reports rr
+				JOIN content_items ci ON ci.id = rr.content_item_id
+				WHERE rr.project_id <> ci.project_id
+			)
+			SELECT (SELECT COUNT(*) FROM mismatches) AS cnt,
+			       id, rr_project, ci_project
+			FROM mismatches LIMIT 5`,
+			Description: "review_reports.project_id must match its content_item.project_id",
+		},
+		{
+			ID:   "DC-CROSS-003",
+			Name: "review_reports / content_versions content_item mismatch",
+			SQL: `WITH mismatches AS (
+				SELECT rr.id, rr.content_item_id, rr.content_version_id, cv.content_item_id AS cv_item
+				FROM review_reports rr
+				JOIN content_versions cv ON cv.id = rr.content_version_id
+				WHERE cv.content_item_id <> rr.content_item_id
+			)
+			SELECT (SELECT COUNT(*) FROM mismatches) AS cnt,
+			       id, content_item_id, content_version_id, cv_item
+			FROM mismatches LIMIT 5`,
+			Description: "review_reports.content_version must belong to the same content_item",
+		},
+		{
+			ID:   "DC-CROSS-004",
+			Name: "chapter_plan_candidates / batch project mismatch",
+			SQL: `WITH mismatches AS (
+				SELECT cpc.id, cpc.project_id AS cand_project, cpb.project_id AS batch_project
+				FROM chapter_plan_candidates cpc
+				JOIN chapter_plan_candidate_batches cpb ON cpb.id = cpc.batch_id
+				WHERE cpc.project_id <> cpb.project_id
+			)
+			SELECT (SELECT COUNT(*) FROM mismatches) AS cnt,
+			       id, cand_project, batch_project
+			FROM mismatches LIMIT 5`,
+			Description: "chapter_plan_candidates.project_id must match its batch.project_id",
+		},
+		{
+			ID:   "DC-CROSS-005",
+			Name: "chapter_plan_revisions / chapter_plan project mismatch",
+			SQL: `WITH mismatches AS (
+				SELECT cpr.id, cpr.project_id AS rev_project, cp.project_id AS cp_project
+				FROM chapter_plan_revisions cpr
+				JOIN chapter_plans cp ON cp.id = cpr.chapter_plan_id
+				WHERE cpr.project_id <> cp.project_id
+			)
+			SELECT (SELECT COUNT(*) FROM mismatches) AS cnt,
+			       id, rev_project, cp_project
+			FROM mismatches LIMIT 5`,
+			Description: "chapter_plan_revisions.project_id must match its chapter_plan.project_id",
+		},
+		{
+			ID:   "DC-CROSS-006",
+			Name: "chapter_plan_result_consumptions / workflow_run_records project mismatch",
+			SQL: `WITH mismatches AS (
+				SELECT cprc.workflow_run_id, cprc.project_id AS cons_project, wrr.project_id AS run_project
+				FROM chapter_plan_result_consumptions cprc
+				JOIN workflow_run_records wrr ON wrr.id = cprc.workflow_run_id
+				WHERE cprc.project_id <> wrr.project_id
+			)
+			SELECT (SELECT COUNT(*) FROM mismatches) AS cnt,
+			       workflow_run_id, cons_project, run_project
+			FROM mismatches LIMIT 5`,
+			Description: "chapter_plan_result_consumptions.project_id must match its workflow_run_record.project_id",
+		},
+
+		// === Current Version Checks ===
+
+		{
+			ID:   "DC-CURVER-001",
+			Name: "content_items current_version_id missing",
+			SQL: `WITH invalid AS (
+				SELECT id, project_id, current_version_id
+				FROM content_items
+				WHERE current_version_id IS NULL
+			)
+			SELECT (SELECT COUNT(*) FROM invalid) AS cnt,
+			       id, project_id, current_version_id
+			FROM invalid LIMIT 5`,
+			Description: "content_items.current_version_id must not be NULL",
+		},
+		{
+			ID:   "DC-CURVER-002",
+			Name: "content_items current_version wrong content_item",
+			SQL: `WITH invalid AS (
+				SELECT ci.id, ci.project_id, ci.current_version_id, cv.content_item_id AS cv_item
+				FROM content_items ci
+				JOIN content_versions cv ON cv.id = ci.current_version_id
+				WHERE cv.content_item_id <> ci.id
+			)
+			SELECT (SELECT COUNT(*) FROM invalid) AS cnt,
+			       id, project_id, current_version_id, cv_item
+			FROM invalid LIMIT 5`,
+			Description: "content_items.current_version_id must belong to the same content_item",
+		},
+		{
+			ID:   "DC-CURVER-003",
+			Name: "chapter_plans current_revision_id missing",
+			SQL: `WITH invalid AS (
+				SELECT id, project_id, current_revision_id
+				FROM chapter_plans
+				WHERE current_revision_id IS NULL
+			)
+			SELECT (SELECT COUNT(*) FROM invalid) AS cnt,
+			       id, project_id, current_revision_id
+			FROM invalid LIMIT 5`,
+			Description: "chapter_plans.current_revision_id must not be NULL",
+		},
+		{
+			ID:   "DC-CURVER-004",
+			Name: "chapter_plans current_revision wrong chapter_plan",
+			SQL: `WITH invalid AS (
+				SELECT cp.id, cp.project_id, cp.current_revision_id, cpr.chapter_plan_id AS cpr_cp
+				FROM chapter_plans cp
+				JOIN chapter_plan_revisions cpr ON cpr.id = cp.current_revision_id
+				WHERE cpr.chapter_plan_id <> cp.id
+			)
+			SELECT (SELECT COUNT(*) FROM invalid) AS cnt,
+			       id, project_id, current_revision_id, cpr_cp
+			FROM invalid LIMIT 5`,
+			Description: "chapter_plans.current_revision_id must belong to the same chapter_plan",
+		},
+
+		// === Version Chain Checks ===
+
+		{
+			ID:   "DC-VERCHAIN-001",
+			Name: "content_versions source_content_version_id orphan",
+			SQL: `WITH orphans AS (
+				SELECT cv.id, cv.content_item_id, cv.source_content_version_id
+				FROM content_versions cv
+				LEFT JOIN content_versions scv ON scv.id = cv.source_content_version_id
+				WHERE cv.source_content_version_id IS NOT NULL AND scv.id IS NULL
+			)
+			SELECT (SELECT COUNT(*) FROM orphans) AS cnt,
+			       id, content_item_id, source_content_version_id
+			FROM orphans LIMIT 5`,
+			Description: "content_versions.source_content_version_id must reference an existing content_versions row",
+		},
+		{
+			ID:   "DC-VERCHAIN-002",
+			Name: "content_versions source version cross-item",
+			SQL: `WITH invalid AS (
+				SELECT cv.id, cv.content_item_id, cv.source_content_version_id, scv.content_item_id AS src_item
+				FROM content_versions cv
+				JOIN content_versions scv ON scv.id = cv.source_content_version_id
+				WHERE cv.content_item_id <> scv.content_item_id
+			)
+			SELECT (SELECT COUNT(*) FROM invalid) AS cnt,
+			       id, content_item_id, source_content_version_id, src_item
+			FROM invalid LIMIT 5`,
+			Description: "content_versions.source_content_version_id must belong to the same content_item",
+		},
+		{
+			ID:   "DC-VERCHAIN-003",
+			Name: "content_versions source references self",
+			SQL: `WITH self_ref AS (
+				SELECT id, content_item_id, source_content_version_id
+				FROM content_versions
+				WHERE source_content_version_id IS NOT NULL
+				  AND source_content_version_id = id
+			)
+			SELECT (SELECT COUNT(*) FROM self_ref) AS cnt,
+			       id, content_item_id, source_content_version_id
+			FROM self_ref LIMIT 5`,
+			Description: "content_versions must not reference itself as source",
+		},
+		{
+			ID:   "DC-VERCHAIN-004",
+			Name: "storylines parent_id self-reference",
+			SQL: `WITH self_ref AS (
+				SELECT id, project_id, parent_id
+				FROM storylines
+				WHERE parent_id IS NOT NULL AND parent_id = id
+			)
+			SELECT (SELECT COUNT(*) FROM self_ref) AS cnt,
+			       id, project_id, parent_id
+			FROM self_ref LIMIT 5`,
+			Description: "storylines.parent_id must not equal id",
+		},
+		{
+			ID:   "DC-VERCHAIN-005",
+			Name: "workflow_run_records retry_of_run_id self-reference",
+			SQL: `WITH self_ref AS (
+				SELECT id, project_id, retry_of_run_id
+				FROM workflow_run_records
+				WHERE retry_of_run_id IS NOT NULL AND retry_of_run_id = id
+			)
+			SELECT (SELECT COUNT(*) FROM self_ref) AS cnt,
+			       id, project_id, retry_of_run_id
+			FROM self_ref LIMIT 5`,
+			Description: "workflow_run_records.retry_of_run_id must not equal id",
+		},
+
+		// === Status Consistency Checks ===
+
+		{
+			ID:   "DC-STATUS-001",
+			Name: "workflow_run_records succeeded without finished_at",
+			SQL: `WITH invalid AS (
+				SELECT id, project_id, stage, status, finished_at
+				FROM workflow_run_records
+				WHERE status IN ('succeeded', 'failed') AND finished_at IS NULL
+			)
+			SELECT (SELECT COUNT(*) FROM invalid) AS cnt,
+			       id, project_id, stage, status
+			FROM invalid LIMIT 5`,
+			Description: "succeeded/failed workflow_run_records must have finished_at",
+		},
+		{
+			ID:   "DC-STATUS-002",
+			Name: "workflow_run_records failed without error",
+			SQL: `WITH invalid AS (
+				SELECT id, project_id, stage, status, error_code, error_message
+				FROM workflow_run_records
+				WHERE status = 'failed' AND (error_code IS NULL OR error_message IS NULL)
+			)
+			SELECT (SELECT COUNT(*) FROM invalid) AS cnt,
+			       id, project_id, stage, status
+			FROM invalid LIMIT 5`,
+			Description: "failed workflow_run_records must have error_code and error_message",
+		},
+		{
+			ID:   "DC-STATUS-003",
+			Name: "workflow_run_records succeeded with error",
+			SQL: `WITH invalid AS (
+				SELECT id, project_id, stage, status, error_code
+				FROM workflow_run_records
+				WHERE status <> 'failed' AND error_code IS NOT NULL
+			)
+			SELECT (SELECT COUNT(*) FROM invalid) AS cnt,
+			       id, project_id, stage, status, error_code
+			FROM invalid LIMIT 5`,
+			Description: "non-failed workflow_run_records must not have error_code",
+		},
+		{
+			ID:   "DC-STATUS-004",
+			Name: "workflow_run_records queued with time fields",
+			SQL: `WITH invalid AS (
+				SELECT id, project_id, status, started_at, finished_at, cancelled_at
+				FROM workflow_run_records
+				WHERE status = 'queued'
+				  AND (started_at IS NOT NULL OR finished_at IS NOT NULL OR cancelled_at IS NOT NULL)
+			)
+			SELECT (SELECT COUNT(*) FROM invalid) AS cnt,
+			       id, project_id, status
+			FROM invalid LIMIT 5`,
+			Description: "queued workflow_run_records must have NULL started_at, finished_at, cancelled_at",
+		},
+		{
+			ID:   "DC-STATUS-005",
+			Name: "workflow_run_records running without started_at",
+			SQL: `WITH invalid AS (
+				SELECT id, project_id, status, started_at, finished_at
+				FROM workflow_run_records
+				WHERE status = 'running' AND (started_at IS NULL OR finished_at IS NOT NULL)
+			)
+			SELECT (SELECT COUNT(*) FROM invalid) AS cnt,
+			       id, project_id, status
+			FROM invalid LIMIT 5`,
+			Description: "running workflow_run_records must have started_at and NULL finished_at",
+		},
+		{
+			ID:   "DC-STATUS-006",
+			Name: "content_versions frozen without frozen_at",
+			SQL: `WITH invalid AS (
+				SELECT id, content_item_id, status, frozen_at
+				FROM content_versions
+				WHERE status = 'frozen' AND frozen_at IS NULL
+			)
+			SELECT (SELECT COUNT(*) FROM invalid) AS cnt,
+			       id, content_item_id, status
+			FROM invalid LIMIT 5`,
+			Description: "frozen content_versions must have frozen_at",
+		},
+		{
+			ID:   "DC-STATUS-007",
+			Name: "content_versions editable_draft with frozen_at",
+			SQL: `WITH invalid AS (
+				SELECT id, content_item_id, status, frozen_at
+				FROM content_versions
+				WHERE status = 'editable_draft' AND frozen_at IS NOT NULL
+			)
+			SELECT (SELECT COUNT(*) FROM invalid) AS cnt,
+			       id, content_item_id, status
+			FROM invalid LIMIT 5`,
+			Description: "editable_draft content_versions must have NULL frozen_at",
+		},
+		{
+			ID:   "DC-STATUS-008",
+			Name: "chapter_plans confirmed without confirmed_at",
+			SQL: `WITH invalid AS (
+				SELECT id, project_id, status, confirmed_at
+				FROM chapter_plans
+				WHERE status = 'confirmed' AND confirmed_at IS NULL
+			)
+			SELECT (SELECT COUNT(*) FROM invalid) AS cnt,
+			       id, project_id, status
+			FROM invalid LIMIT 5`,
+			Description: "confirmed chapter_plans must have confirmed_at",
+		},
+		{
+			ID:   "DC-STATUS-009",
+			Name: "chapter_plans pending_confirmation with confirmed_at",
+			SQL: `WITH invalid AS (
+				SELECT id, project_id, status, confirmed_at
+				FROM chapter_plans
+				WHERE status = 'pending_confirmation' AND confirmed_at IS NOT NULL
+			)
+			SELECT (SELECT COUNT(*) FROM invalid) AS cnt,
+			       id, project_id, status
+			FROM invalid LIMIT 5`,
+			Description: "pending_confirmation chapter_plans must have NULL confirmed_at",
+		},
+		{
+			ID:   "DC-STATUS-010",
+			Name: "chapter_plan_candidates adopted without adopted_chapter_plan",
+			SQL: `WITH invalid AS (
+				SELECT id, project_id, batch_id, status, adopted_chapter_plan_id, adopted_at
+				FROM chapter_plan_candidates
+				WHERE status = 'adopted' AND (adopted_chapter_plan_id IS NULL OR adopted_at IS NULL)
+			)
+			SELECT (SELECT COUNT(*) FROM invalid) AS cnt,
+			       id, project_id, batch_id, status
+			FROM invalid LIMIT 5`,
+			Description: "adopted chapter_plan_candidates must have adopted_chapter_plan_id and adopted_at",
+		},
+		{
+			ID:   "DC-STATUS-011",
+			Name: "chapter_plan_result_consumptions consumed without consumed_at",
+			SQL: `WITH invalid AS (
+				SELECT workflow_run_id, project_id, status, consumed_at
+				FROM chapter_plan_result_consumptions
+				WHERE status = 'consumed' AND consumed_at IS NULL
+			)
+			SELECT (SELECT COUNT(*) FROM invalid) AS cnt,
+			       workflow_run_id, project_id, status
+			FROM invalid LIMIT 5`,
+			Description: "consumed chapter_plan_result_consumptions must have consumed_at",
+		},
+
+		// === Business Uniqueness Checks ===
+
+		{
+			ID:   "DC-UNIQUE-001",
+			Name: "content_items duplicate chapter_plan",
+			SQL: `WITH dups AS (
+				SELECT chapter_plan_id, COUNT(*) AS cnt
+				FROM content_items
+				GROUP BY chapter_plan_id
+				HAVING COUNT(*) > 1
+			)
+			SELECT (SELECT COUNT(*) FROM dups) AS cnt,
+			       chapter_plan_id, cnt
+			FROM dups LIMIT 5`,
+			Description: "each chapter_plan must have at most one content_item",
+		},
+		{
+			ID:   "DC-UNIQUE-002",
+			Name: "chapter_plan_candidates adopted relation inconsistency",
+			SQL: `WITH anomalies AS (
+				SELECT cpc.id, cpc.project_id, cpc.adopted_chapter_plan_id, cpc.adopted_revision_id,
+				       'adopted_revision_id_null' AS reason
+				FROM chapter_plan_candidates cpc
+				WHERE cpc.status = 'adopted' AND cpc.adopted_revision_id IS NULL
+
+				UNION ALL
+
+				SELECT cpc.id, cpc.project_id, cpc.adopted_chapter_plan_id, cpc.adopted_revision_id,
+				       'adopted_revision_not_found' AS reason
+				FROM chapter_plan_candidates cpc
+				LEFT JOIN chapter_plan_revisions cpr ON cpr.id = cpc.adopted_revision_id
+				WHERE cpc.status = 'adopted' AND cpc.adopted_revision_id IS NOT NULL AND cpr.id IS NULL
+
+				UNION ALL
+
+				SELECT cpc.id, cpc.project_id, cpc.adopted_chapter_plan_id, cpc.adopted_revision_id,
+				       'revision_chapter_plan_mismatch' AS reason
+				FROM chapter_plan_candidates cpc
+				JOIN chapter_plan_revisions cpr ON cpr.id = cpc.adopted_revision_id
+				WHERE cpc.status = 'adopted' AND cpr.chapter_plan_id <> cpc.adopted_chapter_plan_id
+
+				UNION ALL
+
+				SELECT cpc.id, cpc.project_id, cpc.adopted_chapter_plan_id, cpc.adopted_revision_id,
+				       'revision_project_mismatch' AS reason
+				FROM chapter_plan_candidates cpc
+				JOIN chapter_plan_revisions cpr ON cpr.id = cpc.adopted_revision_id
+				WHERE cpc.status = 'adopted' AND cpr.project_id <> cpc.project_id
+
+				UNION ALL
+
+				SELECT cpc.id, cpc.project_id, cpc.adopted_chapter_plan_id, cpc.adopted_revision_id,
+				       'revision_source_candidate_mismatch' AS reason
+				FROM chapter_plan_candidates cpc
+				JOIN chapter_plan_revisions cpr ON cpr.id = cpc.adopted_revision_id
+				WHERE cpc.status = 'adopted' AND (cpr.source_candidate_id IS NULL OR cpr.source_candidate_id <> cpc.id)
+
+				UNION ALL
+
+				SELECT cpc.id, cpc.project_id, cpc.adopted_chapter_plan_id, cpc.adopted_revision_id,
+				       'revision_source_batch_mismatch' AS reason
+				FROM chapter_plan_candidates cpc
+				JOIN chapter_plan_revisions cpr ON cpr.id = cpc.adopted_revision_id
+				WHERE cpc.status = 'adopted' AND (cpr.source_candidate_batch_id IS NULL OR cpr.source_candidate_batch_id <> cpc.batch_id)
+
+				UNION ALL
+
+				SELECT cpc.id, cpc.project_id, cpc.adopted_chapter_plan_id, cpc.adopted_revision_id,
+				       'candidate_multiple_revisions' AS reason
+				FROM chapter_plan_candidates cpc
+				JOIN (
+					SELECT source_candidate_id, COUNT(*) AS cnt
+					FROM chapter_plan_revisions
+					WHERE source_candidate_id IS NOT NULL
+					GROUP BY source_candidate_id
+					HAVING COUNT(*) > 1
+				) multi ON multi.source_candidate_id = cpc.id
+				WHERE cpc.status = 'adopted'
+			)
+			SELECT (SELECT COUNT(*) FROM anomalies) AS cnt,
+			       id, project_id, adopted_chapter_plan_id, adopted_revision_id, reason
+			FROM anomalies LIMIT 5`,
+			Description: "adopted candidates must have a valid adopted_revision_id referencing a revision with matching chapter_plan_id, project_id, source_candidate_id, and source_candidate_batch_id",
+		},
+		{
+			ID:   "DC-UNIQUE-003",
+			Name: "review_findings duplicate issue_key per review",
+			SQL: `WITH dups AS (
+				SELECT review_id, issue_key, COUNT(*) AS cnt
+				FROM review_findings
+				WHERE issue_key IS NOT NULL
+				GROUP BY review_id, issue_key
+				HAVING COUNT(*) > 1
+			)
+			SELECT (SELECT COUNT(*) FROM dups) AS cnt,
+			       review_id, issue_key, cnt
+			FROM dups LIMIT 5`,
+			Description: "each review must have unique issue_key values",
+		},
+
+		// === Time Consistency Checks ===
+
+		{
+			ID:   "DC-TIME-001",
+			Name: "workflow_run_records finished_at before started_at",
+			SQL: `WITH invalid AS (
+				SELECT id, project_id, stage, status, started_at, finished_at
+				FROM workflow_run_records
+				WHERE started_at IS NOT NULL AND finished_at IS NOT NULL
+				  AND finished_at < started_at
+			)
+			SELECT (SELECT COUNT(*) FROM invalid) AS cnt,
+			       id, project_id, stage, status
+			FROM invalid LIMIT 5`,
+			Description: "workflow_run_records.finished_at must not be before started_at",
+		},
+		{
+			ID:   "DC-TIME-002",
+			Name: "workflow_run_records created_at after finished_at",
+			SQL: `WITH invalid AS (
+				SELECT id, project_id, stage, status, created_at, finished_at
+				FROM workflow_run_records
+				WHERE finished_at IS NOT NULL AND created_at > finished_at
+			)
+			SELECT (SELECT COUNT(*) FROM invalid) AS cnt,
+			       id, project_id, stage, status
+			FROM invalid LIMIT 5`,
+			Description: "workflow_run_records.created_at must not be after finished_at",
+		},
+		{
+			ID:   "DC-TIME-003",
+			Name: "content_versions frozen_at before created_at",
+			SQL: `WITH invalid AS (
+				SELECT id, content_item_id, status, created_at, frozen_at
+				FROM content_versions
+				WHERE frozen_at IS NOT NULL AND frozen_at < created_at
+			)
+			SELECT (SELECT COUNT(*) FROM invalid) AS cnt,
+			       id, content_item_id, status
+			FROM invalid LIMIT 5`,
+			Description: "content_versions.frozen_at must not be before created_at",
+		},
+		{
+			ID:   "DC-TIME-004",
+			Name: "review_reports completed_at before created_at",
+			SQL: `WITH invalid AS (
+				SELECT id, project_id, created_at, completed_at
+				FROM review_reports
+				WHERE completed_at IS NOT NULL AND completed_at < created_at
+			)
+			SELECT (SELECT COUNT(*) FROM invalid) AS cnt,
+			       id, project_id
+			FROM invalid LIMIT 5`,
+			Description: "review_reports.completed_at must not be before created_at",
+		},
+		{
+			ID:   "DC-TIME-005",
+			Name: "chapter_plans confirmed_at before created_at",
+			SQL: `WITH invalid AS (
+				SELECT id, project_id, status, created_at, confirmed_at
+				FROM chapter_plans
+				WHERE confirmed_at IS NOT NULL AND confirmed_at < created_at
+			)
+			SELECT (SELECT COUNT(*) FROM invalid) AS cnt,
+			       id, project_id, status
+			FROM invalid LIMIT 5`,
+			Description: "chapter_plans.confirmed_at must not be before created_at",
+		},
+		{
+			ID:   "DC-TIME-006",
+			Name: "chapter_plan_candidates adopted_at before created_at",
+			SQL: `WITH invalid AS (
+				SELECT id, project_id, batch_id, status, created_at, adopted_at
+				FROM chapter_plan_candidates
+				WHERE adopted_at IS NOT NULL AND adopted_at < created_at
+			)
+			SELECT (SELECT COUNT(*) FROM invalid) AS cnt,
+			       id, project_id, batch_id, status
+			FROM invalid LIMIT 5`,
+			Description: "chapter_plan_candidates.adopted_at must not be before created_at",
+		},
+		{
+			ID:   "DC-TIME-007",
+			Name: "workflow_run_events created_at too old",
+			SQL: `WITH invalid AS (
+				SELECT wre.id, wre.run_id, wre.event_type, wre.created_at, wrr.created_at AS run_created
+				FROM workflow_run_events wre
+				JOIN workflow_run_records wrr ON wrr.id = wre.run_id
+				WHERE wre.created_at < wrr.created_at
+			)
+			SELECT (SELECT COUNT(*) FROM invalid) AS cnt,
+			       id, run_id, event_type
+			FROM invalid LIMIT 5`,
+			Description: "workflow_run_events.created_at must not be before its run's created_at",
+		},
+	}
+
+	return checks
 }
