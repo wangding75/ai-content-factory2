@@ -22,7 +22,7 @@ Write-Output ""
 
 # Step 1: Run migration history validation
 Write-Output "=== Migration History Integrity ==="
-$historyScript = Join-Path $repoRoot 'scripts\validate-migration-history.ps1'
+$historyScript = Join-Path $repoRoot 'database\tools\Validate-Migration-History.ps1'
 $historyResult = & powershell -ExecutionPolicy Bypass -File $historyScript 2>&1
 if ($LASTEXITCODE -ne 0) {
     Write-Output $historyResult

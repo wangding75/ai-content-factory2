@@ -7,7 +7,7 @@
 - 基线：`228e8c21bf8a7adbbb31c2710180a58c040ad805` / `main`
 - 环境：Docker Compose production，Web `http://127.0.0.1:13001`，API `http://127.0.0.1:18080/api/v1`
 - 测试项目：`f6e00000-0000-4000-8000-000000000003`（F6E 星港进行中系列）
-- 固定数据标识：`created_by=acf-test-data-f6e`；加载及校验脚本：`scripts/test-data/09-f6e-unified-p0.ps1 -Action Load|Verify`
+- 固定数据标识：`created_by=acf-test-data-f6e`；加载及校验脚本：`database/legacy/test-data/09-f6e-unified-p0.ps1 -Action Load|Verify`
 
 ## 页面与功能验收
 
