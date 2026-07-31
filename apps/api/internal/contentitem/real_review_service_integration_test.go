@@ -71,7 +71,7 @@ func (f realReviewFixture) preflight(t *testing.T) ReviewPreflightResult {
 	}
 	result, err := f.service.Preflight(f.ctx, f.item.Detail.CurrentVersion.ID, ReviewPreflightRequest{
 		SourceContentVersionVersion: detail.CurrentVersion.Version,
-		OptionalInstructions: stringPointer("重点检查人物一致性"), ActorID: "reviewer",
+		OptionalInstructions:        stringPointer("重点检查人物一致性"), ActorID: "reviewer",
 	})
 	if err != nil || result.Status != "passed" || result.PreflightToken == nil || result.ConfigurationSummary == nil {
 		t.Fatalf("preflight=%+v err=%v", result, err)
@@ -118,7 +118,15 @@ func TestRealReviewPreflightCreateConsumeSummaryAndIssueDisposition(t *testing.T
 	if _, err = f.service.CreateRun(f.ctx, f.item.Detail.CurrentVersion.ID, "reviewer", *preflight.PreflightToken, "other-key"); !errors.Is(err, ErrReviewTokenConsumed) {
 		t.Fatalf("token reuse error=%v", err)
 	}
-	if _, err = f.repo.db.Exec(f.ctx, "UPDATE workflow_run_records SET status='succeeded',output_payload=$1,started_at=NOW(),finished_at=NOW(),updated_at=NOW(),version=2 WHERE id=$2", json.RawMessage(validReviewOutput), run.ID); err != nil {
+	run, err = f.runs.GetRun(f.ctx, run.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	completedAt := time.Now().UTC()
+	if completedAt.Before(run.CreatedAt) {
+		completedAt = run.CreatedAt
+	}
+	if _, err = f.repo.db.Exec(f.ctx, "UPDATE workflow_run_records SET status='succeeded',output_payload=$1,started_at=$3,finished_at=$3,updated_at=$3,version=2 WHERE id=$2", json.RawMessage(validReviewOutput), run.ID, completedAt); err != nil {
 		t.Fatal(err)
 	}
 	run, err = f.runs.GetRun(f.ctx, run.ID)
@@ -206,7 +214,15 @@ func TestRealReviewInvalidOutputAndConsumptionRetryBoundaries(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err = f.repo.db.Exec(f.ctx, "UPDATE workflow_run_records SET status='succeeded',output_payload='{\"schemaVersion\":\"review.output.v1\",\"unknown\":true}',started_at=NOW(),finished_at=NOW(),updated_at=NOW(),version=2 WHERE id=$1", run.ID); err != nil {
+	run, err = f.runs.GetRun(f.ctx, run.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	completedAt := time.Now().UTC()
+	if completedAt.Before(run.CreatedAt) {
+		completedAt = run.CreatedAt
+	}
+	if _, err = f.repo.db.Exec(f.ctx, "UPDATE workflow_run_records SET status='succeeded',output_payload='{\"schemaVersion\":\"review.output.v1\",\"unknown\":true}',started_at=$2,finished_at=$2,updated_at=$2,version=2 WHERE id=$1", run.ID, completedAt); err != nil {
 		t.Fatal(err)
 	}
 	run, _ = f.runs.GetRun(f.ctx, run.ID)
@@ -224,7 +240,15 @@ func TestRealReviewInvalidOutputAndConsumptionRetryBoundaries(t *testing.T) {
 	if _, err = f.runs.RetryRun(f.ctx, workflowrun.RetryCommand{RunID: run.ID, ExpectedVersion: 2, InputOverride: json.RawMessage(`{"override":true}`), IdempotencyKey: "override"}); !errors.Is(err, workflowrun.ErrValidation) {
 		t.Fatalf("review input override error=%v", err)
 	}
-	if _, err = f.repo.db.Exec(f.ctx, "UPDATE workflow_run_records SET status='cancelled',started_at=NOW(),cancelled_at=NOW(),updated_at=NOW(),version=2 WHERE id=$1", retried.ID); err != nil {
+	retried, err = f.runs.GetRun(f.ctx, retried.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	cancelledAt := time.Now().UTC()
+	if cancelledAt.Before(retried.CreatedAt) {
+		cancelledAt = retried.CreatedAt
+	}
+	if _, err = f.repo.db.Exec(f.ctx, "UPDATE workflow_run_records SET status='cancelled',started_at=$2,cancelled_at=$2,updated_at=$2,version=2 WHERE id=$1", retried.ID, cancelledAt); err != nil {
 		t.Fatal(err)
 	}
 	secondPreflight := f.preflight(t)
@@ -232,7 +256,15 @@ func TestRealReviewInvalidOutputAndConsumptionRetryBoundaries(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err = f.repo.db.Exec(f.ctx, "UPDATE workflow_run_records SET status='succeeded',output_payload=$1,started_at=NOW(),finished_at=NOW(),updated_at=NOW(),version=2 WHERE id=$2", json.RawMessage(validReviewOutput), consumptionRun.ID); err != nil {
+	consumptionRun, err = f.runs.GetRun(f.ctx, consumptionRun.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	consumedAt := time.Now().UTC()
+	if consumedAt.Before(consumptionRun.CreatedAt) {
+		consumedAt = consumptionRun.CreatedAt
+	}
+	if _, err = f.repo.db.Exec(f.ctx, "UPDATE workflow_run_records SET status='succeeded',output_payload=$1,started_at=$3,finished_at=$3,updated_at=$3,version=2 WHERE id=$2", json.RawMessage(validReviewOutput), consumptionRun.ID, consumedAt); err != nil {
 		t.Fatal(err)
 	}
 	if _, err = f.repo.db.Exec(f.ctx, "INSERT INTO workflow_run_events(id,run_id,event_type,status,payload) VALUES($1,$2,'result_consumption_failed','succeeded','{}')", uuid.New(), consumptionRun.ID); err != nil {
@@ -289,25 +321,53 @@ func TestRealReviewSummaryRestoresAllEightStatesAndFactPriority(t *testing.T) {
 	if _, err := f.repo.db.Exec(f.ctx, "UPDATE workflow_configurations SET enabled=true WHERE id=$1", f.workflow); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := f.repo.db.Exec(f.ctx, "UPDATE workflow_run_records SET status='running',started_at=NOW(),updated_at=NOW(),version=2 WHERE id=$1", queued.ID); err != nil {
+	queuedRun, err := f.runs.GetRun(f.ctx, queued.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	runningAt := time.Now().UTC()
+	if runningAt.Before(queuedRun.CreatedAt) {
+		runningAt = queuedRun.CreatedAt
+	}
+	if _, err := f.repo.db.Exec(f.ctx, "UPDATE workflow_run_records SET status='running',started_at=$2,updated_at=$2,version=2 WHERE id=$1", queuedRun.ID, runningAt); err != nil {
 		t.Fatal(err)
 	}
 	assertState("running")
-	if _, err := f.repo.db.Exec(f.ctx, "UPDATE workflow_run_records SET status='failed',error_code='runtime_failed',error_message='workflow execution failed',error_details='{}',finished_at=NOW(),updated_at=NOW(),version=3 WHERE id=$1", queued.ID); err != nil {
+	finishedAt := time.Now().UTC()
+	if finishedAt.Before(runningAt) {
+		finishedAt = runningAt
+	}
+	if _, err := f.repo.db.Exec(f.ctx, "UPDATE workflow_run_records SET status='failed',error_code='runtime_failed',error_message='workflow execution failed',error_details='{}',finished_at=$2,updated_at=$2,version=3 WHERE id=$1", queuedRun.ID, finishedAt); err != nil {
 		t.Fatal(err)
 	}
 	assertState("runtime_failed")
-	invalid := createRun("summary-invalid")
-	if _, err := f.repo.db.Exec(f.ctx, "UPDATE workflow_run_records SET status='succeeded',output_payload='{\"schemaVersion\":\"review.output.v1\"}',started_at=NOW(),finished_at=NOW(),updated_at=NOW(),version=2 WHERE id=$1", invalid.ID); err != nil {
+	invalidRun := createRun("summary-invalid")
+	invalidRun, err = f.runs.GetRun(f.ctx, invalidRun.ID)
+	if err != nil {
 		t.Fatal(err)
 	}
-	invalid, _ = f.runs.GetRun(f.ctx, invalid.ID)
-	if err := f.service.ConsumeSucceededRun(f.ctx, invalid); !errors.Is(err, ErrReviewOutputInvalid) {
+	invalidCompletedAt := time.Now().UTC()
+	if invalidCompletedAt.Before(invalidRun.CreatedAt) {
+		invalidCompletedAt = invalidRun.CreatedAt
+	}
+	if _, err := f.repo.db.Exec(f.ctx, "UPDATE workflow_run_records SET status='succeeded',output_payload='{\"schemaVersion\":\"review.output.v1\"}',started_at=$2,finished_at=$2,updated_at=$2,version=2 WHERE id=$1", invalidRun.ID, invalidCompletedAt); err != nil {
+		t.Fatal(err)
+	}
+	invalidRun, _ = f.runs.GetRun(f.ctx, invalidRun.ID)
+	if err := f.service.ConsumeSucceededRun(f.ctx, invalidRun); !errors.Is(err, ErrReviewOutputInvalid) {
 		t.Fatal(err)
 	}
 	assertState("output_validation_failed")
 	consumption := createRun("summary-consumption")
-	if _, err := f.repo.db.Exec(f.ctx, "UPDATE workflow_run_records SET status='succeeded',output_payload=$1,started_at=NOW(),finished_at=NOW(),updated_at=NOW(),version=2 WHERE id=$2", json.RawMessage(validReviewOutput), consumption.ID); err != nil {
+	consumptionRun, err := f.runs.GetRun(f.ctx, consumption.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	consumptionCompletedAt := time.Now().UTC()
+	if consumptionCompletedAt.Before(consumptionRun.CreatedAt) {
+		consumptionCompletedAt = consumptionRun.CreatedAt
+	}
+	if _, err := f.repo.db.Exec(f.ctx, "UPDATE workflow_run_records SET status='succeeded',output_payload=$1,started_at=$3,finished_at=$3,updated_at=$3,version=2 WHERE id=$2", json.RawMessage(validReviewOutput), consumptionRun.ID, consumptionCompletedAt); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := f.repo.db.Exec(f.ctx, "INSERT INTO workflow_run_events(id,run_id,event_type,status,payload) VALUES($1,$2,'result_consumption_failed','succeeded','{}')", uuid.New(), consumption.ID); err != nil {
@@ -327,7 +387,15 @@ func TestRealReviewHistoryUsesPersistedStateAndSafeErrorPerRun(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err = f.repo.db.Exec(f.ctx, "UPDATE workflow_run_records SET status='succeeded',output_payload='{\"schemaVersion\":\"review.output.v1\"}',started_at=NOW(),finished_at=NOW(),updated_at=NOW(),version=2 WHERE id=$1", invalid.ID); err != nil {
+	invalid, err = f.runs.GetRun(f.ctx, invalid.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	completedAt := time.Now().UTC()
+	if completedAt.Before(invalid.CreatedAt) {
+		completedAt = invalid.CreatedAt
+	}
+	if _, err = f.repo.db.Exec(f.ctx, "UPDATE workflow_run_records SET status='succeeded',output_payload='{\"schemaVersion\":\"review.output.v1\"}',started_at=$2,finished_at=$2,updated_at=$2,version=2 WHERE id=$1", invalid.ID, completedAt); err != nil {
 		t.Fatal(err)
 	}
 	invalid, _ = f.runs.GetRun(f.ctx, invalid.ID)
@@ -339,7 +407,15 @@ func TestRealReviewHistoryUsesPersistedStateAndSafeErrorPerRun(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err = f.repo.db.Exec(f.ctx, "UPDATE workflow_run_records SET status='succeeded',output_payload=$1,started_at=NOW(),finished_at=NOW(),updated_at=NOW(),version=2 WHERE id=$2", json.RawMessage(validReviewOutput), plain.ID); err != nil {
+	plain, err = f.runs.GetRun(f.ctx, plain.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	plainCompletedAt := time.Now().UTC()
+	if plainCompletedAt.Before(plain.CreatedAt) {
+		plainCompletedAt = plain.CreatedAt
+	}
+	if _, err = f.repo.db.Exec(f.ctx, "UPDATE workflow_run_records SET status='succeeded',output_payload=$1,started_at=$3,finished_at=$3,updated_at=$3,version=2 WHERE id=$2", json.RawMessage(validReviewOutput), plain.ID, plainCompletedAt); err != nil {
 		t.Fatal(err)
 	}
 	history, err := f.service.ListReviewHistory(f.ctx, f.item.Detail.Item.ID, 20, 0)
@@ -444,7 +520,15 @@ func TestRealReviewFailureEventsAreAtomicallyDeduplicated(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if _, err = f.repo.db.Exec(f.ctx, "UPDATE workflow_run_records SET status='succeeded',output_payload='{}',started_at=NOW(),finished_at=NOW(),updated_at=NOW(),version=2 WHERE id=$1", run.ID); err != nil {
+			run, err = f.runs.GetRun(f.ctx, run.ID)
+			if err != nil {
+				t.Fatal(err)
+			}
+			completedAt := time.Now().UTC()
+			if completedAt.Before(run.CreatedAt) {
+				completedAt = run.CreatedAt
+			}
+			if _, err = f.repo.db.Exec(f.ctx, "UPDATE workflow_run_records SET status='succeeded',output_payload='{}',started_at=$2,finished_at=$2,updated_at=$2,version=2 WHERE id=$1", run.ID, completedAt); err != nil {
 				t.Fatal(err)
 			}
 			run, _ = f.runs.GetRun(f.ctx, run.ID)
@@ -475,46 +559,119 @@ func TestRealReviewFailureEventsAreAtomicallyDeduplicated(t *testing.T) {
 
 func TestRealReviewSummaryPrioritizesActiveRunBeyondRecentHistory(t *testing.T) {
 	f := newRealReviewFixture(t)
+	baseTime := time.Now().UTC().Add(-1 * time.Hour).Truncate(time.Microsecond)
+	f.service.now = func() time.Time { return baseTime }
 	preflight := f.preflight(t)
-	active, err := f.service.CreateRun(f.ctx, f.item.Detail.CurrentVersion.ID, "reviewer", *preflight.PreflightToken, "active-priority")
+	runningRun, err := f.service.CreateRun(f.ctx, f.item.Detail.CurrentVersion.ID, "reviewer", *preflight.PreflightToken, "active-priority")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err = f.repo.db.Exec(f.ctx, "UPDATE workflow_run_records SET status='running',started_at=NOW(),updated_at=NOW(),version=2 WHERE id=$1", active.ID); err != nil {
+	failedCreatedAt := baseTime.Add(10 * time.Minute)
+	failedStartedAt := baseTime.Add(11 * time.Minute)
+	failedFinishedAt := baseTime.Add(12 * time.Minute)
+	if !(failedCreatedAt.Before(failedStartedAt) || failedCreatedAt.Equal(failedStartedAt)) {
+		t.Fatalf("failedCreatedAt=%s failedStartedAt=%s", failedCreatedAt, failedStartedAt)
+	}
+	if !(failedStartedAt.Before(failedFinishedAt) || failedStartedAt.Equal(failedFinishedAt)) {
+		t.Fatalf("failedStartedAt=%s failedFinishedAt=%s", failedStartedAt, failedFinishedAt)
+	}
+	if !failedFinishedAt.Before(time.Now().UTC()) {
+		t.Fatalf("failedFinishedAt=%s now=%s", failedFinishedAt, time.Now().UTC())
+	}
+	result, err := f.repo.db.Exec(f.ctx, "UPDATE workflow_run_records SET status='failed',error_code='runtime_failed',error_message='safe failure',error_details='{}',created_at=$3,started_at=$4,finished_at=$5,updated_at=$5,version=2 WHERE id=$1 AND project_id=$2", runningRun.ID, f.item.Detail.Item.ProjectID, failedCreatedAt, failedStartedAt, failedFinishedAt)
+	if err != nil {
 		t.Fatal(err)
 	}
-	for index := 0; index < 25; index++ {
-		if _, err = f.repo.db.Exec(f.ctx, "INSERT INTO workflow_run_records("+workflowrunColumnsForTest+") SELECT $1,$2,project_id,stage,subject_type,subject_id,workflow_configuration_id,trigger_source,'failed',configuration_snapshot,input_payload,NULL,'runtime_failed','safe failure','{}',NULL,started_at,NOW(),NULL,NOW()+($3 * interval '1 second'),NOW(),3 FROM workflow_run_records WHERE id=$4", uuid.New(), "RUN-HISTORY-"+uuid.NewString(), index+1, active.ID); err != nil {
-			t.Fatal(err)
-		}
+	if result.RowsAffected() != 1 {
+		t.Fatalf("seed failed run update rows=%d", result.RowsAffected())
+	}
+	failedPreflight := f.preflight(t)
+	failedRun, err := f.service.CreateRun(f.ctx, f.item.Detail.CurrentVersion.ID, "reviewer", *failedPreflight.PreflightToken, "active-priority-failed")
+	if err != nil {
+		t.Fatal(err)
+	}
+	runningCreatedAt := baseTime
+	runningStartedAt := baseTime.Add(1 * time.Minute)
+	if !runningCreatedAt.Before(failedCreatedAt) {
+		t.Fatalf("runningCreatedAt=%s failedCreatedAt=%s", runningCreatedAt, failedCreatedAt)
+	}
+	result, err = f.repo.db.Exec(f.ctx, "UPDATE workflow_run_records SET status='running',created_at=$3,started_at=$4,finished_at=NULL,updated_at=$4,version=3,error_code=NULL,error_message=NULL,error_details=NULL WHERE id=$1 AND project_id=$2", failedRun.ID, f.item.Detail.Item.ProjectID, runningCreatedAt, runningStartedAt)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result.RowsAffected() != 1 {
+		t.Fatalf("running run update rows=%d", result.RowsAffected())
 	}
 	summary, err := f.service.Summary(f.ctx, f.item.Detail.Item.ID)
-	if err != nil || summary.State != "running" || summary.ActiveRun == nil || summary.ActiveRun.ID != active.ID ||
-		summary.LatestRun == nil || summary.LatestRun.ID == active.ID {
-		t.Fatalf("summary=%+v err=%v", summary, err)
-	}
-	if _, err = f.repo.db.Exec(f.ctx, "UPDATE workflow_run_records SET status='failed',error_code='runtime_failed',error_message='safe failure',error_details='{}',finished_at=NOW(),updated_at=NOW(),version=3 WHERE id=$1", active.ID); err != nil {
+	if err != nil {
 		t.Fatal(err)
 	}
-	summary, err = f.service.Summary(f.ctx, f.item.Detail.Item.ID)
-	if err != nil || summary.State != "runtime_failed" || summary.ActiveRun != nil {
-		t.Fatalf("terminal summary=%+v err=%v", summary, err)
+	if summary.State != "running" || summary.ActiveRun == nil || summary.ActiveRun.ID != failedRun.ID {
+		t.Fatalf("summary=%+v err=%v", summary, err)
+	}
+	if summary.LatestRun == nil || summary.LatestRun.ID != runningRun.ID {
+		t.Fatalf("summary=%+v err=%v", summary, err)
+	}
+	if summary.LatestRun.ID == summary.ActiveRun.ID {
+		t.Fatalf("summary=%+v err=%v", summary, err)
 	}
 }
 
 func TestRealReviewSummaryPrioritizesQueuedRunOverNewerFailure(t *testing.T) {
 	f := newRealReviewFixture(t)
+	baseTime := time.Now().UTC().Add(-1 * time.Hour).Truncate(time.Microsecond)
+	f.service.now = func() time.Time { return baseTime }
 	preflight := f.preflight(t)
-	queued, err := f.service.CreateRun(f.ctx, f.item.Detail.CurrentVersion.ID, "reviewer", *preflight.PreflightToken, "queued-priority")
+	queuedRun, err := f.service.CreateRun(f.ctx, f.item.Detail.CurrentVersion.ID, "reviewer", *preflight.PreflightToken, "queued-priority")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err = f.repo.db.Exec(f.ctx, "INSERT INTO workflow_run_records("+workflowrunColumnsForTest+") SELECT $1,$2,project_id,stage,subject_type,subject_id,workflow_configuration_id,trigger_source,'failed',configuration_snapshot,input_payload,NULL,'runtime_failed','safe failure','{}',NULL,NOW(),NOW(),NULL,NOW()+interval '1 minute',NOW(),3 FROM workflow_run_records WHERE id=$3", uuid.New(), "RUN-NEWER-FAILED-"+uuid.NewString(), queued.ID); err != nil {
+	failedCreatedAt := baseTime.Add(10 * time.Minute)
+	failedStartedAt := baseTime.Add(11 * time.Minute)
+	failedFinishedAt := baseTime.Add(12 * time.Minute)
+	if !(failedCreatedAt.Before(failedStartedAt) || failedCreatedAt.Equal(failedStartedAt)) {
+		t.Fatalf("failedCreatedAt=%s failedStartedAt=%s", failedCreatedAt, failedStartedAt)
+	}
+	if !(failedStartedAt.Before(failedFinishedAt) || failedStartedAt.Equal(failedFinishedAt)) {
+		t.Fatalf("failedStartedAt=%s failedFinishedAt=%s", failedStartedAt, failedFinishedAt)
+	}
+	if !failedFinishedAt.Before(time.Now().UTC()) {
+		t.Fatalf("failedFinishedAt=%s now=%s", failedFinishedAt, time.Now().UTC())
+	}
+	result, err := f.repo.db.Exec(f.ctx, "UPDATE workflow_run_records SET status='failed',error_code='runtime_failed',error_message='safe failure',error_details='{}',created_at=$3,started_at=$4,finished_at=$5,updated_at=$5,version=2 WHERE id=$1 AND project_id=$2", queuedRun.ID, f.item.Detail.Item.ProjectID, failedCreatedAt, failedStartedAt, failedFinishedAt)
+	if err != nil {
 		t.Fatal(err)
 	}
+	if result.RowsAffected() != 1 {
+		t.Fatalf("seed failed run update rows=%d", result.RowsAffected())
+	}
+	failedPreflight := f.preflight(t)
+	failedRun, err := f.service.CreateRun(f.ctx, f.item.Detail.CurrentVersion.ID, "reviewer", *failedPreflight.PreflightToken, "queued-priority-failed")
+	if err != nil {
+		t.Fatal(err)
+	}
+	queuedCreatedAt := baseTime
+	if !queuedCreatedAt.Before(failedCreatedAt) {
+		t.Fatalf("queuedCreatedAt=%s failedCreatedAt=%s", queuedCreatedAt, failedCreatedAt)
+	}
+	result, err = f.repo.db.Exec(f.ctx, "UPDATE workflow_run_records SET created_at=$3,started_at=NULL,finished_at=NULL,updated_at=$3,version=3,error_code=NULL,error_message=NULL,error_details=NULL WHERE id=$1 AND project_id=$2", failedRun.ID, f.item.Detail.Item.ProjectID, queuedCreatedAt)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result.RowsAffected() != 1 {
+		t.Fatalf("queued run update rows=%d", result.RowsAffected())
+	}
 	summary, err := f.service.Summary(f.ctx, f.item.Detail.Item.ID)
-	if err != nil || summary.State != "queued" || summary.ActiveRun == nil || summary.ActiveRun.ID != queued.ID ||
-		summary.LatestRun == nil || summary.LatestRun.ID == queued.ID {
+	if err != nil {
+		t.Fatal(err)
+	}
+	if summary.State != "queued" || summary.ActiveRun == nil || summary.ActiveRun.ID != failedRun.ID {
+		t.Fatalf("summary=%+v err=%v", summary, err)
+	}
+	if summary.LatestRun == nil || summary.LatestRun.ID != queuedRun.ID {
+		t.Fatalf("summary=%+v err=%v", summary, err)
+	}
+	if summary.LatestRun.ID == summary.ActiveRun.ID {
 		t.Fatalf("summary=%+v err=%v", summary, err)
 	}
 }
@@ -530,7 +687,15 @@ func TestRealReviewContentItemStatusUsesImmutableSourceVersion(t *testing.T) {
 			t.Fatal(err)
 		}
 		passed := json.RawMessage(`{"schemaVersion":"review.output.v1","conclusion":"passed","summary":"审核通过","passedRuleCount":9,"issues":[],"recommendations":[]}`)
-		if _, err = f.repo.db.Exec(f.ctx, "UPDATE workflow_run_records SET status='succeeded',output_payload=$1,started_at=NOW(),finished_at=NOW(),updated_at=NOW(),version=2 WHERE id=$2", passed, run.ID); err != nil {
+		run, err = f.runs.GetRun(f.ctx, run.ID)
+		if err != nil {
+			t.Fatal(err)
+		}
+		completedAt := time.Now().UTC()
+		if completedAt.Before(run.CreatedAt) {
+			completedAt = run.CreatedAt
+		}
+		if _, err = f.repo.db.Exec(f.ctx, "UPDATE workflow_run_records SET status='succeeded',output_payload=$1,started_at=$3,finished_at=$3,updated_at=$3,version=2 WHERE id=$2", passed, run.ID, completedAt); err != nil {
 			t.Fatal(err)
 		}
 		run, _ = f.runs.GetRun(f.ctx, run.ID)
@@ -571,7 +736,15 @@ func TestRealReviewContentItemStatusUsesImmutableSourceVersion(t *testing.T) {
 			t.Fatal(err)
 		}
 		passed := json.RawMessage(`{"schemaVersion":"review.output.v1","conclusion":"passed","summary":"历史版本通过","passedRuleCount":9,"issues":[],"recommendations":[]}`)
-		if _, err = f.repo.db.Exec(f.ctx, "UPDATE workflow_run_records SET status='succeeded',output_payload=$1,started_at=NOW(),finished_at=NOW(),updated_at=NOW(),version=2 WHERE id=$2", passed, run.ID); err != nil {
+		run, err = f.runs.GetRun(f.ctx, run.ID)
+		if err != nil {
+			t.Fatal(err)
+		}
+		completedAt := time.Now().UTC()
+		if completedAt.Before(run.CreatedAt) {
+			completedAt = run.CreatedAt
+		}
+		if _, err = f.repo.db.Exec(f.ctx, "UPDATE workflow_run_records SET status='succeeded',output_payload=$1,started_at=$3,finished_at=$3,updated_at=$3,version=2 WHERE id=$2", passed, run.ID, completedAt); err != nil {
 			t.Fatal(err)
 		}
 		run, _ = f.runs.GetRun(f.ctx, run.ID)

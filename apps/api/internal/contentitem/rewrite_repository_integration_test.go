@@ -78,6 +78,12 @@ func insertRewriteRepositoryFixture(t *testing.T, ctx context.Context, db *pgxpo
 		if _, err = tx.Exec(ctx, "INSERT INTO chapter_plans(id,project_id,chapter_no,title,status,source,confirmed_at,created_by) VALUES($1,$2,$3,'chapter','confirmed','mock_generated',NOW(),'i07-repository')", chapterID, row.projectID, row.chapterNo); err != nil {
 			t.Fatal(err)
 		}
+		if _, err = tx.Exec(ctx, "INSERT INTO chapter_plan_revisions(id,chapter_plan_id,project_id,revision_no,snapshot,change_type,created_by) VALUES($1,$2,$3,1,$4,'manual_create','i07-repository')", uuid.New(), chapterID, row.projectID, []byte(`{"chapterNo":1,"title":"chapter","summary":"","chapterPurpose":"other","storylineRefs":[],"materialRefs":[],"foreshadowingRefs":[]}`)); err != nil {
+			t.Fatal(err)
+		}
+		if _, err = tx.Exec(ctx, "UPDATE chapter_plans SET current_revision_id=(SELECT id FROM chapter_plan_revisions WHERE chapter_plan_id=$1 AND revision_no=1) WHERE id=$1", chapterID); err != nil {
+			t.Fatal(err)
+		}
 		if _, err = tx.Exec(ctx, "INSERT INTO content_items(id,project_id,chapter_plan_id,title,current_version_id) VALUES($1,$2,$3,'item',$4)", row.itemID, row.projectID, chapterID, row.versionID); err != nil {
 			t.Fatal(err)
 		}

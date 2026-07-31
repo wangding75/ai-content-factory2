@@ -63,6 +63,12 @@ func fixture(t *testing.T, ctx context.Context, db *pgxpool.Pool) fx {
 		if _, e = tx.Exec(ctx, "INSERT INTO chapter_plans(id,project_id,chapter_no,title,summary,status,source,created_by,confirmed_at) VALUES($1,$2,$3,$4,'summary',$5,'mock_generated','i06',CASE WHEN $5='confirmed' THEN NOW() ELSE NULL END)", p.id, f.project, p.n, "chapter "+p.status, p.status); e != nil {
 			t.Fatal(e)
 		}
+		if _, e = tx.Exec(ctx, "INSERT INTO chapter_plan_revisions(id,chapter_plan_id,project_id,revision_no,snapshot,change_type,created_by) VALUES($1,$2,$3,1,$4,'manual_create','i06')", uuid.New(), p.id, f.project, []byte(`{"chapterNo":1,"title":"fixture","summary":"summary","chapterPurpose":"other","storylineRefs":[],"materialRefs":[],"foreshadowingRefs":[]}`)); e != nil {
+			t.Fatal(e)
+		}
+		if _, e = tx.Exec(ctx, "UPDATE chapter_plans SET current_revision_id=(SELECT id FROM chapter_plan_revisions WHERE chapter_plan_id=$1 AND revision_no=1) WHERE id=$1", p.id); e != nil {
+			t.Fatal(e)
+		}
 	}
 	if e = tx.Commit(ctx); e != nil {
 		t.Fatal(e)

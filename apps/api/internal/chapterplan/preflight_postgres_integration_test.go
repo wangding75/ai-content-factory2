@@ -373,6 +373,8 @@ func TestPostgresPersistedGenerationContextDigestMatchesSnapshot(t *testing.T) {
 	connections := &mutablePreflightConnectionReader{connection: globalconfig.Connection{Common: globalconfig.Common{ID: connectionID, Enabled: true, Version: 13}, ConnectionType: "n8n", BaseURL: "http://internal.example.test/private?token=must-not-persist", TypeConfig: json.RawMessage(`{"credential":"must-not-persist"}`)}}
 	runs := workflowrun.NewService(workflowrun.NewPostgresRepository(db), project.NewPostgresRepository(db), bindings, workflows, connections)
 	service, err := NewPostgresService(project.NewPostgresRepository(db), db, "test-hmac-secret-1234567890")
+	baseTime := time.Date(2026, time.July, 31, 4, 26, 0, 0, time.UTC)
+	service.now = func() time.Time { return baseTime }
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -617,7 +619,15 @@ func TestPostgresPreflightCreateConsumeUsesFrozenBaseSnapshot(t *testing.T) {
 			tc.mutate(&candidate)
 			output := NormalizedChapterPlanOutput{ProjectID: f.project, GenerationMode: "full", Target: preflight.Target, SourceWorkflowRunID: run.ID, Candidates: []NormalizedCandidate{candidate, NormalizedCandidate{ChapterNo: 2, Title: "Two", Summary: "two", ChapterPurpose: "transition", StorylineRefs: base.StorylineRefs}}, Metadata: OutputMetadata{InputDigest: persisted.GenerationContext.InputDigest, GeneratedAt: time.Now().UTC().Format(time.RFC3339), SafeProviderSummary: "safe"}}
 			raw, _ := json.Marshal(output)
-			if _, err := db.Exec(ctx, "UPDATE workflow_run_records SET status='succeeded',output_payload=$2,started_at=NOW(),finished_at=NOW() WHERE id=$1", run.ID, raw); err != nil {
+			storedRun, err := workflowrun.NewPostgresRepository(db).GetByID(ctx, run.ID)
+			if err != nil {
+				t.Fatal(err)
+			}
+			completedAt := time.Now().UTC()
+			if completedAt.Before(storedRun.CreatedAt) {
+				completedAt = storedRun.CreatedAt
+			}
+			if _, err := db.Exec(ctx, "UPDATE workflow_run_records SET status='succeeded',output_payload=$2,started_at=$3,finished_at=$3,updated_at=$3 WHERE id=$1", run.ID, raw, completedAt); err != nil {
 				t.Fatal(err)
 			}
 			stored, err := workflowrun.NewPostgresRepository(db).GetByID(ctx, run.ID)
