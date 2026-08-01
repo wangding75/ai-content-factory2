@@ -1178,7 +1178,7 @@ paths:
     get:
       operationId: listLlmProviders
       description: Lists saved LLM provider configurations. q matches name after trimming; filters combine with AND. Results are ordered by updatedAt DESC, id ASC. Credentials, encrypted values and authorization headers are never returned.
-      parameters: [{$ref: "#/components/parameters/ConfigurationQuery"}, {$ref: "#/components/parameters/ProviderTypeQuery"}, {$ref: "#/components/parameters/IntegrationStatusQuery"}, {$ref: "#/components/parameters/ValidationStatusQuery"}, {$ref: "#/components/parameters/EnabledQuery"}, {$ref: "#/components/parameters/ExecutableQuery"}, {$ref: "#/components/parameters/LimitQuery"}, {$ref: "#/components/parameters/OffsetQuery"}]
+      parameters: [{$ref: "#/components/parameters/ConfigurationQuery"}, {$ref: "#/components/parameters/ProviderTypeQuery"}, {$ref: "#/components/parameters/IntegrationStatusQuery"}, {$ref: "#/components/parameters/EnabledQuery"}, {$ref: "#/components/parameters/LimitQuery"}, {$ref: "#/components/parameters/OffsetQuery"}]
       responses:
         "200": {description: Paginated LLM providers., content: {application/json: {schema: {$ref: "#/components/schemas/LlmProviderListEnvelope"}}}}
         "400": {$ref: "#/components/responses/BadRequest"}
@@ -1212,70 +1212,6 @@ paths:
         "404": {$ref: "#/components/responses/NotFound"}
         "409": {$ref: "#/components/responses/Conflict"}
         "422": {$ref: "#/components/responses/UnprocessableEntity"}
-  /api/v1/llm-providers/{providerId}/verify:
-    parameters: [{$ref: "#/components/parameters/ProviderId"}]
-    post:
-      operationId: verifyLlmProvider
-      description: Performs a real outbound health probe to verify credentials and default model availability. Updates validationStatus, checkedAt, checks, executable, and safeError.
-      parameters: [{$ref: "#/components/parameters/IdempotencyKey"}]
-      requestBody: {required: true, content: {application/json: {schema: {$ref: "#/components/schemas/VerifyLlmProviderRequest"}}}}
-      responses:
-        "200": {description: Verified LLM provider., content: {application/json: {schema: {$ref: "#/components/schemas/LlmProviderVerifyResultEnvelope"}}}}
-        "400": {$ref: "#/components/responses/BadRequest"}
-        "404": {$ref: "#/components/responses/NotFound"}
-        "409": {$ref: "#/components/responses/Conflict"}
-        "422": {$ref: "#/components/responses/UnprocessableEntity"}
-  /api/v1/llm-providers/{providerId}/enable:
-    parameters: [{$ref: "#/components/parameters/ProviderId"}]
-    post:
-      operationId: enableLlmProvider
-      description: Enables the LLM provider configuration if it has been successfully verified.
-      parameters: [{$ref: "#/components/parameters/IdempotencyKey"}]
-      requestBody: {required: true, content: {application/json: {schema: {$ref: "#/components/schemas/ConfigurationActionRequest"}}}}
-      responses:
-        "200": {description: Enabled LLM provider., content: {application/json: {schema: {$ref: "#/components/schemas/LlmProviderEnvelope"}}}}
-        "400": {$ref: "#/components/responses/BadRequest"}
-        "404": {$ref: "#/components/responses/NotFound"}
-        "409": {$ref: "#/components/responses/Conflict"}
-        "422": {$ref: "#/components/responses/UnprocessableEntity"}
-  /api/v1/llm-providers/{providerId}/disable:
-    parameters: [{$ref: "#/components/parameters/ProviderId"}]
-    post:
-      operationId: disableLlmProvider
-      description: Disables the LLM provider configuration, preventing new bindings from using it.
-      parameters: [{$ref: "#/components/parameters/IdempotencyKey"}]
-      requestBody: {required: true, content: {application/json: {schema: {$ref: "#/components/schemas/ConfigurationActionRequest"}}}}
-      responses:
-        "200": {description: Disabled LLM provider., content: {application/json: {schema: {$ref: "#/components/schemas/LlmProviderEnvelope"}}}}
-        "400": {$ref: "#/components/responses/BadRequest"}
-        "404": {$ref: "#/components/responses/NotFound"}
-        "409": {$ref: "#/components/responses/Conflict"}
-        "422": {$ref: "#/components/responses/UnprocessableEntity"}
-  /api/v1/llm-providers/{providerId}/models:
-    parameters: [{$ref: "#/components/parameters/ProviderId"}]
-    get:
-      operationId: listLlmProviderModels
-      description: Returns the safe discovered or manually configured model catalog for the LLM provider.
-      parameters: [{$ref: "#/components/parameters/LimitQuery"}, {$ref: "#/components/parameters/OffsetQuery"}]
-      responses:
-        "200": {description: List of provider models., content: {application/json: {schema: {$ref: "#/components/schemas/LlmProviderModelListEnvelope"}}}}
-        "400": {$ref: "#/components/responses/BadRequest"}
-        "404": {$ref: "#/components/responses/NotFound"}
-        "500": {$ref: "#/components/responses/InternalServerError"}
-  /api/v1/llm-providers/{providerId}/models/discover:
-    parameters: [{$ref: "#/components/parameters/ProviderId"}]
-    post:
-      operationId: discoverLlmProviderModels
-      description: Calls the saved OpenAI-compatible endpoint to fetch available models and updates the catalog.
-      parameters: [{$ref: "#/components/parameters/IdempotencyKey"}]
-      requestBody: {required: true, content: {application/json: {schema: {$ref: "#/components/schemas/ConfigurationActionRequest"}}}}
-      responses:
-        "200": {description: Models discovered and catalog updated., content: {application/json: {schema: {$ref: "#/components/schemas/LlmProviderModelListEnvelope"}}}}
-        "400": {$ref: "#/components/responses/BadRequest"}
-        "404": {$ref: "#/components/responses/NotFound"}
-        "409": {$ref: "#/components/responses/Conflict"}
-        "422": {$ref: "#/components/responses/UnprocessableEntity"}
-        "500": {$ref: "#/components/responses/InternalServerError"}
   /api/v1/workflow-connection-types:
     get:
       operationId: listWorkflowConnectionTypes
@@ -1292,7 +1228,7 @@ paths:
     get:
       operationId: listWorkflowConnections
       description: Lists saved generic workflow connections; q matches name after trimming and filters combine with AND. Results are ordered by updatedAt DESC, id ASC. Credential material is never returned.
-      parameters: [{$ref: "#/components/parameters/ConfigurationQuery"}, {$ref: "#/components/parameters/ConnectionTypeQuery"}, {$ref: "#/components/parameters/IntegrationStatusQuery"}, {$ref: "#/components/parameters/ValidationStatusQuery"}, {$ref: "#/components/parameters/EnabledQuery"}, {$ref: "#/components/parameters/ExecutableQuery"}, {$ref: "#/components/parameters/LimitQuery"}, {$ref: "#/components/parameters/OffsetQuery"}]
+      parameters: [{$ref: "#/components/parameters/ConfigurationQuery"}, {$ref: "#/components/parameters/ConnectionTypeQuery"}, {$ref: "#/components/parameters/IntegrationStatusQuery"}, {$ref: "#/components/parameters/EnabledQuery"}, {$ref: "#/components/parameters/LimitQuery"}, {$ref: "#/components/parameters/OffsetQuery"}]
       responses:
         "200": {description: Paginated workflow connections., content: {application/json: {schema: {$ref: "#/components/schemas/WorkflowConnectionListEnvelope"}}}}
         "400": {$ref: "#/components/responses/BadRequest"}
@@ -1335,19 +1271,6 @@ paths:
       requestBody: {required: true, content: {application/json: {schema: {$ref: "#/components/schemas/ConfigurationActionRequest"}}}}
       responses:
         "200": {description: Verified workflow connection., content: {application/json: {schema: {$ref: "#/components/schemas/WorkflowConnectionEnvelope"}}}}
-        "400": {$ref: "#/components/responses/BadRequest"}
-        "404": {$ref: "#/components/responses/NotFound"}
-        "409": {$ref: "#/components/responses/Conflict"}
-        "422": {$ref: "#/components/responses/UnprocessableEntity"}
-  /api/v1/workflow-connections/{connectionId}/enable:
-    parameters: [{$ref: "#/components/parameters/ConnectionId"}]
-    post:
-      operationId: enableWorkflowConnection
-      description: Enables the workflow connection configuration if it has been successfully verified.
-      parameters: [{$ref: "#/components/parameters/IdempotencyKey"}]
-      requestBody: {required: true, content: {application/json: {schema: {$ref: "#/components/schemas/ConfigurationActionRequest"}}}}
-      responses:
-        "200": {description: Enabled workflow connection., content: {application/json: {schema: {$ref: "#/components/schemas/WorkflowConnectionEnvelope"}}}}
         "400": {$ref: "#/components/responses/BadRequest"}
         "404": {$ref: "#/components/responses/NotFound"}
         "409": {$ref: "#/components/responses/Conflict"}
@@ -1824,16 +1747,6 @@ components:
         type: integer
         minimum: 0
         default: 0
-    ValidationStatusQuery:
-      name: validationStatus
-      in: query
-      schema:
-        $ref: "#/components/schemas/ValidationStatus"
-    ExecutableQuery:
-      name: executable
-      in: query
-      schema:
-        type: boolean
     Iteration14WorkflowRunId:
       name: runId
       in: path
@@ -1971,21 +1884,14 @@ components:
         hasSecret: {type: boolean, readOnly: true}
         secretFingerprint: {type: [string, "null"], maxLength: 32, readOnly: true, description: Non-reversible safe identifier; plaintext and ciphertext are never returned.}
         integrationStatus: {allOf: [{$ref: "#/components/schemas/IntegrationStatus"}], readOnly: true}
-        validationStatus: {allOf: [{$ref: "#/components/schemas/ValidationStatus"}], readOnly: true}
         enabled: {type: boolean, readOnly: true}
-        executable: {type: boolean, readOnly: true}
-        safeError: {oneOf: [{type: "null"}, {$ref: "#/components/schemas/SafeError"}], readOnly: true}
-        modelCount: {type: integer, minimum: 0, readOnly: true}
-        verifiedVersion: {type: [integer, "null"], minimum: 1, readOnly: true}
-        checkedAt: {type: [string, "null"], format: date-time, readOnly: true}
-        checks: {type: array, items: {$ref: "#/components/schemas/ValidationCheck"}, readOnly: true}
         lastVerifiedAt: {type: [string, "null"], format: date-time, readOnly: true}
         lastErrorCode: {type: [string, "null"], maxLength: 80, readOnly: true}
         lastErrorMessage: {type: [string, "null"], maxLength: 300, readOnly: true}
         version: {type: integer, minimum: 1, readOnly: true}
         createdAt: {type: string, format: date-time, readOnly: true}
         updatedAt: {type: string, format: date-time, readOnly: true}
-      example: {id: "018f0c20-0000-4000-8000-000000000001", name: Primary OpenAI-compatible, providerType: openai_compatible, baseUrl: "https://api.example.test/v1", defaultModel: gpt-4.1-mini, timeoutSeconds: 30, hasSecret: true, secretFingerprint: "4e3b9a1c", integrationStatus: not_connected, validationStatus: unverified, enabled: false, executable: false, safeError: null, modelCount: 0, verifiedVersion: null, checkedAt: null, checks: [], lastVerifiedAt: null, lastErrorCode: null, lastErrorMessage: null, version: 1, createdAt: "2026-07-19T09:00:00Z", updatedAt: "2026-07-19T09:00:00Z"}
+      example: {id: "018f0c20-0000-4000-8000-000000000001", name: Primary OpenAI-compatible, providerType: openai_compatible, baseUrl: "https://api.example.test/v1", defaultModel: gpt-4.1-mini, timeoutSeconds: 30, hasSecret: true, secretFingerprint: "4e3b9a1c", integrationStatus: not_connected, enabled: false, lastVerifiedAt: null, lastErrorCode: null, lastErrorMessage: null, version: 1, createdAt: "2026-07-19T09:00:00Z", updatedAt: "2026-07-19T09:00:00Z"}
     CreateLlmProviderRequest:
       type: object
       additionalProperties: false
@@ -2074,15 +1980,7 @@ components:
         hasCredential: {type: boolean, readOnly: true}
         credentialFingerprint: {type: [string, "null"], maxLength: 32, readOnly: true, description: Non-reversible safe identifier; plaintext and ciphertext are never returned.}
         integrationStatus: {allOf: [{$ref: "#/components/schemas/IntegrationStatus"}], readOnly: true, description: Starts as not_connected and becomes connected only through Verify. Connected and enabled are required by project binding and real execution gates.}
-        validationStatus: {allOf: [{$ref: "#/components/schemas/ValidationStatus"}], readOnly: true}
         enabled: {type: boolean, readOnly: true, description: Starts false; Verify and Disable are the only state-transition endpoints.}
-        executable: {type: boolean, readOnly: true}
-        safeError: {oneOf: [{type: "null"}, {$ref: "#/components/schemas/SafeError"}], readOnly: true}
-        workflowConfigurationCount: {type: integer, minimum: 0, readOnly: true}
-        affectedWorkflowConfigurationCount: {type: [integer, "null"], minimum: 0, readOnly: true}
-        verifiedVersion: {type: [integer, "null"], minimum: 1, readOnly: true}
-        checkedAt: {type: [string, "null"], format: date-time, readOnly: true}
-        checks: {type: array, items: {$ref: "#/components/schemas/ValidationCheck"}, readOnly: true}
         lastVerifiedAt: {type: [string, "null"], format: date-time, readOnly: true}
         lastErrorCode: {type: [string, "null"], maxLength: 80, readOnly: true}
         lastErrorMessage: {type: [string, "null"], maxLength: 300, readOnly: true}
@@ -4932,103 +4830,6 @@ components:
     ChapterPlanningBatchConflictErrorEnvelope: {allOf: [{$ref: "#/components/schemas/ErrorEnvelope"}, {type: object, properties: {error: {$ref: "#/components/schemas/ChapterPlanningBatchConflictError"}}}]}
     ChapterPlanningOutputValidationErrorEnvelope: {allOf: [{$ref: "#/components/schemas/ErrorEnvelope"}, {type: object, properties: {error: {$ref: "#/components/schemas/ChapterPlanningOutputValidationError"}}}]}
     ChapterPlanningResultConsumptionErrorEnvelope: {allOf: [{$ref: "#/components/schemas/ErrorEnvelope"}, {type: object, properties: {error: {$ref: "#/components/schemas/ChapterPlanningResultConsumptionError"}}}]}
-    ValidationStatus:
-      type: string
-      enum: [unverified, verifying, verified, failed, stale]
-    LlmStrategy:
-      type: string
-      enum: [acf_managed, n8n_managed, none]
-    RuntimeStatus:
-      type: string
-      enum: [queued, running, cancelling, succeeded, failed, cancelled, timed_out]
-    DisplayStatus:
-      type: string
-      enum: [queued, running, cancelling, succeeded, failed, cancelled, timed_out, output_validation_failed, result_consumption_failed]
-    FailurePhase:
-      type: string
-      enum: [external_execution, output_validation, result_consumption, cancellation]
-    RetryMode:
-      type: string
-      enum: [current_configuration, original_configuration]
-    SafeError:
-      type: object
-      additionalProperties: false
-      required: [code, message]
-      properties:
-        code: {type: string}
-        message: {type: string}
-        details: {type: object, additionalProperties: true}
-    ValidationCheck:
-      type: object
-      additionalProperties: false
-      required: [code, status, message]
-      properties:
-        code: {type: string}
-        status: {$ref: "#/components/schemas/ContentReviewCheckStatus"}
-        message: {type: string}
-        repairAction: {type: string}
-    NonExecutableReason:
-      type: object
-      additionalProperties: false
-      required: [code, message]
-      properties:
-        code: {type: string}
-        message: {type: string}
-        repairAction: {type: string}
-    VerifyLlmProviderRequest:
-      type: object
-      additionalProperties: false
-      required: [expectedVersion]
-      properties:
-        expectedVersion: {type: integer, minimum: 1}
-        optionalModel: {type: string, minLength: 1, maxLength: 160}
-    LlmProviderVerifyResult:
-      type: object
-      additionalProperties: false
-      required: [validationStatus, verifiedVersion, checkedAt, checks, executable, safeError]
-      properties:
-        validationStatus: {$ref: "#/components/schemas/ValidationStatus"}
-        verifiedVersion: {type: [integer, "null"], minimum: 1}
-        checkedAt: {type: [string, "null"], format: date-time}
-        modelSummary: {type: string}
-        checks: {type: array, items: {$ref: "#/components/schemas/ValidationCheck"}}
-        executable: {type: boolean}
-        safeError: {oneOf: [{type: "null"}, {$ref: "#/components/schemas/SafeError"}]}
-    LlmProviderVerifyResultEnvelope:
-      type: object
-      additionalProperties: false
-      required: [data, request_id]
-      properties:
-        data: {$ref: "#/components/schemas/LlmProviderVerifyResult"}
-        request_id: {type: string}
-    LlmProviderModel:
-      type: object
-      additionalProperties: false
-      required: [modelName, displayName, capabilities, source, available, discoveredAt, lastSeenAt]
-      properties:
-        modelName: {type: string, minLength: 1, maxLength: 160, description: Unique identifier of the model.}
-        displayName: {type: string, minLength: 1, maxLength: 160}
-        capabilities: {type: array, items: {type: string}}
-        source: {type: string, enum: [discovered, manual]}
-        available: {type: boolean}
-        discoveredAt: {type: [string, "null"], format: date-time}
-        lastSeenAt: {type: [string, "null"], format: date-time}
-    LlmProviderModelList:
-      type: object
-      additionalProperties: false
-      required: [items, total, limit, offset]
-      properties:
-        items: {type: array, items: {$ref: "#/components/schemas/LlmProviderModel"}}
-        total: {type: integer, minimum: 0}
-        limit: {type: integer, minimum: 1, maximum: 100}
-        offset: {type: integer, minimum: 0}
-    LlmProviderModelListEnvelope:
-      type: object
-      additionalProperties: false
-      required: [data, request_id]
-      properties:
-        data: {$ref: "#/components/schemas/LlmProviderModelList"}
-        request_id: {type: string}
   examples:
     ChapterPlanningPreflightTokenExpiredError: {value: {error: {code: preflight_token_expired, message: "preflight token has expired", details: {retryAction: rerun_preflight, safeReason: "The token is older than ten minutes."}}, request_id: req_cf15_expired}}
     ChapterPlanningActiveRunConflictError: {value: {error: {code: active_run_conflict, message: "a chapter-planning run is already active", details: {resourceId: "11111111-1111-4111-8111-111111111111", retryAction: wait_for_active_run, safeReason: "Only one queued or running chapter-planning run is allowed."}}, request_id: req_cf15_active}}
