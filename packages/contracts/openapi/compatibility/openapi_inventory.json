@@ -3373,6 +3373,43 @@
       "has_error_envelope": true
     },
     {
+      "path": "/api/v1/workflow-connections/{connectionId}/enable",
+      "method": "post",
+      "operationId": "enableWorkflowConnection",
+      "idempotency_key": true,
+      "pagination": false,
+      "expected_version": "expectedVersion",
+      "success_responses": [
+        {
+          "status": 200,
+          "schema": "WorkflowConnectionEnvelope"
+        }
+      ],
+      "error_responses": [
+        {
+          "status": 400,
+          "schema": "ErrorEnvelope",
+          "is_error_envelope": true
+        },
+        {
+          "status": 404,
+          "schema": "ErrorEnvelope",
+          "is_error_envelope": true
+        },
+        {
+          "status": 409,
+          "schema": "ErrorEnvelope",
+          "is_error_envelope": true
+        },
+        {
+          "status": 422,
+          "schema": "ErrorEnvelope",
+          "is_error_envelope": true
+        }
+      ],
+      "has_error_envelope": true
+    },
+    {
       "path": "/api/v1/workflow-connections/{connectionId}/verify",
       "method": "post",
       "operationId": "verifyWorkflowConnection",
@@ -4302,8 +4339,29 @@
           "type": "['string', 'null']"
         },
         "integrationStatus": {},
+        "validationStatus": {},
         "enabled": {
           "type": "boolean"
+        },
+        "executable": {
+          "type": "boolean"
+        },
+        "safeError": {},
+        "workflowConfigurationCount": {
+          "type": "integer"
+        },
+        "affectedWorkflowConfigurationCount": {
+          "type": "['integer', 'null']"
+        },
+        "verifiedVersion": {
+          "type": "['integer', 'null']"
+        },
+        "checkedAt": {
+          "type": "['string', 'null']",
+          "format": "date-time"
+        },
+        "checks": {
+          "type": "array"
         },
         "lastVerifiedAt": {
           "type": "['string', 'null']",

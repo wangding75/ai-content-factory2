@@ -1292,7 +1292,7 @@ paths:
     get:
       operationId: listWorkflowConnections
       description: Lists saved generic workflow connections; q matches name after trimming and filters combine with AND. Results are ordered by updatedAt DESC, id ASC. Credential material is never returned.
-      parameters: [{$ref: "#/components/parameters/ConfigurationQuery"}, {$ref: "#/components/parameters/ConnectionTypeQuery"}, {$ref: "#/components/parameters/IntegrationStatusQuery"}, {$ref: "#/components/parameters/EnabledQuery"}, {$ref: "#/components/parameters/LimitQuery"}, {$ref: "#/components/parameters/OffsetQuery"}]
+      parameters: [{$ref: "#/components/parameters/ConfigurationQuery"}, {$ref: "#/components/parameters/ConnectionTypeQuery"}, {$ref: "#/components/parameters/IntegrationStatusQuery"}, {$ref: "#/components/parameters/ValidationStatusQuery"}, {$ref: "#/components/parameters/EnabledQuery"}, {$ref: "#/components/parameters/ExecutableQuery"}, {$ref: "#/components/parameters/LimitQuery"}, {$ref: "#/components/parameters/OffsetQuery"}]
       responses:
         "200": {description: Paginated workflow connections., content: {application/json: {schema: {$ref: "#/components/schemas/WorkflowConnectionListEnvelope"}}}}
         "400": {$ref: "#/components/responses/BadRequest"}
@@ -1335,6 +1335,19 @@ paths:
       requestBody: {required: true, content: {application/json: {schema: {$ref: "#/components/schemas/ConfigurationActionRequest"}}}}
       responses:
         "200": {description: Verified workflow connection., content: {application/json: {schema: {$ref: "#/components/schemas/WorkflowConnectionEnvelope"}}}}
+        "400": {$ref: "#/components/responses/BadRequest"}
+        "404": {$ref: "#/components/responses/NotFound"}
+        "409": {$ref: "#/components/responses/Conflict"}
+        "422": {$ref: "#/components/responses/UnprocessableEntity"}
+  /api/v1/workflow-connections/{connectionId}/enable:
+    parameters: [{$ref: "#/components/parameters/ConnectionId"}]
+    post:
+      operationId: enableWorkflowConnection
+      description: Enables the workflow connection configuration if it has been successfully verified.
+      parameters: [{$ref: "#/components/parameters/IdempotencyKey"}]
+      requestBody: {required: true, content: {application/json: {schema: {$ref: "#/components/schemas/ConfigurationActionRequest"}}}}
+      responses:
+        "200": {description: Enabled workflow connection., content: {application/json: {schema: {$ref: "#/components/schemas/WorkflowConnectionEnvelope"}}}}
         "400": {$ref: "#/components/responses/BadRequest"}
         "404": {$ref: "#/components/responses/NotFound"}
         "409": {$ref: "#/components/responses/Conflict"}
@@ -2061,7 +2074,15 @@ components:
         hasCredential: {type: boolean, readOnly: true}
         credentialFingerprint: {type: [string, "null"], maxLength: 32, readOnly: true, description: Non-reversible safe identifier; plaintext and ciphertext are never returned.}
         integrationStatus: {allOf: [{$ref: "#/components/schemas/IntegrationStatus"}], readOnly: true, description: Starts as not_connected and becomes connected only through Verify. Connected and enabled are required by project binding and real execution gates.}
+        validationStatus: {allOf: [{$ref: "#/components/schemas/ValidationStatus"}], readOnly: true}
         enabled: {type: boolean, readOnly: true, description: Starts false; Verify and Disable are the only state-transition endpoints.}
+        executable: {type: boolean, readOnly: true}
+        safeError: {oneOf: [{type: "null"}, {$ref: "#/components/schemas/SafeError"}], readOnly: true}
+        workflowConfigurationCount: {type: integer, minimum: 0, readOnly: true}
+        affectedWorkflowConfigurationCount: {type: [integer, "null"], minimum: 0, readOnly: true}
+        verifiedVersion: {type: [integer, "null"], minimum: 1, readOnly: true}
+        checkedAt: {type: [string, "null"], format: date-time, readOnly: true}
+        checks: {type: array, items: {$ref: "#/components/schemas/ValidationCheck"}, readOnly: true}
         lastVerifiedAt: {type: [string, "null"], format: date-time, readOnly: true}
         lastErrorCode: {type: [string, "null"], maxLength: 80, readOnly: true}
         lastErrorMessage: {type: [string, "null"], maxLength: 300, readOnly: true}
