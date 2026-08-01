@@ -555,5 +555,7 @@ $ErrorActionPreference = $savedErrorActionPreference
 if ($topUnknownExitCode -eq 0 -or $topUnknownOutput -notmatch "additionalProperty: 'unexpected'" -or $topUnknownOutput -match "minItems|required") { throw "CF-15 top-level unknown-field fixture did not fail only for unexpected." }
 if ($candidateUnknownExitCode -eq 0 -or $candidateUnknownOutput -notmatch "additionalProperty: 'unexpectedCandidate'" -or $candidateUnknownOutput -match "minItems|required") { throw "CF-15 candidate unknown-field fixture did not fail only for unexpectedCandidate." }
 
-Write-Host "[PASS] OpenAPI and Novel JSON Schema validation completed." -ForegroundColor Green
+python packages/contracts/openapi/compatibility/openapi_compatibility_test.py
+if ($LASTEXITCODE -ne 0) { throw "OpenAPI compatibility test failed." }
 
+Write-Host "[PASS] OpenAPI and Novel JSON Schema validation completed." -ForegroundColor Green
