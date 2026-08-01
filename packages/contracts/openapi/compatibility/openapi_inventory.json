@@ -1597,6 +1597,80 @@
       "has_error_envelope": true
     },
     {
+      "path": "/api/v1/llm-providers/{providerId}/models",
+      "method": "get",
+      "operationId": "listLlmProviderModels",
+      "idempotency_key": false,
+      "pagination": true,
+      "expected_version": null,
+      "success_responses": [
+        {
+          "status": 200,
+          "schema": "LlmProviderModelListEnvelope"
+        }
+      ],
+      "error_responses": [
+        {
+          "status": 400,
+          "schema": "ErrorEnvelope",
+          "is_error_envelope": true
+        },
+        {
+          "status": 404,
+          "schema": "ErrorEnvelope",
+          "is_error_envelope": true
+        },
+        {
+          "status": 500,
+          "schema": "ErrorEnvelope",
+          "is_error_envelope": true
+        }
+      ],
+      "has_error_envelope": true
+    },
+    {
+      "path": "/api/v1/llm-providers/{providerId}/models/discover",
+      "method": "post",
+      "operationId": "discoverLlmProviderModels",
+      "idempotency_key": true,
+      "pagination": false,
+      "expected_version": "expectedVersion",
+      "success_responses": [
+        {
+          "status": 200,
+          "schema": "LlmProviderModelListEnvelope"
+        }
+      ],
+      "error_responses": [
+        {
+          "status": 400,
+          "schema": "ErrorEnvelope",
+          "is_error_envelope": true
+        },
+        {
+          "status": 404,
+          "schema": "ErrorEnvelope",
+          "is_error_envelope": true
+        },
+        {
+          "status": 409,
+          "schema": "ErrorEnvelope",
+          "is_error_envelope": true
+        },
+        {
+          "status": 422,
+          "schema": "ErrorEnvelope",
+          "is_error_envelope": true
+        },
+        {
+          "status": 500,
+          "schema": "ErrorEnvelope",
+          "is_error_envelope": true
+        }
+      ],
+      "has_error_envelope": true
+    },
+    {
       "path": "/api/v1/llm-providers/{providerId}/verify",
       "method": "post",
       "operationId": "verifyLlmProvider",
@@ -14199,6 +14273,86 @@
       }
     },
     "LlmProviderVerifyResultEnvelope": {
+      "required": [
+        "data",
+        "request_id"
+      ],
+      "enums": {},
+      "properties": {
+        "data": {
+          "type": "object"
+        },
+        "request_id": {
+          "type": "string"
+        }
+      }
+    },
+    "LlmProviderModel": {
+      "required": [
+        "available",
+        "capabilities",
+        "discoveredAt",
+        "displayName",
+        "lastSeenAt",
+        "modelName",
+        "source"
+      ],
+      "enums": {
+        "source": [
+          "discovered",
+          "manual"
+        ]
+      },
+      "properties": {
+        "modelName": {
+          "type": "string"
+        },
+        "displayName": {
+          "type": "string"
+        },
+        "capabilities": {
+          "type": "array"
+        },
+        "source": {
+          "type": "string"
+        },
+        "available": {
+          "type": "boolean"
+        },
+        "discoveredAt": {
+          "type": "['string', 'null']",
+          "format": "date-time"
+        },
+        "lastSeenAt": {
+          "type": "['string', 'null']",
+          "format": "date-time"
+        }
+      }
+    },
+    "LlmProviderModelList": {
+      "required": [
+        "items",
+        "limit",
+        "offset",
+        "total"
+      ],
+      "enums": {},
+      "properties": {
+        "items": {
+          "type": "array"
+        },
+        "total": {
+          "type": "integer"
+        },
+        "limit": {
+          "type": "integer"
+        },
+        "offset": {
+          "type": "integer"
+        }
+      }
+    },
+    "LlmProviderModelListEnvelope": {
       "required": [
         "data",
         "request_id"

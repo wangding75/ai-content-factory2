@@ -1251,6 +1251,31 @@ paths:
         "404": {$ref: "#/components/responses/NotFound"}
         "409": {$ref: "#/components/responses/Conflict"}
         "422": {$ref: "#/components/responses/UnprocessableEntity"}
+  /api/v1/llm-providers/{providerId}/models:
+    parameters: [{$ref: "#/components/parameters/ProviderId"}]
+    get:
+      operationId: listLlmProviderModels
+      description: Returns the safe discovered or manually configured model catalog for the LLM provider.
+      parameters: [{$ref: "#/components/parameters/LimitQuery"}, {$ref: "#/components/parameters/OffsetQuery"}]
+      responses:
+        "200": {description: List of provider models., content: {application/json: {schema: {$ref: "#/components/schemas/LlmProviderModelListEnvelope"}}}}
+        "400": {$ref: "#/components/responses/BadRequest"}
+        "404": {$ref: "#/components/responses/NotFound"}
+        "500": {$ref: "#/components/responses/InternalServerError"}
+  /api/v1/llm-providers/{providerId}/models/discover:
+    parameters: [{$ref: "#/components/parameters/ProviderId"}]
+    post:
+      operationId: discoverLlmProviderModels
+      description: Calls the saved OpenAI-compatible endpoint to fetch available models and updates the catalog.
+      parameters: [{$ref: "#/components/parameters/IdempotencyKey"}]
+      requestBody: {required: true, content: {application/json: {schema: {$ref: "#/components/schemas/ConfigurationActionRequest"}}}}
+      responses:
+        "200": {description: Models discovered and catalog updated., content: {application/json: {schema: {$ref: "#/components/schemas/LlmProviderModelListEnvelope"}}}}
+        "400": {$ref: "#/components/responses/BadRequest"}
+        "404": {$ref: "#/components/responses/NotFound"}
+        "409": {$ref: "#/components/responses/Conflict"}
+        "422": {$ref: "#/components/responses/UnprocessableEntity"}
+        "500": {$ref: "#/components/responses/InternalServerError"}
   /api/v1/workflow-connection-types:
     get:
       operationId: listWorkflowConnectionTypes
@@ -4954,6 +4979,34 @@ components:
       required: [data, request_id]
       properties:
         data: {$ref: "#/components/schemas/LlmProviderVerifyResult"}
+        request_id: {type: string}
+    LlmProviderModel:
+      type: object
+      additionalProperties: false
+      required: [modelName, displayName, capabilities, source, available, discoveredAt, lastSeenAt]
+      properties:
+        modelName: {type: string, minLength: 1, maxLength: 160, description: Unique identifier of the model.}
+        displayName: {type: string, minLength: 1, maxLength: 160}
+        capabilities: {type: array, items: {type: string}}
+        source: {type: string, enum: [discovered, manual]}
+        available: {type: boolean}
+        discoveredAt: {type: [string, "null"], format: date-time}
+        lastSeenAt: {type: [string, "null"], format: date-time}
+    LlmProviderModelList:
+      type: object
+      additionalProperties: false
+      required: [items, total, limit, offset]
+      properties:
+        items: {type: array, items: {$ref: "#/components/schemas/LlmProviderModel"}}
+        total: {type: integer, minimum: 0}
+        limit: {type: integer, minimum: 1, maximum: 100}
+        offset: {type: integer, minimum: 0}
+    LlmProviderModelListEnvelope:
+      type: object
+      additionalProperties: false
+      required: [data, request_id]
+      properties:
+        data: {$ref: "#/components/schemas/LlmProviderModelList"}
         request_id: {type: string}
   examples:
     ChapterPlanningPreflightTokenExpiredError: {value: {error: {code: preflight_token_expired, message: "preflight token has expired", details: {retryAction: rerun_preflight, safeReason: "The token is older than ten minutes."}}, request_id: req_cf15_expired}}
