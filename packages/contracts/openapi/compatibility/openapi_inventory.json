@@ -13871,6 +13871,84 @@
           "type": "string"
         }
       }
+    },
+    "ValidationStatus": {
+      "required": [],
+      "enums": {
+        "_self": [
+          "unverified",
+          "verifying",
+          "verified",
+          "failed",
+          "stale"
+        ]
+      },
+      "properties": {}
+    },
+    "LlmStrategy": {
+      "required": [],
+      "enums": {
+        "_self": [
+          "acf_managed",
+          "n8n_managed",
+          "none"
+        ]
+      },
+      "properties": {}
+    },
+    "RuntimeStatus": {
+      "required": [],
+      "enums": {
+        "_self": [
+          "queued",
+          "running",
+          "cancelling",
+          "succeeded",
+          "failed",
+          "cancelled",
+          "timed_out"
+        ]
+      },
+      "properties": {}
+    },
+    "DisplayStatus": {
+      "required": [],
+      "enums": {
+        "_self": [
+          "queued",
+          "running",
+          "cancelling",
+          "succeeded",
+          "failed",
+          "cancelled",
+          "timed_out",
+          "output_validation_failed",
+          "result_consumption_failed"
+        ]
+      },
+      "properties": {}
+    },
+    "FailurePhase": {
+      "required": [],
+      "enums": {
+        "_self": [
+          "external_execution",
+          "output_validation",
+          "result_consumption",
+          "cancellation"
+        ]
+      },
+      "properties": {}
+    },
+    "RetryMode": {
+      "required": [],
+      "enums": {
+        "_self": [
+          "current_configuration",
+          "original_configuration"
+        ]
+      },
+      "properties": {}
     }
   }
 }

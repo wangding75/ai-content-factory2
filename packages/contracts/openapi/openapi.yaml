@@ -4830,6 +4830,24 @@ components:
     ChapterPlanningBatchConflictErrorEnvelope: {allOf: [{$ref: "#/components/schemas/ErrorEnvelope"}, {type: object, properties: {error: {$ref: "#/components/schemas/ChapterPlanningBatchConflictError"}}}]}
     ChapterPlanningOutputValidationErrorEnvelope: {allOf: [{$ref: "#/components/schemas/ErrorEnvelope"}, {type: object, properties: {error: {$ref: "#/components/schemas/ChapterPlanningOutputValidationError"}}}]}
     ChapterPlanningResultConsumptionErrorEnvelope: {allOf: [{$ref: "#/components/schemas/ErrorEnvelope"}, {type: object, properties: {error: {$ref: "#/components/schemas/ChapterPlanningResultConsumptionError"}}}]}
+    ValidationStatus:
+      type: string
+      enum: [unverified, verifying, verified, failed, stale]
+    LlmStrategy:
+      type: string
+      enum: [acf_managed, n8n_managed, none]
+    RuntimeStatus:
+      type: string
+      enum: [queued, running, cancelling, succeeded, failed, cancelled, timed_out]
+    DisplayStatus:
+      type: string
+      enum: [queued, running, cancelling, succeeded, failed, cancelled, timed_out, output_validation_failed, result_consumption_failed]
+    FailurePhase:
+      type: string
+      enum: [external_execution, output_validation, result_consumption, cancellation]
+    RetryMode:
+      type: string
+      enum: [current_configuration, original_configuration]
   examples:
     ChapterPlanningPreflightTokenExpiredError: {value: {error: {code: preflight_token_expired, message: "preflight token has expired", details: {retryAction: rerun_preflight, safeReason: "The token is older than ten minutes."}}, request_id: req_cf15_expired}}
     ChapterPlanningActiveRunConflictError: {value: {error: {code: active_run_conflict, message: "a chapter-planning run is already active", details: {resourceId: "11111111-1111-4111-8111-111111111111", retryAction: wait_for_active_run, safeReason: "Only one queued or running chapter-planning run is allowed."}}, request_id: req_cf15_active}}
