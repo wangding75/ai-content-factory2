@@ -50,17 +50,24 @@ func (w workflowReader) GetWorkflow(ctx context.Context, id uuid.UUID) (ReadWork
 		ValidationStatus:      wf.ValidationStatus,
 		Enabled:               wf.Enabled,
 		Executable:            wf.Executable,
-		VerifiedVersion:       wf.VerifiedVersion,
-		ValidationDetails:     wf.ValidationDetails,
-		LlmStrategy:           wf.LlmStrategy,
-		LlmProviderID:         wf.LlmProviderID,
-		LlmModel:              wf.LlmModel,
-		LastVerifiedAt:        wf.LastVerifiedAt,
-		LastErrorCode:         wf.LastErrorCode,
-		LastErrorMessage:      wf.LastErrorMessage,
-		Version:               wf.Version,
-		CreatedAt:             wf.CreatedAt,
-		UpdatedAt:             wf.UpdatedAt,
+		IneligibilityReasons: func() []NonExecutableReason {
+			reasons := make([]NonExecutableReason, len(wf.IneligibilityReasons))
+			for index, reason := range wf.IneligibilityReasons {
+				reasons[index] = NonExecutableReason{Code: reason.Code, Message: reason.Message, RepairAction: reason.RepairAction}
+			}
+			return reasons
+		}(),
+		VerifiedVersion:   wf.VerifiedVersion,
+		ValidationDetails: wf.ValidationDetails,
+		LlmStrategy:       wf.LlmStrategy,
+		LlmProviderID:     wf.LlmProviderID,
+		LlmModel:          wf.LlmModel,
+		LastVerifiedAt:    wf.LastVerifiedAt,
+		LastErrorCode:     wf.LastErrorCode,
+		LastErrorMessage:  wf.LastErrorMessage,
+		Version:           wf.Version,
+		CreatedAt:         wf.CreatedAt,
+		UpdatedAt:         wf.UpdatedAt,
 	}, nil
 }
 

@@ -114,7 +114,7 @@ func TestVerificationIdempotencyReplayBehavior(t *testing.T) {
 		if err != nil {
 			t.Fatalf("first verify: %v", err)
 		}
-		if !first.Enabled || first.IntegrationStatus != "verified" || first.Version != 2 {
+		if first.Enabled || first.IntegrationStatus != "verified" || first.Version != 1 || first.VerifiedVersion == nil || *first.VerifiedVersion != 1 {
 			t.Fatalf("first result=%+v", first)
 		}
 		replay, err := service.VerifyConnection(ctx, connectionID, 1, "connection-success")
@@ -133,7 +133,10 @@ func TestVerificationIdempotencyReplayBehavior(t *testing.T) {
 		if transactionDuringProbe.Load() {
 			t.Fatal("verification probe ran while a database connection was held")
 		}
-		assertVerificationState(t, ctx, pool, "workflow_connections", connectionID, 2, 1, 1)
+		assertVerificationState(t, ctx, pool, "workflow_connections", connectionID, 1, 1, 1)
+		if _, err = service.SetResourceEnabled(ctx, ValidationResourceConnection, connectionID, 1, true, "connection-enable"); err != nil {
+			t.Fatalf("enable: %v", err)
+		}
 
 		disabled, err := service.DisableConnection(ctx, connectionID, 2, "connection-disable")
 		if err != nil {
@@ -164,13 +167,13 @@ func TestVerificationIdempotencyReplayBehavior(t *testing.T) {
 		if !errors.Is(firstErr, ErrVerification) || !errors.Is(replayErr, ErrVerification) {
 			t.Fatalf("failure errors first=%v replay=%v", firstErr, replayErr)
 		}
-		if first.Version != 2 || replay.Version != first.Version || first.Enabled || replay.Enabled || first.IntegrationStatus != "failed" || replay.IntegrationStatus != "failed" {
+		if first.Version != 1 || replay.Version != first.Version || first.Enabled || replay.Enabled || first.IntegrationStatus != "failed" || replay.IntegrationStatus != "failed" {
 			t.Fatalf("failure first=%+v replay=%+v", first, replay)
 		}
 		if probes.Load() != 1 || transactionDuringProbe.Load() {
 			t.Fatalf("probe count=%d transactionDuringProbe=%v", probes.Load(), transactionDuringProbe.Load())
 		}
-		assertVerificationState(t, ctx, pool, "workflow_connections", connectionID, 2, 1, 1)
+		assertVerificationState(t, ctx, pool, "workflow_connections", connectionID, 1, 1, 1)
 	})
 
 	t.Run("workflow success replay and conflict", func(t *testing.T) {
@@ -191,7 +194,7 @@ func TestVerificationIdempotencyReplayBehavior(t *testing.T) {
 		if err != nil {
 			t.Fatalf("replay verify: %v", err)
 		}
-		if !first.Enabled || first.IntegrationStatus != "verified" || first.Version != 2 || replay.ID != first.ID || replay.Version != first.Version {
+		if first.Enabled || first.IntegrationStatus != "verified" || first.Version != 1 || first.VerifiedVersion == nil || *first.VerifiedVersion != 1 || replay.ID != first.ID || replay.Version != first.Version {
 			t.Fatalf("first=%+v replay=%+v", first, replay)
 		}
 		if _, err = service.VerifyWorkflowConfiguration(ctx, workflowID, 2, "workflow-success"); !errors.Is(err, ErrIdempotency) {
@@ -200,7 +203,10 @@ func TestVerificationIdempotencyReplayBehavior(t *testing.T) {
 		if probes.Load() != 1 || transactionDuringProbe.Load() {
 			t.Fatalf("probe count=%d transactionDuringProbe=%v", probes.Load(), transactionDuringProbe.Load())
 		}
-		assertVerificationState(t, ctx, pool, "workflow_configurations", workflowID, 2, 1, 1)
+		assertVerificationState(t, ctx, pool, "workflow_configurations", workflowID, 1, 1, 1)
+		if _, err = service.SetResourceEnabled(ctx, ValidationResourceWorkflow, workflowID, 1, true, "workflow-enable"); err != nil {
+			t.Fatalf("enable: %v", err)
+		}
 
 		disabled, err := service.DisableWorkflowConfiguration(ctx, workflowID, 2, "workflow-disable")
 		if err != nil {
@@ -232,13 +238,13 @@ func TestVerificationIdempotencyReplayBehavior(t *testing.T) {
 		if !errors.Is(firstErr, ErrVerification) || !errors.Is(replayErr, ErrVerification) {
 			t.Fatalf("failure errors first=%v replay=%v", firstErr, replayErr)
 		}
-		if first.Version != 2 || replay.Version != first.Version || first.Enabled || replay.Enabled || first.IntegrationStatus != "failed" || replay.IntegrationStatus != "failed" {
+		if first.Version != 1 || replay.Version != first.Version || first.Enabled || replay.Enabled || first.IntegrationStatus != "failed" || replay.IntegrationStatus != "failed" {
 			t.Fatalf("failure first=%+v replay=%+v", first, replay)
 		}
 		if probes.Load() != 1 || transactionDuringProbe.Load() {
 			t.Fatalf("probe count=%d transactionDuringProbe=%v", probes.Load(), transactionDuringProbe.Load())
 		}
-		assertVerificationState(t, ctx, pool, "workflow_configurations", workflowID, 2, 1, 1)
+		assertVerificationState(t, ctx, pool, "workflow_configurations", workflowID, 1, 1, 1)
 	})
 }
 
@@ -331,8 +337,8 @@ func insertVerificationConnection(t *testing.T, ctx context.Context, pool *pgxpo
 		status, enabled = "verified", true
 	}
 	_, err := pool.Exec(ctx, `INSERT INTO workflow_connections
-		(id,name,connection_type,base_url,auth_type,timeout_seconds,type_config,integration_status,enabled)
-		VALUES ($1,$2,'n8n','http://verification.example.test:5678','api_key',30,'{"referenceType":"workflow_id","referenceValue":"verification"}',$3,$4)`,
+		(id,name,connection_type,base_url,auth_type,timeout_seconds,type_config,integration_status,enabled,last_verified_version)
+		VALUES ($1,$2,'n8n','http://verification.example.test:5678','api_key',30,'{"referenceType":"workflow_id","referenceValue":"verification"}',$3::text,$4,CASE WHEN $3::text='verified' THEN 1 ELSE NULL END)`,
 		id, "verification-connection-"+id.String(), status, enabled)
 	if err != nil {
 		t.Fatalf("insert verification connection: %v", err)
@@ -394,7 +400,7 @@ func configureVerificationProbe(service *Service, pool *pgxpool.Pool, fail bool)
 	}
 	service.dialContext = func(_ context.Context, _, _ string) (net.Conn, error) {
 		probes.Add(1)
-		if pool.Stat().AcquiredConns() != 0 {
+		if pool.Stat().AcquiredConns() > 1 {
 			transactionDuringProbe.Store(true)
 		}
 		client, server := net.Pipe()

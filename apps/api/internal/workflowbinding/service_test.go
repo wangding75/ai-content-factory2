@@ -173,6 +173,8 @@ func TestServiceListStagesWithBinding(t *testing.T) {
 	t.Cleanup(func() { cleanupBinding(t, context.Background(), pool, created.ID) })
 
 	wf := newEnabledWorkflow(wfID, []string{"chapter_planning"})
+	wf.Executable = false
+	wf.IneligibilityReasons = []NonExecutableReason{{Code: "workflow_configuration_stale", Message: "The workflow changed after verification.", RepairAction: "workflow_configuration:verify"}}
 	svc := NewService(pool, mockProjectRepo{}, mockWorkflowRepo{getFn: func(_ context.Context, id uuid.UUID) (ReadWorkflowConfiguration, error) {
 		if id == wfID {
 			return wf, nil
@@ -192,6 +194,15 @@ func TestServiceListStagesWithBinding(t *testing.T) {
 	}
 	if items[0].WorkflowConfigurationSummary == nil {
 		t.Fatal("ListStages()[0].WorkflowConfigurationSummary is nil")
+	}
+	if items[0].Executable || len(items[0].IneligibilityReasons) != 1 || items[0].IneligibilityReasons[0].Code != "workflow_configuration_stale" {
+		t.Fatalf("retained binding eligibility=%+v", items[0])
+	}
+	wf.Executable = true
+	wf.IneligibilityReasons = nil
+	recovered, err := svc.ListStages(ctx, projectID)
+	if err != nil || !recovered[0].Bound || !recovered[0].Executable || len(recovered[0].IneligibilityReasons) != 0 {
+		t.Fatalf("recovered binding=%+v err=%v", recovered[0], err)
 	}
 }
 
@@ -490,11 +501,11 @@ func TestServicePutExpectedVersionOnFirstBind(t *testing.T) {
 
 func TestPutRequestExpectedVersionJSONSemantics(t *testing.T) {
 	cases := []struct {
-		name       string
-		body       string
-		provided   bool
-		version    *int
-		valid      bool
+		name     string
+		body     string
+		provided bool
+		version  *int
+		valid    bool
 	}{
 		{"omitted", `{"workflowConfigurationId":"11111111-1111-4111-8111-111111111111"}`, false, nil, true},
 		{"null", `{"workflowConfigurationId":"11111111-1111-4111-8111-111111111111","expectedVersion":null}`, true, nil, false},

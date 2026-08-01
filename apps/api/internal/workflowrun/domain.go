@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/local/ai-content-factory/apps/api/internal/platform/safety"
 )
 
 type Status string
@@ -189,37 +190,5 @@ func RedactJSON(value json.RawMessage) json.RawMessage {
 	if !validJSONObject(value) {
 		return value
 	}
-	var payload any
-	if err := json.Unmarshal(value, &payload); err != nil {
-		return value
-	}
-	redactValue(payload)
-	redacted, err := json.Marshal(payload)
-	if err != nil {
-		return value
-	}
-	return redacted
-}
-func redactValue(value any) {
-	switch typed := value.(type) {
-	case map[string]any:
-		for key, child := range typed {
-			if isSensitiveKey(key) {
-				typed[key] = "[REDACTED]"
-			} else {
-				redactValue(child)
-			}
-		}
-	case []any:
-		for _, child := range typed {
-			redactValue(child)
-		}
-	}
-}
-func isSensitiveKey(key string) bool {
-	normalized := strings.ToLower(strings.NewReplacer("_", "", "-", "", " ", "").Replace(key))
-	_, sensitive := map[string]struct{}{
-		"password": {}, "secret": {}, "clientsecret": {}, "apikey": {}, "accesstoken": {}, "refreshtoken": {}, "authtoken": {}, "authorization": {}, "credential": {}, "credentials": {}, "privatekey": {}, "webhooksecret": {}, "cookie": {}, "setcookie": {}, "xapikey": {}, "idempotencykey": {},
-	}[normalized]
-	return sensitive
+	return safety.RedactJSON(value)
 }

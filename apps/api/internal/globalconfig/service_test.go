@@ -66,13 +66,8 @@ func TestVerificationHTTPClientRejectsPrivateResolutionAndRedirects(t *testing.T
 			return client, nil
 		},
 	}
-	response, err := service.verificationHTTPClient().Do(request)
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer response.Body.Close()
-	if response.StatusCode != http.StatusFound {
-		t.Fatalf("redirect status=%d, want 302", response.StatusCode)
+	if _, err := service.verificationHTTPClient().Do(request); err == nil {
+		t.Fatal("redirect loop must be bounded")
 	}
 }
 

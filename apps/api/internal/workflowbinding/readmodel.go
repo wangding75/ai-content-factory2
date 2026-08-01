@@ -12,33 +12,34 @@ import (
 // frozen WorkflowConfiguration schema and is reused verbatim as the
 // workflowConfigurationSummary in both GET and PUT responses.
 type ReadWorkflowConfiguration struct {
-	ID                    uuid.UUID       `json:"id"`
-	Name                  string          `json:"name"`
-	ConnectionID          uuid.UUID       `json:"connectionId"`
-	ConnectionName        string          `json:"connectionName"`
-	ConnectionType        string          `json:"connectionType"`
-	WorkflowType          string          `json:"workflowType"`
-	ApplicableStages      []string        `json:"applicableStages"`
-	TypeConfig            json.RawMessage `json:"typeConfig"`
-	InputContractVersion  string          `json:"inputContractVersion"`
-	OutputContractVersion string          `json:"outputContractVersion"`
-	DefaultParameters     json.RawMessage `json:"defaultParameters"`
-	Note                  *string         `json:"note"`
-	IntegrationStatus     string          `json:"integrationStatus"`
-	ValidationStatus      string          `json:"validationStatus"`
-	Enabled               bool            `json:"enabled"`
-	Executable            bool            `json:"executable"`
-	VerifiedVersion       *int            `json:"verifiedVersion"`
-	ValidationDetails     json.RawMessage `json:"validationDetails"`
-	LlmStrategy           string          `json:"llmStrategy"`
-	LlmProviderID         *uuid.UUID      `json:"llmProviderId"`
-	LlmModel              *string         `json:"llmModel"`
-	LastVerifiedAt        *time.Time      `json:"lastVerifiedAt"`
-	LastErrorCode         *string         `json:"lastErrorCode"`
-	LastErrorMessage      *string         `json:"lastErrorMessage"`
-	Version               int             `json:"version"`
-	CreatedAt             time.Time       `json:"createdAt"`
-	UpdatedAt             time.Time       `json:"updatedAt"`
+	ID                    uuid.UUID             `json:"id"`
+	Name                  string                `json:"name"`
+	ConnectionID          uuid.UUID             `json:"connectionId"`
+	ConnectionName        string                `json:"connectionName"`
+	ConnectionType        string                `json:"connectionType"`
+	WorkflowType          string                `json:"workflowType"`
+	ApplicableStages      []string              `json:"applicableStages"`
+	TypeConfig            json.RawMessage       `json:"typeConfig"`
+	InputContractVersion  string                `json:"inputContractVersion"`
+	OutputContractVersion string                `json:"outputContractVersion"`
+	DefaultParameters     json.RawMessage       `json:"defaultParameters"`
+	Note                  *string               `json:"note"`
+	IntegrationStatus     string                `json:"integrationStatus"`
+	ValidationStatus      string                `json:"validationStatus"`
+	Enabled               bool                  `json:"enabled"`
+	Executable            bool                  `json:"executable"`
+	IneligibilityReasons  []NonExecutableReason `json:"ineligibilityReasons"`
+	VerifiedVersion       *int                  `json:"verifiedVersion"`
+	ValidationDetails     json.RawMessage       `json:"validationDetails"`
+	LlmStrategy           string                `json:"llmStrategy"`
+	LlmProviderID         *uuid.UUID            `json:"llmProviderId"`
+	LlmModel              *string               `json:"llmModel"`
+	LastVerifiedAt        *time.Time            `json:"lastVerifiedAt"`
+	LastErrorCode         *string               `json:"lastErrorCode"`
+	LastErrorMessage      *string               `json:"lastErrorMessage"`
+	Version               int                   `json:"version"`
+	CreatedAt             time.Time             `json:"createdAt"`
+	UpdatedAt             time.Time             `json:"updatedAt"`
 }
 
 // StageRead is the internal per-stage read model returned by GET and PUT.  The
@@ -48,9 +49,15 @@ type StageRead struct {
 	Stage                        WorkflowBindingStage
 	Bound                        bool
 	Executable                   bool
-	IneligibilityReasons         []string
+	IneligibilityReasons         []NonExecutableReason
 	Binding                      *ProjectWorkflowBinding
 	WorkflowConfigurationSummary *ReadWorkflowConfiguration
+}
+
+type NonExecutableReason struct {
+	Code         string `json:"code"`
+	Message      string `json:"message"`
+	RepairAction string `json:"repairAction,omitempty"`
 }
 
 // UnbindResult is the internal DELETE result.

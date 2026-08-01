@@ -73,7 +73,7 @@ func (s *Service) ListStages(ctx context.Context, projectID uuid.UUID) ([]StageR
 			read.WorkflowConfigurationSummary = &summary
 			read.Executable = summary.Executable
 			if !summary.Executable {
-				read.IneligibilityReasons = []string{"workflow_configuration_not_executable"}
+				read.IneligibilityReasons = append([]NonExecutableReason(nil), summary.IneligibilityReasons...)
 			}
 		}
 		out = append(out, read)

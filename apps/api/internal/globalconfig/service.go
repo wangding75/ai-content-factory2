@@ -15,10 +15,8 @@ import (
 	"io"
 	"net"
 	"net/http"
-	"net/netip"
 	"net/url"
 	"path"
-	"strconv"
 	"strings"
 	"time"
 
@@ -28,6 +26,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/local/ai-content-factory/apps/api/internal/audit"
 	"github.com/local/ai-content-factory/apps/api/internal/idempotency"
+	"github.com/local/ai-content-factory/apps/api/internal/platform/safehttp"
 )
 
 var (
@@ -93,19 +92,20 @@ type Connection struct {
 }
 type Workflow struct {
 	Common
-	ConnectionID          uuid.UUID       `json:"connectionId"`
-	ConnectionName        string          `json:"connectionName"`
-	ConnectionType        string          `json:"connectionType"`
-	WorkflowType          string          `json:"workflowType"`
-	ApplicableStages      []string        `json:"applicableStages"`
-	TypeConfig            json.RawMessage `json:"typeConfig"`
-	InputContractVersion  string          `json:"inputContractVersion"`
-	OutputContractVersion string          `json:"outputContractVersion"`
-	DefaultParameters     json.RawMessage `json:"defaultParameters"`
-	Note                  *string         `json:"note"`
-	LlmStrategy           string          `json:"llmStrategy"`
-	LlmProviderID         *uuid.UUID      `json:"llmProviderId"`
-	LlmModel              *string         `json:"llmModel"`
+	IneligibilityReasons  []IneligibilityReason `json:"ineligibilityReasons"`
+	ConnectionID          uuid.UUID             `json:"connectionId"`
+	ConnectionName        string                `json:"connectionName"`
+	ConnectionType        string                `json:"connectionType"`
+	WorkflowType          string                `json:"workflowType"`
+	ApplicableStages      []string              `json:"applicableStages"`
+	TypeConfig            json.RawMessage       `json:"typeConfig"`
+	InputContractVersion  string                `json:"inputContractVersion"`
+	OutputContractVersion string                `json:"outputContractVersion"`
+	DefaultParameters     json.RawMessage       `json:"defaultParameters"`
+	Note                  *string               `json:"note"`
+	LlmStrategy           string                `json:"llmStrategy"`
+	LlmProviderID         *uuid.UUID            `json:"llmProviderId"`
+	LlmModel              *string               `json:"llmModel"`
 }
 type ProviderModel struct {
 	ID           uuid.UUID  `json:"id"`
@@ -241,7 +241,7 @@ func ProviderTypes() []ProviderType     { return providerTypes }
 func ConnectionTypes() []ConnectionType { return connectionTypes }
 func PlatformTypes() []PlatformType     { return platformTypes }
 func ValidIntegrationStatus(v string) bool {
-	return v == "unverified" || v == "verifying" || v == "verified" || v == "failed" || v == "stale"
+	return validValidationStatus(ValidationStatus(v))
 }
 func ValidType(path, value string) bool {
 	for _, x := range providerTypes {
@@ -275,8 +275,8 @@ func validPlatformAuth(platform, auth string) bool {
 }
 
 func validURL(x string) bool {
-	u, e := url.ParseRequestURI(x)
-	return e == nil && u.Scheme != "" && u.Host != "" && u.User == nil
+	_, err := safehttp.NormalizeURL(x, integrationOutboundPolicy())
+	return err == nil
 }
 func validN8n(x json.RawMessage) bool {
 	var v struct {
@@ -302,8 +302,7 @@ func (s *Service) seal(value string) (string, string, error) {
 	return base64.StdEncoding.EncodeToString(append(n, g.Seal(nil, n, []byte(value), nil)...)), fingerprint(value), nil
 }
 func fingerprint(v string) string {
-	h := sha256.Sum256([]byte(v))
-	return hex.EncodeToString(h[:])[:32]
+	return secureFingerprint(v)
 }
 func (s *Service) CreateProvider(ctx context.Context, r ProviderCreate, key string) (Provider, error) {
 	if r.ProviderType != "openai_compatible" || !validProvider(r.Name, r.BaseURL, r.DefaultModel, r.TimeoutSeconds) || !validOptional(r.Secret) {
@@ -640,93 +639,34 @@ func (s *Service) UpdateConnectionIdempotent(ctx context.Context, id uuid.UUID, 
 	return out, err
 }
 
-// VerifyConnection performs the only state transition that can enable a
-// connection.  The probe is deliberately made through the narrowly scoped
-// outbound client below; ordinary create and update operations remain local.
+// VerifyConnection retains the legacy n8n probe adapter while delegating the
+// shared status, version, idempotency and audit semantics to the common
+// validation command. Verification never enables the resource.
 func (s *Service) VerifyConnection(ctx context.Context, id uuid.UUID, expectedVersion int, key string) (Connection, error) {
-	request := struct {
-		ExpectedVersion int `json:"expectedVersion"`
-	}{expectedVersion}
-	verification, body, replayed, err := s.verificationReplay(ctx, "workflow-connection:verify:"+id.String(), key, request)
-	if err != nil {
-		return Connection{}, err
-	}
-	if !replayed {
-		current, currentErr := s.GetConnection(ctx, id)
-		if currentErr != nil {
-			return Connection{}, currentErr
+	_, commandErr := s.RunValidationCommand(ctx, ValidationResourceConnection, id, expectedVersion, key, func(ctx context.Context) ValidationOutcome {
+		current, readErr := s.GetConnection(ctx, id)
+		if readErr != nil {
+			return ValidationOutcome{Success: false, Code: "upstream_unavailable", Message: "The connection could not be verified."}
 		}
-		if current.Version != expectedVersion {
-			return Connection{}, ErrVersionConflict
+		if probeErr := s.probeConnection(ctx, current); probeErr != nil {
+			return ValidationOutcome{Success: false, Code: safehttp.ErrorCode(probeErr), Message: "The connection could not be verified.", Details: json.RawMessage(`{"checks":[{"code":"connection","status":"failed"}]}`)}
 		}
-		probeErr := s.probeConnection(ctx, current)
-		body, _, err = s.verificationAction(ctx, verification, probeErr == nil, func(tx pgx.Tx) (json.RawMessage, error) {
-			current, err := s.getConnectionTx(ctx, tx, id)
-			if err != nil {
-				return nil, err
-			}
-			if current.Version != expectedVersion {
-				return nil, ErrVersionConflict
-			}
-			out, err := s.setConnectionVerificationTx(ctx, tx, current, probeErr == nil)
-			if err != nil {
-				return nil, err
-			}
-			action := "verify"
-			if probeErr != nil {
-				action = "verify_failed"
-			}
-			if err = s.audit(ctx, tx, action, "workflow_connection", id, safeAudit("verify", out.Version, map[string]any{})); err != nil {
-				return nil, err
-			}
-			return json.Marshal(out)
-		})
-		if err != nil {
-			return Connection{}, err
-		}
+		return ValidationOutcome{Success: true, Details: json.RawMessage(`{"checks":[{"code":"connection","status":"passed"}]}`)}
+	})
+	out, readErr := s.GetConnection(ctx, id)
+	if readErr != nil {
+		return Connection{}, readErr
 	}
-	var out Connection
-	if err = json.Unmarshal(body, &out); err != nil {
-		return Connection{}, err
-	}
-	if !out.Enabled || out.IntegrationStatus != "verified" {
-		return out, ErrVerification
-	}
-	return out, nil
+	return out, commandErr
 }
 
 // DisableConnection is intentionally local: it neither deletes configurations
 // nor contacts n8n.  Repeating the action at the current version is a no-op.
 func (s *Service) DisableConnection(ctx context.Context, id uuid.UUID, expectedVersion int, key string) (Connection, error) {
-	request := struct {
-		ExpectedVersion int `json:"expectedVersion"`
-	}{expectedVersion}
-	body, err := s.idempotent(ctx, "workflow-connection:disable:"+id.String(), key, request, http.StatusOK, func(tx pgx.Tx) (json.RawMessage, error) {
-		current, err := s.getConnectionTx(ctx, tx, id)
-		if err != nil {
-			return nil, err
-		}
-		if current.Version != expectedVersion {
-			return nil, ErrVersionConflict
-		}
-		out := current
-		if current.Enabled {
-			err = scanConnection(tx.QueryRow(ctx, "UPDATE workflow_connections SET enabled=false,last_verified_version=CASE WHEN integration_status='verified' THEN version+1 ELSE last_verified_version END,version=version+1,updated_at=NOW() WHERE id=$1 AND version=$2 RETURNING "+connectionColumns, id, expectedVersion), &out)
-			if err != nil {
-				return nil, err
-			}
-			if err = s.audit(ctx, tx, "disable", "workflow_connection", id, safeAudit("disable", out.Version, map[string]any{})); err != nil {
-				return nil, err
-			}
-		}
-		return json.Marshal(out)
-	})
-	if err != nil {
+	if _, err := s.SetResourceEnabled(ctx, ValidationResourceConnection, id, expectedVersion, false, key); err != nil {
 		return Connection{}, err
 	}
-	var out Connection
-	err = json.Unmarshal(body, &out)
-	return out, err
+	return s.GetConnection(ctx, id)
 }
 func (s *Service) CreateWorkflow(ctx context.Context, r WorkflowCreate, key string) (Workflow, error) {
 	r.LlmStrategy = normalizedLlmStrategy(r.LlmStrategy)
@@ -972,111 +912,36 @@ func (s *Service) UpdateWorkflowIdempotent(ctx context.Context, id uuid.UUID, r 
 	return out, err
 }
 
-// VerifyWorkflowConfiguration probes the production webhook with a dedicated
-// verification payload. It never creates a WorkflowRun, batch, or candidate.
+// VerifyWorkflowConfiguration retains the legacy probe adapter and delegates
+// common command semantics to RunValidationCommand. It never enables the
+// workflow or creates a WorkflowRun, batch, or candidate.
 func (s *Service) VerifyWorkflowConfiguration(ctx context.Context, id uuid.UUID, expectedVersion int, key string) (Workflow, error) {
-	request := struct {
-		ExpectedVersion int `json:"expectedVersion"`
-	}{expectedVersion}
-	verification, body, replayed, err := s.verificationReplay(ctx, "workflow-configuration:verify:"+id.String(), key, request)
-	if err != nil {
-		return Workflow{}, err
-	}
-	if !replayed {
-		workflow, workflowErr := s.GetWorkflow(ctx, id)
-		if workflowErr != nil {
-			return Workflow{}, workflowErr
-		}
-		if workflow.Version != expectedVersion {
-			return Workflow{}, ErrVersionConflict
+	_, commandErr := s.RunValidationCommand(ctx, ValidationResourceWorkflow, id, expectedVersion, key, func(ctx context.Context) ValidationOutcome {
+		workflow, readErr := s.GetWorkflow(ctx, id)
+		if readErr != nil {
+			return ValidationOutcome{Success: false, Code: "upstream_unavailable", Message: "The workflow could not be verified."}
 		}
 		connection, connectionErr := s.GetConnection(ctx, workflow.ConnectionID)
-		if connectionErr != nil {
-			return Workflow{}, connectionErr
+		if connectionErr != nil || !connection.Executable {
+			return ValidationOutcome{Success: false, Code: "configuration_unverified", Message: "The workflow connection is not executable."}
 		}
-		if !connection.Enabled || connection.IntegrationStatus != "verified" {
-			return Workflow{}, ErrConnectionNotReady
+		if probeErr := s.probeWorkflow(ctx, connection, workflow); probeErr != nil {
+			return ValidationOutcome{Success: false, Code: safehttp.ErrorCode(probeErr), Message: "The workflow could not be verified.", Details: json.RawMessage(`{"checks":[{"code":"workflow_reference","status":"failed"}]}`)}
 		}
-		probeErr := s.probeWorkflow(ctx, connection, workflow)
-		body, _, err = s.verificationAction(ctx, verification, probeErr == nil, func(tx pgx.Tx) (json.RawMessage, error) {
-			workflow, err := s.getWorkflowTx(ctx, tx, id)
-			if err != nil {
-				return nil, err
-			}
-			if workflow.Version != expectedVersion {
-				return nil, ErrVersionConflict
-			}
-			connection, err := s.getConnectionTx(ctx, tx, workflow.ConnectionID)
-			if err != nil {
-				return nil, err
-			}
-			if !connection.Enabled || connection.IntegrationStatus != "verified" {
-				return nil, ErrConnectionNotReady
-			}
-			out, err := s.setWorkflowVerificationTx(ctx, tx, workflow, probeErr == nil)
-			if err != nil {
-				return nil, err
-			}
-			action := "verify"
-			if probeErr != nil {
-				action = "verify_failed"
-			}
-			if err = s.audit(ctx, tx, action, "workflow_configuration", id, safeAudit("verify", out.Version, map[string]any{})); err != nil {
-				return nil, err
-			}
-			return json.Marshal(out)
-		})
-		if err != nil {
-			return Workflow{}, err
-		}
+		return ValidationOutcome{Success: true, Details: json.RawMessage(`{"checks":[{"code":"workflow_reference","status":"passed"}]}`)}
+	})
+	out, readErr := s.GetWorkflow(ctx, id)
+	if readErr != nil {
+		return Workflow{}, readErr
 	}
-	var out Workflow
-	if err = json.Unmarshal(body, &out); err != nil {
-		return Workflow{}, err
-	}
-	if !out.Enabled || out.IntegrationStatus != "verified" {
-		return out, ErrVerification
-	}
-	return out, nil
+	return out, commandErr
 }
 
 func (s *Service) DisableWorkflowConfiguration(ctx context.Context, id uuid.UUID, expectedVersion int, key string) (Workflow, error) {
-	request := struct {
-		ExpectedVersion int `json:"expectedVersion"`
-	}{expectedVersion}
-	body, err := s.idempotent(ctx, "workflow-configuration:disable:"+id.String(), key, request, http.StatusOK, func(tx pgx.Tx) (json.RawMessage, error) {
-		current, err := s.getWorkflowTx(ctx, tx, id)
-		if err != nil {
-			return nil, err
-		}
-		if current.Version != expectedVersion {
-			return nil, ErrVersionConflict
-		}
-		out := current
-		if current.Enabled {
-			tag, updateErr := tx.Exec(ctx, "UPDATE workflow_configurations SET enabled=false,last_verified_version=CASE WHEN integration_status='verified' THEN version+1 ELSE last_verified_version END,version=version+1,updated_at=NOW() WHERE id=$1 AND version=$2", id, expectedVersion)
-			if updateErr != nil {
-				return nil, updateErr
-			}
-			if tag.RowsAffected() != 1 {
-				return nil, s.updateMissingOrConflict(ctx, tx, "workflow_configurations", id)
-			}
-			out, err = s.getWorkflowTx(ctx, tx, id)
-			if err != nil {
-				return nil, err
-			}
-			if err = s.audit(ctx, tx, "disable", "workflow_configuration", id, safeAudit("disable", out.Version, map[string]any{})); err != nil {
-				return nil, err
-			}
-		}
-		return json.Marshal(out)
-	})
-	if err != nil {
+	if _, err := s.SetResourceEnabled(ctx, ValidationResourceWorkflow, id, expectedVersion, false, key); err != nil {
 		return Workflow{}, err
 	}
-	var out Workflow
-	err = json.Unmarshal(body, &out)
-	return out, err
+	return s.GetWorkflow(ctx, id)
 }
 func (s *Service) UpdatePlatform(ctx context.Context, id uuid.UUID, r PlatformUpdate) (Platform, error) {
 	tx, err := s.pool.Begin(ctx)
@@ -1246,46 +1111,6 @@ func defaultJSON(v json.RawMessage) json.RawMessage {
 }
 func mustJSON(v any) json.RawMessage { b, _ := json.Marshal(v); return b }
 
-func (s *Service) getConnectionTx(ctx context.Context, tx pgx.Tx, id uuid.UUID) (Connection, error) {
-	var out Connection
-	err := scanConnection(tx.QueryRow(ctx, "SELECT "+connectionColumns+" FROM workflow_connections WHERE id=$1", id), &out)
-	return out, notFound(err)
-}
-
-func (s *Service) getWorkflowTx(ctx context.Context, tx pgx.Tx, id uuid.UUID) (Workflow, error) {
-	var out Workflow
-	err := scanWorkflow(tx.QueryRow(ctx, "SELECT "+workflowColumns+" FROM workflow_configurations w JOIN workflow_connections c ON c.id=w.connection_id WHERE w.id=$1", id), &out)
-	return out, notFound(err)
-}
-
-func (s *Service) setConnectionVerificationTx(ctx context.Context, tx pgx.Tx, current Connection, success bool) (Connection, error) {
-	status, enabled, code, message := "failed", false, "verification_failed", "The connection could not be verified."
-	if success {
-		status, enabled, code, message = "verified", true, "", ""
-	}
-	var out Connection
-	err := scanConnection(tx.QueryRow(ctx, "UPDATE workflow_connections SET integration_status=$2,enabled=$3,last_verified_version=CASE WHEN $3 THEN version+1 ELSE last_verified_version END,validation_details='{}'::jsonb,last_verified_at=CASE WHEN $3 THEN NOW() ELSE last_verified_at END,last_error_code=NULLIF($4,''),last_error_message=NULLIF($5,''),version=version+1,updated_at=NOW() WHERE id=$1 AND version=$6 RETURNING "+connectionColumns, current.ID, status, enabled, code, message, current.Version), &out)
-	if errors.Is(err, pgx.ErrNoRows) {
-		return out, s.updateMissingOrConflict(ctx, tx, "workflow_connections", current.ID)
-	}
-	return out, err
-}
-
-func (s *Service) setWorkflowVerificationTx(ctx context.Context, tx pgx.Tx, current Workflow, success bool) (Workflow, error) {
-	status, enabled, code, message := "failed", false, "verification_failed", "The workflow endpoint could not be verified."
-	if success {
-		status, enabled, code, message = "verified", true, "", ""
-	}
-	tag, err := tx.Exec(ctx, "UPDATE workflow_configurations SET integration_status=$2,enabled=$3,last_verified_version=CASE WHEN $3 THEN version+1 ELSE last_verified_version END,validation_details='{}'::jsonb,last_verified_at=CASE WHEN $3 THEN NOW() ELSE last_verified_at END,last_error_code=NULLIF($4,''),last_error_message=NULLIF($5,''),version=version+1,updated_at=NOW() WHERE id=$1 AND version=$6", current.ID, status, enabled, code, message, current.Version)
-	if err != nil {
-		return Workflow{}, err
-	}
-	if tag.RowsAffected() != 1 {
-		return Workflow{}, s.updateMissingOrConflict(ctx, tx, "workflow_configurations", current.ID)
-	}
-	return s.getWorkflowTx(ctx, tx, current.ID)
-}
-
 func (s *Service) probeConnection(ctx context.Context, connection Connection) error {
 	endpoint, err := verificationURL(connection.BaseURL, "healthz")
 	if err != nil {
@@ -1343,57 +1168,29 @@ func (s *Service) probe(ctx context.Context, endpoint string, timeoutSeconds int
 	client := s.verificationHTTPClient()
 	res, err := client.Do(req)
 	if err != nil {
-		return ErrVerification
+		return err
 	}
 	defer res.Body.Close()
 	if res.StatusCode < 200 || res.StatusCode > 299 {
-		return ErrVerification
+		return &safehttp.Error{Code: "upstream_unavailable", Message: "The integration service returned an unsuccessful response.", Retryable: res.StatusCode >= 500}
 	}
-	if response != nil && json.NewDecoder(io.LimitReader(res.Body, 64*1024)).Decode(response) != nil {
-		return ErrVerification
+	if response != nil {
+		body, readErr := io.ReadAll(io.LimitReader(res.Body, 64*1024+1))
+		if readErr != nil {
+			return &safehttp.Error{Code: "upstream_unavailable", Message: "The integration response could not be read.", Retryable: true}
+		}
+		if len(body) > 64*1024 {
+			return &safehttp.Error{Code: safehttp.CodeResponseTooLarge, Message: "The integration response is too large.", Retryable: false}
+		}
+		if json.Unmarshal(body, response) != nil {
+			return &safehttp.Error{Code: "upstream_unavailable", Message: "The integration response was invalid.", Retryable: false}
+		}
 	}
 	return nil
 }
 
 func (s *Service) verificationHTTPClient() *http.Client {
-	dial := s.dialContext
-	if dial == nil {
-		dial = (&net.Dialer{}).DialContext
-	}
-	resolver := s.resolveHost
-	if resolver == nil {
-		resolver = func(ctx context.Context, host string) ([]net.IP, error) {
-			return net.DefaultResolver.LookupIP(ctx, "ip", host)
-		}
-	}
-	transport := &http.Transport{Proxy: nil, DialContext: func(ctx context.Context, network, address string) (net.Conn, error) {
-		host, port, err := net.SplitHostPort(address)
-		if err != nil {
-			return nil, ErrVerification
-		}
-		ips, err := resolver(ctx, host)
-		if err != nil || len(ips) == 0 {
-			return nil, ErrVerification
-		}
-		for _, ip := range ips {
-			if !verificationAddressAllowed(host, ip) {
-				return nil, ErrVerification
-			}
-		}
-		var lastErr error
-		for _, ip := range ips {
-			conn, dialErr := dial(ctx, network, net.JoinHostPort(ip.String(), port))
-			if dialErr == nil {
-				return conn, nil
-			}
-			lastErr = dialErr
-		}
-		if lastErr != nil {
-			return nil, lastErr
-		}
-		return nil, ErrVerification
-	}}
-	return &http.Client{Transport: transport, CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}
+	return safehttp.New(s.outboundPolicy()).HTTPClient()
 }
 
 // RuntimeHTTPClient applies the same no-proxy, no-redirect, DNS-rebinding-safe
@@ -1405,19 +1202,9 @@ func (s *Service) RuntimeHTTPClient() *http.Client {
 // verificationURL validates only syntax. Every resolved address is checked in
 // DialContext immediately before use, which prevents DNS rebinding bypasses.
 func verificationURL(baseURL, suffix string) (string, error) {
-	u, err := url.Parse(baseURL)
-	if err != nil || (u.Scheme != "http" && u.Scheme != "https") || u.Host == "" || u.User != nil {
+	u, err := safehttp.NormalizeURL(baseURL, integrationOutboundPolicy())
+	if err != nil {
 		return "", ErrVerification
-	}
-	host := strings.ToLower(u.Hostname())
-	if host == "" || host == "localhost" {
-		return "", ErrVerification
-	}
-	if port := u.Port(); port != "" {
-		parsed, portErr := strconv.Atoi(port)
-		if portErr != nil || parsed < 1 || parsed > 65535 {
-			return "", ErrVerification
-		}
 	}
 	u.Path = path.Join(u.Path, suffix)
 	u.RawQuery, u.Fragment = "", ""
@@ -1425,87 +1212,28 @@ func verificationURL(baseURL, suffix string) (string, error) {
 }
 
 func verificationAddressAllowed(host string, ip net.IP) bool {
-	if strings.EqualFold(host, "n8n") {
-		return true
-	}
-	addr, ok := netip.AddrFromSlice(ip)
-	if !ok {
-		return false
-	}
-	return !(addr.IsLoopback() || addr.IsPrivate() || addr.IsLinkLocalUnicast() || addr.IsUnspecified() || addr.IsMulticast())
+	policy := integrationOutboundPolicy()
+	policy.Resolver = func(context.Context, string) ([]net.IP, error) { return []net.IP{ip}, nil }
+	u := &url.URL{Scheme: "https", Host: host}
+	_, err := safehttp.ValidateDestination(context.Background(), u, policy)
+	return err == nil
 }
 
-type verificationRequest struct {
-	scope string
-	key   string
-	hash  string
+func integrationOutboundPolicy() safehttp.Policy {
+	policy := safehttp.DefaultPolicy()
+	policy.AllowedSchemes = map[string]bool{"https": true, "http": true}
+	policy.AllowedPorts = map[int]bool{80: true, 443: true, 5678: true}
+	policy.TrustedHosts = map[string]bool{"n8n": true}
+	return policy
 }
 
-// verificationReplay reads a completed response before any resource lookup or
-// external probe. A miss returns the prepared request hash for the transaction
-// recheck performed after the probe.
-func (s *Service) verificationReplay(ctx context.Context, scope, key string, request any) (verificationRequest, json.RawMessage, bool, error) {
-	if strings.TrimSpace(key) == "" || len(key) > 128 {
-		return verificationRequest{}, nil, false, ErrValidation
-	}
-	requestJSON, err := json.Marshal(request)
-	if err != nil {
-		return verificationRequest{}, nil, false, ErrValidation
-	}
-	hashBytes := sha256.Sum256(requestJSON)
-	hash := hex.EncodeToString(hashBytes[:])
-	verification := verificationRequest{scope: scope, key: key, hash: hash}
-	existing, err := idempotency.NewPostgresRepository(s.pool).Get(ctx, scope, key)
-	if err == nil {
-		if existing.RequestHash != hash {
-			return verificationRequest{}, nil, false, ErrIdempotency
-		}
-		return verification, existing.ResponseBody, true, nil
-	}
-	if !errors.Is(err, idempotency.ErrNotFound) {
-		return verificationRequest{}, nil, false, err
-	}
-	return verification, nil, false, nil
+func (s *Service) outboundPolicy() safehttp.Policy {
+	policy := integrationOutboundPolicy()
+	policy.Resolver = s.resolveHost
+	policy.DialContext = s.dialContext
+	return policy
 }
 
-// verificationAction deliberately starts only after the external probe has
-// finished. The short transaction locks and rechecks both idempotency and the
-// resource version before a CAS write, so a stale probe cannot overwrite a
-// concurrent state transition.
-func (s *Service) verificationAction(ctx context.Context, request verificationRequest, success bool, fn func(pgx.Tx) (json.RawMessage, error)) (json.RawMessage, bool, error) {
-	tx, err := s.pool.Begin(ctx)
-	if err != nil {
-		return nil, false, err
-	}
-	defer tx.Rollback(ctx)
-	if _, err = tx.Exec(ctx, "SELECT pg_advisory_xact_lock(hashtextextended($1, 0))", request.scope+":"+request.key); err != nil {
-		return nil, false, fmt.Errorf("lock verification request: %w", err)
-	}
-	repository := idempotency.NewPostgresRepositoryTx(tx)
-	if existing, existingErr := repository.Get(ctx, request.scope, request.key); existingErr == nil {
-		if existing.RequestHash != request.hash {
-			return nil, false, ErrIdempotency
-		}
-		return existing.ResponseBody, true, tx.Commit(ctx)
-	} else if !errors.Is(existingErr, idempotency.ErrNotFound) {
-		return nil, false, existingErr
-	}
-	body, err := fn(tx)
-	if err != nil {
-		return nil, false, unique(err)
-	}
-	status := http.StatusOK
-	if !success {
-		status = http.StatusUnprocessableEntity
-	}
-	if _, err = repository.Create(ctx, idempotency.Record{ID: uuid.New(), Scope: request.scope, Key: request.key, RequestHash: request.hash, ResponseStatus: status, ResponseBody: body}); err != nil {
-		return nil, false, ErrIdempotency
-	}
-	if err = tx.Commit(ctx); err != nil {
-		return nil, false, err
-	}
-	return body, false, nil
-}
 func (s *Service) idempotent(ctx context.Context, scope, key string, request any, responseStatus int, fn func(pgx.Tx) (json.RawMessage, error)) (json.RawMessage, error) {
 	if strings.TrimSpace(key) == "" || len(key) > 128 {
 		return nil, ErrValidation
@@ -1556,7 +1284,7 @@ func safeAudit(operation string, version int, changes map[string]any) map[string
 		"typeConfigChanged": {}, "credentialChanged": {}, "credentialCleared": {},
 		"connectionId": {}, "applicableStages": {}, "inputContractVersion": {},
 		"outputContractVersion": {}, "defaultParametersChanged": {}, "noteChanged": {},
-		"accountIdentifier": {},
+		"accountIdentifier": {}, "validationStatus": {}, "errorCode": {},
 	}
 	safeChanges := make(map[string]any, len(changes))
 	for key, value := range changes {
@@ -1602,7 +1330,7 @@ const providerColumns = "id,name,provider_type,base_url,default_model,timeout_se
 
 func scanProvider(r scanner, x *Provider) error {
 	err := r.Scan(&x.ID, &x.Name, &x.ProviderType, &x.BaseURL, &x.DefaultModel, &x.TimeoutSeconds, &x.HasSecret, &x.SecretFingerprint, &x.IntegrationStatus, &x.Enabled, &x.VerifiedVersion, &x.ValidationDetails, &x.LastVerifiedAt, &x.LastErrorCode, &x.LastErrorMessage, &x.Version, &x.CreatedAt, &x.UpdatedAt)
-	finalizeCommon(&x.Common)
+	finalizeCommon(&x.Common, "provider")
 	return err
 }
 
@@ -1610,7 +1338,7 @@ const connectionColumns = "id,name,connection_type,base_url,auth_type,timeout_se
 
 func scanConnection(r scanner, x *Connection) error {
 	err := r.Scan(&x.ID, &x.Name, &x.ConnectionType, &x.BaseURL, &x.AuthType, &x.TimeoutSeconds, &x.TypeConfig, &x.HasCredential, &x.CredentialFingerprint, &x.IntegrationStatus, &x.Enabled, &x.VerifiedVersion, &x.ValidationDetails, &x.LastVerifiedAt, &x.LastErrorCode, &x.LastErrorMessage, &x.Version, &x.CreatedAt, &x.UpdatedAt)
-	finalizeCommon(&x.Common)
+	finalizeCommon(&x.Common, "connection")
 	return err
 }
 
@@ -1622,13 +1350,20 @@ func scanWorkflow(r scanner, x *Workflow) error {
 	if e == nil {
 		e = json.Unmarshal(raw, &x.ApplicableStages)
 	}
-	finalizeCommon(&x.Common)
+	x.IneligibilityReasons = finalizeCommon(&x.Common, "workflow_configuration")
 	return e
 }
 
-func finalizeCommon(x *Common) {
+func finalizeCommon(x *Common, kind string) []IneligibilityReason {
 	x.ValidationStatus = x.IntegrationStatus
-	x.Executable = x.Enabled && x.IntegrationStatus == "verified" && x.VerifiedVersion != nil && *x.VerifiedVersion == x.Version
+	var reasons []IneligibilityReason
+	x.Executable, reasons = EvaluateEligibility(EligibilityFact{
+		Kind: kind, Status: ValidationStatus(x.IntegrationStatus), Enabled: x.Enabled,
+		Version: x.Version, VerifiedVersion: x.VerifiedVersion, ModelAvailable: true,
+		StrategyComplete: true, ReferenceExists: true, ReferenceActive: true,
+		StageMatches: true, InputCompatible: true, OutputCompatible: true,
+	})
+	return reasons
 }
 
 const platformColumns = "id,name,platform_type,account_identifier,endpoint_url,auth_type,timeout_seconds,type_config,note,encrypted_credential IS NOT NULL,credential_fingerprint,integration_status,enabled,last_verified_at,last_error_code,last_error_message,version,created_at,updated_at"

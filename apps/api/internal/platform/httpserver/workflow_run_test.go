@@ -63,7 +63,7 @@ func TestWorkflowRunHTTPCreateMapsRequestAndRedactsResponse(t *testing.T) {
 	if app.createCommand.ProjectID != run.ProjectID || app.createCommand.TriggerSource != "manual" || app.createCommand.IdempotencyKey != "create-key" || !strings.Contains(string(app.createCommand.InputPayload), "title") { t.Fatalf("unexpected command: %#v", app.createCommand) }
 	var body struct { Data struct { ConfigurationSnapshot map[string]any `json:"configurationSnapshot"`; InputPayload map[string]any `json:"inputPayload"` } `json:"data"`; RequestID string `json:"request_id"` }
 	if err := json.Unmarshal(w.Body.Bytes(), &body); err != nil { t.Fatal(err) }
-	if body.RequestID == "" || body.Data.ConfigurationSnapshot["token"] != "hidden" || body.Data.InputPayload["token"] != "hidden" { t.Fatalf("unsafe or incomplete response: %s", w.Body.String()) }
+	if body.RequestID == "" || body.Data.ConfigurationSnapshot["token"] != "[REDACTED]" || body.Data.InputPayload["token"] != "[REDACTED]" { t.Fatalf("unsafe or incomplete response: %s", w.Body.String()) }
 	for _, tc := range []struct{ body, key string }{{`{}`, "key"}, {`{"projectId":"`+run.ProjectID.String()+`","stage":"review","inputPayload":{}}`, ""}} {
 		w = workflowRunHTTPRequest(handler, http.MethodPost, "/api/v1/workflow-runs", tc.body, tc.key)
 		if w.Code != http.StatusBadRequest || !strings.Contains(w.Body.String(), `"request_id"`) { t.Fatalf("invalid create = %d: %s", w.Code, w.Body.String()) }
