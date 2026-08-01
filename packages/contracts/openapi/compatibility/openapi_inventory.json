@@ -13949,6 +13949,70 @@
         ]
       },
       "properties": {}
+    },
+    "SafeError": {
+      "required": [
+        "code",
+        "message"
+      ],
+      "enums": {},
+      "properties": {
+        "code": {
+          "type": "string"
+        },
+        "message": {
+          "type": "string"
+        },
+        "details": {
+          "type": "object"
+        }
+      }
+    },
+    "ValidationCheck": {
+      "required": [
+        "code",
+        "message",
+        "status"
+      ],
+      "enums": {
+        "status": [
+          "passed",
+          "warning",
+          "blocked"
+        ]
+      },
+      "properties": {
+        "code": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string"
+        },
+        "message": {
+          "type": "string"
+        },
+        "repairAction": {
+          "type": "string"
+        }
+      }
+    },
+    "NonExecutableReason": {
+      "required": [
+        "code",
+        "message"
+      ],
+      "enums": {},
+      "properties": {
+        "code": {
+          "type": "string"
+        },
+        "message": {
+          "type": "string"
+        },
+        "repairAction": {
+          "type": "string"
+        }
+      }
     }
   }
 }
