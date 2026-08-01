@@ -65,6 +65,8 @@ LLM 策略：
 
 验证清单：Connection、Workflow 引用、Stage、输入契约、输出契约、LLM 策略。任何必需项失败，Workflow Configuration 不可执行。
 
+关键字段变化更新同一 Workflow Configuration 记录并执行 `version + 1`，不创建配置历史表；验证状态转 `stale`。历史运行配置由 WorkflowRun 不可变快照承担。
+
 ## 5. 项目绑定闭环
 
 - 四个 Stage 共用同一绑定组件。

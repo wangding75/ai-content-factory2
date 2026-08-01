@@ -44,7 +44,7 @@
 - [ ] ACF-managed 必须选择可执行 Provider 和模型；
 - [ ] 项目不得覆盖策略；
 - [ ] Connection、引用、Stage、输入、输出、LLM 策略分层验证；
-- [ ] 关键字段变化创建新记录版本并使当前验证失效；
+- [ ] 关键字段变化更新同一 Workflow Configuration 记录、执行 `version + 1` 并使当前验证转 `stale`；不创建配置历史表；
 - [ ] enabled 保留但 executable=false，重新验证后恢复；
 - [ ] 未验证或依赖失效时不可成为新绑定候选或新 Run 依赖。
 
@@ -94,3 +94,14 @@
 - [ ] AppShell、导航、中文 locale 和 UI 人工验收通过；
 - [ ] 独立 Code Review 完成；
 - [ ] Git 状态 clean，报告和证据完整。
+
+## 11. 任务级阶段门禁
+
+- [ ] Task 02 完成后：主 OpenAPI 是唯一 HTTP 事实来源，兼容检查和生成物无漂移；
+- [ ] Task 03 完成后：Migration 19、Repository、Fixture、Schema/Data consistency 全部 PASS；
+- [ ] Task 04 完成后：统一状态机、执行资格、安全外呼和 Secret 语义具备独立测试；
+- [ ] Task 05 完成后：Provider→Connection→Workflow Configuration→Binding 配置闭环可验证、可启停、可恢复；
+- [ ] Task 06 完成后：WorkflowRun 状态机、快照、真实 n8n 调用、取消、超时和重试完整；
+- [ ] Task 07 完成后：15 Frame 对应 UI 接入真实 API，前端 typecheck/lint/test/build PASS；
+- [ ] Task 08 完成后：四 Stage 正式路径均不调用 Mock Adapter，领域写入保持原子性；
+- [ ] Task 09 完成后：真实 LLM、真实 n8n、四 Stage E2E、安全、数据库、人工 UI 和独立 Review 全部 PASS。

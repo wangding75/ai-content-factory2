@@ -1,13 +1,28 @@
 iteration: iteration-19-second-loop-integration-acceptance
 status: frozen_for_openapi_sync
 contract_source: packages/contracts/openapi/openapi.yaml
-baseline_commit: 235917f9d74c1263093e06ec0629d71dfed9ee02
+baseline_commit: 6e8656467f3c204feb83d19185d10f78e092cd56
 stages: [chapter_planning, content_generation, review, rewrite]
 validation_statuses: [unverified, verifying, verified, failed, stale]
 llm_strategies: [acf_managed, n8n_managed, none]
 runtime_statuses: [queued, running, cancelling, succeeded, failed, cancelled, timed_out]
 display_statuses: [queued, running, cancelling, succeeded, failed, cancelled, timed_out, output_validation_failed, result_consumption_failed]
 retry_modes: [current_configuration, original_configuration]
+
+compatibility_decisions:
+  workflow_configuration_versioning:
+    storage: same_record_version_increment
+    history_table: false
+    rule: Key-field changes update the same row, increment version and set validationStatus=stale.
+    runtime_history: Immutable WorkflowRun snapshots are the historical execution source.
+  legacy_validation_status:
+    rule: Existing not_connected values migrate to unverified; existing paths and operationIds are extended, not duplicated.
+  retry_contract:
+    rule: Existing retry operations evolve compatibly to explicit mode=current_configuration/original_configuration.
+  cancellation_contract:
+    rule: Cancellation evolves from immediate cancelled semantics to cancelling then cancelled while preserving the existing path.
+  result_consumption_retry:
+    rule: Stage-specific consumption retry is retained; it never invokes n8n/LLM and never creates a new Runtime Run.
 
 apis:
   llm_provider_models:

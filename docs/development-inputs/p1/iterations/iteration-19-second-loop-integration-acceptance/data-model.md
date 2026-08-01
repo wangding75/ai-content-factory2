@@ -78,6 +78,15 @@ none         => llm_provider_id IS NULL AND llm_model IS NULL
 
 项目级绑定不得增加 Provider、模型、LLM 参数或策略覆盖字段。
 
+
+### 4.1 配置版本职责边界
+
+- Workflow Configuration 修改关键字段时更新同一行，使用现有整数 `version` 做乐观锁并执行 `version + 1`。
+- 本迭代不新增 Workflow Configuration 历史表、版本表或密钥历史表。
+- `last_verified_version` 只表示当前记录哪个版本最近验证成功；关键字段变化后当前状态转 `stale`。
+- 历史运行必须由 `workflow_run_records` 的不可变 `configuration_snapshot`、`connection_snapshot` 和 `llm_policy_snapshot` 还原，不依赖读取旧配置行。
+- `original_configuration` 重试不是读取配置历史表，而是使用 Run 快照并校验当前 Secret/Credential fingerprint、引用存在性和安全可重放条件。
+
 ## 5. ProjectWorkflowBinding 读取模型
 
 `project_workflow_bindings` 不新增持久化状态字段。读取 DTO 派生：
