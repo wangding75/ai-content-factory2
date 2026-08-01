@@ -64,6 +64,85 @@ func registerGlobalConfigurationRoutes(m *http.ServeMux, s *globalconfig.Service
 		v, e := s.UpdateProviderIdempotent(r.Context(), id, x, key)
 		configurationRead(w, r, v, e)
 	})
+	m.HandleFunc("GET /api/v1/llm-providers/{providerId}/models", func(w http.ResponseWriter, r *http.Request) {
+		id, ok := configurationID(w, r, "providerId")
+		if !ok {
+			return
+		}
+		models, err := s.ListProviderModels(r.Context(), id)
+		if err != nil {
+			configurationError(w, r, err)
+			return
+		}
+		writeJSON(w, r, 200, map[string]any{"items": models})
+	})
+	m.HandleFunc("POST /api/v1/llm-providers/{providerId}/models/discover", func(w http.ResponseWriter, r *http.Request) {
+		id, ok := configurationID(w, r, "providerId")
+		if !ok {
+			return
+		}
+		var body configurationActionRequest
+		if !configurationBody(w, r, &body) || body.ExpectedVersion < 1 {
+			writeError(w, r, 400, "validation_error", "invalid configuration", map[string]any{})
+			return
+		}
+		key, ok := configurationPatchKey(w, r)
+		if !ok {
+			return
+		}
+		models, err := s.DiscoverProviderModels(r.Context(), id, body.ExpectedVersion, key)
+		if err != nil {
+			configurationError(w, r, err)
+			return
+		}
+		writeJSON(w, r, 200, map[string]any{"items": models})
+	})
+	m.HandleFunc("POST /api/v1/llm-providers/{providerId}/verify", func(w http.ResponseWriter, r *http.Request) {
+		id, ok := configurationID(w, r, "providerId")
+		if !ok {
+			return
+		}
+		var body struct {
+			ExpectedVersion int    `json:"expectedVersion"`
+			Model           string `json:"model"`
+		}
+		if !configurationBody(w, r, &body) || body.ExpectedVersion < 1 {
+			writeError(w, r, 400, "validation_error", "invalid configuration", map[string]any{})
+			return
+		}
+		key, ok := configurationPatchKey(w, r)
+		if !ok {
+			return
+		}
+		value, err := s.VerifyProvider(r.Context(), id, body.ExpectedVersion, key, body.Model)
+		configurationRead(w, r, value, err)
+	})
+	for _, action := range []struct {
+		path    string
+		handler func(context.Context, uuid.UUID, int, string) (globalconfig.Provider, error)
+	}{
+		{"POST /api/v1/llm-providers/{providerId}/enable", s.EnableProvider},
+		{"POST /api/v1/llm-providers/{providerId}/disable", s.DisableProvider},
+	} {
+		action := action
+		m.HandleFunc(action.path, func(w http.ResponseWriter, r *http.Request) {
+			id, ok := configurationID(w, r, "providerId")
+			if !ok {
+				return
+			}
+			var body configurationActionRequest
+			if !configurationBody(w, r, &body) || body.ExpectedVersion < 1 {
+				writeError(w, r, 400, "validation_error", "invalid configuration", map[string]any{})
+				return
+			}
+			key, ok := configurationPatchKey(w, r)
+			if !ok {
+				return
+			}
+			value, err := action.handler(r.Context(), id, body.ExpectedVersion, key)
+			configurationRead(w, r, value, err)
+		})
+	}
 	m.HandleFunc("GET /api/v1/workflow-connections", func(w http.ResponseWriter, r *http.Request) {
 		o, ok := configurationListOptions(w, r)
 		if !ok {
@@ -109,6 +188,7 @@ func registerGlobalConfigurationRoutes(m *http.ServeMux, s *globalconfig.Service
 		handler func(context.Context, uuid.UUID, int, string) (globalconfig.Connection, error)
 	}{
 		{"POST /api/v1/workflow-connections/{connectionId}/verify", s.VerifyConnection},
+		{"POST /api/v1/workflow-connections/{connectionId}/enable", s.EnableConnection},
 		{"POST /api/v1/workflow-connections/{connectionId}/disable", s.DisableConnection},
 	} {
 		action := action
@@ -178,6 +258,7 @@ func registerGlobalConfigurationRoutes(m *http.ServeMux, s *globalconfig.Service
 		handler func(context.Context, uuid.UUID, int, string) (globalconfig.Workflow, error)
 	}{
 		{"POST /api/v1/workflow-configurations/{workflowId}/verify", s.VerifyWorkflowConfiguration},
+		{"POST /api/v1/workflow-configurations/{workflowId}/enable", s.EnableWorkflowConfiguration},
 		{"POST /api/v1/workflow-configurations/{workflowId}/disable", s.DisableWorkflowConfiguration},
 	} {
 		action := action

@@ -157,6 +157,12 @@ func (s *Service) Put(ctx context.Context, projectID uuid.UUID, stage WorkflowBi
 	if !stageApplicable(stage, wf.ApplicableStages) {
 		return PutResult{}, ErrNotApplicable
 	}
+	// Legacy readers without Iteration 19 eligibility data leave Executable at
+	// its zero value. A populated reason list is the authoritative signal that
+	// the configuration was evaluated and is currently blocked.
+	if !wf.Executable && len(wf.IneligibilityReasons) > 0 {
+		return PutResult{}, ErrDisabledWorkflow
+	}
 	repo := NewPostgresRepository(s.pool)
 	existing, err := repo.GetByProjectAndStage(ctx, projectID, stage)
 	if errors.Is(err, ErrNotFound) {
@@ -313,6 +319,9 @@ func (s *Service) putTx(ctx context.Context, tx pgx.Tx, projectID uuid.UUID, sta
 	}
 	if !stageApplicable(stage, wf.ApplicableStages) {
 		return PutResult{}, ErrNotApplicable
+	}
+	if !wf.Executable && len(wf.IneligibilityReasons) > 0 {
+		return PutResult{}, ErrDisabledWorkflow
 	}
 	repo := NewPostgresRepositoryTx(tx)
 	existing, err := repo.GetByProjectAndStage(ctx, projectID, stage)
@@ -519,6 +528,7 @@ func putResultFromDTO(dto WorkflowBindingStageDTO) (PutResult, int) {
 			ValidationStatus:      dto.WorkflowConfigurationSummary.ValidationStatus,
 			Enabled:               dto.WorkflowConfigurationSummary.Enabled,
 			Executable:            dto.WorkflowConfigurationSummary.Executable,
+			IneligibilityReasons:  dto.WorkflowConfigurationSummary.IneligibilityReasons,
 			VerifiedVersion:       dto.WorkflowConfigurationSummary.VerifiedVersion,
 			ValidationDetails:     dto.WorkflowConfigurationSummary.ValidationDetails,
 			LlmStrategy:           dto.WorkflowConfigurationSummary.LlmStrategy,

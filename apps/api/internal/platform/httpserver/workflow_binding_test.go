@@ -758,14 +758,14 @@ func insertWorkflowBindingProject(t *testing.T, ctx context.Context, pool *pgxpo
 func insertWorkflowBindingWorkflow(t *testing.T, ctx context.Context, pool *pgxpool.Pool, wfID, connID uuid.UUID, stages []string) {
 	t.Helper()
 	now := time.Now().UTC()
-	_, err := pool.Exec(ctx, `INSERT INTO workflow_connections (id, name, connection_type, base_url, auth_type, timeout_seconds, type_config, created_at, updated_at)
-		VALUES ($1, $2, 'n8n', 'http://localhost', 'api_key', 30, '{}', $3, $4)`, connID, "test-conn-"+connID.String()[:8], now, now)
+	_, err := pool.Exec(ctx, `INSERT INTO workflow_connections (id, name, connection_type, base_url, auth_type, timeout_seconds, type_config, integration_status, enabled, last_verified_version, created_at, updated_at)
+		VALUES ($1, $2, 'n8n', 'http://localhost', 'api_key', 30, '{}', 'verified', true, 1, $3, $4)`, connID, "test-conn-"+connID.String()[:8], now, now)
 	if err != nil {
 		t.Fatalf("insert connection fixture: %v", err)
 	}
 	raw, _ := json.Marshal(stages)
-	_, err = pool.Exec(ctx, `INSERT INTO workflow_configurations (id, name, connection_id, applicable_stages, type_config, input_contract_version, output_contract_version, default_parameters, enabled, created_at, updated_at)
-		VALUES ($1, $2, $3, $4::jsonb, '{}', 'v1', 'v1', '{}', true, $5, $6)`, wfID, "test-wf-"+wfID.String()[:8], connID, raw, now, now)
+	_, err = pool.Exec(ctx, `INSERT INTO workflow_configurations (id, name, connection_id, applicable_stages, type_config, input_contract_version, output_contract_version, default_parameters, integration_status, enabled, last_verified_version, created_at, updated_at)
+		VALUES ($1, $2, $3, $4::jsonb, '{}', 'v1', 'v1', '{}', 'verified', true, 1, $5, $6)`, wfID, "test-wf-"+wfID.String()[:8], connID, raw, now, now)
 	if err != nil {
 		t.Fatalf("insert workflow fixture: %v", err)
 	}

@@ -172,6 +172,9 @@ func TestEnableCommandConcurrentIdempotencyAndDisable(t *testing.T) {
 	if _, err = pool.Exec(ctx, "UPDATE llm_provider_configurations SET integration_status='verified',last_verified_version=1 WHERE id=$1", id); err != nil {
 		t.Fatal(err)
 	}
+	if _, err = pool.Exec(ctx, "INSERT INTO llm_provider_models(id,provider_id,model_key,source,availability,last_seen_at) VALUES($1,$2,'fixture-model','manual','available',NOW())", uuid.New(), id); err != nil {
+		t.Fatal(err)
+	}
 	start := make(chan struct{})
 	results := make(chan EnableCommandResult, 2)
 	errs := make(chan error, 2)

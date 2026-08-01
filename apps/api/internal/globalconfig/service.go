@@ -37,6 +37,7 @@ var (
 	ErrNameConflict       = errors.New("configuration name already exists")
 	ErrVerification       = errors.New("integration verification failed")
 	ErrConnectionNotReady = errors.New("workflow connection is not connected")
+	ErrNotExecutable      = errors.New("workflow configuration is not executable")
 )
 
 type Service struct {
@@ -372,6 +373,143 @@ func (s *Service) ListProviderModels(ctx context.Context, providerID uuid.UUID) 
 	}
 	return models, rows.Err()
 }
+
+// DiscoverProviderModels refreshes the safe catalogue from the saved
+// OpenAI-compatible endpoint. The credential is decrypted only while building
+// the outbound request and never appears in the response, audit, or error.
+func (s *Service) DiscoverProviderModels(ctx context.Context, id uuid.UUID, expectedVersion int, key string) ([]ProviderModel, error) {
+	provider, err := s.GetProvider(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	if provider.Version != expectedVersion {
+		return nil, ErrVersionConflict
+	}
+	models, err := s.discoverModels(ctx, provider)
+	if err != nil {
+		return nil, err
+	}
+	body, err := s.idempotent(ctx, "llm-provider:discover:"+id.String(), key, struct {
+		ExpectedVersion int      `json:"expectedVersion"`
+		Models          []string `json:"models"`
+	}{expectedVersion, models}, 200, func(tx pgx.Tx) (json.RawMessage, error) {
+		var version int
+		if err := tx.QueryRow(ctx, "SELECT version FROM llm_provider_configurations WHERE id=$1 FOR UPDATE", id).Scan(&version); err != nil {
+			return nil, notFound(err)
+		}
+		if version != expectedVersion {
+			return nil, ErrVersionConflict
+		}
+		if err := s.updateModelCatalogue(ctx, tx, id, models); err != nil {
+			return nil, err
+		}
+		if err := s.audit(ctx, tx, "model_discover", "llm_provider", id, safeAudit("model_discover", version, map[string]any{})); err != nil {
+			return nil, err
+		}
+		rows, err := tx.Query(ctx, "SELECT id,provider_id,model_key,source,availability,last_seen_at,created_at,updated_at FROM llm_provider_models WHERE provider_id=$1 ORDER BY model_key ASC,id ASC", id)
+		if err != nil {
+			return nil, err
+		}
+		defer rows.Close()
+		out := []ProviderModel{}
+		for rows.Next() {
+			var model ProviderModel
+			if err = rows.Scan(&model.ID, &model.ProviderID, &model.ModelKey, &model.Source, &model.Availability, &model.LastSeenAt, &model.CreatedAt, &model.UpdatedAt); err != nil {
+				return nil, err
+			}
+			out = append(out, model)
+		}
+		if err = rows.Err(); err != nil {
+			return nil, err
+		}
+		return json.Marshal(out)
+	})
+	if err != nil {
+		return nil, err
+	}
+	var out []ProviderModel
+	if err = json.Unmarshal(body, &out); err != nil {
+		return nil, ErrIdempotency
+	}
+	return out, nil
+}
+
+func (s *Service) VerifyProvider(ctx context.Context, id uuid.UUID, expectedVersion int, key string, optionalModel string) (Provider, error) {
+	_, commandErr := s.RunValidationCommand(ctx, ValidationResourceProvider, id, expectedVersion, key, func(ctx context.Context) ValidationOutcome {
+		provider, err := s.GetProvider(ctx, id)
+		if err != nil {
+			return validationOutcome(err, safeChecks(check("connection", false, "configuration_not_found")))
+		}
+		if model := strings.TrimSpace(optionalModel); model != "" && model != provider.DefaultModel {
+			return validationOutcome(&safehttp.Error{Code: "model_unavailable"}, safeChecks(check("model", false, "model_unavailable")))
+		}
+		models, err := s.discoverModels(ctx, provider)
+		if err != nil {
+			return validationOutcome(err, safeChecks(check("connection", false, safehttp.ErrorCode(err))))
+		}
+		available := false
+		for _, model := range models {
+			if model == provider.DefaultModel {
+				available = true
+				break
+			}
+		}
+		if !available {
+			return validationOutcome(&safehttp.Error{Code: "model_unavailable"}, safeChecks(check("connection", true, ""), check("model", false, "model_unavailable")))
+		}
+		// Catalogue persistence is deliberately separated from the external call;
+		// an optimistic transaction makes a raced edit win without stale writes.
+		tx, txErr := s.pool.Begin(ctx)
+		if txErr != nil {
+			return validationOutcome(txErr, safeChecks(check("model", false, "upstream_unavailable")))
+		}
+		defer tx.Rollback(ctx)
+		var version int
+		if txErr = tx.QueryRow(ctx, "SELECT version FROM llm_provider_configurations WHERE id=$1 FOR UPDATE", id).Scan(&version); txErr == nil && version == expectedVersion {
+			txErr = s.updateModelCatalogue(ctx, tx, id, models)
+		}
+		if txErr == nil && version != expectedVersion {
+			txErr = ErrVersionConflict
+		}
+		if txErr == nil {
+			txErr = tx.Commit(ctx)
+		}
+		if txErr != nil {
+			return validationOutcome(txErr, safeChecks(check("model", false, "model_unavailable")))
+		}
+		return validationOutcome(nil, safeChecks(check("connection", true, ""), check("model", true, "")))
+	})
+	out, readErr := s.GetProvider(ctx, id)
+	if readErr != nil {
+		return Provider{}, readErr
+	}
+	return out, commandErr
+}
+
+func (s *Service) EnableProvider(ctx context.Context, id uuid.UUID, expectedVersion int, key string) (Provider, error) {
+	if _, err := s.SetResourceEnabled(ctx, ValidationResourceProvider, id, expectedVersion, true, key); err != nil {
+		return Provider{}, err
+	}
+	provider, err := s.GetProvider(ctx, id)
+	if err != nil {
+		return Provider{}, err
+	}
+	available, err := s.providerModelAvailable(ctx, id, provider.DefaultModel)
+	if err != nil {
+		return Provider{}, err
+	}
+	if !available {
+		return Provider{}, ErrVerification
+	}
+	return provider, nil
+}
+
+func (s *Service) DisableProvider(ctx context.Context, id uuid.UUID, expectedVersion int, key string) (Provider, error) {
+	if _, err := s.SetResourceEnabled(ctx, ValidationResourceProvider, id, expectedVersion, false, key); err != nil {
+		return Provider{}, err
+	}
+	return s.GetProvider(ctx, id)
+}
 func (s *Service) UpsertProviderModel(ctx context.Context, model ProviderModel) (ProviderModel, error) {
 	if model.ProviderID == uuid.Nil || strings.TrimSpace(model.ModelKey) == "" || len(model.ModelKey) > 200 ||
 		(model.Source != "discovered" && model.Source != "manual") ||
@@ -646,18 +784,28 @@ func (s *Service) VerifyConnection(ctx context.Context, id uuid.UUID, expectedVe
 	_, commandErr := s.RunValidationCommand(ctx, ValidationResourceConnection, id, expectedVersion, key, func(ctx context.Context) ValidationOutcome {
 		current, readErr := s.GetConnection(ctx, id)
 		if readErr != nil {
-			return ValidationOutcome{Success: false, Code: "upstream_unavailable", Message: "The connection could not be verified."}
+			return validationOutcome(readErr, safeChecks(check("connection", false, "configuration_not_found")))
 		}
-		if probeErr := s.probeConnection(ctx, current); probeErr != nil {
-			return ValidationOutcome{Success: false, Code: safehttp.ErrorCode(probeErr), Message: "The connection could not be verified.", Details: json.RawMessage(`{"checks":[{"code":"connection","status":"failed"}]}`)}
+		credential, credentialErr := s.connectionCredential(ctx, id)
+		if credentialErr != nil {
+			return validationOutcome(credentialErr, safeChecks(check("connection", false, "configuration_unverified")))
 		}
-		return ValidationOutcome{Success: true, Details: json.RawMessage(`{"checks":[{"code":"connection","status":"passed"}]}`)}
+		var instance any
+		err := s.integrationRequest(ctx, current.BaseURL, "api/v1/workflows?limit=1", credential, "X-N8N-API-KEY", current.TimeoutSeconds, &instance)
+		return validationOutcome(err, safeChecks(check("connection", err == nil, safehttp.ErrorCode(err))))
 	})
 	out, readErr := s.GetConnection(ctx, id)
 	if readErr != nil {
 		return Connection{}, readErr
 	}
 	return out, commandErr
+}
+
+func (s *Service) EnableConnection(ctx context.Context, id uuid.UUID, expectedVersion int, key string) (Connection, error) {
+	if _, err := s.SetResourceEnabled(ctx, ValidationResourceConnection, id, expectedVersion, true, key); err != nil {
+		return Connection{}, err
+	}
+	return s.GetConnection(ctx, id)
 }
 
 // DisableConnection is intentionally local: it neither deletes configurations
@@ -701,7 +849,10 @@ func (s *Service) CreateWorkflow(ctx context.Context, r WorkflowCreate, key stri
 func (s *Service) GetWorkflow(ctx context.Context, id uuid.UUID) (Workflow, error) {
 	var x Workflow
 	e := scanWorkflow(s.pool.QueryRow(ctx, "SELECT "+workflowColumns+" FROM workflow_configurations w JOIN workflow_connections c ON c.id=w.connection_id WHERE w.id=$1", id), &x)
-	return x, notFound(e)
+	if e != nil {
+		return x, notFound(e)
+	}
+	return x, s.hydrateWorkflowEligibility(ctx, &x)
 }
 
 func GetWorkflowForShare(ctx context.Context, tx pgx.Tx, id uuid.UUID) (Workflow, error) {
@@ -752,10 +903,80 @@ func (s *Service) ListWorkflows(ctx context.Context, o ListOptions) ([]Workflow,
 		if e = scanWorkflow(rows, &x); e != nil {
 			return nil, 0, e
 		}
+		if e = s.hydrateWorkflowEligibility(ctx, &x); e != nil {
+			return nil, 0, e
+		}
 		out = append(out, x)
 	}
 	return out, n, rows.Err()
 }
+
+func (s *Service) hydrateWorkflowEligibility(ctx context.Context, workflow *Workflow) error {
+	connection, err := s.GetConnection(ctx, workflow.ConnectionID)
+	if err != nil {
+		return err
+	}
+	providerFact := EligibilityFact{Kind: "provider", Status: ValidationVerified, Enabled: true, Version: 1, VerifiedVersion: intPointer(1), ModelAvailable: true}
+	strategyComplete := true
+	if workflow.LlmStrategy == "acf_managed" {
+		if workflow.LlmProviderID == nil || workflow.LlmModel == nil {
+			strategyComplete = false
+		} else {
+			provider, providerErr := s.GetProvider(ctx, *workflow.LlmProviderID)
+			if providerErr != nil {
+				strategyComplete = false
+			} else {
+				available, availabilityErr := s.providerModelAvailable(ctx, provider.ID, *workflow.LlmModel)
+				if availabilityErr != nil {
+					return availabilityErr
+				}
+				providerFact = EligibilityFact{Kind: "provider", Status: ValidationStatus(provider.ValidationStatus), Enabled: provider.Enabled, Version: provider.Version, VerifiedVersion: provider.VerifiedVersion, ModelAvailable: available}
+			}
+		}
+	}
+	workflowFact := EligibilityFact{Kind: "workflow_configuration", Status: ValidationStatus(workflow.ValidationStatus), Enabled: workflow.Enabled, Version: workflow.Version, VerifiedVersion: workflow.VerifiedVersion, StrategyComplete: strategyComplete, ReferenceExists: true, ReferenceActive: true, StageMatches: true, InputCompatible: validContractVersion(workflow.InputContractVersion), OutputCompatible: validContractVersion(workflow.OutputContractVersion)}
+	connectionFact := EligibilityFact{Kind: "connection", Status: ValidationStatus(connection.ValidationStatus), Enabled: connection.Enabled, Version: connection.Version, VerifiedVersion: connection.VerifiedVersion}
+	workflow.Executable, workflow.IneligibilityReasons = EvaluateEligibility(workflowFact, connectionFact, providerFact)
+	return nil
+}
+
+func (s *Service) workflowStrategyExecutable(ctx context.Context, workflow Workflow) bool {
+	if workflow.LlmStrategy == "none" || workflow.LlmStrategy == "n8n_managed" {
+		return true
+	}
+	if workflow.LlmStrategy != "acf_managed" || workflow.LlmProviderID == nil || workflow.LlmModel == nil {
+		return false
+	}
+	provider, err := s.GetProvider(ctx, *workflow.LlmProviderID)
+	if err != nil || !provider.Executable {
+		return false
+	}
+	available, err := s.providerModelAvailable(ctx, provider.ID, *workflow.LlmModel)
+	return err == nil && available
+}
+
+func (s *Service) workflowDependenciesExecutable(ctx context.Context, workflow Workflow) bool {
+	connection, err := s.GetConnection(ctx, workflow.ConnectionID)
+	return err == nil && connection.Executable && s.workflowStrategyExecutable(ctx, workflow)
+}
+
+func containsAll(actual, expected []string) bool {
+	set := map[string]bool{}
+	for _, value := range actual {
+		set[value] = true
+	}
+	for _, value := range expected {
+		if !set[value] {
+			return false
+		}
+	}
+	return len(expected) > 0
+}
+
+func validContractVersion(value string) bool {
+	return strings.TrimSpace(value) != "" && len(value) <= 40
+}
+func intPointer(value int) *int { return &value }
 func (s *Service) CreatePlatform(ctx context.Context, r PlatformCreate, key string) (Platform, error) {
 	if !validPlatform(r.Name, r.PlatformType, r.AccountIdentifier, r.EndpointURL, r.AuthType, r.TimeoutSeconds, r.TypeConfig) || !validOptional(r.Credential) || !validNote(r.Note) {
 		return Platform{}, ErrValidation
@@ -917,24 +1138,65 @@ func (s *Service) UpdateWorkflowIdempotent(ctx context.Context, id uuid.UUID, r 
 // workflow or creates a WorkflowRun, batch, or candidate.
 func (s *Service) VerifyWorkflowConfiguration(ctx context.Context, id uuid.UUID, expectedVersion int, key string) (Workflow, error) {
 	_, commandErr := s.RunValidationCommand(ctx, ValidationResourceWorkflow, id, expectedVersion, key, func(ctx context.Context) ValidationOutcome {
-		workflow, readErr := s.GetWorkflow(ctx, id)
-		if readErr != nil {
-			return ValidationOutcome{Success: false, Code: "upstream_unavailable", Message: "The workflow could not be verified."}
+		workflow, err := s.GetWorkflow(ctx, id)
+		if err != nil {
+			return validationOutcome(err, safeChecks(check("connection", false, "configuration_not_found")))
 		}
-		connection, connectionErr := s.GetConnection(ctx, workflow.ConnectionID)
-		if connectionErr != nil || !connection.Executable {
-			return ValidationOutcome{Success: false, Code: "configuration_unverified", Message: "The workflow connection is not executable."}
+		connection, err := s.GetConnection(ctx, workflow.ConnectionID)
+		if err != nil {
+			return validationOutcome(err, safeChecks(check("connection", false, "configuration_unverified")))
 		}
-		if probeErr := s.probeWorkflow(ctx, connection, workflow); probeErr != nil {
-			return ValidationOutcome{Success: false, Code: safehttp.ErrorCode(probeErr), Message: "The workflow could not be verified.", Details: json.RawMessage(`{"checks":[{"code":"workflow_reference","status":"failed"}]}`)}
+		checks := []map[string]any{}
+		connectionOK := connection.Executable
+		checks = append(checks, check("connection", connectionOK, "configuration_unverified"))
+		var cfg struct {
+			ReferenceType  string `json:"referenceType"`
+			ReferenceValue string `json:"referenceValue"`
 		}
-		return ValidationOutcome{Success: true, Details: json.RawMessage(`{"checks":[{"code":"workflow_reference","status":"passed"}]}`)}
+		if json.Unmarshal(workflow.TypeConfig, &cfg) != nil || (cfg.ReferenceType != "workflow_id" && cfg.ReferenceType != "webhook_path") || strings.TrimSpace(cfg.ReferenceValue) == "" {
+			return validationOutcome(&safehttp.Error{Code: "workflow_reference_not_found"}, safeChecks(checks...))
+		}
+		ref := workflowReferenceCheck{}
+		var refErr error
+		if cfg.ReferenceType == "workflow_id" {
+			ref, refErr = s.n8nWorkflow(ctx, connection, cfg.ReferenceValue)
+		} else {
+			refErr = s.probeWorkflow(ctx, connection, workflow)
+			ref = workflowReferenceCheck{Exists: refErr == nil, Active: refErr == nil, Stages: workflow.ApplicableStages}
+		}
+		checks = append(checks, check("workflow_reference", refErr == nil && ref.Exists, "workflow_reference_not_found"))
+		checks = append(checks, check("stage", refErr == nil && containsAll(ref.Stages, workflow.ApplicableStages), "workflow_stage_mismatch"))
+		checks = append(checks, check("input_contract", validContractVersion(workflow.InputContractVersion), "input_contract_incompatible"))
+		checks = append(checks, check("output_contract", validContractVersion(workflow.OutputContractVersion), "output_contract_incompatible"))
+		strategyOK := s.workflowStrategyExecutable(ctx, workflow)
+		checks = append(checks, check("llm_strategy", strategyOK, "llm_strategy_incomplete"))
+		if refErr != nil {
+			return validationOutcome(refErr, safeChecks(checks...))
+		}
+		if !connectionOK || !ref.Exists || !ref.Active || !containsAll(ref.Stages, workflow.ApplicableStages) || !validContractVersion(workflow.InputContractVersion) || !validContractVersion(workflow.OutputContractVersion) || !strategyOK {
+			return validationOutcome(&safehttp.Error{Code: "configuration_verification_failed"}, safeChecks(checks...))
+		}
+		return validationOutcome(nil, safeChecks(checks...))
 	})
 	out, readErr := s.GetWorkflow(ctx, id)
 	if readErr != nil {
 		return Workflow{}, readErr
 	}
 	return out, commandErr
+}
+
+func (s *Service) EnableWorkflowConfiguration(ctx context.Context, id uuid.UUID, expectedVersion int, key string) (Workflow, error) {
+	workflow, err := s.GetWorkflow(ctx, id)
+	if err != nil {
+		return Workflow{}, err
+	}
+	if workflow.ValidationStatus != string(ValidationVerified) || workflow.VerifiedVersion == nil || *workflow.VerifiedVersion != workflow.Version || !s.workflowDependenciesExecutable(ctx, workflow) {
+		return Workflow{}, ErrVerification
+	}
+	if _, err = s.SetResourceEnabled(ctx, ValidationResourceWorkflow, id, expectedVersion, true, key); err != nil {
+		return Workflow{}, err
+	}
+	return s.GetWorkflow(ctx, id)
 }
 
 func (s *Service) DisableWorkflowConfiguration(ctx context.Context, id uuid.UUID, expectedVersion int, key string) (Workflow, error) {
@@ -1241,14 +1503,14 @@ func (s *Service) idempotent(ctx context.Context, scope, key string, request any
 	b, _ := json.Marshal(request)
 	h := sha256.Sum256(b)
 	hash := hex.EncodeToString(h[:])
+	if s.beforeIdempotencyLock != nil {
+		s.beforeIdempotencyLock()
+	}
 	tx, e := s.pool.Begin(ctx)
 	if e != nil {
 		return nil, e
 	}
 	defer tx.Rollback(ctx)
-	if s.beforeIdempotencyLock != nil {
-		s.beforeIdempotencyLock()
-	}
 	if _, e = tx.Exec(ctx, "SELECT pg_advisory_xact_lock(hashtextextended($1, 0))", scope+":"+key); e != nil {
 		return nil, fmt.Errorf("lock idempotency request: %w", e)
 	}

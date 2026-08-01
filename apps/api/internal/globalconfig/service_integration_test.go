@@ -10,6 +10,7 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"testing"
@@ -319,6 +320,12 @@ func verificationIntegrationDatabase(t *testing.T) (*pgxpool.Pool, context.Conte
 	if config.ConnConfig.Database != "ai_content_factory" {
 		t.Fatalf("DATABASE_URL database=%q, want ai_content_factory", config.ConnConfig.Database)
 	}
+	// The idempotency race test deliberately holds each transaction at a
+	// synchronization barrier before it acquires its advisory lock. Keep the
+	// test pool large enough for every participant to reach that barrier.
+	if config.MaxConns < 8 {
+		config.MaxConns = 8
+	}
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	t.Cleanup(cancel)
 	pool, err := pgxpool.NewWithConfig(ctx, config)
@@ -422,6 +429,9 @@ func serveVerificationProbe(connection net.Conn, fail bool) {
 		return
 	}
 	response := []byte(`{}`)
+	if strings.Contains(request.URL.Path, "/api/v1/workflows/") {
+		response = []byte(`{"id":"verification","active":true,"tags":[{"name":"acf-stage:chapter_planning"}]}`)
+	}
 	if request.Method == http.MethodPost {
 		var payload struct {
 			Stage           string `json:"stage"`

@@ -89,6 +89,59 @@ func (s *Service) SetResourceEnabled(ctx context.Context, resource ValidationRes
 		if enabled && (status != string(ValidationVerified) || verifiedVersion == nil || *verifiedVersion != version) {
 			return nil, ErrVerification
 		}
+		if enabled && resource == ValidationResourceProvider {
+			var defaultModel string
+			if err := tx.QueryRow(ctx, "SELECT default_model FROM llm_provider_configurations WHERE id=$1", id).Scan(&defaultModel); err != nil {
+				return nil, err
+			}
+			available, err := s.providerModelAvailableTx(ctx, tx, id, defaultModel)
+			if err != nil {
+				return nil, err
+			}
+			if !available {
+				return nil, ErrVerification
+			}
+		}
+		if enabled && resource == ValidationResourceWorkflow {
+			var connectionID uuid.UUID
+			var strategy string
+			var providerID *uuid.UUID
+			var model *string
+			if err := tx.QueryRow(ctx, "SELECT connection_id,llm_strategy,llm_provider_id,llm_model FROM workflow_configurations WHERE id=$1", id).Scan(&connectionID, &strategy, &providerID, &model); err != nil {
+				return nil, err
+			}
+			var connectionStatus string
+			var connectionEnabled bool
+			var connectionVersion int
+			var connectionVerified *int
+			if err := tx.QueryRow(ctx, "SELECT integration_status,enabled,version,last_verified_version FROM workflow_connections WHERE id=$1 FOR SHARE", connectionID).Scan(&connectionStatus, &connectionEnabled, &connectionVersion, &connectionVerified); err != nil {
+				return nil, notFound(err)
+			}
+			if connectionStatus != "verified" || !connectionEnabled || connectionVerified == nil || *connectionVerified != connectionVersion {
+				return nil, ErrVerification
+			}
+			if strategy == "acf_managed" {
+				if providerID == nil || model == nil {
+					return nil, ErrVerification
+				}
+				var providerStatus string
+				var providerEnabled bool
+				var providerVersion int
+				var providerVerified *int
+				if err := tx.QueryRow(ctx, "SELECT integration_status,enabled,version,last_verified_version FROM llm_provider_configurations WHERE id=$1 FOR SHARE", *providerID).Scan(&providerStatus, &providerEnabled, &providerVersion, &providerVerified); err != nil {
+					return nil, notFound(err)
+				}
+				available, err := s.providerModelAvailableTx(ctx, tx, *providerID, *model)
+				if err != nil {
+					return nil, err
+				}
+				if providerStatus != "verified" || !providerEnabled || providerVerified == nil || *providerVerified != providerVersion || !available {
+					return nil, ErrVerification
+				}
+			} else if strategy != "n8n_managed" && strategy != "none" {
+				return nil, ErrVerification
+			}
+		}
 		if currentEnabled != enabled {
 			tag, updateErr := tx.Exec(ctx, "UPDATE "+table+" SET enabled=$3,last_verified_version=CASE WHEN integration_status='verified' THEN version+1 ELSE last_verified_version END,version=version+1,updated_at=NOW() WHERE id=$1 AND version=$2", id, expectedVersion, enabled)
 			if updateErr != nil {
