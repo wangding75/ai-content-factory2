@@ -1,6 +1,6 @@
 # Iteration 19 — 执行计划
 
-**状态：`frozen`。** Task 01 为文档歧义修正和计划落盘；完成手动更新并提交后，剩余 8 个开发任务必须按顺序执行。
+**状态：`frozen`。** Task 01 已在 Commit `39fa4f3c4838c5d67b98c7958ba2f7a42ece75b7` 完成文档歧义修正和计划落盘。Task 02～09 的最新任务书与详细验收标准已归档到 [`taskbooks/`](taskbooks/README.md)，必须按顺序执行。
 
 ## 1. 全局执行规则
 
@@ -39,7 +39,7 @@ Task 02 OpenAPI
 → Task 09 真实联调与关闭
 ```
 
-不得并行跨过未完成的上游契约或 Schema。
+不得并行跨过未完成的上游契约或 Schema。每个 Task 的逐文件修改逻辑、验收标准、验证门禁和回执要求，以对应任务书为直接执行输入；本文件只维护迭代级顺序和里程碑。
 
 ## 4. Task 02 门禁
 
@@ -106,13 +106,17 @@ Task 02 OpenAPI
 - 独立全量 Code Review 和缺陷修复完成；
 - `.ai-dev/state.json`、报告和最终状态更新，工作区 clean。
 
-## 12. 任务书索引
+## 12. 任务书索引与适用规则
 
-- `CF-19-02-main-openapi-contract.md`
-- `CF-19-03-migration19-persistence.md`
-- `CF-19-04-integration-foundation.md`
-- `CF-19-05-integration-config-binding.md`
-- `CF-19-06-workflow-runtime-recovery.md`
-- `CF-19-07-frontend.md`
-- `CF-19-08-four-stage-runtime.md`
-- `CF-19-09-e2e-acceptance.md`
+统一索引：[`taskbooks/README.md`](taskbooks/README.md)。
+
+- [Task 02 — 主 OpenAPI 契约同步](taskbooks/CF-19-02-main-openapi-contract.md)
+- [Task 03 — Migration 19 与持久化模型](taskbooks/CF-19-03-migration19-persistence.md)
+- [Task 04 — 公共集成基础](taskbooks/CF-19-04-integration-foundation.md)
+- [Task 05 — 集成配置与项目绑定闭环](taskbooks/CF-19-05-integration-config-binding.md)
+- [Task 06 — Workflow Runtime 与失败恢复](taskbooks/CF-19-06-workflow-runtime-recovery.md)
+- [Task 07 — Iteration 19 完整前端](taskbooks/CF-19-07-frontend.md)
+- [Task 08 — 四 Stage 真实 Runtime 接入](taskbooks/CF-19-08-four-stage-runtime.md)
+- [Task 09 — 真实联调与最终验收](taskbooks/CF-19-09-e2e-acceptance.md)
+
+任务书中的“验收标准”和“验证要求”必须同时满足。任务书与本文件出现粒度差异时，以冻结业务契约不变为前提，以任务书的逐文件边界和详细验收标准执行；不得借此扩大任务范围。

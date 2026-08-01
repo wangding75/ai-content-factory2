@@ -97,6 +97,8 @@
 
 ## 11. 任务级阶段门禁
 
+本节是迭代级汇总；Task 02～09 的逐文件验收标准、验证证据和禁止回归项，以 [`taskbooks/README.md`](taskbooks/README.md) 及对应任务书为直接执行依据。迭代级标准与任务书标准必须同时满足。
+
 - [ ] Task 02 完成后：主 OpenAPI 是唯一 HTTP 事实来源，兼容检查和生成物无漂移；
 - [ ] Task 03 完成后：Migration 19、Repository、Fixture、Schema/Data consistency 全部 PASS；
 - [ ] Task 04 完成后：统一状态机、执行资格、安全外呼和 Secret 语义具备独立测试；
