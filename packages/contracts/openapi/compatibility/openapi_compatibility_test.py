@@ -208,13 +208,15 @@ def extract_schema_details(schema_name, doc):
     schema_def = doc['components']['schemas'][schema_name]
     required_fields = set()
     enums = {}
+    properties = {}
 
     # Check if the schema itself is an enum
     schema_resolved = resolve_ref_dict(schema_def, doc)
     if isinstance(schema_resolved, dict) and 'enum' in schema_resolved:
         return {
             "required": [],
-            "enums": {"_self": schema_resolved['enum']}
+            "enums": {"_self": schema_resolved['enum']},
+            "properties": {}
         }
 
     def walk_schema(node, path_history=None):
@@ -243,18 +245,26 @@ def extract_schema_details(schema_name, doc):
         if 'properties' in node:
             for prop_name, prop_def in node['properties'].items():
                 prop_resolved = resolve_ref_dict(prop_def, doc)
+                prop_info = {}
                 if isinstance(prop_resolved, dict):
+                    if 'type' in prop_resolved:
+                        prop_info['type'] = str(prop_resolved['type'])
+                    if 'format' in prop_resolved:
+                        prop_info['format'] = str(prop_resolved['format'])
+
                     if 'enum' in prop_resolved:
                         enums[prop_name] = prop_resolved['enum']
                     elif 'type' in prop_resolved and prop_resolved['type'] == 'array' and 'items' in prop_resolved:
                         items_resolved = resolve_ref_dict(prop_resolved['items'], doc)
                         if isinstance(items_resolved, dict) and 'enum' in items_resolved:
                             enums[prop_name] = items_resolved['enum']
+                properties[prop_name] = prop_info
 
     walk_schema(schema_def)
     return {
         "required": sorted(list(required_fields)),
-        "enums": enums
+        "enums": enums,
+        "properties": properties
     }
 
 def generate_inventory():
@@ -277,16 +287,89 @@ def generate_inventory():
         "schemas": schemas_dict
     }
 
+def check_compatibility(baseline, current):
+    errors = []
+
+    # 1. Check paths compatibility
+    baseline_paths = { (p['path'], p['method']): p for p in baseline['paths'] }
+    current_paths = { (p['path'], p['method']): p for p in current['paths'] }
+
+    for (path, method), b_op in baseline_paths.items():
+        if (path, method) not in current_paths:
+            errors.append(f"Deleted path/method: {method.upper()} {path}")
+            continue
+        c_op = current_paths[(path, method)]
+
+        # Check operationId
+        if b_op['operationId'] != c_op['operationId']:
+            errors.append(f"Changed operationId for {method.upper()} {path}: expected '{b_op['operationId']}', got '{c_op['operationId']}'")
+
+        # Check success responses not deleted
+        b_success = { r['status']: r for r in b_op['success_responses'] }
+        c_success = { r['status']: r for r in c_op['success_responses'] }
+        for status, b_resp in b_success.items():
+            if status not in c_success:
+                errors.append(f"Deleted success response {status} for {method.upper()} {path}")
+            else:
+                c_resp = c_success[status]
+                if b_resp['schema'] != c_resp['schema']:
+                    errors.append(f"Changed success response schema for {method.upper()} {path} ({status}): expected '{b_resp['schema']}', got '{c_resp['schema']}'")
+
+    # 2. Check schemas compatibility
+    baseline_schemas = baseline['schemas']
+    current_schemas = current['schemas']
+
+    for schema_name, b_schema in baseline_schemas.items():
+        if schema_name not in current_schemas:
+            errors.append(f"Deleted schema: {schema_name}")
+            continue
+        c_schema = current_schemas[schema_name]
+
+        # Check required fields not expanded (no new required fields added)
+        b_req = set(b_schema.get('required', []))
+        c_req = set(c_schema.get('required', []))
+        new_req = c_req - b_req
+        if new_req:
+            errors.append(f"Expanded required fields for schema '{schema_name}': added {list(new_req)}")
+
+        # Check fields not deleted
+        b_props = b_schema.get('properties', {})
+        c_props = c_schema.get('properties', {})
+        for prop_name, b_prop_info in b_props.items():
+            if prop_name not in c_props:
+                errors.append(f"Deleted field '{prop_name}' in schema '{schema_name}'")
+                continue
+            c_prop_info = c_props[prop_name]
+
+            # Check type/format not changed
+            if b_prop_info.get('type') != c_prop_info.get('type'):
+                errors.append(f"Changed type for field '{prop_name}' in schema '{schema_name}': expected '{b_prop_info.get('type')}', got '{c_prop_info.get('type')}'")
+            if b_prop_info.get('format') != c_prop_info.get('format'):
+                errors.append(f"Changed format for field '{prop_name}' in schema '{schema_name}': expected '{b_prop_info.get('format')}', got '{c_prop_info.get('format')}'")
+
+        # Check enums not deleted
+        b_enums = b_schema.get('enums', {})
+        c_enums = c_schema.get('enums', {})
+        for prop_name, b_enum_values in b_enums.items():
+            if prop_name not in c_enums:
+                errors.append(f"Deleted enum for field '{prop_name}' in schema '{schema_name}'")
+                continue
+            c_enum_values = c_enums[prop_name]
+            deleted_enum_vals = set(b_enum_values) - set(c_enum_values)
+            if deleted_enum_vals:
+                errors.append(f"Deleted enum values for field '{prop_name}' in schema '{schema_name}': removed {list(deleted_enum_vals)}")
+
+    return errors
+
 def main():
-    # Ensure directory exists
     os.makedirs(os.path.dirname(INVENTORY_JSON_PATH), exist_ok=True)
 
-    inventory = generate_inventory()
+    current_inventory = generate_inventory()
 
     # Check if we should generate
     if len(sys.argv) > 1 and sys.argv[1] == '--generate':
         with open(INVENTORY_JSON_PATH, 'w', encoding='utf-8') as f:
-            json.dump(inventory, f, indent=2, ensure_ascii=False)
+            json.dump(current_inventory, f, indent=2, ensure_ascii=False)
         print(f"[PASS] Successfully generated OpenAPI inventory at {INVENTORY_JSON_PATH}")
         sys.exit(0)
 
@@ -294,20 +377,18 @@ def main():
     if not os.path.exists(INVENTORY_JSON_PATH):
         # Auto generate on first run if file is missing
         with open(INVENTORY_JSON_PATH, 'w', encoding='utf-8') as f:
-            json.dump(inventory, f, indent=2, ensure_ascii=False)
+            json.dump(current_inventory, f, indent=2, ensure_ascii=False)
         print(f"[PASS] Initial inventory created at {INVENTORY_JSON_PATH}")
         sys.exit(0)
 
     with open(INVENTORY_JSON_PATH, 'r', encoding='utf-8') as f:
         stored_inventory = json.load(f)
 
-    # Check equality by serialized string comparison to be exact and preserve order
-    current_serialized = json.dumps(inventory, indent=2, ensure_ascii=False)
-    stored_serialized = json.dumps(stored_inventory, indent=2, ensure_ascii=False)
-
-    if current_serialized != stored_serialized:
-        print("[FAIL] OpenAPI compatibility inventory mismatch!")
-        print("Please run this script with '--generate' to update the compatibility inventory.")
+    errors = check_compatibility(stored_inventory, current_inventory)
+    if errors:
+        print("[FAIL] OpenAPI compatibility check failed:")
+        for err in errors:
+            print(f" - {err}")
         sys.exit(1)
 
     print("[PASS] OpenAPI compatibility inventory matches stored file.")

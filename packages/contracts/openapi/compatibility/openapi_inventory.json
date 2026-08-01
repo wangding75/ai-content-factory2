@@ -3661,13 +3661,19 @@
           "verified",
           "failed"
         ]
-      }
+      },
+      "properties": {}
     },
     "ConfigurationActionRequest": {
       "required": [
         "expectedVersion"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "expectedVersion": {
+          "type": "integer"
+        }
+      }
     },
     "ConfigurationFieldSchema": {
       "required": [
@@ -3683,6 +3689,23 @@
           "boolean",
           "object"
         ]
+      },
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "label": {
+          "type": "string"
+        },
+        "valueType": {
+          "type": "string"
+        },
+        "required": {
+          "type": "boolean"
+        },
+        "constraints": {
+          "type": "object"
+        }
       }
     },
     "LlmProviderTypeCode": {
@@ -3691,7 +3714,8 @@
         "_self": [
           "openai_compatible"
         ]
-      }
+      },
+      "properties": {}
     },
     "LlmProviderType": {
       "required": [
@@ -3704,20 +3728,47 @@
         "providerType": [
           "openai_compatible"
         ]
+      },
+      "properties": {
+        "providerType": {
+          "type": "string"
+        },
+        "displayName": {
+          "type": "string"
+        },
+        "supportsSecret": {
+          "type": "boolean"
+        },
+        "fieldSchemas": {
+          "type": "array"
+        }
       }
     },
     "LlmProviderTypeList": {
       "required": [
         "items"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "items": {
+          "type": "array"
+        }
+      }
     },
     "LlmProviderTypeListEnvelope": {
       "required": [
         "data",
         "request_id"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "data": {
+          "type": "object"
+        },
+        "request_id": {
+          "type": "string"
+        }
+      }
     },
     "LlmProvider": {
       "required": [
@@ -3738,7 +3789,58 @@
         "updatedAt",
         "version"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "name": {
+          "type": "string"
+        },
+        "providerType": {},
+        "baseUrl": {
+          "type": "string",
+          "format": "uri"
+        },
+        "defaultModel": {
+          "type": "string"
+        },
+        "timeoutSeconds": {
+          "type": "integer"
+        },
+        "hasSecret": {
+          "type": "boolean"
+        },
+        "secretFingerprint": {
+          "type": "['string', 'null']"
+        },
+        "integrationStatus": {},
+        "enabled": {
+          "type": "boolean"
+        },
+        "lastVerifiedAt": {
+          "type": "['string', 'null']",
+          "format": "date-time"
+        },
+        "lastErrorCode": {
+          "type": "['string', 'null']"
+        },
+        "lastErrorMessage": {
+          "type": "['string', 'null']"
+        },
+        "version": {
+          "type": "integer"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
     },
     "CreateLlmProviderRequest": {
       "required": [
@@ -3752,13 +3854,58 @@
         "providerType": [
           "openai_compatible"
         ]
+      },
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "providerType": {
+          "type": "string"
+        },
+        "baseUrl": {
+          "type": "string",
+          "format": "uri"
+        },
+        "defaultModel": {
+          "type": "string"
+        },
+        "timeoutSeconds": {
+          "type": "integer"
+        },
+        "secret": {
+          "type": "string"
+        }
       }
     },
     "UpdateLlmProviderRequest": {
       "required": [
         "expectedVersion"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "expectedVersion": {
+          "type": "integer"
+        },
+        "name": {
+          "type": "string"
+        },
+        "baseUrl": {
+          "type": "string",
+          "format": "uri"
+        },
+        "defaultModel": {
+          "type": "string"
+        },
+        "timeoutSeconds": {
+          "type": "integer"
+        },
+        "secret": {
+          "type": "string"
+        },
+        "clearSecret": {
+          "type": "boolean"
+        }
+      }
     },
     "LlmProviderList": {
       "required": [
@@ -3767,21 +3914,51 @@
         "offset",
         "total"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "items": {
+          "type": "array"
+        },
+        "total": {
+          "type": "integer"
+        },
+        "limit": {
+          "type": "integer"
+        },
+        "offset": {
+          "type": "integer"
+        }
+      }
     },
     "LlmProviderEnvelope": {
       "required": [
         "data",
         "request_id"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "data": {
+          "type": "object"
+        },
+        "request_id": {
+          "type": "string"
+        }
+      }
     },
     "LlmProviderListEnvelope": {
       "required": [
         "data",
         "request_id"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "data": {
+          "type": "object"
+        },
+        "request_id": {
+          "type": "string"
+        }
+      }
     },
     "WorkflowConnectionTypeCode": {
       "required": [],
@@ -3789,7 +3966,8 @@
         "_self": [
           "n8n"
         ]
-      }
+      },
+      "properties": {}
     },
     "WorkflowConnectionType": {
       "required": [
@@ -3805,20 +3983,47 @@
         "authTypes": [
           "api_key"
         ]
+      },
+      "properties": {
+        "connectionType": {
+          "type": "string"
+        },
+        "displayName": {
+          "type": "string"
+        },
+        "authTypes": {
+          "type": "array"
+        },
+        "fieldSchemas": {
+          "type": "array"
+        }
       }
     },
     "WorkflowConnectionTypeList": {
       "required": [
         "items"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "items": {
+          "type": "array"
+        }
+      }
     },
     "WorkflowConnectionTypeListEnvelope": {
       "required": [
         "data",
         "request_id"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "data": {
+          "type": "object"
+        },
+        "request_id": {
+          "type": "string"
+        }
+      }
     },
     "N8nTypeConfig": {
       "required": [
@@ -3830,6 +4035,14 @@
           "workflow_id",
           "webhook_path"
         ]
+      },
+      "properties": {
+        "referenceType": {
+          "type": "string"
+        },
+        "referenceValue": {
+          "type": "string"
+        }
       }
     },
     "WorkflowConnection": {
@@ -3856,6 +4069,60 @@
         "authType": [
           "api_key"
         ]
+      },
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "name": {
+          "type": "string"
+        },
+        "connectionType": {},
+        "baseUrl": {
+          "type": "string",
+          "format": "uri"
+        },
+        "authType": {
+          "type": "string"
+        },
+        "timeoutSeconds": {
+          "type": "integer"
+        },
+        "typeConfig": {
+          "type": "object"
+        },
+        "hasCredential": {
+          "type": "boolean"
+        },
+        "credentialFingerprint": {
+          "type": "['string', 'null']"
+        },
+        "integrationStatus": {},
+        "enabled": {
+          "type": "boolean"
+        },
+        "lastVerifiedAt": {
+          "type": "['string', 'null']",
+          "format": "date-time"
+        },
+        "lastErrorCode": {
+          "type": "['string', 'null']"
+        },
+        "lastErrorMessage": {
+          "type": "['string', 'null']"
+        },
+        "version": {
+          "type": "integer"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
       }
     },
     "CreateWorkflowConnectionRequest": {
@@ -3874,6 +4141,30 @@
         "authType": [
           "api_key"
         ]
+      },
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "connectionType": {
+          "type": "string"
+        },
+        "baseUrl": {
+          "type": "string",
+          "format": "uri"
+        },
+        "authType": {
+          "type": "string"
+        },
+        "timeoutSeconds": {
+          "type": "integer"
+        },
+        "typeConfig": {
+          "type": "object"
+        },
+        "credential": {
+          "type": "string"
+        }
       }
     },
     "UpdateWorkflowConnectionRequest": {
@@ -3884,6 +4175,33 @@
         "authType": [
           "api_key"
         ]
+      },
+      "properties": {
+        "expectedVersion": {
+          "type": "integer"
+        },
+        "name": {
+          "type": "string"
+        },
+        "baseUrl": {
+          "type": "string",
+          "format": "uri"
+        },
+        "authType": {
+          "type": "string"
+        },
+        "timeoutSeconds": {
+          "type": "integer"
+        },
+        "typeConfig": {
+          "type": "object"
+        },
+        "credential": {
+          "type": "string"
+        },
+        "clearCredential": {
+          "type": "boolean"
+        }
       }
     },
     "WorkflowConnectionList": {
@@ -3893,21 +4211,51 @@
         "offset",
         "total"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "items": {
+          "type": "array"
+        },
+        "total": {
+          "type": "integer"
+        },
+        "limit": {
+          "type": "integer"
+        },
+        "offset": {
+          "type": "integer"
+        }
+      }
     },
     "WorkflowConnectionEnvelope": {
       "required": [
         "data",
         "request_id"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "data": {
+          "type": "object"
+        },
+        "request_id": {
+          "type": "string"
+        }
+      }
     },
     "WorkflowConnectionListEnvelope": {
       "required": [
         "data",
         "request_id"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "data": {
+          "type": "object"
+        },
+        "request_id": {
+          "type": "string"
+        }
+      }
     },
     "WorkflowType": {
       "required": [],
@@ -3915,7 +4263,8 @@
         "_self": [
           "n8n"
         ]
-      }
+      },
+      "properties": {}
     },
     "ApplicableStage": {
       "required": [],
@@ -3926,7 +4275,8 @@
           "review",
           "rewrite"
         ]
-      }
+      },
+      "properties": {}
     },
     "WorkflowConfiguration": {
       "required": [
@@ -3958,6 +4308,67 @@
           "review",
           "rewrite"
         ]
+      },
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "name": {
+          "type": "string"
+        },
+        "connectionId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "connectionName": {
+          "type": "string"
+        },
+        "connectionType": {},
+        "workflowType": {},
+        "applicableStages": {
+          "type": "array"
+        },
+        "typeConfig": {
+          "type": "object"
+        },
+        "inputContractVersion": {
+          "type": "string"
+        },
+        "outputContractVersion": {
+          "type": "string"
+        },
+        "defaultParameters": {
+          "type": "object"
+        },
+        "note": {
+          "type": "['string', 'null']"
+        },
+        "integrationStatus": {},
+        "enabled": {
+          "type": "boolean"
+        },
+        "lastVerifiedAt": {
+          "type": "['string', 'null']",
+          "format": "date-time"
+        },
+        "lastErrorCode": {
+          "type": "['string', 'null']"
+        },
+        "lastErrorMessage": {
+          "type": "['string', 'null']"
+        },
+        "version": {
+          "type": "integer"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
       }
     },
     "CreateWorkflowConfigurationRequest": {
@@ -3976,6 +4387,33 @@
           "review",
           "rewrite"
         ]
+      },
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "connectionId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "applicableStages": {
+          "type": "array"
+        },
+        "typeConfig": {
+          "type": "object"
+        },
+        "inputContractVersion": {
+          "type": "string"
+        },
+        "outputContractVersion": {
+          "type": "string"
+        },
+        "defaultParameters": {
+          "type": "object"
+        },
+        "note": {
+          "type": "['string', 'null']"
+        }
       }
     },
     "UpdateWorkflowConfigurationRequest": {
@@ -3989,6 +4427,36 @@
           "review",
           "rewrite"
         ]
+      },
+      "properties": {
+        "expectedVersion": {
+          "type": "integer"
+        },
+        "name": {
+          "type": "string"
+        },
+        "connectionId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "applicableStages": {
+          "type": "array"
+        },
+        "typeConfig": {
+          "type": "object"
+        },
+        "inputContractVersion": {
+          "type": "string"
+        },
+        "outputContractVersion": {
+          "type": "string"
+        },
+        "defaultParameters": {
+          "type": "object"
+        },
+        "note": {
+          "type": "['string', 'null']"
+        }
       }
     },
     "WorkflowConfigurationList": {
@@ -3998,21 +4466,51 @@
         "offset",
         "total"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "items": {
+          "type": "array"
+        },
+        "total": {
+          "type": "integer"
+        },
+        "limit": {
+          "type": "integer"
+        },
+        "offset": {
+          "type": "integer"
+        }
+      }
     },
     "WorkflowConfigurationEnvelope": {
       "required": [
         "data",
         "request_id"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "data": {
+          "type": "object"
+        },
+        "request_id": {
+          "type": "string"
+        }
+      }
     },
     "WorkflowConfigurationListEnvelope": {
       "required": [
         "data",
         "request_id"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "data": {
+          "type": "object"
+        },
+        "request_id": {
+          "type": "string"
+        }
+      }
     },
     "DistributionPlatformTypeCode": {
       "required": [],
@@ -4023,7 +4521,8 @@
           "youtube",
           "custom"
         ]
-      }
+      },
+      "properties": {}
     },
     "DistributionPlatformType": {
       "required": [
@@ -4045,20 +4544,47 @@
           "access_token",
           "custom"
         ]
+      },
+      "properties": {
+        "platformType": {
+          "type": "string"
+        },
+        "displayName": {
+          "type": "string"
+        },
+        "authTypes": {
+          "type": "array"
+        },
+        "fieldSchemas": {
+          "type": "array"
+        }
       }
     },
     "DistributionPlatformTypeList": {
       "required": [
         "items"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "items": {
+          "type": "array"
+        }
+      }
     },
     "DistributionPlatformTypeListEnvelope": {
       "required": [
         "data",
         "request_id"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "data": {
+          "type": "object"
+        },
+        "request_id": {
+          "type": "string"
+        }
+      }
     },
     "DistributionPlatform": {
       "required": [
@@ -4089,6 +4615,66 @@
           "access_token",
           "custom"
         ]
+      },
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "name": {
+          "type": "string"
+        },
+        "platformType": {},
+        "accountIdentifier": {
+          "type": "string"
+        },
+        "endpointUrl": {
+          "type": "['string', 'null']",
+          "format": "uri"
+        },
+        "authType": {
+          "type": "string"
+        },
+        "timeoutSeconds": {
+          "type": "integer"
+        },
+        "typeConfig": {
+          "type": "object"
+        },
+        "note": {
+          "type": "['string', 'null']"
+        },
+        "hasCredential": {
+          "type": "boolean"
+        },
+        "credentialFingerprint": {
+          "type": "['string', 'null']"
+        },
+        "integrationStatus": {},
+        "enabled": {
+          "type": "boolean"
+        },
+        "lastVerifiedAt": {
+          "type": "['string', 'null']",
+          "format": "date-time"
+        },
+        "lastErrorCode": {
+          "type": "['string', 'null']"
+        },
+        "lastErrorMessage": {
+          "type": "['string', 'null']"
+        },
+        "version": {
+          "type": "integer"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
       }
     },
     "CreateDistributionPlatformRequest": {
@@ -4113,6 +4699,36 @@
           "access_token",
           "custom"
         ]
+      },
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "platformType": {
+          "type": "string"
+        },
+        "accountIdentifier": {
+          "type": "string"
+        },
+        "endpointUrl": {
+          "type": "['string', 'null']",
+          "format": "uri"
+        },
+        "authType": {
+          "type": "string"
+        },
+        "timeoutSeconds": {
+          "type": "integer"
+        },
+        "typeConfig": {
+          "type": "object"
+        },
+        "note": {
+          "type": "['string', 'null']"
+        },
+        "credential": {
+          "type": "string"
+        }
       }
     },
     "UpdateDistributionPlatformRequest": {
@@ -4126,6 +4742,39 @@
           "access_token",
           "custom"
         ]
+      },
+      "properties": {
+        "expectedVersion": {
+          "type": "integer"
+        },
+        "name": {
+          "type": "string"
+        },
+        "accountIdentifier": {
+          "type": "string"
+        },
+        "endpointUrl": {
+          "type": "['string', 'null']",
+          "format": "uri"
+        },
+        "authType": {
+          "type": "string"
+        },
+        "timeoutSeconds": {
+          "type": "integer"
+        },
+        "typeConfig": {
+          "type": "object"
+        },
+        "note": {
+          "type": "['string', 'null']"
+        },
+        "credential": {
+          "type": "string"
+        },
+        "clearCredential": {
+          "type": "boolean"
+        }
       }
     },
     "DistributionPlatformList": {
@@ -4135,35 +4784,79 @@
         "offset",
         "total"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "items": {
+          "type": "array"
+        },
+        "total": {
+          "type": "integer"
+        },
+        "limit": {
+          "type": "integer"
+        },
+        "offset": {
+          "type": "integer"
+        }
+      }
     },
     "DistributionPlatformEnvelope": {
       "required": [
         "data",
         "request_id"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "data": {
+          "type": "object"
+        },
+        "request_id": {
+          "type": "string"
+        }
+      }
     },
     "DistributionPlatformListEnvelope": {
       "required": [
         "data",
         "request_id"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "data": {
+          "type": "object"
+        },
+        "request_id": {
+          "type": "string"
+        }
+      }
     },
     "Envelope": {
       "required": [
         "data",
         "request_id"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "data": {},
+        "request_id": {
+          "type": "string"
+        }
+      }
     },
     "ErrorEnvelope": {
       "required": [
         "error",
         "request_id"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "error": {
+          "type": "object"
+        },
+        "request_id": {
+          "type": "string"
+        }
+      }
     },
     "Error": {
       "required": [
@@ -4171,7 +4864,18 @@
         "details",
         "message"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "code": {
+          "type": "string"
+        },
+        "message": {
+          "type": "string"
+        },
+        "details": {
+          "type": "object"
+        }
+      }
     },
     "ContentItemStatus": {
       "required": [],
@@ -4181,7 +4885,8 @@
           "in_review",
           "reviewed"
         ]
-      }
+      },
+      "properties": {}
     },
     "ContentVersionStatus": {
       "required": [],
@@ -4190,7 +4895,8 @@
           "editable_draft",
           "frozen"
         ]
-      }
+      },
+      "properties": {}
     },
     "ContentVersionSource": {
       "required": [],
@@ -4202,7 +4908,8 @@
           "workflow_generated",
           "workflow_rewrite"
         ]
-      }
+      },
+      "properties": {}
     },
     "WorkflowRunStatus": {
       "required": [],
@@ -4212,7 +4919,8 @@
           "succeeded",
           "failed"
         ]
-      }
+      },
+      "properties": {}
     },
     "ContentItem": {
       "required": [
@@ -4231,6 +4939,38 @@
           "in_review",
           "reviewed"
         ]
+      },
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "chapter_plan_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "title": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string"
+        },
+        "current_version_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "reviewed_at": {
+          "type": "['string', 'null']",
+          "format": "date-time"
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "date-time"
+        }
       }
     },
     "ContentVersion": {
@@ -4261,13 +5001,84 @@
           "workflow_generated",
           "workflow_rewrite"
         ]
+      },
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "content_item_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "version_no": {
+          "type": "integer"
+        },
+        "version": {
+          "type": "integer"
+        },
+        "status": {
+          "type": "string"
+        },
+        "source": {
+          "type": "string"
+        },
+        "source_content_version_id": {
+          "type": "['string', 'null']",
+          "format": "uuid"
+        },
+        "source_content_version_version": {
+          "type": "['integer', 'null']"
+        },
+        "source_workflow_run_id": {
+          "type": "['string', 'null']",
+          "format": "uuid"
+        },
+        "title": {
+          "type": "string"
+        },
+        "content": {
+          "type": "string"
+        },
+        "summary": {
+          "type": "['string', 'null']"
+        },
+        "word_count": {
+          "type": "integer"
+        },
+        "frozen_at": {
+          "type": "['string', 'null']",
+          "format": "date-time"
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "date-time"
+        }
       }
     },
     "SaveContentDraftRequest": {
       "required": [
         "expected_version"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "expected_version": {
+          "type": "integer"
+        },
+        "title": {
+          "type": "string"
+        },
+        "content": {
+          "type": "string"
+        },
+        "summary": {
+          "type": "['string', 'null']"
+        }
+      }
     },
     "MockGenerationParameters": {
       "required": [
@@ -4277,21 +5088,55 @@
         "material_refs_json",
         "storyline_refs_json"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "chapter_goal": {
+          "type": "['string', 'null']"
+        },
+        "storyline_refs_json": {
+          "type": "array"
+        },
+        "material_refs_json": {
+          "type": "array"
+        },
+        "foreshadowing_refs_json": {
+          "type": "array"
+        },
+        "creation_notes": {
+          "type": "['string', 'null']"
+        }
+      }
     },
     "MockGenerateContentRequest": {
       "required": [
         "expected_version",
         "parameters"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "expected_version": {
+          "type": "integer"
+        },
+        "parameters": {
+          "type": "object"
+        }
+      }
     },
     "MockReviewRequest": {
       "required": [
         "content_version_id",
         "expected_version"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "content_version_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "expected_version": {
+          "type": "integer"
+        }
+      }
     },
     "MockRewriteParameters": {
       "required": [
@@ -4306,6 +5151,17 @@
           "character_consistency",
           "world_consistency"
         ]
+      },
+      "properties": {
+        "rewrite_focus": {
+          "type": "array"
+        },
+        "preserve_ending": {
+          "type": "boolean"
+        },
+        "instructions": {
+          "type": "['string', 'null']"
+        }
       }
     },
     "MockRewriteRequest": {
@@ -4315,7 +5171,23 @@
         "review_report_id",
         "source_content_version_id"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "source_content_version_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "review_report_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "expected_version": {
+          "type": "integer"
+        },
+        "parameters": {
+          "type": "object"
+        }
+      }
     },
     "WorkflowRunSummary": {
       "required": [
@@ -4337,6 +5209,29 @@
           "succeeded",
           "failed"
         ]
+      },
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "provider_key": {
+          "type": "string"
+        },
+        "workflow_key": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string"
+        },
+        "started_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "finished_at": {
+          "type": "['string', 'null']",
+          "format": "date-time"
+        }
       }
     },
     "ReviewReport": {
@@ -4356,6 +5251,56 @@
           "pass",
           "revise"
         ]
+      },
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "content_item_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "content_version_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "provider_key": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string"
+        },
+        "conclusion": {
+          "type": "string"
+        },
+        "score": {
+          "type": "integer"
+        },
+        "summary": {
+          "type": "string"
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "workflowRunId": {
+          "type": "['string', 'null']",
+          "format": "uuid"
+        },
+        "schemaVersion": {
+          "type": "['string', 'null']"
+        },
+        "sourceContentVersionVersion": {
+          "type": "['integer', 'null']"
+        },
+        "sourceContentHash": {
+          "type": "['string', 'null']"
+        },
+        "completedAt": {
+          "type": "['string', 'null']",
+          "format": "date-time"
+        }
       }
     },
     "ReviewFinding": {
@@ -4380,6 +5325,31 @@
           "medium",
           "high"
         ]
+      },
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "review_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "category": {
+          "type": "string"
+        },
+        "severity": {
+          "type": "string"
+        },
+        "title": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "location": {
+          "type": "['object', 'null']"
+        }
       }
     },
     "ReviewRecommendation": {
@@ -4397,6 +5367,29 @@
           "medium",
           "high"
         ]
+      },
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "review_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "priority": {
+          "type": "string"
+        },
+        "title": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        }
       }
     },
     "ContentVersionSummary": {
@@ -4417,6 +5410,31 @@
           "workflow_generated",
           "workflow_rewrite"
         ]
+      },
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "version_no": {
+          "type": "integer"
+        },
+        "version": {
+          "type": "integer"
+        },
+        "title": {
+          "type": "string"
+        },
+        "word_count": {
+          "type": "integer"
+        },
+        "source": {
+          "type": "string"
+        },
+        "frozen_at": {
+          "type": "string",
+          "format": "date-time"
+        }
       }
     },
     "ContentVersionSourceSummary": {
@@ -4435,6 +5453,25 @@
           "workflow_generated",
           "workflow_rewrite"
         ]
+      },
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "version_no": {
+          "type": "integer"
+        },
+        "title": {
+          "type": "string"
+        },
+        "source": {
+          "type": "string"
+        },
+        "frozen_at": {
+          "type": "['string', 'null']",
+          "format": "date-time"
+        }
       }
     },
     "ContentVersionReviewSummary": {
@@ -4451,6 +5488,28 @@
           "pass",
           "revise"
         ]
+      },
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "status": {
+          "type": "string"
+        },
+        "conclusion": {
+          "type": "string"
+        },
+        "score": {
+          "type": "integer"
+        },
+        "summary": {
+          "type": "string"
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        }
       }
     },
     "ContentVersionWorkflowRunSummary": {
@@ -4468,6 +5527,33 @@
           "failed",
           "cancelled"
         ]
+      },
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "run_number": {
+          "type": "['string', 'null']"
+        },
+        "stage": {},
+        "provider_key": {
+          "type": "['string', 'null']"
+        },
+        "workflow_key": {
+          "type": "['string', 'null']"
+        },
+        "status": {
+          "type": "string"
+        },
+        "started_at": {
+          "type": "['string', 'null']",
+          "format": "date-time"
+        },
+        "finished_at": {
+          "type": "['string', 'null']",
+          "format": "date-time"
+        }
       }
     },
     "ContentVersionListItem": {
@@ -4498,6 +5584,45 @@
           "workflow_generated",
           "workflow_rewrite"
         ]
+      },
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "content_item_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "version_no": {
+          "type": "integer"
+        },
+        "status": {
+          "type": "string"
+        },
+        "source": {
+          "type": "string"
+        },
+        "title": {
+          "type": "string"
+        },
+        "word_count": {
+          "type": "integer"
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "frozen_at": {
+          "type": "['string', 'null']",
+          "format": "date-time"
+        },
+        "is_current": {
+          "type": "boolean"
+        },
+        "source_content_version": {},
+        "source_review_report": {},
+        "source_workflow_run": {}
       }
     },
     "ContentVersionList": {
@@ -4507,14 +5632,36 @@
         "offset",
         "total"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "items": {
+          "type": "array"
+        },
+        "total": {
+          "type": "integer"
+        },
+        "limit": {
+          "type": "integer"
+        },
+        "offset": {
+          "type": "integer"
+        }
+      }
     },
     "ContentVersionListEnvelope": {
       "required": [
         "data",
         "request_id"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "data": {
+          "type": "object"
+        },
+        "request_id": {
+          "type": "string"
+        }
+      }
     },
     "ContentVersionContentItemSummary": {
       "required": [
@@ -4529,6 +5676,22 @@
           "in_review",
           "reviewed"
         ]
+      },
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "title": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string"
+        },
+        "current_version_id": {
+          "type": "string",
+          "format": "uuid"
+        }
       }
     },
     "ContentVersionDetail": {
@@ -4540,14 +5703,37 @@
         "source_content_version",
         "source_review_report"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "content_version": {
+          "type": "object"
+        },
+        "content_item": {
+          "type": "object"
+        },
+        "source_content_version": {},
+        "source_review_report": {},
+        "rewrite_workflow_run": {},
+        "source_workflow_run": {},
+        "is_current": {
+          "type": "boolean"
+        }
+      }
     },
     "ContentVersionDetailEnvelope": {
       "required": [
         "data",
         "request_id"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "data": {
+          "type": "object"
+        },
+        "request_id": {
+          "type": "string"
+        }
+      }
     },
     "ProjectWorkChapterPlanSummary": {
       "required": [
@@ -4561,6 +5747,21 @@
           "pending_confirmation",
           "confirmed"
         ]
+      },
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "chapter_no": {
+          "type": "integer"
+        },
+        "title": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string"
+        }
       }
     },
     "ProjectWorkProjectSummary": {
@@ -4575,6 +5776,18 @@
           "producing",
           "archived"
         ]
+      },
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "name": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string"
+        }
       }
     },
     "ProjectWorkNavigation": {
@@ -4587,7 +5800,37 @@
         "rewrite_source_version_id",
         "rewrite_target_version_id"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "content_item_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "current_version_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "latest_review_report_id": {
+          "type": "['string', 'null']",
+          "format": "uuid"
+        },
+        "latest_workflow_run_id": {
+          "type": "['string', 'null']",
+          "format": "uuid"
+        },
+        "rewrite_source_version_id": {
+          "type": "['string', 'null']",
+          "format": "uuid"
+        },
+        "rewrite_review_report_id": {
+          "type": "['string', 'null']",
+          "format": "uuid"
+        },
+        "rewrite_target_version_id": {
+          "type": "['string', 'null']",
+          "format": "uuid"
+        }
+      }
     },
     "ProjectWorkReadModel": {
       "required": [
@@ -4601,7 +5844,34 @@
         "version_count",
         "work_id"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "work_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "project_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "chapter_plan": {
+          "type": "object"
+        },
+        "content_item": {
+          "type": "object"
+        },
+        "current_version": {
+          "type": "object"
+        },
+        "version_count": {
+          "type": "integer"
+        },
+        "latest_review": {},
+        "latest_workflow_run": {},
+        "navigation": {
+          "type": "object"
+        }
+      }
     },
     "ProjectWorkSummary": {
       "required": [
@@ -4615,7 +5885,34 @@
         "version_count",
         "work_id"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "work_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "project_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "chapter_plan": {
+          "type": "object"
+        },
+        "content_item": {
+          "type": "object"
+        },
+        "current_version": {
+          "type": "object"
+        },
+        "version_count": {
+          "type": "integer"
+        },
+        "latest_review": {},
+        "latest_workflow_run": {},
+        "navigation": {
+          "type": "object"
+        }
+      }
     },
     "ProjectWorkList": {
       "required": [
@@ -4624,14 +5921,36 @@
         "offset",
         "total"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "items": {
+          "type": "array"
+        },
+        "total": {
+          "type": "integer"
+        },
+        "limit": {
+          "type": "integer"
+        },
+        "offset": {
+          "type": "integer"
+        }
+      }
     },
     "ProjectWorkListEnvelope": {
       "required": [
         "data",
         "request_id"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "data": {
+          "type": "object"
+        },
+        "request_id": {
+          "type": "string"
+        }
+      }
     },
     "ProjectWorkDetail": {
       "required": [
@@ -4639,28 +5958,63 @@
         "version_history",
         "work"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "work": {
+          "type": "object"
+        },
+        "project": {
+          "type": "object"
+        },
+        "version_history": {
+          "type": "array"
+        }
+      }
     },
     "ProjectWorkDetailEnvelope": {
       "required": [
         "data",
         "request_id"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "data": {
+          "type": "object"
+        },
+        "request_id": {
+          "type": "string"
+        }
+      }
     },
     "ContentItemDetail": {
       "required": [
         "content_item",
         "current_version"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "content_item": {
+          "type": "object"
+        },
+        "current_version": {
+          "type": "object"
+        }
+      }
     },
     "ContentItemDetailEnvelope": {
       "required": [
         "data",
         "request_id"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "data": {
+          "type": "object"
+        },
+        "request_id": {
+          "type": "string"
+        }
+      }
     },
     "MockGenerateContentResult": {
       "required": [
@@ -4668,14 +6022,33 @@
         "current_version",
         "workflow_run"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "content_item": {
+          "type": "object"
+        },
+        "current_version": {
+          "type": "object"
+        },
+        "workflow_run": {
+          "type": "object"
+        }
+      }
     },
     "MockGenerateContentResultEnvelope": {
       "required": [
         "data",
         "request_id"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "data": {
+          "type": "object"
+        },
+        "request_id": {
+          "type": "string"
+        }
+      }
     },
     "MockReviewResult": {
       "required": [
@@ -4685,14 +6058,39 @@
         "review",
         "workflow_run"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "content_item": {
+          "type": "object"
+        },
+        "review": {
+          "type": "object"
+        },
+        "findings": {
+          "type": "array"
+        },
+        "recommendations": {
+          "type": "array"
+        },
+        "workflow_run": {
+          "type": "object"
+        }
+      }
     },
     "MockReviewResultEnvelope": {
       "required": [
         "data",
         "request_id"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "data": {
+          "type": "object"
+        },
+        "request_id": {
+          "type": "string"
+        }
+      }
     },
     "ReviewList": {
       "required": [
@@ -4701,14 +6099,36 @@
         "offset",
         "total"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "items": {
+          "type": "array"
+        },
+        "total": {
+          "type": "integer"
+        },
+        "limit": {
+          "type": "integer"
+        },
+        "offset": {
+          "type": "integer"
+        }
+      }
     },
     "ReviewListEnvelope": {
       "required": [
         "data",
         "request_id"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "data": {
+          "type": "object"
+        },
+        "request_id": {
+          "type": "string"
+        }
+      }
     },
     "ReviewDetail": {
       "required": [
@@ -4718,14 +6138,37 @@
         "review",
         "workflow_run"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "review": {
+          "type": "object"
+        },
+        "content_version": {
+          "type": "object"
+        },
+        "findings": {
+          "type": "array"
+        },
+        "recommendations": {
+          "type": "array"
+        },
+        "workflow_run": {
+          "type": "object"
+        }
+      }
     },
     "ReviewDetailEnvelope": {
       "required": [
         "data",
         "request_id"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "data": {},
+        "request_id": {
+          "type": "string"
+        }
+      }
     },
     "RewriteInputSummary": {
       "required": [
@@ -4733,7 +6176,19 @@
         "review_report_id",
         "source_version_no"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "source_version_no": {
+          "type": "integer"
+        },
+        "review_report_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "parameters": {
+          "type": "object"
+        }
+      }
     },
     "WorkflowRunDetail": {
       "required": [
@@ -4760,6 +6215,64 @@
           "succeeded",
           "failed"
         ]
+      },
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "project_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "provider_key": {
+          "type": "string"
+        },
+        "workflow_key": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string"
+        },
+        "source_content_item_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "source_content_version_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "target_content_version_id": {
+          "type": "['string', 'null']",
+          "format": "uuid"
+        },
+        "source_review_report_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "input_summary": {
+          "type": "object"
+        },
+        "output_summary": {
+          "type": "['object', 'null']"
+        },
+        "error": {
+          "type": "['object', 'null']"
+        },
+        "idempotency_key": {
+          "type": "string"
+        },
+        "request_fingerprint": {
+          "type": "string"
+        },
+        "started_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "finished_at": {
+          "type": "['string', 'null']",
+          "format": "date-time"
+        }
       }
     },
     "MockRewriteResult": {
@@ -4770,28 +6283,69 @@
         "target_content_version",
         "workflow_run"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "content_item": {
+          "type": "object"
+        },
+        "source_content_version": {
+          "type": "object"
+        },
+        "source_review_report": {
+          "type": "object"
+        },
+        "target_content_version": {
+          "type": "object"
+        },
+        "workflow_run": {
+          "type": "object"
+        }
+      }
     },
     "MockRewriteResultEnvelope": {
       "required": [
         "data",
         "request_id"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "data": {
+          "type": "object"
+        },
+        "request_id": {
+          "type": "string"
+        }
+      }
     },
     "WorkflowRunDetailEnvelope": {
       "required": [
         "data",
         "request_id"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "data": {
+          "type": "object"
+        },
+        "request_id": {
+          "type": "string"
+        }
+      }
     },
     "GlobalWorkReadModel": {
       "required": [
         "project",
         "work"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "project": {
+          "type": "object"
+        },
+        "work": {
+          "type": "object"
+        }
+      }
     },
     "GlobalWorkList": {
       "required": [
@@ -4800,14 +6354,36 @@
         "offset",
         "total"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "items": {
+          "type": "array"
+        },
+        "total": {
+          "type": "integer"
+        },
+        "limit": {
+          "type": "integer"
+        },
+        "offset": {
+          "type": "integer"
+        }
+      }
     },
     "GlobalWorkListEnvelope": {
       "required": [
         "data",
         "request_id"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "data": {
+          "type": "object"
+        },
+        "request_id": {
+          "type": "string"
+        }
+      }
     },
     "BuiltinWorkflowDefinition": {
       "required": [
@@ -4831,20 +6407,53 @@
           "review",
           "rewrite"
         ]
+      },
+      "properties": {
+        "workflow_key": {
+          "type": "string"
+        },
+        "provider_key": {
+          "type": "string"
+        },
+        "label": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string"
+        },
+        "result_kind": {
+          "type": "string"
+        }
       }
     },
     "BuiltinWorkflowList": {
       "required": [
         "items"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "items": {
+          "type": "array"
+        }
+      }
     },
     "BuiltinWorkflowListEnvelope": {
       "required": [
         "data",
         "request_id"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "data": {
+          "type": "object"
+        },
+        "request_id": {
+          "type": "string"
+        }
+      }
     },
     "GlobalWorkflowSubject": {
       "required": [
@@ -4858,6 +6467,15 @@
           "review_report",
           "content_version"
         ]
+      },
+      "properties": {
+        "type": {
+          "type": "string"
+        },
+        "id": {
+          "type": "string",
+          "format": "uuid"
+        }
       }
     },
     "GlobalWorkflowRunSummary": {
@@ -4884,6 +6502,36 @@
           "succeeded",
           "failed"
         ]
+      },
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "provider_key": {
+          "type": "string"
+        },
+        "workflow_key": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string"
+        },
+        "project": {},
+        "subject": {
+          "type": "object"
+        },
+        "error": {
+          "type": "['object', 'null']"
+        },
+        "started_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "finished_at": {
+          "type": "['string', 'null']",
+          "format": "date-time"
+        }
       }
     },
     "GlobalWorkflowRunList": {
@@ -4893,14 +6541,36 @@
         "offset",
         "total"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "items": {
+          "type": "array"
+        },
+        "total": {
+          "type": "integer"
+        },
+        "limit": {
+          "type": "integer"
+        },
+        "offset": {
+          "type": "integer"
+        }
+      }
     },
     "GlobalWorkflowRunListEnvelope": {
       "required": [
         "data",
         "request_id"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "data": {
+          "type": "object"
+        },
+        "request_id": {
+          "type": "string"
+        }
+      }
     },
     "CapabilityDescriptor": {
       "required": [
@@ -4919,20 +6589,50 @@
           "enabled",
           "not_configured"
         ]
+      },
+      "properties": {
+        "key": {
+          "type": "string"
+        },
+        "label": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "workflow_keys": {
+          "type": "array"
+        }
       }
     },
     "CapabilityList": {
       "required": [
         "items"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "items": {
+          "type": "array"
+        }
+      }
     },
     "CapabilityListEnvelope": {
       "required": [
         "data",
         "request_id"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "data": {
+          "type": "object"
+        },
+        "request_id": {
+          "type": "string"
+        }
+      }
     },
     "IntegrationDescriptor": {
       "required": [
@@ -4955,20 +6655,50 @@
           "publish",
           "workflow"
         ]
+      },
+      "properties": {
+        "key": {
+          "type": "string"
+        },
+        "label": {
+          "type": "string"
+        },
+        "category": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        }
       }
     },
     "IntegrationList": {
       "required": [
         "items"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "items": {
+          "type": "array"
+        }
+      }
     },
     "IntegrationListEnvelope": {
       "required": [
         "data",
         "request_id"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "data": {
+          "type": "object"
+        },
+        "request_id": {
+          "type": "string"
+        }
+      }
     },
     "ProjectType": {
       "required": [],
@@ -4980,7 +6710,8 @@
           "graphic_text",
           "image"
         ]
-      }
+      },
+      "properties": {}
     },
     "ProjectTypeDescriptor": {
       "required": [
@@ -4998,20 +6729,50 @@
           "graphic_text",
           "image"
         ]
+      },
+      "properties": {
+        "code": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "enabled": {
+          "type": "boolean"
+        },
+        "sort_order": {
+          "type": "integer"
+        }
       }
     },
     "ProjectTypeList": {
       "required": [
         "items"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "items": {
+          "type": "array"
+        }
+      }
     },
     "ProjectTypeListEnvelope": {
       "required": [
         "data",
         "request_id"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "data": {
+          "type": "object"
+        },
+        "request_id": {
+          "type": "string"
+        }
+      }
     },
     "ProjectStatus": {
       "required": [],
@@ -5021,7 +6782,8 @@
           "producing",
           "archived"
         ]
-      }
+      },
+      "properties": {}
     },
     "ProjectStage": {
       "required": [],
@@ -5036,7 +6798,8 @@
           "review",
           "completed"
         ]
-      }
+      },
+      "properties": {}
     },
     "Project": {
       "required": [
@@ -5072,6 +6835,35 @@
           "review",
           "completed"
         ]
+      },
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "name": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "current_stage": {
+          "type": "string"
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "date-time"
+        }
       }
     },
     "CreateProjectRequest": {
@@ -5087,11 +6879,30 @@
           "graphic_text",
           "image"
         ]
+      },
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        }
       }
     },
     "UpdateProjectRequest": {
       "required": [],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        }
+      }
     },
     "ProjectList": {
       "required": [
@@ -5100,48 +6911,107 @@
         "offset",
         "total"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "items": {
+          "type": "array"
+        },
+        "total": {
+          "type": "integer"
+        },
+        "limit": {
+          "type": "integer"
+        },
+        "offset": {
+          "type": "integer"
+        }
+      }
     },
     "ProjectWorkspace": {
       "required": [
         "progress",
         "project"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "project": {
+          "type": "object"
+        },
+        "progress": {
+          "type": "object"
+        }
+      }
     },
     "ProjectEnvelope": {
       "required": [
         "data",
         "request_id"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "data": {
+          "type": "object"
+        },
+        "request_id": {
+          "type": "string"
+        }
+      }
     },
     "ProjectListEnvelope": {
       "required": [
         "data",
         "request_id"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "data": {
+          "type": "object"
+        },
+        "request_id": {
+          "type": "string"
+        }
+      }
     },
     "ProjectWorkspaceEnvelope": {
       "required": [
         "data",
         "request_id"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "data": {
+          "type": "object"
+        },
+        "request_id": {
+          "type": "string"
+        }
+      }
     },
     "ProjectPlanningGoals": {
       "required": [
         "plot_summary",
         "selling_points"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "selling_points": {
+          "type": "array"
+        },
+        "plot_summary": {
+          "type": "string"
+        }
+      }
     },
     "ProjectPlanningConstraints": {
       "required": [
         "emotional_tone"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "emotional_tone": {
+          "type": "string"
+        }
+      }
     },
     "ProjectPlanning": {
       "required": [
@@ -5155,7 +7025,39 @@
         "updated_at",
         "version"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "project_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "premise": {
+          "type": "string"
+        },
+        "audience": {
+          "type": "string"
+        },
+        "style": {
+          "type": "string"
+        },
+        "goals_json": {
+          "type": "object"
+        },
+        "constraints_json": {
+          "type": "object"
+        },
+        "version": {
+          "type": "integer"
+        },
+        "created_at": {
+          "type": "['string', 'null']",
+          "format": "date-time"
+        },
+        "updated_at": {
+          "type": "['string', 'null']",
+          "format": "date-time"
+        }
+      }
     },
     "SaveProjectPlanningRequest": {
       "required": [
@@ -5166,14 +7068,42 @@
         "premise",
         "style"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "premise": {
+          "type": "string"
+        },
+        "audience": {
+          "type": "string"
+        },
+        "style": {
+          "type": "string"
+        },
+        "goals_json": {
+          "type": "object"
+        },
+        "constraints_json": {
+          "type": "object"
+        },
+        "expected_version": {
+          "type": "integer"
+        }
+      }
     },
     "ProjectPlanningEnvelope": {
       "required": [
         "data",
         "request_id"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "data": {
+          "type": "object"
+        },
+        "request_id": {
+          "type": "string"
+        }
+      }
     },
     "MaterialType": {
       "required": [],
@@ -5186,7 +7116,8 @@
           "item",
           "reference"
         ]
-      }
+      },
+      "properties": {}
     },
     "Material": {
       "required": [
@@ -5209,6 +7140,38 @@
           "item",
           "reference"
         ]
+      },
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "type": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "summary": {
+          "type": "string"
+        },
+        "content_json": {
+          "type": "object"
+        },
+        "tags_json": {
+          "type": "array"
+        },
+        "version": {
+          "type": "integer"
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "date-time"
+        }
       }
     },
     "MaterialReferenceReadModel": {
@@ -5238,6 +7201,51 @@
         "status": [
           "active"
         ]
+      },
+      "properties": {
+        "usage_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "project_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "project_name": {
+          "type": "string"
+        },
+        "project_type": {
+          "type": "string"
+        },
+        "usage_type": {
+          "type": "string"
+        },
+        "role_name": {
+          "type": "string"
+        },
+        "notes": {
+          "type": "string"
+        },
+        "start_chapter": {
+          "type": "['integer', 'null']"
+        },
+        "end_chapter": {
+          "type": "['integer', 'null']"
+        },
+        "status": {
+          "type": "string"
+        },
+        "version": {
+          "type": "integer"
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "date-time"
+        }
       }
     },
     "MaterialDetail": {
@@ -5246,7 +7254,18 @@
         "reference_count",
         "references"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "material": {
+          "type": "object"
+        },
+        "references": {
+          "type": "array"
+        },
+        "reference_count": {
+          "type": "integer"
+        }
+      }
     },
     "CreateMaterialRequest": {
       "required": [
@@ -5265,27 +7284,77 @@
           "item",
           "reference"
         ]
+      },
+      "properties": {
+        "type": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "summary": {
+          "type": "string"
+        },
+        "content_json": {
+          "type": "object"
+        },
+        "tags_json": {
+          "type": "array"
+        }
       }
     },
     "UpdateMaterialRequest": {
       "required": [
         "expected_version"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "expected_version": {
+          "type": "integer"
+        },
+        "name": {
+          "type": "string"
+        },
+        "summary": {
+          "type": "string"
+        },
+        "content_json": {
+          "type": "object"
+        },
+        "tags_json": {
+          "type": "array"
+        }
+      }
     },
     "MaterialEnvelope": {
       "required": [
         "data",
         "request_id"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "data": {
+          "type": "object"
+        },
+        "request_id": {
+          "type": "string"
+        }
+      }
     },
     "MaterialDetailEnvelope": {
       "required": [
         "data",
         "request_id"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "data": {
+          "type": "object"
+        },
+        "request_id": {
+          "type": "string"
+        }
+      }
     },
     "MaterialList": {
       "required": [
@@ -5294,14 +7363,36 @@
         "offset",
         "total"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "items": {
+          "type": "array"
+        },
+        "total": {
+          "type": "integer"
+        },
+        "limit": {
+          "type": "integer"
+        },
+        "offset": {
+          "type": "integer"
+        }
+      }
     },
     "MaterialListEnvelope": {
       "required": [
         "data",
         "request_id"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "data": {
+          "type": "object"
+        },
+        "request_id": {
+          "type": "string"
+        }
+      }
     },
     "ProjectMaterialUsageStatus": {
       "required": [],
@@ -5309,7 +7400,8 @@
         "_self": [
           "active"
         ]
-      }
+      },
+      "properties": {}
     },
     "ProjectMaterialUsage": {
       "required": [
@@ -5330,6 +7422,49 @@
         "status": [
           "active"
         ]
+      },
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "project_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "material_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "usage_type": {
+          "type": "string"
+        },
+        "role_name": {
+          "type": "string"
+        },
+        "notes": {
+          "type": "string"
+        },
+        "start_chapter": {
+          "type": "['integer', 'null']"
+        },
+        "end_chapter": {
+          "type": "['integer', 'null']"
+        },
+        "status": {
+          "type": "string"
+        },
+        "version": {
+          "type": "integer"
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "date-time"
+        }
       }
     },
     "ProjectMaterialUsageInput": {
@@ -5340,7 +7475,24 @@
         "start_chapter",
         "usage_type"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "usage_type": {
+          "type": "string"
+        },
+        "role_name": {
+          "type": "string"
+        },
+        "notes": {
+          "type": "string"
+        },
+        "start_chapter": {
+          "type": "['integer', 'null']"
+        },
+        "end_chapter": {
+          "type": "['integer', 'null']"
+        }
+      }
     },
     "ProjectMaterialItem": {
       "required": [
@@ -5348,7 +7500,19 @@
         "material",
         "usage"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "material": {
+          "type": "object"
+        },
+        "usage": {
+          "type": "object"
+        },
+        "last_updated_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
     },
     "ProjectMaterialTypeCounts": {
       "required": [
@@ -5359,7 +7523,27 @@
         "reference",
         "worldview"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "character": {
+          "type": "integer"
+        },
+        "worldview": {
+          "type": "integer"
+        },
+        "location": {
+          "type": "integer"
+        },
+        "organization": {
+          "type": "integer"
+        },
+        "item": {
+          "type": "integer"
+        },
+        "reference": {
+          "type": "integer"
+        }
+      }
     },
     "ProjectMaterialList": {
       "required": [
@@ -5369,20 +7553,65 @@
         "total",
         "type_counts"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "items": {
+          "type": "array"
+        },
+        "total": {
+          "type": "integer"
+        },
+        "limit": {
+          "type": "integer"
+        },
+        "offset": {
+          "type": "integer"
+        },
+        "type_counts": {
+          "type": "object"
+        }
+      }
     },
     "CreateProjectMaterialRequest": {
       "required": [
         "material",
         "usage"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "material": {
+          "type": "object"
+        },
+        "usage": {
+          "type": "object"
+        }
+      }
     },
     "UpdateProjectMaterialUsageRequest": {
       "required": [
         "expected_version"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "expected_version": {
+          "type": "integer"
+        },
+        "usage_type": {
+          "type": "string"
+        },
+        "role_name": {
+          "type": "string"
+        },
+        "notes": {
+          "type": "string"
+        },
+        "start_chapter": {
+          "type": "['integer', 'null']"
+        },
+        "end_chapter": {
+          "type": "['integer', 'null']"
+        }
+      }
     },
     "UnbindProjectMaterialResult": {
       "required": [
@@ -5391,28 +7620,68 @@
         "project_id",
         "unbound"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "project_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "material_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "unbound": {
+          "type": "boolean"
+        },
+        "material_retained": {
+          "type": "boolean"
+        }
+      }
     },
     "ProjectMaterialItemEnvelope": {
       "required": [
         "data",
         "request_id"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "data": {
+          "type": "object"
+        },
+        "request_id": {
+          "type": "string"
+        }
+      }
     },
     "ProjectMaterialListEnvelope": {
       "required": [
         "data",
         "request_id"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "data": {
+          "type": "object"
+        },
+        "request_id": {
+          "type": "string"
+        }
+      }
     },
     "UnbindProjectMaterialResultEnvelope": {
       "required": [
         "data",
         "request_id"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "data": {
+          "type": "object"
+        },
+        "request_id": {
+          "type": "string"
+        }
+      }
     },
     "PlotLineType": {
       "required": [],
@@ -5421,7 +7690,8 @@
           "main",
           "child"
         ]
-      }
+      },
+      "properties": {}
     },
     "PlotLineRelation": {
       "required": [],
@@ -5430,7 +7700,8 @@
           "root",
           "child"
         ]
-      }
+      },
+      "properties": {}
     },
     "PlotLineStatus": {
       "required": [],
@@ -5440,7 +7711,8 @@
           "completed",
           "archived"
         ]
-      }
+      },
+      "properties": {}
     },
     "PlotLine": {
       "required": [
@@ -5473,6 +7745,55 @@
           "completed",
           "archived"
         ]
+      },
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "project_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "parent_id": {
+          "type": "['string', 'null']",
+          "format": "uuid"
+        },
+        "type": {
+          "type": "string"
+        },
+        "relation": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "summary": {
+          "type": "string"
+        },
+        "start_chapter": {
+          "type": "['integer', 'null']"
+        },
+        "end_chapter": {
+          "type": "['integer', 'null']"
+        },
+        "status": {
+          "type": "string"
+        },
+        "sort_order": {
+          "type": "integer"
+        },
+        "version": {
+          "type": "integer"
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "date-time"
+        }
       }
     },
     "PlotLineTreeNode": {
@@ -5507,6 +7828,58 @@
           "completed",
           "archived"
         ]
+      },
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "project_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "parent_id": {
+          "type": "['string', 'null']",
+          "format": "uuid"
+        },
+        "type": {
+          "type": "string"
+        },
+        "relation": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "summary": {
+          "type": "string"
+        },
+        "start_chapter": {
+          "type": "['integer', 'null']"
+        },
+        "end_chapter": {
+          "type": "['integer', 'null']"
+        },
+        "status": {
+          "type": "string"
+        },
+        "sort_order": {
+          "type": "integer"
+        },
+        "version": {
+          "type": "integer"
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "children": {
+          "type": "array"
+        }
       }
     },
     "CreateMainPlotLineRequest": {
@@ -5524,6 +7897,26 @@
           "completed",
           "archived"
         ]
+      },
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "summary": {
+          "type": "string"
+        },
+        "start_chapter": {
+          "type": "['integer', 'null']"
+        },
+        "end_chapter": {
+          "type": "['integer', 'null']"
+        },
+        "status": {
+          "type": "string"
+        },
+        "sort_order": {
+          "type": "integer"
+        }
       }
     },
     "CreateChildPlotLineRequest": {
@@ -5541,6 +7934,26 @@
           "completed",
           "archived"
         ]
+      },
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "summary": {
+          "type": "string"
+        },
+        "start_chapter": {
+          "type": "['integer', 'null']"
+        },
+        "end_chapter": {
+          "type": "['integer', 'null']"
+        },
+        "status": {
+          "type": "string"
+        },
+        "sort_order": {
+          "type": "integer"
+        }
       }
     },
     "UpdatePlotLineRequest": {
@@ -5553,6 +7966,29 @@
           "completed",
           "archived"
         ]
+      },
+      "properties": {
+        "expected_version": {
+          "type": "integer"
+        },
+        "name": {
+          "type": "string"
+        },
+        "summary": {
+          "type": "string"
+        },
+        "start_chapter": {
+          "type": "['integer', 'null']"
+        },
+        "end_chapter": {
+          "type": "['integer', 'null']"
+        },
+        "status": {
+          "type": "string"
+        },
+        "sort_order": {
+          "type": "integer"
+        }
       }
     },
     "PlotLineEnvelope": {
@@ -5560,20 +7996,41 @@
         "data",
         "request_id"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "data": {
+          "type": "object"
+        },
+        "request_id": {
+          "type": "string"
+        }
+      }
     },
     "PlotLineTree": {
       "required": [
         "items"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "items": {
+          "type": "array"
+        }
+      }
     },
     "PlotLineTreeEnvelope": {
       "required": [
         "data",
         "request_id"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "data": {
+          "type": "object"
+        },
+        "request_id": {
+          "type": "string"
+        }
+      }
     },
     "ForeshadowingStatus": {
       "required": [],
@@ -5583,7 +8040,8 @@
           "planted",
           "paid_off"
         ]
-      }
+      },
+      "properties": {}
     },
     "ForeshadowingPriority": {
       "required": [],
@@ -5593,7 +8051,8 @@
           "medium",
           "high"
         ]
-      }
+      },
+      "properties": {}
     },
     "Foreshadowing": {
       "required": [
@@ -5622,6 +8081,53 @@
           "planted",
           "paid_off"
         ]
+      },
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "project_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "title": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "priority": {
+          "type": "string"
+        },
+        "planted_plot_line_id": {
+          "type": "['string', 'null']",
+          "format": "uuid"
+        },
+        "payoff_plot_line_id": {
+          "type": "['string', 'null']",
+          "format": "uuid"
+        },
+        "planned_plant_chapter": {
+          "type": "['integer', 'null']"
+        },
+        "planned_payoff_chapter": {
+          "type": "['integer', 'null']"
+        },
+        "status": {
+          "type": "string"
+        },
+        "version": {
+          "type": "integer"
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "date-time"
+        }
       }
     },
     "CreateForeshadowingRequest": {
@@ -5646,6 +8152,34 @@
           "planted",
           "paid_off"
         ]
+      },
+      "properties": {
+        "title": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "priority": {
+          "type": "string"
+        },
+        "planted_plot_line_id": {
+          "type": "['string', 'null']",
+          "format": "uuid"
+        },
+        "payoff_plot_line_id": {
+          "type": "['string', 'null']",
+          "format": "uuid"
+        },
+        "planned_plant_chapter": {
+          "type": "['integer', 'null']"
+        },
+        "planned_payoff_chapter": {
+          "type": "['integer', 'null']"
+        },
+        "status": {
+          "type": "string"
+        }
       }
     },
     "UpdateForeshadowingRequest": {
@@ -5663,6 +8197,37 @@
           "planted",
           "paid_off"
         ]
+      },
+      "properties": {
+        "expected_version": {
+          "type": "integer"
+        },
+        "title": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "priority": {
+          "type": "string"
+        },
+        "planted_plot_line_id": {
+          "type": "['string', 'null']",
+          "format": "uuid"
+        },
+        "payoff_plot_line_id": {
+          "type": "['string', 'null']",
+          "format": "uuid"
+        },
+        "planned_plant_chapter": {
+          "type": "['integer', 'null']"
+        },
+        "planned_payoff_chapter": {
+          "type": "['integer', 'null']"
+        },
+        "status": {
+          "type": "string"
+        }
       }
     },
     "ForeshadowingList": {
@@ -5672,21 +8237,51 @@
         "offset",
         "total"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "items": {
+          "type": "array"
+        },
+        "total": {
+          "type": "integer"
+        },
+        "limit": {
+          "type": "integer"
+        },
+        "offset": {
+          "type": "integer"
+        }
+      }
     },
     "ForeshadowingEnvelope": {
       "required": [
         "data",
         "request_id"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "data": {
+          "type": "object"
+        },
+        "request_id": {
+          "type": "string"
+        }
+      }
     },
     "ForeshadowingListEnvelope": {
       "required": [
         "data",
         "request_id"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "data": {
+          "type": "object"
+        },
+        "request_id": {
+          "type": "string"
+        }
+      }
     },
     "ChapterPlanStatus": {
       "required": [],
@@ -5695,7 +8290,8 @@
           "pending_confirmation",
           "confirmed"
         ]
-      }
+      },
+      "properties": {}
     },
     "ChapterPlanSource": {
       "required": [],
@@ -5705,7 +8301,8 @@
           "candidate_adopted",
           "legacy_manual"
         ]
-      }
+      },
+      "properties": {}
     },
     "ChapterPlanRelation": {
       "required": [],
@@ -5714,7 +8311,8 @@
           "primary",
           "secondary"
         ]
-      }
+      },
+      "properties": {}
     },
     "ChapterPlanStorylineRef": {
       "required": [
@@ -5726,6 +8324,15 @@
           "primary",
           "secondary"
         ]
+      },
+      "properties": {
+        "storyline_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "relation": {
+          "type": "string"
+        }
       }
     },
     "ChapterPlan": {
@@ -5761,13 +8368,113 @@
           "candidate_adopted",
           "legacy_manual"
         ]
+      },
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "project_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "chapter_no": {
+          "type": "integer"
+        },
+        "title": {
+          "type": "string"
+        },
+        "summary": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string"
+        },
+        "source": {
+          "type": "string"
+        },
+        "storyline_refs_json": {
+          "type": "array"
+        },
+        "material_refs_json": {
+          "type": "array"
+        },
+        "foreshadowing_refs_json": {
+          "type": "array"
+        },
+        "chapter_goal": {
+          "type": "['string', 'null']"
+        },
+        "creation_notes": {
+          "type": "['string', 'null']"
+        },
+        "confirmed_at": {
+          "type": "['string', 'null']",
+          "format": "date-time"
+        },
+        "currentRevisionId": {
+          "type": "['string', 'null']",
+          "format": "uuid"
+        },
+        "sourceCandidateId": {
+          "type": "['string', 'null']",
+          "format": "uuid"
+        },
+        "sourceCandidateBatchId": {
+          "type": "['string', 'null']",
+          "format": "uuid"
+        },
+        "sourceWorkflowRunId": {
+          "type": "['string', 'null']",
+          "format": "uuid"
+        },
+        "version": {
+          "type": "integer"
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "date-time"
+        }
       }
     },
     "UpdateChapterPlanRequest": {
       "required": [
         "expected_version"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "expected_version": {
+          "type": "integer"
+        },
+        "chapter_no": {
+          "type": "integer"
+        },
+        "title": {
+          "type": "string"
+        },
+        "summary": {
+          "type": "string"
+        },
+        "storyline_refs_json": {
+          "type": "array"
+        },
+        "material_refs_json": {
+          "type": "array"
+        },
+        "foreshadowing_refs_json": {
+          "type": "array"
+        },
+        "chapter_goal": {
+          "type": "['string', 'null']"
+        },
+        "creation_notes": {
+          "type": "['string', 'null']"
+        }
+      }
     },
     "MockGenerateChapterPlansRequest": {
       "required": [
@@ -5795,6 +8502,45 @@
           "balanced",
           "fast"
         ]
+      },
+      "properties": {
+        "target_storyline_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "start_chapter_no": {
+          "type": "integer"
+        },
+        "end_chapter_no": {
+          "type": "integer"
+        },
+        "chapter_count": {
+          "type": "integer"
+        },
+        "include_main_storyline": {
+          "type": "boolean"
+        },
+        "include_child_storylines": {
+          "type": "boolean"
+        },
+        "include_project_materials": {
+          "type": "boolean"
+        },
+        "include_unpaid_foreshadowings": {
+          "type": "boolean"
+        },
+        "include_prior_chapter_summaries": {
+          "type": "boolean"
+        },
+        "summary_length": {
+          "type": "string"
+        },
+        "chapter_pace": {
+          "type": "string"
+        },
+        "generation_notes": {
+          "type": "['string', 'null']"
+        }
       }
     },
     "MockGenerationRun": {
@@ -5807,34 +8553,91 @@
         "updated_at",
         "workflow_key"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "project_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "provider_key": {
+          "type": "string"
+        },
+        "workflow_key": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string"
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
     },
     "MockGenerateChapterPlansResult": {
       "required": [
         "items",
         "run"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "run": {
+          "type": "object"
+        },
+        "items": {
+          "type": "array"
+        }
+      }
     },
     "ConfirmChapterPlanSelection": {
       "required": [
         "chapter_plan_id",
         "expected_version"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "chapter_plan_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "expected_version": {
+          "type": "integer"
+        }
+      }
     },
     "ConfirmChapterPlansRequest": {
       "required": [
         "selections"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "selections": {
+          "type": "array"
+        }
+      }
     },
     "ChapterPlanEnvelope": {
       "required": [
         "data",
         "request_id"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "data": {
+          "type": "object"
+        },
+        "request_id": {
+          "type": "string"
+        }
+      }
     },
     "ChapterPlanList": {
       "required": [
@@ -5843,21 +8646,51 @@
         "offset",
         "total"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "items": {
+          "type": "array"
+        },
+        "total": {
+          "type": "integer"
+        },
+        "limit": {
+          "type": "integer"
+        },
+        "offset": {
+          "type": "integer"
+        }
+      }
     },
     "ChapterPlanListEnvelope": {
       "required": [
         "data",
         "request_id"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "data": {
+          "type": "object"
+        },
+        "request_id": {
+          "type": "string"
+        }
+      }
     },
     "MockGenerateChapterPlansEnvelope": {
       "required": [
         "data",
         "request_id"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "data": {
+          "type": "object"
+        },
+        "request_id": {
+          "type": "string"
+        }
+      }
     },
     "ProjectWorkflowBinding": {
       "required": [
@@ -5876,6 +8709,34 @@
           "review",
           "rewrite"
         ]
+      },
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "projectId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "stage": {
+          "type": "string"
+        },
+        "workflowConfigurationId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "version": {
+          "type": "integer"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
       }
     },
     "WorkflowBindingStage": {
@@ -5892,33 +8753,73 @@
           "review",
           "rewrite"
         ]
+      },
+      "properties": {
+        "stage": {
+          "type": "string"
+        },
+        "bound": {
+          "type": "boolean"
+        },
+        "binding": {},
+        "workflowConfigurationSummary": {}
       }
     },
     "WorkflowBindingStageList": {
       "required": [
         "items"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "items": {
+          "type": "array"
+        }
+      }
     },
     "WorkflowBindingStageEnvelope": {
       "required": [
         "data",
         "request_id"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "data": {
+          "type": "object"
+        },
+        "request_id": {
+          "type": "string"
+        }
+      }
     },
     "WorkflowBindingStageListEnvelope": {
       "required": [
         "data",
         "request_id"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "data": {
+          "type": "object"
+        },
+        "request_id": {
+          "type": "string"
+        }
+      }
     },
     "PutProjectWorkflowBindingRequest": {
       "required": [
         "workflowConfigurationId"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "workflowConfigurationId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "expectedVersion": {
+          "type": "integer"
+        }
+      }
     },
     "UnbindProjectWorkflowBindingResult": {
       "required": [
@@ -5934,6 +8835,21 @@
           "review",
           "rewrite"
         ]
+      },
+      "properties": {
+        "projectId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "stage": {
+          "type": "string"
+        },
+        "unbound": {
+          "type": "boolean"
+        },
+        "workflowConfigurationRetained": {
+          "type": "boolean"
+        }
       }
     },
     "UnbindProjectWorkflowBindingResultEnvelope": {
@@ -5941,7 +8857,15 @@
         "data",
         "request_id"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "data": {
+          "type": "object"
+        },
+        "request_id": {
+          "type": "string"
+        }
+      }
     },
     "Iteration14WorkflowRunStatus": {
       "required": [],
@@ -5953,7 +8877,8 @@
           "failed",
           "cancelled"
         ]
-      }
+      },
+      "properties": {}
     },
     "CreateWorkflowRunRequest": {
       "required": [
@@ -5968,19 +8893,47 @@
           "review",
           "rewrite"
         ]
+      },
+      "properties": {
+        "projectId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "stage": {
+          "type": "string"
+        },
+        "inputPayload": {
+          "type": "object"
+        }
       }
     },
     "WorkflowRunCommandRequest": {
       "required": [
         "expectedVersion"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "expectedVersion": {
+          "type": "integer"
+        }
+      }
     },
     "WorkflowRunRetryRequest": {
       "required": [
         "expectedVersion"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "expectedVersion": {
+          "type": "integer"
+        },
+        "useCurrentConfiguration": {
+          "type": "boolean"
+        },
+        "inputOverride": {
+          "type": "object"
+        }
+      }
     },
     "WorkflowRunTriggerSource": {
       "required": [],
@@ -5991,7 +8944,8 @@
           "system",
           "api"
         ]
-      }
+      },
+      "properties": {}
     },
     "Iteration14WorkflowRun": {
       "required": [
@@ -6035,6 +8989,80 @@
           "failed",
           "cancelled"
         ]
+      },
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "runNumber": {
+          "type": "string"
+        },
+        "projectId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "stage": {
+          "type": "string"
+        },
+        "subjectType": {
+          "type": "['string', 'null']"
+        },
+        "subjectId": {
+          "type": "['string', 'null']",
+          "format": "uuid"
+        },
+        "workflowConfigurationId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "triggerSource": {
+          "type": "string"
+        },
+        "retryOfRunId": {
+          "type": "['string', 'null']",
+          "format": "uuid"
+        },
+        "status": {
+          "type": "string"
+        },
+        "inputPayload": {},
+        "outputPayload": {},
+        "errorCode": {
+          "type": "['string', 'null']"
+        },
+        "errorMessage": {
+          "type": "['string', 'null']"
+        },
+        "errorDetails": {
+          "type": "['object', 'null']"
+        },
+        "configurationSnapshot": {
+          "type": "object"
+        },
+        "startedAt": {
+          "type": "['string', 'null']",
+          "format": "date-time"
+        },
+        "finishedAt": {
+          "type": "['string', 'null']",
+          "format": "date-time"
+        },
+        "cancelledAt": {
+          "type": "['string', 'null']",
+          "format": "date-time"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "version": {
+          "type": "integer"
+        }
       }
     },
     "Iteration14WorkflowRunEnvelope": {
@@ -6042,7 +9070,15 @@
         "data",
         "request_id"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "data": {
+          "type": "object"
+        },
+        "request_id": {
+          "type": "string"
+        }
+      }
     },
     "Iteration14WorkflowRunList": {
       "required": [
@@ -6051,14 +9087,36 @@
         "offset",
         "total"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "items": {
+          "type": "array"
+        },
+        "total": {
+          "type": "integer"
+        },
+        "limit": {
+          "type": "integer"
+        },
+        "offset": {
+          "type": "integer"
+        }
+      }
     },
     "Iteration14WorkflowRunListEnvelope": {
       "required": [
         "data",
         "request_id"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "data": {
+          "type": "object"
+        },
+        "request_id": {
+          "type": "string"
+        }
+      }
     },
     "WorkflowRunEvent": {
       "required": [
@@ -6091,6 +9149,29 @@
           "failed",
           "cancelled"
         ]
+      },
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "runId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "eventType": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string"
+        },
+        "payload": {
+          "type": "object"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
       }
     },
     "WorkflowRunEventListEnvelope": {
@@ -6098,7 +9179,15 @@
         "data",
         "request_id"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "data": {
+          "type": "object"
+        },
+        "request_id": {
+          "type": "string"
+        }
+      }
     },
     "ProjectWorkflowRunSummary": {
       "required": [
@@ -6108,14 +9197,40 @@
         "recentRuns",
         "totalRuns"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "totalRuns": {
+          "type": "integer"
+        },
+        "activeRuns": {
+          "type": "integer"
+        },
+        "recentFailedRuns": {
+          "type": "integer"
+        },
+        "lastRunAt": {
+          "type": "['string', 'null']",
+          "format": "date-time"
+        },
+        "recentRuns": {
+          "type": "array"
+        }
+      }
     },
     "ProjectWorkflowRunSummaryEnvelope": {
       "required": [
         "data",
         "request_id"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "data": {
+          "type": "object"
+        },
+        "request_id": {
+          "type": "string"
+        }
+      }
     },
     "ReviewDimensionKey": {
       "required": [],
@@ -6127,14 +9242,23 @@
           "structural_logic",
           "character_consistency"
         ]
-      }
+      },
+      "properties": {}
     },
     "ContentReviewPreflightRequest": {
       "required": [
         "optionalInstructions",
         "sourceContentVersionVersion"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "sourceContentVersionVersion": {
+          "type": "integer"
+        },
+        "optionalInstructions": {
+          "type": "['string', 'null']"
+        }
+      }
     },
     "ContentReviewPreflightStatus": {
       "required": [],
@@ -6143,7 +9267,8 @@
           "passed",
           "blocked"
         ]
-      }
+      },
+      "properties": {}
     },
     "ContentReviewCheckStatus": {
       "required": [],
@@ -6153,7 +9278,8 @@
           "warning",
           "blocked"
         ]
-      }
+      },
+      "properties": {}
     },
     "ContentReviewCheckCode": {
       "required": [],
@@ -6167,7 +9293,8 @@
           "active_review_run_absent",
           "review_input_valid"
         ]
-      }
+      },
+      "properties": {}
     },
     "ContentReviewCheck": {
       "required": [
@@ -6190,6 +9317,17 @@
           "warning",
           "blocked"
         ]
+      },
+      "properties": {
+        "code": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string"
+        },
+        "message": {
+          "type": "string"
+        }
       }
     },
     "ContentReviewSourceVersionSummary": {
@@ -6203,7 +9341,35 @@
         "versionNo",
         "wordCount"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "contentItemId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "versionNo": {
+          "type": "integer"
+        },
+        "version": {
+          "type": "integer"
+        },
+        "title": {
+          "type": "string"
+        },
+        "wordCount": {
+          "type": "integer"
+        },
+        "contentHash": {
+          "type": "string"
+        },
+        "frozen": {
+          "type": "boolean"
+        }
+      }
     },
     "ContentReviewConfigurationSummary": {
       "required": [
@@ -6216,7 +9382,35 @@
         "workflowConfigurationName",
         "workflowConfigurationVersion"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "bindingVersion": {
+          "type": "integer"
+        },
+        "workflowConfigurationId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "workflowConfigurationName": {
+          "type": "string"
+        },
+        "workflowConfigurationVersion": {
+          "type": "integer"
+        },
+        "connectionId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "connectionVersion": {
+          "type": "integer"
+        },
+        "inputContract": {
+          "type": "string"
+        },
+        "outputContract": {
+          "type": "string"
+        }
+      }
     },
     "ContentReviewPreflightReport": {
       "required": [
@@ -6240,6 +9434,28 @@
           "structural_logic",
           "character_consistency"
         ]
+      },
+      "properties": {
+        "status": {
+          "type": "string"
+        },
+        "checks": {
+          "type": "array"
+        },
+        "sourceContentVersionSummary": {
+          "type": "object"
+        },
+        "reviewDimensions": {
+          "type": "array"
+        },
+        "configurationSummary": {},
+        "preflightToken": {
+          "type": "['string', 'null']"
+        },
+        "expiresAt": {
+          "type": "['string', 'null']",
+          "format": "date-time"
+        }
       }
     },
     "ContentReviewPreflightEnvelope": {
@@ -6247,13 +9463,26 @@
         "data",
         "request_id"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "data": {
+          "type": "object"
+        },
+        "request_id": {
+          "type": "string"
+        }
+      }
     },
     "CreateContentReviewRunRequest": {
       "required": [
         "preflightToken"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "preflightToken": {
+          "type": "string"
+        }
+      }
     },
     "ReviewRuntimeInputV1": {
       "required": [
@@ -6278,6 +9507,48 @@
           "structural_logic",
           "character_consistency"
         ]
+      },
+      "properties": {
+        "schemaVersion": {
+          "type": "string"
+        },
+        "projectId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "contentItemId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "sourceContentVersionId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "sourceContentVersionVersion": {
+          "type": "integer"
+        },
+        "sourceContentHash": {
+          "type": "string"
+        },
+        "sourceTitle": {
+          "type": "string"
+        },
+        "sourceContent": {
+          "type": "string"
+        },
+        "optionalInstructions": {
+          "type": "['string', 'null']"
+        },
+        "reviewDimensions": {
+          "type": "array"
+        },
+        "workflowRunId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "correlationId": {
+          "type": "string"
+        }
       }
     },
     "ReviewRuntimeEvidenceV1": {
@@ -6285,7 +9556,15 @@
         "quote",
         "sourceRefs"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "quote": {
+          "type": "['string', 'null']"
+        },
+        "sourceRefs": {
+          "type": "array"
+        }
+      }
     },
     "ReviewRuntimeLocationV1": {
       "required": [
@@ -6294,7 +9573,21 @@
         "sentenceEnd",
         "sentenceStart"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "paragraphStart": {
+          "type": "integer"
+        },
+        "paragraphEnd": {
+          "type": "integer"
+        },
+        "sentenceStart": {
+          "type": "integer"
+        },
+        "sentenceEnd": {
+          "type": "integer"
+        }
+      }
     },
     "ReviewRuntimeIssueV1": {
       "required": [
@@ -6315,6 +9608,36 @@
           "warning",
           "suggestion"
         ]
+      },
+      "properties": {
+        "issueKey": {
+          "type": "string"
+        },
+        "position": {
+          "type": "integer"
+        },
+        "categoryKey": {
+          "type": "string"
+        },
+        "categoryLabel": {
+          "type": "string"
+        },
+        "severity": {
+          "type": "string"
+        },
+        "title": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "evidence": {
+          "type": "object"
+        },
+        "location": {},
+        "suggestion": {
+          "type": "['string', 'null']"
+        }
       }
     },
     "ReviewRuntimeRecommendationV1": {
@@ -6330,6 +9653,20 @@
           "medium",
           "high"
         ]
+      },
+      "properties": {
+        "position": {
+          "type": "integer"
+        },
+        "priority": {
+          "type": "string"
+        },
+        "title": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        }
       }
     },
     "ReviewRuntimeOutputV1": {
@@ -6346,6 +9683,26 @@
           "passed",
           "needs_changes"
         ]
+      },
+      "properties": {
+        "schemaVersion": {
+          "type": "string"
+        },
+        "conclusion": {
+          "type": "string"
+        },
+        "summary": {
+          "type": "string"
+        },
+        "passedRuleCount": {
+          "type": "integer"
+        },
+        "issues": {
+          "type": "array"
+        },
+        "recommendations": {
+          "type": "array"
+        }
       }
     },
     "ContentReviewResultState": {
@@ -6361,7 +9718,8 @@
           "output_validation_failed",
           "result_consumption_failed"
         ]
-      }
+      },
+      "properties": {}
     },
     "RealReviewReport": {
       "required": [
@@ -6383,6 +9741,50 @@
           "passed",
           "needs_changes"
         ]
+      },
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "contentItemId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "sourceContentVersionId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "sourceContentVersionVersion": {
+          "type": "integer"
+        },
+        "sourceContentHash": {
+          "type": "string"
+        },
+        "workflowRunId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "schemaVersion": {
+          "type": "string"
+        },
+        "conclusion": {
+          "type": "string"
+        },
+        "summary": {
+          "type": "string"
+        },
+        "passedRuleCount": {
+          "type": "integer"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "completedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
       }
     },
     "ReviewIssueDisposition": {
@@ -6392,7 +9794,8 @@
           "open",
           "ignored"
         ]
-      }
+      },
+      "properties": {}
     },
     "RealReviewIssue": {
       "required": [
@@ -6425,6 +9828,65 @@
           "open",
           "ignored"
         ]
+      },
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "reviewId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "issueKey": {
+          "type": "string"
+        },
+        "position": {
+          "type": "integer"
+        },
+        "categoryKey": {
+          "type": "string"
+        },
+        "categoryLabel": {
+          "type": "string"
+        },
+        "severity": {
+          "type": "string"
+        },
+        "title": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "evidence": {
+          "type": "object"
+        },
+        "location": {},
+        "suggestion": {
+          "type": "['string', 'null']"
+        },
+        "disposition": {
+          "type": "string"
+        },
+        "version": {
+          "type": "integer"
+        },
+        "ignoredAt": {
+          "type": "['string', 'null']",
+          "format": "date-time"
+        },
+        "ignoredBy": {
+          "type": "['string', 'null']"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
       }
     },
     "RealReviewRecommendation": {
@@ -6443,6 +9905,32 @@
           "medium",
           "high"
         ]
+      },
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "reviewId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "position": {
+          "type": "integer"
+        },
+        "priority": {
+          "type": "string"
+        },
+        "title": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
       }
     },
     "RealReviewReportSummary": {
@@ -6459,6 +9947,30 @@
           "passed",
           "needs_changes"
         ]
+      },
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "workflowRunId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "sourceContentVersionId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "conclusion": {
+          "type": "string"
+        },
+        "summary": {
+          "type": "string"
+        },
+        "completedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
       }
     },
     "ContentReviewIssueSummary": {
@@ -6470,7 +9982,27 @@
         "total",
         "warning"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "total": {
+          "type": "integer"
+        },
+        "critical": {
+          "type": "integer"
+        },
+        "warning": {
+          "type": "integer"
+        },
+        "suggestion": {
+          "type": "integer"
+        },
+        "open": {
+          "type": "integer"
+        },
+        "ignored": {
+          "type": "integer"
+        }
+      }
     },
     "ContentReviewSafeError": {
       "required": [
@@ -6486,6 +10018,24 @@
           "output_validation_failed",
           "result_consumption_failed"
         ]
+      },
+      "properties": {
+        "code": {
+          "type": "string"
+        },
+        "message": {
+          "type": "string"
+        },
+        "correlationId": {
+          "type": "string"
+        },
+        "attemptCount": {
+          "type": "integer"
+        },
+        "occurredAt": {
+          "type": "string",
+          "format": "date-time"
+        }
       }
     },
     "ContentReviewSummary": {
@@ -6511,6 +10061,24 @@
           "output_validation_failed",
           "result_consumption_failed"
         ]
+      },
+      "properties": {
+        "contentItemId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "state": {
+          "type": "string"
+        },
+        "canStartReview": {
+          "type": "boolean"
+        },
+        "activeRun": {},
+        "latestRun": {},
+        "latestReport": {},
+        "issueSummary": {},
+        "latestError": {},
+        "configurationSummary": {}
       }
     },
     "ContentReviewSummaryEnvelope": {
@@ -6518,7 +10086,15 @@
         "data",
         "request_id"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "data": {
+          "type": "object"
+        },
+        "request_id": {
+          "type": "string"
+        }
+      }
     },
     "ContentReviewHistoryItem": {
       "required": [
@@ -6539,6 +10115,19 @@
           "output_validation_failed",
           "result_consumption_failed"
         ]
+      },
+      "properties": {
+        "workflowRun": {
+          "type": "object"
+        },
+        "sourceContentVersionSummary": {
+          "type": "object"
+        },
+        "reportSummary": {},
+        "state": {
+          "type": "string"
+        },
+        "latestError": {}
       }
     },
     "RealReviewDetail": {
@@ -6549,7 +10138,24 @@
         "sourceContentVersionSummary",
         "workflowRunSummary"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "report": {
+          "type": "object"
+        },
+        "sourceContentVersionSummary": {
+          "type": "object"
+        },
+        "issues": {
+          "type": "array"
+        },
+        "recommendations": {
+          "type": "array"
+        },
+        "workflowRunSummary": {
+          "type": "object"
+        }
+      }
     },
     "UpdateReviewIssueRequest": {
       "required": [
@@ -6561,6 +10167,14 @@
           "open",
           "ignored"
         ]
+      },
+      "properties": {
+        "disposition": {
+          "type": "string"
+        },
+        "expectedVersion": {
+          "type": "integer"
+        }
       }
     },
     "RealReviewIssueEnvelope": {
@@ -6568,13 +10182,26 @@
         "data",
         "request_id"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "data": {
+          "type": "object"
+        },
+        "request_id": {
+          "type": "string"
+        }
+      }
     },
     "RetryReviewResultConsumptionRequest": {
       "required": [
         "expectedRunVersion"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "expectedRunVersion": {
+          "type": "integer"
+        }
+      }
     },
     "RealReviewResult": {
       "required": [
@@ -6583,14 +10210,36 @@
         "report",
         "workflowRun"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "report": {
+          "type": "object"
+        },
+        "issues": {
+          "type": "array"
+        },
+        "recommendations": {
+          "type": "array"
+        },
+        "workflowRun": {
+          "type": "object"
+        }
+      }
     },
     "RealReviewResultEnvelope": {
       "required": [
         "data",
         "request_id"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "data": {
+          "type": "object"
+        },
+        "request_id": {
+          "type": "string"
+        }
+      }
     },
     "ContentReviewErrorCode": {
       "required": [],
@@ -6617,7 +10266,8 @@
           "result_consumption_failed",
           "idempotency_key_reused_with_different_payload"
         ]
-      }
+      },
+      "properties": {}
     },
     "ContentReviewError": {
       "required": [
@@ -6648,6 +10298,17 @@
           "result_consumption_failed",
           "idempotency_key_reused_with_different_payload"
         ]
+      },
+      "properties": {
+        "code": {
+          "type": "string"
+        },
+        "message": {
+          "type": "string"
+        },
+        "details": {
+          "type": "object"
+        }
       }
     },
     "ContentReviewErrorEnvelope": {
@@ -6655,7 +10316,13 @@
         "error",
         "request_id"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "error": {},
+        "request_id": {
+          "type": "string"
+        }
+      }
     },
     "RewriteStrategy": {
       "required": [],
@@ -6664,7 +10331,8 @@
           "targeted_fix",
           "creative_rewrite"
         ]
-      }
+      },
+      "properties": {}
     },
     "ContentRewriteOptions": {
       "required": [
@@ -6675,6 +10343,11 @@
           "targeted_fix",
           "creative_rewrite"
         ]
+      },
+      "properties": {
+        "strategy": {
+          "type": "string"
+        }
       }
     },
     "ContentRewritePreflightRequest": {
@@ -6683,7 +10356,18 @@
         "rewriteOptions",
         "selectedIssueIds"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "selectedIssueIds": {
+          "type": "array"
+        },
+        "optionalInstructions": {
+          "type": "['string', 'null']"
+        },
+        "rewriteOptions": {
+          "type": "object"
+        }
+      }
     },
     "ContentRewriteAvailabilityReason": {
       "required": [],
@@ -6695,7 +10379,8 @@
           "rewrite_not_configured",
           "active_rewrite_run_conflict"
         ]
-      }
+      },
+      "properties": {}
     },
     "ContentRewriteSourceVersionSummary": {
       "required": [
@@ -6707,7 +10392,32 @@
         "versionNo",
         "wordCount"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "contentItemId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "versionNo": {
+          "type": "integer"
+        },
+        "version": {
+          "type": "integer"
+        },
+        "title": {
+          "type": "string"
+        },
+        "wordCount": {
+          "type": "integer"
+        },
+        "contentHash": {
+          "type": "string"
+        }
+      }
     },
     "ContentRewriteReportSnapshot": {
       "required": [
@@ -6724,6 +10434,32 @@
           "passed",
           "needs_changes"
         ]
+      },
+      "properties": {
+        "reviewReportId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "sourceContentVersionId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "sourceContentVersionVersion": {
+          "type": "integer"
+        },
+        "sourceContentHash": {
+          "type": "string"
+        },
+        "conclusion": {
+          "type": "string"
+        },
+        "summary": {
+          "type": "string"
+        },
+        "completedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
       }
     },
     "ContentRewriteConfigurationSummary": {
@@ -6737,7 +10473,35 @@
         "workflowConfigurationName",
         "workflowConfigurationVersion"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "bindingVersion": {
+          "type": "integer"
+        },
+        "workflowConfigurationId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "workflowConfigurationName": {
+          "type": "string"
+        },
+        "workflowConfigurationVersion": {
+          "type": "integer"
+        },
+        "connectionId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "connectionVersion": {
+          "type": "integer"
+        },
+        "inputContract": {
+          "type": "string"
+        },
+        "outputContract": {
+          "type": "string"
+        }
+      }
     },
     "ContentRewriteAvailability": {
       "required": [
@@ -6758,6 +10522,30 @@
           "rewrite_not_configured",
           "active_rewrite_run_conflict"
         ]
+      },
+      "properties": {
+        "reviewReportId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "contentItemId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "sourceContentVersionSummary": {
+          "type": "object"
+        },
+        "available": {
+          "type": "boolean"
+        },
+        "reason": {
+          "type": "['string', 'null']"
+        },
+        "openIssueCount": {
+          "type": "integer"
+        },
+        "activeRun": {},
+        "configurationSummary": {}
       }
     },
     "ContentRewriteAvailabilityEnvelope": {
@@ -6765,7 +10553,15 @@
         "data",
         "request_id"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "data": {
+          "type": "object"
+        },
+        "request_id": {
+          "type": "string"
+        }
+      }
     },
     "ContentRewriteCheckStatus": {
       "required": [],
@@ -6774,7 +10570,8 @@
           "passed",
           "blocked"
         ]
-      }
+      },
+      "properties": {}
     },
     "ContentRewriteCheckCode": {
       "required": [],
@@ -6789,7 +10586,8 @@
           "active_rewrite_run_absent",
           "rewrite_input_valid"
         ]
-      }
+      },
+      "properties": {}
     },
     "ContentRewriteCheck": {
       "required": [
@@ -6812,6 +10610,17 @@
           "passed",
           "blocked"
         ]
+      },
+      "properties": {
+        "code": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string"
+        },
+        "message": {
+          "type": "string"
+        }
       }
     },
     "RewriteIssueSnapshot": {
@@ -6837,6 +10646,50 @@
           "warning",
           "suggestion"
         ]
+      },
+      "properties": {
+        "reviewIssueId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "reviewReportId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "issueKey": {
+          "type": "string"
+        },
+        "position": {
+          "type": "integer"
+        },
+        "version": {
+          "type": "integer"
+        },
+        "categoryKey": {
+          "type": "string"
+        },
+        "categoryLabel": {
+          "type": "string"
+        },
+        "severity": {
+          "type": "string"
+        },
+        "title": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "evidence": {
+          "type": "object"
+        },
+        "location": {},
+        "suggestion": {
+          "type": "['string', 'null']"
+        },
+        "disposition": {
+          "type": "string"
+        }
       }
     },
     "ContentRewriteSelectedIssueSummary": {
@@ -6844,7 +10697,15 @@
         "items",
         "total"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "total": {
+          "type": "integer"
+        },
+        "items": {
+          "type": "array"
+        }
+      }
     },
     "ContentRewritePreflightStatus": {
       "required": [],
@@ -6853,7 +10714,8 @@
           "passed",
           "blocked"
         ]
-      }
+      },
+      "properties": {}
     },
     "ContentRewritePreflightReport": {
       "required": [
@@ -6873,6 +10735,37 @@
           "passed",
           "blocked"
         ]
+      },
+      "properties": {
+        "status": {
+          "type": "string"
+        },
+        "checks": {
+          "type": "array"
+        },
+        "reviewReportSnapshot": {
+          "type": "object"
+        },
+        "sourceContentVersionSummary": {
+          "type": "object"
+        },
+        "selectedIssueSummary": {
+          "type": "object"
+        },
+        "rewriteOptions": {
+          "type": "object"
+        },
+        "optionalInstructions": {
+          "type": "['string', 'null']"
+        },
+        "configurationSummary": {},
+        "preflightToken": {
+          "type": "['string', 'null']"
+        },
+        "expiresAt": {
+          "type": "['string', 'null']",
+          "format": "date-time"
+        }
       }
     },
     "ContentRewritePreflightEnvelope": {
@@ -6880,13 +10773,26 @@
         "data",
         "request_id"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "data": {
+          "type": "object"
+        },
+        "request_id": {
+          "type": "string"
+        }
+      }
     },
     "CreateContentRewriteRunRequest": {
       "required": [
         "preflightToken"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "preflightToken": {
+          "type": "string"
+        }
+      }
     },
     "RewriteRuntimeInputV1": {
       "required": [
@@ -6906,20 +10812,86 @@
         "sourceTitle",
         "workflowRunId"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "schemaVersion": {
+          "type": "string"
+        },
+        "workflowRunId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "correlationId": {
+          "type": "string"
+        },
+        "projectId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "contentItemId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "sourceContentVersionId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "sourceContentVersionVersion": {
+          "type": "integer"
+        },
+        "sourceContentHash": {
+          "type": "string"
+        },
+        "sourceTitle": {
+          "type": "string"
+        },
+        "sourceContent": {
+          "type": "string"
+        },
+        "reviewReportId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "reportSnapshot": {
+          "type": "object"
+        },
+        "selectedIssues": {
+          "type": "array"
+        },
+        "optionalInstructions": {
+          "type": "['string', 'null']"
+        },
+        "rewriteOptions": {
+          "type": "object"
+        }
+      }
     },
     "RewriteIssueOutcomeV1": {
       "required": [
         "reviewIssueId",
         "summary"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "reviewIssueId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "summary": {
+          "type": "string"
+        }
+      }
     },
     "RewriteOutputMetadataV1": {
       "required": [
         "changeSummary"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "changeSummary": {
+          "type": "['string', 'null']"
+        }
+      }
     },
     "RewriteRuntimeOutputV1": {
       "required": [
@@ -6932,7 +10904,31 @@
         "unresolvedIssues",
         "warnings"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "schemaVersion": {
+          "type": "string"
+        },
+        "title": {
+          "type": "string"
+        },
+        "content": {
+          "type": "string"
+        },
+        "summary": {
+          "type": "string"
+        },
+        "addressedIssues": {
+          "type": "array"
+        },
+        "unresolvedIssues": {
+          "type": "array"
+        },
+        "warnings": {
+          "type": "array"
+        },
+        "metadata": {}
+      }
     },
     "ContentRewriteResultState": {
       "required": [],
@@ -6947,7 +10943,8 @@
           "output_validation_failed",
           "result_consumption_failed"
         ]
-      }
+      },
+      "properties": {}
     },
     "ContentRewriteSafeError": {
       "required": [
@@ -6962,6 +10959,21 @@
           "output_validation_failed",
           "result_consumption_failed"
         ]
+      },
+      "properties": {
+        "code": {
+          "type": "string"
+        },
+        "message": {
+          "type": "string"
+        },
+        "correlationId": {
+          "type": "string"
+        },
+        "occurredAt": {
+          "type": "string",
+          "format": "date-time"
+        }
       }
     },
     "ContentRewriteSummary": {
@@ -6991,6 +11003,37 @@
           "output_validation_failed",
           "result_consumption_failed"
         ]
+      },
+      "properties": {
+        "reviewReportId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "contentItemId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "state": {
+          "type": "string"
+        },
+        "canStartRewrite": {
+          "type": "boolean"
+        },
+        "activeRun": {},
+        "latestRun": {},
+        "sourceContentVersionSummary": {
+          "type": "object"
+        },
+        "selectedIssueSummary": {},
+        "candidateVersion": {},
+        "candidateIsCurrent": {
+          "type": "boolean"
+        },
+        "canSetCurrent": {
+          "type": "boolean"
+        },
+        "latestError": {},
+        "configurationSummary": {}
       }
     },
     "ContentRewriteSummaryEnvelope": {
@@ -6998,7 +11041,15 @@
         "data",
         "request_id"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "data": {
+          "type": "object"
+        },
+        "request_id": {
+          "type": "string"
+        }
+      }
     },
     "ContentRewriteHistoryItem": {
       "required": [
@@ -7021,6 +11072,25 @@
           "output_validation_failed",
           "result_consumption_failed"
         ]
+      },
+      "properties": {
+        "reviewReportSnapshot": {
+          "type": "object"
+        },
+        "sourceContentVersionSummary": {
+          "type": "object"
+        },
+        "workflowRun": {
+          "type": "object"
+        },
+        "state": {
+          "type": "string"
+        },
+        "candidateVersion": {},
+        "candidateIsCurrent": {
+          "type": "boolean"
+        },
+        "latestError": {}
       }
     },
     "ContentRewriteHistory": {
@@ -7030,14 +11100,36 @@
         "offset",
         "total"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "items": {
+          "type": "array"
+        },
+        "total": {
+          "type": "integer"
+        },
+        "limit": {
+          "type": "integer"
+        },
+        "offset": {
+          "type": "integer"
+        }
+      }
     },
     "ContentRewriteHistoryEnvelope": {
       "required": [
         "data",
         "request_id"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "data": {
+          "type": "object"
+        },
+        "request_id": {
+          "type": "string"
+        }
+      }
     },
     "ContentRewriteResult": {
       "required": [
@@ -7050,20 +11142,59 @@
         "sourceContentVersionSummary",
         "workflowRun"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "reviewReportSnapshot": {
+          "type": "object"
+        },
+        "sourceContentVersionSummary": {
+          "type": "object"
+        },
+        "selectedIssueSummary": {
+          "type": "object"
+        },
+        "workflowRun": {
+          "type": "object"
+        },
+        "output": {
+          "type": "object"
+        },
+        "candidateVersion": {
+          "type": "object"
+        },
+        "candidateIsCurrent": {
+          "type": "boolean"
+        },
+        "canSetCurrent": {
+          "type": "boolean"
+        }
+      }
     },
     "ContentRewriteResultEnvelope": {
       "required": [
         "data",
         "request_id"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "data": {
+          "type": "object"
+        },
+        "request_id": {
+          "type": "string"
+        }
+      }
     },
     "RetryContentRewriteResultConsumptionRequest": {
       "required": [
         "expectedRunVersion"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "expectedRunVersion": {
+          "type": "integer"
+        }
+      }
     },
     "ContentRewriteErrorCode": {
       "required": [],
@@ -7087,7 +11218,8 @@
           "workflow_run_version_conflict",
           "internal_error"
         ]
-      }
+      },
+      "properties": {}
     },
     "ContentRewriteError": {
       "required": [
@@ -7115,6 +11247,17 @@
           "workflow_run_version_conflict",
           "internal_error"
         ]
+      },
+      "properties": {
+        "code": {
+          "type": "string"
+        },
+        "message": {
+          "type": "string"
+        },
+        "details": {
+          "type": "object"
+        }
       }
     },
     "ContentRewriteErrorEnvelope": {
@@ -7122,7 +11265,13 @@
         "error",
         "request_id"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "error": {},
+        "request_id": {
+          "type": "string"
+        }
+      }
     },
     "ContentGenerationContextOptions": {
       "required": [
@@ -7131,7 +11280,21 @@
         "includeProjectMaterials",
         "includeStoryContext"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "includePriorChapterSummaries": {
+          "type": "boolean"
+        },
+        "includeProjectMaterials": {
+          "type": "boolean"
+        },
+        "includeStoryContext": {
+          "type": "boolean"
+        },
+        "includeForeshadowings": {
+          "type": "boolean"
+        }
+      }
     },
     "ContentGenerationPreflightRequest": {
       "required": [
@@ -7140,7 +11303,22 @@
         "expectedCurrentVersion",
         "expectedCurrentVersionId"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "expectedCurrentVersionId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "expectedCurrentVersion": {
+          "type": "integer"
+        },
+        "contextOptions": {
+          "type": "object"
+        },
+        "additionalInstructions": {
+          "type": "['string', 'null']"
+        }
+      }
     },
     "ContentGenerationPreflightStatus": {
       "required": [],
@@ -7149,7 +11327,8 @@
           "passed",
           "blocked"
         ]
-      }
+      },
+      "properties": {}
     },
     "ContentGenerationCheckStatus": {
       "required": [],
@@ -7159,7 +11338,8 @@
           "warning",
           "blocked"
         ]
-      }
+      },
+      "properties": {}
     },
     "ContentGenerationCheckCode": {
       "required": [],
@@ -7172,7 +11352,8 @@
           "current_version_unchanged",
           "generation_input_valid"
         ]
-      }
+      },
+      "properties": {}
     },
     "ContentGenerationCheck": {
       "required": [
@@ -7194,6 +11375,17 @@
           "warning",
           "blocked"
         ]
+      },
+      "properties": {
+        "code": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string"
+        },
+        "message": {
+          "type": "string"
+        }
       }
     },
     "ContentGenerationContextSummary": {
@@ -7205,7 +11397,27 @@
         "priorChapterCount",
         "storylineCount"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "chapterGoalCount": {
+          "type": "integer"
+        },
+        "keyPlotCount": {
+          "type": "integer"
+        },
+        "priorChapterCount": {
+          "type": "integer"
+        },
+        "materialCount": {
+          "type": "integer"
+        },
+        "storylineCount": {
+          "type": "integer"
+        },
+        "foreshadowingCount": {
+          "type": "integer"
+        }
+      }
     },
     "ContentGenerationWorkflowSummary": {
       "required": [
@@ -7215,7 +11427,25 @@
         "outputContractVersion",
         "workflowConfigurationId"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "workflowConfigurationId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "name": {
+          "type": "string"
+        },
+        "inputContractVersion": {
+          "type": "string"
+        },
+        "outputContractVersion": {
+          "type": "string"
+        },
+        "configurationVersion": {
+          "type": "integer"
+        }
+      }
     },
     "ContentGenerationPreflightReport": {
       "required": [
@@ -7233,6 +11463,31 @@
           "passed",
           "blocked"
         ]
+      },
+      "properties": {
+        "status": {
+          "type": "string"
+        },
+        "preflightToken": {
+          "type": "['string', 'null']"
+        },
+        "expiresAt": {
+          "type": "['string', 'null']",
+          "format": "date-time"
+        },
+        "sourceVersion": {
+          "type": "object"
+        },
+        "targetVersionNo": {
+          "type": "integer"
+        },
+        "workflow": {},
+        "contextSummary": {
+          "type": "object"
+        },
+        "checks": {
+          "type": "array"
+        }
       }
     },
     "ContentGenerationPreflightEnvelope": {
@@ -7240,13 +11495,26 @@
         "data",
         "request_id"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "data": {
+          "type": "object"
+        },
+        "request_id": {
+          "type": "string"
+        }
+      }
     },
     "CreateContentGenerationRunRequest": {
       "required": [
         "preflightToken"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "preflightToken": {
+          "type": "string"
+        }
+      }
     },
     "ContentGenerationResultState": {
       "required": [],
@@ -7261,7 +11529,8 @@
           "output_validation_failed",
           "result_consumption_failed"
         ]
-      }
+      },
+      "properties": {}
     },
     "ContentGenerationSafeError": {
       "required": [
@@ -7287,6 +11556,17 @@
           "result_consumption_failed",
           "idempotency_key_reused_with_different_payload"
         ]
+      },
+      "properties": {
+        "code": {
+          "type": "string"
+        },
+        "message": {
+          "type": "string"
+        },
+        "details": {
+          "type": "object"
+        }
       }
     },
     "ContentGenerationSummary": {
@@ -7316,6 +11596,41 @@
           "output_validation_failed",
           "result_consumption_failed"
         ]
+      },
+      "properties": {
+        "contentItemId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "contentItem": {
+          "type": "object"
+        },
+        "currentVersionId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "currentVersion": {
+          "type": "object"
+        },
+        "workflowConfigured": {
+          "type": "boolean"
+        },
+        "state": {
+          "type": "string"
+        },
+        "activeRun": {},
+        "latestRun": {},
+        "latestEvents": {
+          "type": "array"
+        },
+        "latestCandidateVersion": {},
+        "latestError": {},
+        "canGenerate": {
+          "type": "boolean"
+        },
+        "candidateCanBecomeCurrent": {
+          "type": "boolean"
+        }
       }
     },
     "ContentGenerationSummaryEnvelope": {
@@ -7323,7 +11638,15 @@
         "data",
         "request_id"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "data": {
+          "type": "object"
+        },
+        "request_id": {
+          "type": "string"
+        }
+      }
     },
     "SetCurrentContentVersionRequest": {
       "required": [
@@ -7331,13 +11654,31 @@
         "expectedCurrentVersion",
         "expectedCurrentVersionId"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "candidateVersionId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "expectedCurrentVersionId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "expectedCurrentVersion": {
+          "type": "integer"
+        }
+      }
     },
     "RetryContentGenerationResultConsumptionRequest": {
       "required": [
         "expectedRunVersion"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "expectedRunVersion": {
+          "type": "integer"
+        }
+      }
     },
     "ContentGenerationResult": {
       "required": [
@@ -7345,14 +11686,33 @@
         "contentItem",
         "workflowRun"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "contentItem": {
+          "type": "object"
+        },
+        "candidateVersion": {
+          "type": "object"
+        },
+        "workflowRun": {
+          "type": "object"
+        }
+      }
     },
     "ContentGenerationResultEnvelope": {
       "required": [
         "data",
         "request_id"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "data": {
+          "type": "object"
+        },
+        "request_id": {
+          "type": "string"
+        }
+      }
     },
     "ContentGenerationErrorCode": {
       "required": [],
@@ -7374,7 +11734,8 @@
           "result_consumption_failed",
           "idempotency_key_reused_with_different_payload"
         ]
-      }
+      },
+      "properties": {}
     },
     "ContentGenerationError": {
       "required": [
@@ -7400,6 +11761,17 @@
           "result_consumption_failed",
           "idempotency_key_reused_with_different_payload"
         ]
+      },
+      "properties": {
+        "code": {
+          "type": "string"
+        },
+        "message": {
+          "type": "string"
+        },
+        "details": {
+          "type": "object"
+        }
       }
     },
     "ContentGenerationErrorEnvelope": {
@@ -7407,7 +11779,13 @@
         "error",
         "request_id"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "error": {},
+        "request_id": {
+          "type": "string"
+        }
+      }
     },
     "ChapterPlanningGenerationMode": {
       "required": [],
@@ -7417,30 +11795,50 @@
           "append",
           "range"
         ]
-      }
+      },
+      "properties": {}
     },
     "ChapterPlanningFullTarget": {
       "required": [
         "targetTotalChapters"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "targetTotalChapters": {
+          "type": "integer"
+        }
+      }
     },
     "ChapterPlanningAppendTarget": {
       "required": [
         "chapterCount"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "chapterCount": {
+          "type": "integer"
+        }
+      }
     },
     "ChapterPlanningRangeTarget": {
       "required": [
         "endChapterNo",
         "startChapterNo"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "startChapterNo": {
+          "type": "integer"
+        },
+        "endChapterNo": {
+          "type": "integer"
+        }
+      }
     },
     "ChapterPlanningStorylineSelection": {
       "required": [],
-      "enums": {}
+      "enums": {},
+      "properties": {}
     },
     "ChapterPlanningContextOptions": {
       "required": [
@@ -7449,7 +11847,21 @@
         "includeProjectMaterials",
         "includeUnpaidForeshadowings"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "includeProjectMaterials": {
+          "type": "boolean"
+        },
+        "includeUnpaidForeshadowings": {
+          "type": "boolean"
+        },
+        "includePriorChapterSummaries": {
+          "type": "boolean"
+        },
+        "coreSettingsOnly": {
+          "type": "boolean"
+        }
+      }
     },
     "ChapterPlanningPreflightRequest": {
       "required": [
@@ -7465,6 +11877,19 @@
           "append",
           "range"
         ]
+      },
+      "properties": {
+        "generationMode": {
+          "type": "string"
+        },
+        "target": {},
+        "storylineSelection": {},
+        "contextOptions": {
+          "type": "object"
+        },
+        "additionalInstructions": {
+          "type": "['string', 'null']"
+        }
       }
     },
     "ChapterPlanningItemSeverity": {
@@ -7475,11 +11900,27 @@
           "warning",
           "blocker"
         ]
-      }
+      },
+      "properties": {}
     },
     "ChapterPlanningItemDetails": {
       "required": [],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "action": {
+          "type": "string"
+        },
+        "field": {
+          "type": "string"
+        },
+        "resourceId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "safeSummary": {
+          "type": "string"
+        }
+      }
     },
     "ChapterPlanningPreflightItem": {
       "required": [
@@ -7494,6 +11935,20 @@
           "warning",
           "blocker"
         ]
+      },
+      "properties": {
+        "code": {
+          "type": "string"
+        },
+        "message": {
+          "type": "string"
+        },
+        "severity": {
+          "type": "string"
+        },
+        "details": {
+          "type": "object"
+        }
       }
     },
     "ChapterPlanningBlockerCode": {
@@ -7506,7 +11961,8 @@
           "storyline_reference_invalid",
           "generation_input_invalid"
         ]
-      }
+      },
+      "properties": {}
     },
     "ChapterPlanningBlockerItem": {
       "required": [
@@ -7523,6 +11979,20 @@
           "storyline_reference_invalid",
           "generation_input_invalid"
         ]
+      },
+      "properties": {
+        "code": {
+          "type": "string"
+        },
+        "message": {
+          "type": "string"
+        },
+        "safeReason": {
+          "type": "string"
+        },
+        "retryAction": {
+          "type": "string"
+        }
       }
     },
     "ChapterPlanningNormalizedTargetSummary": {
@@ -7531,7 +12001,18 @@
         "requestedChapterCount",
         "startChapterNo"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "startChapterNo": {
+          "type": "integer"
+        },
+        "endChapterNo": {
+          "type": "integer"
+        },
+        "requestedChapterCount": {
+          "type": "integer"
+        }
+      }
     },
     "ChapterPlanningInputSummary": {
       "required": [
@@ -7546,6 +12027,18 @@
           "append",
           "range"
         ]
+      },
+      "properties": {
+        "generationMode": {
+          "type": "string"
+        },
+        "target": {
+          "type": "object"
+        },
+        "storylineSelection": {},
+        "contextOptions": {
+          "type": "object"
+        }
       }
     },
     "ChapterPlanningExecutionConfigurationSummary": {
@@ -7554,7 +12047,19 @@
         "workflowBindingId",
         "workflowBindingVersion"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "stage": {
+          "type": "string"
+        },
+        "workflowBindingId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "workflowBindingVersion": {
+          "type": "integer"
+        }
+      }
     },
     "ChapterPlanningPreflightPassed": {
       "required": [
@@ -7569,7 +12074,36 @@
         "status",
         "warnings"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "result": {},
+        "status": {},
+        "preflightToken": {
+          "type": "string"
+        },
+        "expiresAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "inputDigest": {
+          "type": "string"
+        },
+        "inputSummary": {
+          "type": "object"
+        },
+        "executionConfigurationSummary": {
+          "type": "object"
+        },
+        "checks": {
+          "type": "array"
+        },
+        "blockers": {
+          "type": "array"
+        },
+        "warnings": {
+          "type": "array"
+        }
+      }
     },
     "ChapterPlanningPreflightBlocked": {
       "required": [
@@ -7582,24 +12116,54 @@
         "status",
         "warnings"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "result": {},
+        "status": {},
+        "inputDigest": {
+          "type": "string"
+        },
+        "inputSummary": {},
+        "executionConfigurationSummary": {},
+        "checks": {
+          "type": "array"
+        },
+        "blockers": {
+          "type": "array"
+        },
+        "warnings": {
+          "type": "array"
+        }
+      }
     },
     "ChapterPlanningPreflightReport": {
       "required": [],
-      "enums": {}
+      "enums": {},
+      "properties": {}
     },
     "ChapterPlanningPreflightEnvelope": {
       "required": [
         "data",
         "request_id"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "data": {},
+        "request_id": {
+          "type": "string"
+        }
+      }
     },
     "CreateChapterPlanRunRequest": {
       "required": [
         "preflightToken"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "preflightToken": {
+          "type": "string"
+        }
+      }
     },
     "ChapterPlanCandidateStatus": {
       "required": [],
@@ -7610,7 +12174,8 @@
           "adopted",
           "discarded"
         ]
-      }
+      },
+      "properties": {}
     },
     "ChapterPlanCandidateBatchStatus": {
       "required": [],
@@ -7621,7 +12186,8 @@
           "adopted",
           "abandoned"
         ]
-      }
+      },
+      "properties": {}
     },
     "ChapterPlanReferenceSnapshot": {
       "required": [
@@ -7631,7 +12197,25 @@
         "relation",
         "version"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "label": {
+          "type": "string"
+        },
+        "relation": {
+          "type": "string"
+        },
+        "position": {
+          "type": "integer"
+        },
+        "version": {
+          "type": "integer"
+        }
+      }
     },
     "ChapterPlanCandidateSnapshot": {
       "required": [
@@ -7653,6 +12237,32 @@
           "atmosphere",
           "other"
         ]
+      },
+      "properties": {
+        "chapterNo": {
+          "type": "integer"
+        },
+        "title": {
+          "type": "string"
+        },
+        "summary": {
+          "type": "string"
+        },
+        "chapterPurpose": {
+          "type": "string"
+        },
+        "storylineRefs": {
+          "type": "array"
+        },
+        "materialRefs": {
+          "type": "array"
+        },
+        "foreshadowingRefs": {
+          "type": "array"
+        },
+        "generationBasis": {
+          "type": "object"
+        }
       }
     },
     "ChapterPlanCandidateBatch": {
@@ -7688,6 +12298,69 @@
           "adopted",
           "abandoned"
         ]
+      },
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "projectId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "sourceWorkflowRunId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "generationMode": {
+          "type": "string"
+        },
+        "target": {
+          "type": "object"
+        },
+        "inputDigest": {
+          "type": "string"
+        },
+        "inputSummary": {
+          "type": "object"
+        },
+        "candidateCount": {
+          "type": "integer"
+        },
+        "pendingCount": {
+          "type": "integer"
+        },
+        "staleCount": {
+          "type": "integer"
+        },
+        "adoptedCount": {
+          "type": "integer"
+        },
+        "discardedCount": {
+          "type": "integer"
+        },
+        "status": {
+          "type": "string"
+        },
+        "version": {
+          "type": "integer"
+        },
+        "completedAt": {
+          "type": "['string', 'null']",
+          "format": "date-time"
+        },
+        "abandonedAt": {
+          "type": "['string', 'null']",
+          "format": "date-time"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
       }
     },
     "ChapterPlanCandidateDiffType": {
@@ -7699,7 +12372,8 @@
           "no_change",
           "stale_conflict"
         ]
-      }
+      },
+      "properties": {}
     },
     "ChapterPlanCandidate": {
       "required": [
@@ -7733,6 +12407,61 @@
           "adopted",
           "discarded"
         ]
+      },
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "batchId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "projectId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "chapterNo": {
+          "type": "integer"
+        },
+        "sortOrder": {
+          "type": "integer"
+        },
+        "baseChapterPlanId": {
+          "type": "['string', 'null']",
+          "format": "uuid"
+        },
+        "baseRevisionId": {
+          "type": "['string', 'null']",
+          "format": "uuid"
+        },
+        "baseChapterPlanVersion": {
+          "type": "['integer', 'null']"
+        },
+        "baseSnapshot": {},
+        "generatedSnapshot": {
+          "type": "object"
+        },
+        "currentSnapshot": {
+          "type": "object"
+        },
+        "diffType": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string"
+        },
+        "version": {
+          "type": "integer"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
       }
     },
     "ChapterPlanDiffEntry": {
@@ -7749,6 +12478,20 @@
           "changed",
           "unchanged"
         ]
+      },
+      "properties": {
+        "path": {
+          "type": "string"
+        },
+        "changeType": {
+          "type": "string"
+        },
+        "before": {
+          "type": "['string', 'null']"
+        },
+        "after": {
+          "type": "['string', 'null']"
+        }
       }
     },
     "ChapterPlanCandidateDiff": {
@@ -7758,7 +12501,22 @@
         "entries",
         "stale"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "baseRevisionId": {
+          "type": "['string', 'null']",
+          "format": "uuid"
+        },
+        "candidateVersion": {
+          "type": "integer"
+        },
+        "entries": {
+          "type": "array"
+        },
+        "stale": {
+          "type": "boolean"
+        }
+      }
     },
     "ChapterPlanRevision": {
       "required": [
@@ -7781,6 +12539,45 @@
           "confirm",
           "legacy_backfill"
         ]
+      },
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "chapterPlanId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "projectId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "revisionNo": {
+          "type": "integer"
+        },
+        "snapshot": {
+          "type": "object"
+        },
+        "changeType": {
+          "type": "string"
+        },
+        "sourceCandidateId": {
+          "type": "['string', 'null']",
+          "format": "uuid"
+        },
+        "sourceCandidateBatchId": {
+          "type": "['string', 'null']",
+          "format": "uuid"
+        },
+        "sourceWorkflowRunId": {
+          "type": "['string', 'null']",
+          "format": "uuid"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
       }
     },
     "ChapterPlanCandidateEnvelope": {
@@ -7788,14 +12585,30 @@
         "data",
         "request_id"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "data": {
+          "type": "object"
+        },
+        "request_id": {
+          "type": "string"
+        }
+      }
     },
     "ChapterPlanCandidateBatchEnvelope": {
       "required": [
         "data",
         "request_id"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "data": {
+          "type": "object"
+        },
+        "request_id": {
+          "type": "string"
+        }
+      }
     },
     "ChapterPlanCandidateBatchList": {
       "required": [
@@ -7804,7 +12617,21 @@
         "offset",
         "total"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "items": {
+          "type": "array"
+        },
+        "total": {
+          "type": "integer"
+        },
+        "limit": {
+          "type": "integer"
+        },
+        "offset": {
+          "type": "integer"
+        }
+      }
     },
     "ChapterPlanCandidateList": {
       "required": [
@@ -7813,34 +12640,77 @@
         "offset",
         "total"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "items": {
+          "type": "array"
+        },
+        "total": {
+          "type": "integer"
+        },
+        "limit": {
+          "type": "integer"
+        },
+        "offset": {
+          "type": "integer"
+        }
+      }
     },
     "ChapterPlanCandidateBatchListEnvelope": {
       "required": [
         "data",
         "request_id"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "data": {
+          "type": "object"
+        },
+        "request_id": {
+          "type": "string"
+        }
+      }
     },
     "ChapterPlanCandidateListEnvelope": {
       "required": [
         "data",
         "request_id"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "data": {
+          "type": "object"
+        },
+        "request_id": {
+          "type": "string"
+        }
+      }
     },
     "UpdateChapterPlanCandidateRequest": {
       "required": [
         "currentSnapshot",
         "expectedCandidateVersion"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "expectedCandidateVersion": {
+          "type": "integer"
+        },
+        "currentSnapshot": {
+          "type": "object"
+        }
+      }
     },
     "RecompareChapterPlanCandidateRequest": {
       "required": [
         "expectedCandidateVersion"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "expectedCandidateVersion": {
+          "type": "integer"
+        }
+      }
     },
     "ChapterPlanCandidateComparison": {
       "required": [
@@ -7848,21 +12718,46 @@
         "currentChapter",
         "diff"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "candidate": {
+          "type": "object"
+        },
+        "currentChapter": {},
+        "diff": {
+          "type": "object"
+        }
+      }
     },
     "ChapterPlanCandidateComparisonEnvelope": {
       "required": [
         "data",
         "request_id"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "data": {
+          "type": "object"
+        },
+        "request_id": {
+          "type": "string"
+        }
+      }
     },
     "AdoptChapterPlanCandidateRequest": {
       "required": [
         "expectedCandidateVersion",
         "expectedChapterPlanVersion"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "expectedCandidateVersion": {
+          "type": "integer"
+        },
+        "expectedChapterPlanVersion": {
+          "type": "['integer', 'null']"
+        }
+      }
     },
     "AdoptedChapterPlanCandidate": {
       "required": [
@@ -7896,6 +12791,59 @@
           "adopted",
           "discarded"
         ]
+      },
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "batchId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "projectId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "chapterNo": {
+          "type": "integer"
+        },
+        "sortOrder": {
+          "type": "integer"
+        },
+        "baseChapterPlanId": {
+          "type": "['string', 'null']",
+          "format": "uuid"
+        },
+        "baseRevisionId": {
+          "type": "['string', 'null']",
+          "format": "uuid"
+        },
+        "baseChapterPlanVersion": {
+          "type": "['integer', 'null']"
+        },
+        "baseSnapshot": {},
+        "generatedSnapshot": {
+          "type": "object"
+        },
+        "currentSnapshot": {
+          "type": "object"
+        },
+        "diffType": {
+          "type": "string"
+        },
+        "status": {},
+        "version": {
+          "type": "integer"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
       }
     },
     "NonAdoptedChapterPlanCandidate": {
@@ -7929,6 +12877,59 @@
           "stale",
           "discarded"
         ]
+      },
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "batchId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "projectId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "chapterNo": {
+          "type": "integer"
+        },
+        "sortOrder": {
+          "type": "integer"
+        },
+        "baseChapterPlanId": {
+          "type": "['string', 'null']",
+          "format": "uuid"
+        },
+        "baseRevisionId": {
+          "type": "['string', 'null']",
+          "format": "uuid"
+        },
+        "baseChapterPlanVersion": {
+          "type": "['integer', 'null']"
+        },
+        "baseSnapshot": {},
+        "generatedSnapshot": {
+          "type": "object"
+        },
+        "currentSnapshot": {
+          "type": "object"
+        },
+        "diffType": {
+          "type": "string"
+        },
+        "status": {},
+        "version": {
+          "type": "integer"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
       }
     },
     "AdoptChapterPlanCandidateAdoptedResult": {
@@ -7939,7 +12940,20 @@
         "outcome",
         "revision"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "outcome": {},
+        "candidate": {},
+        "chapterPlan": {
+          "type": "object"
+        },
+        "revision": {
+          "type": "object"
+        },
+        "batch": {
+          "type": "object"
+        }
+      }
     },
     "AdoptChapterPlanCandidateNoChangeResult": {
       "required": [
@@ -7949,24 +12963,52 @@
         "outcome",
         "revision"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "outcome": {},
+        "candidate": {},
+        "chapterPlan": {
+          "type": "object"
+        },
+        "revision": {
+          "type": "null"
+        },
+        "batch": {
+          "type": "object"
+        }
+      }
     },
     "AdoptChapterPlanCandidateResult": {
       "required": [],
-      "enums": {}
+      "enums": {},
+      "properties": {}
     },
     "AdoptChapterPlanCandidateEnvelope": {
       "required": [
         "data",
         "request_id"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "data": {},
+        "request_id": {
+          "type": "string"
+        }
+      }
     },
     "DiscardChapterPlanCandidateRequest": {
       "required": [
         "expectedCandidateVersion"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "expectedCandidateVersion": {
+          "type": "integer"
+        },
+        "reason": {
+          "type": "['string', 'null']"
+        }
+      }
     },
     "BulkAdoptChapterPlanCandidateItem": {
       "required": [
@@ -7974,14 +13016,34 @@
         "expectedCandidateVersion",
         "expectedChapterPlanVersion"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "candidateId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "expectedCandidateVersion": {
+          "type": "integer"
+        },
+        "expectedChapterPlanVersion": {
+          "type": "['integer', 'null']"
+        }
+      }
     },
     "BulkAdoptChapterPlanCandidatesRequest": {
       "required": [
         "candidates",
         "expectedBatchVersion"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "expectedBatchVersion": {
+          "type": "integer"
+        },
+        "candidates": {
+          "type": "array"
+        }
+      }
     },
     "BulkAdoptChapterPlanCandidateAdoptedResult": {
       "required": [
@@ -7991,7 +13053,21 @@
         "outcome",
         "revision"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "candidateId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "outcome": {},
+        "candidate": {},
+        "chapterPlan": {
+          "type": "object"
+        },
+        "revision": {
+          "type": "object"
+        }
+      }
     },
     "BulkAdoptChapterPlanCandidateNoChangeResult": {
       "required": [
@@ -8001,7 +13077,21 @@
         "outcome",
         "revision"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "candidateId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "outcome": {},
+        "candidate": {},
+        "chapterPlan": {
+          "type": "object"
+        },
+        "revision": {
+          "type": "null"
+        }
+      }
     },
     "BulkAdoptChapterPlanCandidateStaleResult": {
       "required": [
@@ -8010,7 +13100,18 @@
         "error",
         "outcome"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "candidateId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "outcome": {},
+        "candidate": {
+          "type": "object"
+        },
+        "error": {}
+      }
     },
     "BulkAdoptChapterPlanCandidateConflictResult": {
       "required": [
@@ -8019,7 +13120,18 @@
         "error",
         "outcome"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "candidateId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "outcome": {},
+        "candidate": {
+          "type": "object"
+        },
+        "error": {}
+      }
     },
     "BulkAdoptChapterPlanCandidateFailedResult": {
       "required": [
@@ -8027,32 +13139,68 @@
         "error",
         "outcome"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "candidateId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "outcome": {},
+        "error": {}
+      }
     },
     "BulkAdoptChapterPlanCandidateResult": {
       "required": [],
-      "enums": {}
+      "enums": {},
+      "properties": {}
     },
     "BulkAdoptChapterPlanCandidatesResult": {
       "required": [
         "batch",
         "items"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "items": {
+          "type": "array"
+        },
+        "batch": {
+          "type": "object"
+        }
+      }
     },
     "BulkAdoptChapterPlanCandidatesEnvelope": {
       "required": [
         "data",
         "request_id"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "data": {
+          "type": "object"
+        },
+        "request_id": {
+          "type": "string"
+        }
+      }
     },
     "AbandonChapterPlanCandidateBatchRequest": {
       "required": [
         "acknowledgeAdoptedChaptersRemain",
         "expectedBatchVersion"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "expectedBatchVersion": {
+          "type": "integer"
+        },
+        "reason": {
+          "type": "['string', 'null']"
+        },
+        "acknowledgeAdoptedChaptersRemain": {
+          "type": "boolean"
+        }
+      }
     },
     "ChapterPlanRevisionList": {
       "required": [
@@ -8061,14 +13209,36 @@
         "offset",
         "total"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "items": {
+          "type": "array"
+        },
+        "total": {
+          "type": "integer"
+        },
+        "limit": {
+          "type": "integer"
+        },
+        "offset": {
+          "type": "integer"
+        }
+      }
     },
     "ChapterPlanRevisionListEnvelope": {
       "required": [
         "data",
         "request_id"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "data": {
+          "type": "object"
+        },
+        "request_id": {
+          "type": "string"
+        }
+      }
     },
     "ChapterPlanningSummary": {
       "required": [
@@ -8078,14 +13248,37 @@
         "currentChapterCount",
         "pendingConfirmationCount"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "currentChapterCount": {
+          "type": "integer"
+        },
+        "pendingConfirmationCount": {
+          "type": "integer"
+        },
+        "confirmedChapterCount": {
+          "type": "integer"
+        },
+        "candidateBatchCounts": {
+          "type": "object"
+        },
+        "activeRun": {}
+      }
     },
     "ChapterPlanningSummaryEnvelope": {
       "required": [
         "data",
         "request_id"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "data": {
+          "type": "object"
+        },
+        "request_id": {
+          "type": "string"
+        }
+      }
     },
     "ChapterPlanningErrorCode": {
       "required": [],
@@ -8107,14 +13300,33 @@
           "result_consumption_failed",
           "idempotency_key_reused_with_different_payload"
         ]
-      }
+      },
+      "properties": {}
     },
     "ChapterPlanningErrorDetails": {
       "required": [
         "retryAction",
         "safeReason"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "resourceId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "expectedVersion": {
+          "type": "integer"
+        },
+        "currentVersion": {
+          "type": "integer"
+        },
+        "retryAction": {
+          "type": "string"
+        },
+        "safeReason": {
+          "type": "string"
+        }
+      }
     },
     "ChapterPlanningError": {
       "required": [
@@ -8140,6 +13352,17 @@
           "result_consumption_failed",
           "idempotency_key_reused_with_different_payload"
         ]
+      },
+      "properties": {
+        "code": {
+          "type": "string"
+        },
+        "message": {
+          "type": "string"
+        },
+        "details": {
+          "type": "object"
+        }
       }
     },
     "ChapterPlanningWorkflowNotConfiguredError": {
@@ -8166,6 +13389,15 @@
           "result_consumption_failed",
           "idempotency_key_reused_with_different_payload"
         ]
+      },
+      "properties": {
+        "code": {},
+        "message": {
+          "type": "string"
+        },
+        "details": {
+          "type": "object"
+        }
       }
     },
     "ChapterPlanningPreflightConflictError": {
@@ -8192,6 +13424,15 @@
           "result_consumption_failed",
           "idempotency_key_reused_with_different_payload"
         ]
+      },
+      "properties": {
+        "code": {},
+        "message": {
+          "type": "string"
+        },
+        "details": {
+          "type": "object"
+        }
       }
     },
     "ChapterPlanningCreateRunConflictError": {
@@ -8207,6 +13448,15 @@
           "run_already_consumed",
           "idempotency_key_reused_with_different_payload"
         ]
+      },
+      "properties": {
+        "code": {},
+        "message": {
+          "type": "string"
+        },
+        "details": {
+          "type": "object"
+        }
       }
     },
     "ChapterPlanningCreateRunPreconditionError": {
@@ -8221,6 +13471,15 @@
           "preflight_token_invalid",
           "preflight_token_expired"
         ]
+      },
+      "properties": {
+        "code": {},
+        "message": {
+          "type": "string"
+        },
+        "details": {
+          "type": "object"
+        }
       }
     },
     "ChapterPlanningCandidateMutationConflictError": {
@@ -8235,6 +13494,15 @@
           "version_conflict",
           "idempotency_key_reused_with_different_payload"
         ]
+      },
+      "properties": {
+        "code": {},
+        "message": {
+          "type": "string"
+        },
+        "details": {
+          "type": "object"
+        }
       }
     },
     "ChapterPlanningSingleAdoptConflictError": {
@@ -8252,6 +13520,15 @@
           "revision_sequence_conflict",
           "idempotency_key_reused_with_different_payload"
         ]
+      },
+      "properties": {
+        "code": {},
+        "message": {
+          "type": "string"
+        },
+        "details": {
+          "type": "object"
+        }
       }
     },
     "ChapterPlanningBulkAdoptConflictError": {
@@ -8266,6 +13543,15 @@
           "version_conflict",
           "idempotency_key_reused_with_different_payload"
         ]
+      },
+      "properties": {
+        "code": {},
+        "message": {
+          "type": "string"
+        },
+        "details": {
+          "type": "object"
+        }
       }
     },
     "ChapterPlanningBatchConflictError": {
@@ -8281,6 +13567,15 @@
           "version_conflict",
           "idempotency_key_reused_with_different_payload"
         ]
+      },
+      "properties": {
+        "code": {},
+        "message": {
+          "type": "string"
+        },
+        "details": {
+          "type": "object"
+        }
       }
     },
     "ChapterPlanningStaleCandidateError": {
@@ -8307,6 +13602,15 @@
           "result_consumption_failed",
           "idempotency_key_reused_with_different_payload"
         ]
+      },
+      "properties": {
+        "code": {},
+        "message": {
+          "type": "string"
+        },
+        "details": {
+          "type": "object"
+        }
       }
     },
     "ChapterPlanningConflictError": {
@@ -8322,6 +13626,15 @@
           "chapter_no_conflict",
           "revision_sequence_conflict"
         ]
+      },
+      "properties": {
+        "code": {},
+        "message": {
+          "type": "string"
+        },
+        "details": {
+          "type": "object"
+        }
       }
     },
     "ChapterPlanningFailedError": {
@@ -8348,6 +13661,15 @@
           "result_consumption_failed",
           "idempotency_key_reused_with_different_payload"
         ]
+      },
+      "properties": {
+        "code": {},
+        "message": {
+          "type": "string"
+        },
+        "details": {
+          "type": "object"
+        }
       }
     },
     "ChapterPlanningOutputValidationError": {
@@ -8374,6 +13696,15 @@
           "result_consumption_failed",
           "idempotency_key_reused_with_different_payload"
         ]
+      },
+      "properties": {
+        "code": {},
+        "message": {
+          "type": "string"
+        },
+        "details": {
+          "type": "object"
+        }
       }
     },
     "ChapterPlanningResultConsumptionError": {
@@ -8400,6 +13731,15 @@
           "result_consumption_failed",
           "idempotency_key_reused_with_different_payload"
         ]
+      },
+      "properties": {
+        "code": {},
+        "message": {
+          "type": "string"
+        },
+        "details": {
+          "type": "object"
+        }
       }
     },
     "ChapterPlanningWorkflowNotConfiguredErrorEnvelope": {
@@ -8407,70 +13747,130 @@
         "error",
         "request_id"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "error": {},
+        "request_id": {
+          "type": "string"
+        }
+      }
     },
     "ChapterPlanningPreflightConflictErrorEnvelope": {
       "required": [
         "error",
         "request_id"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "error": {},
+        "request_id": {
+          "type": "string"
+        }
+      }
     },
     "ChapterPlanningCreateRunConflictErrorEnvelope": {
       "required": [
         "error",
         "request_id"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "error": {},
+        "request_id": {
+          "type": "string"
+        }
+      }
     },
     "ChapterPlanningCreateRunPreconditionErrorEnvelope": {
       "required": [
         "error",
         "request_id"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "error": {},
+        "request_id": {
+          "type": "string"
+        }
+      }
     },
     "ChapterPlanningCandidateMutationConflictErrorEnvelope": {
       "required": [
         "error",
         "request_id"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "error": {},
+        "request_id": {
+          "type": "string"
+        }
+      }
     },
     "ChapterPlanningSingleAdoptConflictErrorEnvelope": {
       "required": [
         "error",
         "request_id"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "error": {},
+        "request_id": {
+          "type": "string"
+        }
+      }
     },
     "ChapterPlanningBulkAdoptConflictErrorEnvelope": {
       "required": [
         "error",
         "request_id"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "error": {},
+        "request_id": {
+          "type": "string"
+        }
+      }
     },
     "ChapterPlanningBatchConflictErrorEnvelope": {
       "required": [
         "error",
         "request_id"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "error": {},
+        "request_id": {
+          "type": "string"
+        }
+      }
     },
     "ChapterPlanningOutputValidationErrorEnvelope": {
       "required": [
         "error",
         "request_id"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "error": {},
+        "request_id": {
+          "type": "string"
+        }
+      }
     },
     "ChapterPlanningResultConsumptionErrorEnvelope": {
       "required": [
         "error",
         "request_id"
       ],
-      "enums": {}
+      "enums": {},
+      "properties": {
+        "error": {},
+        "request_id": {
+          "type": "string"
+        }
+      }
     }
   }
 }
