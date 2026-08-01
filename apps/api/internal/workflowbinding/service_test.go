@@ -49,7 +49,7 @@ func newDisabledWorkflow(id uuid.UUID, stages []string) ReadWorkflowConfiguratio
 		WorkflowType:      "n8n",
 		ApplicableStages:  stages,
 		Enabled:           false,
-		IntegrationStatus: "not_connected",
+		IntegrationStatus: "unverified",
 		Version:           1,
 		CreatedAt:         time.Now().UTC(),
 		UpdatedAt:         time.Now().UTC(),

@@ -25,7 +25,14 @@ type ReadWorkflowConfiguration struct {
 	DefaultParameters     json.RawMessage `json:"defaultParameters"`
 	Note                  *string         `json:"note"`
 	IntegrationStatus     string          `json:"integrationStatus"`
+	ValidationStatus      string          `json:"validationStatus"`
 	Enabled               bool            `json:"enabled"`
+	Executable            bool            `json:"executable"`
+	VerifiedVersion       *int            `json:"verifiedVersion"`
+	ValidationDetails     json.RawMessage `json:"validationDetails"`
+	LlmStrategy           string          `json:"llmStrategy"`
+	LlmProviderID         *uuid.UUID      `json:"llmProviderId"`
+	LlmModel              *string         `json:"llmModel"`
 	LastVerifiedAt        *time.Time      `json:"lastVerifiedAt"`
 	LastErrorCode         *string         `json:"lastErrorCode"`
 	LastErrorMessage      *string         `json:"lastErrorMessage"`
@@ -40,6 +47,8 @@ type ReadWorkflowConfiguration struct {
 type StageRead struct {
 	Stage                        WorkflowBindingStage
 	Bound                        bool
+	Executable                   bool
+	IneligibilityReasons         []string
 	Binding                      *ProjectWorkflowBinding
 	WorkflowConfigurationSummary *ReadWorkflowConfiguration
 }

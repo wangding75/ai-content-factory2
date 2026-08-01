@@ -36,26 +36,33 @@ func bindingDTO(b ProjectWorkflowBinding) BindingDTO {
 // workflow configuration summary.  It mirrors ReadWorkflowConfiguration and is
 // rendered verbatim as workflowConfigurationSummary.
 type WorkflowConfigurationSummaryDTO struct {
-	ID                    uuid.UUID     `json:"id"`
-	Name                  string        `json:"name"`
-	ConnectionID          uuid.UUID     `json:"connectionId"`
-	ConnectionName        string        `json:"connectionName"`
-	ConnectionType        string        `json:"connectionType"`
-	WorkflowType          string        `json:"workflowType"`
+	ID                    uuid.UUID       `json:"id"`
+	Name                  string          `json:"name"`
+	ConnectionID          uuid.UUID       `json:"connectionId"`
+	ConnectionName        string          `json:"connectionName"`
+	ConnectionType        string          `json:"connectionType"`
+	WorkflowType          string          `json:"workflowType"`
 	ApplicableStages      []string        `json:"applicableStages"`
 	TypeConfig            json.RawMessage `json:"typeConfig"`
 	InputContractVersion  string          `json:"inputContractVersion"`
 	OutputContractVersion string          `json:"outputContractVersion"`
 	DefaultParameters     json.RawMessage `json:"defaultParameters"`
-	Note                  *string       `json:"note"`
-	IntegrationStatus     string        `json:"integrationStatus"`
-	Enabled               bool          `json:"enabled"`
-	LastVerifiedAt        *time.Time    `json:"lastVerifiedAt"`
-	LastErrorCode         *string       `json:"lastErrorCode"`
-	LastErrorMessage      *string       `json:"lastErrorMessage"`
-	Version               int           `json:"version"`
-	CreatedAt             time.Time     `json:"createdAt"`
-	UpdatedAt             time.Time     `json:"updatedAt"`
+	Note                  *string         `json:"note"`
+	IntegrationStatus     string          `json:"integrationStatus"`
+	ValidationStatus      string          `json:"validationStatus"`
+	Enabled               bool            `json:"enabled"`
+	Executable            bool            `json:"executable"`
+	VerifiedVersion       *int            `json:"verifiedVersion"`
+	ValidationDetails     json.RawMessage `json:"validationDetails"`
+	LlmStrategy           string          `json:"llmStrategy"`
+	LlmProviderID         *uuid.UUID      `json:"llmProviderId"`
+	LlmModel              *string         `json:"llmModel"`
+	LastVerifiedAt        *time.Time      `json:"lastVerifiedAt"`
+	LastErrorCode         *string         `json:"lastErrorCode"`
+	LastErrorMessage      *string         `json:"lastErrorMessage"`
+	Version               int             `json:"version"`
+	CreatedAt             time.Time       `json:"createdAt"`
+	UpdatedAt             time.Time       `json:"updatedAt"`
 }
 
 func summaryDTO(s *ReadWorkflowConfiguration) *WorkflowConfigurationSummaryDTO {
@@ -76,7 +83,14 @@ func summaryDTO(s *ReadWorkflowConfiguration) *WorkflowConfigurationSummaryDTO {
 		DefaultParameters:     s.DefaultParameters,
 		Note:                  s.Note,
 		IntegrationStatus:     s.IntegrationStatus,
+		ValidationStatus:      s.ValidationStatus,
 		Enabled:               s.Enabled,
+		Executable:            s.Executable,
+		VerifiedVersion:       s.VerifiedVersion,
+		ValidationDetails:     s.ValidationDetails,
+		LlmStrategy:           s.LlmStrategy,
+		LlmProviderID:         s.LlmProviderID,
+		LlmModel:              s.LlmModel,
 		LastVerifiedAt:        s.LastVerifiedAt,
 		LastErrorCode:         s.LastErrorCode,
 		LastErrorMessage:      s.LastErrorMessage,
@@ -91,9 +105,11 @@ func summaryDTO(s *ReadWorkflowConfiguration) *WorkflowConfigurationSummaryDTO {
 // binding exists; workflowConfigurationSummary is the full global workflow for
 // bound stages and null for unbound stages.
 type WorkflowBindingStageDTO struct {
-	Stage                        string                          `json:"stage"`
-	Bound                        bool                            `json:"bound"`
-	Binding                      *BindingDTO                     `json:"binding"`
+	Stage                        string                           `json:"stage"`
+	Bound                        bool                             `json:"bound"`
+	Executable                   bool                             `json:"executable"`
+	IneligibilityReasons         []string                         `json:"ineligibilityReasons"`
+	Binding                      *BindingDTO                      `json:"binding"`
 	WorkflowConfigurationSummary *WorkflowConfigurationSummaryDTO `json:"workflowConfigurationSummary"`
 }
 
@@ -101,6 +117,8 @@ func stageDTO(s StageRead) WorkflowBindingStageDTO {
 	dto := WorkflowBindingStageDTO{
 		Stage:                        s.Stage.String(),
 		Bound:                        s.Bound,
+		Executable:                   s.Executable,
+		IneligibilityReasons:         s.IneligibilityReasons,
 		WorkflowConfigurationSummary: summaryDTO(s.WorkflowConfigurationSummary),
 	}
 	if s.Binding != nil {

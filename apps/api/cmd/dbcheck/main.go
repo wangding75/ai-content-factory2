@@ -293,7 +293,7 @@ func checkMigrationState(ctx context.Context, conn *pgx.Conn) (version int, dirt
 	return version, dirty, nil
 }
 
-// runSchemaChecks runs all schema checks for iteration 15-18 migrations.
+// runSchemaChecks runs all schema checks for iteration 15-19 migrations.
 func runSchemaChecks(ctx context.Context, conn *pgx.Conn) []checkResult {
 	var results []checkResult
 
@@ -377,6 +377,54 @@ func runSchemaChecks(ctx context.Context, conn *pgx.Conn) []checkResult {
 	results = append(results, checkFunctionExists(ctx, conn, "enforce_workflow_rewrite_candidate_scope"))
 	results = append(results, checkTriggerExists(ctx, conn, "content_versions_workflow_rewrite_scope_trigger"))
 	results = append(results, checkConstraintExists(ctx, conn, "content_versions_workflow_rewrite_shape"))
+
+	// --- 000019: iteration_19_real_integration ---
+
+	results = append(results, checkColumn(ctx, conn, "llm_provider_configurations", "last_verified_version", "integer", "YES", "NULL"))
+	results = append(results, checkColumn(ctx, conn, "llm_provider_configurations", "validation_details", "jsonb", "NO", "'{}'::jsonb"))
+	results = append(results, checkColumn(ctx, conn, "llm_provider_configurations", "model_catalog_updated_at", "timestamp with time zone", "YES", "NULL"))
+	results = append(results, checkColumn(ctx, conn, "llm_provider_models", "provider_id", "uuid", "NO", "NULL"))
+	results = append(results, checkColumn(ctx, conn, "llm_provider_models", "model_key", "character varying", "NO", "NULL"))
+	results = append(results, checkColumn(ctx, conn, "llm_provider_models", "source", "text", "NO", "NULL"))
+	results = append(results, checkColumn(ctx, conn, "llm_provider_models", "availability", "text", "NO", "NULL"))
+	results = append(results, checkColumn(ctx, conn, "workflow_connections", "last_verified_version", "integer", "YES", "NULL"))
+	results = append(results, checkColumn(ctx, conn, "workflow_connections", "validation_details", "jsonb", "NO", "'{}'::jsonb"))
+	results = append(results, checkColumn(ctx, conn, "workflow_configurations", "llm_strategy", "text", "NO", "'none'::text"))
+	results = append(results, checkColumn(ctx, conn, "workflow_configurations", "llm_provider_id", "uuid", "YES", "NULL"))
+	results = append(results, checkColumn(ctx, conn, "workflow_configurations", "llm_model", "character varying", "YES", "NULL"))
+	results = append(results, checkColumn(ctx, conn, "workflow_configurations", "last_verified_version", "integer", "YES", "NULL"))
+	results = append(results, checkColumn(ctx, conn, "workflow_configurations", "validation_details", "jsonb", "NO", "'{}'::jsonb"))
+	results = append(results, checkColumn(ctx, conn, "workflow_run_records", "failure_phase", "text", "YES", "NULL"))
+	results = append(results, checkColumn(ctx, conn, "workflow_run_records", "failure_code", "character varying", "YES", "NULL"))
+	results = append(results, checkColumn(ctx, conn, "workflow_run_records", "safe_error_message", "character varying", "YES", "NULL"))
+	results = append(results, checkColumn(ctx, conn, "workflow_run_records", "retryability", "text", "NO", "'not_retryable'::text"))
+	results = append(results, checkColumn(ctx, conn, "workflow_run_records", "retry_mode", "text", "YES", "NULL"))
+	results = append(results, checkColumn(ctx, conn, "workflow_run_records", "external_execution_id", "character varying", "YES", "NULL"))
+	results = append(results, checkColumn(ctx, conn, "workflow_run_records", "cancellation_requested_at", "timestamp with time zone", "YES", "NULL"))
+	results = append(results, checkColumn(ctx, conn, "workflow_run_records", "timed_out_at", "timestamp with time zone", "YES", "NULL"))
+	results = append(results, checkColumn(ctx, conn, "workflow_run_records", "binding_snapshot", "jsonb", "NO", "'{}'::jsonb"))
+	results = append(results, checkColumn(ctx, conn, "workflow_run_records", "connection_snapshot", "jsonb", "NO", "'{}'::jsonb"))
+	results = append(results, checkColumn(ctx, conn, "workflow_run_records", "llm_policy_snapshot", "jsonb", "NO", "'{}'::jsonb"))
+	for _, constraint := range []string{
+		"llm_provider_models_provider_model_key",
+		"llm_provider_configurations_verified_version_check",
+		"workflow_connections_verified_version_check",
+		"workflow_configurations_verified_version_check",
+		"workflow_configurations_llm_strategy_shape_check",
+		"workflow_run_records_retry_not_self_check",
+		"workflow_run_records_snapshot_shape_check",
+		"workflow_run_records_failure_shape_check",
+	} {
+		results = append(results, checkConstraintExists(ctx, conn, constraint))
+	}
+	for _, index := range []string{
+		"llm_provider_models_provider_availability_model_idx",
+		"workflow_configurations_stage_strategy_validation_enabled_idx",
+		"workflow_run_records_project_stage_status_created_idx",
+		"workflow_run_records_connection_execution_unique_idx",
+	} {
+		results = append(results, checkIndexExists(ctx, conn, index))
+	}
 
 	return results
 }
@@ -1047,38 +1095,40 @@ func defineDataChecks() []dataCheck {
 			SQL: `WITH invalid AS (
 				SELECT id, project_id, stage, status, finished_at
 				FROM workflow_run_records
-				WHERE status IN ('succeeded', 'failed') AND finished_at IS NULL
+				WHERE status IN ('succeeded', 'failed', 'timed_out') AND finished_at IS NULL
 			)
 			SELECT (SELECT COUNT(*) FROM invalid) AS cnt,
 			       id, project_id, stage, status
 			FROM invalid LIMIT 5`,
-			Description: "succeeded/failed workflow_run_records must have finished_at",
+			Description: "succeeded/failed/timed_out workflow_run_records must have finished_at",
 		},
 		{
 			ID:   "DC-STATUS-002",
 			Name: "workflow_run_records failed without error",
 			SQL: `WITH invalid AS (
-				SELECT id, project_id, stage, status, error_code, error_message
+				SELECT id, project_id, stage, status, failure_code, safe_error_message, error_code, error_message
 				FROM workflow_run_records
-				WHERE status = 'failed' AND (error_code IS NULL OR error_message IS NULL)
+				WHERE status IN ('failed', 'timed_out')
+				  AND (COALESCE(failure_code, error_code) IS NULL OR COALESCE(safe_error_message, error_message) IS NULL)
 			)
 			SELECT (SELECT COUNT(*) FROM invalid) AS cnt,
 			       id, project_id, stage, status
 			FROM invalid LIMIT 5`,
-			Description: "failed workflow_run_records must have error_code and error_message",
+			Description: "failed/timed_out workflow_run_records must have a stable failure code and safe message",
 		},
 		{
 			ID:   "DC-STATUS-003",
 			Name: "workflow_run_records succeeded with error",
 			SQL: `WITH invalid AS (
-				SELECT id, project_id, stage, status, error_code
+				SELECT id, project_id, stage, status, failure_code, error_code
 				FROM workflow_run_records
-				WHERE status <> 'failed' AND error_code IS NOT NULL
+				WHERE status NOT IN ('failed', 'timed_out')
+				  AND (failure_code IS NOT NULL OR safe_error_message IS NOT NULL OR error_code IS NOT NULL OR error_message IS NOT NULL OR error_details IS NOT NULL)
 			)
 			SELECT (SELECT COUNT(*) FROM invalid) AS cnt,
 			       id, project_id, stage, status, error_code
 			FROM invalid LIMIT 5`,
-			Description: "non-failed workflow_run_records must not have error_code",
+			Description: "non-failed workflow_run_records must not have failure fields",
 		},
 		{
 			ID:   "DC-STATUS-004",
@@ -1380,6 +1430,126 @@ func defineDataChecks() []dataCheck {
 			       id, run_id, event_type
 			FROM invalid LIMIT 5`,
 			Description: "workflow_run_events.created_at must not be before its run's created_at",
+		},
+
+		// === Iteration 19 integration persistence checks ===
+
+		{
+			ID:   "DC-I19-001",
+			Name: "workflow configuration LLM strategy shape",
+			SQL: `WITH invalid AS (
+				SELECT id, llm_strategy, llm_provider_id, llm_model
+				FROM workflow_configurations
+				WHERE llm_strategy NOT IN ('acf_managed', 'n8n_managed', 'none')
+				   OR (llm_strategy = 'acf_managed' AND (llm_provider_id IS NULL OR llm_model IS NULL OR btrim(llm_model) = ''))
+				   OR (llm_strategy IN ('n8n_managed', 'none') AND (llm_provider_id IS NOT NULL OR llm_model IS NOT NULL))
+			)
+			SELECT (SELECT COUNT(*) FROM invalid) AS cnt,
+			       id, llm_strategy, llm_provider_id, llm_model
+			FROM invalid LIMIT 5`,
+			Description: "workflow configurations must satisfy the frozen LLM strategy field combinations",
+		},
+		{
+			ID:   "DC-I19-002",
+			Name: "verified configuration version mismatch",
+			SQL: `WITH invalid AS (
+				SELECT 'llm_provider' AS kind, id, integration_status, version, last_verified_version
+				FROM llm_provider_configurations
+				WHERE (integration_status = 'verified' AND last_verified_version IS DISTINCT FROM version)
+				   OR (last_verified_version IS NOT NULL AND last_verified_version NOT BETWEEN 1 AND version)
+				UNION ALL
+				SELECT 'workflow_connection', id, integration_status, version, last_verified_version
+				FROM workflow_connections
+				WHERE (integration_status = 'verified' AND last_verified_version IS DISTINCT FROM version)
+				   OR (last_verified_version IS NOT NULL AND last_verified_version NOT BETWEEN 1 AND version)
+				UNION ALL
+				SELECT 'workflow_configuration', id, integration_status, version, last_verified_version
+				FROM workflow_configurations
+				WHERE (integration_status = 'verified' AND last_verified_version IS DISTINCT FROM version)
+				   OR (last_verified_version IS NOT NULL AND last_verified_version NOT BETWEEN 1 AND version)
+			)
+			SELECT (SELECT COUNT(*) FROM invalid) AS cnt,
+			       kind, id, integration_status, version, last_verified_version
+			FROM invalid LIMIT 5`,
+			Description: "verified records must point at their current version and all verified versions must be in range",
+		},
+		{
+			ID:   "DC-I19-003",
+			Name: "LLM model catalogue provider orphan",
+			SQL: `WITH invalid AS (
+				SELECT model.id, model.provider_id, model.model_key
+				FROM llm_provider_models model
+				LEFT JOIN llm_provider_configurations provider ON provider.id = model.provider_id
+				WHERE provider.id IS NULL
+			)
+			SELECT (SELECT COUNT(*) FROM invalid) AS cnt,
+			       id, provider_id, model_key
+			FROM invalid LIMIT 5`,
+			Description: "every model catalogue entry must reference an existing LLM provider",
+		},
+		{
+			ID:   "DC-I19-004",
+			Name: "workflow run failure state shape",
+			SQL: `WITH invalid AS (
+				SELECT id, project_id, status, failure_phase, failure_code, retryability
+				FROM workflow_run_records
+				WHERE (status IN ('failed', 'timed_out') AND (COALESCE(failure_code, error_code) IS NULL OR COALESCE(safe_error_message, error_message) IS NULL))
+				   OR (status NOT IN ('failed', 'timed_out') AND (failure_phase IS NOT NULL OR failure_code IS NOT NULL OR safe_error_message IS NOT NULL))
+				   OR failure_phase IS NOT NULL AND failure_phase NOT IN ('external_execution', 'output_validation', 'result_consumption', 'cancellation')
+				   OR retryability NOT IN ('runtime_retry', 'result_consumption_retry', 'not_retryable')
+			)
+			SELECT (SELECT COUNT(*) FROM invalid) AS cnt,
+			       id, project_id, status, failure_phase, failure_code, retryability
+			FROM invalid LIMIT 5`,
+			Description: "workflow run failure and retryability fields must match the runtime state",
+		},
+		{
+			ID:   "DC-I19-005",
+			Name: "workflow run retry chain mismatch",
+			SQL: `WITH invalid AS (
+				SELECT retry.id, retry.project_id, retry.stage, retry.retry_of_run_id, original.project_id AS original_project, original.stage AS original_stage
+				FROM workflow_run_records retry
+				LEFT JOIN workflow_run_records original ON original.id = retry.retry_of_run_id
+				WHERE retry.retry_of_run_id IS NOT NULL
+				  AND (original.id IS NULL OR retry.id = retry.retry_of_run_id OR retry.project_id <> original.project_id OR retry.stage <> original.stage OR retry.retry_mode IS NULL)
+			)
+			SELECT (SELECT COUNT(*) FROM invalid) AS cnt,
+			       id, project_id, stage, retry_of_run_id, original_project, original_stage
+			FROM invalid LIMIT 5`,
+			Description: "retry runs must reference a different run for the same project and stage and record their retry mode",
+		},
+		{
+			ID:   "DC-I19-006",
+			Name: "workflow run snapshot safety and shape",
+			SQL: `WITH invalid AS (
+				SELECT id, project_id, stage
+				FROM workflow_run_records
+				WHERE jsonb_typeof(binding_snapshot) <> 'object'
+				   OR jsonb_typeof(connection_snapshot) <> 'object'
+				   OR jsonb_typeof(llm_policy_snapshot) <> 'object'
+				   OR (binding_snapshot::text || connection_snapshot::text || llm_policy_snapshot::text)
+				      ~* ('"(password|secret|credential|authorization|cookie|api[_-]?key|access[_-]?token|ref' || 'resh[_-]?token)"[[:space:]]*:')
+			)
+			SELECT (SELECT COUNT(*) FROM invalid) AS cnt,
+			       id, project_id, stage
+			FROM invalid LIMIT 5`,
+			Description: "workflow run snapshots must be JSON objects without secret-bearing values",
+		},
+		{
+			ID:   "DC-I19-007",
+			Name: "workflow run cancellation and timeout timestamps",
+			SQL: `WITH invalid AS (
+				SELECT id, project_id, status, cancellation_requested_at, cancelled_at, timed_out_at, finished_at
+				FROM workflow_run_records
+				WHERE (status = 'cancelling' AND cancellation_requested_at IS NULL)
+				   OR (status = 'cancelled' AND cancelled_at IS NULL)
+				   OR (status = 'timed_out' AND (timed_out_at IS NULL OR finished_at IS NULL))
+				   OR (timed_out_at IS NOT NULL AND status <> 'timed_out')
+			)
+			SELECT (SELECT COUNT(*) FROM invalid) AS cnt,
+			       id, project_id, status, cancellation_requested_at, cancelled_at, timed_out_at, finished_at
+			FROM invalid LIMIT 5`,
+			Description: "cancelling, cancelled, and timed_out runs must carry their matching timestamps",
 		},
 	}
 

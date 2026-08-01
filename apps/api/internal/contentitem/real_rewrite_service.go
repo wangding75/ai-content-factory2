@@ -378,8 +378,8 @@ func (s *RealRewriteService) runnable(ctx context.Context, projectID uuid.UUID) 
 	connection, err := s.configs.GetConnection(ctx, workflow.ConnectionID)
 	if errors.Is(err, globalconfig.ErrNotFound) { return binding, workflow, connection, ErrRewriteNotConfigured }
 	if err != nil { return binding, workflow, connection, err }
-	if !workflow.Enabled || workflow.IntegrationStatus != "connected" ||
-		!connection.Enabled || connection.IntegrationStatus != "connected" ||
+	if !workflow.Enabled || workflow.IntegrationStatus != "verified" ||
+		!connection.Enabled || connection.IntegrationStatus != "verified" ||
 		!containsString(workflow.ApplicableStages, "rewrite") ||
 		workflow.InputContractVersion != "rewrite.input.v1" ||
 		workflow.OutputContractVersion != "rewrite.output.v1" {
@@ -406,8 +406,8 @@ func runnableRewriteForCreate(ctx context.Context, tx pgx.Tx, projectID uuid.UUI
 	connection, err := globalconfig.GetConnectionForShare(ctx, tx, workflow.ConnectionID)
 	if errors.Is(err, globalconfig.ErrNotFound) { return binding, workflow, connection, ErrRewriteNotConfigured }
 	if err != nil { return binding, workflow, connection, err }
-	if !workflow.Enabled || workflow.IntegrationStatus != "connected" ||
-		!connection.Enabled || connection.IntegrationStatus != "connected" ||
+	if !workflow.Enabled || workflow.IntegrationStatus != "verified" ||
+		!connection.Enabled || connection.IntegrationStatus != "verified" ||
 		!containsString(workflow.ApplicableStages, "rewrite") ||
 		workflow.InputContractVersion != "rewrite.input.v1" ||
 		workflow.OutputContractVersion != "rewrite.output.v1" {

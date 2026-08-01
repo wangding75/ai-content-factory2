@@ -57,16 +57,20 @@ func NewService(pool *pgxpool.Pool, encryptionKey string) (*Service, error) {
 }
 
 type Common struct {
-	ID                uuid.UUID  `json:"id"`
-	Name              string     `json:"name"`
-	IntegrationStatus string     `json:"integrationStatus"`
-	Enabled           bool       `json:"enabled"`
-	LastVerifiedAt    *time.Time `json:"lastVerifiedAt"`
-	LastErrorCode     *string    `json:"lastErrorCode"`
-	LastErrorMessage  *string    `json:"lastErrorMessage"`
-	Version           int        `json:"version"`
-	CreatedAt         time.Time  `json:"createdAt"`
-	UpdatedAt         time.Time  `json:"updatedAt"`
+	ID                uuid.UUID       `json:"id"`
+	Name              string          `json:"name"`
+	IntegrationStatus string          `json:"integrationStatus"`
+	ValidationStatus  string          `json:"validationStatus"`
+	Enabled           bool            `json:"enabled"`
+	Executable        bool            `json:"executable"`
+	VerifiedVersion   *int            `json:"verifiedVersion"`
+	ValidationDetails json.RawMessage `json:"validationDetails"`
+	LastVerifiedAt    *time.Time      `json:"lastVerifiedAt"`
+	LastErrorCode     *string         `json:"lastErrorCode"`
+	LastErrorMessage  *string         `json:"lastErrorMessage"`
+	Version           int             `json:"version"`
+	CreatedAt         time.Time       `json:"createdAt"`
+	UpdatedAt         time.Time       `json:"updatedAt"`
 }
 type Provider struct {
 	Common
@@ -99,6 +103,19 @@ type Workflow struct {
 	OutputContractVersion string          `json:"outputContractVersion"`
 	DefaultParameters     json.RawMessage `json:"defaultParameters"`
 	Note                  *string         `json:"note"`
+	LlmStrategy           string          `json:"llmStrategy"`
+	LlmProviderID         *uuid.UUID      `json:"llmProviderId"`
+	LlmModel              *string         `json:"llmModel"`
+}
+type ProviderModel struct {
+	ID           uuid.UUID  `json:"id"`
+	ProviderID   uuid.UUID  `json:"providerId"`
+	ModelKey     string     `json:"modelName"`
+	Source       string     `json:"source"`
+	Availability string     `json:"availability"`
+	LastSeenAt   *time.Time `json:"lastSeenAt"`
+	CreatedAt    time.Time  `json:"createdAt"`
+	UpdatedAt    time.Time  `json:"updatedAt"`
 }
 type Platform struct {
 	Common
@@ -151,6 +168,9 @@ type WorkflowCreate struct {
 	InputContractVersion, OutputContractVersion string
 	DefaultParameters                           json.RawMessage
 	Note                                        *string
+	LlmStrategy                                 string
+	LlmProviderID                               *uuid.UUID
+	LlmModel                                    *string
 }
 type WorkflowUpdate struct {
 	ExpectedVersion                             int
@@ -161,6 +181,9 @@ type WorkflowUpdate struct {
 	InputContractVersion, OutputContractVersion *string
 	DefaultParameters                           json.RawMessage
 	Note                                        **string
+	LlmStrategy                                 *string
+	LlmProviderID                               **uuid.UUID
+	LlmModel                                    **string
 }
 type PlatformCreate struct {
 	Name, PlatformType, AccountIdentifier string
@@ -218,7 +241,7 @@ func ProviderTypes() []ProviderType     { return providerTypes }
 func ConnectionTypes() []ConnectionType { return connectionTypes }
 func PlatformTypes() []PlatformType     { return platformTypes }
 func ValidIntegrationStatus(v string) bool {
-	return v == "not_connected" || v == "connected" || v == "unverified" || v == "verified" || v == "failed"
+	return v == "unverified" || v == "verifying" || v == "verified" || v == "failed" || v == "stale"
 }
 func ValidType(path, value string) bool {
 	for _, x := range providerTypes {
@@ -292,7 +315,7 @@ func (s *Service) CreateProvider(ctx context.Context, r ProviderCreate, key stri
 		if e != nil {
 			return nil, e
 		}
-		row := tx.QueryRow(ctx, "INSERT INTO llm_provider_configurations(id,name,provider_type,base_url,default_model,encrypted_secret,secret_fingerprint,timeout_seconds) VALUES($1,$2,$3,$4,$5,$6,$7,$8) RETURNING id,name,provider_type,base_url,default_model,timeout_seconds,encrypted_secret IS NOT NULL,secret_fingerprint,integration_status,enabled,last_verified_at,last_error_code,last_error_message,version,created_at,updated_at", uuid.New(), r.Name, r.ProviderType, r.BaseURL, r.DefaultModel, enc, fp, r.TimeoutSeconds)
+		row := tx.QueryRow(ctx, "INSERT INTO llm_provider_configurations(id,name,provider_type,base_url,default_model,encrypted_secret,secret_fingerprint,timeout_seconds) VALUES($1,$2,$3,$4,$5,$6,$7,$8) RETURNING "+providerColumns, uuid.New(), r.Name, r.ProviderType, r.BaseURL, r.DefaultModel, enc, fp, r.TimeoutSeconds)
 		if e = scanProvider(row, &out); e != nil {
 			return nil, e
 		}
@@ -309,7 +332,7 @@ func (s *Service) CreateProvider(ctx context.Context, r ProviderCreate, key stri
 }
 func (s *Service) GetProvider(ctx context.Context, id uuid.UUID) (Provider, error) {
 	var x Provider
-	e := scanProvider(s.pool.QueryRow(ctx, "SELECT id,name,provider_type,base_url,default_model,timeout_seconds,encrypted_secret IS NOT NULL,secret_fingerprint,integration_status,enabled,last_verified_at,last_error_code,last_error_message,version,created_at,updated_at FROM llm_provider_configurations WHERE id=$1", id), &x)
+	e := scanProvider(s.pool.QueryRow(ctx, "SELECT "+providerColumns+" FROM llm_provider_configurations WHERE id=$1", id), &x)
 	return x, notFound(e)
 }
 func (s *Service) ListProviders(ctx context.Context, o ListOptions) ([]Provider, int, error) {
@@ -319,7 +342,7 @@ func (s *Service) ListProviders(ctx context.Context, o ListOptions) ([]Provider,
 		return nil, 0, e
 	}
 	args = append(args, o.Limit, o.Offset)
-	rows, e := s.pool.Query(ctx, "SELECT id,name,provider_type,base_url,default_model,timeout_seconds,encrypted_secret IS NOT NULL,secret_fingerprint,integration_status,enabled,last_verified_at,last_error_code,last_error_message,version,created_at,updated_at FROM llm_provider_configurations"+q+fmt.Sprintf(" ORDER BY updated_at DESC,id ASC LIMIT $%d OFFSET $%d", len(args)-1, len(args)), args...)
+	rows, e := s.pool.Query(ctx, "SELECT "+providerColumns+" FROM llm_provider_configurations"+q+fmt.Sprintf(" ORDER BY updated_at DESC,id ASC LIMIT $%d OFFSET $%d", len(args)-1, len(args)), args...)
 	if e != nil {
 		return nil, 0, e
 	}
@@ -333,6 +356,40 @@ func (s *Service) ListProviders(ctx context.Context, o ListOptions) ([]Provider,
 		xs = append(xs, x)
 	}
 	return xs, total, rows.Err()
+}
+func (s *Service) ListProviderModels(ctx context.Context, providerID uuid.UUID) ([]ProviderModel, error) {
+	rows, err := s.pool.Query(ctx, "SELECT id,provider_id,model_key,source,availability,last_seen_at,created_at,updated_at FROM llm_provider_models WHERE provider_id=$1 ORDER BY model_key ASC,id ASC", providerID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	models := []ProviderModel{}
+	for rows.Next() {
+		var model ProviderModel
+		if err = rows.Scan(&model.ID, &model.ProviderID, &model.ModelKey, &model.Source, &model.Availability, &model.LastSeenAt, &model.CreatedAt, &model.UpdatedAt); err != nil {
+			return nil, err
+		}
+		models = append(models, model)
+	}
+	return models, rows.Err()
+}
+func (s *Service) UpsertProviderModel(ctx context.Context, model ProviderModel) (ProviderModel, error) {
+	if model.ProviderID == uuid.Nil || strings.TrimSpace(model.ModelKey) == "" || len(model.ModelKey) > 200 ||
+		(model.Source != "discovered" && model.Source != "manual") ||
+		(model.Availability != "available" && model.Availability != "unavailable") {
+		return ProviderModel{}, ErrValidation
+	}
+	if model.ID == uuid.Nil {
+		model.ID = uuid.New()
+	}
+	var out ProviderModel
+	err := s.pool.QueryRow(ctx, `INSERT INTO llm_provider_models(id,provider_id,model_key,source,availability,last_seen_at)
+		VALUES($1,$2,$3,$4,$5,$6)
+		ON CONFLICT(provider_id,model_key) DO UPDATE SET source=EXCLUDED.source,availability=EXCLUDED.availability,last_seen_at=EXCLUDED.last_seen_at,updated_at=NOW()
+		RETURNING id,provider_id,model_key,source,availability,last_seen_at,created_at,updated_at`,
+		model.ID, model.ProviderID, model.ModelKey, model.Source, model.Availability, model.LastSeenAt,
+	).Scan(&out.ID, &out.ProviderID, &out.ModelKey, &out.Source, &out.Availability, &out.LastSeenAt, &out.CreatedAt, &out.UpdatedAt)
+	return out, err
 }
 func (s *Service) UpdateProvider(ctx context.Context, id uuid.UUID, r ProviderUpdate) (Provider, error) {
 	tx, err := s.pool.Begin(ctx)
@@ -354,7 +411,7 @@ func (s *Service) updateProviderTx(ctx context.Context, tx pgx.Tx, id uuid.UUID,
 		return Provider{}, ErrValidation
 	}
 	var cur Provider
-	e := scanProvider(tx.QueryRow(ctx, "SELECT id,name,provider_type,base_url,default_model,timeout_seconds,encrypted_secret IS NOT NULL,secret_fingerprint,integration_status,enabled,last_verified_at,last_error_code,last_error_message,version,created_at,updated_at FROM llm_provider_configurations WHERE id=$1", id), &cur)
+	e := scanProvider(tx.QueryRow(ctx, "SELECT "+providerColumns+" FROM llm_provider_configurations WHERE id=$1", id), &cur)
 	e = notFound(e)
 	if e != nil {
 		return Provider{}, e
@@ -391,7 +448,7 @@ func (s *Service) updateProviderTx(ctx context.Context, tx pgx.Tx, id uuid.UUID,
 		fp = nil
 	}
 	var out Provider
-	e = scanProvider(tx.QueryRow(ctx, "UPDATE llm_provider_configurations SET name=$2,base_url=$3,default_model=$4,timeout_seconds=$5,encrypted_secret=CASE WHEN $6::text IS NULL THEN encrypted_secret ELSE NULLIF($6::text,'') END,secret_fingerprint=CASE WHEN $6::text IS NULL THEN secret_fingerprint ELSE $7 END,version=version+1,updated_at=NOW() WHERE id=$1 AND version=$8 RETURNING id,name,provider_type,base_url,default_model,timeout_seconds,encrypted_secret IS NOT NULL,secret_fingerprint,integration_status,enabled,last_verified_at,last_error_code,last_error_message,version,created_at,updated_at", id, cur.Name, cur.BaseURL, cur.DefaultModel, cur.TimeoutSeconds, enc, fp, r.ExpectedVersion), &out)
+	e = scanProvider(tx.QueryRow(ctx, "UPDATE llm_provider_configurations SET name=$2,base_url=$3,default_model=$4,timeout_seconds=$5,encrypted_secret=CASE WHEN $6::text IS NULL THEN encrypted_secret ELSE NULLIF($6::text,'') END,secret_fingerprint=CASE WHEN $6::text IS NULL THEN secret_fingerprint ELSE $7 END,version=version+1,integration_status='stale',validation_details='{}'::jsonb,updated_at=NOW() WHERE id=$1 AND version=$8 RETURNING "+providerColumns, id, cur.Name, cur.BaseURL, cur.DefaultModel, cur.TimeoutSeconds, enc, fp, r.ExpectedVersion), &out)
 	if errors.Is(e, pgx.ErrNoRows) {
 		return out, s.updateMissingOrConflict(ctx, tx, "llm_provider_configurations", id)
 	}
@@ -547,7 +604,7 @@ func (s *Service) updateConnectionTx(ctx context.Context, tx pgx.Tx, id uuid.UUI
 		fp = nil
 	}
 	var out Connection
-	e = scanConnection(tx.QueryRow(ctx, "UPDATE workflow_connections SET name=$2,base_url=$3,auth_type=$4,timeout_seconds=$5,type_config=$6,encrypted_credential=CASE WHEN $7::text IS NULL THEN encrypted_credential ELSE NULLIF($7::text,'') END,credential_fingerprint=CASE WHEN $7::text IS NULL THEN credential_fingerprint ELSE $8 END,version=version+1,updated_at=NOW() WHERE id=$1 AND version=$9 RETURNING "+connectionColumns, id, cur.Name, cur.BaseURL, cur.AuthType, cur.TimeoutSeconds, cur.TypeConfig, enc, fp, r.ExpectedVersion), &out)
+	e = scanConnection(tx.QueryRow(ctx, "UPDATE workflow_connections SET name=$2,base_url=$3,auth_type=$4,timeout_seconds=$5,type_config=$6,encrypted_credential=CASE WHEN $7::text IS NULL THEN encrypted_credential ELSE NULLIF($7::text,'') END,credential_fingerprint=CASE WHEN $7::text IS NULL THEN credential_fingerprint ELSE $8 END,version=version+1,integration_status='stale',validation_details='{}'::jsonb,updated_at=NOW() WHERE id=$1 AND version=$9 RETURNING "+connectionColumns, id, cur.Name, cur.BaseURL, cur.AuthType, cur.TimeoutSeconds, cur.TypeConfig, enc, fp, r.ExpectedVersion), &out)
 	if errors.Is(e, pgx.ErrNoRows) {
 		return out, s.updateMissingOrConflict(ctx, tx, "workflow_connections", id)
 	}
@@ -632,7 +689,7 @@ func (s *Service) VerifyConnection(ctx context.Context, id uuid.UUID, expectedVe
 	if err = json.Unmarshal(body, &out); err != nil {
 		return Connection{}, err
 	}
-	if !out.Enabled || out.IntegrationStatus != "connected" {
+	if !out.Enabled || out.IntegrationStatus != "verified" {
 		return out, ErrVerification
 	}
 	return out, nil
@@ -654,7 +711,7 @@ func (s *Service) DisableConnection(ctx context.Context, id uuid.UUID, expectedV
 		}
 		out := current
 		if current.Enabled {
-			err = scanConnection(tx.QueryRow(ctx, "UPDATE workflow_connections SET enabled=false,version=version+1,updated_at=NOW() WHERE id=$1 AND version=$2 RETURNING "+connectionColumns, id, expectedVersion), &out)
+			err = scanConnection(tx.QueryRow(ctx, "UPDATE workflow_connections SET enabled=false,last_verified_version=CASE WHEN integration_status='verified' THEN version+1 ELSE last_verified_version END,version=version+1,updated_at=NOW() WHERE id=$1 AND version=$2 RETURNING "+connectionColumns, id, expectedVersion), &out)
 			if err != nil {
 				return nil, err
 			}
@@ -672,7 +729,8 @@ func (s *Service) DisableConnection(ctx context.Context, id uuid.UUID, expectedV
 	return out, err
 }
 func (s *Service) CreateWorkflow(ctx context.Context, r WorkflowCreate, key string) (Workflow, error) {
-	if !validWorkflow(r.Name, r.ApplicableStages, r.TypeConfig, r.InputContractVersion, r.OutputContractVersion, r.DefaultParameters) || !validNote(r.Note) {
+	r.LlmStrategy = normalizedLlmStrategy(r.LlmStrategy)
+	if !validWorkflow(r.Name, r.ApplicableStages, r.TypeConfig, r.InputContractVersion, r.OutputContractVersion, r.DefaultParameters) || !validNote(r.Note) || !validLlmPolicy(r.LlmStrategy, r.LlmProviderID, r.LlmModel) {
 		return Workflow{}, ErrValidation
 	}
 	if _, e := s.GetConnection(ctx, r.ConnectionID); e != nil {
@@ -680,7 +738,7 @@ func (s *Service) CreateWorkflow(ctx context.Context, r WorkflowCreate, key stri
 	}
 	body, err := s.idempotent(ctx, "workflow-configuration:create", key, r, 201, func(tx pgx.Tx) (json.RawMessage, error) {
 		id := uuid.New()
-		_, e := tx.Exec(ctx, "INSERT INTO workflow_configurations(id,name,connection_id,applicable_stages,type_config,input_contract_version,output_contract_version,default_parameters,note) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9)", id, r.Name, r.ConnectionID, mustJSON(r.ApplicableStages), r.TypeConfig, r.InputContractVersion, r.OutputContractVersion, defaultJSON(r.DefaultParameters), r.Note)
+		_, e := tx.Exec(ctx, "INSERT INTO workflow_configurations(id,name,connection_id,applicable_stages,type_config,input_contract_version,output_contract_version,default_parameters,note,llm_strategy,llm_provider_id,llm_model) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)", id, r.Name, r.ConnectionID, mustJSON(r.ApplicableStages), r.TypeConfig, r.InputContractVersion, r.OutputContractVersion, defaultJSON(r.DefaultParameters), r.Note, r.LlmStrategy, r.LlmProviderID, r.LlmModel)
 		if e != nil {
 			return nil, e
 		}
@@ -826,7 +884,7 @@ func (s *Service) UpdateWorkflow(ctx context.Context, id uuid.UUID, r WorkflowUp
 	return out, nil
 }
 func (s *Service) updateWorkflowTx(ctx context.Context, tx pgx.Tx, id uuid.UUID, r WorkflowUpdate) (Workflow, error) {
-	if r.ExpectedVersion < 1 || (r.Name == nil && r.ConnectionID == nil && r.ApplicableStages == nil && r.TypeConfig == nil && r.InputContractVersion == nil && r.OutputContractVersion == nil && r.DefaultParameters == nil && r.Note == nil) {
+	if r.ExpectedVersion < 1 || (r.Name == nil && r.ConnectionID == nil && r.ApplicableStages == nil && r.TypeConfig == nil && r.InputContractVersion == nil && r.OutputContractVersion == nil && r.DefaultParameters == nil && r.Note == nil && r.LlmStrategy == nil && r.LlmProviderID == nil && r.LlmModel == nil) {
 		return Workflow{}, ErrValidation
 	}
 	var cur Workflow
@@ -865,10 +923,19 @@ func (s *Service) updateWorkflowTx(ctx context.Context, tx pgx.Tx, id uuid.UUID,
 	if r.Note != nil {
 		cur.Note = *r.Note
 	}
-	if !validWorkflow(cur.Name, cur.ApplicableStages, cur.TypeConfig, cur.InputContractVersion, cur.OutputContractVersion, cur.DefaultParameters) || !validNote(cur.Note) {
+	if r.LlmStrategy != nil {
+		cur.LlmStrategy = normalizedLlmStrategy(*r.LlmStrategy)
+	}
+	if r.LlmProviderID != nil {
+		cur.LlmProviderID = *r.LlmProviderID
+	}
+	if r.LlmModel != nil {
+		cur.LlmModel = *r.LlmModel
+	}
+	if !validWorkflow(cur.Name, cur.ApplicableStages, cur.TypeConfig, cur.InputContractVersion, cur.OutputContractVersion, cur.DefaultParameters) || !validNote(cur.Note) || !validLlmPolicy(cur.LlmStrategy, cur.LlmProviderID, cur.LlmModel) {
 		return Workflow{}, ErrValidation
 	}
-	tag, e := tx.Exec(ctx, "UPDATE workflow_configurations SET name=$2,connection_id=$3,applicable_stages=$4,type_config=$5,input_contract_version=$6,output_contract_version=$7,default_parameters=$8,note=$9,version=version+1,updated_at=NOW() WHERE id=$1 AND version=$10", id, cur.Name, cur.ConnectionID, mustJSON(cur.ApplicableStages), cur.TypeConfig, cur.InputContractVersion, cur.OutputContractVersion, cur.DefaultParameters, cur.Note, r.ExpectedVersion)
+	tag, e := tx.Exec(ctx, "UPDATE workflow_configurations SET name=$2,connection_id=$3,applicable_stages=$4,type_config=$5,input_contract_version=$6,output_contract_version=$7,default_parameters=$8,note=$9,llm_strategy=$10,llm_provider_id=$11,llm_model=$12,integration_status='stale',validation_details='{}'::jsonb,version=version+1,updated_at=NOW() WHERE id=$1 AND version=$13", id, cur.Name, cur.ConnectionID, mustJSON(cur.ApplicableStages), cur.TypeConfig, cur.InputContractVersion, cur.OutputContractVersion, cur.DefaultParameters, cur.Note, cur.LlmStrategy, cur.LlmProviderID, cur.LlmModel, r.ExpectedVersion)
 	if e != nil {
 		return Workflow{}, unique(e)
 	}
@@ -927,7 +994,7 @@ func (s *Service) VerifyWorkflowConfiguration(ctx context.Context, id uuid.UUID,
 		if connectionErr != nil {
 			return Workflow{}, connectionErr
 		}
-		if !connection.Enabled || connection.IntegrationStatus != "connected" {
+		if !connection.Enabled || connection.IntegrationStatus != "verified" {
 			return Workflow{}, ErrConnectionNotReady
 		}
 		probeErr := s.probeWorkflow(ctx, connection, workflow)
@@ -943,7 +1010,7 @@ func (s *Service) VerifyWorkflowConfiguration(ctx context.Context, id uuid.UUID,
 			if err != nil {
 				return nil, err
 			}
-			if !connection.Enabled || connection.IntegrationStatus != "connected" {
+			if !connection.Enabled || connection.IntegrationStatus != "verified" {
 				return nil, ErrConnectionNotReady
 			}
 			out, err := s.setWorkflowVerificationTx(ctx, tx, workflow, probeErr == nil)
@@ -967,7 +1034,7 @@ func (s *Service) VerifyWorkflowConfiguration(ctx context.Context, id uuid.UUID,
 	if err = json.Unmarshal(body, &out); err != nil {
 		return Workflow{}, err
 	}
-	if !out.Enabled || out.IntegrationStatus != "connected" {
+	if !out.Enabled || out.IntegrationStatus != "verified" {
 		return out, ErrVerification
 	}
 	return out, nil
@@ -987,7 +1054,7 @@ func (s *Service) DisableWorkflowConfiguration(ctx context.Context, id uuid.UUID
 		}
 		out := current
 		if current.Enabled {
-			tag, updateErr := tx.Exec(ctx, "UPDATE workflow_configurations SET enabled=false,version=version+1,updated_at=NOW() WHERE id=$1 AND version=$2", id, expectedVersion)
+			tag, updateErr := tx.Exec(ctx, "UPDATE workflow_configurations SET enabled=false,last_verified_version=CASE WHEN integration_status='verified' THEN version+1 ELSE last_verified_version END,version=version+1,updated_at=NOW() WHERE id=$1 AND version=$2", id, expectedVersion)
 			if updateErr != nil {
 				return nil, updateErr
 			}
@@ -1133,6 +1200,22 @@ func validWorkflow(n string, st []string, c json.RawMessage, i, o string, p json
 	}
 	return true
 }
+func normalizedLlmStrategy(value string) string {
+	if strings.TrimSpace(value) == "" {
+		return "none"
+	}
+	return value
+}
+func validLlmPolicy(strategy string, providerID *uuid.UUID, model *string) bool {
+	switch strategy {
+	case "acf_managed":
+		return providerID != nil && *providerID != uuid.Nil && model != nil && strings.TrimSpace(*model) != "" && len(*model) <= 200
+	case "n8n_managed", "none":
+		return providerID == nil && model == nil
+	default:
+		return false
+	}
+}
 func validNote(v *string) bool { return v == nil || len(*v) <= 5000 }
 func validPlatform(n, t, a string, e *string, auth string, timeout int, c json.RawMessage) bool {
 	var config map[string]any
@@ -1176,12 +1259,12 @@ func (s *Service) getWorkflowTx(ctx context.Context, tx pgx.Tx, id uuid.UUID) (W
 }
 
 func (s *Service) setConnectionVerificationTx(ctx context.Context, tx pgx.Tx, current Connection, success bool) (Connection, error) {
-	status, enabled, code, message := "not_connected", false, "verification_failed", "The connection could not be verified."
+	status, enabled, code, message := "failed", false, "verification_failed", "The connection could not be verified."
 	if success {
-		status, enabled, code, message = "connected", true, "", ""
+		status, enabled, code, message = "verified", true, "", ""
 	}
 	var out Connection
-	err := scanConnection(tx.QueryRow(ctx, "UPDATE workflow_connections SET integration_status=$2,enabled=$3,last_verified_at=CASE WHEN $3 THEN NOW() ELSE NULL END,last_error_code=NULLIF($4,''),last_error_message=NULLIF($5,''),version=version+1,updated_at=NOW() WHERE id=$1 AND version=$6 RETURNING "+connectionColumns, current.ID, status, enabled, code, message, current.Version), &out)
+	err := scanConnection(tx.QueryRow(ctx, "UPDATE workflow_connections SET integration_status=$2,enabled=$3,last_verified_version=CASE WHEN $3 THEN version+1 ELSE last_verified_version END,validation_details='{}'::jsonb,last_verified_at=CASE WHEN $3 THEN NOW() ELSE last_verified_at END,last_error_code=NULLIF($4,''),last_error_message=NULLIF($5,''),version=version+1,updated_at=NOW() WHERE id=$1 AND version=$6 RETURNING "+connectionColumns, current.ID, status, enabled, code, message, current.Version), &out)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return out, s.updateMissingOrConflict(ctx, tx, "workflow_connections", current.ID)
 	}
@@ -1189,11 +1272,11 @@ func (s *Service) setConnectionVerificationTx(ctx context.Context, tx pgx.Tx, cu
 }
 
 func (s *Service) setWorkflowVerificationTx(ctx context.Context, tx pgx.Tx, current Workflow, success bool) (Workflow, error) {
-	status, enabled, code, message := "not_connected", false, "verification_failed", "The workflow endpoint could not be verified."
+	status, enabled, code, message := "failed", false, "verification_failed", "The workflow endpoint could not be verified."
 	if success {
-		status, enabled, code, message = "connected", true, "", ""
+		status, enabled, code, message = "verified", true, "", ""
 	}
-	tag, err := tx.Exec(ctx, "UPDATE workflow_configurations SET integration_status=$2,enabled=$3,last_verified_at=CASE WHEN $3 THEN NOW() ELSE NULL END,last_error_code=NULLIF($4,''),last_error_message=NULLIF($5,''),version=version+1,updated_at=NOW() WHERE id=$1 AND version=$6", current.ID, status, enabled, code, message, current.Version)
+	tag, err := tx.Exec(ctx, "UPDATE workflow_configurations SET integration_status=$2,enabled=$3,last_verified_version=CASE WHEN $3 THEN version+1 ELSE last_verified_version END,validation_details='{}'::jsonb,last_verified_at=CASE WHEN $3 THEN NOW() ELSE last_verified_at END,last_error_code=NULLIF($4,''),last_error_message=NULLIF($5,''),version=version+1,updated_at=NOW() WHERE id=$1 AND version=$6", current.ID, status, enabled, code, message, current.Version)
 	if err != nil {
 		return Workflow{}, err
 	}
@@ -1515,25 +1598,37 @@ func notFound(e error) error {
 
 type scanner interface{ Scan(...any) error }
 
+const providerColumns = "id,name,provider_type,base_url,default_model,timeout_seconds,encrypted_secret IS NOT NULL,secret_fingerprint,integration_status,enabled,last_verified_version,validation_details,last_verified_at,last_error_code,last_error_message,version,created_at,updated_at"
+
 func scanProvider(r scanner, x *Provider) error {
-	return r.Scan(&x.ID, &x.Name, &x.ProviderType, &x.BaseURL, &x.DefaultModel, &x.TimeoutSeconds, &x.HasSecret, &x.SecretFingerprint, &x.IntegrationStatus, &x.Enabled, &x.LastVerifiedAt, &x.LastErrorCode, &x.LastErrorMessage, &x.Version, &x.CreatedAt, &x.UpdatedAt)
+	err := r.Scan(&x.ID, &x.Name, &x.ProviderType, &x.BaseURL, &x.DefaultModel, &x.TimeoutSeconds, &x.HasSecret, &x.SecretFingerprint, &x.IntegrationStatus, &x.Enabled, &x.VerifiedVersion, &x.ValidationDetails, &x.LastVerifiedAt, &x.LastErrorCode, &x.LastErrorMessage, &x.Version, &x.CreatedAt, &x.UpdatedAt)
+	finalizeCommon(&x.Common)
+	return err
 }
 
-const connectionColumns = "id,name,connection_type,base_url,auth_type,timeout_seconds,type_config,encrypted_credential IS NOT NULL,credential_fingerprint,integration_status,enabled,last_verified_at,last_error_code,last_error_message,version,created_at,updated_at"
+const connectionColumns = "id,name,connection_type,base_url,auth_type,timeout_seconds,type_config,encrypted_credential IS NOT NULL,credential_fingerprint,integration_status,enabled,last_verified_version,validation_details,last_verified_at,last_error_code,last_error_message,version,created_at,updated_at"
 
 func scanConnection(r scanner, x *Connection) error {
-	return r.Scan(&x.ID, &x.Name, &x.ConnectionType, &x.BaseURL, &x.AuthType, &x.TimeoutSeconds, &x.TypeConfig, &x.HasCredential, &x.CredentialFingerprint, &x.IntegrationStatus, &x.Enabled, &x.LastVerifiedAt, &x.LastErrorCode, &x.LastErrorMessage, &x.Version, &x.CreatedAt, &x.UpdatedAt)
+	err := r.Scan(&x.ID, &x.Name, &x.ConnectionType, &x.BaseURL, &x.AuthType, &x.TimeoutSeconds, &x.TypeConfig, &x.HasCredential, &x.CredentialFingerprint, &x.IntegrationStatus, &x.Enabled, &x.VerifiedVersion, &x.ValidationDetails, &x.LastVerifiedAt, &x.LastErrorCode, &x.LastErrorMessage, &x.Version, &x.CreatedAt, &x.UpdatedAt)
+	finalizeCommon(&x.Common)
+	return err
 }
 
-const workflowColumns = "w.id,w.name,w.connection_id,c.name,c.connection_type,'n8n',w.applicable_stages,w.type_config,w.input_contract_version,w.output_contract_version,w.default_parameters,w.note,w.integration_status,w.enabled,w.last_verified_at,w.last_error_code,w.last_error_message,w.version,w.created_at,w.updated_at"
+const workflowColumns = "w.id,w.name,w.connection_id,c.name,c.connection_type,'n8n',w.applicable_stages,w.type_config,w.input_contract_version,w.output_contract_version,w.default_parameters,w.note,w.llm_strategy,w.llm_provider_id,w.llm_model,w.integration_status,w.enabled,w.last_verified_version,w.validation_details,w.last_verified_at,w.last_error_code,w.last_error_message,w.version,w.created_at,w.updated_at"
 
 func scanWorkflow(r scanner, x *Workflow) error {
 	var raw json.RawMessage
-	e := r.Scan(&x.ID, &x.Name, &x.ConnectionID, &x.ConnectionName, &x.ConnectionType, &x.WorkflowType, &raw, &x.TypeConfig, &x.InputContractVersion, &x.OutputContractVersion, &x.DefaultParameters, &x.Note, &x.IntegrationStatus, &x.Enabled, &x.LastVerifiedAt, &x.LastErrorCode, &x.LastErrorMessage, &x.Version, &x.CreatedAt, &x.UpdatedAt)
+	e := r.Scan(&x.ID, &x.Name, &x.ConnectionID, &x.ConnectionName, &x.ConnectionType, &x.WorkflowType, &raw, &x.TypeConfig, &x.InputContractVersion, &x.OutputContractVersion, &x.DefaultParameters, &x.Note, &x.LlmStrategy, &x.LlmProviderID, &x.LlmModel, &x.IntegrationStatus, &x.Enabled, &x.VerifiedVersion, &x.ValidationDetails, &x.LastVerifiedAt, &x.LastErrorCode, &x.LastErrorMessage, &x.Version, &x.CreatedAt, &x.UpdatedAt)
 	if e == nil {
 		e = json.Unmarshal(raw, &x.ApplicableStages)
 	}
+	finalizeCommon(&x.Common)
 	return e
+}
+
+func finalizeCommon(x *Common) {
+	x.ValidationStatus = x.IntegrationStatus
+	x.Executable = x.Enabled && x.IntegrationStatus == "verified" && x.VerifiedVersion != nil && *x.VerifiedVersion == x.Version
 }
 
 const platformColumns = "id,name,platform_type,account_identifier,endpoint_url,auth_type,timeout_seconds,type_config,note,encrypted_credential IS NOT NULL,credential_fingerprint,integration_status,enabled,last_verified_at,last_error_code,last_error_message,version,created_at,updated_at"

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"os"
+	"reflect"
 	"strings"
 	"sync"
 	"testing"
@@ -85,25 +86,81 @@ func preflightCommand(projectID uuid.UUID, nonce string) CreateRunPreparation {
 }
 
 func TestPreflightTokenSequentialSingleConsumption(t *testing.T) {
-	db, ctx := openDB(t); repo := NewPostgresRepository(db); projectID, workflowID := fixture(t, ctx, db); service := contentGenerationService(t, repo, projectID, workflowID); nonce := uuid.NewString()
-	first, err := service.CreateRunForPreflightToken(ctx, projectID, nonce, "first", preflightCommand(projectID, nonce)); if err != nil { t.Fatal(err) }
-	if _, err = service.CreateRunForPreflightToken(ctx, projectID, nonce, "second", preflightCommand(projectID, nonce)); !errors.Is(err, ErrPreflightTokenConsumed) { t.Fatalf("second use = %v", err) }
-	var count int; if err = db.QueryRow(ctx, "SELECT count(*) FROM workflow_run_records WHERE id=$1", first.ID).Scan(&count); err != nil || count != 1 { t.Fatalf("runs=%d err=%v", count, err) }
-	var payload string; if err = db.QueryRow(ctx, "SELECT input_payload::text FROM workflow_run_records WHERE id=$1", first.ID).Scan(&payload); err != nil || strings.Contains(payload, "eyJ") { t.Fatalf("token leaked or query failed: %q %v", payload, err) }
+	db, ctx := openDB(t)
+	repo := NewPostgresRepository(db)
+	projectID, workflowID := fixture(t, ctx, db)
+	service := contentGenerationService(t, repo, projectID, workflowID)
+	nonce := uuid.NewString()
+	first, err := service.CreateRunForPreflightToken(ctx, projectID, nonce, "first", preflightCommand(projectID, nonce))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err = service.CreateRunForPreflightToken(ctx, projectID, nonce, "second", preflightCommand(projectID, nonce)); !errors.Is(err, ErrPreflightTokenConsumed) {
+		t.Fatalf("second use = %v", err)
+	}
+	var count int
+	if err = db.QueryRow(ctx, "SELECT count(*) FROM workflow_run_records WHERE id=$1", first.ID).Scan(&count); err != nil || count != 1 {
+		t.Fatalf("runs=%d err=%v", count, err)
+	}
+	var payload string
+	if err = db.QueryRow(ctx, "SELECT input_payload::text FROM workflow_run_records WHERE id=$1", first.ID).Scan(&payload); err != nil || strings.Contains(payload, "eyJ") {
+		t.Fatalf("token leaked or query failed: %q %v", payload, err)
+	}
 }
 
 func TestPreflightTokenConcurrentSingleConsumption(t *testing.T) {
-	db, ctx := openDB(t); repo := NewPostgresRepository(db); projectID, workflowID := fixture(t, ctx, db); service := contentGenerationService(t, repo, projectID, workflowID); nonce := uuid.NewString(); start := make(chan struct{}); errs := make(chan error, 2)
-	for i := 0; i < 2; i++ { go func(i int) { <-start; _, err := service.CreateRunForPreflightToken(ctx, projectID, nonce, "key-"+string(rune('a'+i)), preflightCommand(projectID, nonce)); errs <- err }(i) }; close(start)
-	success := 0; for i := 0; i < 2; i++ { if err := <-errs; err == nil { success++ } else if !errors.Is(err, ErrPreflightTokenConsumed) { t.Fatalf("concurrent use = %v", err) } }; var count int; if err := db.QueryRow(ctx, "SELECT count(*) FROM workflow_run_records WHERE input_payload->>'preflightTokenNonce'=$1", nonce).Scan(&count); err != nil || success != 1 || count != 1 { t.Fatalf("success=%d runs=%d err=%v", success, count, err) }
+	db, ctx := openDB(t)
+	repo := NewPostgresRepository(db)
+	projectID, workflowID := fixture(t, ctx, db)
+	service := contentGenerationService(t, repo, projectID, workflowID)
+	nonce := uuid.NewString()
+	start := make(chan struct{})
+	errs := make(chan error, 2)
+	for i := 0; i < 2; i++ {
+		go func(i int) {
+			<-start
+			_, err := service.CreateRunForPreflightToken(ctx, projectID, nonce, "key-"+string(rune('a'+i)), preflightCommand(projectID, nonce))
+			errs <- err
+		}(i)
+	}
+	close(start)
+	success := 0
+	for i := 0; i < 2; i++ {
+		if err := <-errs; err == nil {
+			success++
+		} else if !errors.Is(err, ErrPreflightTokenConsumed) {
+			t.Fatalf("concurrent use = %v", err)
+		}
+	}
+	var count int
+	if err := db.QueryRow(ctx, "SELECT count(*) FROM workflow_run_records WHERE input_payload->>'preflightTokenNonce'=$1", nonce).Scan(&count); err != nil || success != 1 || count != 1 {
+		t.Fatalf("success=%d runs=%d err=%v", success, count, err)
+	}
 }
 
 func TestPreflightTokenConsumptionSurvivesMoreThan100HistoricalRuns(t *testing.T) {
-	db, ctx := openDB(t); repo := NewPostgresRepository(db); projectID, workflowID := fixture(t, ctx, db); service := contentGenerationService(t, repo, projectID, workflowID); nonce := uuid.NewString()
-	if _, err := service.CreateRunForPreflightToken(ctx, projectID, nonce, "first", preflightCommand(projectID, nonce)); err != nil { t.Fatal(err) }
-	for i := 0; i < 101; i++ { n := uuid.NewString(); if _, err := service.CreateRunForPreflightToken(ctx, projectID, n, "history-"+n, preflightCommand(projectID, n)); err != nil { t.Fatal(err) } }
-	if _, err := service.CreateRunForPreflightToken(ctx, projectID, nonce, "again", preflightCommand(projectID, nonce)); !errors.Is(err, ErrPreflightTokenConsumed) { t.Fatalf("reused nonce=%v", err) }
-	var count int; _ = db.QueryRow(ctx, "SELECT count(*) FROM workflow_run_records WHERE input_payload->>'preflightTokenNonce'=$1", nonce).Scan(&count); if count != 1 { t.Fatalf("runs=%d", count) }
+	db, ctx := openDB(t)
+	repo := NewPostgresRepository(db)
+	projectID, workflowID := fixture(t, ctx, db)
+	service := contentGenerationService(t, repo, projectID, workflowID)
+	nonce := uuid.NewString()
+	if _, err := service.CreateRunForPreflightToken(ctx, projectID, nonce, "first", preflightCommand(projectID, nonce)); err != nil {
+		t.Fatal(err)
+	}
+	for i := 0; i < 101; i++ {
+		n := uuid.NewString()
+		if _, err := service.CreateRunForPreflightToken(ctx, projectID, n, "history-"+n, preflightCommand(projectID, n)); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if _, err := service.CreateRunForPreflightToken(ctx, projectID, nonce, "again", preflightCommand(projectID, nonce)); !errors.Is(err, ErrPreflightTokenConsumed) {
+		t.Fatalf("reused nonce=%v", err)
+	}
+	var count int
+	_ = db.QueryRow(ctx, "SELECT count(*) FROM workflow_run_records WHERE input_payload->>'preflightTokenNonce'=$1", nonce).Scan(&count)
+	if count != 1 {
+		t.Fatalf("runs=%d", count)
+	}
 }
 func TestRepositoryCRUDEventsAndSummary(t *testing.T) {
 	db, ctx := openDB(t)
@@ -147,6 +204,106 @@ func TestRepositoryCRUDEventsAndSummary(t *testing.T) {
 	if summary.TotalRuns != 1 || summary.RunningCount != 0 || summary.LatestFailure == nil || summary.LatestRun == nil || len(summary.RecentRuns) != 1 {
 		t.Fatalf("summary=%+v", summary)
 	}
+}
+
+func TestRepositoryIteration19SnapshotAndRetryRoundTrip(t *testing.T) {
+	db, ctx := openDB(t)
+	repo := NewPostgresRepository(db)
+	projectID, workflowID := fixture(t, ctx, db)
+
+	original, err := repo.Create(ctx, newRun(t, projectID, workflowID, "WR-I19-ORIGINAL"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	retry, err := New(
+		uuid.New(),
+		projectID,
+		workflowID,
+		testRunNumber(projectID, "WR-I19-RETRY"),
+		"review",
+		"retry",
+		json.RawMessage(`{"connection":{"id":"connection-safe","type":"n8n"},"configurationVersion":7}`),
+		json.RawMessage(`{"content":"safe"}`),
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	retryOf := original.ID
+	retryMode := "original_configuration"
+	externalID := "execution-safe-19"
+	retry.RetryOfRunID = &retryOf
+	retry.RetryMode = &retryMode
+	retry.ExternalExecutionID = &externalID
+	retry.Retryability = "runtime_retry"
+	retry.BindingSnapshot = json.RawMessage(`{"bindingId":"binding-safe","bindingVersion":3,"stage":"review"}`)
+	retry.ConnectionSnapshot = json.RawMessage(`{"id":"connection-safe","version":4,"credentialFingerprint":"sha256:safe"}`)
+	retry.LlmPolicySnapshot = json.RawMessage(`{"strategy":"acf_managed","providerId":"provider-safe","providerVersion":5,"model":"fixture-model","secretFingerprint":"sha256:safe"}`)
+
+	created, err := repo.Create(ctx, retry)
+	if err != nil {
+		t.Fatal(err)
+	}
+	got, err := repo.GetByID(ctx, created.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got.RetryOfRunID == nil || *got.RetryOfRunID != original.ID || got.RetryMode == nil || *got.RetryMode != retryMode || got.ExternalExecutionID == nil || *got.ExternalExecutionID != externalID || got.Retryability != "runtime_retry" {
+		t.Fatalf("retry metadata did not round-trip: %+v", got)
+	}
+	for name, pair := range map[string][2]json.RawMessage{
+		"binding":    {retry.BindingSnapshot, got.BindingSnapshot},
+		"connection": {retry.ConnectionSnapshot, got.ConnectionSnapshot},
+		"llm policy": {retry.LlmPolicySnapshot, got.LlmPolicySnapshot},
+	} {
+		if !jsonEqual(pair[0], pair[1]) {
+			t.Errorf("%s snapshot did not round-trip: want=%s got=%s", name, pair[0], pair[1])
+		}
+	}
+
+	selfRetry := newRun(t, projectID, workflowID, "WR-I19-SELF")
+	selfRetry.RetryOfRunID = &selfRetry.ID
+	if _, err = repo.Create(ctx, selfRetry); err == nil {
+		t.Fatal("self-referencing retry_of_run_id unexpectedly succeeded")
+	}
+}
+
+func TestRepositoryIteration19TimedOutFailureRoundTrip(t *testing.T) {
+	db, ctx := openDB(t)
+	repo := NewPostgresRepository(db)
+	projectID, workflowID := fixture(t, ctx, db)
+
+	run := newRun(t, projectID, workflowID, "WR-I19-TIMED-OUT")
+	failurePhase := "external_execution"
+	failureCode := "execution_timeout"
+	safeMessage := "The external workflow timed out."
+	startedAt := time.Now().UTC().Add(-time.Minute)
+	finishedAt := time.Now().UTC()
+	run.Status = StatusTimedOut
+	run.FailurePhase = &failurePhase
+	run.FailureCode = &failureCode
+	run.SafeErrorMessage = &safeMessage
+	run.Retryability = "runtime_retry"
+	run.StartedAt = &startedAt
+	run.FinishedAt = &finishedAt
+	run.TimedOutAt = &finishedAt
+
+	created, err := repo.Create(ctx, run)
+	if err != nil {
+		t.Fatal(err)
+	}
+	got, err := repo.GetByID(ctx, created.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got.Status != StatusTimedOut || got.FailurePhase == nil || *got.FailurePhase != failurePhase || got.FailureCode == nil || *got.FailureCode != failureCode || got.SafeErrorMessage == nil || *got.SafeErrorMessage != safeMessage || got.Retryability != "runtime_retry" || got.TimedOutAt == nil {
+		t.Fatalf("timed-out failure metadata did not round-trip: %+v", got)
+	}
+}
+
+func jsonEqual(left, right json.RawMessage) bool {
+	var leftValue any
+	var rightValue any
+	return json.Unmarshal(left, &leftValue) == nil && json.Unmarshal(right, &rightValue) == nil && reflect.DeepEqual(leftValue, rightValue)
 }
 
 func TestRepositoryListQueryTimeAndPaginationFilters(t *testing.T) {
@@ -301,25 +458,39 @@ func TestRepositoryAtomicRunAndEventWrites(t *testing.T) {
 }
 
 func TestRepositoryIdempotencyResultFailureRollsBackRunEventAndRecord(t *testing.T) {
-	db,ctx:=openDB(t)
-	repo:=NewPostgresRepository(db)
-	projectID,workflowID:=fixture(t,ctx,db)
-	scope,key,hash:="createContentGenerationRun:"+projectID.String(),"idem-write-failure",strings.Repeat("a",64)
-	run:=newRun(t,projectID,workflowID,"WR-IDEM-ROLLBACK")
-	_,err:=repo.ExecuteIdempotent(ctx,scope,key,hash,func(store Store)(WorkflowRun,error){
-		created,_,createErr:=store.CreateWithInitialEvent(ctx,run,Event{ID:uuid.New(),RunID:run.ID,EventType:"queued",Status:StatusQueued,Payload:json.RawMessage(`{}`),CreatedAt:time.Now().UTC()})
-		if createErr!=nil{return WorkflowRun{},createErr}
-		transactional,ok:=store.(interface{Transaction() pgx.Tx})
-		if !ok{return WorkflowRun{},ErrValidation}
-		_,createErr=idempotency.NewPostgresRepositoryTx(transactional.Transaction()).Create(ctx,idempotency.Record{ID:uuid.New(),Scope:scope,Key:key,RequestHash:strings.Repeat("b",64),ResponseStatus:201,ResponseBody:json.RawMessage(`{}`)})
-		return created,createErr
+	db, ctx := openDB(t)
+	repo := NewPostgresRepository(db)
+	projectID, workflowID := fixture(t, ctx, db)
+	scope, key, hash := "createContentGenerationRun:"+projectID.String(), "idem-write-failure", strings.Repeat("a", 64)
+	run := newRun(t, projectID, workflowID, "WR-IDEM-ROLLBACK")
+	_, err := repo.ExecuteIdempotent(ctx, scope, key, hash, func(store Store) (WorkflowRun, error) {
+		created, _, createErr := store.CreateWithInitialEvent(ctx, run, Event{ID: uuid.New(), RunID: run.ID, EventType: "queued", Status: StatusQueued, Payload: json.RawMessage(`{}`), CreatedAt: time.Now().UTC()})
+		if createErr != nil {
+			return WorkflowRun{}, createErr
+		}
+		transactional, ok := store.(interface{ Transaction() pgx.Tx })
+		if !ok {
+			return WorkflowRun{}, ErrValidation
+		}
+		_, createErr = idempotency.NewPostgresRepositoryTx(transactional.Transaction()).Create(ctx, idempotency.Record{ID: uuid.New(), Scope: scope, Key: key, RequestHash: strings.Repeat("b", 64), ResponseStatus: 201, ResponseBody: json.RawMessage(`{}`)})
+		return created, createErr
 	})
-	if err==nil{t.Fatal("expected idempotency result write failure")}
-	var runs,events,records int
-	if e:=db.QueryRow(ctx,"SELECT count(*) FROM workflow_run_records WHERE id=$1",run.ID).Scan(&runs);e!=nil{t.Fatal(e)}
-	if e:=db.QueryRow(ctx,"SELECT count(*) FROM workflow_run_events WHERE run_id=$1",run.ID).Scan(&events);e!=nil{t.Fatal(e)}
-	if e:=db.QueryRow(ctx,"SELECT count(*) FROM idempotency_records WHERE scope=$1 AND idempotency_key=$2",scope,key).Scan(&records);e!=nil{t.Fatal(e)}
-	if runs!=0||events!=0||records!=0{t.Fatalf("runs=%d events=%d records=%d",runs,events,records)}
+	if err == nil {
+		t.Fatal("expected idempotency result write failure")
+	}
+	var runs, events, records int
+	if e := db.QueryRow(ctx, "SELECT count(*) FROM workflow_run_records WHERE id=$1", run.ID).Scan(&runs); e != nil {
+		t.Fatal(e)
+	}
+	if e := db.QueryRow(ctx, "SELECT count(*) FROM workflow_run_events WHERE run_id=$1", run.ID).Scan(&events); e != nil {
+		t.Fatal(e)
+	}
+	if e := db.QueryRow(ctx, "SELECT count(*) FROM idempotency_records WHERE scope=$1 AND idempotency_key=$2", scope, key).Scan(&records); e != nil {
+		t.Fatal(e)
+	}
+	if runs != 0 || events != 0 || records != 0 {
+		t.Fatalf("runs=%d events=%d records=%d", runs, events, records)
+	}
 }
 
 func TestRepositoryListEventsHasStableCreatedAtIDOrder(t *testing.T) {
@@ -412,7 +583,9 @@ func TestWorkflowRunPersistentIdempotencyReplayConcurrencyAndRestart(t *testing.
 	if runs != 2 || events != 1 {
 		t.Fatalf("runs=%d events=%d", runs, events)
 	}
-	if _, err = first.CancelRun(ctx, RunCommand{RunID: results[0].ID, ExpectedVersion: results[0].Version, IdempotencyKey: "workflow-run-concurrent-cancel"}); err != nil { t.Fatal(err) }
+	if _, err = first.CancelRun(ctx, RunCommand{RunID: results[0].ID, ExpectedVersion: results[0].Version, IdempotencyKey: "workflow-run-concurrent-cancel"}); err != nil {
+		t.Fatal(err)
+	}
 	retried, err := first.RetryRun(ctx, RetryCommand{RunID: created.ID, ExpectedVersion: cancelReplay.Version, UseCurrentConfiguration: false, InputOverride: json.RawMessage(`{"override":true}`), IdempotencyKey: "workflow-run-retry"})
 	if err != nil {
 		t.Fatal(err)

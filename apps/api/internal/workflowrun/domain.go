@@ -12,21 +12,23 @@ import (
 type Status string
 
 const (
-	StatusQueued    Status = "queued"
-	StatusRunning   Status = "running"
-	StatusSucceeded Status = "succeeded"
-	StatusFailed    Status = "failed"
-	StatusCancelled Status = "cancelled"
-	EventTypeResultConsumed           = "result_consumed"
-	EventTypeResultConsumptionFailed  = "result_consumption_failed"
-	EventTypeOutputValidationFailed   = "output_validation_failed"
+	StatusQueued                     Status = "queued"
+	StatusRunning                    Status = "running"
+	StatusCancelling                 Status = "cancelling"
+	StatusSucceeded                  Status = "succeeded"
+	StatusFailed                     Status = "failed"
+	StatusCancelled                  Status = "cancelled"
+	StatusTimedOut                   Status = "timed_out"
+	EventTypeResultConsumed                 = "result_consumed"
+	EventTypeResultConsumptionFailed        = "result_consumption_failed"
+	EventTypeOutputValidationFailed         = "output_validation_failed"
 )
 
 var (
-	ErrValidation        = errors.New("workflow run validation failed")
-	ErrInvalidTransition = errors.New("invalid workflow run status transition")
-	ErrNotFound          = errors.New("workflow run not found")
-	ErrVersionConflict   = errors.New("workflow run version conflict")
+	ErrValidation             = errors.New("workflow run validation failed")
+	ErrInvalidTransition      = errors.New("invalid workflow run status transition")
+	ErrNotFound               = errors.New("workflow run not found")
+	ErrVersionConflict        = errors.New("workflow run version conflict")
 	ErrPreflightTokenConsumed = errors.New("workflow run preflight token consumed")
 )
 
@@ -37,10 +39,39 @@ type Failure struct {
 }
 
 type WorkflowRun struct {
-	ID uuid.UUID `json:"id"`; RunNumber string `json:"runNumber"`; ProjectID uuid.UUID `json:"projectId"`; Stage string `json:"stage"`; WorkflowConfigurationID uuid.UUID `json:"workflowConfigurationId"`; TriggerSource string `json:"triggerSource"`; Status Status `json:"status"`
-	SubjectType *string `json:"subjectType"`; SubjectID *uuid.UUID `json:"subjectId"`
-	ConfigurationSnapshot json.RawMessage `json:"configurationSnapshot"`; InputPayload json.RawMessage `json:"inputPayload"`; OutputPayload json.RawMessage `json:"outputPayload"`; ErrorCode *string `json:"errorCode"`; ErrorMessage *string `json:"errorMessage"`; ErrorDetails json.RawMessage `json:"errorDetails"`; RetryOfRunID *uuid.UUID `json:"retryOfRunId"`
-	StartedAt *time.Time `json:"startedAt"`; FinishedAt *time.Time `json:"finishedAt"`; CancelledAt *time.Time `json:"cancelledAt"`; CreatedAt time.Time `json:"createdAt"`; UpdatedAt time.Time `json:"updatedAt"`; Version int `json:"version"`
+	ID                      uuid.UUID       `json:"id"`
+	RunNumber               string          `json:"runNumber"`
+	ProjectID               uuid.UUID       `json:"projectId"`
+	Stage                   string          `json:"stage"`
+	WorkflowConfigurationID uuid.UUID       `json:"workflowConfigurationId"`
+	TriggerSource           string          `json:"triggerSource"`
+	Status                  Status          `json:"status"`
+	SubjectType             *string         `json:"subjectType"`
+	SubjectID               *uuid.UUID      `json:"subjectId"`
+	ConfigurationSnapshot   json.RawMessage `json:"configurationSnapshot"`
+	InputPayload            json.RawMessage `json:"inputPayload"`
+	OutputPayload           json.RawMessage `json:"outputPayload"`
+	ErrorCode               *string         `json:"errorCode"`
+	ErrorMessage            *string         `json:"errorMessage"`
+	ErrorDetails            json.RawMessage `json:"errorDetails"`
+	RetryOfRunID            *uuid.UUID      `json:"retryOfRunId"`
+	FailurePhase            *string         `json:"failurePhase"`
+	FailureCode             *string         `json:"failureCode"`
+	SafeErrorMessage        *string         `json:"safeErrorMessage"`
+	Retryability            string          `json:"retryability"`
+	RetryMode               *string         `json:"retryMode"`
+	ExternalExecutionID     *string         `json:"externalExecutionId"`
+	CancellationRequestedAt *time.Time      `json:"cancellationRequestedAt"`
+	TimedOutAt              *time.Time      `json:"timedOutAt"`
+	BindingSnapshot         json.RawMessage `json:"bindingSnapshot"`
+	ConnectionSnapshot      json.RawMessage `json:"connectionSnapshot"`
+	LlmPolicySnapshot       json.RawMessage `json:"llmPolicySnapshot"`
+	StartedAt               *time.Time      `json:"startedAt"`
+	FinishedAt              *time.Time      `json:"finishedAt"`
+	CancelledAt             *time.Time      `json:"cancelledAt"`
+	CreatedAt               time.Time       `json:"createdAt"`
+	UpdatedAt               time.Time       `json:"updatedAt"`
+	Version                 int             `json:"version"`
 }
 
 type Event struct {
@@ -54,7 +85,7 @@ type Event struct {
 
 func New(id, projectID, workflowConfigurationID uuid.UUID, runNumber, stage, triggerSource string, snapshot, input json.RawMessage) (WorkflowRun, error) {
 	now := time.Now().UTC()
-	run := WorkflowRun{ID: id, RunNumber: runNumber, ProjectID: projectID, Stage: stage, WorkflowConfigurationID: workflowConfigurationID, TriggerSource: triggerSource, Status: StatusQueued, ConfigurationSnapshot: RedactJSON(snapshot), InputPayload: RedactJSON(input), CreatedAt: now, UpdatedAt: now, Version: 1}
+	run := WorkflowRun{ID: id, RunNumber: runNumber, ProjectID: projectID, Stage: stage, WorkflowConfigurationID: workflowConfigurationID, TriggerSource: triggerSource, Status: StatusQueued, ConfigurationSnapshot: RedactJSON(snapshot), InputPayload: RedactJSON(input), Retryability: "not_retryable", BindingSnapshot: json.RawMessage(`{}`), ConnectionSnapshot: json.RawMessage(`{}`), LlmPolicySnapshot: json.RawMessage(`{}`), CreatedAt: now, UpdatedAt: now, Version: 1}
 	if err := run.validate(); err != nil {
 		return WorkflowRun{}, err
 	}
@@ -111,7 +142,7 @@ func canTransition(from, to Status) bool {
 }
 
 func (r WorkflowRun) validate() error {
-	if r.ID == uuid.Nil || r.ProjectID == uuid.Nil || r.WorkflowConfigurationID == uuid.Nil || strings.TrimSpace(r.RunNumber) == "" || strings.TrimSpace(r.Stage) == "" || !validTriggerSource(r.TriggerSource) || r.Version < 1 || !validJSONObject(r.ConfigurationSnapshot) || !validJSONObject(r.InputPayload) {
+	if r.ID == uuid.Nil || r.ProjectID == uuid.Nil || r.WorkflowConfigurationID == uuid.Nil || strings.TrimSpace(r.RunNumber) == "" || strings.TrimSpace(r.Stage) == "" || !validTriggerSource(r.TriggerSource) || r.Version < 1 || !validJSONObject(r.ConfigurationSnapshot) || !validJSONObject(r.InputPayload) || len(r.BindingSnapshot) > 0 && !validJSONObject(r.BindingSnapshot) || len(r.ConnectionSnapshot) > 0 && !validJSONObject(r.ConnectionSnapshot) || len(r.LlmPolicySnapshot) > 0 && !validJSONObject(r.LlmPolicySnapshot) {
 		return ErrValidation
 	}
 	if (r.SubjectType == nil) != (r.SubjectID == nil) || (r.SubjectType != nil && (strings.TrimSpace(*r.SubjectType) == "" || *r.SubjectID == uuid.Nil)) {
@@ -120,10 +151,26 @@ func (r WorkflowRun) validate() error {
 	if r.OutputPayload != nil && !validJSONObject(r.OutputPayload) || r.ErrorDetails != nil && !validJSONObject(r.ErrorDetails) {
 		return ErrValidation
 	}
-	if r.Status == StatusFailed && (r.ErrorCode == nil || r.ErrorMessage == nil || strings.TrimSpace(*r.ErrorCode) == "" || strings.TrimSpace(*r.ErrorMessage) == "") {
+	if r.Status == StatusFailed || r.Status == StatusTimedOut {
+		failureCode := r.FailureCode
+		if failureCode == nil {
+			failureCode = r.ErrorCode
+		}
+		safeMessage := r.SafeErrorMessage
+		if safeMessage == nil {
+			safeMessage = r.ErrorMessage
+		}
+		if failureCode == nil || safeMessage == nil || strings.TrimSpace(*failureCode) == "" || strings.TrimSpace(*safeMessage) == "" {
+			return ErrValidation
+		}
+	}
+	if r.Status != StatusQueued && r.Status != StatusRunning && r.Status != StatusCancelling && r.Status != StatusSucceeded && r.Status != StatusFailed && r.Status != StatusCancelled && r.Status != StatusTimedOut {
 		return ErrValidation
 	}
-	if r.Status != StatusQueued && r.Status != StatusRunning && r.Status != StatusSucceeded && r.Status != StatusFailed && r.Status != StatusCancelled {
+	if r.Retryability != "" && r.Retryability != "runtime_retry" && r.Retryability != "result_consumption_retry" && r.Retryability != "not_retryable" {
+		return ErrValidation
+	}
+	if r.RetryMode != nil && *r.RetryMode != "current_configuration" && *r.RetryMode != "original_configuration" {
 		return ErrValidation
 	}
 	return nil
@@ -136,6 +183,7 @@ func validTriggerSource(value string) bool {
 func validJSONObject(value json.RawMessage) bool {
 	return len(value) > 0 && json.Valid(value) && strings.HasPrefix(strings.TrimSpace(string(value)), "{")
 }
+
 // RedactJSON removes secret-bearing values before data becomes part of a durable run record.
 func RedactJSON(value json.RawMessage) json.RawMessage {
 	if !validJSONObject(value) {

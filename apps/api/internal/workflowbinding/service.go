@@ -71,6 +71,10 @@ func (s *Service) ListStages(ctx context.Context, projectID uuid.UUID) ([]StageR
 				return nil, err
 			}
 			read.WorkflowConfigurationSummary = &summary
+			read.Executable = summary.Executable
+			if !summary.Executable {
+				read.IneligibilityReasons = []string{"workflow_configuration_not_executable"}
+			}
 		}
 		out = append(out, read)
 	}
@@ -239,7 +243,7 @@ func (s *Service) PutWithIdempotency(ctx context.Context, projectID uuid.UUID, s
 		if res.Created {
 			status = 201
 		}
-		payload := stageDTO(StageRead{Stage: res.Stage, Bound: true, Binding: &res.Binding, WorkflowConfigurationSummary: &res.Summary})
+		payload := stageDTO(StageRead{Stage: res.Stage, Bound: true, Executable: res.Summary.Executable, Binding: &res.Binding, WorkflowConfigurationSummary: &res.Summary})
 		body, mErr := marshalJSON(payload)
 		return body, status, mErr
 	})
@@ -348,11 +352,11 @@ func (s *Service) createTx(ctx context.Context, tx pgx.Tx, repo *Repository, pro
 		return PutResult{}, err
 	}
 	if err := s.audit(ctx, tx, "project_workflow_binding.create", created.ID, map[string]any{
-		"projectId":                projectID.String(),
-		"stage":                    stage.String(),
-		"bindingId":                created.ID.String(),
+		"projectId":               projectID.String(),
+		"stage":                   stage.String(),
+		"bindingId":               created.ID.String(),
 		"workflowConfigurationId": wfID.String(),
-		"newVersion":               created.Version,
+		"newVersion":              created.Version,
 	}); err != nil {
 		return PutResult{}, err
 	}
@@ -365,13 +369,13 @@ func (s *Service) replaceTx(ctx context.Context, tx pgx.Tx, repo *Repository, ex
 		return PutResult{}, err
 	}
 	if err := s.audit(ctx, tx, "project_workflow_binding.replace", updated.ID, map[string]any{
-		"projectId":                   existing.ProjectID.String(),
-		"stage":                       existing.Stage.String(),
-		"bindingId":                   updated.ID.String(),
+		"projectId":                  existing.ProjectID.String(),
+		"stage":                      existing.Stage.String(),
+		"bindingId":                  updated.ID.String(),
 		"oldWorkflowConfigurationId": existing.WorkflowConfigurationID.String(),
 		"newWorkflowConfigurationId": wfID.String(),
-		"oldVersion":                  existing.Version,
-		"newVersion":                  updated.Version,
+		"oldVersion":                 existing.Version,
+		"newVersion":                 updated.Version,
 	}); err != nil {
 		return PutResult{}, err
 	}
@@ -396,11 +400,11 @@ func (s *Service) deleteTx(ctx context.Context, tx pgx.Tx, projectID uuid.UUID, 
 		return UnbindResult{}, err
 	}
 	if err := s.audit(ctx, tx, "project_workflow_binding.remove", removed.ID, map[string]any{
-		"projectId":                   projectID.String(),
-		"stage":                       stage.String(),
-		"bindingId":                   removed.ID.String(),
+		"projectId":                  projectID.String(),
+		"stage":                      stage.String(),
+		"bindingId":                  removed.ID.String(),
 		"oldWorkflowConfigurationId": removed.WorkflowConfigurationID.String(),
-		"oldVersion":                  removed.Version,
+		"oldVersion":                 removed.Version,
 	}); err != nil {
 		return UnbindResult{}, err
 	}
@@ -512,7 +516,14 @@ func putResultFromDTO(dto WorkflowBindingStageDTO) (PutResult, int) {
 			DefaultParameters:     dto.WorkflowConfigurationSummary.DefaultParameters,
 			Note:                  dto.WorkflowConfigurationSummary.Note,
 			IntegrationStatus:     dto.WorkflowConfigurationSummary.IntegrationStatus,
+			ValidationStatus:      dto.WorkflowConfigurationSummary.ValidationStatus,
 			Enabled:               dto.WorkflowConfigurationSummary.Enabled,
+			Executable:            dto.WorkflowConfigurationSummary.Executable,
+			VerifiedVersion:       dto.WorkflowConfigurationSummary.VerifiedVersion,
+			ValidationDetails:     dto.WorkflowConfigurationSummary.ValidationDetails,
+			LlmStrategy:           dto.WorkflowConfigurationSummary.LlmStrategy,
+			LlmProviderID:         dto.WorkflowConfigurationSummary.LlmProviderID,
+			LlmModel:              dto.WorkflowConfigurationSummary.LlmModel,
 			LastVerifiedAt:        dto.WorkflowConfigurationSummary.LastVerifiedAt,
 			LastErrorCode:         dto.WorkflowConfigurationSummary.LastErrorCode,
 			LastErrorMessage:      dto.WorkflowConfigurationSummary.LastErrorMessage,
@@ -550,13 +561,13 @@ func deleteScope(actor string, projectID uuid.UUID, stage WorkflowBindingStage) 
 // with any differing request facet is rejected.
 func putFingerprint(actor string, projectID uuid.UUID, stage WorkflowBindingStage, req PutRequest) string {
 	return safeHashJSON(struct {
-		Actor                    string     `json:"actor"`
-		Method                   string     `json:"method"`
-		ProjectID                uuid.UUID  `json:"projectId"`
-		Stage                    string     `json:"stage"`
-		WorkflowConfigurationID  uuid.UUID  `json:"workflowConfigurationId"`
-		ExpectedVersion          *int       `json:"expectedVersion"`
-		Operation                string     `json:"operation"`
+		Actor                   string    `json:"actor"`
+		Method                  string    `json:"method"`
+		ProjectID               uuid.UUID `json:"projectId"`
+		Stage                   string    `json:"stage"`
+		WorkflowConfigurationID uuid.UUID `json:"workflowConfigurationId"`
+		ExpectedVersion         *int      `json:"expectedVersion"`
+		Operation               string    `json:"operation"`
 	}{actor, "PUT", projectID, stage.String(), req.WorkflowConfigurationID, req.ExpectedVersion, "bind"})
 }
 

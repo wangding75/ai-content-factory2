@@ -529,6 +529,28 @@ func TestDataCheckCount(t *testing.T) {
 	}
 }
 
+func TestIteration19DataChecksAreRegistered(t *testing.T) {
+	want := map[string]bool{
+		"DC-I19-001": false,
+		"DC-I19-002": false,
+		"DC-I19-003": false,
+		"DC-I19-004": false,
+		"DC-I19-005": false,
+		"DC-I19-006": false,
+		"DC-I19-007": false,
+	}
+	for _, check := range defineDataChecks() {
+		if _, ok := want[check.ID]; ok {
+			want[check.ID] = true
+		}
+	}
+	for id, found := range want {
+		if !found {
+			t.Errorf("Iteration 19 data check %s is not registered", id)
+		}
+	}
+}
+
 func TestDataCheckCategories(t *testing.T) {
 	checks := defineDataChecks()
 	categories := map[string]int{}

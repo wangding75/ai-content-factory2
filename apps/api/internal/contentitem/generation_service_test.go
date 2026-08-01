@@ -59,8 +59,8 @@ func TestGenerationSummaryErrorPropagation(t *testing.T) {
 	repo, ctx, _, item, spy := generationFixture(t)
 	binding := workflowbinding.ProjectWorkflowBinding{ID: uuid.New(), ProjectID: item.Detail.Item.ProjectID, Stage: workflowbinding.StageContentGeneration, WorkflowConfigurationID: uuid.New(), Version: 1}
 	configs := generationSummaryConfigs{
-		workflow: globalconfig.Workflow{Common: globalconfig.Common{ID: binding.WorkflowConfigurationID, Enabled: true, IntegrationStatus: "connected", Version: 1}, ConnectionID: uuid.New()},
-		connection: globalconfig.Connection{Common: globalconfig.Common{ID: uuid.New(), Enabled: true, IntegrationStatus: "connected", Version: 1}},
+		workflow: globalconfig.Workflow{Common: globalconfig.Common{ID: binding.WorkflowConfigurationID, Enabled: true, IntegrationStatus: "verified", Version: 1}, ConnectionID: uuid.New()},
+		connection: globalconfig.Connection{Common: globalconfig.Common{ID: uuid.New(), Enabled: true, IntegrationStatus: "verified", Version: 1}},
 	}
 	ordinaryBinding := errors.New("binding query failed")
 	ordinaryConfig := errors.New("configuration query failed")
@@ -102,7 +102,7 @@ func TestGenerationPreflightRunnableErrorPropagation(t *testing.T) {
 	repo,ctx,_,item,spy:=generationFixture(t)
 	binding:=workflowbinding.ProjectWorkflowBinding{ID:uuid.New(),ProjectID:item.Detail.Item.ProjectID,Stage:workflowbinding.StageContentGeneration,WorkflowConfigurationID:uuid.New(),Version:1}
 	connectionID:=uuid.New()
-	ready:=generationSummaryConfigs{workflow:globalconfig.Workflow{Common:globalconfig.Common{ID:binding.WorkflowConfigurationID,Enabled:true,Version:1},ConnectionID:connectionID},connection:globalconfig.Connection{Common:globalconfig.Common{ID:connectionID,Enabled:true,IntegrationStatus:"connected",Version:1}}}
+	ready:=generationSummaryConfigs{workflow:globalconfig.Workflow{Common:globalconfig.Common{ID:binding.WorkflowConfigurationID,Enabled:true,Version:1},ConnectionID:connectionID},connection:globalconfig.Connection{Common:globalconfig.Common{ID:connectionID,Enabled:true,IntegrationStatus:"verified",Version:1}}}
 	ordinary:=errors.New("repository unavailable")
 	beforeRuns:=count(t,ctx,repo.db,"SELECT count(*) FROM workflow_run_records WHERE project_id=$1",item.Detail.Item.ProjectID)
 	beforeEvents:=count(t,ctx,repo.db,"SELECT count(*) FROM workflow_run_events e JOIN workflow_run_records r ON r.id=e.run_id WHERE r.project_id=$1",item.Detail.Item.ProjectID)

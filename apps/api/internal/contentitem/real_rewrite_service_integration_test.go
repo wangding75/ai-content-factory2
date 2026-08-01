@@ -61,11 +61,11 @@ func newRealRewriteFixture(t *testing.T) realRewriteFixture {
 		t.Fatalf("review result=%+v err=%v", result, err)
 	}
 	connectionID, workflowID, bindingID := uuid.New(), uuid.New(), uuid.New()
-	if _, err = review.repo.db.Exec(review.ctx, "INSERT INTO workflow_connections(id,name,connection_type,base_url,auth_type,timeout_seconds,type_config,integration_status,enabled) VALUES($1,$2,'n8n','http://rewrite-fixture','api_key',5,'{}','connected',true)", connectionID, "rewrite-"+connectionID.String()); err != nil {
+	if _, err = review.repo.db.Exec(review.ctx, "INSERT INTO workflow_connections(id,name,connection_type,base_url,auth_type,timeout_seconds,type_config,integration_status,enabled,last_verified_version) VALUES($1,$2,'n8n','http://rewrite-fixture','api_key',5,'{}','verified',true,1)", connectionID, "rewrite-"+connectionID.String()); err != nil {
 		t.Fatal(err)
 	}
 	typeConfig := json.RawMessage(`{"referenceType":"webhook_path","referenceValue":"rewrite-fixture"}`)
-	if _, err = review.repo.db.Exec(review.ctx, "INSERT INTO workflow_configurations(id,name,connection_id,applicable_stages,type_config,input_contract_version,output_contract_version,default_parameters,integration_status,enabled) VALUES($1,$2,$3,'[\"rewrite\"]',$4,'rewrite.input.v1','rewrite.output.v1','{}','connected',true)", workflowID, "rewrite-"+workflowID.String(), connectionID, typeConfig); err != nil {
+	if _, err = review.repo.db.Exec(review.ctx, "INSERT INTO workflow_configurations(id,name,connection_id,applicable_stages,type_config,input_contract_version,output_contract_version,default_parameters,integration_status,enabled,last_verified_version) VALUES($1,$2,$3,'[\"rewrite\"]',$4,'rewrite.input.v1','rewrite.output.v1','{}','verified',true,1)", workflowID, "rewrite-"+workflowID.String(), connectionID, typeConfig); err != nil {
 		t.Fatal(err)
 	}
 	if _, err = review.repo.db.Exec(review.ctx, "INSERT INTO project_workflow_bindings(id,project_id,stage,workflow_configuration_id) VALUES($1,$2,'rewrite',$3)", bindingID, review.item.Detail.Item.ProjectID, workflowID); err != nil {
@@ -374,13 +374,13 @@ func TestRealRewriteCreateRollbackOnExpiredActorSourceIssueAndConfigurationDrift
 			}
 		}, ErrRewritePreflightStale},
 		{"configuration", func(t *testing.T, f realRewriteFixture) {
-			_, err := f.repo.db.Exec(f.ctx, "UPDATE workflow_configurations SET version=version+1 WHERE id=$1", f.workflow)
+			_, err := f.repo.db.Exec(f.ctx, "UPDATE workflow_configurations SET integration_status='stale',version=version+1 WHERE id=$1", f.workflow)
 			if err != nil {
 				t.Fatal(err)
 			}
 		}, ErrRewritePreflightStale},
 		{"connection", func(t *testing.T, f realRewriteFixture) {
-			_, err := f.repo.db.Exec(f.ctx, "UPDATE workflow_connections SET version=version+1 WHERE id=$1", f.connection)
+			_, err := f.repo.db.Exec(f.ctx, "UPDATE workflow_connections SET integration_status='stale',version=version+1 WHERE id=$1", f.connection)
 			if err != nil {
 				t.Fatal(err)
 			}

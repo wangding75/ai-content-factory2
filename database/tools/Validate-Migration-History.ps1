@@ -2,6 +2,11 @@
 # Validates that all migration SQL files match their recorded SHA-256 checksums
 # PowerShell 5.1 compatible
 
+param(
+    [string]$MigrationDirectory,
+    [string]$ChecksumManifest
+)
+
 $ErrorActionPreference = 'Stop'
 
 # Locate repo root
@@ -11,9 +16,35 @@ if ($LASTEXITCODE -ne 0) {
     exit 1
 }
 
-$migrationDir = Join-Path $repoRoot 'apps\api\migrations'
-$manifestPath = Join-Path $migrationDir 'migration-checksums.sha256'
+$migrationDir = if ($MigrationDirectory) { [System.IO.Path]::GetFullPath($MigrationDirectory) } else { Join-Path $repoRoot 'apps\api\migrations' }
+$manifestPath = if ($ChecksumManifest) { [System.IO.Path]::GetFullPath($ChecksumManifest) } else { Join-Path $migrationDir 'migration-checksums.sha256' }
 $manifestName = 'migration-checksums.sha256'
+
+function Get-Sha256Hex {
+    param([byte[]]$Bytes)
+
+    $sha256 = [System.Security.Cryptography.SHA256]::Create()
+    try {
+        return ([System.BitConverter]::ToString($sha256.ComputeHash($Bytes))).Replace('-', '').ToLowerInvariant()
+    } finally {
+        $sha256.Dispose()
+    }
+}
+
+function Get-NewlineCompatibleHashes {
+    param([string]$Path)
+
+    # Historical entries were recorded on both Windows and Unix before SQL
+    # line endings were pinned.  Treat a migration as logical lines, then
+    # derive the two historical encodings from that single normalized value.
+    # This makes LF and CRLF worktrees equivalent without rewriting history.
+    $bytes = [System.IO.File]::ReadAllBytes($Path)
+    $text = [System.Text.Encoding]::UTF8.GetString($bytes)
+    $logical = $text.Replace("`r`n", "`n").Replace("`r", "`n")
+    $lfBytes = [System.Text.Encoding]::UTF8.GetBytes($logical)
+    $crlfBytes = [System.Text.Encoding]::UTF8.GetBytes($logical.Replace("`n", "`r`n"))
+    return @((Get-Sha256Hex $lfBytes), (Get-Sha256Hex $crlfBytes)) | Select-Object -Unique
+}
 
 Write-Output "Repository: $repoRoot"
 Write-Output "Migration directory: $migrationDir"
@@ -211,12 +242,15 @@ foreach ($line in $manifestLines) {
         exit 1
     }
 
-    $actualHash = (Get-FileHash -Algorithm SHA256 -Path $filePath).Hash.ToLower()
+    $compatibleHashes = @(Get-NewlineCompatibleHashes -Path $filePath)
 
-    if ($actualHash -ne $expectedHash) {
+    if ($compatibleHashes -notcontains $expectedHash) {
         Write-Error "FAIL: Hash mismatch for $fileName"
         Write-Error "  Expected: $expectedHash"
-        Write-Error "  Actual:   $actualHash"
+        Write-Error "  LF:       $($compatibleHashes[0])"
+        if ($compatibleHashes.Count -gt 1) {
+            Write-Error "  CRLF:     $($compatibleHashes[1])"
+        }
         exit 1
     }
 }

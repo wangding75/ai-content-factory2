@@ -1,9 +1,9 @@
 -- ACF deterministic complete test dataset
--- Target schema: Migration 000001..000018
+-- Target schema: Migration 000001..000019
 -- Preconditions:
 --   1. DATABASE_URL points to ai_content_factory.
 --   2. Business tables are empty.
---   3. schema_migrations remains at version 18 and dirty=false.
+--   3. schema_migrations remains at version 19 and dirty=false.
 --
 -- This file inserts deterministic, non-sensitive fixture data only.
 -- It does not truncate or alter schema.
@@ -28,6 +28,7 @@ INSERT INTO llm_provider_configurations (
     id, name, provider_type, base_url, default_model,
     encrypted_secret, secret_fingerprint, timeout_seconds,
     integration_status, enabled, last_verified_at,
+    last_verified_version, validation_details, model_catalog_updated_at,
     last_error_code, last_error_message, version, created_at, updated_at
 ) VALUES
 (
@@ -39,8 +40,11 @@ INSERT INTO llm_provider_configurations (
     NULL,
     NULL,
     30,
-    'connected',
+    'verified',
     TRUE,
+    '2026-01-01 00:01:00+00',
+    1,
+    '{"catalog":"fixture"}'::jsonb,
     '2026-01-01 00:01:00+00',
     NULL,
     NULL,
@@ -57,8 +61,11 @@ INSERT INTO llm_provider_configurations (
     NULL,
     NULL,
     30,
-    'not_connected',
+    'unverified',
     FALSE,
+    NULL,
+    NULL,
+    '{}'::jsonb,
     NULL,
     NULL,
     NULL,
@@ -67,10 +74,36 @@ INSERT INTO llm_provider_configurations (
     '2026-01-01 00:00:10+00'
 );
 
+INSERT INTO llm_provider_models (
+    id, provider_id, model_key, source, availability,
+    last_seen_at, created_at, updated_at
+) VALUES
+(
+    '20500000-0000-4000-8000-000000000001',
+    '20000000-0000-4000-8000-000000000001',
+    'fixture-model',
+    'discovered',
+    'available',
+    '2026-01-01 00:01:00+00',
+    '2026-01-01 00:00:55+00',
+    '2026-01-01 00:01:00+00'
+),
+(
+    '20500000-0000-4000-8000-000000000002',
+    '20000000-0000-4000-8000-000000000001',
+    'fixture-manual-model',
+    'manual',
+    'unavailable',
+    NULL,
+    '2026-01-01 00:00:56+00',
+    '2026-01-01 00:00:56+00'
+);
+
 INSERT INTO workflow_connections (
     id, name, connection_type, base_url, auth_type,
     encrypted_credential, credential_fingerprint, timeout_seconds,
     type_config, integration_status, enabled, last_verified_at,
+    last_verified_version, validation_details,
     last_error_code, last_error_message, version, created_at, updated_at
 ) VALUES
 (
@@ -83,9 +116,11 @@ INSERT INTO workflow_connections (
     NULL,
     60,
     '{"webhookMode":"test","fixture":true}'::jsonb,
-    'connected',
+    'verified',
     TRUE,
     '2026-01-01 00:02:00+00',
+    1,
+    '{"connectivity":"fixture"}'::jsonb,
     NULL,
     NULL,
     1,
@@ -102,9 +137,11 @@ INSERT INTO workflow_connections (
     NULL,
     60,
     '{"webhookMode":"test","fixture":true}'::jsonb,
-    'not_connected',
+    'unverified',
     FALSE,
     NULL,
+    NULL,
+    '{}'::jsonb,
     NULL,
     NULL,
     1,
@@ -115,8 +152,9 @@ INSERT INTO workflow_connections (
 INSERT INTO workflow_configurations (
     id, name, connection_id, applicable_stages, type_config,
     input_contract_version, output_contract_version,
-    default_parameters, note, integration_status, enabled,
-    last_verified_at, last_error_code, last_error_message,
+    default_parameters, note, llm_strategy, llm_provider_id, llm_model,
+    integration_status, enabled, last_verified_at, last_verified_version,
+    validation_details, last_error_code, last_error_message,
     version, created_at, updated_at
 ) VALUES
 (
@@ -129,9 +167,14 @@ INSERT INTO workflow_configurations (
     'chapter-plan.output.v1',
     '{"temperature":0.2}'::jsonb,
     'Deterministic fixture workflow',
-    'connected',
+    'none',
+    NULL,
+    NULL,
+    'verified',
     TRUE,
     '2026-01-01 00:02:10+00',
+    1,
+    '{"workflow":"fixture"}'::jsonb,
     NULL,
     NULL,
     1,
@@ -148,9 +191,14 @@ INSERT INTO workflow_configurations (
     'content-generation.output.v1',
     '{"temperature":0.3}'::jsonb,
     'Deterministic fixture workflow',
-    'connected',
+    'acf_managed',
+    '20000000-0000-4000-8000-000000000001',
+    'fixture-model',
+    'verified',
     TRUE,
     '2026-01-01 00:02:20+00',
+    1,
+    '{"workflow":"fixture","provider":"fixture"}'::jsonb,
     NULL,
     NULL,
     1,
@@ -167,9 +215,14 @@ INSERT INTO workflow_configurations (
     'review.output.v1',
     '{"strict":true}'::jsonb,
     'Deterministic fixture workflow',
-    'connected',
+    'n8n_managed',
+    NULL,
+    NULL,
+    'verified',
     TRUE,
     '2026-01-01 00:02:30+00',
+    1,
+    '{"workflow":"fixture","n8n":"fixture"}'::jsonb,
     NULL,
     NULL,
     1,
@@ -186,12 +239,17 @@ INSERT INTO workflow_configurations (
     'rewrite.output.v1',
     '{"preserveVoice":true}'::jsonb,
     'Deterministic fixture workflow',
-    'connected',
+    'none',
+    NULL,
+    NULL,
+    'stale',
     TRUE,
     '2026-01-01 00:02:40+00',
-    NULL,
-    NULL,
     1,
+    '{"reason":"fixture_stale"}'::jsonb,
+    NULL,
+    NULL,
+    2,
     '2026-01-01 00:01:10+00',
     '2026-01-01 00:02:40+00'
 );
@@ -1547,6 +1605,93 @@ INSERT INTO workflow_run_records (
     NULL
 );
 
+INSERT INTO workflow_run_records (
+    id, run_number, project_id, stage, workflow_configuration_id,
+    trigger_source, status, configuration_snapshot, input_payload,
+    output_payload, retry_of_run_id, retry_mode, retryability,
+    external_execution_id, started_at, finished_at,
+    created_at, updated_at, version, subject_type, subject_id
+) VALUES (
+    '50000000-0000-4000-8000-000000000009',
+    'ACF-FIX-CG-RETRY-0001',
+    '10000000-0000-4000-8000-000000000002',
+    'content_generation',
+    '22000000-0000-4000-8000-000000000002',
+    'retry',
+    'succeeded',
+    '{"id":"22000000-0000-4000-8000-000000000002","version":1,"connection":{"id":"21000000-0000-4000-8000-000000000001"},"inputContractVersion":"content-generation.input.v1","outputContractVersion":"content-generation.output.v1"}'::jsonb,
+    '{"schemaVersion":"content-generation.input.v1","projectId":"10000000-0000-4000-8000-000000000002","retryOfRunId":"50000000-0000-4000-8000-000000000007"}'::jsonb,
+    '{"schemaVersion":"content-generation.output.v1","title":"Recovered fixture"}'::jsonb,
+    '50000000-0000-4000-8000-000000000007',
+    'original_configuration',
+    'not_retryable',
+    'fixture-execution-retry-0001',
+    '2026-01-01 07:40:10+00',
+    '2026-01-01 07:40:20+00',
+    '2026-01-01 07:40:00+00',
+    '2026-01-01 07:40:20+00',
+    1,
+    'content_item',
+    '70000000-0000-4000-8000-000000000002'
+);
+
+UPDATE workflow_run_records
+SET failure_phase = 'external_execution',
+    failure_code = 'fixture_failure',
+    safe_error_message = 'Intentional deterministic fixture failure.',
+    retryability = 'runtime_retry'
+WHERE id = '50000000-0000-4000-8000-000000000007';
+
+UPDATE workflow_run_records run
+SET configuration_snapshot = jsonb_build_object(
+        'stage', run.stage,
+        'workflowConnection', jsonb_build_object(
+            'id', connection.id,
+            'name', connection.name,
+            'version', connection.version,
+            'type', connection.connection_type
+        ),
+        'workflowConfiguration', jsonb_build_object(
+            'id', workflow.id,
+            'name', workflow.name,
+            'version', workflow.version,
+            'reference', workflow.type_config,
+            'inputContractVersion', workflow.input_contract_version,
+            'outputContractVersion', workflow.output_contract_version,
+            'defaultParameters', workflow.default_parameters
+        )
+    ),
+    binding_snapshot = jsonb_build_object(
+        'bindingId', binding.id,
+        'bindingVersion', binding.version,
+        'stage', run.stage
+    ),
+    connection_snapshot = jsonb_build_object(
+        'id', connection.id,
+        'name', connection.name,
+        'version', connection.version,
+        'type', connection.connection_type,
+        'baseUrl', connection.base_url,
+        'authType', connection.auth_type,
+        'credentialFingerprint', connection.credential_fingerprint
+    ),
+    llm_policy_snapshot = jsonb_strip_nulls(jsonb_build_object(
+        'strategy', workflow.llm_strategy,
+        'providerId', provider.id,
+        'providerName', provider.name,
+        'providerVersion', provider.version,
+        'model', workflow.llm_model,
+        'secretFingerprint', provider.secret_fingerprint
+    ))
+FROM workflow_configurations workflow
+JOIN workflow_connections connection ON connection.id = workflow.connection_id
+LEFT JOIN llm_provider_configurations provider ON provider.id = workflow.llm_provider_id
+CROSS JOIN project_workflow_bindings binding
+WHERE workflow.id = run.workflow_configuration_id
+  AND binding.project_id = run.project_id
+  AND binding.stage = run.stage
+  AND binding.workflow_configuration_id = workflow.id;
+
 INSERT INTO workflow_run_events (
     id, run_id, event_type, status, payload, created_at
 ) VALUES
@@ -1621,6 +1766,30 @@ INSERT INTO workflow_run_events (
     'cancelled',
     '{"fixture":true}'::jsonb,
     '2026-01-01 07:30:20+00'
+),
+(
+    '51000000-0000-4000-8000-000000000026',
+    '50000000-0000-4000-8000-000000000009',
+    'retry_created',
+    'queued',
+    '{"retryOfRunId":"50000000-0000-4000-8000-000000000007","retryMode":"original_configuration"}'::jsonb,
+    '2026-01-01 07:40:00+00'
+),
+(
+    '51000000-0000-4000-8000-000000000027',
+    '50000000-0000-4000-8000-000000000009',
+    'execution_started',
+    'running',
+    '{"externalExecutionId":"fixture-execution-retry-0001"}'::jsonb,
+    '2026-01-01 07:40:10+00'
+),
+(
+    '51000000-0000-4000-8000-000000000028',
+    '50000000-0000-4000-8000-000000000009',
+    'succeeded',
+    'succeeded',
+    '{"fixture":true}'::jsonb,
+    '2026-01-01 07:40:20+00'
 );
 
 -- ---------------------------------------------------------------------------
@@ -1725,6 +1894,29 @@ BEGIN
         RAISE EXCEPTION 'Fixture assertion failed: workflow events before run creation = %', anomaly_count;
     END IF;
 
+    SELECT COUNT(*)
+    INTO anomaly_count
+    FROM workflow_configurations
+    WHERE llm_strategy NOT IN ('acf_managed', 'n8n_managed', 'none')
+       OR (llm_strategy = 'acf_managed' AND (llm_provider_id IS NULL OR llm_model IS NULL))
+       OR (llm_strategy IN ('n8n_managed', 'none') AND (llm_provider_id IS NOT NULL OR llm_model IS NOT NULL));
+
+    IF anomaly_count <> 0 THEN
+        RAISE EXCEPTION 'Fixture assertion failed: invalid workflow LLM strategies = %', anomaly_count;
+    END IF;
+
+    SELECT COUNT(*)
+    INTO anomaly_count
+    FROM workflow_run_records
+    WHERE retry_of_run_id = id
+       OR jsonb_typeof(binding_snapshot) <> 'object'
+       OR jsonb_typeof(connection_snapshot) <> 'object'
+       OR jsonb_typeof(llm_policy_snapshot) <> 'object';
+
+    IF anomaly_count <> 0 THEN
+        RAISE EXCEPTION 'Fixture assertion failed: invalid retry links or snapshots = %', anomaly_count;
+    END IF;
+
     FOREACH fixture_table IN ARRAY ARRAY[
         'audit_logs',
         'projects',
@@ -1746,6 +1938,7 @@ BEGIN
         'review_findings',
         'review_recommendations',
         'llm_provider_configurations',
+        'llm_provider_models',
         'workflow_connections',
         'workflow_configurations',
         'distribution_platform_configurations',

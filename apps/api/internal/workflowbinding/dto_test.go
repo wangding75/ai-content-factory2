@@ -22,7 +22,7 @@ func TestWorkflowConfigurationSummaryDTOSerializesTypeConfigAsObject(t *testing.
 		InputContractVersion:  "v1",
 		OutputContractVersion: "v1",
 		DefaultParameters:     json.RawMessage(`{"temperature":0.7}`),
-		IntegrationStatus:     "not_connected",
+		IntegrationStatus:     "unverified",
 		Enabled:               true,
 		Version:               1,
 		CreatedAt:             time.Now().UTC(),

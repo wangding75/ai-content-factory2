@@ -80,9 +80,9 @@ func TestIteration14FrozenWorkflowRuntimeContract(t *testing.T) {
 	assertRoute("/api/v1/content-workflow-runs:", "listContentWorkflowRuns", "GlobalWorkflowRunListEnvelope")
 	assertRoute("/api/v1/content-workflow-runs/{workflowRunId}:", "getContentWorkflowRun", "WorkflowRunDetailEnvelope")
 
-	for _, deferred := range []string{"enableWorkflowConnection", "enableWorkflowConfiguration"} {
-		if _, exists := operationIDs[deferred]; exists {
-			t.Fatalf("deferred operation remains active: %s", deferred)
+	for _, activated := range []string{"enableWorkflowConnection", "enableWorkflowConfiguration"} {
+		if _, exists := operationIDs[activated]; !exists {
+			t.Fatalf("Iteration 19 operation is missing: %s", activated)
 		}
 	}
 	_ = schemaBlock

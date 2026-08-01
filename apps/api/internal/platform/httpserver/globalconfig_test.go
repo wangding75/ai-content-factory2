@@ -406,14 +406,14 @@ func TestVerificationReplayHTTPIdempotency(t *testing.T) {
 		status  string
 		enabled bool
 	}{
-		{connectionSuccessID, "connected", true},
-		{connectionFailureID, "not_connected", false},
-		{workflowConnectionID, "connected", true},
+		{connectionSuccessID, "verified", true},
+		{connectionFailureID, "failed", false},
+		{workflowConnectionID, "verified", true},
 	} {
 		_, err = pool.Exec(ctx, `INSERT INTO workflow_connections
-			(id,name,connection_type,base_url,auth_type,timeout_seconds,type_config,integration_status,enabled,last_error_code,last_error_message,version)
+			(id,name,connection_type,base_url,auth_type,timeout_seconds,type_config,integration_status,enabled,last_error_code,last_error_message,version,last_verified_version)
 			VALUES ($1,$2,'n8n','http://verification.invalid:5678','api_key',30,'{"referenceType":"workflow_id","referenceValue":"verification"}',$3,$4,
-				CASE WHEN $4 THEN NULL ELSE 'verification_failed' END,CASE WHEN $4 THEN NULL ELSE 'The connection could not be verified.' END,2)`,
+				CASE WHEN $4 THEN NULL ELSE 'verification_failed' END,CASE WHEN $4 THEN NULL ELSE 'The connection could not be verified.' END,2,CASE WHEN $4 THEN 2 ELSE NULL END)`,
 			fixture.id, "verification-http-connection-"+fixture.id.String(), fixture.status, fixture.enabled)
 		if err != nil {
 			t.Fatalf("insert connection fixture: %v", err)
@@ -424,13 +424,13 @@ func TestVerificationReplayHTTPIdempotency(t *testing.T) {
 		status  string
 		enabled bool
 	}{
-		{workflowSuccessID, "connected", true},
-		{workflowFailureID, "not_connected", false},
+		{workflowSuccessID, "verified", true},
+		{workflowFailureID, "failed", false},
 	} {
 		_, err = pool.Exec(ctx, `INSERT INTO workflow_configurations
-			(id,name,connection_id,applicable_stages,type_config,input_contract_version,output_contract_version,default_parameters,integration_status,enabled,last_error_code,last_error_message,version)
+			(id,name,connection_id,applicable_stages,type_config,input_contract_version,output_contract_version,default_parameters,integration_status,enabled,last_error_code,last_error_message,version,last_verified_version)
 			VALUES ($1,$2,$3,'["chapter_planning"]','{"referenceType":"webhook_path","referenceValue":"verification"}','v1','v1','{}',$4,$5,
-				CASE WHEN $5 THEN NULL ELSE 'verification_failed' END,CASE WHEN $5 THEN NULL ELSE 'The workflow endpoint could not be verified.' END,2)`,
+				CASE WHEN $5 THEN NULL ELSE 'verification_failed' END,CASE WHEN $5 THEN NULL ELSE 'The workflow endpoint could not be verified.' END,2,CASE WHEN $5 THEN 2 ELSE NULL END)`,
 			fixture.id, "verification-http-workflow-"+fixture.id.String(), workflowConnectionID, fixture.status, fixture.enabled)
 		if err != nil {
 			t.Fatalf("insert workflow fixture: %v", err)
@@ -625,15 +625,15 @@ func TestApplicableStageWorkflowConfigurationsIntegration(t *testing.T) {
 	w5ID := uuid.New()
 
 	now := time.Now().UTC()
-	_, err = pool.Exec(ctx, `INSERT INTO workflow_connections (id, name, connection_type, base_url, auth_type, timeout_seconds, type_config, integration_status, created_at, updated_at)
-		VALUES ($1, $2, 'n8n', 'http://localhost:5678', 'api_key', 30, '{"referenceType":"workflow_id","referenceValue":"w1"}', 'verified', $3, $4)`,
+	_, err = pool.Exec(ctx, `INSERT INTO workflow_connections (id, name, connection_type, base_url, auth_type, timeout_seconds, type_config, integration_status, last_verified_version, created_at, updated_at)
+		VALUES ($1, $2, 'n8n', 'http://localhost:5678', 'api_key', 30, '{"referenceType":"workflow_id","referenceValue":"w1"}', 'verified', 1, $3, $4)`,
 		conn1ID, prefix+"_conn1", now, now)
 	if err != nil {
 		t.Fatalf("insert conn1: %v", err)
 	}
 
 	_, err = pool.Exec(ctx, `INSERT INTO workflow_connections (id, name, connection_type, base_url, auth_type, timeout_seconds, type_config, integration_status, created_at, updated_at)
-		VALUES ($1, $2, 'n8n', 'http://localhost:8080', 'api_key', 30, '{"referenceType":"workflow_id","referenceValue":"w2"}', 'not_connected', $3, $4)`,
+		VALUES ($1, $2, 'n8n', 'http://localhost:8080', 'api_key', 30, '{"referenceType":"workflow_id","referenceValue":"w2"}', 'unverified', $3, $4)`,
 		conn2ID, prefix+"_conn2", now, now)
 	if err != nil {
 		t.Fatalf("insert conn2: %v", err)
@@ -645,24 +645,24 @@ func TestApplicableStageWorkflowConfigurationsIntegration(t *testing.T) {
 	})
 
 	// W1: prefix_alpha, Conn1 (n8n), applicableStages: ["chapter_planning", "review"], enabled: true
-	_, err = pool.Exec(ctx, `INSERT INTO workflow_configurations (id, name, connection_id, applicable_stages, type_config, input_contract_version, output_contract_version, default_parameters, integration_status, enabled, created_at, updated_at)
-		VALUES ($1, $2, $3, '["chapter_planning", "review"]'::jsonb, '{"referenceType":"workflow_id","referenceValue":"w1"}', 'v1', 'v1', '{}', 'verified', true, $4, $5)`,
+	_, err = pool.Exec(ctx, `INSERT INTO workflow_configurations (id, name, connection_id, applicable_stages, type_config, input_contract_version, output_contract_version, default_parameters, integration_status, enabled, last_verified_version, created_at, updated_at)
+		VALUES ($1, $2, $3, '["chapter_planning", "review"]'::jsonb, '{"referenceType":"workflow_id","referenceValue":"w1"}', 'v1', 'v1', '{}', 'verified', true, 1, $4, $5)`,
 		w1ID, prefix+"_alpha_planner", conn1ID, now, now)
 	if err != nil {
 		t.Fatalf("insert w1: %v", err)
 	}
 
 	// W2: prefix_beta, Conn1 (n8n), applicableStages: ["content_generation"], enabled: true
-	_, err = pool.Exec(ctx, `INSERT INTO workflow_configurations (id, name, connection_id, applicable_stages, type_config, input_contract_version, output_contract_version, default_parameters, integration_status, enabled, created_at, updated_at)
-		VALUES ($1, $2, $3, '["content_generation"]'::jsonb, '{"referenceType":"workflow_id","referenceValue":"w2"}', 'v1', 'v1', '{}', 'verified', true, $4, $5)`,
+	_, err = pool.Exec(ctx, `INSERT INTO workflow_configurations (id, name, connection_id, applicable_stages, type_config, input_contract_version, output_contract_version, default_parameters, integration_status, enabled, last_verified_version, created_at, updated_at)
+		VALUES ($1, $2, $3, '["content_generation"]'::jsonb, '{"referenceType":"workflow_id","referenceValue":"w2"}', 'v1', 'v1', '{}', 'verified', true, 1, $4, $5)`,
 		w2ID, prefix+"_beta_generator", conn1ID, now, now)
 	if err != nil {
 		t.Fatalf("insert w2: %v", err)
 	}
 
 	// W3: prefix_gamma, Conn1 (n8n), applicableStages: ["review"], enabled: false
-	_, err = pool.Exec(ctx, `INSERT INTO workflow_configurations (id, name, connection_id, applicable_stages, type_config, input_contract_version, output_contract_version, default_parameters, integration_status, enabled, created_at, updated_at)
-		VALUES ($1, $2, $3, '["review"]'::jsonb, '{"referenceType":"workflow_id","referenceValue":"w3"}', 'v1', 'v1', '{}', 'verified', false, $4, $5)`,
+	_, err = pool.Exec(ctx, `INSERT INTO workflow_configurations (id, name, connection_id, applicable_stages, type_config, input_contract_version, output_contract_version, default_parameters, integration_status, enabled, last_verified_version, created_at, updated_at)
+		VALUES ($1, $2, $3, '["review"]'::jsonb, '{"referenceType":"workflow_id","referenceValue":"w3"}', 'v1', 'v1', '{}', 'verified', false, 1, $4, $5)`,
 		w3ID, prefix+"_gamma_reviewer", conn1ID, now, now)
 	if err != nil {
 		t.Fatalf("insert w3: %v", err)
@@ -670,7 +670,7 @@ func TestApplicableStageWorkflowConfigurationsIntegration(t *testing.T) {
 
 	// W4: prefix_delta, Conn2 (dify), applicableStages: ["rewrite"], enabled: true
 	_, err = pool.Exec(ctx, `INSERT INTO workflow_configurations (id, name, connection_id, applicable_stages, type_config, input_contract_version, output_contract_version, default_parameters, integration_status, enabled, created_at, updated_at)
-		VALUES ($1, $2, $3, '["rewrite"]'::jsonb, '{}', 'v1', 'v1', '{}', 'not_connected', true, $4, $5)`,
+		VALUES ($1, $2, $3, '["rewrite"]'::jsonb, '{}', 'v1', 'v1', '{}', 'unverified', true, $4, $5)`,
 		w4ID, prefix+"_delta_rewriter", conn2ID, now, now)
 	if err != nil {
 		t.Fatalf("insert w4: %v", err)
@@ -678,7 +678,7 @@ func TestApplicableStageWorkflowConfigurationsIntegration(t *testing.T) {
 
 	// W5: prefix_epsilon, Conn2 (dify), applicableStages: ["chapter_planning", "rewrite"], enabled: true
 	_, err = pool.Exec(ctx, `INSERT INTO workflow_configurations (id, name, connection_id, applicable_stages, type_config, input_contract_version, output_contract_version, default_parameters, integration_status, enabled, created_at, updated_at)
-		VALUES ($1, $2, $3, '["chapter_planning", "rewrite"]'::jsonb, '{}', 'v1', 'v1', '{}', 'not_connected', true, $4, $5)`,
+		VALUES ($1, $2, $3, '["chapter_planning", "rewrite"]'::jsonb, '{}', 'v1', 'v1', '{}', 'unverified', true, $4, $5)`,
 		w5ID, prefix+"_epsilon_multi", conn2ID, now, now)
 	if err != nil {
 		t.Fatalf("insert w5: %v", err)

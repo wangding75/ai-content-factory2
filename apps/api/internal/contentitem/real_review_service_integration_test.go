@@ -36,10 +36,10 @@ func newRealReviewFixture(t *testing.T) realReviewFixture {
 	}
 	item.Detail, _ = repo.GetByID(ctx, item.Detail.Item.ID)
 	connectionID, workflowID := uuid.New(), uuid.New()
-	if _, err := db.Exec(ctx, "INSERT INTO workflow_connections(id,name,connection_type,base_url,auth_type,timeout_seconds,type_config,integration_status,enabled) VALUES($1,$2,'n8n','http://review-fixture','api_key',5,'{}','connected',true)", connectionID, "review-"+connectionID.String()); err != nil {
+	if _, err := db.Exec(ctx, "INSERT INTO workflow_connections(id,name,connection_type,base_url,auth_type,timeout_seconds,type_config,integration_status,enabled,last_verified_version) VALUES($1,$2,'n8n','http://review-fixture','api_key',5,'{}','verified',true,1)", connectionID, "review-"+connectionID.String()); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := db.Exec(ctx, "INSERT INTO workflow_configurations(id,name,connection_id,applicable_stages,type_config,input_contract_version,output_contract_version,default_parameters,integration_status,enabled) VALUES($1,$2,$3,'[\"review\"]','{}','review.input.v1','review.output.v1',$4,'connected',true)", workflowID, "review-"+workflowID.String(), connectionID, json.RawMessage(`{"reviewDimensions":["compliance","factual_consistency","language_quality","structural_logic","character_consistency"]}`)); err != nil {
+	if _, err := db.Exec(ctx, "INSERT INTO workflow_configurations(id,name,connection_id,applicable_stages,type_config,input_contract_version,output_contract_version,default_parameters,integration_status,enabled,last_verified_version) VALUES($1,$2,$3,'[\"review\"]','{}','review.input.v1','review.output.v1',$4,'verified',true,1)", workflowID, "review-"+workflowID.String(), connectionID, json.RawMessage(`{"reviewDimensions":["compliance","factual_consistency","language_quality","structural_logic","character_consistency"]}`)); err != nil {
 		t.Fatal(err)
 	}
 	bindingID := uuid.New()

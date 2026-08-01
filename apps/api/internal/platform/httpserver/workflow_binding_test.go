@@ -218,7 +218,7 @@ func TestWorkflowBindingGetBoundShape(t *testing.T) {
 				InputContractVersion:  "v1",
 				OutputContractVersion: "v1",
 				DefaultParameters:     json.RawMessage(`{"temperature":0.7}`),
-				IntegrationStatus:     "not_connected",
+				IntegrationStatus:     "unverified",
 				Enabled:               true,
 				Version:               1,
 				CreatedAt:             now,
@@ -264,7 +264,7 @@ func TestWorkflowBindingPutCreateReplaceNoop(t *testing.T) {
 	now := time.Now().UTC()
 
 	b := workflowbinding.ProjectWorkflowBinding{ID: bindingID, ProjectID: projectID, Stage: workflowbinding.StageChapterPlanning, WorkflowConfigurationID: wfID, Version: 1, CreatedAt: now, UpdatedAt: now}
-	summary := workflowbinding.ReadWorkflowConfiguration{ID: wfID, Name: "planner", ConnectionID: uuid.New(), ConnectionName: "conn", ConnectionType: "n8n", WorkflowType: "n8n", ApplicableStages: []string{"chapter_planning"}, TypeConfig: json.RawMessage(`{}`), InputContractVersion: "v1", OutputContractVersion: "v1", DefaultParameters: json.RawMessage(`{}`), IntegrationStatus: "not_connected", Enabled: true, Version: 1, CreatedAt: now, UpdatedAt: now}
+	summary := workflowbinding.ReadWorkflowConfiguration{ID: wfID, Name: "planner", ConnectionID: uuid.New(), ConnectionName: "conn", ConnectionType: "n8n", WorkflowType: "n8n", ApplicableStages: []string{"chapter_planning"}, TypeConfig: json.RawMessage(`{}`), InputContractVersion: "v1", OutputContractVersion: "v1", DefaultParameters: json.RawMessage(`{}`), IntegrationStatus: "unverified", Enabled: true, Version: 1, CreatedAt: now, UpdatedAt: now}
 
 	twoPointOh := uuid.MustParse("55555555-5555-4555-8555-555555555555")
 
@@ -319,7 +319,7 @@ func TestWorkflowBindingPutIdempotentReplay(t *testing.T) {
 	now := time.Now().UTC()
 
 	b := workflowbinding.ProjectWorkflowBinding{ID: bindingID, ProjectID: projectID, Stage: workflowbinding.StageChapterPlanning, WorkflowConfigurationID: wfID, Version: 1, CreatedAt: now, UpdatedAt: now}
-	summary := workflowbinding.ReadWorkflowConfiguration{ID: wfID, Name: "planner", ConnectionID: uuid.New(), ConnectionName: "conn", ConnectionType: "n8n", WorkflowType: "n8n", ApplicableStages: []string{"chapter_planning"}, TypeConfig: json.RawMessage(`{}`), InputContractVersion: "v1", OutputContractVersion: "v1", DefaultParameters: json.RawMessage(`{}`), IntegrationStatus: "not_connected", Enabled: true, Version: 1, CreatedAt: now, UpdatedAt: now}
+	summary := workflowbinding.ReadWorkflowConfiguration{ID: wfID, Name: "planner", ConnectionID: uuid.New(), ConnectionName: "conn", ConnectionType: "n8n", WorkflowType: "n8n", ApplicableStages: []string{"chapter_planning"}, TypeConfig: json.RawMessage(`{}`), InputContractVersion: "v1", OutputContractVersion: "v1", DefaultParameters: json.RawMessage(`{}`), IntegrationStatus: "unverified", Enabled: true, Version: 1, CreatedAt: now, UpdatedAt: now}
 
 	called := 0
 	svc := &fakeBindingService{
@@ -551,7 +551,7 @@ func TestWorkflowBindingSingleLayerEnvelope(t *testing.T) {
 	bindingID := uuid.MustParse("33333333-3333-4333-8333-333333333333")
 	now := time.Now().UTC()
 	b := workflowbinding.ProjectWorkflowBinding{ID: bindingID, ProjectID: projectID, Stage: workflowbinding.StageChapterPlanning, WorkflowConfigurationID: wfID, Version: 1, CreatedAt: now, UpdatedAt: now}
-	summary := workflowbinding.ReadWorkflowConfiguration{ID: wfID, Name: "planner", ConnectionID: uuid.New(), ConnectionName: "conn", ConnectionType: "n8n", WorkflowType: "n8n", ApplicableStages: []string{"chapter_planning"}, TypeConfig: json.RawMessage(`{}`), InputContractVersion: "v1", OutputContractVersion: "v1", DefaultParameters: json.RawMessage(`{}`), IntegrationStatus: "not_connected", Enabled: true, Version: 1, CreatedAt: now, UpdatedAt: now}
+	summary := workflowbinding.ReadWorkflowConfiguration{ID: wfID, Name: "planner", ConnectionID: uuid.New(), ConnectionName: "conn", ConnectionType: "n8n", WorkflowType: "n8n", ApplicableStages: []string{"chapter_planning"}, TypeConfig: json.RawMessage(`{}`), InputContractVersion: "v1", OutputContractVersion: "v1", DefaultParameters: json.RawMessage(`{}`), IntegrationStatus: "unverified", Enabled: true, Version: 1, CreatedAt: now, UpdatedAt: now}
 
 	h := workflowBindingTestHandler(&fakeBindingService{
 		putFn: func(ctx context.Context, pid uuid.UUID, s workflowbinding.WorkflowBindingStage, r workflowbinding.PutRequest, k string) (workflowbinding.PutResult, int, error) {

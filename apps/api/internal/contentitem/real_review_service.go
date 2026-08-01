@@ -402,7 +402,7 @@ func (s *RealReviewService) runnable(ctx context.Context, projectID uuid.UUID) (
 	if err != nil {
 		return binding, workflow, connection, nil, err
 	}
-	if !workflow.Enabled || !connection.Enabled || connection.IntegrationStatus != "connected" ||
+	if !workflow.Enabled || !connection.Enabled || connection.IntegrationStatus != "verified" ||
 		!containsString(workflow.ApplicableStages, "review") ||
 		workflow.InputContractVersion != "review.input.v1" || workflow.OutputContractVersion != "review.output.v1" {
 		return binding, workflow, connection, nil, ErrReviewNotConfigured
@@ -629,7 +629,7 @@ func runnableReviewForCreate(ctx context.Context, tx pgx.Tx, projectID uuid.UUID
 	if err != nil {
 		return binding, workflow, connection, nil, err
 	}
-	if !workflow.Enabled || !connection.Enabled || connection.IntegrationStatus != "connected" ||
+	if !workflow.Enabled || !connection.Enabled || connection.IntegrationStatus != "verified" ||
 		!containsString(workflow.ApplicableStages, "review") ||
 		workflow.InputContractVersion != "review.input.v1" || workflow.OutputContractVersion != "review.output.v1" {
 		return binding, workflow, connection, nil, ErrReviewNotConfigured
