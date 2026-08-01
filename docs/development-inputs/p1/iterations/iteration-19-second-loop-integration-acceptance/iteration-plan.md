@@ -1,13 +1,12 @@
 # Iteration 19 — LLM 与工作流真实接入及第二用户闭环关闭
 
-**状态：`execution_plan_and_taskbooks_frozen_ready_for_task_02`。** 新 UI、迭代级 API Scope、逻辑数据模型、状态机、安全边界、执行计划及 Task 02～09 任务书已冻结。Task 01 已完成；后续从 Task 02 主 OpenAPI 契约开始开发。
+**状态：`execution_plan_frozen_ready_for_task_02`。** 新 UI、迭代级 API Scope、逻辑数据模型、状态机、安全边界和执行计划已冻结。Task 01 已完成；后续从 Task 02 主 OpenAPI 契约开始开发。
 
 ## 1. 基线
 
 - 分支：`feature/second-user-loop`。
 - UI 与迭代契约冻结 Commit：`6e8656467f3c204feb83d19185d10f78e092cd56`。
 - 执行计划修正 Commit：`39fa4f3c4838c5d67b98c7958ba2f7a42ece75b7`。
-- 详细任务书索引：[`taskbooks/README.md`](taskbooks/README.md)。
 - Iteration 12～18 已完成配置记录、项目绑定、WorkflowRun、章节规划、正文生成、审核和重写能力。
 - Iteration 14.5 已建立本地 n8n Connection Verify、Workflow Verify、绑定和 Preflight 基线；Iteration 19 在现有架构上扩展，不重建平行模块。
 - 当前目标：真实 LLM Provider、真实 n8n Runtime、Workflow Configuration LLM 策略、实时执行资格和四 Stage 完整闭环。
@@ -85,7 +84,7 @@ Task 01 文档修正已完成。当前只剩以下 8 个开发任务：
 | Task 08 | 四 Stage 真实 Runtime 接入 | 章节规划、正文、审核、重写依次移除最终 Mock 路径 | Task 07 |
 | Task 09 | 真实联调与最终验收 | 真实 LLM/n8n E2E、安全、数据库、UI、Review、关闭迭代 | Task 08 |
 
-完整边界、依赖、Commit 和阶段门禁见 `execution-plan.md`；逐文件修改逻辑、详细验收标准和回执要求见 [`taskbooks/README.md`](taskbooks/README.md)。每个任务一个主 Commit；任务内部先局部验证、再分组验证、最后完整门禁。
+完整边界、依赖、阶段顺序和里程碑见 `execution-plan.md`。具体执行拆分属于可变执行资料，不构成本目录的冻结事实源；执行资料不得反向修改或覆盖本目录中的业务契约、数据模型、API Scope、UI Scope 和验收标准。
 
 ## 7. 任务拆分原则
 
@@ -116,7 +115,7 @@ Task 01 文档修正已完成。当前只剩以下 8 个开发任务：
 - [x] 迭代级 API Scope 已完整定义；
 - [x] 逻辑数据模型、状态机、快照和安全边界已定义；
 - [x] UI/API/数据模型追踪已建立；
-- [x] 8 个剩余开发任务、依赖和门禁已冻结；
+- [x] 8 个剩余开发阶段、依赖和迭代级门禁已冻结；
 - [ ] 主 OpenAPI 已更新并通过生成类型验证；
 - [ ] Migration 19 已实现并通过数据库门禁；
 - [ ] 后端、前端和四 Stage 真实接入完成；

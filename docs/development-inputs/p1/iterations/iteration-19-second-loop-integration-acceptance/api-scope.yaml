@@ -4,8 +4,7 @@ contract_source: packages/contracts/openapi/openapi.yaml
 baseline_commit: 39fa4f3c4838c5d67b98c7958ba2f7a42ece75b7
 baseline_commit_role: execution_plan_freeze_parent
 ui_contract_freeze_commit: 6e8656467f3c204feb83d19185d10f78e092cd56
-implementation_base_rule: Use the current clean repository HEAD after applying and committing the Iteration 19 taskbook package.
-taskbook_index: docs/development-inputs/p1/iterations/iteration-19-second-loop-integration-acceptance/taskbooks/README.md
+implementation_base_rule: Use the current clean repository HEAD and preserve all frozen compatibility decisions.
 stages: [chapter_planning, content_generation, review, rewrite]
 validation_statuses: [unverified, verifying, verified, failed, stale]
 llm_strategies: [acf_managed, n8n_managed, none]
