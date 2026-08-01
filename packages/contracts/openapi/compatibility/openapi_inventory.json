@@ -1523,6 +1523,117 @@
       "has_error_envelope": true
     },
     {
+      "path": "/api/v1/llm-providers/{providerId}/disable",
+      "method": "post",
+      "operationId": "disableLlmProvider",
+      "idempotency_key": true,
+      "pagination": false,
+      "expected_version": "expectedVersion",
+      "success_responses": [
+        {
+          "status": 200,
+          "schema": "LlmProviderEnvelope"
+        }
+      ],
+      "error_responses": [
+        {
+          "status": 400,
+          "schema": "ErrorEnvelope",
+          "is_error_envelope": true
+        },
+        {
+          "status": 404,
+          "schema": "ErrorEnvelope",
+          "is_error_envelope": true
+        },
+        {
+          "status": 409,
+          "schema": "ErrorEnvelope",
+          "is_error_envelope": true
+        },
+        {
+          "status": 422,
+          "schema": "ErrorEnvelope",
+          "is_error_envelope": true
+        }
+      ],
+      "has_error_envelope": true
+    },
+    {
+      "path": "/api/v1/llm-providers/{providerId}/enable",
+      "method": "post",
+      "operationId": "enableLlmProvider",
+      "idempotency_key": true,
+      "pagination": false,
+      "expected_version": "expectedVersion",
+      "success_responses": [
+        {
+          "status": 200,
+          "schema": "LlmProviderEnvelope"
+        }
+      ],
+      "error_responses": [
+        {
+          "status": 400,
+          "schema": "ErrorEnvelope",
+          "is_error_envelope": true
+        },
+        {
+          "status": 404,
+          "schema": "ErrorEnvelope",
+          "is_error_envelope": true
+        },
+        {
+          "status": 409,
+          "schema": "ErrorEnvelope",
+          "is_error_envelope": true
+        },
+        {
+          "status": 422,
+          "schema": "ErrorEnvelope",
+          "is_error_envelope": true
+        }
+      ],
+      "has_error_envelope": true
+    },
+    {
+      "path": "/api/v1/llm-providers/{providerId}/verify",
+      "method": "post",
+      "operationId": "verifyLlmProvider",
+      "idempotency_key": true,
+      "pagination": false,
+      "expected_version": "expectedVersion",
+      "success_responses": [
+        {
+          "status": 200,
+          "schema": "LlmProviderVerifyResultEnvelope"
+        }
+      ],
+      "error_responses": [
+        {
+          "status": 400,
+          "schema": "ErrorEnvelope",
+          "is_error_envelope": true
+        },
+        {
+          "status": 404,
+          "schema": "ErrorEnvelope",
+          "is_error_envelope": true
+        },
+        {
+          "status": 409,
+          "schema": "ErrorEnvelope",
+          "is_error_envelope": true
+        },
+        {
+          "status": 422,
+          "schema": "ErrorEnvelope",
+          "is_error_envelope": true
+        }
+      ],
+      "has_error_envelope": true
+    },
+    {
       "path": "/api/v1/materials",
       "method": "get",
       "operationId": "listMaterials",
@@ -3816,8 +3927,26 @@
           "type": "['string', 'null']"
         },
         "integrationStatus": {},
+        "validationStatus": {},
         "enabled": {
           "type": "boolean"
+        },
+        "executable": {
+          "type": "boolean"
+        },
+        "safeError": {},
+        "modelCount": {
+          "type": "integer"
+        },
+        "verifiedVersion": {
+          "type": "['integer', 'null']"
+        },
+        "checkedAt": {
+          "type": "['string', 'null']",
+          "format": "date-time"
+        },
+        "checks": {
+          "type": "array"
         },
         "lastVerifiedAt": {
           "type": "['string', 'null']",
@@ -14010,6 +14139,76 @@
           "type": "string"
         },
         "repairAction": {
+          "type": "string"
+        }
+      }
+    },
+    "VerifyLlmProviderRequest": {
+      "required": [
+        "expectedVersion"
+      ],
+      "enums": {},
+      "properties": {
+        "expectedVersion": {
+          "type": "integer"
+        },
+        "optionalModel": {
+          "type": "string"
+        }
+      }
+    },
+    "LlmProviderVerifyResult": {
+      "required": [
+        "checkedAt",
+        "checks",
+        "executable",
+        "safeError",
+        "validationStatus",
+        "verifiedVersion"
+      ],
+      "enums": {
+        "validationStatus": [
+          "unverified",
+          "verifying",
+          "verified",
+          "failed",
+          "stale"
+        ]
+      },
+      "properties": {
+        "validationStatus": {
+          "type": "string"
+        },
+        "verifiedVersion": {
+          "type": "['integer', 'null']"
+        },
+        "checkedAt": {
+          "type": "['string', 'null']",
+          "format": "date-time"
+        },
+        "modelSummary": {
+          "type": "string"
+        },
+        "checks": {
+          "type": "array"
+        },
+        "executable": {
+          "type": "boolean"
+        },
+        "safeError": {}
+      }
+    },
+    "LlmProviderVerifyResultEnvelope": {
+      "required": [
+        "data",
+        "request_id"
+      ],
+      "enums": {},
+      "properties": {
+        "data": {
+          "type": "object"
+        },
+        "request_id": {
           "type": "string"
         }
       }
