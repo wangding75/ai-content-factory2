@@ -65,7 +65,7 @@ func main() {
 		globalConfigurations,
 		globalConfigurations,
 	)
-	workflowRuns.SetWorkflowExecutor(workflowrun.NewN8NWorkflowExecutor(globalConfigurations.RuntimeHTTPClient()))
+	workflowRuns.SetWorkflowExecutor(workflowrun.NewN8NWorkflowExecutor(globalConfigurations.RuntimeHTTPClient(), globalConfigurations.RuntimeConnectionCredential))
 	runtimeBridge := workflowrun.NewRuntimeBridge(workflowRuns)
 	contentGeneration := contentitem.NewGenerationService(contentRepository, workflowbinding.NewPostgresRepository(pool), globalConfigurations, runtimeBridge, hmacSecret)
 	workflowRuns.SetContentSucceededConsumer(contentGeneration)

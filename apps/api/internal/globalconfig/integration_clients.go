@@ -86,6 +86,12 @@ func (s *Service) connectionCredential(ctx context.Context, id uuid.UUID) (strin
 	return s.unseal(*encrypted)
 }
 
+// RuntimeConnectionCredential confines decryption to the outbound runtime call.
+// Callers must use the value immediately and must never persist or log it.
+func (s *Service) RuntimeConnectionCredential(ctx context.Context, id uuid.UUID) (string, error) {
+	return s.connectionCredential(ctx, id)
+}
+
 func integrationURL(base string, suffix string) (string, error) {
 	u, err := safehttp.NormalizeURL(base, integrationOutboundPolicy())
 	if err != nil {

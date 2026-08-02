@@ -2,7 +2,6 @@ package workflowrun
 
 import (
 	"context"
-	"errors"
 	"strings"
 	"time"
 )
@@ -60,9 +59,7 @@ func (s *Service) RunWorker(ctx context.Context, interval time.Duration, onError
 					continue
 				}
 				result, e := s.executor.Query(ctx, request)
-				if errors.Is(e, ErrExecutionTimeout) {
-					_, e = s.timeoutExecution(ctx, run)
-				} else if e == nil {
+				if e == nil {
 					_, e = s.applyExecutionResult(ctx, run, result)
 				}
 				report(e)

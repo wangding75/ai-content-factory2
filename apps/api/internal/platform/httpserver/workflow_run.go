@@ -2,9 +2,11 @@ package httpserver
 
 import (
 	"context"
+	"crypto/subtle"
 	"encoding/json"
 	"errors"
 	"net/http"
+	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -102,7 +104,32 @@ func registerWorkflowRunRoutes(mux *http.ServeMux, app workflowRunApplication) {
 	mux.HandleFunc("POST /api/v1/workflow-runs/{runId}/cancel", cancelWorkflowRunHandler(app))
 	mux.HandleFunc("POST /api/v1/workflow-runs/{runId}/retries", retryWorkflowRunHandler(app))
 	mux.HandleFunc("GET /api/v1/workflow-runs/{runId}/retry-options", getWorkflowRunRetryOptionsHandler(app))
+	mux.HandleFunc("GET /api/internal/n8n/workflow-runs/{runId}/cancellation", n8nCancellationStatusHandler(app))
 	mux.HandleFunc("GET /api/v1/projects/{projectId}/workflow-run-summary", getProjectWorkflowRunSummaryHandler(app))
+}
+
+// n8nCancellationStatusHandler exposes only the cancellation fact required by
+// a cooperative workflow checkpoint. It never returns a run snapshot or error
+// detail and requires the dedicated service-to-service credential.
+func n8nCancellationStatusHandler(app workflowRunApplication) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		expected := os.Getenv("ACF_N8N_CANCEL_STATUS_TOKEN")
+		provided := r.Header.Get("X-ACF-N8N-CANCEL-TOKEN")
+		if expected == "" || subtle.ConstantTimeCompare([]byte(expected), []byte(provided)) != 1 {
+			writeError(w, r, http.StatusUnauthorized, "unauthenticated", "authentication required", map[string]any{})
+			return
+		}
+		id, ok := workflowRunID(w, r)
+		if !ok {
+			return
+		}
+		run, err := app.GetRun(r.Context(), id)
+		if err != nil {
+			workflowRunServiceError(w, r, err)
+			return
+		}
+		writeJSON(w, r, http.StatusOK, map[string]any{"cancelled": run.Status == workflowrun.StatusCancelling || run.Status == workflowrun.StatusCancelled})
+	}
 }
 
 func createWorkflowRunHandler(app workflowRunApplication) http.HandlerFunc {

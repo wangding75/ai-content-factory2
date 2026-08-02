@@ -11,19 +11,24 @@ import (
 	"path"
 	"strings"
 	"time"
+
+	"github.com/google/uuid"
 )
 
 const maxWorkflowResponseBytes = 2 << 20
 
 type N8NWorkflowExecutor struct {
 	client *http.Client
+	credential func(context.Context, uuid.UUID) (string, error)
 }
 
-func NewN8NWorkflowExecutor(client *http.Client) *N8NWorkflowExecutor {
+func NewN8NWorkflowExecutor(client *http.Client, credential ...func(context.Context, uuid.UUID) (string, error)) *N8NWorkflowExecutor {
 	if client == nil {
 		client = &http.Client{}
 	}
-	return &N8NWorkflowExecutor{client: client}
+	e := &N8NWorkflowExecutor{client: client}
+	if len(credential) == 1 { e.credential = credential[0] }
+	return e
 }
 
 func (e *N8NWorkflowExecutor) Verify(context.Context, ExecutionRequest) error {
@@ -78,7 +83,14 @@ func (e *N8NWorkflowExecutor) Execute(ctx context.Context, request ExecutionRequ
 }
 
 func (e *N8NWorkflowExecutor) Cancel(ctx context.Context, request ExecutionRequest) (ExecutionResult, error) {
-	return e.executionControl(ctx, request, http.MethodPost)
+	if strings.TrimSpace(request.ExternalExecutionID) == "" {
+		return ExecutionResult{}, ErrExecutorUnavailable
+	}
+	// n8n has no execution-stop public API in the pinned version. The running
+	// workflow observes ACF's cancellation endpoint at its own checkpoints.
+	// Acknowledging the request here leaves the durable run in cancelling until
+	// the next public execution query reports its terminal result.
+	return ExecutionResult{Status: ExecutionAccepted, ExternalExecutionID: request.ExternalExecutionID}, nil
 }
 
 func (e *N8NWorkflowExecutor) Query(ctx context.Context, request ExecutionRequest) (ExecutionResult, error) {
@@ -98,15 +110,16 @@ func (e *N8NWorkflowExecutor) executionControl(ctx context.Context, request Exec
 		return ExecutionResult{}, ErrExecutorUnavailable
 	}
 	endpoint.Path = path.Join(endpoint.Path, "api", "v1", "executions", request.ExternalExecutionID)
-	if method == http.MethodPost {
-		endpoint.Path = path.Join(endpoint.Path, "stop")
-	}
+	endpoint.RawQuery = "includeData=true"
 	requestCtx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 	httpRequest, err := http.NewRequestWithContext(requestCtx, method, endpoint.String(), nil)
 	if err != nil {
 		return ExecutionResult{}, err
 	}
+	credential, err := e.runtimeCredential(requestCtx, request.WorkflowConnectionID)
+	if err != nil { return ExecutionResult{}, ErrExecutorUnavailable }
+	if credential != "" { httpRequest.Header.Set("X-N8N-API-KEY", credential) }
 	response, err := e.client.Do(httpRequest)
 	if err != nil {
 		if errors.Is(requestCtx.Err(), context.DeadlineExceeded) {
@@ -127,51 +140,46 @@ func (e *N8NWorkflowExecutor) executionControl(ctx context.Context, request Exec
 	if err != nil || len(body) > maxWorkflowResponseBytes {
 		return ExecutionResult{}, ErrInvalidExecutionResult
 	}
-	if method == http.MethodPost && len(bytes.TrimSpace(body)) == 0 {
-		return ExecutionResult{Status: ExecutionAccepted, ExternalExecutionID: request.ExternalExecutionID}, nil
-	}
-	return parseN8NControlResponse(body, request.ExternalExecutionID, method == http.MethodPost)
+	return parseN8NQueryResponse(body, request.ExternalExecutionID)
+}
+
+func (e *N8NWorkflowExecutor) runtimeCredential(ctx context.Context, id uuid.UUID) (string, error) {
+	if e.credential == nil { return "", nil }
+	if id == uuid.Nil { return "", ErrExecutorUnavailable }
+	return e.credential(ctx, id)
 }
 
 // parseN8NQueryResponse accepts only the small n8n execution representation
 // required for restart recovery. It intentionally does not try to normalize
 // arbitrary n8n API versions or preserve an upstream response body.
 func parseN8NQueryResponse(body json.RawMessage, externalExecutionID string) (ExecutionResult, error) {
-	return parseN8NControlResponse(body, externalExecutionID, false)
-}
-
-func parseN8NControlResponse(body json.RawMessage, externalExecutionID string, cancellation bool) (ExecutionResult, error) {
 	var response struct {
-		Status string          `json:"status"`
-		Data   json.RawMessage `json:"data"`
-		Output json.RawMessage `json:"output"`
+		Status string `json:"status"`
+		Data struct { ResultData struct { LastNodeExecuted string `json:"lastNodeExecuted"`; RunData map[string][]struct { Data struct { Main [][]struct { JSON json.RawMessage `json:"json"` } `json:"main"` } `json:"data"` } `json:"runData"` } `json:"resultData"` } `json:"data"`
 	}
-	if !validJSONObject(body) || json.Unmarshal(body, &response) != nil {
-		return ExecutionResult{}, ErrInvalidExecutionResult
-	}
+	if !validJSONObject(body) || json.Unmarshal(body, &response) != nil { return ExecutionResult{}, ErrInvalidExecutionResult }
 	result := ExecutionResult{ExternalExecutionID: externalExecutionID}
 	switch strings.ToLower(strings.TrimSpace(response.Status)) {
-	case "new", "waiting", "running", "cancelling":
+	case "new", "running", "waiting":
 		result.Status = ExecutionRunning
-		if cancellation {
-			result.Status = ExecutionAccepted
-		}
-	case "success", "succeeded":
-		output := response.Output
-		if len(output) == 0 {
-			output = response.Data
-		}
-		if !validJSONObject(output) {
-			return ExecutionResult{}, ErrInvalidExecutionResult
-		}
-		result.Status, result.Output = ExecutionSucceeded, RedactJSON(output)
-	case "error", "failed", "crashed":
+		return result, nil
+	case "error", "crashed":
 		result.Status, result.ErrorCode, result.ErrorMessage = ExecutionFailed, "upstream_execution_failed", "workflow execution failed"
+		return result, nil
 	case "canceled", "cancelled":
 		result.Status = ExecutionCancelled
+		return result, nil
+	case "success":
 	default:
 		return ExecutionResult{}, ErrInvalidExecutionResult
 	}
+	runs := response.Data.ResultData.RunData[response.Data.ResultData.LastNodeExecuted]
+	if response.Data.ResultData.LastNodeExecuted == "" || len(runs) == 0 || len(runs[len(runs)-1].Data.Main) == 0 || len(runs[len(runs)-1].Data.Main[0]) == 0 { return ExecutionResult{}, ErrInvalidExecutionResult }
+	output := runs[len(runs)-1].Data.Main[0][0].JSON
+	var cancellation struct { Status string `json:"status"` }
+	if json.Unmarshal(output, &cancellation) == nil && strings.EqualFold(cancellation.Status, "cancelled") { result.Status = ExecutionCancelled; return result, nil }
+	if !validJSONObject(output) { return ExecutionResult{}, ErrInvalidExecutionResult }
+	result.Status, result.Output = ExecutionSucceeded, RedactJSON(output)
 	return result, nil
 }
 

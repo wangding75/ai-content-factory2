@@ -23,15 +23,38 @@
       "position": [-120,0]
     },
     {
+      "parameters": {
+        "url": "={{ $json.verified || $json.error ? $env.ACF_API_BASE_URL + '/api/v1/meta' : $env.ACF_API_BASE_URL + '/api/internal/n8n/workflow-runs/' + $json.sourceWorkflowRunId + '/cancellation' }}",
+        "sendHeaders": true,
+        "headerParameters": {"parameters":[{"name":"X-ACF-N8N-CANCEL-TOKEN","value":"={{ $env.ACF_N8N_CANCEL_STATUS_TOKEN }}"}]},
+        "options": {}
+      },
+      "id": "f4e32de0-15a0-4100-8000-000000000022",
+      "name": "Check ACF Cooperative Cancellation",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [120,0]
+    },
+    {
+      "parameters": {
+        "jsCode": "const source=$('Validate Request and Generate Deterministic Candidates').all()[0]?.json;\nif(!source||typeof source!=='object'||Array.isArray(source)) throw new Error('missing runtime source');\nif(source.error||source.verified) return [{json:{...source}}];\nconst cancelled=$json.cancelled;\nif(cancelled===true) return [{json:{status:'cancelled'}}];\nif(cancelled!==false) throw new Error('invalid cancellation status response');\nreturn [{json:{...source}}];"
+      },
+      "id": "f4e32de0-15a0-4100-8000-000000000023",
+      "name": "Stop When ACF Cancellation Is Requested",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [380,0]
+    },
+    {
       "parameters": {"respondWith":"text","responseBody":"={{ JSON.stringify($json) }}","options":{"responseCode":"={{ $json.error ? 400 : 200 }}"}},
       "id": "f4e32de0-15a0-4100-8000-000000000013",
       "name": "Return Runtime Output or Contract Error",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.1,
-      "position": [180,0]
+      "position": [640,0]
     }
   ],
-  "connections": {"Production Webhook":{"main":[[{"node":"Validate Request and Generate Deterministic Candidates","type":"main","index":0}]]},"Validate Request and Generate Deterministic Candidates":{"main":[[{"node":"Return Runtime Output or Contract Error","type":"main","index":0}]]}},
+  "connections": {"Production Webhook":{"main":[[{"node":"Validate Request and Generate Deterministic Candidates","type":"main","index":0}]]},"Validate Request and Generate Deterministic Candidates":{"main":[[{"node":"Check ACF Cooperative Cancellation","type":"main","index":0}]]},"Check ACF Cooperative Cancellation":{"main":[[{"node":"Stop When ACF Cancellation Is Requested","type":"main","index":0}]]},"Stop When ACF Cancellation Is Requested":{"main":[[{"node":"Return Runtime Output or Contract Error","type":"main","index":0}]]}},
   "settings": {"executionOrder":"v1"},
   "versionId": "f4e32de0-15a0-4100-8000-000000000031",
   "meta": {"templateCredsSetupCompleted":true},

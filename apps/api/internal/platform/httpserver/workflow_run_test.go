@@ -195,6 +195,37 @@ func TestWorkflowRunHTTPCommandsAndErrors(t *testing.T) {
 	}
 }
 
+func TestN8NCancellationStatusRequiresDedicatedCredential(t *testing.T) {
+	t.Setenv("ACF_N8N_CANCEL_STATUS_TOKEN", "test-cancel-token")
+	run := workflowRunHTTPFixture()
+	run.Status = workflowrun.StatusCancelling
+	app := &fakeWorkflowRunApplication{run: run}
+	handler := workflowRunHTTPHandler(app)
+	path := "/api/internal/n8n/workflow-runs/" + run.ID.String() + "/cancellation"
+	for _, test := range []struct {
+		name string
+		token string
+		want int
+	}{
+		{name: "missing", want: http.StatusUnauthorized},
+		{name: "wrong", token: "wrong-token", want: http.StatusUnauthorized},
+		{name: "accepted", token: "test-cancel-token", want: http.StatusOK},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			req := httptest.NewRequest(http.MethodGet, path, nil)
+			req.Header.Set("X-ACF-N8N-CANCEL-TOKEN", test.token)
+			w := httptest.NewRecorder()
+			handler.ServeHTTP(w, req)
+			if w.Code != test.want {
+				t.Fatalf("status=%d body=%s", w.Code, w.Body.String())
+			}
+			if test.want == http.StatusOK && !strings.Contains(w.Body.String(), `"cancelled":true`) {
+				t.Fatalf("body=%s", w.Body.String())
+			}
+		})
+	}
+}
+
 func TestWorkflowRunHTTPRetryModesAndOptions(t *testing.T) {
 	run := workflowRunHTTPFixture()
 	app := &fakeWorkflowRunApplication{run: run, retryOptions: workflowrun.RetryOptions{RunID: run.ID, Retryability: "runtime_retry", CurrentConfiguration: workflowrun.RetryOption{Mode: "current_configuration", Enabled: true, Reasons: []workflowrun.RetryReason{}}, OriginalConfiguration: workflowrun.RetryOption{Mode: "original_configuration", Reasons: []workflowrun.RetryReason{{Code: "snapshot_incomplete", Message: "disabled"}}}}}

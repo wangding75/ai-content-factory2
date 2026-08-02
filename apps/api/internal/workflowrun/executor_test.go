@@ -102,22 +102,26 @@ func TestN8NWorkflowExecutorRejectsUnsafeWebhookReference(t *testing.T) {
 }
 
 func TestN8NWorkflowExecutorQueryParsesTerminalAndRunningResponses(t *testing.T) {
+	body := func(status string, output string) string {
+		if output == "" { return `{"status":"` + status + `"}` }
+		return `{"status":"` + status + `","data":{"resultData":{"lastNodeExecuted":"terminal","runData":{"terminal":[{"data":{"main":[[{"json":` + output + `}]]}}]}}}}`
+	}
 	for _, test := range []struct {
 		name       string
 		body       string
 		wantStatus ExecutionStatus
 		wantOutput string
 	}{
-		{name: "running", body: `{"status":"running"}`, wantStatus: ExecutionRunning},
-		{name: "waiting", body: `{"status":"waiting"}`, wantStatus: ExecutionRunning},
-		{name: "success data", body: `{"status":"success","data":{"result":"ok"}}`, wantStatus: ExecutionSucceeded, wantOutput: `{"result":"ok"}`},
-		{name: "success output", body: `{"status":"succeeded","output":{"result":"ok"}}`, wantStatus: ExecutionSucceeded, wantOutput: `{"result":"ok"}`},
-		{name: "failed", body: `{"status":"error","message":"token=secret"}`, wantStatus: ExecutionFailed},
-		{name: "cancelled", body: `{"status":"canceled"}`, wantStatus: ExecutionCancelled},
+		{name: "running", body: body("running", ""), wantStatus: ExecutionRunning},
+		{name: "waiting", body: body("waiting", ""), wantStatus: ExecutionRunning},
+		{name: "success", body: body("success", `{"result":"ok"}`), wantStatus: ExecutionSucceeded, wantOutput: `{"result":"ok"}`},
+		{name: "failed", body: body("error", ""), wantStatus: ExecutionFailed},
+		{name: "crashed", body: body("crashed", ""), wantStatus: ExecutionFailed},
+		{name: "cancelled", body: body("canceled", ""), wantStatus: ExecutionCancelled},
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				if r.Method != http.MethodGet || r.URL.Path != "/api/v1/executions/execution-42" {
+				if r.Method != http.MethodGet || r.URL.Path != "/api/v1/executions/execution-42" || r.URL.Query().Get("includeData") != "true" {
 					t.Fatalf("request=%s %s", r.Method, r.URL.Path)
 				}
 				_, _ = w.Write([]byte(test.body))
@@ -135,10 +139,31 @@ func TestN8NWorkflowExecutorQueryParsesTerminalAndRunningResponses(t *testing.T)
 	}
 }
 
+func TestN8NWorkflowExecutorQueryUsesDedicatedCredential(t *testing.T) {
+	connectionID := uuid.New()
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if got := r.Header.Get("X-N8N-API-KEY"); got != "test-api-key" {
+			t.Fatalf("api key=%q", got)
+		}
+		_, _ = w.Write([]byte(`{"status":"running"}`))
+	}))
+	defer server.Close()
+	snapshot := json.RawMessage(`{"workflowConnection":{"type":"n8n","baseUrl":"` + server.URL + `","timeoutSeconds":5}}`)
+	result, err := NewN8NWorkflowExecutor(server.Client(), func(_ context.Context, id uuid.UUID) (string, error) {
+		if id != connectionID {
+			t.Fatalf("connection id=%s", id)
+		}
+		return "test-api-key", nil
+	}).Query(context.Background(), ExecutionRequest{ConfigurationSnapshot: snapshot, WorkflowConnectionID: connectionID, ExternalExecutionID: "execution-42"})
+	if err != nil || result.Status != ExecutionRunning {
+		t.Fatalf("result=%+v err=%v", result, err)
+	}
+}
+
 func TestN8NWorkflowExecutorQueryRejectsInvalidResponses(t *testing.T) {
 	for _, body := range []string{
+		`{"status":"success","data":{"resultData":{"runData":{}}}}`,
 		`{"status":"unknown"}`,
-		`{"status":"success","data":[]}`,
 		`not json`,
 	} {
 		t.Run(body, func(t *testing.T) {
@@ -159,26 +184,7 @@ func TestN8NWorkflowExecutorQueryRejectsMissingExternalExecutionID(t *testing.T)
 	}
 }
 
-func TestN8NWorkflowExecutorCancelDistinguishesAcceptedAndTerminalStates(t *testing.T) {
-	for _, test := range []struct {
-		body string
-		want ExecutionStatus
-	}{
-		{body: ``, want: ExecutionAccepted},
-		{body: `{"status":"canceled"}`, want: ExecutionCancelled},
-		{body: `{"status":"running"}`, want: ExecutionAccepted},
-	} {
-		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			if r.Method != http.MethodPost || r.URL.Path != "/api/v1/executions/execution-42/stop" {
-				t.Fatalf("request=%s %s", r.Method, r.URL.Path)
-			}
-			_, _ = w.Write([]byte(test.body))
-		}))
-		snapshot := json.RawMessage(`{"workflowConnection":{"type":"n8n","baseUrl":"` + server.URL + `","timeoutSeconds":5}}`)
-		result, err := NewN8NWorkflowExecutor(server.Client()).Cancel(context.Background(), ExecutionRequest{ConfigurationSnapshot: snapshot, ExternalExecutionID: "execution-42"})
-		server.Close()
-		if err != nil || result.Status != test.want {
-			t.Fatalf("result=%+v err=%v", result, err)
-		}
-	}
+func TestN8NWorkflowExecutorCancelAcceptsCooperativeCancellation(t *testing.T) {
+	result, err := NewN8NWorkflowExecutor(nil).Cancel(context.Background(), ExecutionRequest{ExternalExecutionID: "execution-42"})
+	if err != nil || result.Status != ExecutionAccepted { t.Fatalf("result=%+v err=%v", result, err) }
 }
