@@ -13,6 +13,7 @@ import (
 var (
 	ErrExecutorUnavailable    = errors.New("workflow executor unavailable")
 	ErrExecutionTimeout       = errors.New("workflow execution timed out")
+	ErrExecutionNotFound      = errors.New("workflow execution not found")
 	ErrInvalidExecutionResult = errors.New("invalid workflow execution result")
 )
 

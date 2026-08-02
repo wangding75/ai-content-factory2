@@ -114,7 +114,7 @@ func (r WorkflowRun) Succeed(at time.Time, output json.RawMessage) (WorkflowRun,
 // result-consumption failure to succeeded. The validated output and immutable
 // execution snapshots remain on the original Run.
 func (r WorkflowRun) CompleteResultConsumption(at time.Time) (WorkflowRun, error) {
-	if !validJSONObject(r.OutputPayload) || (r.Status != StatusRunning &&
+	if !validJSONObject(r.OutputPayload) || (r.Status != StatusRunning && r.Status != StatusCancelling &&
 		(r.Status != StatusFailed || r.FailurePhase == nil || *r.FailurePhase != "result_consumption")) {
 		return WorkflowRun{}, ErrInvalidTransition
 	}
@@ -181,9 +181,9 @@ func (r WorkflowRun) transition(next Status, at time.Time, output json.RawMessag
 }
 
 func canTransition(from, to Status) bool {
-	return (from == StatusQueued && (to == StatusRunning || to == StatusCancelling)) ||
+	return (from == StatusQueued && (to == StatusRunning || to == StatusCancelling || to == StatusCancelled)) ||
 		(from == StatusRunning && (to == StatusSucceeded || to == StatusFailed || to == StatusCancelling || to == StatusCancelled || to == StatusTimedOut)) ||
-		(from == StatusCancelling && to == StatusCancelled)
+		(from == StatusCancelling && (to == StatusSucceeded || to == StatusFailed || to == StatusCancelled))
 }
 
 func (r WorkflowRun) validate() error {

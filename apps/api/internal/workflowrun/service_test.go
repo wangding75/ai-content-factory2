@@ -149,7 +149,7 @@ func (s *serviceStore) SaveExternalExecutionID(_ context.Context, current Workfl
 }
 func (s *serviceStore) SaveOutputForConsumption(_ context.Context, current WorkflowRun, output json.RawMessage, event Event) (WorkflowRun, Event, error) {
 	r := s.runs[current.ID]
-	if r.Version != current.Version || r.Status != StatusRunning || r.OutputPayload != nil {
+	if r.Version != current.Version || (r.Status != StatusRunning && r.Status != StatusCancelling) || r.OutputPayload != nil {
 		return WorkflowRun{}, Event{}, ErrVersionConflict
 	}
 	r.OutputPayload, r.Version, r.UpdatedAt = output, r.Version+1, event.CreatedAt
@@ -354,7 +354,7 @@ func TestRetryAndCancelVersionRules(t *testing.T) {
 	q := WorkflowRun{ID: uuid.New(), RunNumber: "WR-2", ProjectID: projectID, Stage: "review", WorkflowConfigurationID: uuid.New(), TriggerSource: "manual", Status: StatusQueued, ConfigurationSnapshot: json.RawMessage(`{}`), InputPayload: json.RawMessage(`{}`), CreatedAt: now, UpdatedAt: now, Version: 1}
 	store.runs[q.ID] = q
 	cancelled, e := s.CancelRun(context.Background(), RunCommand{RunID: q.ID, ExpectedVersion: 1, IdempotencyKey: "x"})
-	if e != nil || cancelled.Status != StatusCancelling || len(store.events[q.ID]) != 1 {
+	if e != nil || cancelled.Status != StatusCancelled || len(store.events[q.ID]) != 1 {
 		t.Fatalf("run=%+v err=%v", cancelled, e)
 	}
 }
@@ -552,6 +552,46 @@ func TestWorkerDoesNotQueryOrExecuteRunningRunWithoutExternalExecutionID(t *test
 	<-done
 	if executor.QueryCalls != 0 || executor.ExecuteCalls != 0 || store.runs[run.ID].Status != StatusRunning {
 		t.Fatalf("query=%d execute=%d run=%+v", executor.QueryCalls, executor.ExecuteCalls, store.runs[run.ID])
+	}
+}
+
+func TestCancelRunQueuesLocalCancellationAndClaimsExternalCancellation(t *testing.T) {
+	service, store, projectID := fixtureService(t)
+	now := service.now()
+	queued := WorkflowRun{ID: uuid.New(), RunNumber: "WR-CANCEL-QUEUED", ProjectID: projectID, Stage: "review", WorkflowConfigurationID: uuid.New(), TriggerSource: "manual", Status: StatusQueued, ConfigurationSnapshot: json.RawMessage(`{"workflowConnection":{"id":"` + uuid.NewString() + `"},"workflowConfiguration":{"defaultParameters":{}}}`), InputPayload: json.RawMessage(`{}`), CreatedAt: now, UpdatedAt: now, Version: 1}
+	externalID := "cancel-external"
+	running := queued
+	running.ID, running.RunNumber, running.Status, running.ExternalExecutionID, running.Version = uuid.New(), "WR-CANCEL-RUNNING", StatusRunning, &externalID, 2
+	running.StartedAt = &now
+	store.runs[queued.ID], store.runs[running.ID] = queued, running
+	fake := &FakeWorkflowExecutor{CancelResult: ExecutionResult{Status: ExecutionAccepted}}
+	service.SetWorkflowExecutor(fake)
+	local, err := service.CancelRun(context.Background(), RunCommand{RunID: queued.ID, ExpectedVersion: 1, IdempotencyKey: "queued-cancel"})
+	if err != nil || local.Status != StatusCancelled || fake.CancelCalls != 0 || len(store.events[queued.ID]) != 1 {
+		t.Fatalf("local=%+v err=%v cancel=%d", local, err, fake.CancelCalls)
+	}
+	claimed, err := service.CancelRun(context.Background(), RunCommand{RunID: running.ID, ExpectedVersion: 2, IdempotencyKey: "running-cancel"})
+	if err != nil || claimed.Status != StatusCancelling || fake.CancelCalls != 1 || fake.ExecuteCalls != 0 || len(store.events[running.ID]) != 1 {
+		t.Fatalf("claimed=%+v err=%v cancel=%d execute=%d", claimed, err, fake.CancelCalls, fake.ExecuteCalls)
+	}
+	if replay, err := service.CancelRun(context.Background(), RunCommand{RunID: running.ID, ExpectedVersion: 2, IdempotencyKey: "running-cancel"}); err != nil || replay.ID != claimed.ID || fake.CancelCalls != 1 {
+		t.Fatalf("replay=%+v err=%v cancel=%d", replay, err, fake.CancelCalls)
+	}
+}
+
+func TestWorkerCancellingUsesQueryForRealTerminalState(t *testing.T) {
+	service, store, projectID := fixtureService(t)
+	now, externalID := service.now(), "cancelling-external"
+	run := WorkflowRun{ID: uuid.New(), RunNumber: "WR-CANCELLING", ProjectID: projectID, Stage: "review", WorkflowConfigurationID: uuid.New(), TriggerSource: "manual", Status: StatusCancelling, ConfigurationSnapshot: json.RawMessage(`{"workflowConnection":{"id":"` + uuid.NewString() + `"},"workflowConfiguration":{"defaultParameters":{}}}`), InputPayload: json.RawMessage(`{}`), ExternalExecutionID: &externalID, StartedAt: &now, CancellationRequestedAt: &now, CreatedAt: now, UpdatedAt: now, Version: 3}
+	store.runs[run.ID] = run
+	fake := &FakeWorkflowExecutor{CancelResult: ExecutionResult{Status: ExecutionAccepted}, QueryResult: ExecutionResult{Status: ExecutionCancelled}}
+	service.SetWorkflowExecutor(fake)
+	if err := service.completeCancellation(context.Background(), run); err != nil {
+		t.Fatal(err)
+	}
+	updated := store.runs[run.ID]
+	if updated.Status != StatusCancelled || fake.CancelCalls != 1 || fake.QueryCalls != 1 || fake.ExecuteCalls != 0 || len(store.events[run.ID]) != 1 {
+		t.Fatalf("updated=%+v cancel=%d query=%d execute=%d events=%d", updated, fake.CancelCalls, fake.QueryCalls, fake.ExecuteCalls, len(store.events[run.ID]))
 	}
 }
 

@@ -239,7 +239,7 @@ func (s *Service) applyExecutionResult(ctx context.Context, run WorkflowRun, res
 		// Persist the validated external result while the Run is still running.
 		// A process crash from this point is recoverable by the worker without a
 		// second Submit (or a second Query): OutputPayload marks consumption work.
-		pending := Event{ID: s.newID(), RunID: run.ID, EventType: "output_validated", Status: StatusRunning, Payload: executionEventPayload(result), CreatedAt: s.now()}
+		pending := Event{ID: s.newID(), RunID: run.ID, EventType: "output_validated", Status: run.Status, Payload: executionEventPayload(result), CreatedAt: s.now()}
 		stored, _, err := s.store.SaveOutputForConsumption(ctx, run, RedactJSON(result.Output), pending)
 		if err != nil {
 			return WorkflowRun{}, mapStoreError(err)
@@ -262,7 +262,7 @@ func (s *Service) applyExecutionResult(ctx context.Context, run WorkflowRun, res
 // source_workflow_run_id/workflow_run_id uniqueness, so replay after a crash
 // returns the existing domain result before the Run becomes succeeded.
 func (s *Service) consumeStoredResult(ctx context.Context, run WorkflowRun) (WorkflowRun, error) {
-	if (run.Status != StatusRunning && run.Status != StatusFailed) || !validJSONObject(run.OutputPayload) {
+	if (run.Status != StatusRunning && run.Status != StatusCancelling && run.Status != StatusFailed) || !validJSONObject(run.OutputPayload) {
 		return run, ErrInvalidTransition
 	}
 	consumerRun := run
@@ -671,7 +671,8 @@ func (s *Service) CancelRun(ctx context.Context, command RunCommand) (WorkflowRu
 		ID      uuid.UUID
 		Version int
 	}{command.RunID, command.ExpectedVersion})
-	return s.store.ExecuteIdempotent(ctx, scope, command.IdempotencyKey, fingerprint, func(store Store) (WorkflowRun, error) {
+	claimedExternalCancellation := false
+	updated, err := s.store.ExecuteIdempotent(ctx, scope, command.IdempotencyKey, fingerprint, func(store Store) (WorkflowRun, error) {
 		current, err := store.GetByID(ctx, command.RunID)
 		if err != nil {
 			return WorkflowRun{}, mapStoreError(err)
@@ -682,6 +683,17 @@ func (s *Service) CancelRun(ctx context.Context, command RunCommand) (WorkflowRu
 		if current.Status == StatusCancelling || current.Status == StatusCancelled {
 			return current, nil
 		}
+		if current.Status == StatusQueued {
+			next, cancelErr := current.Cancel(s.now())
+			if cancelErr != nil {
+				return WorkflowRun{}, cancelErr
+			}
+			updated, _, updateErr := store.UpdateStatusWithEvent(ctx, current, next, Event{ID: s.newID(), RunID: next.ID, EventType: "cancelled", Status: StatusCancelled, Payload: json.RawMessage(`{}`), CreatedAt: next.UpdatedAt})
+			return updated, mapStoreError(updateErr)
+		}
+		if current.Status == StatusRunning && (current.ExternalExecutionID == nil || strings.TrimSpace(*current.ExternalExecutionID) == "") {
+			return WorkflowRun{}, ErrExecutorUnavailable
+		}
 		next, err := current.RequestCancellation(s.now())
 		if errors.Is(err, ErrInvalidTransition) {
 			return WorkflowRun{}, ErrNotCancellable
@@ -690,8 +702,26 @@ func (s *Service) CancelRun(ctx context.Context, command RunCommand) (WorkflowRu
 			return WorkflowRun{}, err
 		}
 		updated, _, err := store.UpdateStatusWithEvent(ctx, current, next, Event{ID: s.newID(), RunID: next.ID, EventType: "cancel_requested", Status: StatusCancelling, Payload: json.RawMessage(`{}`), CreatedAt: next.UpdatedAt})
+		if err == nil && updated.Status == StatusCancelling {
+			claimedExternalCancellation = true
+		}
 		return updated, mapStoreError(err)
 	})
+	if err != nil || !claimedExternalCancellation {
+		return updated, err
+	}
+	request, err := executionRequest(updated)
+	if err != nil {
+		return updated, err
+	}
+	result, err := s.executor.Cancel(ctx, request)
+	if err != nil {
+		return updated, err
+	}
+	if result.Status == ExecutionSucceeded || result.Status == ExecutionFailed || result.Status == ExecutionCancelled {
+		return s.applyExecutionResult(ctx, updated, result)
+	}
+	return updated, nil
 }
 
 func (s *Service) GetRetryOptions(ctx context.Context, runID uuid.UUID) (RetryOptions, error) {

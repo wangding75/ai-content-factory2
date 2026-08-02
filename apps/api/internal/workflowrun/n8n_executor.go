@@ -115,29 +115,32 @@ func (e *N8NWorkflowExecutor) executionControl(ctx context.Context, request Exec
 		return ExecutionResult{}, err
 	}
 	defer response.Body.Close()
-	if response.StatusCode == http.StatusNotFound || response.StatusCode == http.StatusConflict {
+	if response.StatusCode == http.StatusNotFound {
 		_, _ = io.Copy(io.Discard, io.LimitReader(response.Body, 64*1024))
-		return ExecutionResult{Status: ExecutionCancelled, ExternalExecutionID: request.ExternalExecutionID}, nil
+		return ExecutionResult{}, ErrExecutionNotFound
 	}
 	if response.StatusCode < 200 || response.StatusCode > 299 {
 		_, _ = io.Copy(io.Discard, io.LimitReader(response.Body, 64*1024))
-		return ExecutionResult{Status: ExecutionFailed, ErrorCode: "upstream_http_error", ErrorMessage: "workflow execution failed"}, nil
-	}
-	if method == http.MethodPost {
-		_, _ = io.Copy(io.Discard, io.LimitReader(response.Body, 64*1024))
-		return ExecutionResult{Status: ExecutionCancelled, ExternalExecutionID: request.ExternalExecutionID}, nil
+		return ExecutionResult{}, ErrExecutorUnavailable
 	}
 	body, err := io.ReadAll(io.LimitReader(response.Body, maxWorkflowResponseBytes+1))
 	if err != nil || len(body) > maxWorkflowResponseBytes {
 		return ExecutionResult{}, ErrInvalidExecutionResult
 	}
-	return parseN8NQueryResponse(body, request.ExternalExecutionID)
+	if method == http.MethodPost && len(bytes.TrimSpace(body)) == 0 {
+		return ExecutionResult{Status: ExecutionAccepted, ExternalExecutionID: request.ExternalExecutionID}, nil
+	}
+	return parseN8NControlResponse(body, request.ExternalExecutionID, method == http.MethodPost)
 }
 
 // parseN8NQueryResponse accepts only the small n8n execution representation
 // required for restart recovery. It intentionally does not try to normalize
 // arbitrary n8n API versions or preserve an upstream response body.
 func parseN8NQueryResponse(body json.RawMessage, externalExecutionID string) (ExecutionResult, error) {
+	return parseN8NControlResponse(body, externalExecutionID, false)
+}
+
+func parseN8NControlResponse(body json.RawMessage, externalExecutionID string, cancellation bool) (ExecutionResult, error) {
 	var response struct {
 		Status string          `json:"status"`
 		Data   json.RawMessage `json:"data"`
@@ -148,8 +151,11 @@ func parseN8NQueryResponse(body json.RawMessage, externalExecutionID string) (Ex
 	}
 	result := ExecutionResult{ExternalExecutionID: externalExecutionID}
 	switch strings.ToLower(strings.TrimSpace(response.Status)) {
-	case "new", "waiting", "running":
+	case "new", "waiting", "running", "cancelling":
 		result.Status = ExecutionRunning
+		if cancellation {
+			result.Status = ExecutionAccepted
+		}
 	case "success", "succeeded":
 		output := response.Output
 		if len(output) == 0 {

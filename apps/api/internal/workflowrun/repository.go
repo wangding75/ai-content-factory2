@@ -448,7 +448,7 @@ func (r *Repository) SaveExternalExecutionID(ctx context.Context, current Workfl
 // any domain write.  The output and its event share one transaction so a
 // restarted worker can consume it without touching the executor again.
 func (r *Repository) SaveOutputForConsumption(ctx context.Context, current WorkflowRun, output json.RawMessage, event Event) (WorkflowRun, Event, error) {
-	if current.Status != StatusRunning || !validJSONObject(output) || event.RunID != current.ID || event.Status != StatusRunning {
+	if (current.Status != StatusRunning && current.Status != StatusCancelling) || !validJSONObject(output) || event.RunID != current.ID || event.Status != current.Status {
 		return WorkflowRun{}, Event{}, ErrValidation
 	}
 	if r.pool == nil {
@@ -459,7 +459,7 @@ func (r *Repository) SaveOutputForConsumption(ctx context.Context, current Workf
 		return WorkflowRun{}, Event{}, err
 	}
 	defer tx.Rollback(ctx)
-	updated, err := scanRun(tx.QueryRow(ctx, "UPDATE workflow_run_records SET output_payload=$1,updated_at=$2,version=version+1 WHERE id=$3 AND version=$4 AND status='running' AND output_payload IS NULL RETURNING "+runColumns, RedactJSON(output), event.CreatedAt, current.ID, current.Version))
+	updated, err := scanRun(tx.QueryRow(ctx, "UPDATE workflow_run_records SET output_payload=$1,updated_at=$2,version=version+1 WHERE id=$3 AND version=$4 AND status IN ('running','cancelling') AND output_payload IS NULL RETURNING "+runColumns, RedactJSON(output), event.CreatedAt, current.ID, current.Version))
 	if errors.Is(err, pgx.ErrNoRows) {
 		return WorkflowRun{}, Event{}, ErrVersionConflict
 	}

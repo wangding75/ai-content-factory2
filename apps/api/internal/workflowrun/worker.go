@@ -83,26 +83,28 @@ func (s *Service) RunWorker(ctx context.Context, interval time.Duration, onError
 }
 
 func (s *Service) completeCancellation(ctx context.Context, run WorkflowRun) error {
-	if run.StartedAt != nil {
-		if run.ExternalExecutionID == nil {
-			return ErrExecutorUnavailable
-		}
-		request, err := executionRequest(run)
-		if err != nil {
-			return err
-		}
-		result, err := s.executor.Cancel(ctx, request)
-		if err != nil {
-			return err
-		}
-		if result.Status != ExecutionCancelled {
-			return ErrExecutorUnavailable
-		}
+	if run.ExternalExecutionID == nil || strings.TrimSpace(*run.ExternalExecutionID) == "" {
+		return ErrExecutorUnavailable
 	}
-	next, err := run.Cancel(s.now())
+	request, err := executionRequest(run)
 	if err != nil {
 		return err
 	}
-	_, _, err = s.store.UpdateStatusWithEvent(ctx, run, next, Event{ID: s.newID(), RunID: run.ID, EventType: "cancelled", Status: StatusCancelled, Payload: executionEventPayload(ExecutionResult{}), CreatedAt: next.UpdatedAt})
-	return mapStoreError(err)
+	result, err := s.executor.Cancel(ctx, request)
+	if err != nil {
+		return err
+	}
+	if result.Status == ExecutionSucceeded || result.Status == ExecutionFailed || result.Status == ExecutionCancelled {
+		_, err = s.applyExecutionResult(ctx, run, result)
+		return err
+	}
+	result, err = s.executor.Query(ctx, request)
+	if err != nil {
+		return err
+	}
+	if result.Status == ExecutionAccepted || result.Status == ExecutionRunning {
+		return nil
+	}
+	_, err = s.applyExecutionResult(ctx, run, result)
+	return err
 }

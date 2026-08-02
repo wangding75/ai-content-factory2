@@ -158,3 +158,27 @@ func TestN8NWorkflowExecutorQueryRejectsMissingExternalExecutionID(t *testing.T)
 		t.Fatalf("err=%v", err)
 	}
 }
+
+func TestN8NWorkflowExecutorCancelDistinguishesAcceptedAndTerminalStates(t *testing.T) {
+	for _, test := range []struct {
+		body string
+		want ExecutionStatus
+	}{
+		{body: ``, want: ExecutionAccepted},
+		{body: `{"status":"canceled"}`, want: ExecutionCancelled},
+		{body: `{"status":"running"}`, want: ExecutionAccepted},
+	} {
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if r.Method != http.MethodPost || r.URL.Path != "/api/v1/executions/execution-42/stop" {
+				t.Fatalf("request=%s %s", r.Method, r.URL.Path)
+			}
+			_, _ = w.Write([]byte(test.body))
+		}))
+		snapshot := json.RawMessage(`{"workflowConnection":{"type":"n8n","baseUrl":"` + server.URL + `","timeoutSeconds":5}}`)
+		result, err := NewN8NWorkflowExecutor(server.Client()).Cancel(context.Background(), ExecutionRequest{ConfigurationSnapshot: snapshot, ExternalExecutionID: "execution-42"})
+		server.Close()
+		if err != nil || result.Status != test.want {
+			t.Fatalf("result=%+v err=%v", result, err)
+		}
+	}
+}
