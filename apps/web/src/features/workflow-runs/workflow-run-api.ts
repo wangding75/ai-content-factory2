@@ -2,19 +2,20 @@ import type { ApiRequestInit } from "../../lib/api.ts";
 import { apiRequest } from "../../lib/api.ts";
 import type { WorkflowStage } from "../workflow-bindings/workflow-binding-api.ts";
 
-export type WorkflowRunStatus = "queued" | "running" | "succeeded" | "failed" | "cancelled";
+export type WorkflowRunStatus = "queued" | "running" | "cancelling" | "succeeded" | "failed" | "cancelled" | "timed_out";
+export type WorkflowRunDisplayStatus = WorkflowRunStatus | "output_validation_failed" | "result_consumption_failed";
 export type WorkflowRunTriggerSource = "manual" | "retry" | "system" | "api";
-export type WorkflowRunDto = { id: string; runNumber: string; projectId: string; stage: string; subjectType: string | null; subjectId: string | null; workflowConfigurationId: string; triggerSource: string; status: string; inputPayload: Record<string, unknown>; outputPayload: Record<string, unknown> | null; errorCode: string | null; errorMessage: string | null; errorDetails: Record<string, unknown> | null; configurationSnapshot: Record<string, unknown>; retryOfRunId?: string | null; startedAt: string | null; finishedAt: string | null; cancelledAt: string | null; createdAt: string | null; updatedAt: string | null; version: number };
+export type WorkflowRunDto = { id: string; runNumber: string; projectId: string; stage: string; subjectType: string | null; subjectId: string | null; workflowConfigurationId: string; workflowName?: string | null; workflowConfigurationVersion?: number | null; triggerSource: string; status: string; displayStatus?: string; failurePhase?: "external_execution" | "output_validation" | "result_consumption" | "cancellation" | null; failureCode?: string | null; safeError?: { code: string; message: string } | null; domainImpact?: Array<{ label?: string; message?: string; status?: string }>; retryability?: "runtime_retry" | "result_consumption_retry" | "not_retryable"; retryMode?: "current_configuration" | "original_configuration" | null; connectionSummary?: { name: string; validationStatus: string; executable: boolean } | null; llmPolicySummary?: { strategy: string; providerName: string | null; model: string | null; executable: boolean } | null; inputPayload: Record<string, unknown>; outputPayload: Record<string, unknown> | null; errorCode: string | null; errorMessage: string | null; errorDetails: Record<string, unknown> | null; configurationSnapshot: Record<string, unknown>; retryOfRunId?: string | null; startedAt: string | null; finishedAt: string | null; cancelledAt: string | null; createdAt: string | null; updatedAt: string | null; version: number };
 export type WorkflowRunList = { items: WorkflowRunDto[]; total: number; limit: number; offset: number };
-export type WorkflowRunListQuery = { projectId?: string; stage?: WorkflowStage; status?: WorkflowRunStatus; q?: string; startTime?: string; endTime?: string; limit?: number; offset?: number };
-export type WorkflowRunVm = { id: string; runNumber: string; projectId: string; stageLabel: string; status: WorkflowRunStatus | "unknown"; statusLabel: string; triggerSourceLabel: string; createdAtLabel: string; updatedAtLabel: string };
+export type WorkflowRunListQuery = { projectId?: string; stage?: WorkflowStage; workflowConfigurationId?: string; status?: WorkflowRunStatus; displayStatus?: WorkflowRunDisplayStatus; connectionId?: string; providerId?: string; model?: string; configurationVersion?: number; retryability?: "runtime_retry" | "result_consumption_retry" | "not_retryable"; triggerSource?: WorkflowRunTriggerSource; q?: string; from?: string; to?: string; startTime?: string; endTime?: string; limit?: number; offset?: number };
+export type WorkflowRunVm = { id: string; runNumber: string; projectId: string; stageLabel: string; status: WorkflowRunDisplayStatus | "unknown"; statusLabel: string; triggerSourceLabel: string; workflowName: string; retryLabel: string; createdAtLabel: string; updatedAtLabel: string };
 
 const stageLabels: Record<WorkflowStage, string> = { chapter_planning: "章节规划", content_generation: "内容生成", review: "内容审核", rewrite: "内容改写" };
-const statusLabels: Record<WorkflowRunStatus, string> = { queued: "等待执行", running: "运行中", succeeded: "已成功", failed: "失败", cancelled: "已取消" };
+const statusLabels: Record<WorkflowRunDisplayStatus, string> = { queued: "等待执行", running: "运行中", cancelling: "正在取消", succeeded: "已成功", failed: "执行失败", cancelled: "已取消", timed_out: "执行超时", output_validation_failed: "输出校验失败", result_consumption_failed: "结果提交失败" };
 const triggerSourceLabels: Record<WorkflowRunTriggerSource, string> = { manual: "手动触发", retry: "重试触发", system: "系统触发", api: "API 触发" };
 
 const isWorkflowStage = (value: string): value is WorkflowStage => value in stageLabels;
-const isWorkflowRunStatus = (value: string): value is WorkflowRunStatus => value in statusLabels;
+const isWorkflowRunStatus = (value: string): value is WorkflowRunDisplayStatus => value in statusLabels;
 const isWorkflowRunTriggerSource = (value: string): value is WorkflowRunTriggerSource => value in triggerSourceLabels;
 
 export function formatWorkflowRunTime(value: string | null | undefined) {
@@ -28,23 +29,38 @@ export function workflowRunQuery(query: WorkflowRunListQuery = {}) {
   if (query.projectId?.trim()) params.set("projectId", query.projectId.trim());
   if (query.stage) params.set("stage", query.stage);
   if (query.status) params.set("status", query.status);
+  if (query.displayStatus) params.set("displayStatus", query.displayStatus);
+  if (query.workflowConfigurationId) params.set("workflowConfigurationId", query.workflowConfigurationId);
+  if (query.connectionId) params.set("connectionId", query.connectionId);
+  if (query.providerId) params.set("providerId", query.providerId);
+  if (query.model) params.set("model", query.model);
+  if (query.configurationVersion !== undefined) params.set("configurationVersion", String(query.configurationVersion));
+  if (query.retryability) params.set("retryability", query.retryability);
+  if (query.triggerSource) params.set("triggerSource", query.triggerSource);
   if (query.q?.trim()) params.set("q", query.q.trim());
+  if (query.from) params.set("from", query.from);
+  if (query.to) params.set("to", query.to);
   if (query.startTime) params.set("startTime", query.startTime);
   if (query.endTime) params.set("endTime", query.endTime);
   return params;
 }
 
-export const mapWorkflowRun = (item: WorkflowRunDto): WorkflowRunVm => ({
+export const mapWorkflowRun = (item: WorkflowRunDto): WorkflowRunVm => {
+  const displayStatus = item.displayStatus ?? item.status;
+  const knownStatus = isWorkflowRunStatus(displayStatus) ? displayStatus : undefined;
+  return {
   id: item.id,
   runNumber: item.runNumber || "—",
   projectId: item.projectId,
   stageLabel: isWorkflowStage(item.stage) ? stageLabels[item.stage] : "未知环节",
-  status: isWorkflowRunStatus(item.status) ? item.status : "unknown",
-  statusLabel: isWorkflowRunStatus(item.status) ? statusLabels[item.status] : "未知状态",
+  status: knownStatus ?? "unknown",
+  statusLabel: knownStatus ? statusLabels[knownStatus] : "未知状态",
   triggerSourceLabel: isWorkflowRunTriggerSource(item.triggerSource) ? triggerSourceLabels[item.triggerSource] : "未知来源",
+  workflowName: item.workflowName || "工作流配置已不可用",
+  retryLabel: item.retryOfRunId ? "由重试创建" : "首次执行",
   createdAtLabel: formatWorkflowRunTime(item.createdAt),
   updatedAtLabel: formatWorkflowRunTime(item.updatedAt),
-});
+}; };
 
 export async function listWorkflowRuns(query: WorkflowRunListQuery = {}, init?: ApiRequestInit): Promise<Omit<WorkflowRunList, "items"> & { items: WorkflowRunVm[] }> {
   const response = await apiRequest<WorkflowRunList>(`/workflow-runs?${workflowRunQuery(query)}`, init);
@@ -61,13 +77,15 @@ const redact = (value: unknown): unknown => {
   return value;
 };
 export const formatWorkflowRunJson = (value: unknown) => value && typeof value === "object" && Object.keys(value).length ? JSON.stringify(redact(value), null, 2) : "暂无信息";
-export const mapWorkflowRunDetail = (item: WorkflowRunDto): WorkflowRunDetailVm => ({ ...item, ...mapWorkflowRun(item), inputPayload: item.inputPayload ?? {}, configurationSnapshot: item.configurationSnapshot ?? {}, canCancel: item.status === "queued" || item.status === "running", canRetry: item.status === "failed" || item.status === "cancelled" });
+export const mapWorkflowRunDetail = (item: WorkflowRunDto): WorkflowRunDetailVm => ({ ...item, ...mapWorkflowRun(item), inputPayload: item.inputPayload ?? {}, configurationSnapshot: item.configurationSnapshot ?? {}, canCancel: item.status === "queued" || item.status === "running" || item.status === "cancelling", canRetry: item.retryability === "runtime_retry" || item.status === "failed" || item.status === "cancelled" || item.status === "timed_out" });
 export const mapWorkflowRunEvent = (item: WorkflowRunEventDto): WorkflowRunEventVm => ({ id: item.id, eventType: item.eventType, title: eventLabels[item.eventType] ?? "未知运行事件", statusLabel: isWorkflowRunStatus(item.status) ? statusLabels[item.status] : "未知状态", createdAtLabel: formatWorkflowRunTime(item.createdAt), payload: item.payload ?? null });
 const runPath = (runId: string) => `/workflow-runs/${encodeURIComponent(runId)}`;
 export const getWorkflowRun = async (runId: string, init?: ApiRequestInit) => mapWorkflowRunDetail(await apiRequest<WorkflowRunDto>(runPath(runId), init));
 export const listWorkflowRunEvents = async (runId: string, init?: ApiRequestInit) => (await apiRequest<{ items: WorkflowRunEventDto[] }>(`${runPath(runId)}/events`, init)).items.map(mapWorkflowRunEvent);
 export const cancelWorkflowRun = async (runId: string, expectedVersion: number, key: string) => mapWorkflowRunDetail(await apiRequest<WorkflowRunDto>(`${runPath(runId)}/cancel`, { method: "POST", headers: { "Content-Type": "application/json", "Idempotency-Key": key }, body: JSON.stringify({ expectedVersion }) }));
-export const retryWorkflowRun = async (runId: string, expectedVersion: number, key: string, inputOverride?: Record<string, unknown>) => mapWorkflowRunDetail(await apiRequest<WorkflowRunDto>(`${runPath(runId)}/retries`, { method: "POST", headers: { "Content-Type": "application/json", "Idempotency-Key": key }, body: JSON.stringify({ expectedVersion, useCurrentConfiguration: false, ...(inputOverride ? { inputOverride } : {}) }) }));
+export type WorkflowRunRetryOptions = { retryability: "runtime_retry" | "result_consumption_retry" | "not_retryable"; currentConfiguration: { mode: "current_configuration"; enabled: boolean; reasons: Array<{ message: string }>; configurationDifferences?: Array<{ summary: string }> }; originalConfiguration: { mode: "original_configuration"; enabled: boolean; reasons: Array<{ message: string }>; configurationDifferences?: Array<{ summary: string }> }; resultConsumptionRetryRequired: boolean };
+export const getWorkflowRunRetryOptions = (runId: string, init?: ApiRequestInit) => apiRequest<WorkflowRunRetryOptions>(`${runPath(runId)}/retry-options`, init);
+export const retryWorkflowRun = async (runId: string, expectedVersion: number, key: string, mode: "current_configuration" | "original_configuration" = "current_configuration", inputOverride?: Record<string, unknown>) => mapWorkflowRunDetail(await apiRequest<WorkflowRunDto>(`${runPath(runId)}/retries`, { method: "POST", headers: { "Content-Type": "application/json", "Idempotency-Key": key }, body: JSON.stringify({ expectedVersion, mode, ...(inputOverride ? { inputOverride } : {}) }) }));
 
 export type ProjectWorkflowRunSummaryDto = {
   totalRuns: number;
