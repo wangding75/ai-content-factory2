@@ -51,7 +51,9 @@ func main() {
 	}
 	contentRepository := contentitem.NewPostgresRepository(pool)
 	contentItems := contentitem.NewApplication(contentRepository, nil)
-	iteration08 := contentitem.NewGlobalLiteService(contentitem.NewQueryService(contentRepository))
+	contentQueries := contentitem.NewQueryService(contentRepository)
+	iteration07 := contentitem.NewIteration07Application(nil, contentQueries)
+	iteration08 := contentitem.NewGlobalLiteService(contentQueries)
 	globalConfigurations, err := globalconfig.NewService(pool, cfg.ConfigurationEncryptionKey)
 	if err != nil {
 		log.Fatal(err)
@@ -79,7 +81,7 @@ func main() {
 	go workflowRuns.RunWorker(workerContext, time.Second, func(workerErr error) {
 		log.Printf("workflow worker: %v", workerErr)
 	})
-	server := httpserver.New(cfg.APIAddress, projects, plannings, materials, projectMaterials, storylines, foreshadowings, chapterPlans, contentItems, iteration08, contentGeneration, realReview, realRewrite, globalConfigurations, workflowbinding.NewCloseLoop(pool, projectRepository, globalConfigurations), workflowRuns)
+	server := httpserver.New(cfg.APIAddress, projects, plannings, materials, projectMaterials, storylines, foreshadowings, chapterPlans, contentItems, iteration07, iteration08, contentGeneration, realReview, realRewrite, globalConfigurations, workflowbinding.NewCloseLoop(pool, projectRepository, globalConfigurations), workflowRuns)
 	log.Printf("api listening on %s", cfg.APIAddress)
 	if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 		log.Fatal(err)
