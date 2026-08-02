@@ -279,6 +279,18 @@ func (ing *ResultIngestor) Ingest(ctx context.Context, input IngestInput) (Candi
 		return CandidateBatch{}, fmt.Errorf("%w: begin tx failed: %v", ErrIngestionTransaction, err)
 	}
 	defer tx.Rollback(ctx)
+	batch, err := ing.IngestTx(ctx, tx, input)
+	if err != nil {
+		return CandidateBatch{}, err
+	}
+	if err = tx.Commit(ctx); err != nil {
+		return CandidateBatch{}, fmt.Errorf("%w: commit tx failed: %v", ErrIngestionTransaction, err)
+	}
+	return batch, nil
+}
+
+func (ing *ResultIngestor) IngestTx(ctx context.Context, tx pgx.Tx, input IngestInput) (CandidateBatch, error) {
+	var err error
 
 	// Acquire advisory transaction lock on RunID to serialize concurrent ingestion requests
 	runLockID := advisoryLockID("workflow_run", input.Run.RunID.String())
@@ -299,8 +311,8 @@ func (ing *ResultIngestor) Ingest(ctx context.Context, input IngestInput) (Candi
 	if projID != input.Run.ProjectID {
 		return CandidateBatch{}, fmt.Errorf("%w: workflow run project mismatch", ErrOutputValidationFailed)
 	}
-	if runStatus != "succeeded" {
-		return CandidateBatch{}, fmt.Errorf("%w: workflow run is not succeeded", ErrOutputValidationFailed)
+	if runStatus != "succeeded" && runStatus != "running" && runStatus != "failed" {
+		return CandidateBatch{}, fmt.Errorf("%w: workflow run is not consumable", ErrOutputValidationFailed)
 	}
 	if runStage != "chapter_planning" {
 		return CandidateBatch{}, fmt.Errorf("%w: workflow run stage mismatch", ErrOutputValidationFailed)
@@ -310,9 +322,6 @@ func (ing *ResultIngestor) Ingest(ctx context.Context, input IngestInput) (Candi
 	queryExisting := fmt.Sprintf("SELECT %s FROM chapter_plan_candidate_batches WHERE source_workflow_run_id = $1 FOR UPDATE", candidateBatchCols)
 	existingBatch, err := scanBatch(tx.QueryRow(ctx, queryExisting, input.Run.RunID))
 	if err == nil {
-		if err := tx.Commit(ctx); err != nil {
-			return CandidateBatch{}, fmt.Errorf("%w: commit replay failed: %v", ErrIngestionTransaction, err)
-		}
 		return existingBatch, nil
 	} else if !errors.Is(err, pgx.ErrNoRows) {
 		return CandidateBatch{}, fmt.Errorf("%w: query existing batch failed: %v", ErrIngestionTransaction, err)
@@ -369,7 +378,7 @@ func (ing *ResultIngestor) Ingest(ctx context.Context, input IngestInput) (Candi
 		var pgErr *pgconn.PgError
 		if errors.As(err, &pgErr) && pgErr.Code == "23505" {
 			// Concurrent insertion constraint hit -> query existing batch
-			existingBatch, queryErr := scanBatch(ing.pool.QueryRow(ctx, fmt.Sprintf("SELECT %s FROM chapter_plan_candidate_batches WHERE source_workflow_run_id = $1", candidateBatchCols), input.Run.RunID))
+			existingBatch, queryErr := scanBatch(tx.QueryRow(ctx, fmt.Sprintf("SELECT %s FROM chapter_plan_candidate_batches WHERE source_workflow_run_id = $1", candidateBatchCols), input.Run.RunID))
 			if queryErr == nil {
 				return existingBatch, nil
 			}
@@ -436,11 +445,7 @@ func (ing *ResultIngestor) Ingest(ctx context.Context, input IngestInput) (Candi
 		}
 	}
 
-	if err := tx.Commit(ctx); err != nil {
-		return CandidateBatch{}, fmt.Errorf("%w: commit tx failed: %v", ErrIngestionTransaction, err)
-	}
-
-	return scanBatch(ing.pool.QueryRow(ctx, fmt.Sprintf("SELECT %s FROM chapter_plan_candidate_batches WHERE id = $1", candidateBatchCols), batchID))
+	return scanBatch(tx.QueryRow(ctx, fmt.Sprintf("SELECT %s FROM chapter_plan_candidate_batches WHERE id = $1", candidateBatchCols), batchID))
 }
 
 type chapterPlanComparisonValue struct {

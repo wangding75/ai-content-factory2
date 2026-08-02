@@ -253,6 +253,27 @@ export function createChapterPlanRun(
   );
 }
 
+export function retryChapterPlanningResultConsumption(
+  workflowRunId: string,
+  expectedRunVersion: number,
+  idempotencyKey: string,
+  init?: ApiRequestInit,
+): Promise<ChapterPlanningWorkflowRun> {
+  return apiRequest<ChapterPlanningWorkflowRun>(
+    `/workflow-runs/${encodeURIComponent(workflowRunId)}/chapter-planning-result-consumption-retries`,
+    {
+      ...init,
+      method: "POST",
+      headers: {
+        ...init?.headers,
+        "Content-Type": "application/json",
+        "Idempotency-Key": idempotencyKey,
+      },
+      body: JSON.stringify({ expectedRunVersion }),
+    },
+  );
+}
+
 // --- FE-F2 Candidate Batch & Candidate Contracts ---
 
 export type ChapterPlanCandidateBatchStatus =

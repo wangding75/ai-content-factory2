@@ -22,6 +22,7 @@ import {
   getProjectChapterPlanningSummary,
   listChapterPlans,
   preflightChapterPlanRun,
+  retryChapterPlanningResultConsumption,
   type ChapterPlan,
   type ChapterPlanningPreflightReport,
   type ChapterPlanningPreflightRequest,
@@ -295,6 +296,33 @@ export function ChapterPlansWorkspace({
     }
   };
 
+  const handleSummaryRetry = async () => {
+    if (summaryError?.code !== "result_consumption_failed") {
+      await load();
+      return;
+    }
+    const runId = summaryError.details.workflowRunId;
+    const expectedVersion = summaryError.details.expectedRunVersion;
+    if (typeof runId !== "string" || typeof expectedVersion !== "number") {
+      await load();
+      return;
+    }
+    const scope = `chapter-plan:result-consumption:${runId}`;
+    const payload = { expectedRunVersion: expectedVersion };
+    try {
+      const key = await getOrCreateKey(scope, payload);
+      await retryChapterPlanningResultConsumption(runId, expectedVersion, key);
+      clearKey(scope);
+      invalidateChapterPlanViews(projectId);
+      await load();
+    } catch (cause) {
+      if (cause instanceof ApiError && (cause.status === 0 || cause.status >= 500 || cause.code === "timeout")) {
+        await markUnknown(scope, payload);
+      }
+      setSummaryError(cause instanceof ApiError ? cause : new ApiError("结果消费重试失败。", 500));
+    }
+  };
+
   const submitConfirm = async () => {
     const candidates = Object.values(selected).filter(
       (plan) => plan.status === "pending_confirmation",
@@ -364,7 +392,7 @@ export function ChapterPlansWorkspace({
         summary={summary}
         summaryError={summaryError}
         onConfigure={() => setSettingsOpen(true)}
-        onRetry={() => void load()}
+        onRetry={() => void handleSummaryRetry()}
         projectId={projectId}
       />
 

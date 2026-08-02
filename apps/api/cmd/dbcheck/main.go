@@ -426,6 +426,14 @@ func runSchemaChecks(ctx context.Context, conn *pgx.Conn) []checkResult {
 		results = append(results, checkIndexExists(ctx, conn, index))
 	}
 
+	// --- 000021: workflow_run_result_consumption ---
+	results = append(results, checkColumn(ctx, conn, "workflow_run_result_consumptions", "workflow_run_id", "uuid", "NO", "NULL"))
+	results = append(results, checkColumn(ctx, conn, "workflow_run_result_consumptions", "status", "text", "NO", "NULL"))
+	results = append(results, checkColumn(ctx, conn, "workflow_run_result_consumptions", "attempt_count", "integer", "NO", "0"))
+	results = append(results, checkIndexExists(ctx, conn, "workflow_run_result_consumptions_recovery_idx"))
+	results = append(results, checkIndexExists(ctx, conn, "workflow_run_events_one_succeeded_idx"))
+	results = append(results, checkIndexExists(ctx, conn, "workflow_run_events_one_result_consumed_idx"))
+
 	return results
 }
 

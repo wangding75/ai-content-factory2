@@ -85,6 +85,111 @@ func preflightCommand(projectID uuid.UUID, nonce string) CreateRunPreparation {
 	}
 }
 
+func pendingConsumptionRun(t *testing.T, ctx context.Context, repo *Repository, projectID, workflowID uuid.UUID, number string) WorkflowRun {
+	t.Helper()
+	run := newRun(t, projectID, workflowID, number)
+	running, err := run.Start(time.Now().UTC())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err = repo.Create(ctx, running); err != nil {
+		t.Fatal(err)
+	}
+	stored, _, err := repo.SaveOutputForConsumption(ctx, running, json.RawMessage(`{"schemaVersion":"review.output.v1"}`), Event{
+		ID: uuid.New(), RunID: running.ID, EventType: "output_validated", Status: StatusRunning, Payload: json.RawMessage(`{}`), CreatedAt: time.Now().UTC(),
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	return stored
+}
+
+func TestResultConsumptionTransactionCommitsRuntimeFactAndDomainEventAtomically(t *testing.T) {
+	db, ctx := openDB(t)
+	projectID, workflowID := fixture(t, ctx, db)
+	repo := NewPostgresRepository(db)
+	run := pendingConsumptionRun(t, ctx, repo, projectID, workflowID, "WR-CONSUME-COMMIT")
+
+	updated, replay, err := repo.ConsumeResult(ctx, run.ID, run.Version, time.Now().UTC(), false, func(ctx context.Context, tx pgx.Tx, locked WorkflowRun) error {
+		_, callbackErr := tx.Exec(ctx, "INSERT INTO workflow_run_events(id,run_id,event_type,status,payload) VALUES($1,$2,'result_consumed','running','{}')", uuid.New(), locked.ID)
+		return callbackErr
+	})
+	if err != nil || replay || updated.Status != StatusSucceeded || updated.ID != run.ID {
+		t.Fatalf("updated=%+v replay=%v err=%v", updated, replay, err)
+	}
+	var state string
+	if err = db.QueryRow(ctx, "SELECT status FROM workflow_run_result_consumptions WHERE workflow_run_id=$1", run.ID).Scan(&state); err != nil || state != "completed" {
+		t.Fatalf("state=%s err=%v", state, err)
+	}
+	for _, eventType := range []string{EventTypeResultConsumed, "succeeded"} {
+		var count int
+		if err = db.QueryRow(ctx, "SELECT count(*) FROM workflow_run_events WHERE run_id=$1 AND event_type=$2", run.ID, eventType).Scan(&count); err != nil || count != 1 {
+			t.Fatalf("event=%s count=%d err=%v", eventType, count, err)
+		}
+	}
+}
+
+func TestResultConsumptionTransactionRollsBackPartialDomainWriteAndCanRetry(t *testing.T) {
+	db, ctx := openDB(t)
+	projectID, workflowID := fixture(t, ctx, db)
+	repo := NewPostgresRepository(db)
+	run := pendingConsumptionRun(t, ctx, repo, projectID, workflowID, "WR-CONSUME-ROLLBACK")
+	canary := errors.New("domain write failed")
+
+	_, _, err := repo.ConsumeResult(ctx, run.ID, run.Version, time.Now().UTC(), false, func(ctx context.Context, tx pgx.Tx, locked WorkflowRun) error {
+		if _, insertErr := tx.Exec(ctx, "INSERT INTO workflow_run_events(id,run_id,event_type,status,payload) VALUES($1,$2,'result_consumed','running','{}')", uuid.New(), locked.ID); insertErr != nil {
+			return insertErr
+		}
+		return canary
+	})
+	if !errors.Is(err, canary) {
+		t.Fatalf("err=%v", err)
+	}
+	var eventCount int
+	if err = db.QueryRow(ctx, "SELECT count(*) FROM workflow_run_events WHERE run_id=$1 AND event_type='result_consumed'", run.ID).Scan(&eventCount); err != nil || eventCount != 0 {
+		t.Fatalf("partial event count=%d err=%v", eventCount, err)
+	}
+	persisted, err := repo.GetByID(ctx, run.ID)
+	if err != nil || persisted.Status != StatusRunning || persisted.Version != run.Version {
+		t.Fatalf("persisted=%+v err=%v", persisted, err)
+	}
+	var state string
+	if err = db.QueryRow(ctx, "SELECT status FROM workflow_run_result_consumptions WHERE workflow_run_id=$1", run.ID).Scan(&state); err != nil || state != "pending" {
+		t.Fatalf("state=%s err=%v", state, err)
+	}
+}
+
+func TestConcurrentResultConsumptionInvokesDomainCallbackOnce(t *testing.T) {
+	db, ctx := openDB(t)
+	projectID, workflowID := fixture(t, ctx, db)
+	repo := NewPostgresRepository(db)
+	run := pendingConsumptionRun(t, ctx, repo, projectID, workflowID, "WR-CONSUME-CONCURRENT")
+	start := make(chan struct{})
+	var calls int
+	var mutex sync.Mutex
+	errs := make([]error, 2)
+	replays := make([]bool, 2)
+	var group sync.WaitGroup
+	for i := range errs {
+		group.Add(1)
+		go func(index int) {
+			defer group.Done()
+			<-start
+			_, replays[index], errs[index] = repo.ConsumeResult(context.Background(), run.ID, run.Version, time.Now().UTC(), false, func(context.Context, pgx.Tx, WorkflowRun) error {
+				mutex.Lock()
+				calls++
+				mutex.Unlock()
+				return nil
+			})
+		}(i)
+	}
+	close(start)
+	group.Wait()
+	if errs[0] != nil || errs[1] != nil || calls != 1 || replays[0] == replays[1] {
+		t.Fatalf("calls=%d replays=%v errors=%v", calls, replays, errs)
+	}
+}
+
 func TestPreflightTokenSequentialSingleConsumption(t *testing.T) {
 	db, ctx := openDB(t)
 	repo := NewPostgresRepository(db)

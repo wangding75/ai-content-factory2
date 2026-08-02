@@ -136,16 +136,25 @@ type RevisionListResult struct {
 }
 
 type CandidateBatchCounts struct {
-	Ready           int `json:"ready"`
+	Ready            int `json:"ready"`
 	PartiallyAdopted int `json:"partiallyAdopted"`
-	Adopted         int `json:"adopted"`
-	Abandoned       int `json:"abandoned"`
+	Adopted          int `json:"adopted"`
+	Abandoned        int `json:"abandoned"`
 }
 
 type Summary struct {
-	CurrentChapterCount     int                  `json:"currentChapterCount"`
-	PendingConfirmationCount int                 `json:"pendingConfirmationCount"`
-	ConfirmedChapterCount   int                  `json:"confirmedChapterCount"`
-	CandidateBatchCounts    CandidateBatchCounts `json:"candidateBatchCounts"`
-	ActiveRun               json.RawMessage      `json:"activeRun"`
+	CurrentChapterCount      int                  `json:"currentChapterCount"`
+	PendingConfirmationCount int                  `json:"pendingConfirmationCount"`
+	ConfirmedChapterCount    int                  `json:"confirmedChapterCount"`
+	CandidateBatchCounts     CandidateBatchCounts `json:"candidateBatchCounts"`
+	ActiveRun                json.RawMessage      `json:"activeRun"`
 }
+
+type RuntimeResultError struct {
+	Cause      error
+	RunID      uuid.UUID
+	RunVersion int
+}
+
+func (e *RuntimeResultError) Error() string { return e.Cause.Error() }
+func (e *RuntimeResultError) Unwrap() error { return e.Cause }

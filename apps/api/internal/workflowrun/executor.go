@@ -54,10 +54,10 @@ type WorkflowExecutor interface {
 }
 
 type FakeWorkflowExecutor struct {
-	VerifyError, ExecuteError, CancelError error
-	ExecuteResult, CancelResult            ExecutionResult
-	VerifyCalls, ExecuteCalls, CancelCalls int
-	LastRequest                            ExecutionRequest
+	VerifyError, ExecuteError, CancelError             error
+	ExecuteResult, CancelResult                        ExecutionResult
+	VerifyCalls, ExecuteCalls, CancelCalls, QueryCalls int
+	LastRequest                                        ExecutionRequest
 }
 
 func (f *FakeWorkflowExecutor) Verify(_ context.Context, request ExecutionRequest) error {
@@ -76,6 +76,7 @@ func (f *FakeWorkflowExecutor) Cancel(_ context.Context, request ExecutionReques
 	return f.CancelResult, f.CancelError
 }
 func (f *FakeWorkflowExecutor) Query(_ context.Context, request ExecutionRequest) (ExecutionResult, error) {
+	f.QueryCalls++
 	f.LastRequest = request
 	return f.ExecuteResult, f.ExecuteError
 }

@@ -28,6 +28,36 @@ type createChapterPlanRunRequest struct {
 func registerChapterPlanRunRoutes(mux *http.ServeMux, app chapterPlanRunApplication) {
 	mux.HandleFunc("POST /api/v1/projects/{projectId}/chapter-plan-runs/preflight", chapterPlanPreflightHandler(app))
 	mux.HandleFunc("POST /api/v1/projects/{projectId}/chapter-plan-runs", createChapterPlanRunHandler(app))
+	mux.HandleFunc("POST /api/v1/workflow-runs/{workflowRunId}/chapter-planning-result-consumption-retries", chapterPlanResultConsumptionRetryHandler(app))
+}
+
+func chapterPlanResultConsumptionRetryHandler(app chapterPlanRunApplication) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		runID, err := uuid.Parse(r.PathValue("workflowRunId"))
+		key := strings.TrimSpace(r.Header.Get("Idempotency-Key"))
+		var body struct {
+			ExpectedRunVersion int `json:"expectedRunVersion"`
+		}
+		if err != nil || key == "" || len(key) > 128 || decodeBody(r, &body) != nil || body.ExpectedRunVersion < 1 {
+			writeError(w, r, http.StatusBadRequest, "validation_error", "invalid result consumption retry request", map[string]any{})
+			return
+		}
+		run, err := app.RetryChapterPlanningResultConsumption(r.Context(), runID, body.ExpectedRunVersion, key)
+		if err != nil {
+			switch {
+			case errors.Is(err, workflowrun.ErrVersionConflict):
+				writeError(w, r, http.StatusConflict, "workflow_run_version_conflict", "workflow run version changed", map[string]any{})
+			case errors.Is(err, workflowrun.ErrNotFound):
+				writeError(w, r, http.StatusNotFound, "workflow_run_not_found", "workflow run was not found", map[string]any{})
+			case errors.Is(err, workflowrun.ErrNotRetryable):
+				writeError(w, r, http.StatusConflict, "result_consumption_failed", "workflow run result is not retryable", map[string]any{})
+			default:
+				writeError(w, r, http.StatusInternalServerError, "result_consumption_failed", "chapter planning result could not be stored safely", map[string]any{})
+			}
+			return
+		}
+		writeJSON(w, r, http.StatusOK, iteration14WorkflowRunResponse(run))
+	}
 }
 func chapterPlanPreflightHandler(app chapterPlanRunApplication) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {

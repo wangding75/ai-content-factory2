@@ -1,5 +1,5 @@
 import type { ApiRequestInit } from "../../lib/api.ts";
-import { apiRequest } from "../../lib/api.ts";
+import { ApiError, apiRequest } from "../../lib/api.ts";
 import type { WorkflowStage } from "../workflow-bindings/workflow-binding-api.ts";
 
 export type WorkflowRunStatus = "queued" | "running" | "cancelling" | "succeeded" | "failed" | "cancelled" | "timed_out";
@@ -71,7 +71,7 @@ export async function listWorkflowRuns(query: WorkflowRunListQuery = {}, init?: 
 
 export type WorkflowRunEventDto = { id: string; runId: string; eventType: string; status: string; payload: Record<string, unknown> | null; createdAt: string | null };
 export type WorkflowRunEventVm = { id: string; eventType: string; title: string; statusLabel: string; createdAtLabel: string; payload: Record<string, unknown> | null };
-export type WorkflowRunDetailVm = Omit<WorkflowRunDto, Exclude<keyof WorkflowRunVm, "status">> & Omit<WorkflowRunVm, "status"> & { canCancel: boolean; canRetry: boolean };
+export type WorkflowRunDetailVm = Omit<WorkflowRunDto, Exclude<keyof WorkflowRunVm, "status">> & Omit<WorkflowRunVm, "status"> & { canCancel: boolean; canRetry: boolean; canRetryResultConsumption: boolean };
 const eventLabels: Record<string, string> = { queued: "已创建运行", worker_started: "开始执行", request_sent: "已发送请求", response_received: "已收到响应", output_validated: "已校验输出", succeeded: "运行成功", failed: "运行失败", cancelled: "已取消运行", retry_created: "已创建重试运行" };
 const redact = (value: unknown): unknown => {
   if (Array.isArray(value)) return value.map(redact);
@@ -79,7 +79,7 @@ const redact = (value: unknown): unknown => {
   return value;
 };
 export const formatWorkflowRunJson = (value: unknown) => value && typeof value === "object" && Object.keys(value).length ? JSON.stringify(redact(value), null, 2) : "暂无信息";
-export const mapWorkflowRunDetail = (item: WorkflowRunDto): WorkflowRunDetailVm => ({ ...item, ...mapWorkflowRun(item), status: item.status, inputPayload: item.inputPayload ?? {}, configurationSnapshot: item.configurationSnapshot ?? {}, canCancel: item.status === "queued" || item.status === "running" || item.status === "cancelling", canRetry: item.retryability === "runtime_retry" || item.status === "failed" || item.status === "cancelled" || item.status === "timed_out" });
+export const mapWorkflowRunDetail = (item: WorkflowRunDto): WorkflowRunDetailVm => { const consumption = item.retryability === "result_consumption_retry" || item.failurePhase === "result_consumption"; return ({ ...item, ...mapWorkflowRun(item), status: item.status, inputPayload: item.inputPayload ?? {}, configurationSnapshot: item.configurationSnapshot ?? {}, canCancel: item.status === "queued" || item.status === "running" || item.status === "cancelling", canRetry: !consumption && (item.retryability === "runtime_retry" || item.status === "failed" || item.status === "cancelled" || item.status === "timed_out"), canRetryResultConsumption: consumption }); };
 export const mapWorkflowRunEvent = (item: WorkflowRunEventDto): WorkflowRunEventVm => ({ id: item.id, eventType: item.eventType, title: eventLabels[item.eventType] ?? "未知运行事件", statusLabel: isWorkflowRunStatus(item.status) ? statusLabels[item.status] : "未知状态", createdAtLabel: formatWorkflowRunTime(item.createdAt), payload: item.payload ?? null });
 const runPath = (runId: string) => `/workflow-runs/${encodeURIComponent(runId)}`;
 export const getWorkflowRun = async (runId: string, init?: ApiRequestInit) => mapWorkflowRunDetail(await apiRequest<WorkflowRunDto>(runPath(runId), init));
@@ -88,6 +88,15 @@ export const cancelWorkflowRun = async (runId: string, expectedVersion: number, 
 export type WorkflowRunRetryOptions = { runId: string; retryability: WorkflowRunRetryability; currentConfiguration: { mode: "current_configuration"; enabled: boolean; reasons: Array<{ code: string; message: string; repairAction?: string }>; configurationDifferences?: Array<{ field: string; changed: boolean; summary: string }> }; originalConfiguration: { mode: "original_configuration"; enabled: boolean; reasons: Array<{ code: string; message: string; repairAction?: string }>; configurationDifferences?: Array<{ field: string; changed: boolean; summary: string }> }; resultConsumptionRetryRequired: boolean };
 export const getWorkflowRunRetryOptions = (runId: string, init?: ApiRequestInit) => apiRequest<WorkflowRunRetryOptions>(`${runPath(runId)}/retry-options`, init);
 export const retryWorkflowRun = async (runId: string, expectedVersion: number, key: string, mode: WorkflowRunRetryMode, inputOverride?: Record<string, unknown>, reason?: string) => mapWorkflowRunDetail(await apiRequest<WorkflowRunDto>(`${runPath(runId)}/retries`, { method: "POST", headers: { "Content-Type": "application/json", "Idempotency-Key": key }, body: JSON.stringify({ expectedVersion, mode, ...(reason !== undefined ? { reason } : {}), ...(inputOverride ? { inputOverride } : {}) }) }));
+export const retryWorkflowRunResultConsumption = async (run: Pick<WorkflowRunDto, "id" | "stage" | "version">, key: string) => {
+  const encoded = encodeURIComponent(run.id);
+  const path = run.stage === "chapter_planning" ? `/workflow-runs/${encoded}/chapter-planning-result-consumption-retries`
+    : run.stage === "content_generation" ? `/content-generation-runs/${encoded}/result-consumption-retries`
+      : run.stage === "review" ? `/workflow-runs/${encoded}/review-result-consumption-retries`
+        : run.stage === "rewrite" ? `/workflow-runs/${encoded}/rewrite-result-consumption-retries` : "";
+  if (!path) throw new ApiError("该阶段不支持结果消费重试。", 409, "result_consumption_not_supported");
+  return apiRequest<unknown>(path, { method: "POST", headers: { "Content-Type": "application/json", "Idempotency-Key": key }, body: JSON.stringify({ expectedRunVersion: run.version }) });
+};
 
 export type ProjectWorkflowRunSummaryDto = {
   totalRuns: number;

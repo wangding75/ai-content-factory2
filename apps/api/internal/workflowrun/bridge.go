@@ -20,6 +20,7 @@ type RuntimeBridge interface {
 	ListRunEvents(context.Context, uuid.UUID) ([]Event, error)
 	GetRun(context.Context, uuid.UUID) (WorkflowRun, error)
 	AddEvent(context.Context, Event) (Event, error)
+	RetryResultConsumption(context.Context, uuid.UUID, int) (WorkflowRun, error)
 }
 
 type bridge struct{ runtime *Service }
@@ -55,6 +56,9 @@ func (b bridge) GetRun(ctx context.Context, id uuid.UUID) (WorkflowRun, error) {
 }
 func (b bridge) AddEvent(ctx context.Context, event Event) (Event, error) {
 	return b.runtime.AddEvent(ctx, event)
+}
+func (b bridge) RetryResultConsumption(ctx context.Context, id uuid.UUID, expectedVersion int) (WorkflowRun, error) {
+	return b.runtime.RetryResultConsumption(ctx, id, expectedVersion)
 }
 
 var _ RuntimeBridge = bridge{}

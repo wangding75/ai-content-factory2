@@ -334,21 +334,30 @@ func (r *Repository) GetChapterPlanningSummary(ctx context.Context, projectID uu
 	// Summary is driven by the latest chapter-planning Runtime run. Runtime
 	// failures and cancellations remain Runtime outcomes; only a succeeded run
 	// can be surfaced as a post-runtime consumption failure.
+	var runtimeRunID uuid.UUID
 	var runtimeStatus string
+	var runtimeFailurePhase *string
+	var runtimeVersion int
 	var consumptionStatus *string
 	err := r.db.QueryRow(ctx, `
-		SELECT r.status, c.status
+		SELECT r.id, r.status, r.failure_phase, r.version, c.status
 		FROM workflow_run_records r
 		LEFT JOIN chapter_plan_result_consumptions c ON c.workflow_run_id = r.id
 		WHERE r.project_id = $1 AND r.stage = 'chapter_planning'
 		ORDER BY r.created_at DESC, r.id DESC
-		LIMIT 1`, projectID).Scan(&runtimeStatus, &consumptionStatus)
+		LIMIT 1`, projectID).Scan(&runtimeRunID, &runtimeStatus, &runtimeFailurePhase, &runtimeVersion, &consumptionStatus)
 	if err == nil {
+		if runtimeStatus == "failed" && runtimeFailurePhase != nil && *runtimeFailurePhase == "output_validation" {
+			return summary, &RuntimeResultError{Cause: ErrOutputValidationFailed, RunID: runtimeRunID, RunVersion: runtimeVersion}
+		}
+		if runtimeStatus == "failed" && runtimeFailurePhase != nil && *runtimeFailurePhase == "result_consumption" {
+			return summary, &RuntimeResultError{Cause: ErrIngestionTransaction, RunID: runtimeRunID, RunVersion: runtimeVersion}
+		}
 		if runtimeStatus == "succeeded" && consumptionStatus != nil && *consumptionStatus == string(ConsumptionOutputValidationFailed) {
-			return summary, ErrOutputValidationFailed
+			return summary, &RuntimeResultError{Cause: ErrOutputValidationFailed, RunID: runtimeRunID, RunVersion: runtimeVersion}
 		}
 		if runtimeStatus == "succeeded" && consumptionStatus != nil && *consumptionStatus == string(ConsumptionResultConsumptionFailed) {
-			return summary, ErrIngestionTransaction
+			return summary, &RuntimeResultError{Cause: ErrIngestionTransaction, RunID: runtimeRunID, RunVersion: runtimeVersion}
 		}
 	}
 	if err != nil && !errors.Is(err, pgx.ErrNoRows) {

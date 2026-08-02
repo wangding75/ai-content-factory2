@@ -7,6 +7,8 @@ import (
 	"errors"
 	"io"
 
+	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 	"github.com/local/ai-content-factory/apps/api/internal/workflowrun"
 )
 
@@ -16,6 +18,55 @@ import (
 type RuntimeConsumer struct {
 	ingestor     Ingestor
 	consumptions *ConsumptionRepository
+}
+
+func decodeChapterPlanningResult(run workflowrun.WorkflowRun) (IngestInput, error) {
+	var input struct {
+		GenerationContext GenerationContextSnapshot `json:"generationContext"`
+	}
+	if json.Unmarshal(run.InputPayload, &input) != nil || input.GenerationContext.InputDigest == "" {
+		return IngestInput{}, ErrOutputValidationFailed
+	}
+	var output NormalizedChapterPlanOutput
+	decoder := json.NewDecoder(bytes.NewReader(run.OutputPayload))
+	decoder.DisallowUnknownFields()
+	if decoder.Decode(&output) != nil || decoder.Decode(&struct{}{}) != io.EOF {
+		return IngestInput{}, ErrOutputValidationFailed
+	}
+	value := IngestInput{Run: RunReference{RunID: run.ID, ProjectID: run.ProjectID}, Context: input.GenerationContext, NormalizedOutput: output}
+	if err := ValidateNormalizedOutput(value); err != nil {
+		return IngestInput{}, err
+	}
+	return value, nil
+}
+
+func (c *RuntimeConsumer) ValidateResult(run workflowrun.WorkflowRun) error {
+	_, err := decodeChapterPlanningResult(run)
+	return err
+}
+
+func (c *RuntimeConsumer) ConsumeResultTx(ctx context.Context, tx pgx.Tx, run workflowrun.WorkflowRun) error {
+	input, err := decodeChapterPlanningResult(run)
+	if err != nil {
+		return err
+	}
+	ingestor, ok := c.ingestor.(interface {
+		IngestTx(context.Context, pgx.Tx, IngestInput) (CandidateBatch, error)
+	})
+	if !ok {
+		return ErrIngestionTransaction
+	}
+	batch, err := ingestor.IngestTx(ctx, tx, input)
+	if err != nil {
+		return err
+	}
+	_, err = tx.Exec(ctx, `INSERT INTO chapter_plan_result_consumptions(workflow_run_id,project_id,status,candidate_batch_id,consumed_at)
+		VALUES($1,$2,'consumed',$3,NOW()) ON CONFLICT(workflow_run_id) DO UPDATE SET status='consumed',candidate_batch_id=EXCLUDED.candidate_batch_id,consumed_at=COALESCE(chapter_plan_result_consumptions.consumed_at,NOW()),failure_code=NULL,safe_reason=NULL,retry_action=NULL,version=chapter_plan_result_consumptions.version+1,updated_at=NOW()`, run.ID, run.ProjectID, batch.ID)
+	if err != nil {
+		return err
+	}
+	_, err = tx.Exec(ctx, "INSERT INTO workflow_run_events(id,run_id,event_type,status,payload,created_at) VALUES($1,$2,'result_consumed',$3,'{}',NOW()) ON CONFLICT DO NOTHING", uuid.New(), run.ID, run.Status)
+	return err
 }
 
 func NewRuntimeConsumer(ingestor Ingestor, consumptions ...*ConsumptionRepository) *RuntimeConsumer {

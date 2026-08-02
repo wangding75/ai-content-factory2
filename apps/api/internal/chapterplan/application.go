@@ -166,6 +166,19 @@ func (s *Service) List(ctx context.Context, projectID uuid.UUID) ([]Plan, error)
 	}
 	return items, nil
 }
+
+func (s *Service) RetryChapterPlanningResultConsumption(ctx context.Context, runID uuid.UUID, expectedVersion int, idempotencyKey string) (workflowrun.WorkflowRun, error) {
+	if runID == uuid.Nil || expectedVersion < 1 || strings.TrimSpace(idempotencyKey) == "" || len(idempotencyKey) > 128 {
+		return workflowrun.WorkflowRun{}, ErrValidation
+	}
+	runtime, ok := s.runCreator.(interface {
+		RetryResultConsumption(context.Context, uuid.UUID, int) (workflowrun.WorkflowRun, error)
+	})
+	if !ok {
+		return workflowrun.WorkflowRun{}, workflowrun.ErrNotRetryable
+	}
+	return runtime.RetryResultConsumption(ctx, runID, expectedVersion)
+}
 func (s *Service) Get(ctx context.Context, id uuid.UUID) (Plan, error) {
 	p, err := s.plans.GetByID(ctx, id)
 	if err != nil {

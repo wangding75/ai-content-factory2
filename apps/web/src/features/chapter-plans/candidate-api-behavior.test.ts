@@ -17,6 +17,7 @@ import {
   listChapterPlanRevisions,
   preflightChapterPlanRun,
   recompareChapterPlanCandidate,
+  retryChapterPlanningResultConsumption,
   updateChapterPlanCandidate,
   type ChapterPlan,
   type ChapterPlanCandidateBatch,
@@ -24,6 +25,26 @@ import {
   type ChapterPlanningPreflightBlocked,
   type WritableChapterPlanSource,
 } from "./chapter-plan-http-api.ts";
+
+test("chapter planning result-consumption retry uses the dedicated same-run request", async () => {
+  const originalFetch = globalThis.fetch;
+  let captured = { url: "", method: "", key: "", body: "" };
+  globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
+    const headers = new Headers(init?.headers);
+    captured = { url: String(input), method: String(init?.method), key: headers.get("Idempotency-Key") ?? "", body: String(init?.body) };
+    return new Response(JSON.stringify({ data: { id: "run/id", status: "succeeded", version: 4 }, request_id: "retry" }), { status: 200, headers: { "Content-Type": "application/json" } });
+  }) as typeof fetch;
+  try {
+    const run = await retryChapterPlanningResultConsumption("run/id", 3, "consume-key");
+    assert.equal(run.id, "run/id");
+    assert.match(captured.url, /workflow-runs\/run%2Fid\/chapter-planning-result-consumption-retries$/);
+    assert.equal(captured.method, "POST");
+    assert.equal(captured.key, "consume-key");
+    assert.deepEqual(JSON.parse(captured.body), { expectedRunVersion: 3 });
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
 
 test("preflight sends frozen full, append, and range targets without legacy fields", async () => {
   const originalFetch = globalThis.fetch;

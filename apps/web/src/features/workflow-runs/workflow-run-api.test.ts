@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 import { ApiError } from "../../lib/api.ts";
-import { cancelWorkflowRun, createWorkflowRun, formatWorkflowRunTime, getProjectWorkflowRunSummary, getWorkflowRun, getWorkflowRunRetryOptions, listWorkflowRunEvents, retryWorkflowRun } from "./workflow-run-api.ts";
+import { cancelWorkflowRun, createWorkflowRun, formatWorkflowRunTime, getProjectWorkflowRunSummary, getWorkflowRun, getWorkflowRunRetryOptions, listWorkflowRunEvents, mapWorkflowRunDetail, retryWorkflowRun, retryWorkflowRunResultConsumption } from "./workflow-run-api.ts";
 
 const source = readFileSync(new URL("./workflow-run-api.ts", import.meta.url), "utf8");
 const page = readFileSync(new URL("./workflow-runs-page.tsx", import.meta.url), "utf8");
@@ -30,6 +30,22 @@ test("Runtime detail API functions send the frozen paths, versions, keys, and co
   global.fetch = async (url, init) => { calls.push({ url: String(url), init }); const body = String(url).endsWith("/events") ? { items: [{ id: "event", runId: "run/id", eventType: "queued", status: "queued", payload: {}, createdAt: "invalid" }] } : run; return new Response(JSON.stringify({ data: body, request_id: "req" }), { status: String(url).includes("retries") ? 201 : 200 }); };
   const detail = await getWorkflowRun("run/id"); const events = await listWorkflowRunEvents("run/id"); await cancelWorkflowRun("run/id", 3, "cancel-key"); await retryWorkflowRun("run/id", 3, "retry-key", "original_configuration", { replacement: true });
   assert.equal(detail.createdAtLabel, "—"); assert.equal(events[0].title, "已创建运行"); assert.match(calls[0].url, /run%2Fid/); assert.equal((calls[2].init?.headers as Record<string,string>)["Idempotency-Key"], "cancel-key"); assert.deepEqual(JSON.parse(String(calls[3].init?.body)), { expectedVersion: 3, mode: "original_configuration", inputOverride: { replacement: true } }); assert.equal(formatWorkflowRunTime("bad"), "—");
+});
+test("result-consumption failure disables Runtime retry and routes every Stage to its dedicated same-run API", async () => {
+  const calls: Array<{ url: string; init?: RequestInit }> = [];
+  global.fetch = async (url, init) => { calls.push({ url: String(url), init }); return new Response(JSON.stringify({ data: run, request_id: "req" }), { status: 200 }); };
+  const failed = await getWorkflowRun("run/id", { headers: { "x-test": "ignored" } });
+  const consumption = { ...failed, status: "failed" as const, failurePhase: "result_consumption" as const, retryability: "result_consumption_retry" as const };
+  assert.equal(mapWorkflowRunDetail(consumption).canRetry, false);
+  assert.equal(mapWorkflowRunDetail(consumption).canRetryResultConsumption, true);
+  for (const stage of ["chapter_planning", "content_generation", "review", "rewrite"] as const) await retryWorkflowRunResultConsumption({ id: "run/id", stage, version: 3 }, `key-${stage}`);
+  assert.deepEqual(calls.slice(1).map((call) => call.url.replace(/^.*\/api\/v1/, "")), [
+    "/workflow-runs/run%2Fid/chapter-planning-result-consumption-retries",
+    "/content-generation-runs/run%2Fid/result-consumption-retries",
+    "/workflow-runs/run%2Fid/review-result-consumption-retries",
+    "/workflow-runs/run%2Fid/rewrite-result-consumption-retries",
+  ]);
+  for (const call of calls.slice(1)) assert.deepEqual(JSON.parse(String(call.init?.body)), { expectedRunVersion: 3 });
 });
 test("Retry Options and Retry Request use the exact frozen response and explicit body", async () => {
   const calls: Array<{ url: string; init?: RequestInit }> = [];

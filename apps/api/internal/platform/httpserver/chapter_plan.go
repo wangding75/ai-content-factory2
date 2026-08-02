@@ -43,6 +43,7 @@ type chapterPlanApplication interface {
 type chapterPlanRunApplication interface {
 	Preflight(context.Context, uuid.UUID, chapterplan.PreflightRequest) (chapterplan.PreflightResult, error)
 	CreateChapterPlanningRun(context.Context, uuid.UUID, string, string, string) (workflowrun.WorkflowRun, error)
+	RetryChapterPlanningResultConsumption(context.Context, uuid.UUID, int, string) (workflowrun.WorkflowRun, error)
 }
 
 type chapterPlanStorylineRefResponse struct {
@@ -372,6 +373,15 @@ func chapterPlanningDetails(retryAction, safeReason string) map[string]any {
 }
 
 func chapterPlanServiceError(w http.ResponseWriter, r *http.Request, err error) {
+	detailsForRuntimeResult := func(retryAction, safeReason string) map[string]any {
+		details := chapterPlanningDetails(retryAction, safeReason)
+		var runtimeErr *chapterplan.RuntimeResultError
+		if errors.As(err, &runtimeErr) {
+			details["workflowRunId"] = runtimeErr.RunID
+			details["expectedRunVersion"] = runtimeErr.RunVersion
+		}
+		return details
+	}
 	switch {
 	case errors.Is(err, chapterplan.ErrProjectNotFound):
 		writeError(w, r, 404, "project_not_found", "project not found", chapterPlanningDetails("check_project_id", "The specified project was not found"))
@@ -402,9 +412,9 @@ func chapterPlanServiceError(w http.ResponseWriter, r *http.Request, err error) 
 	case errors.Is(err, chapterplan.ErrRevisionSequenceConflict):
 		writeError(w, r, 409, "revision_sequence_conflict", "revision sequence conflict", chapterPlanningDetails("refresh_and_retry", "Revision sequence mismatch"))
 	case errors.Is(err, chapterplan.ErrOutputValidationFailed):
-		writeError(w, r, 422, "output_validation_failed", "runtime output validation failed", chapterPlanningDetails("retry_run", "The runtime output does not match the frozen generation context."))
+		writeError(w, r, 422, "output_validation_failed", "runtime output validation failed", detailsForRuntimeResult("retry_run", "The runtime output does not match the frozen generation context."))
 	case errors.Is(err, chapterplan.ErrIngestionTransaction):
-		writeError(w, r, 500, "result_consumption_failed", "result consumption failed", chapterPlanningDetails("retry_run", "The generated result could not be stored safely."))
+		writeError(w, r, 500, "result_consumption_failed", "result consumption failed", detailsForRuntimeResult("retry_result_consumption", "The generated result could not be stored safely."))
 	case errors.Is(err, chapterplan.ErrInvalidState), errors.Is(err, chapterplan.ErrVersionConflict):
 		writeError(w, r, 409, "version_conflict", "chapter plan version conflict", chapterPlanningDetails("refresh_and_retry", "Target resource version changed since last fetch"))
 	case errors.Is(err, chapterplan.ErrValidation), errors.Is(err, chapterplan.ErrProjectMismatch), errors.Is(err, chapterplan.ErrInvalidReference):

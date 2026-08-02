@@ -34,6 +34,14 @@ func (r *Repository) Transaction() pgx.Tx {
 
 const runColumns = "id, run_number, project_id, stage, subject_type, subject_id, workflow_configuration_id, trigger_source, status, configuration_snapshot, input_payload, output_payload, error_code, error_message, error_details, retry_of_run_id, failure_phase, failure_code, safe_error_message, retryability, retry_mode, external_execution_id, cancellation_requested_at, timed_out_at, binding_snapshot, connection_snapshot, llm_policy_snapshot, started_at, finished_at, cancelled_at, created_at, updated_at, version"
 
+func prefixedRunColumns(alias string) string {
+	columns := strings.Split(runColumns, ", ")
+	for i := range columns {
+		columns[i] = alias + "." + columns[i]
+	}
+	return strings.Join(columns, ", ")
+}
+
 type ListFilter struct {
 	ProjectID                                                                                                                      *uuid.UUID
 	Stage, WorkflowConfigurationID, Status, DisplayStatus, ConnectionID, ProviderID, Model, Retryability, TriggerSource, RunNumber string
@@ -348,6 +356,35 @@ func (r *Repository) List(ctx context.Context, f ListFilter) ([]WorkflowRun, err
 	}
 	return out, nil
 }
+func (r *Repository) ListRecoverableResultConsumptions(ctx context.Context, limit int, now time.Time) ([]WorkflowRun, error) {
+	if limit <= 0 || limit > 100 {
+		limit = 100
+	}
+	rows, err := r.db.Query(ctx, "SELECT "+prefixedRunColumns("r")+` FROM workflow_run_records r
+		JOIN workflow_run_result_consumptions c ON c.workflow_run_id=r.id
+		WHERE r.output_payload IS NOT NULL
+		  AND ((r.status='running' AND c.status='pending') OR
+		       (r.status='failed' AND r.failure_phase='result_consumption' AND c.status='failed') OR
+		       (c.status='in_progress' AND (c.lease_until IS NULL OR c.lease_until <= $1)
+		        AND (r.status='running' OR (r.status='failed' AND r.failure_phase='result_consumption'))))
+		ORDER BY c.updated_at ASC, r.id ASC LIMIT $2`, now.UTC(), limit)
+	if err != nil {
+		return nil, fmt.Errorf("list recoverable result consumptions: %w", err)
+	}
+	defer rows.Close()
+	out := make([]WorkflowRun, 0)
+	for rows.Next() {
+		value, scanErr := scanRun(rows)
+		if scanErr != nil {
+			return nil, fmt.Errorf("scan recoverable result consumption: %w", scanErr)
+		}
+		out = append(out, value)
+	}
+	if err = rows.Err(); err != nil {
+		return nil, fmt.Errorf("iterate recoverable result consumptions: %w", err)
+	}
+	return out, nil
+}
 func (r *Repository) Count(ctx context.Context, f ListFilter) (int, error) {
 	if f.StartTime != nil && f.EndTime != nil && f.StartTime.After(*f.EndTime) {
 		return 0, ErrValidation
@@ -403,6 +440,145 @@ func (r *Repository) SaveExternalExecutionID(ctx context.Context, current Workfl
 	}
 	if err != nil {
 		return WorkflowRun{}, fmt.Errorf("save external execution id: %w", err)
+	}
+	return updated, nil
+}
+
+// SaveOutputForConsumption durably records a successful external result before
+// any domain write.  The output and its event share one transaction so a
+// restarted worker can consume it without touching the executor again.
+func (r *Repository) SaveOutputForConsumption(ctx context.Context, current WorkflowRun, output json.RawMessage, event Event) (WorkflowRun, Event, error) {
+	if current.Status != StatusRunning || !validJSONObject(output) || event.RunID != current.ID || event.Status != StatusRunning {
+		return WorkflowRun{}, Event{}, ErrValidation
+	}
+	if r.pool == nil {
+		return WorkflowRun{}, Event{}, ErrValidation
+	}
+	tx, err := r.pool.Begin(ctx)
+	if err != nil {
+		return WorkflowRun{}, Event{}, err
+	}
+	defer tx.Rollback(ctx)
+	updated, err := scanRun(tx.QueryRow(ctx, "UPDATE workflow_run_records SET output_payload=$1,updated_at=$2,version=version+1 WHERE id=$3 AND version=$4 AND status='running' AND output_payload IS NULL RETURNING "+runColumns, RedactJSON(output), event.CreatedAt, current.ID, current.Version))
+	if errors.Is(err, pgx.ErrNoRows) {
+		return WorkflowRun{}, Event{}, ErrVersionConflict
+	}
+	if err != nil {
+		return WorkflowRun{}, Event{}, err
+	}
+	if _, err = tx.Exec(ctx, "INSERT INTO workflow_run_result_consumptions(workflow_run_id,status) VALUES($1,'pending') ON CONFLICT (workflow_run_id) DO NOTHING", current.ID); err != nil {
+		return WorkflowRun{}, Event{}, err
+	}
+	created, err := NewPostgresRepositoryTx(tx).AddEvent(ctx, event)
+	if err != nil {
+		return WorkflowRun{}, Event{}, err
+	}
+	if err = tx.Commit(ctx); err != nil {
+		return WorkflowRun{}, Event{}, err
+	}
+	return updated, created, nil
+}
+
+// ConsumeResult owns the transaction that spans the stage domain write,
+// durable consumption fact, Runtime terminal state and terminal events.
+func (r *Repository) ConsumeResult(ctx context.Context, runID uuid.UUID, expectedVersion int, at time.Time, retried bool, consume func(context.Context, pgx.Tx, WorkflowRun) error) (WorkflowRun, bool, error) {
+	if r.pool == nil || runID == uuid.Nil || consume == nil {
+		return WorkflowRun{}, false, ErrValidation
+	}
+	// The consumption row is the serialization point. Read committed lets a
+	// waiter observe the committed completed fact after acquiring FOR UPDATE;
+	// Serializable would instead surface a transient 40001 to an otherwise
+	// idempotent concurrent retry.
+	tx, err := r.pool.BeginTx(ctx, pgx.TxOptions{IsoLevel: pgx.ReadCommitted})
+	if err != nil {
+		return WorkflowRun{}, false, fmt.Errorf("begin result consumption: %w", err)
+	}
+	defer tx.Rollback(ctx)
+	var state string
+	if err = tx.QueryRow(ctx, "SELECT status FROM workflow_run_result_consumptions WHERE workflow_run_id=$1 FOR UPDATE", runID).Scan(&state); errors.Is(err, pgx.ErrNoRows) {
+		return WorkflowRun{}, false, ErrNotFound
+	} else if err != nil {
+		return WorkflowRun{}, false, err
+	}
+	run, err := NewPostgresRepositoryTx(tx).GetByIDForUpdate(ctx, runID)
+	if err != nil {
+		return WorkflowRun{}, false, err
+	}
+	if run.Version != expectedVersion && state != "completed" {
+		return WorkflowRun{}, false, ErrVersionConflict
+	}
+	if state == "completed" {
+		if run.Status != StatusSucceeded {
+			return WorkflowRun{}, false, ErrVersionConflict
+		}
+		return run, true, tx.Commit(ctx)
+	}
+	if !validJSONObject(run.OutputPayload) || (run.Status != StatusRunning && (run.Status != StatusFailed || run.FailurePhase == nil || *run.FailurePhase != "result_consumption")) {
+		return WorkflowRun{}, false, ErrInvalidTransition
+	}
+	if _, err = tx.Exec(ctx, "UPDATE workflow_run_result_consumptions SET status='in_progress',lease_until=$2,attempt_count=attempt_count+1,failure_code=NULL,safe_error_message=NULL,updated_at=$2 WHERE workflow_run_id=$1", runID, at.UTC()); err != nil {
+		return WorkflowRun{}, false, err
+	}
+	if err = consume(ctx, tx, run); err != nil {
+		return WorkflowRun{}, false, err
+	}
+	next, err := run.CompleteResultConsumption(at)
+	if err != nil {
+		return WorkflowRun{}, false, err
+	}
+	updated, err := scanRun(tx.QueryRow(ctx, "UPDATE workflow_run_records SET status='succeeded',error_code=NULL,error_message=NULL,error_details=NULL,failure_phase=NULL,failure_code=NULL,safe_error_message=NULL,retryability='not_retryable',finished_at=$2,updated_at=$2,version=$3 WHERE id=$1 AND version=$4 RETURNING "+runColumns, runID, at.UTC(), next.Version, run.Version))
+	if err != nil {
+		return WorkflowRun{}, false, err
+	}
+	if _, err = tx.Exec(ctx, "UPDATE workflow_run_result_consumptions SET status='completed',lease_until=NULL,completed_at=$2,updated_at=$2 WHERE workflow_run_id=$1", runID, at.UTC()); err != nil {
+		return WorkflowRun{}, false, err
+	}
+	if retried {
+		if _, err = tx.Exec(ctx, "INSERT INTO workflow_run_events(id,run_id,event_type,status,payload,created_at) VALUES($1,$2,'result_consumption_retried','succeeded',$3,$4)", uuid.New(), runID, json.RawMessage(`{"retried":true}`), at.UTC()); err != nil {
+			return WorkflowRun{}, false, err
+		}
+	}
+	if _, err = tx.Exec(ctx, "INSERT INTO workflow_run_events(id,run_id,event_type,status,payload,created_at) VALUES($1,$2,'succeeded','succeeded','{}',$3) ON CONFLICT DO NOTHING", uuid.New(), runID, at.UTC()); err != nil {
+		return WorkflowRun{}, false, err
+	}
+	if err = tx.Commit(ctx); err != nil {
+		return WorkflowRun{}, false, fmt.Errorf("commit result consumption: %w", err)
+	}
+	return updated, false, nil
+}
+
+func (r *Repository) MarkResultConsumptionFailure(ctx context.Context, runID uuid.UUID, phase, code, message string, at time.Time) (WorkflowRun, error) {
+	if r.pool == nil || runID == uuid.Nil || (phase != "output_validation" && phase != "result_consumption") {
+		return WorkflowRun{}, ErrValidation
+	}
+	tx, err := r.pool.Begin(ctx)
+	if err != nil {
+		return WorkflowRun{}, err
+	}
+	defer tx.Rollback(ctx)
+	run, err := NewPostgresRepositoryTx(tx).GetByIDForUpdate(ctx, runID)
+	if err != nil {
+		return WorkflowRun{}, err
+	}
+	if run.Status == StatusSucceeded {
+		return run, nil
+	}
+	retryability := "not_retryable"
+	if phase == "result_consumption" {
+		retryability = "result_consumption_retry"
+	}
+	updated, err := scanRun(tx.QueryRow(ctx, "UPDATE workflow_run_records SET status='failed',error_code=$2,error_message=$3,error_details='{}',failure_phase=$4,failure_code=$2,safe_error_message=$3,retryability=$5,finished_at=$6,updated_at=$6,version=version+1 WHERE id=$1 AND status IN ('running','failed') RETURNING "+runColumns, runID, code, message, phase, retryability, at.UTC()))
+	if err != nil {
+		return WorkflowRun{}, err
+	}
+	if _, err = tx.Exec(ctx, "UPDATE workflow_run_result_consumptions SET status='failed',lease_until=NULL,attempt_count=attempt_count+1,failure_code=$2,safe_error_message=$3,updated_at=$4 WHERE workflow_run_id=$1", runID, code, message, at.UTC()); err != nil {
+		return WorkflowRun{}, err
+	}
+	if _, err = tx.Exec(ctx, "INSERT INTO workflow_run_events(id,run_id,event_type,status,payload,created_at) VALUES($1,$2,$3,'failed','{}',$4) ON CONFLICT DO NOTHING", uuid.New(), runID, code, at.UTC()); err != nil {
+		return WorkflowRun{}, err
+	}
+	if err = tx.Commit(ctx); err != nil {
+		return WorkflowRun{}, err
 	}
 	return updated, nil
 }

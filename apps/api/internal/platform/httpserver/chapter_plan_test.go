@@ -49,6 +49,10 @@ type fakeChapterPlanRunApplication struct {
 	projectID uuid.UUID
 	request   chapterplan.PreflightRequest
 	calls     int
+	retryRun  workflowrun.WorkflowRun
+	retryID   uuid.UUID
+	retryVer  int
+	retryKey  string
 }
 
 type testPrincipalProvider struct {
@@ -67,6 +71,26 @@ func (f *fakeChapterPlanRunApplication) Preflight(_ context.Context, projectID u
 
 func (f *fakeChapterPlanRunApplication) CreateChapterPlanningRun(context.Context, uuid.UUID, string, string, string) (workflowrun.WorkflowRun, error) {
 	return workflowrun.WorkflowRun{}, nil
+}
+
+func (f *fakeChapterPlanRunApplication) RetryChapterPlanningResultConsumption(_ context.Context, runID uuid.UUID, expectedVersion int, key string) (workflowrun.WorkflowRun, error) {
+	f.retryID, f.retryVer, f.retryKey = runID, expectedVersion, key
+	return f.retryRun, f.err
+}
+
+func TestChapterPlanningResultConsumptionRetryRouteUsesOriginalRun(t *testing.T) {
+	runID := uuid.New()
+	fake := &fakeChapterPlanRunApplication{retryRun: workflowrun.WorkflowRun{ID: runID, Version: 4, Status: workflowrun.StatusSucceeded}}
+	mux := http.NewServeMux()
+	registerChapterPlanRunRoutes(mux, fake)
+	request := httptest.NewRequest(http.MethodPost, "/api/v1/workflow-runs/"+runID.String()+"/chapter-planning-result-consumption-retries", strings.NewReader(`{"expectedRunVersion":3}`))
+	request.Header.Set("Content-Type", "application/json")
+	request.Header.Set("Idempotency-Key", "chapter-consume")
+	response := httptest.NewRecorder()
+	mux.ServeHTTP(response, request)
+	if response.Code != http.StatusOK || fake.retryID != runID || fake.retryVer != 3 || fake.retryKey != "chapter-consume" || !strings.Contains(response.Body.String(), runID.String()) {
+		t.Fatalf("status=%d body=%s retryID=%s version=%d key=%s", response.Code, response.Body.String(), fake.retryID, fake.retryVer, fake.retryKey)
+	}
 }
 
 func (f *fakeChapterPlanApplication) List(_ context.Context, id uuid.UUID) ([]chapterplan.Plan, error) {

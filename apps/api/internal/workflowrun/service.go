@@ -27,6 +27,7 @@ var (
 	ErrNotRunnable                = errors.New("workflow is not runnable")
 	ErrNotCancellable             = errors.New("workflow run is not cancellable")
 	ErrNotRetryable               = errors.New("workflow run is not retryable")
+	ErrResultConsumptionFailed    = errors.New("workflow result consumption failed")
 	ErrActiveRewriteRun           = errors.New("active rewrite run conflict")
 	ErrIdempotencyConflict        = errors.New("idempotency key reused with different payload")
 	ErrRewriteVersionConflict     = errors.New("rewrite workflow run version conflict")
@@ -50,15 +51,24 @@ type Store interface {
 	CreateWithInitialEvent(context.Context, WorkflowRun, Event) (WorkflowRun, Event, error)
 	GetByID(context.Context, uuid.UUID) (WorkflowRun, error)
 	List(context.Context, ListFilter) ([]WorkflowRun, error)
+	ListRecoverableResultConsumptions(context.Context, int, time.Time) ([]WorkflowRun, error)
 	ListEvents(context.Context, uuid.UUID) ([]Event, error)
 	AddEvent(context.Context, Event) (Event, error)
 	UpdateStatusWithEvent(context.Context, WorkflowRun, WorkflowRun, Event) (WorkflowRun, Event, error)
 	SaveExternalExecutionID(context.Context, WorkflowRun, string) (WorkflowRun, error)
+	SaveOutputForConsumption(context.Context, WorkflowRun, json.RawMessage, Event) (WorkflowRun, Event, error)
+	ConsumeResult(context.Context, uuid.UUID, int, time.Time, bool, func(context.Context, pgx.Tx, WorkflowRun) error) (WorkflowRun, bool, error)
+	MarkResultConsumptionFailure(context.Context, uuid.UUID, string, string, string, time.Time) (WorkflowRun, error)
 	QuerySummary(context.Context, uuid.UUID, int) (Summary, error)
 	Count(context.Context, ListFilter) (int, error)
 	ExecuteIdempotent(context.Context, string, string, string, func(Store) (WorkflowRun, error)) (WorkflowRun, error)
 	ExecuteIdempotentWithReplay(context.Context, string, string, string, func(Store) (WorkflowRun, error)) (WorkflowRun, bool, error)
 	PreflightTokenUsed(context.Context, string) (bool, error)
+}
+
+type TransactionalResultConsumer interface {
+	ValidateResult(WorkflowRun) error
+	ConsumeResultTx(context.Context, pgx.Tx, WorkflowRun) error
 }
 
 type CreateRunCommand struct {
@@ -226,36 +236,15 @@ func (s *Service) applyExecutionResult(ctx context.Context, run WorkflowRun, res
 		return run, nil
 	}
 	if result.Status == ExecutionSucceeded {
-		next, err := run.Succeed(s.now(), RedactJSON(result.Output))
+		// Persist the validated external result while the Run is still running.
+		// A process crash from this point is recoverable by the worker without a
+		// second Submit (or a second Query): OutputPayload marks consumption work.
+		pending := Event{ID: s.newID(), RunID: run.ID, EventType: "output_validated", Status: StatusRunning, Payload: executionEventPayload(result), CreatedAt: s.now()}
+		stored, _, err := s.store.SaveOutputForConsumption(ctx, run, RedactJSON(result.Output), pending)
 		if err != nil {
-			return WorkflowRun{}, err
+			return WorkflowRun{}, mapStoreError(err)
 		}
-		event := Event{ID: s.newID(), RunID: run.ID, EventType: "succeeded", Status: StatusSucceeded, Payload: executionEventPayload(result), CreatedAt: next.UpdatedAt}
-		updated, _, err := s.store.UpdateStatusWithEvent(ctx, run, next, event)
-		if err != nil {
-			return updated, mapStoreError(err)
-		}
-		if s.succeededConsumer != nil && updated.Stage == "chapter_planning" {
-			if err := s.succeededConsumer.ConsumeSucceededRun(ctx, updated); err != nil {
-				return updated, err
-			}
-		}
-		if s.contentSucceededConsumer != nil && updated.Stage == "content_generation" {
-			if err := s.contentSucceededConsumer.ConsumeSucceededRun(ctx, updated); err != nil {
-				return updated, err
-			}
-		}
-		if s.reviewSucceededConsumer != nil && updated.Stage == "review" {
-			if err := s.reviewSucceededConsumer.ConsumeSucceededRun(ctx, updated); err != nil {
-				return updated, err
-			}
-		}
-		if s.rewriteSucceededConsumer != nil && updated.Stage == "rewrite" {
-			if err := s.rewriteSucceededConsumer.ConsumeSucceededRun(ctx, updated); err != nil {
-				return updated, err
-			}
-		}
-		return updated, nil
+		return s.consumeStoredResult(ctx, stored)
 	}
 	if result.Status == ExecutionCancelled {
 		next, err := run.Cancel(s.now())
@@ -267,6 +256,88 @@ func (s *Service) applyExecutionResult(ctx context.Context, run WorkflowRun, res
 		return updated, mapStoreError(err)
 	}
 	return s.failExecution(ctx, run, result.ErrorCode, result.ErrorMessage)
+}
+
+// consumeStoredResult is deliberately idempotent: the domain consumers use
+// source_workflow_run_id/workflow_run_id uniqueness, so replay after a crash
+// returns the existing domain result before the Run becomes succeeded.
+func (s *Service) consumeStoredResult(ctx context.Context, run WorkflowRun) (WorkflowRun, error) {
+	if (run.Status != StatusRunning && run.Status != StatusFailed) || !validJSONObject(run.OutputPayload) {
+		return run, ErrInvalidTransition
+	}
+	consumerRun := run
+	consumerRun.Status = StatusSucceeded // frozen domain validation sees an externally successful result
+	var transactional TransactionalResultConsumer
+	var consumeErr error
+	if s.succeededConsumer != nil && run.Stage == "chapter_planning" {
+		transactional, _ = s.succeededConsumer.(TransactionalResultConsumer)
+	}
+	if s.contentSucceededConsumer != nil && run.Stage == "content_generation" {
+		transactional, _ = s.contentSucceededConsumer.(TransactionalResultConsumer)
+	}
+	if s.reviewSucceededConsumer != nil && run.Stage == "review" {
+		transactional, _ = s.reviewSucceededConsumer.(TransactionalResultConsumer)
+	}
+	if s.rewriteSucceededConsumer != nil && run.Stage == "rewrite" {
+		transactional, _ = s.rewriteSucceededConsumer.(TransactionalResultConsumer)
+	}
+	if transactional != nil {
+		if validationErr := transactional.ValidateResult(consumerRun); validationErr != nil {
+			return s.store.MarkResultConsumptionFailure(ctx, run.ID, "output_validation", "output_validation_failed", "workflow output validation failed", s.now())
+		}
+		updated, _, err := s.store.ConsumeResult(ctx, run.ID, run.Version, s.now(), run.Status == StatusFailed, transactional.ConsumeResultTx)
+		if err == nil {
+			return updated, nil
+		}
+		consumeErr = err
+	} else {
+		if s.succeededConsumer != nil && run.Stage == "chapter_planning" {
+			consumeErr = s.succeededConsumer.ConsumeSucceededRun(ctx, consumerRun)
+		}
+		if s.contentSucceededConsumer != nil && run.Stage == "content_generation" {
+			consumeErr = s.contentSucceededConsumer.ConsumeSucceededRun(ctx, consumerRun)
+		}
+		if s.reviewSucceededConsumer != nil && run.Stage == "review" {
+			consumeErr = s.reviewSucceededConsumer.ConsumeSucceededRun(ctx, consumerRun)
+		}
+		if s.rewriteSucceededConsumer != nil && run.Stage == "rewrite" {
+			consumeErr = s.rewriteSucceededConsumer.ConsumeSucceededRun(ctx, consumerRun)
+		}
+	}
+	if consumeErr != nil {
+		updated, markErr := s.store.MarkResultConsumptionFailure(ctx, run.ID, "result_consumption", "result_consumption_failed", "workflow result could not be consumed safely", s.now())
+		if markErr != nil {
+			return WorkflowRun{}, mapStoreError(markErr)
+		}
+		if updated.Status == StatusSucceeded {
+			return updated, nil
+		}
+		return updated, ErrResultConsumptionFailed
+	}
+	next, err := run.Succeed(s.now(), run.OutputPayload)
+	if err != nil {
+		return WorkflowRun{}, err
+	}
+	event := Event{ID: s.newID(), RunID: run.ID, EventType: "succeeded", Status: StatusSucceeded, Payload: json.RawMessage(`{}`), CreatedAt: next.UpdatedAt}
+	updated, _, err := s.store.UpdateStatusWithEvent(ctx, run, next, event)
+	return updated, mapStoreError(err)
+}
+
+func (s *Service) RetryResultConsumption(ctx context.Context, runID uuid.UUID, expectedVersion int) (WorkflowRun, error) {
+	if runID == uuid.Nil || expectedVersion < 1 {
+		return WorkflowRun{}, ErrValidation
+	}
+	run, err := s.store.GetByID(ctx, runID)
+	if err != nil {
+		return WorkflowRun{}, mapStoreError(err)
+	}
+	if run.Version != expectedVersion {
+		return WorkflowRun{}, ErrVersionConflict
+	}
+	if run.Status != StatusFailed || run.FailurePhase == nil || *run.FailurePhase != "result_consumption" || run.Retryability != "result_consumption_retry" || !validJSONObject(run.OutputPayload) {
+		return WorkflowRun{}, ErrNotRetryable
+	}
+	return s.consumeStoredResult(ctx, run)
 }
 
 func (s *Service) failExecution(ctx context.Context, run WorkflowRun, code, message string) (WorkflowRun, error) {
@@ -821,6 +892,9 @@ func (s *Service) RetryRunWithReplay(ctx context.Context, command RetryCommand) 
 		if err != nil {
 			return WorkflowRun{}, mapStoreError(err)
 		}
+		if discovered.Stage == "rewrite" && mode == "current_configuration" {
+			return WorkflowRun{}, ErrValidation
+		}
 		var original WorkflowRun
 		if discovered.Stage == "rewrite" {
 			rewriteStore, ok := store.(interface {
@@ -1004,7 +1078,7 @@ func (s *Service) runnableConfiguration(ctx context.Context, id uuid.UUID, stage
 }
 
 func configurationSnapshot(binding workflowbinding.ProjectWorkflowBinding, configuration globalconfig.Workflow, connection globalconfig.Connection, createdAt time.Time) (json.RawMessage, error) {
-	v := map[string]any{"projectId": binding.ProjectID, "stage": binding.Stage.String(), "binding": map[string]any{"id": binding.ID, "version": binding.Version}, "workflowConfiguration": map[string]any{"id": configuration.ID, "name": configuration.Name, "version": configuration.Version, "typeConfig": configuration.TypeConfig, "inputContractVersion": configuration.InputContractVersion, "outputContractVersion": configuration.OutputContractVersion, "defaultParameters": configuration.DefaultParameters, "llmStrategy": configuration.LlmStrategy, "llmProviderId": configuration.LlmProviderID, "llmModel": configuration.LlmModel, "validationStatus": configuration.ValidationStatus, "enabled": configuration.Enabled, "executable": configuration.Executable}, "workflowConnection": map[string]any{"id": connection.ID, "name": connection.Name, "version": connection.Version, "type": connection.ConnectionType, "baseUrl": safeBaseURL(connection.BaseURL), "authType": connection.AuthType, "timeoutSeconds": connection.TimeoutSeconds, "credentialFingerprint": connection.CredentialFingerprint, "typeConfig": connection.TypeConfig, "validationStatus": connection.ValidationStatus, "enabled": connection.Enabled, "executable": connection.Executable}, "createdAt": createdAt.UTC()}
+	v := map[string]any{"projectId": binding.ProjectID, "stage": binding.Stage.String(), "binding": map[string]any{"id": binding.ID, "version": binding.Version}, "workflowConfiguration": map[string]any{"id": configuration.ID, "name": configuration.Name, "version": configuration.Version, "typeConfig": configuration.TypeConfig, "inputContractVersion": configuration.InputContractVersion, "outputContractVersion": configuration.OutputContractVersion, "defaultParameters": configuration.DefaultParameters, "llmStrategy": configuration.LlmStrategy, "llmProviderId": configuration.LlmProviderID, "llmModel": configuration.LlmModel, "validationStatus": configuration.ValidationStatus, "enabled": configuration.Enabled, "executable": configuration.Executable}, "workflowConnection": map[string]any{"id": connection.ID, "name": connection.Name, "version": connection.Version, "type": connection.ConnectionType, "baseUrl": safeBaseURL(connection.BaseURL), "authType": connection.AuthType, "timeoutSeconds": connection.TimeoutSeconds, "typeConfig": connection.TypeConfig, "validationStatus": connection.ValidationStatus, "enabled": connection.Enabled, "executable": connection.Executable}, "createdAt": createdAt.UTC()}
 	b, err := json.Marshal(v)
 	if err != nil {
 		return nil, err

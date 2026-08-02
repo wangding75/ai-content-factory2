@@ -109,6 +109,23 @@ func (r WorkflowRun) Succeed(at time.Time, output json.RawMessage) (WorkflowRun,
 	}
 	return r.transition(StatusSucceeded, at.UTC(), output, nil)
 }
+
+// CompleteResultConsumption is the only path that can recover an existing
+// result-consumption failure to succeeded. The validated output and immutable
+// execution snapshots remain on the original Run.
+func (r WorkflowRun) CompleteResultConsumption(at time.Time) (WorkflowRun, error) {
+	if !validJSONObject(r.OutputPayload) || (r.Status != StatusRunning &&
+		(r.Status != StatusFailed || r.FailurePhase == nil || *r.FailurePhase != "result_consumption")) {
+		return WorkflowRun{}, ErrInvalidTransition
+	}
+	at = at.UTC()
+	r.Status, r.UpdatedAt, r.Version = StatusSucceeded, at, r.Version+1
+	r.FinishedAt = &at
+	r.ErrorCode, r.ErrorMessage, r.ErrorDetails = nil, nil, nil
+	r.FailurePhase, r.FailureCode, r.SafeErrorMessage = nil, nil, nil
+	r.Retryability = "not_retryable"
+	return r, nil
+}
 func (r WorkflowRun) Fail(at time.Time, failure Failure) (WorkflowRun, error) {
 	if strings.TrimSpace(failure.Code) == "" || strings.TrimSpace(failure.Message) == "" || !validJSONObject(failure.Details) {
 		return WorkflowRun{}, ErrValidation

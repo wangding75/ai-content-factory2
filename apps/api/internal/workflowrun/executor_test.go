@@ -37,7 +37,7 @@ func TestFakeWorkflowExecutorAndServiceMapping(t *testing.T) {
 	if err != nil || updated.Status != StatusSucceeded || fake.ExecuteCalls != 1 {
 		t.Fatalf("run=%+v err=%v calls=%d", updated, err, fake.ExecuteCalls)
 	}
-	if len(store.events[runID]) != 2 || string(updated.OutputPayload) == "" {
+	if len(store.events[runID]) != 3 || string(updated.OutputPayload) == "" || store.events[runID][1].EventType != "output_validated" {
 		t.Fatalf("events=%+v output=%s", store.events[runID], updated.OutputPayload)
 	}
 	if string(fake.LastRequest.ConfigurationSnapshot) == "" || string(fake.LastRequest.Parameters) == "" {

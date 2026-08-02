@@ -558,6 +558,13 @@ paths:
       operationId: getProjectChapterPlanningSummary
       description: Read-only workspace aggregation, including the current active chapter_planning Runtime run when present.
       responses: {"200": {description: Chapter planning summary., content: {application/json: {schema: {$ref: "#/components/schemas/ChapterPlanningSummaryEnvelope"}}}}, "400": {$ref: "#/components/responses/BadRequest"}, "404": {$ref: "#/components/responses/NotFound"}, "422": {description: Latest Run output failed normalized-output validation., content: {application/json: {schema: {$ref: "#/components/schemas/ChapterPlanningOutputValidationErrorEnvelope"}, examples: {outputValidationFailed: {$ref: "#/components/examples/ChapterPlanningOutputValidationFailedError"}}}}}, "500": {description: Latest Run result consumption failed safely., content: {application/json: {schema: {$ref: "#/components/schemas/ChapterPlanningResultConsumptionErrorEnvelope"}}}}}
+  /api/v1/workflow-runs/{workflowRunId}/chapter-planning-result-consumption-retries:
+    parameters: [{$ref: "#/components/parameters/WorkflowRunId"}, {$ref: "#/components/parameters/IdempotencyKey"}]
+    post:
+      operationId: retryChapterPlanningResultConsumption
+      description: Reconsumes only the original validated chapter-planning output on the same WorkflowRun. It creates no Run and performs no external execution.
+      requestBody: {required: true, content: {application/json: {schema: {$ref: "#/components/schemas/RetryChapterPlanningResultConsumptionRequest"}}}}
+      responses: {"200": {description: The original WorkflowRun after result consumption., content: {application/json: {schema: {$ref: "#/components/schemas/Iteration14WorkflowRunEnvelope"}}}}, "400": {$ref: "#/components/responses/BadRequest"}, "404": {$ref: "#/components/responses/NotFound"}, "409": {$ref: "#/components/responses/Conflict"}, "500": {$ref: "#/components/responses/InternalServerError"}}
   /api/v1/projects/{projectId}/chapter-plan-candidate-batches:
     parameters: [{$ref: "#/components/parameters/ProjectId"}]
     get:
@@ -4151,7 +4158,7 @@ components:
       properties:
         id: {type: string, format: uuid}
         runId: {type: string, format: uuid}
-        eventType: {type: string, enum: [created, queued, worker_started, execution_started, request_sent, response_received, llm_started, llm_completed, output_validated, cancel_requested, cancelled, timed_out, output_validation_failed, result_consumed, result_consumption_failed, succeeded, failed, retry_created]}
+        eventType: {type: string, enum: [created, queued, worker_started, execution_started, request_sent, response_received, llm_started, llm_completed, output_validated, cancel_requested, cancelled, timed_out, output_validation_failed, result_consumed, result_consumption_failed, result_consumption_retried, succeeded, failed, retry_created]}
         status: {$ref: "#/components/schemas/Iteration14WorkflowRunStatus", description: WorkflowRun status snapshot after this event is written; event status is not an independent lifecycle.}
         payload: {type: object, additionalProperties: true, description: Redacted event payload.}
         createdAt: {type: string, format: date-time}
@@ -4914,6 +4921,12 @@ components:
         expectedCurrentVersionId: {type: string, format: uuid}
         expectedCurrentVersion: {type: integer, minimum: 1}
     RetryContentGenerationResultConsumptionRequest:
+      type: object
+      additionalProperties: false
+      required: [expectedRunVersion]
+      properties:
+        expectedRunVersion: {type: integer, minimum: 1}
+    RetryChapterPlanningResultConsumptionRequest:
       type: object
       additionalProperties: false
       required: [expectedRunVersion]

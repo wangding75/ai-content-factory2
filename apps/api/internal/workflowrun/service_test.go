@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 	"github.com/local/ai-content-factory/apps/api/internal/globalconfig"
 	"github.com/local/ai-content-factory/apps/api/internal/project"
 	"github.com/local/ai-content-factory/apps/api/internal/workflowbinding"
@@ -104,6 +105,15 @@ func (s *serviceStore) List(_ context.Context, _ ListFilter) ([]WorkflowRun, err
 	}
 	return out, nil
 }
+func (s *serviceStore) ListRecoverableResultConsumptions(_ context.Context, _ int, _ time.Time) ([]WorkflowRun, error) {
+	out := []WorkflowRun{}
+	for _, r := range s.runs {
+		if validJSONObject(r.OutputPayload) && (r.Status == StatusRunning || (r.Status == StatusFailed && r.FailurePhase != nil && *r.FailurePhase == "result_consumption")) {
+			out = append(out, r)
+		}
+	}
+	return out, nil
+}
 func (s *serviceStore) Count(_ context.Context, _ ListFilter) (int, error) { return len(s.runs), nil }
 func (s *serviceStore) ListEvents(_ context.Context, id uuid.UUID) ([]Event, error) {
 	return s.events[id], nil
@@ -135,6 +145,50 @@ func (s *serviceStore) SaveExternalExecutionID(_ context.Context, current Workfl
 	r.Version++
 	r.UpdatedAt = time.Now().UTC()
 	s.runs[r.ID] = r
+	return r, nil
+}
+func (s *serviceStore) SaveOutputForConsumption(_ context.Context, current WorkflowRun, output json.RawMessage, event Event) (WorkflowRun, Event, error) {
+	r := s.runs[current.ID]
+	if r.Version != current.Version || r.Status != StatusRunning || r.OutputPayload != nil {
+		return WorkflowRun{}, Event{}, ErrVersionConflict
+	}
+	r.OutputPayload, r.Version, r.UpdatedAt = output, r.Version+1, event.CreatedAt
+	s.runs[r.ID] = r
+	s.events[r.ID] = append(s.events[r.ID], event)
+	return r, event, nil
+}
+func (s *serviceStore) ConsumeResult(ctx context.Context, runID uuid.UUID, expectedVersion int, at time.Time, _ bool, consume func(context.Context, pgx.Tx, WorkflowRun) error) (WorkflowRun, bool, error) {
+	r := s.runs[runID]
+	if r.Version != expectedVersion {
+		return WorkflowRun{}, false, ErrVersionConflict
+	}
+	if err := consume(ctx, nil, r); err != nil {
+		return WorkflowRun{}, false, err
+	}
+	next, err := r.CompleteResultConsumption(at)
+	if err != nil {
+		return WorkflowRun{}, false, err
+	}
+	s.runs[runID] = next
+	s.events[runID] = append(s.events[runID], Event{ID: uuid.New(), RunID: runID, EventType: "succeeded", Status: StatusSucceeded, Payload: json.RawMessage(`{}`), CreatedAt: at})
+	return next, false, nil
+}
+func (s *serviceStore) MarkResultConsumptionFailure(_ context.Context, runID uuid.UUID, phase, code, message string, at time.Time) (WorkflowRun, error) {
+	r := s.runs[runID]
+	if r.Status == StatusRunning {
+		r, _ = r.Fail(at, Failure{Code: code, Message: message, Details: json.RawMessage(`{}`)})
+	} else {
+		r.Version++
+		r.UpdatedAt = at
+	}
+	r.FailurePhase, r.FailureCode, r.SafeErrorMessage = &phase, &code, &message
+	if phase == "result_consumption" {
+		r.Retryability = "result_consumption_retry"
+	} else {
+		r.Retryability = "not_retryable"
+	}
+	s.runs[runID] = r
+	s.events[runID] = append(s.events[runID], Event{ID: uuid.New(), RunID: runID, EventType: code, Status: StatusFailed, Payload: json.RawMessage(`{}`), CreatedAt: at})
 	return r, nil
 }
 func (s *serviceStore) QuerySummary(_ context.Context, _ uuid.UUID, _ int) (Summary, error) {
@@ -333,6 +387,11 @@ func TestRetryOptionsReuseSnapshotAndResultConsumptionQualification(t *testing.T
 	if err != nil || !options.ResultConsumptionRetryRequired || options.CurrentConfiguration.Enabled || options.OriginalConfiguration.Enabled {
 		t.Fatalf("consumption options=%+v err=%v", options, err)
 	}
+	for _, mode := range []string{"current_configuration", "original_configuration"} {
+		if _, err = s.RetryRun(context.Background(), RetryCommand{RunID: run.ID, ExpectedVersion: run.Version, Mode: mode, IdempotencyKey: "reject-" + mode}); !errors.Is(err, ErrNotRetryable) {
+			t.Fatalf("mode=%s err=%v", mode, err)
+		}
+	}
 }
 
 func TestRetryOptionsDisableIncompleteSnapshot(t *testing.T) {
@@ -401,9 +460,118 @@ func TestWorkerExecutesQueuedRuns(t *testing.T) {
 	}
 }
 
+func TestWorkerRecoversPersistedConsumptionWithoutExecutor(t *testing.T) {
+	service, store, projectID := fixtureService(t)
+	now := service.now()
+	phase, code, message, externalID := "result_consumption", "result_consumption_failed", "safe", "external-existing"
+	run := WorkflowRun{ID: uuid.New(), RunNumber: "WR-RECOVER-CONSUME", ProjectID: projectID, Stage: "review", WorkflowConfigurationID: uuid.New(), TriggerSource: "manual", Status: StatusFailed, ConfigurationSnapshot: json.RawMessage(`{}`), InputPayload: json.RawMessage(`{}`), OutputPayload: json.RawMessage(`{"safe":true}`), ErrorCode: &code, ErrorMessage: &message, ErrorDetails: json.RawMessage(`{}`), FailurePhase: &phase, FailureCode: &code, SafeErrorMessage: &message, Retryability: "result_consumption_retry", ExternalExecutionID: &externalID, StartedAt: &now, FinishedAt: &now, CreatedAt: now, UpdatedAt: now, Version: 3}
+	store.runs[run.ID] = run
+	consumer := &transactionalConsumerSpy{}
+	service.SetReviewSucceededConsumer(consumer)
+	executor := &FakeWorkflowExecutor{}
+	service.SetWorkflowExecutor(executor)
+	ctx, cancel := context.WithCancel(context.Background())
+	done := make(chan struct{})
+	go func() {
+		service.RunWorker(ctx, time.Hour, func(err error) { t.Errorf("worker error: %v", err) })
+		close(done)
+	}()
+	deadline := time.Now().Add(time.Second)
+	for store.runs[run.ID].Status != StatusSucceeded && time.Now().Before(deadline) {
+		time.Sleep(time.Millisecond)
+	}
+	cancel()
+	<-done
+	updated := store.runs[run.ID]
+	if updated.Status != StatusSucceeded || updated.ID != run.ID || updated.ExternalExecutionID == nil || *updated.ExternalExecutionID != externalID || consumer.consumptions != 1 || executor.ExecuteCalls != 0 || executor.QueryCalls != 0 {
+		t.Fatalf("updated=%+v consumptions=%d execute=%d query=%d", updated, consumer.consumptions, executor.ExecuteCalls, executor.QueryCalls)
+	}
+}
+
 type succeededConsumerSpy struct {
 	calls int
 	stage string
+}
+
+type transactionalConsumerSpy struct {
+	validateErr         error
+	consumeErr          error
+	validations         int
+	consumptions        int
+	statusDuringConsume Status
+}
+
+func (spy *transactionalConsumerSpy) ConsumeSucceededRun(context.Context, WorkflowRun) error {
+	return errors.New("legacy consumer must not be used")
+}
+func (spy *transactionalConsumerSpy) ValidateResult(WorkflowRun) error {
+	spy.validations++
+	return spy.validateErr
+}
+func (spy *transactionalConsumerSpy) ConsumeResultTx(_ context.Context, _ pgx.Tx, run WorkflowRun) error {
+	spy.consumptions++
+	spy.statusDuringConsume = run.Status
+	return spy.consumeErr
+}
+
+func TestExternalSuccessValidationConsumptionAndTerminalOrdering(t *testing.T) {
+	for _, test := range []struct {
+		name, phase             string
+		validateErr, consumeErr error
+		wantStatus              Status
+		wantConsumptions        int
+	}{
+		{name: "output validation failure", phase: "output_validation", validateErr: errors.New("invalid schema"), wantStatus: StatusFailed},
+		{name: "result consumption failure", phase: "result_consumption", consumeErr: errors.New("domain transaction failed"), wantStatus: StatusFailed, wantConsumptions: 1},
+		{name: "complete", wantStatus: StatusSucceeded, wantConsumptions: 1},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			service, store, projectID := fixtureService(t)
+			now := service.now()
+			externalID := "external-original"
+			run := WorkflowRun{ID: uuid.New(), RunNumber: "WR-ORDER", ProjectID: projectID, Stage: "review", WorkflowConfigurationID: uuid.New(), TriggerSource: "manual", Status: StatusRunning, ConfigurationSnapshot: json.RawMessage(`{}`), InputPayload: json.RawMessage(`{}`), ExternalExecutionID: &externalID, StartedAt: &now, CreatedAt: now, UpdatedAt: now, Version: 2}
+			store.runs[run.ID] = run
+			consumer := &transactionalConsumerSpy{validateErr: test.validateErr, consumeErr: test.consumeErr}
+			service.SetReviewSucceededConsumer(consumer)
+			updated, err := service.applyExecutionResult(context.Background(), run, ExecutionResult{Status: ExecutionSucceeded, Output: json.RawMessage(`{"safe":true}`)})
+			if test.validateErr == nil && test.consumeErr == nil {
+				if err != nil {
+					t.Fatal(err)
+				}
+			} else if err == nil && test.consumeErr != nil {
+				t.Fatal("expected consumption error")
+			}
+			if updated.Status != test.wantStatus || consumer.validations != 1 || consumer.consumptions != test.wantConsumptions || updated.ExternalExecutionID == nil || *updated.ExternalExecutionID != externalID || !validJSONObject(updated.OutputPayload) {
+				t.Fatalf("updated=%+v validations=%d consumptions=%d err=%v", updated, consumer.validations, consumer.consumptions, err)
+			}
+			if test.phase != "" && (updated.FailurePhase == nil || *updated.FailurePhase != test.phase) {
+				t.Fatalf("failurePhase=%v want=%s", updated.FailurePhase, test.phase)
+			}
+			if test.wantConsumptions == 1 && consumer.statusDuringConsume != StatusRunning {
+				t.Fatalf("consumer observed terminal status=%s", consumer.statusDuringConsume)
+			}
+		})
+	}
+}
+
+func TestResultConsumptionFailureDoesNotLeakSecretCanary(t *testing.T) {
+	service, store, projectID := fixtureService(t)
+	now := service.now()
+	run := WorkflowRun{ID: uuid.New(), RunNumber: "WR-SECRET", ProjectID: projectID, Stage: "review", WorkflowConfigurationID: uuid.New(), TriggerSource: "manual", Status: StatusRunning, ConfigurationSnapshot: json.RawMessage(`{}`), InputPayload: json.RawMessage(`{}`), StartedAt: &now, CreatedAt: now, UpdatedAt: now, Version: 2}
+	store.runs[run.ID] = run
+	consumer := &transactionalConsumerSpy{consumeErr: errors.New("database failed Authorization: Bearer R3-SECRET-CANARY")}
+	service.SetReviewSucceededConsumer(consumer)
+	updated, err := service.applyExecutionResult(context.Background(), run, ExecutionResult{Status: ExecutionSucceeded, Output: json.RawMessage(`{"safe":true}`)})
+	if !errors.Is(err, ErrResultConsumptionFailed) || updated.SafeErrorMessage == nil {
+		t.Fatalf("updated=%+v err=%v", updated, err)
+	}
+	serialized, _ := json.Marshal(struct {
+		Run    WorkflowRun
+		Events []Event
+	}{updated, store.events[run.ID]})
+	if strings.Contains(string(serialized), "R3-SECRET-CANARY") || strings.Contains(err.Error(), "R3-SECRET-CANARY") {
+		t.Fatalf("secret canary leaked: %s err=%v", serialized, err)
+	}
 }
 
 func (spy *succeededConsumerSpy) ConsumeSucceededRun(_ context.Context, run WorkflowRun) error {

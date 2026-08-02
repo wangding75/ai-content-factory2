@@ -82,7 +82,7 @@ func (s *RealRewriteService) RetryResultConsumption(ctx context.Context, runID u
 	if run.Version != request.ExpectedRunVersion {
 		return RewriteResult{}, workflowrun.ErrVersionConflict
 	}
-	if run.Stage != "rewrite" || run.Status != workflowrun.StatusSucceeded ||
+	if run.Stage != "rewrite" || (run.Status != workflowrun.StatusSucceeded && run.Status != workflowrun.StatusFailed) ||
 		run.SubjectType == nil || *run.SubjectType != "review_report" || run.SubjectID == nil ||
 		*run.SubjectID != input.ReviewReportID || len(run.OutputPayload) == 0 {
 		return RewriteResult{}, ErrRewriteCandidateNotReady
@@ -137,6 +137,17 @@ func (s *RealRewriteService) RetryResultConsumption(ctx context.Context, runID u
 	}
 	if err = tx.Commit(ctx); err != nil {
 		return RewriteResult{}, ErrRewriteResultConsumption
+	}
+	if run.Status == workflowrun.StatusFailed && run.FailurePhase != nil && *run.FailurePhase == "result_consumption" {
+		runtime, ok := s.runs.(interface {
+			RetryResultConsumption(context.Context, uuid.UUID, int) (workflowrun.WorkflowRun, error)
+		})
+		if !ok {
+			return RewriteResult{}, workflowrun.ErrNotRetryable
+		}
+		if _, err = runtime.RetryResultConsumption(ctx, run.ID, request.ExpectedRunVersion); err != nil {
+			return RewriteResult{}, err
+		}
 	}
 	return s.Result(ctx, run.ID)
 }

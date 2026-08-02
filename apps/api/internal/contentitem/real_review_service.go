@@ -24,18 +24,18 @@ import (
 )
 
 var (
-	ErrReviewNotConfigured       = errors.New("review workflow is not configured")
-	ErrReviewNotReviewable       = errors.New("content version is not reviewable")
-	ErrReviewActiveRun           = errors.New("review run is already active")
-	ErrReviewPreflightChanged    = errors.New("review preflight input changed")
-	ErrReviewTokenInvalid        = errors.New("review preflight token is invalid")
-	ErrReviewTokenExpired        = errors.New("review preflight token expired")
-	ErrReviewTokenConsumed       = workflowrun.ErrPreflightTokenConsumed
-	ErrReviewOutputInvalid       = errors.New("review output validation failed")
-	ErrReviewResultNotRetryable  = errors.New("review result is not retryable")
-	ErrReviewResultConsumption   = errors.New("review result consumption failed")
-	ErrReviewIssueNotFound       = errors.New("review issue not found")
-	ErrReviewIssueVersion        = errors.New("review issue version conflict")
+	ErrReviewNotConfigured      = errors.New("review workflow is not configured")
+	ErrReviewNotReviewable      = errors.New("content version is not reviewable")
+	ErrReviewActiveRun          = errors.New("review run is already active")
+	ErrReviewPreflightChanged   = errors.New("review preflight input changed")
+	ErrReviewTokenInvalid       = errors.New("review preflight token is invalid")
+	ErrReviewTokenExpired       = errors.New("review preflight token expired")
+	ErrReviewTokenConsumed      = workflowrun.ErrPreflightTokenConsumed
+	ErrReviewOutputInvalid      = errors.New("review output validation failed")
+	ErrReviewResultNotRetryable = errors.New("review result is not retryable")
+	ErrReviewResultConsumption  = errors.New("review result consumption failed")
+	ErrReviewIssueNotFound      = errors.New("review issue not found")
+	ErrReviewIssueVersion       = errors.New("review issue version conflict")
 )
 
 var frozenReviewDimensions = []string{
@@ -49,7 +49,7 @@ var frozenReviewDimensions = []string{
 type ReviewPreflightRequest struct {
 	SourceContentVersionVersion int
 	OptionalInstructions        *string
-	ActorID                      string
+	ActorID                     string
 }
 
 type ReviewCheck struct {
@@ -91,18 +91,18 @@ type ReviewPreflightResult struct {
 }
 
 type ReviewRuntimeInputV1 struct {
-	SchemaVersion               string      `json:"schemaVersion"`
-	ProjectID                   uuid.UUID   `json:"projectId"`
-	ContentItemID               uuid.UUID   `json:"contentItemId"`
-	SourceContentVersionID      uuid.UUID   `json:"sourceContentVersionId"`
-	SourceContentVersionVersion int         `json:"sourceContentVersionVersion"`
-	SourceContentHash           string      `json:"sourceContentHash"`
-	SourceTitle                 string      `json:"sourceTitle"`
-	SourceContent               string      `json:"sourceContent"`
-	OptionalInstructions        *string     `json:"optionalInstructions"`
-	ReviewDimensions            []string    `json:"reviewDimensions"`
-	WorkflowRunID               uuid.UUID   `json:"workflowRunId"`
-	CorrelationID               string      `json:"correlationId"`
+	SchemaVersion               string    `json:"schemaVersion"`
+	ProjectID                   uuid.UUID `json:"projectId"`
+	ContentItemID               uuid.UUID `json:"contentItemId"`
+	SourceContentVersionID      uuid.UUID `json:"sourceContentVersionId"`
+	SourceContentVersionVersion int       `json:"sourceContentVersionVersion"`
+	SourceContentHash           string    `json:"sourceContentHash"`
+	SourceTitle                 string    `json:"sourceTitle"`
+	SourceContent               string    `json:"sourceContent"`
+	OptionalInstructions        *string   `json:"optionalInstructions"`
+	ReviewDimensions            []string  `json:"reviewDimensions"`
+	WorkflowRunID               uuid.UUID `json:"workflowRunId"`
+	CorrelationID               string    `json:"correlationId"`
 }
 
 type ReviewRuntimeEvidenceV1 struct {
@@ -118,16 +118,16 @@ type ReviewRuntimeLocationV1 struct {
 }
 
 type ReviewRuntimeIssueV1 struct {
-	IssueKey     string                   `json:"issueKey"`
-	Position     int                      `json:"position"`
-	CategoryKey  string                   `json:"categoryKey"`
-	CategoryLabel string                  `json:"categoryLabel"`
-	Severity     string                   `json:"severity"`
-	Title        string                   `json:"title"`
-	Description  string                   `json:"description"`
-	Evidence     ReviewRuntimeEvidenceV1  `json:"evidence"`
-	Location     *ReviewRuntimeLocationV1 `json:"location"`
-	Suggestion   *string                  `json:"suggestion"`
+	IssueKey      string                   `json:"issueKey"`
+	Position      int                      `json:"position"`
+	CategoryKey   string                   `json:"categoryKey"`
+	CategoryLabel string                   `json:"categoryLabel"`
+	Severity      string                   `json:"severity"`
+	Title         string                   `json:"title"`
+	Description   string                   `json:"description"`
+	Evidence      ReviewRuntimeEvidenceV1  `json:"evidence"`
+	Location      *ReviewRuntimeLocationV1 `json:"location"`
+	Suggestion    *string                  `json:"suggestion"`
 }
 
 type ReviewRuntimeRecommendationV1 struct {
@@ -138,11 +138,11 @@ type ReviewRuntimeRecommendationV1 struct {
 }
 
 type ReviewRuntimeOutputV1 struct {
-	SchemaVersion  string                          `json:"schemaVersion"`
-	Conclusion     string                          `json:"conclusion"`
-	Summary        string                          `json:"summary"`
-	PassedRuleCount int                            `json:"passedRuleCount"`
-	Issues         []ReviewRuntimeIssueV1          `json:"issues"`
+	SchemaVersion   string                          `json:"schemaVersion"`
+	Conclusion      string                          `json:"conclusion"`
+	Summary         string                          `json:"summary"`
+	PassedRuleCount int                             `json:"passedRuleCount"`
+	Issues          []ReviewRuntimeIssueV1          `json:"issues"`
 	Recommendations []ReviewRuntimeRecommendationV1 `json:"recommendations"`
 }
 
@@ -243,18 +243,18 @@ type ReviewResultConsumptionRetryRequest struct {
 }
 
 type ReviewIssueUpdateRequest struct {
-	Disposition   string
+	Disposition     string
 	ExpectedVersion int
-	IdempotencyKey string
-	ActorID        string
+	IdempotencyKey  string
+	ActorID         string
 }
 
 type ReviewHistoryItem struct {
-	WorkflowRun                 workflowrun.WorkflowRun       `json:"workflowRun"`
-	SourceContentVersionSummary ReviewSourceVersionSummary    `json:"sourceContentVersionSummary"`
-	ReportSummary               *ReviewReportSummary          `json:"reportSummary"`
-	State                       string                        `json:"state"`
-	LatestError                 *ReviewSafeError              `json:"latestError"`
+	WorkflowRun                 workflowrun.WorkflowRun    `json:"workflowRun"`
+	SourceContentVersionSummary ReviewSourceVersionSummary `json:"sourceContentVersionSummary"`
+	ReportSummary               *ReviewReportSummary       `json:"reportSummary"`
+	State                       string                     `json:"state"`
+	LatestError                 *ReviewSafeError           `json:"latestError"`
 }
 
 type ReviewHistoryPage struct {
@@ -265,11 +265,11 @@ type ReviewHistoryPage struct {
 }
 
 type RealReviewDetail struct {
-	Report                      RealReviewReport            `json:"report"`
-	SourceContentVersionSummary ReviewSourceVersionSummary  `json:"sourceContentVersionSummary"`
-	Issues                      []RealReviewIssue           `json:"issues"`
-	Recommendations             []RealReviewRecommendation  `json:"recommendations"`
-	WorkflowRunSummary          workflowrun.WorkflowRun     `json:"workflowRunSummary"`
+	Report                      RealReviewReport           `json:"report"`
+	SourceContentVersionSummary ReviewSourceVersionSummary `json:"sourceContentVersionSummary"`
+	Issues                      []RealReviewIssue          `json:"issues"`
+	Recommendations             []RealReviewRecommendation `json:"recommendations"`
+	WorkflowRunSummary          workflowrun.WorkflowRun    `json:"workflowRunSummary"`
 }
 
 type reviewRunService interface {
@@ -586,7 +586,7 @@ func (s *RealReviewService) Preflight(ctx context.Context, versionID uuid.UUID, 
 		ConfigurationID: workflow.ID, ConfigurationVersion: workflow.Version,
 		ConnectionID: connection.ID, ConnectionVersion: connection.Version,
 		InputDigest: reviewInputDigest(source, request.OptionalInstructions, dimensions, binding, workflow, connection),
-		Nonce: uuid.NewString(), IssuedAt: now.Unix(), ExpiresAt: now.Add(10 * time.Minute).Unix(),
+		Nonce:       uuid.NewString(), IssuedAt: now.Unix(), ExpiresAt: now.Add(10 * time.Minute).Unix(),
 	}
 	token, err := s.signReviewToken(claims)
 	if err != nil {
@@ -982,12 +982,26 @@ func (s *RealReviewService) ConsumeSucceededRun(ctx context.Context, run workflo
 	return nil
 }
 
+func (s *RealReviewService) ValidateResult(run workflowrun.WorkflowRun) error {
+	_, err := DecodeReviewRuntimeOutput(run.OutputPayload)
+	return err
+}
+
+func (s *RealReviewService) ConsumeResultTx(ctx context.Context, tx pgx.Tx, run workflowrun.WorkflowRun) error {
+	output, err := DecodeReviewRuntimeOutput(run.OutputPayload)
+	if err != nil {
+		return err
+	}
+	_, err = s.consumeReviewLocked(ctx, tx, run.ID, output)
+	return err
+}
+
 func (s *RealReviewService) consumeReviewLocked(ctx context.Context, tx pgx.Tx, runID uuid.UUID, output ReviewRuntimeOutputV1) (RealReviewResult, error) {
 	run, err := workflowrun.NewPostgresRepositoryTx(tx).GetByIDForUpdate(ctx, runID)
 	if err != nil {
 		return RealReviewResult{}, err
 	}
-	if run.Stage != "review" || run.Status != workflowrun.StatusSucceeded ||
+	if run.Stage != "review" || (run.Status != workflowrun.StatusSucceeded && run.Status != workflowrun.StatusRunning && run.Status != workflowrun.StatusFailed) ||
 		run.SubjectType == nil || *run.SubjectType != "content_version" || run.SubjectID == nil {
 		return RealReviewResult{}, ErrReviewResultNotRetryable
 	}
@@ -1112,8 +1126,8 @@ func (s *RealReviewService) RetryResultConsumption(ctx context.Context, runID uu
 	}
 	scope := "retryReviewResultConsumption:" + runID.String()
 	requestHash := workflowrun.Fingerprint(struct {
-		RunID   uuid.UUID `json:"runId"`
-		Expected int      `json:"expectedRunVersion"`
+		RunID    uuid.UUID `json:"runId"`
+		Expected int       `json:"expectedRunVersion"`
 	}{runID, request.ExpectedRunVersion})
 	tx, err := s.repo.db.Begin(ctx)
 	if err != nil {
@@ -1159,7 +1173,7 @@ func (s *RealReviewService) RetryResultConsumption(ctx context.Context, runID uu
 	if err != nil {
 		return RealReviewResult{}, err
 	}
-	if run.Stage != "review" || run.Status != workflowrun.StatusSucceeded || !consumptionFailed || validationFailed || consumed {
+	if run.Stage != "review" || (run.Status != workflowrun.StatusSucceeded && run.Status != workflowrun.StatusFailed) || !consumptionFailed || validationFailed || consumed {
 		return RealReviewResult{}, ErrReviewResultNotRetryable
 	}
 	result, err := s.consumeReviewLocked(ctx, tx, runID, output)
@@ -1182,6 +1196,19 @@ func (s *RealReviewService) finishReviewRetry(ctx context.Context, tx pgx.Tx, id
 	}
 	if err := tx.Commit(ctx); err != nil {
 		return RealReviewResult{}, err
+	}
+	if result.WorkflowRun.Status == workflowrun.StatusFailed && result.WorkflowRun.FailurePhase != nil && *result.WorkflowRun.FailurePhase == "result_consumption" {
+		runtime, ok := s.runs.(interface {
+			RetryResultConsumption(context.Context, uuid.UUID, int) (workflowrun.WorkflowRun, error)
+		})
+		if !ok {
+			return RealReviewResult{}, workflowrun.ErrNotRetryable
+		}
+		completed, err := runtime.RetryResultConsumption(ctx, result.WorkflowRun.ID, result.WorkflowRun.Version)
+		if err != nil {
+			return RealReviewResult{}, err
+		}
+		result.WorkflowRun = completed
 	}
 	return result, nil
 }

@@ -41,14 +41,14 @@ type RewriteRuntimeOutputV1 struct {
 }
 
 type rewriteRuntimeOutputWire struct {
-	SchemaVersion    *string                    `json:"schemaVersion"`
-	Title            *string                    `json:"title"`
-	Content          *string                    `json:"content"`
-	Summary          *string                    `json:"summary"`
-	AddressedIssues  *[]RewriteIssueOutcomeV1   `json:"addressedIssues"`
-	UnresolvedIssues *[]RewriteIssueOutcomeV1   `json:"unresolvedIssues"`
-	Warnings         *[]string                  `json:"warnings"`
-	Metadata         json.RawMessage            `json:"metadata"`
+	SchemaVersion    *string                  `json:"schemaVersion"`
+	Title            *string                  `json:"title"`
+	Content          *string                  `json:"content"`
+	Summary          *string                  `json:"summary"`
+	AddressedIssues  *[]RewriteIssueOutcomeV1 `json:"addressedIssues"`
+	UnresolvedIssues *[]RewriteIssueOutcomeV1 `json:"unresolvedIssues"`
+	Warnings         *[]string                `json:"warnings"`
+	Metadata         json.RawMessage          `json:"metadata"`
 }
 
 // DecodeRewriteRuntimeOutput is the only rewrite.output.v1 decoding boundary.
@@ -260,6 +260,33 @@ func (s *RealRewriteService) ConsumeSucceededRun(ctx context.Context, run workfl
 	return err
 }
 
+func decodeRewriteConsumption(run workflowrun.WorkflowRun) (RewriteRuntimeInputV1, RewriteRuntimeOutputV1, error) {
+	input, err := decodeRewriteRuntimeInputForConsumption(run.InputPayload)
+	if err != nil || input.WorkflowRunID != run.ID || input.ProjectID != run.ProjectID {
+		return RewriteRuntimeInputV1{}, RewriteRuntimeOutputV1{}, ErrRewriteOutputInvalid
+	}
+	selected := make([]uuid.UUID, len(input.SelectedIssues))
+	for i := range input.SelectedIssues {
+		selected[i] = input.SelectedIssues[i].ReviewIssueID
+	}
+	output, err := DecodeRewriteRuntimeOutput(run.OutputPayload, selected)
+	return input, output, err
+}
+
+func (s *RealRewriteService) ValidateResult(run workflowrun.WorkflowRun) error {
+	_, _, err := decodeRewriteConsumption(run)
+	return err
+}
+
+func (s *RealRewriteService) ConsumeResultTx(ctx context.Context, tx pgx.Tx, run workflowrun.WorkflowRun) error {
+	input, output, err := decodeRewriteConsumption(run)
+	if err != nil {
+		return err
+	}
+	_, err = s.consumeRewriteLocked(ctx, tx, run, input, output, true)
+	return err
+}
+
 func (s *RealRewriteService) ConsumeRewriteResult(ctx context.Context, signal workflowrun.WorkflowRun) (ContentVersion, error) {
 	if signal.ID == uuid.Nil {
 		return ContentVersion{}, ErrRewriteRunNotConsumable
@@ -347,7 +374,7 @@ func (s *RealRewriteService) consumeRewriteLocked(
 	if err != nil {
 		return ContentVersion{}, ErrRewriteRunNotConsumable
 	}
-	if run.Stage != "rewrite" || run.Status != workflowrun.StatusSucceeded ||
+	if run.Stage != "rewrite" || (run.Status != workflowrun.StatusSucceeded && run.Status != workflowrun.StatusRunning && run.Status != workflowrun.StatusFailed) ||
 		run.SubjectType == nil || *run.SubjectType != "review_report" || run.SubjectID == nil ||
 		*run.SubjectID != input.ReviewReportID || run.ProjectID != input.ProjectID ||
 		!bytes.Equal(run.InputPayload, persisted.InputPayload) ||
@@ -462,9 +489,9 @@ func mapRewriteOutputToCandidate(
 	summary := output.Summary
 	return ContentVersion{
 		ID: uuid.New(), ContentItemID: contentItemID, VersionNo: versionNo,
-		SourceContentVersionID: &source.ID,
+		SourceContentVersionID:      &source.ID,
 		SourceContentVersionVersion: &source.Version,
-		SourceWorkflowRunID: &runID, Title: output.Title, Content: output.Content,
+		SourceWorkflowRunID:         &runID, Title: output.Title, Content: output.Content,
 		Summary: &summary, WordCount: wordCount(output.Content),
 		Source: ContentVersionSourceWorkflowRewrite, Status: ContentVersionStatusEditableDraft,
 		GenerationParameters: parameters, Version: 1,

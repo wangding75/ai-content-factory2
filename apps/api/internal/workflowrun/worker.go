@@ -18,6 +18,15 @@ func (s *Service) RunWorker(ctx context.Context, interval time.Duration, onError
 		}
 	}
 	process := func() {
+		consumptions, err := s.store.ListRecoverableResultConsumptions(ctx, 100, s.now())
+		if err != nil {
+			report(err)
+		} else {
+			for _, run := range consumptions {
+				_, consumeErr := s.consumeStoredResult(ctx, run)
+				report(consumeErr)
+			}
+		}
 		for _, status := range []Status{StatusCancelling, StatusQueued, StatusRunning} {
 			runs, err := s.store.List(ctx, ListFilter{Status: string(status), Limit: 100})
 			if err != nil {
@@ -34,7 +43,13 @@ func (s *Service) RunWorker(ctx context.Context, interval time.Duration, onError
 					report(err)
 					continue
 				}
+				if run.Status != StatusRunning {
+					continue
+				}
 				// A running execution is recovered only when it has a durable external id.
+				if validJSONObject(run.OutputPayload) {
+					continue
+				}
 				if run.ExternalExecutionID == nil {
 					continue
 				}
