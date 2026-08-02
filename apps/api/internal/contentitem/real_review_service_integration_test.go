@@ -233,11 +233,11 @@ func TestRealReviewInvalidOutputAndConsumptionRetryBoundaries(t *testing.T) {
 		count(t, f.ctx, f.repo.db, "SELECT count(*) FROM workflow_run_events WHERE run_id=$1 AND event_type='output_validation_failed'", run.ID) != 1 {
 		t.Fatal("invalid output created report or missed failure event")
 	}
-	retried, err := f.runs.RetryRun(f.ctx, workflowrun.RetryCommand{RunID: run.ID, ExpectedVersion: 2, IdempotencyKey: "runtime-retry"})
+	retried, err := f.runs.RetryRun(f.ctx, workflowrun.RetryCommand{RunID: run.ID, ExpectedVersion: 2, Mode: "original_configuration", IdempotencyKey: "runtime-retry"})
 	if err != nil || retried.RetryOfRunID == nil || *retried.RetryOfRunID != run.ID {
 		t.Fatalf("runtime retry=%+v err=%v", retried, err)
 	}
-	if _, err = f.runs.RetryRun(f.ctx, workflowrun.RetryCommand{RunID: run.ID, ExpectedVersion: 2, InputOverride: json.RawMessage(`{"override":true}`), IdempotencyKey: "override"}); !errors.Is(err, workflowrun.ErrValidation) {
+	if _, err = f.runs.RetryRun(f.ctx, workflowrun.RetryCommand{RunID: run.ID, ExpectedVersion: 2, Mode: "original_configuration", InputOverride: json.RawMessage(`{"override":true}`), IdempotencyKey: "override"}); !errors.Is(err, workflowrun.ErrValidation) {
 		t.Fatalf("review input override error=%v", err)
 	}
 	retried, err = f.runs.GetRun(f.ctx, retried.ID)

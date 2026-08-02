@@ -10,6 +10,7 @@ import (
 	"net/url"
 	"strings"
 	"time"
+	"unicode/utf8"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
@@ -82,11 +83,35 @@ type RunCommand struct {
 	IdempotencyKey  string
 }
 type RetryCommand struct {
-	RunID                   uuid.UUID
-	ExpectedVersion         int
-	UseCurrentConfiguration bool
-	InputOverride           json.RawMessage
-	IdempotencyKey          string
+	RunID           uuid.UUID
+	ExpectedVersion int
+	Mode            string
+	Reason          *string
+	InputOverride   json.RawMessage
+	IdempotencyKey  string
+}
+type RetryReason struct {
+	Code         string `json:"code"`
+	Message      string `json:"message"`
+	RepairAction string `json:"repairAction,omitempty"`
+}
+type ConfigurationDifference struct {
+	Field   string `json:"field"`
+	Changed bool   `json:"changed"`
+	Summary string `json:"summary"`
+}
+type RetryOption struct {
+	Mode                     string                    `json:"mode"`
+	Enabled                  bool                      `json:"enabled"`
+	Reasons                  []RetryReason             `json:"reasons"`
+	ConfigurationDifferences []ConfigurationDifference `json:"configurationDifferences,omitempty"`
+}
+type RetryOptions struct {
+	RunID                          uuid.UUID   `json:"runId"`
+	Retryability                   string      `json:"retryability"`
+	CurrentConfiguration           RetryOption `json:"currentConfiguration"`
+	OriginalConfiguration          RetryOption `json:"originalConfiguration"`
+	ResultConsumptionRetryRequired bool        `json:"resultConsumptionRetryRequired"`
 }
 type ListRunsQuery struct{ ListFilter }
 type RunList struct {
@@ -451,6 +476,10 @@ func (s *Service) createRun(ctx context.Context, store Store, command CreateRunC
 	}
 	var configurationID uuid.UUID
 	var snapshot json.RawMessage
+	var binding workflowbinding.ProjectWorkflowBinding
+	var configuration globalconfig.Workflow
+	var connection globalconfig.Connection
+	prepared := command.PreparedConfiguration != nil
 	if command.PreparedConfiguration != nil {
 		if (stage != workflowbinding.StageContentGeneration && stage != workflowbinding.StageReview && stage != workflowbinding.StageRewrite) || command.PreparedConfiguration.WorkflowConfigurationID == uuid.Nil || !validJSONObject(command.PreparedConfiguration.Snapshot) {
 			return WorkflowRun{}, ErrValidation
@@ -461,11 +490,13 @@ func (s *Service) createRun(ctx context.Context, store Store, command CreateRunC
 		if _, err = s.projects.Get(ctx, command.ProjectID); err != nil {
 			return WorkflowRun{}, mapProjectError(err)
 		}
-		binding, bindingErr := s.bindings.GetByProjectAndStage(ctx, command.ProjectID, stage)
+		var bindingErr error
+		binding, bindingErr = s.bindings.GetByProjectAndStage(ctx, command.ProjectID, stage)
 		if bindingErr != nil {
 			return WorkflowRun{}, mapBindingError(bindingErr)
 		}
-		configuration, connection, configurationErr := s.runnableConfiguration(ctx, binding.WorkflowConfigurationID, stage)
+		var configurationErr error
+		configuration, connection, configurationErr = s.runnableConfiguration(ctx, binding.WorkflowConfigurationID, stage)
 		if configurationErr != nil {
 			return WorkflowRun{}, configurationErr
 		}
@@ -484,6 +515,12 @@ func (s *Service) createRun(ctx context.Context, store Store, command CreateRunC
 		return WorkflowRun{}, err
 	}
 	run.SubjectType, run.SubjectID = command.SubjectType, command.SubjectID
+	if prepared {
+		binding, _ = s.bindings.GetByProjectAndStage(ctx, command.ProjectID, stage)
+		configuration, _ = s.configurations.GetWorkflow(ctx, configurationID)
+		connection, _ = s.connections.GetConnection(ctx, configuration.ConnectionID)
+	}
+	s.populateRunSnapshots(ctx, &run, binding, configuration, connection)
 	if _, err = NewFromDB(run); err != nil {
 		return WorkflowRun{}, err
 	}
@@ -560,21 +597,199 @@ func (s *Service) CancelRun(ctx context.Context, command RunCommand) (WorkflowRu
 	})
 }
 
+func (s *Service) GetRetryOptions(ctx context.Context, runID uuid.UUID) (RetryOptions, error) {
+	if runID == uuid.Nil {
+		return RetryOptions{}, ErrValidation
+	}
+	run, err := s.store.GetByID(ctx, runID)
+	if err != nil {
+		return RetryOptions{}, mapStoreError(err)
+	}
+	return s.retryOptionsForStore(ctx, s.store, run)
+}
+
+func disabledRetryOption(mode, code, message string) RetryOption {
+	return RetryOption{Mode: mode, Reasons: []RetryReason{{Code: code, Message: message}}}
+}
+
+func (s *Service) retryOptionsForStore(ctx context.Context, store Store, run WorkflowRun) (RetryOptions, error) {
+	result := RetryOptions{RunID: run.ID, Retryability: "not_retryable", CurrentConfiguration: disabledRetryOption("current_configuration", "workflow_run_not_retryable", "当前运行不可创建新的运行时重试。"), OriginalConfiguration: disabledRetryOption("original_configuration", "workflow_run_not_retryable", "当前运行不可创建新的运行时重试。")}
+	events, err := store.ListEvents(ctx, run.ID)
+	if err != nil {
+		return RetryOptions{}, mapStoreError(err)
+	}
+	outputValidationFailed, resultConsumptionFailed, resultConsumed := false, false, false
+	for _, event := range events {
+		switch event.EventType {
+		case EventTypeOutputValidationFailed:
+			outputValidationFailed = true
+		case EventTypeResultConsumptionFailed:
+			resultConsumptionFailed = true
+		case EventTypeResultConsumed:
+			resultConsumed = true
+		}
+	}
+	hasResult := false
+	if run.Stage == "content_generation" {
+		if candidateStore, ok := store.(interface {
+			HasContentGenerationCandidate(context.Context, uuid.UUID) (bool, error)
+		}); ok {
+			hasResult, err = candidateStore.HasContentGenerationCandidate(ctx, run.ID)
+		}
+	} else if run.Stage == "review" {
+		if reportStore, ok := store.(interface {
+			HasReviewReport(context.Context, uuid.UUID) (bool, error)
+		}); ok {
+			hasResult, err = reportStore.HasReviewReport(ctx, run.ID)
+		}
+	} else if run.Stage == "rewrite" {
+		if candidateStore, ok := store.(interface {
+			HasRewriteCandidate(context.Context, uuid.UUID) (bool, error)
+		}); ok {
+			hasResult, err = candidateStore.HasRewriteCandidate(ctx, run.ID)
+		}
+	}
+	if err != nil {
+		return RetryOptions{}, err
+	}
+	if resultConsumptionFailed || run.Retryability == "result_consumption_retry" {
+		result.Retryability, result.ResultConsumptionRetryRequired = "result_consumption_retry", true
+		result.CurrentConfiguration = disabledRetryOption("current_configuration", "result_consumption_retry_required", "请使用当前业务阶段的结果消费重试。")
+		result.OriginalConfiguration = disabledRetryOption("original_configuration", "result_consumption_retry_required", "请使用当前业务阶段的结果消费重试。")
+		return result, nil
+	}
+	eligibleState := run.Status == StatusFailed || run.Status == StatusCancelled || run.Status == StatusTimedOut || run.Status == StatusSucceeded && outputValidationFailed
+	if !eligibleState || resultConsumed || hasResult {
+		return result, nil
+	}
+	result.Retryability = "runtime_retry"
+	stage, parseErr := workflowbinding.ParseStage(run.Stage)
+	if parseErr == nil {
+		binding, bindErr := s.bindings.GetByProjectAndStage(ctx, run.ProjectID, stage)
+		if bindErr == nil {
+			configuration, connection, configErr := s.runnableConfiguration(ctx, binding.WorkflowConfigurationID, stage)
+			if configErr == nil && configuration.Executable && connection.Executable {
+				result.CurrentConfiguration = RetryOption{Mode: "current_configuration", Enabled: true, Reasons: []RetryReason{}}
+			} else {
+				result.CurrentConfiguration = disabledRetryOption("current_configuration", "current_configuration_not_executable", "当前工作流配置或连接不可执行。")
+			}
+		} else {
+			result.CurrentConfiguration = disabledRetryOption("current_configuration", "workflow_binding_not_found", "当前项目未保留可用的工作流绑定。")
+		}
+	}
+	result.OriginalConfiguration = s.originalRetryOption(ctx, run)
+	return result, nil
+}
+
+func (s *Service) originalRetryOption(ctx context.Context, run WorkflowRun) RetryOption {
+	option := disabledRetryOption("original_configuration", "snapshot_incomplete", "原始运行快照不完整，无法安全重放。")
+	var binding struct {
+		BindingID      uuid.UUID `json:"bindingId"`
+		BindingVersion int       `json:"bindingVersion"`
+		Stage          string    `json:"stage"`
+	}
+	var connection struct {
+		ID                    uuid.UUID `json:"id"`
+		Version               int       `json:"version"`
+		CredentialFingerprint *string   `json:"credentialFingerprint"`
+	}
+	var policy struct {
+		Strategy          string     `json:"strategy"`
+		ProviderID        *uuid.UUID `json:"providerId"`
+		ProviderVersion   *int       `json:"providerVersion"`
+		Model             *string    `json:"model"`
+		SecretFingerprint *string    `json:"secretFingerprint"`
+	}
+	var configuration struct {
+		WorkflowConfiguration struct {
+			ID      uuid.UUID `json:"id"`
+			Version int       `json:"version"`
+		} `json:"workflowConfiguration"`
+	}
+	if !snapshotHasKeys(run.BindingSnapshot, "bindingId", "bindingVersion", "stage") || !snapshotHasKeys(run.ConnectionSnapshot, "id", "name", "version", "connectionType", "baseUrl", "authType", "credentialFingerprint") || !snapshotHasKeys(run.LlmPolicySnapshot, "strategy", "providerId", "providerName", "providerVersion", "model", "secretFingerprint") || json.Unmarshal(run.BindingSnapshot, &binding) != nil || json.Unmarshal(run.ConnectionSnapshot, &connection) != nil || json.Unmarshal(run.LlmPolicySnapshot, &policy) != nil || json.Unmarshal(run.ConfigurationSnapshot, &configuration) != nil || binding.BindingID == uuid.Nil || binding.BindingVersion < 1 || binding.Stage != run.Stage || connection.ID == uuid.Nil || connection.Version < 1 || configuration.WorkflowConfiguration.ID == uuid.Nil || configuration.WorkflowConfiguration.Version < 1 || strings.TrimSpace(policy.Strategy) == "" {
+		return option
+	}
+	currentConfiguration, err := s.configurations.GetWorkflow(ctx, configuration.WorkflowConfiguration.ID)
+	if err != nil {
+		return disabledRetryOption("original_configuration", "workflow_configuration_not_found", "原工作流配置已不存在。")
+	}
+	currentConnection, err := s.connections.GetConnection(ctx, connection.ID)
+	if err != nil {
+		return disabledRetryOption("original_configuration", "workflow_connection_not_found", "原工作流连接已不存在。")
+	}
+	if !sameStringPointer(connection.CredentialFingerprint, currentConnection.CredentialFingerprint) {
+		return disabledRetryOption("original_configuration", "credential_fingerprint_changed", "连接凭据已变化，原配置不可重放。")
+	}
+	if safeBaseURL(currentConnection.BaseURL) == "" || !contains(currentConfiguration.ApplicableStages, run.Stage) {
+		return disabledRetryOption("original_configuration", "snapshot_security_validation_failed", "原配置未通过当前安全校验。")
+	}
+	if policy.Strategy == "acf_managed" {
+		reader, ok := s.configurations.(interface {
+			GetProvider(context.Context, uuid.UUID) (globalconfig.Provider, error)
+		})
+		if !ok || policy.ProviderID == nil {
+			return option
+		}
+		provider, providerErr := reader.GetProvider(ctx, *policy.ProviderID)
+		if providerErr != nil {
+			return disabledRetryOption("original_configuration", "llm_provider_not_found", "原 LLM Provider 已不存在。")
+		}
+		if !sameStringPointer(policy.SecretFingerprint, provider.SecretFingerprint) {
+			return disabledRetryOption("original_configuration", "secret_fingerprint_changed", "LLM 密钥已变化，原配置不可重放。")
+		}
+	}
+	option.Enabled, option.Reasons = true, []RetryReason{}
+	option.ConfigurationDifferences = []ConfigurationDifference{
+		{Field: "workflow_configuration", Changed: currentConfiguration.Version != configuration.WorkflowConfiguration.Version, Summary: "工作流配置版本比较"},
+		{Field: "connection", Changed: currentConnection.Version != connection.Version, Summary: "连接版本比较"},
+	}
+	return option
+}
+
+func snapshotHasKeys(raw json.RawMessage, keys ...string) bool {
+	var value map[string]any
+	if json.Unmarshal(raw, &value) != nil {
+		return false
+	}
+	for _, key := range keys {
+		if _, ok := value[key]; !ok {
+			return false
+		}
+	}
+	return true
+}
+
+func sameStringPointer(left, right *string) bool {
+	if left == nil || right == nil {
+		return left == nil && right == nil
+	}
+	return *left == *right
+}
+
 func (s *Service) RetryRun(ctx context.Context, command RetryCommand) (WorkflowRun, error) {
 	run, _, err := s.RetryRunWithReplay(ctx, command)
 	return run, err
 }
 
 func (s *Service) RetryRunWithReplay(ctx context.Context, command RetryCommand) (WorkflowRun, bool, error) {
-	if command.RunID == uuid.Nil || command.ExpectedVersion < 1 || strings.TrimSpace(command.IdempotencyKey) == "" {
+	mode := strings.TrimSpace(command.Mode)
+	if command.RunID == uuid.Nil || command.ExpectedVersion < 1 || strings.TrimSpace(command.IdempotencyKey) == "" || (mode != "current_configuration" && mode != "original_configuration") {
 		return WorkflowRun{}, false, ErrValidation
 	}
+	reason := ""
+	if command.Reason != nil {
+		reason = strings.TrimSpace(*command.Reason)
+		if utf8.RuneCountInString(reason) > 500 {
+			return WorkflowRun{}, false, ErrValidation
+		}
+	}
 	scope, fingerprint := commandScope("retryWorkflowRun", command.RunID.String(), struct {
-		ID      uuid.UUID
-		Version int
-		Current bool
-		Input   json.RawMessage
-	}{command.RunID, command.ExpectedVersion, command.UseCurrentConfiguration, canonicalJSON(command.InputOverride)})
+		ID      uuid.UUID       `json:"runId"`
+		Version int             `json:"expectedVersion"`
+		Mode    string          `json:"mode"`
+		Reason  string          `json:"reason"`
+		Input   json.RawMessage `json:"inputOverride"`
+	}{command.RunID, command.ExpectedVersion, mode, reason, canonicalJSON(command.InputOverride)})
 	run, replay, executeErr := s.store.ExecuteIdempotentWithReplay(ctx, scope, command.IdempotencyKey, fingerprint, func(store Store) (WorkflowRun, error) {
 		discovered, err := store.GetByID(ctx, command.RunID)
 		if err != nil {
@@ -609,72 +824,27 @@ func (s *Service) RetryRunWithReplay(ctx context.Context, command RetryCommand) 
 		if (original.Stage == "content_generation" || original.Stage == "review" || original.Stage == "rewrite") && command.InputOverride != nil {
 			return WorkflowRun{}, ErrValidation
 		}
-		if (original.Stage == "review" || original.Stage == "rewrite") && command.UseCurrentConfiguration {
-			return WorkflowRun{}, ErrValidation
+		options, optionErr := s.retryOptionsForStore(ctx, store, original)
+		if optionErr != nil {
+			return WorkflowRun{}, optionErr
 		}
-		if original.Stage == "content_generation" || original.Stage == "review" || original.Stage == "rewrite" {
-			events, eventErr := store.ListEvents(ctx, original.ID)
-			if eventErr != nil {
-				return WorkflowRun{}, mapStoreError(eventErr)
-			}
-			outputValidationFailed, resultConsumptionFailed, resultConsumed := false, false, false
-			for _, event := range events {
-				switch event.EventType {
-				case EventTypeOutputValidationFailed:
-					outputValidationFailed = true
-				case EventTypeResultConsumptionFailed:
-					resultConsumptionFailed = true
-				case EventTypeResultConsumed:
-					resultConsumed = true
-				}
-			}
-			hasResult := false
-			if original.Stage == "content_generation" {
-				candidateStore, ok := store.(interface {
-					HasContentGenerationCandidate(context.Context, uuid.UUID) (bool, error)
-				})
-				if !ok {
-					return WorkflowRun{}, ErrNotRetryable
-				}
-				hasResult, eventErr = candidateStore.HasContentGenerationCandidate(ctx, original.ID)
-			} else if original.Stage == "review" {
-				reportStore, ok := store.(interface {
-					HasReviewReport(context.Context, uuid.UUID) (bool, error)
-				})
-				if ok {
-					hasResult, eventErr = reportStore.HasReviewReport(ctx, original.ID)
-				}
-			} else {
-				candidateStore, ok := store.(interface {
-					HasRewriteCandidate(context.Context, uuid.UUID) (bool, error)
-				})
-				if !ok {
-					return WorkflowRun{}, ErrNotRetryable
-				}
-				hasResult, eventErr = candidateStore.HasRewriteCandidate(ctx, original.ID)
-			}
-			if eventErr != nil {
-				return WorkflowRun{}, eventErr
-			}
-			if resultConsumptionFailed || resultConsumed || hasResult {
-				return WorkflowRun{}, ErrNotRetryable
-			}
-			if original.Status != StatusFailed && original.Status != StatusCancelled && (original.Status != StatusSucceeded || !outputValidationFailed || command.UseCurrentConfiguration) {
-				return WorkflowRun{}, ErrNotRetryable
-			}
-			if original.Stage == "rewrite" {
-				rewriteStore, ok := store.(interface {
-					ValidateRewriteRetryRelations(context.Context, WorkflowRun) error
-				})
-				if !ok {
-					return WorkflowRun{}, ErrNotRetryable
-				}
-				if eventErr = rewriteStore.ValidateRewriteRetryRelations(ctx, original); eventErr != nil {
-					return WorkflowRun{}, eventErr
-				}
-			}
-		} else if original.Status != StatusFailed && original.Status != StatusCancelled {
+		selected := options.OriginalConfiguration
+		if mode == "current_configuration" {
+			selected = options.CurrentConfiguration
+		}
+		if !selected.Enabled {
 			return WorkflowRun{}, ErrNotRetryable
+		}
+		if original.Stage == "rewrite" {
+			rewriteStore, ok := store.(interface {
+				ValidateRewriteRetryRelations(context.Context, WorkflowRun) error
+			})
+			if !ok {
+				return WorkflowRun{}, ErrNotRetryable
+			}
+			if validationErr := rewriteStore.ValidateRewriteRetryRelations(ctx, original); validationErr != nil {
+				return WorkflowRun{}, validationErr
+			}
 		}
 		input := original.InputPayload
 		if command.InputOverride != nil {
@@ -684,7 +854,7 @@ func (s *Service) RetryRunWithReplay(ctx context.Context, command RetryCommand) 
 			input = command.InputOverride
 		}
 		snapshot, configurationID := original.ConfigurationSnapshot, original.WorkflowConfigurationID
-		if command.UseCurrentConfiguration {
+		if mode == "current_configuration" {
 			stage, parseErr := workflowbinding.ParseStage(original.Stage)
 			if parseErr != nil {
 				return WorkflowRun{}, ErrValidation
@@ -702,6 +872,8 @@ func (s *Service) RetryRunWithReplay(ctx context.Context, command RetryCommand) 
 				return WorkflowRun{}, fmt.Errorf("build workflow run snapshot: %w", configErr)
 			}
 			configurationID = configuration.ID
+			// Snapshot projections always describe the configuration actually chosen for the retry.
+			_ = binding
 		}
 		run, err := New(s.newID(), original.ProjectID, configurationID, s.newRunNumber(), original.Stage, "retry", snapshot, input)
 		if err != nil {
@@ -709,6 +881,20 @@ func (s *Service) RetryRunWithReplay(ctx context.Context, command RetryCommand) 
 		}
 		now := s.now()
 		run.SubjectType, run.SubjectID = original.SubjectType, original.SubjectID
+		run.Retryability = "not_retryable"
+		retryMode := mode
+		run.RetryMode = &retryMode
+		if mode == "current_configuration" {
+			stage, _ := workflowbinding.ParseStage(original.Stage)
+			binding, _ := s.bindings.GetByProjectAndStage(ctx, original.ProjectID, stage)
+			configuration, _ := s.configurations.GetWorkflow(ctx, configurationID)
+			connection, _ := s.connections.GetConnection(ctx, configuration.ConnectionID)
+			s.populateRunSnapshots(ctx, &run, binding, configuration, connection)
+		} else {
+			run.BindingSnapshot = RedactJSON(original.BindingSnapshot)
+			run.ConnectionSnapshot = RedactJSON(original.ConnectionSnapshot)
+			run.LlmPolicySnapshot = RedactJSON(original.LlmPolicySnapshot)
+		}
 		if original.Stage == "rewrite" {
 			input, err = rewriteRetryPayload(input, run.ID)
 			if err != nil {
@@ -792,12 +978,43 @@ func (s *Service) runnableConfiguration(ctx context.Context, id uuid.UUID, stage
 }
 
 func configurationSnapshot(binding workflowbinding.ProjectWorkflowBinding, configuration globalconfig.Workflow, connection globalconfig.Connection, createdAt time.Time) (json.RawMessage, error) {
-	v := map[string]any{"projectId": binding.ProjectID, "stage": binding.Stage.String(), "binding": map[string]any{"id": binding.ID, "version": binding.Version}, "workflowConfiguration": map[string]any{"id": configuration.ID, "version": configuration.Version, "typeConfig": configuration.TypeConfig, "inputContractVersion": configuration.InputContractVersion, "outputContractVersion": configuration.OutputContractVersion, "defaultParameters": configuration.DefaultParameters}, "workflowConnection": map[string]any{"id": connection.ID, "version": connection.Version, "type": connection.ConnectionType, "baseUrl": safeBaseURL(connection.BaseURL), "timeoutSeconds": connection.TimeoutSeconds, "typeConfig": connection.TypeConfig}, "createdAt": createdAt.UTC()}
+	v := map[string]any{"projectId": binding.ProjectID, "stage": binding.Stage.String(), "binding": map[string]any{"id": binding.ID, "version": binding.Version}, "workflowConfiguration": map[string]any{"id": configuration.ID, "name": configuration.Name, "version": configuration.Version, "typeConfig": configuration.TypeConfig, "inputContractVersion": configuration.InputContractVersion, "outputContractVersion": configuration.OutputContractVersion, "defaultParameters": configuration.DefaultParameters, "llmStrategy": configuration.LlmStrategy, "llmProviderId": configuration.LlmProviderID, "llmModel": configuration.LlmModel, "validationStatus": configuration.ValidationStatus, "enabled": configuration.Enabled, "executable": configuration.Executable}, "workflowConnection": map[string]any{"id": connection.ID, "name": connection.Name, "version": connection.Version, "type": connection.ConnectionType, "baseUrl": safeBaseURL(connection.BaseURL), "authType": connection.AuthType, "timeoutSeconds": connection.TimeoutSeconds, "credentialFingerprint": connection.CredentialFingerprint, "typeConfig": connection.TypeConfig, "validationStatus": connection.ValidationStatus, "enabled": connection.Enabled, "executable": connection.Executable}, "createdAt": createdAt.UTC()}
 	b, err := json.Marshal(v)
 	if err != nil {
 		return nil, err
 	}
 	return RedactJSON(b), nil
+}
+
+func (s *Service) populateRunSnapshots(ctx context.Context, run *WorkflowRun, binding workflowbinding.ProjectWorkflowBinding, configuration globalconfig.Workflow, connection globalconfig.Connection) {
+	if run == nil || binding.ID == uuid.Nil || configuration.ID == uuid.Nil || connection.ID == uuid.Nil {
+		return
+	}
+	run.BindingSnapshot = mustSafeJSON(map[string]any{"bindingId": binding.ID, "bindingVersion": binding.Version, "stage": binding.Stage.String()})
+	run.ConnectionSnapshot = mustSafeJSON(map[string]any{"id": connection.ID, "name": connection.Name, "version": connection.Version, "connectionType": connection.ConnectionType, "baseUrl": safeBaseURL(connection.BaseURL), "authType": connection.AuthType, "credentialFingerprint": connection.CredentialFingerprint})
+	strategy := configuration.LlmStrategy
+	if strategy == "" {
+		strategy = "none"
+	}
+	policy := map[string]any{"strategy": strategy, "providerId": configuration.LlmProviderID, "providerName": nil, "providerVersion": nil, "model": configuration.LlmModel, "secretFingerprint": nil}
+	if configuration.LlmStrategy == "acf_managed" && configuration.LlmProviderID != nil {
+		if reader, ok := s.configurations.(interface {
+			GetProvider(context.Context, uuid.UUID) (globalconfig.Provider, error)
+		}); ok {
+			if provider, err := reader.GetProvider(ctx, *configuration.LlmProviderID); err == nil {
+				policy["providerName"], policy["providerVersion"], policy["secretFingerprint"] = provider.Name, provider.Version, provider.SecretFingerprint
+			}
+		}
+	}
+	run.LlmPolicySnapshot = mustSafeJSON(policy)
+}
+
+func mustSafeJSON(value any) json.RawMessage {
+	encoded, err := json.Marshal(value)
+	if err != nil {
+		return json.RawMessage(`{}`)
+	}
+	return RedactJSON(encoded)
 }
 
 func BuildConfigurationSnapshot(binding workflowbinding.ProjectWorkflowBinding, configuration globalconfig.Workflow, connection globalconfig.Connection, createdAt time.Time) (json.RawMessage, error) {
@@ -824,7 +1041,7 @@ func contains(values []string, value string) bool {
 	return false
 }
 func validListFilter(f ListFilter) bool {
-	if f.ProjectID != nil && *f.ProjectID == uuid.Nil || f.Limit < 0 || f.Limit > 100 || f.Offset < 0 || len(f.RunNumber) > 80 || len(f.Query) > 160 || f.StartTime != nil && f.EndTime != nil && f.StartTime.After(*f.EndTime) {
+	if f.ProjectID != nil && *f.ProjectID == uuid.Nil || f.Limit < 0 || f.Limit > 100 || f.Offset < 0 || f.ConfigurationVersion < 0 || len(f.RunNumber) > 80 || len(f.Query) > 160 || len(f.Model) > 200 || f.StartTime != nil && f.EndTime != nil && f.StartTime.After(*f.EndTime) {
 		return false
 	}
 	if f.Stage != "" {
@@ -832,10 +1049,20 @@ func validListFilter(f ListFilter) bool {
 			return false
 		}
 	}
-	if f.Status != "" && f.Status != string(StatusQueued) && f.Status != string(StatusRunning) && f.Status != string(StatusSucceeded) && f.Status != string(StatusFailed) && f.Status != string(StatusCancelled) {
+	if f.Status != "" && f.Status != string(StatusQueued) && f.Status != string(StatusRunning) && f.Status != string(StatusCancelling) && f.Status != string(StatusSucceeded) && f.Status != string(StatusFailed) && f.Status != string(StatusCancelled) && f.Status != string(StatusTimedOut) {
+		return false
+	}
+	if f.DisplayStatus != "" && !validDisplayStatus(f.DisplayStatus) {
+		return false
+	}
+	if f.Retryability != "" && f.Retryability != "runtime_retry" && f.Retryability != "result_consumption_retry" && f.Retryability != "not_retryable" {
 		return false
 	}
 	return f.TriggerSource == "" || validTriggerSource(f.TriggerSource)
+}
+
+func validDisplayStatus(value string) bool {
+	return value == string(StatusQueued) || value == string(StatusRunning) || value == string(StatusCancelling) || value == string(StatusSucceeded) || value == string(StatusFailed) || value == string(StatusCancelled) || value == string(StatusTimedOut) || value == "output_validation_failed" || value == "result_consumption_failed"
 }
 func mapProjectError(err error) error {
 	if errors.Is(err, project.ErrNotFound) {

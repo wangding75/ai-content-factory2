@@ -75,7 +75,7 @@ func newRun(t *testing.T, p, w uuid.UUID, n string) WorkflowRun {
 func contentGenerationService(t *testing.T, repo *Repository, projectID, workflowID uuid.UUID) *Service {
 	t.Helper()
 	connectionID := uuid.New()
-	s := NewService(repo, serviceProjects{p: project.Project{ID: projectID}}, serviceBindings{b: workflowbinding.ProjectWorkflowBinding{ID: uuid.New(), ProjectID: projectID, Stage: workflowbinding.StageContentGeneration, WorkflowConfigurationID: workflowID, Version: 1}}, serviceConfigs{w: globalconfig.Workflow{Common: globalconfig.Common{ID: workflowID, Enabled: true, IntegrationStatus: "verified"}, ConnectionID: connectionID, ApplicableStages: []string{"content_generation"}, TypeConfig: json.RawMessage(`{}`), DefaultParameters: json.RawMessage(`{}`)}}, serviceConnections{c: globalconfig.Connection{Common: globalconfig.Common{ID: connectionID, Enabled: true, IntegrationStatus: "verified"}, ConnectionType: "n8n", TypeConfig: json.RawMessage(`{}`)}})
+	s := NewService(repo, serviceProjects{p: project.Project{ID: projectID}}, serviceBindings{b: workflowbinding.ProjectWorkflowBinding{ID: uuid.New(), ProjectID: projectID, Stage: workflowbinding.StageContentGeneration, WorkflowConfigurationID: workflowID, Version: 1}}, serviceConfigs{w: globalconfig.Workflow{Common: globalconfig.Common{ID: workflowID, Enabled: true, IntegrationStatus: "verified", Version: 1}, ConnectionID: connectionID, ApplicableStages: []string{"content_generation"}, TypeConfig: json.RawMessage(`{}`), DefaultParameters: json.RawMessage(`{}`)}}, serviceConnections{c: globalconfig.Connection{Common: globalconfig.Common{ID: connectionID, Enabled: true, IntegrationStatus: "verified", Version: 1}, ConnectionType: "n8n", BaseURL: "http://localhost", AuthType: "api_key", TypeConfig: json.RawMessage(`{}`)}})
 	return s
 }
 
@@ -300,6 +300,32 @@ func TestRepositoryIteration19TimedOutFailureRoundTrip(t *testing.T) {
 	}
 }
 
+func TestRepositoryListsCancellingAndTimedOutStatuses(t *testing.T) {
+	db, ctx := openDB(t)
+	repo := NewPostgresRepository(db)
+	projectID, workflowID := fixture(t, ctx, db)
+	now := time.Now().UTC()
+	cancelling := newRun(t, projectID, workflowID, "WR-I19-CANCELLING")
+	cancelling.Status, cancelling.StartedAt, cancelling.CancellationRequestedAt, cancelling.Version = StatusCancelling, &now, &now, 2
+	if _, err := repo.Create(ctx, cancelling); err != nil {
+		t.Fatal(err)
+	}
+	timedOut := newRun(t, projectID, workflowID, "WR-I19-TIMED-OUT-LIST")
+	phase, code, message := "external_execution", "execution_timeout", "safe timeout"
+	timedOut.Status, timedOut.StartedAt, timedOut.FinishedAt, timedOut.TimedOutAt = StatusTimedOut, &now, &now, &now
+	timedOut.FailurePhase, timedOut.FailureCode, timedOut.SafeErrorMessage, timedOut.ErrorCode, timedOut.ErrorMessage, timedOut.Retryability, timedOut.Version = &phase, &code, &message, &code, &message, "runtime_retry", 2
+	if _, err := repo.Create(ctx, timedOut); err != nil {
+		t.Fatal(err)
+	}
+	for _, status := range []string{"cancelling", "timed_out"} {
+		items, err := repo.List(ctx, ListFilter{ProjectID: &projectID, Status: status})
+		total, countErr := repo.Count(ctx, ListFilter{ProjectID: &projectID, Status: status})
+		if err != nil || countErr != nil || len(items) != 1 || total != 1 || string(items[0].Status) != status {
+			t.Fatalf("status=%s items=%+v total=%d listErr=%v countErr=%v", status, items, total, err, countErr)
+		}
+	}
+}
+
 func jsonEqual(left, right json.RawMessage) bool {
 	var leftValue any
 	var rightValue any
@@ -310,11 +336,23 @@ func TestRepositoryListQueryTimeAndPaginationFilters(t *testing.T) {
 	db, ctx := openDB(t)
 	repo := NewPostgresRepository(db)
 	p, w := fixture(t, ctx, db)
+	connectionID, providerID := uuid.New(), uuid.New()
 	base := time.Date(2026, time.July, 22, 12, 0, 0, 0, time.UTC)
 	for index, number := range []string{"WR-ALPHA", "WR-BRAVO", "WR-CHARLIE"} {
 		run := newRun(t, p, w, number)
+		if number == "WR-BRAVO" {
+			phase, code, message := "output_validation", "invalid_output", "safe output error"
+			run.Status, run.FailurePhase, run.FailureCode, run.SafeErrorMessage, run.ErrorCode, run.ErrorMessage, run.Retryability = StatusFailed, &phase, &code, &message, &code, &message, "runtime_retry"
+			run.ErrorDetails = json.RawMessage(`{}`)
+			run.ConfigurationSnapshot = mustSafeJSON(map[string]any{"workflowConfiguration": map[string]any{"id": w, "version": 7}, "workflowConnection": map[string]any{"id": connectionID}})
+			run.ConnectionSnapshot = mustSafeJSON(map[string]any{"id": connectionID})
+			run.LlmPolicySnapshot = mustSafeJSON(map[string]any{"strategy": "acf_managed", "providerId": providerID, "model": "model-19"})
+		}
 		run.CreatedAt = base.Add(time.Duration(index) * time.Hour)
 		run.UpdatedAt = run.CreatedAt
+		if run.Status == StatusFailed {
+			run.StartedAt, run.FinishedAt = &run.CreatedAt, &run.CreatedAt
+		}
 		if _, err := repo.Create(ctx, run); err != nil {
 			t.Fatal(err)
 		}
@@ -348,6 +386,12 @@ func TestRepositoryListQueryTimeAndPaginationFilters(t *testing.T) {
 	page, err := repo.List(ctx, ListFilter{ProjectID: &p, Limit: 1, Offset: 1})
 	if err != nil || len(page) != 1 || page[0].RunNumber != testRunNumber(p, "WR-BRAVO") {
 		t.Fatalf("page=%+v err=%v", page, err)
+	}
+	advanced := ListFilter{ProjectID: &p, Status: "failed", DisplayStatus: "output_validation_failed", ConnectionID: connectionID.String(), ProviderID: providerID.String(), Model: "model-19", ConfigurationVersion: 7, Retryability: "runtime_retry"}
+	filtered, err := repo.List(ctx, advanced)
+	total, countErr := repo.Count(ctx, advanced)
+	if err != nil || countErr != nil || len(filtered) != 1 || total != len(filtered) || filtered[0].RunNumber != testRunNumber(p, "WR-BRAVO") {
+		t.Fatalf("advanced=%+v total=%d listErr=%v countErr=%v", filtered, total, err, countErr)
 	}
 }
 
@@ -523,7 +567,7 @@ func TestWorkflowRunPersistentIdempotencyReplayConcurrencyAndRestart(t *testing.
 	p, w := fixture(t, ctx, db)
 	newService := func() *Service {
 		connectionID := uuid.New()
-		return NewService(NewPostgresRepository(db), serviceProjects{p: project.Project{ID: p}}, serviceBindings{b: workflowbinding.ProjectWorkflowBinding{ID: uuid.New(), ProjectID: p, Stage: workflowbinding.StageChapterPlanning, WorkflowConfigurationID: w, Version: 1}}, serviceConfigs{w: globalconfig.Workflow{Common: globalconfig.Common{ID: w, Version: 1, Enabled: true, IntegrationStatus: "verified"}, ConnectionID: connectionID, ApplicableStages: []string{"chapter_planning"}, TypeConfig: json.RawMessage(`{}`), DefaultParameters: json.RawMessage(`{}`)}}, serviceConnections{c: globalconfig.Connection{Common: globalconfig.Common{ID: connectionID, Version: 1, Enabled: true, IntegrationStatus: "verified"}, ConnectionType: "n8n", TypeConfig: json.RawMessage(`{}`)}})
+		return NewService(NewPostgresRepository(db), serviceProjects{p: project.Project{ID: p}}, serviceBindings{b: workflowbinding.ProjectWorkflowBinding{ID: uuid.New(), ProjectID: p, Stage: workflowbinding.StageChapterPlanning, WorkflowConfigurationID: w, Version: 1}}, serviceConfigs{w: globalconfig.Workflow{Common: globalconfig.Common{ID: w, Version: 1, Enabled: true, IntegrationStatus: "verified"}, ConnectionID: connectionID, ApplicableStages: []string{"chapter_planning"}, TypeConfig: json.RawMessage(`{}`), DefaultParameters: json.RawMessage(`{}`)}}, serviceConnections{c: globalconfig.Connection{Common: globalconfig.Common{ID: connectionID, Version: 1, Enabled: true, IntegrationStatus: "verified"}, ConnectionType: "n8n", BaseURL: "http://localhost", AuthType: "api_key", TypeConfig: json.RawMessage(`{}`)}})
 	}
 	create := func(service *Service, input json.RawMessage, trigger, key string) (WorkflowRun, error) {
 		command := CreateRunCommand{ProjectID: p, Stage: "chapter_planning", InputPayload: input, TriggerSource: trigger}
@@ -586,15 +630,15 @@ func TestWorkflowRunPersistentIdempotencyReplayConcurrencyAndRestart(t *testing.
 	if _, err = first.CancelRun(ctx, RunCommand{RunID: results[0].ID, ExpectedVersion: results[0].Version, IdempotencyKey: "workflow-run-concurrent-cancel"}); err != nil {
 		t.Fatal(err)
 	}
-	retried, err := first.RetryRun(ctx, RetryCommand{RunID: created.ID, ExpectedVersion: cancelReplay.Version, UseCurrentConfiguration: false, InputOverride: json.RawMessage(`{"override":true}`), IdempotencyKey: "workflow-run-retry"})
+	retried, err := first.RetryRun(ctx, RetryCommand{RunID: created.ID, ExpectedVersion: cancelReplay.Version, Mode: "original_configuration", InputOverride: json.RawMessage(`{"override":true}`), IdempotencyKey: "workflow-run-retry"})
 	if err != nil {
 		t.Fatal(err)
 	}
-	retryReplay, err := newService().RetryRun(ctx, RetryCommand{RunID: created.ID, ExpectedVersion: cancelReplay.Version, UseCurrentConfiguration: false, InputOverride: json.RawMessage(`{"override":true}`), IdempotencyKey: "workflow-run-retry"})
+	retryReplay, err := newService().RetryRun(ctx, RetryCommand{RunID: created.ID, ExpectedVersion: cancelReplay.Version, Mode: "original_configuration", InputOverride: json.RawMessage(`{"override":true}`), IdempotencyKey: "workflow-run-retry"})
 	if err != nil || retryReplay.ID != retried.ID {
 		t.Fatalf("retry replay=%+v err=%v", retryReplay, err)
 	}
-	if _, err = newService().RetryRun(ctx, RetryCommand{RunID: created.ID, ExpectedVersion: cancelReplay.Version, UseCurrentConfiguration: true, InputOverride: json.RawMessage(`{"override":true}`), IdempotencyKey: "workflow-run-retry"}); !errors.Is(err, ErrIdempotencyConflict) {
+	if _, err = newService().RetryRun(ctx, RetryCommand{RunID: created.ID, ExpectedVersion: cancelReplay.Version, Mode: "current_configuration", InputOverride: json.RawMessage(`{"override":true}`), IdempotencyKey: "workflow-run-retry"}); !errors.Is(err, ErrIdempotencyConflict) {
 		t.Fatalf("retry conflict=%v", err)
 	}
 	if err = db.QueryRow(ctx, "SELECT COUNT(*) FROM workflow_run_events WHERE run_id=$1", retried.ID).Scan(&events); err != nil {

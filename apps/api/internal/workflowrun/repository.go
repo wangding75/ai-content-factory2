@@ -35,14 +35,76 @@ func (r *Repository) Transaction() pgx.Tx {
 const runColumns = "id, run_number, project_id, stage, subject_type, subject_id, workflow_configuration_id, trigger_source, status, configuration_snapshot, input_payload, output_payload, error_code, error_message, error_details, retry_of_run_id, failure_phase, failure_code, safe_error_message, retryability, retry_mode, external_execution_id, cancellation_requested_at, timed_out_at, binding_snapshot, connection_snapshot, llm_policy_snapshot, started_at, finished_at, cancelled_at, created_at, updated_at, version"
 
 type ListFilter struct {
-	ProjectID                                                        *uuid.UUID
-	Stage, WorkflowConfigurationID, Status, TriggerSource, RunNumber string
-	SubjectType                                                      *string
-	SubjectID                                                        *uuid.UUID
-	Query                                                            string
-	StartTime, EndTime                                               *time.Time
-	Limit, Offset                                                    int
+	ProjectID                                                                                                                      *uuid.UUID
+	Stage, WorkflowConfigurationID, Status, DisplayStatus, ConnectionID, ProviderID, Model, Retryability, TriggerSource, RunNumber string
+	ConfigurationVersion                                                                                                           int
+	SubjectType                                                                                                                    *string
+	SubjectID                                                                                                                      *uuid.UUID
+	Query                                                                                                                          string
+	StartTime, EndTime                                                                                                             *time.Time
+	Limit, Offset                                                                                                                  int
 }
+
+func workflowRunFilterSQL(f ListFilter) (string, []any) {
+	q, args := "", []any{}
+	add := func(clause string, value any) {
+		args = append(args, value)
+		q += fmt.Sprintf(" AND "+clause, len(args))
+	}
+	if f.ProjectID != nil {
+		add("project_id=$%d", *f.ProjectID)
+	}
+	if f.Stage != "" {
+		add("stage=$%d", f.Stage)
+	}
+	if f.WorkflowConfigurationID != "" {
+		add("workflow_configuration_id=$%d", f.WorkflowConfigurationID)
+	}
+	if f.Status != "" {
+		add("status=$%d", f.Status)
+	}
+	if f.DisplayStatus != "" {
+		add("CASE WHEN status='failed' AND failure_phase IN ('output_validation','result_consumption') THEN failure_phase || '_failed' ELSE status::text END=$%d", f.DisplayStatus)
+	}
+	if f.ConnectionID != "" {
+		add("COALESCE(NULLIF(connection_snapshot->>'id',''), configuration_snapshot->'workflowConnection'->>'id')=$%d", f.ConnectionID)
+	}
+	if f.ProviderID != "" {
+		add("llm_policy_snapshot->>'providerId'=$%d", f.ProviderID)
+	}
+	if f.Model != "" {
+		add("llm_policy_snapshot->>'model'=$%d", f.Model)
+	}
+	if f.ConfigurationVersion > 0 {
+		add("(configuration_snapshot->'workflowConfiguration'->>'version')::integer=$%d", f.ConfigurationVersion)
+	}
+	if f.Retryability != "" {
+		add("retryability=$%d", f.Retryability)
+	}
+	if f.TriggerSource != "" {
+		add("trigger_source=$%d", f.TriggerSource)
+	}
+	if f.RunNumber != "" {
+		add("run_number=$%d", f.RunNumber)
+	}
+	if f.SubjectType != nil {
+		add("subject_type=$%d", *f.SubjectType)
+	}
+	if f.SubjectID != nil {
+		add("subject_id=$%d", *f.SubjectID)
+	}
+	if f.Query != "" {
+		add("run_number ILIKE '%%' || $%d || '%%'", f.Query)
+	}
+	if f.StartTime != nil {
+		add("created_at >= $%d", f.StartTime.UTC())
+	}
+	if f.EndTime != nil {
+		add("created_at <= $%d", f.EndTime.UTC())
+	}
+	return q, args
+}
+
 type Summary struct {
 	TotalRuns, ActiveRuns, RecentFailedRuns int
 	LastRunAt                               *time.Time
@@ -256,44 +318,8 @@ func (r *Repository) List(ctx context.Context, f ListFilter) ([]WorkflowRun, err
 	if f.StartTime != nil && f.EndTime != nil && f.StartTime.After(*f.EndTime) {
 		return nil, ErrValidation
 	}
-	q, args := "SELECT "+runColumns+" FROM workflow_run_records WHERE TRUE", []any{}
-	add := func(clause string, value any) {
-		args = append(args, value)
-		q += fmt.Sprintf(" AND "+clause, len(args))
-	}
-	if f.ProjectID != nil {
-		add("project_id=$%d", *f.ProjectID)
-	}
-	if f.Stage != "" {
-		add("stage=$%d", f.Stage)
-	}
-	if f.WorkflowConfigurationID != "" {
-		add("workflow_configuration_id=$%d", f.WorkflowConfigurationID)
-	}
-	if f.Status != "" {
-		add("status=$%d", f.Status)
-	}
-	if f.TriggerSource != "" {
-		add("trigger_source=$%d", f.TriggerSource)
-	}
-	if f.RunNumber != "" {
-		add("run_number=$%d", f.RunNumber)
-	}
-	if f.SubjectType != nil {
-		add("subject_type=$%d", *f.SubjectType)
-	}
-	if f.SubjectID != nil {
-		add("subject_id=$%d", *f.SubjectID)
-	}
-	if f.Query != "" {
-		add("run_number ILIKE '%%' || $%d || '%%'", f.Query)
-	}
-	if f.StartTime != nil {
-		add("created_at >= $%d", f.StartTime.UTC())
-	}
-	if f.EndTime != nil {
-		add("created_at <= $%d", f.EndTime.UTC())
-	}
+	where, args := workflowRunFilterSQL(f)
+	q := "SELECT " + runColumns + " FROM workflow_run_records WHERE TRUE" + where
 	limit := f.Limit
 	if limit <= 0 || limit > 100 {
 		limit = 50
@@ -326,44 +352,8 @@ func (r *Repository) Count(ctx context.Context, f ListFilter) (int, error) {
 	if f.StartTime != nil && f.EndTime != nil && f.StartTime.After(*f.EndTime) {
 		return 0, ErrValidation
 	}
-	q, args := "SELECT COUNT(*) FROM workflow_run_records WHERE TRUE", []any{}
-	add := func(clause string, value any) {
-		args = append(args, value)
-		q += fmt.Sprintf(" AND "+clause, len(args))
-	}
-	if f.ProjectID != nil {
-		add("project_id=$%d", *f.ProjectID)
-	}
-	if f.Stage != "" {
-		add("stage=$%d", f.Stage)
-	}
-	if f.WorkflowConfigurationID != "" {
-		add("workflow_configuration_id=$%d", f.WorkflowConfigurationID)
-	}
-	if f.Status != "" {
-		add("status=$%d", f.Status)
-	}
-	if f.TriggerSource != "" {
-		add("trigger_source=$%d", f.TriggerSource)
-	}
-	if f.RunNumber != "" {
-		add("run_number=$%d", f.RunNumber)
-	}
-	if f.SubjectType != nil {
-		add("subject_type=$%d", *f.SubjectType)
-	}
-	if f.SubjectID != nil {
-		add("subject_id=$%d", *f.SubjectID)
-	}
-	if f.Query != "" {
-		add("run_number ILIKE '%%' || $%d || '%%'", f.Query)
-	}
-	if f.StartTime != nil {
-		add("created_at >= $%d", f.StartTime.UTC())
-	}
-	if f.EndTime != nil {
-		add("created_at <= $%d", f.EndTime.UTC())
-	}
+	where, args := workflowRunFilterSQL(f)
+	q := "SELECT COUNT(*) FROM workflow_run_records WHERE TRUE" + where
 	var total int
 	if err := r.db.QueryRow(ctx, q, args...).Scan(&total); err != nil {
 		return 0, fmt.Errorf("count workflow runs: %w", err)

@@ -15,27 +15,52 @@ import (
 )
 
 type fakeWorkflowRunApplication struct {
-	createCommand workflowrun.CreateRunCommand
-	listQuery workflowrun.ListRunsQuery
-	cancelCommand workflowrun.RunCommand
-	retryCommand workflowrun.RetryCommand
-	createRun workflowrun.WorkflowRun
-	listRuns workflowrun.RunList
-	run workflowrun.WorkflowRun
-	events []workflowrun.Event
-	summary workflowrun.Summary
-	retryReplay bool
+	createCommand                                                          workflowrun.CreateRunCommand
+	listQuery                                                              workflowrun.ListRunsQuery
+	cancelCommand                                                          workflowrun.RunCommand
+	retryCommand                                                           workflowrun.RetryCommand
+	createRun                                                              workflowrun.WorkflowRun
+	listRuns                                                               workflowrun.RunList
+	run                                                                    workflowrun.WorkflowRun
+	events                                                                 []workflowrun.Event
+	summary                                                                workflowrun.Summary
+	retryReplay                                                            bool
+	retryOptions                                                           workflowrun.RetryOptions
 	createErr, listErr, getErr, eventsErr, cancelErr, retryErr, summaryErr error
 }
 
-func (f *fakeWorkflowRunApplication) CreateRun(_ context.Context, command workflowrun.CreateRunCommand) (workflowrun.WorkflowRun, error) { f.createCommand = command; return f.createRun, f.createErr }
-func (f *fakeWorkflowRunApplication) ListRuns(_ context.Context, query workflowrun.ListRunsQuery) (workflowrun.RunList, error) { f.listQuery = query; return f.listRuns, f.listErr }
-func (f *fakeWorkflowRunApplication) GetRun(context.Context, uuid.UUID) (workflowrun.WorkflowRun, error) { return f.run, f.getErr }
-func (f *fakeWorkflowRunApplication) ListRunEvents(context.Context, uuid.UUID) ([]workflowrun.Event, error) { return f.events, f.eventsErr }
-func (f *fakeWorkflowRunApplication) CancelRun(_ context.Context, command workflowrun.RunCommand) (workflowrun.WorkflowRun, error) { f.cancelCommand = command; return f.run, f.cancelErr }
-func (f *fakeWorkflowRunApplication) RetryRun(_ context.Context, command workflowrun.RetryCommand) (workflowrun.WorkflowRun, error) { f.retryCommand = command; return f.run, f.retryErr }
-func (f *fakeWorkflowRunApplication) RetryRunWithReplay(_ context.Context, command workflowrun.RetryCommand) (workflowrun.WorkflowRun, bool, error) { f.retryCommand = command; return f.run, f.retryReplay, f.retryErr }
-func (f *fakeWorkflowRunApplication) GetProjectRunSummary(context.Context, uuid.UUID) (workflowrun.Summary, error) { return f.summary, f.summaryErr }
+func (f *fakeWorkflowRunApplication) CreateRun(_ context.Context, command workflowrun.CreateRunCommand) (workflowrun.WorkflowRun, error) {
+	f.createCommand = command
+	return f.createRun, f.createErr
+}
+func (f *fakeWorkflowRunApplication) ListRuns(_ context.Context, query workflowrun.ListRunsQuery) (workflowrun.RunList, error) {
+	f.listQuery = query
+	return f.listRuns, f.listErr
+}
+func (f *fakeWorkflowRunApplication) GetRun(context.Context, uuid.UUID) (workflowrun.WorkflowRun, error) {
+	return f.run, f.getErr
+}
+func (f *fakeWorkflowRunApplication) ListRunEvents(context.Context, uuid.UUID) ([]workflowrun.Event, error) {
+	return f.events, f.eventsErr
+}
+func (f *fakeWorkflowRunApplication) CancelRun(_ context.Context, command workflowrun.RunCommand) (workflowrun.WorkflowRun, error) {
+	f.cancelCommand = command
+	return f.run, f.cancelErr
+}
+func (f *fakeWorkflowRunApplication) RetryRun(_ context.Context, command workflowrun.RetryCommand) (workflowrun.WorkflowRun, error) {
+	f.retryCommand = command
+	return f.run, f.retryErr
+}
+func (f *fakeWorkflowRunApplication) RetryRunWithReplay(_ context.Context, command workflowrun.RetryCommand) (workflowrun.WorkflowRun, bool, error) {
+	f.retryCommand = command
+	return f.run, f.retryReplay, f.retryErr
+}
+func (f *fakeWorkflowRunApplication) GetRetryOptions(context.Context, uuid.UUID) (workflowrun.RetryOptions, error) {
+	return f.retryOptions, f.retryErr
+}
+func (f *fakeWorkflowRunApplication) GetProjectRunSummary(context.Context, uuid.UUID) (workflowrun.Summary, error) {
+	return f.summary, f.summaryErr
+}
 
 func workflowRunHTTPHandler(app workflowRunApplication) http.Handler {
 	mux := http.NewServeMux()
@@ -50,8 +75,12 @@ func workflowRunHTTPFixture() workflowrun.WorkflowRun {
 
 func workflowRunHTTPRequest(handler http.Handler, method, path, body, key string) *httptest.ResponseRecorder {
 	req := httptest.NewRequest(method, path, strings.NewReader(body))
-	if key != "" { req.Header.Set("Idempotency-Key", key) }
-	w := httptest.NewRecorder(); handler.ServeHTTP(w, req); return w
+	if key != "" {
+		req.Header.Set("Idempotency-Key", key)
+	}
+	w := httptest.NewRecorder()
+	handler.ServeHTTP(w, req)
+	return w
 }
 
 func TestWorkflowRunHTTPCreateMapsRequestAndRedactsResponse(t *testing.T) {
@@ -59,24 +88,46 @@ func TestWorkflowRunHTTPCreateMapsRequestAndRedactsResponse(t *testing.T) {
 	app := &fakeWorkflowRunApplication{createRun: run}
 	handler := workflowRunHTTPHandler(app)
 	w := workflowRunHTTPRequest(handler, http.MethodPost, "/api/v1/workflow-runs", `{"projectId":"`+run.ProjectID.String()+`","stage":"review","inputPayload":{"token":"value","title":"ok"}}`, " create-key ")
-	if w.Code != http.StatusCreated { t.Fatalf("status = %d: %s", w.Code, w.Body.String()) }
-	if app.createCommand.ProjectID != run.ProjectID || app.createCommand.TriggerSource != "manual" || app.createCommand.IdempotencyKey != "create-key" || !strings.Contains(string(app.createCommand.InputPayload), "title") { t.Fatalf("unexpected command: %#v", app.createCommand) }
-	var body struct { Data struct { ConfigurationSnapshot map[string]any `json:"configurationSnapshot"`; InputPayload map[string]any `json:"inputPayload"` } `json:"data"`; RequestID string `json:"request_id"` }
-	if err := json.Unmarshal(w.Body.Bytes(), &body); err != nil { t.Fatal(err) }
-	if body.RequestID == "" || body.Data.ConfigurationSnapshot["token"] != "[REDACTED]" || body.Data.InputPayload["token"] != "[REDACTED]" { t.Fatalf("unsafe or incomplete response: %s", w.Body.String()) }
-	for _, tc := range []struct{ body, key string }{{`{}`, "key"}, {`{"projectId":"`+run.ProjectID.String()+`","stage":"review","inputPayload":{}}`, ""}} {
+	if w.Code != http.StatusCreated {
+		t.Fatalf("status = %d: %s", w.Code, w.Body.String())
+	}
+	if app.createCommand.ProjectID != run.ProjectID || app.createCommand.TriggerSource != "manual" || app.createCommand.IdempotencyKey != "create-key" || !strings.Contains(string(app.createCommand.InputPayload), "title") {
+		t.Fatalf("unexpected command: %#v", app.createCommand)
+	}
+	var body struct {
+		Data struct {
+			ConfigurationSnapshot map[string]any `json:"configurationSnapshot"`
+			InputPayload          map[string]any `json:"inputPayload"`
+		} `json:"data"`
+		RequestID string `json:"request_id"`
+	}
+	if err := json.Unmarshal(w.Body.Bytes(), &body); err != nil {
+		t.Fatal(err)
+	}
+	if body.RequestID == "" || body.Data.ConfigurationSnapshot["token"] != "[REDACTED]" || body.Data.InputPayload["token"] != "[REDACTED]" {
+		t.Fatalf("unsafe or incomplete response: %s", w.Body.String())
+	}
+	for _, tc := range []struct{ body, key string }{{`{}`, "key"}, {`{"projectId":"` + run.ProjectID.String() + `","stage":"review","inputPayload":{}}`, ""}} {
 		w = workflowRunHTTPRequest(handler, http.MethodPost, "/api/v1/workflow-runs", tc.body, tc.key)
-		if w.Code != http.StatusBadRequest || !strings.Contains(w.Body.String(), `"request_id"`) { t.Fatalf("invalid create = %d: %s", w.Code, w.Body.String()) }
+		if w.Code != http.StatusBadRequest || !strings.Contains(w.Body.String(), `"request_id"`) {
+			t.Fatalf("invalid create = %d: %s", w.Code, w.Body.String())
+		}
 	}
 }
 
 func TestWorkflowRunHTTPListParsesFrozenFilters(t *testing.T) {
-	run := workflowRunHTTPFixture(); app := &fakeWorkflowRunApplication{listRuns: workflowrun.RunList{Items: []workflowrun.WorkflowRun{run}, Total: 1, Limit: 3, Offset: 2}}
-	path := "/api/v1/workflow-runs?projectId="+run.ProjectID.String()+"&stage=review&workflowConfigurationId="+run.WorkflowConfigurationID.String()+"&status=queued&triggerSource=manual&runNumber=RUN-14-001&q=14-0&startTime=2026-07-01T00:00:00Z&endTime=2026-07-23T00:00:00Z&limit=3&offset=2"
+	run := workflowRunHTTPFixture()
+	app := &fakeWorkflowRunApplication{listRuns: workflowrun.RunList{Items: []workflowrun.WorkflowRun{run}, Total: 1, Limit: 3, Offset: 2}}
+	connectionID, providerID := uuid.New(), uuid.New()
+	path := "/api/v1/workflow-runs?projectId=" + run.ProjectID.String() + "&stage=review&workflowConfigurationId=" + run.WorkflowConfigurationID.String() + "&status=cancelling&displayStatus=output_validation_failed&connectionId=" + connectionID.String() + "&providerId=" + providerID.String() + "&model=model-19&configurationVersion=7&retryability=runtime_retry&triggerSource=manual&runNumber=RUN-14-001&q=14-0&from=2026-07-01T00:00:00Z&to=2026-07-23T00:00:00Z&limit=3&offset=2"
 	w := workflowRunHTTPRequest(workflowRunHTTPHandler(app), http.MethodGet, path, "", "")
-	if w.Code != http.StatusOK || app.listQuery.ProjectID == nil || app.listQuery.RunNumber != "RUN-14-001" || app.listQuery.Query != "14-0" || app.listQuery.StartTime == nil || app.listQuery.Limit != 3 || app.listQuery.Offset != 2 { t.Fatalf("list mapping failed: %d %#v", w.Code, app.listQuery) }
+	if w.Code != http.StatusOK || app.listQuery.ProjectID == nil || app.listQuery.Status != "cancelling" || app.listQuery.DisplayStatus != "output_validation_failed" || app.listQuery.ConnectionID != connectionID.String() || app.listQuery.ProviderID != providerID.String() || app.listQuery.Model != "model-19" || app.listQuery.ConfigurationVersion != 7 || app.listQuery.Retryability != "runtime_retry" || app.listQuery.RunNumber != "RUN-14-001" || app.listQuery.Query != "14-0" || app.listQuery.StartTime == nil || app.listQuery.Limit != 3 || app.listQuery.Offset != 2 {
+		t.Fatalf("list mapping failed: %d %#v", w.Code, app.listQuery)
+	}
 	w = workflowRunHTTPRequest(workflowRunHTTPHandler(app), http.MethodGet, "/api/v1/workflow-runs?startTime=2026-07-24T00:00:00Z&endTime=2026-07-23T00:00:00Z", "", "")
-	if w.Code != http.StatusBadRequest { t.Fatalf("invalid time range = %d", w.Code) }
+	if w.Code != http.StatusBadRequest {
+		t.Fatalf("invalid time range = %d", w.Code)
+	}
 }
 
 func TestWorkflowRunHTTPListAcceptsFrozenTriggerSources(t *testing.T) {
@@ -84,32 +135,50 @@ func TestWorkflowRunHTTPListAcceptsFrozenTriggerSources(t *testing.T) {
 	handler := workflowRunHTTPHandler(app)
 	for _, source := range []string{"manual", "system", "api", "retry"} {
 		w := workflowRunHTTPRequest(handler, http.MethodGet, "/api/v1/workflow-runs?triggerSource="+source, "", "")
-		if w.Code != http.StatusOK || app.listQuery.TriggerSource != source { t.Fatalf("%s = %d %#v", source, w.Code, app.listQuery) }
+		if w.Code != http.StatusOK || app.listQuery.TriggerSource != source {
+			t.Fatalf("%s = %d %#v", source, w.Code, app.listQuery)
+		}
 	}
 	w := workflowRunHTTPRequest(handler, http.MethodGet, "/api/v1/workflow-runs", "", "")
-	if w.Code != http.StatusOK || app.listQuery.TriggerSource != "" { t.Fatalf("empty filter = %d %#v", w.Code, app.listQuery) }
+	if w.Code != http.StatusOK || app.listQuery.TriggerSource != "" {
+		t.Fatalf("empty filter = %d %#v", w.Code, app.listQuery)
+	}
 	for _, source := range []string{"project", "workflow_center", "other"} {
 		w = workflowRunHTTPRequest(handler, http.MethodGet, "/api/v1/workflow-runs?triggerSource="+source, "", "")
-		if w.Code != http.StatusBadRequest || !strings.Contains(w.Body.String(), "validation_error") { t.Fatalf("%s = %d %s", source, w.Code, w.Body.String()) }
+		if w.Code != http.StatusBadRequest || !strings.Contains(w.Body.String(), "validation_error") {
+			t.Fatalf("%s = %d %s", source, w.Code, w.Body.String())
+		}
 	}
 }
 
 func TestWorkflowRunHTTPCommandsAndErrors(t *testing.T) {
-	run := workflowRunHTTPFixture(); app := &fakeWorkflowRunApplication{run: run}; handler := workflowRunHTTPHandler(app)
+	run := workflowRunHTTPFixture()
+	app := &fakeWorkflowRunApplication{run: run}
+	handler := workflowRunHTTPHandler(app)
 	w := workflowRunHTTPRequest(handler, http.MethodPost, "/api/v1/workflow-runs/"+run.ID.String()+"/cancel", `{"expectedVersion":1}`, "cancel-key")
-	if w.Code != http.StatusOK || app.cancelCommand.RunID != run.ID || app.cancelCommand.ExpectedVersion != 1 || app.cancelCommand.IdempotencyKey != "cancel-key" { t.Fatalf("cancel mapping failed: %d %#v", w.Code, app.cancelCommand) }
+	if w.Code != http.StatusOK || app.cancelCommand.RunID != run.ID || app.cancelCommand.ExpectedVersion != 1 || app.cancelCommand.IdempotencyKey != "cancel-key" {
+		t.Fatalf("cancel mapping failed: %d %#v", w.Code, app.cancelCommand)
+	}
 	w = workflowRunHTTPRequest(handler, http.MethodPost, "/api/v1/workflow-runs/"+run.ID.String()+"/retries", `{"expectedVersion":1,"useCurrentConfiguration":true,"inputOverride":{"topic":"new"}}`, "retry-key")
-	if w.Code != http.StatusCreated || !app.retryCommand.UseCurrentConfiguration || !strings.Contains(string(app.retryCommand.InputOverride), "new") { t.Fatalf("retry mapping failed: %d %#v", w.Code, app.retryCommand) }
+	if w.Code != http.StatusCreated || app.retryCommand.Mode != "current_configuration" || !strings.Contains(string(app.retryCommand.InputOverride), "new") {
+		t.Fatalf("retry mapping failed: %d %#v", w.Code, app.retryCommand)
+	}
 	app.retryReplay = true
 	w = workflowRunHTTPRequest(handler, http.MethodPost, "/api/v1/workflow-runs/"+run.ID.String()+"/retries", `{"expectedVersion":1,"useCurrentConfiguration":true,"inputOverride":{"topic":"new"}}`, "retry-key")
-	if w.Code != http.StatusOK { t.Fatalf("retry replay status=%d body=%s", w.Code, w.Body.String()) }
+	if w.Code != http.StatusOK {
+		t.Fatalf("retry replay status=%d body=%s", w.Code, w.Body.String())
+	}
 	app.retryReplay = false
 	app.cancelErr = workflowrun.ErrVersionConflict
 	w = workflowRunHTTPRequest(handler, http.MethodPost, "/api/v1/workflow-runs/"+run.ID.String()+"/cancel", `{"expectedVersion":1}`, "cancel-key-2")
-	if w.Code != http.StatusConflict || !strings.Contains(w.Body.String(), `"code":"version_conflict"`) || strings.Contains(w.Body.String(), "workflow run version conflict") && strings.Contains(w.Body.String(), "stack") { t.Fatalf("version error = %d: %s", w.Code, w.Body.String()) }
+	if w.Code != http.StatusConflict || !strings.Contains(w.Body.String(), `"code":"version_conflict"`) || strings.Contains(w.Body.String(), "workflow run version conflict") && strings.Contains(w.Body.String(), "stack") {
+		t.Fatalf("version error = %d: %s", w.Code, w.Body.String())
+	}
 	app.cancelErr = workflowrun.ErrIdempotencyConflict
 	w = workflowRunHTTPRequest(handler, http.MethodPost, "/api/v1/workflow-runs/"+run.ID.String()+"/cancel", `{"expectedVersion":1}`, "cancel-key-3")
-	if w.Code != http.StatusConflict || !strings.Contains(w.Body.String(), "idempotency_key_reused_with_different_payload") { t.Fatalf("idempotency error = %d: %s", w.Code, w.Body.String()) }
+	if w.Code != http.StatusConflict || !strings.Contains(w.Body.String(), "idempotency_key_reused_with_different_payload") {
+		t.Fatalf("idempotency error = %d: %s", w.Code, w.Body.String())
+	}
 	for _, test := range []struct {
 		err  error
 		code string
@@ -119,27 +188,90 @@ func TestWorkflowRunHTTPCommandsAndErrors(t *testing.T) {
 		{workflowrun.ErrActiveRewriteRun, "active_rewrite_run_conflict"},
 	} {
 		app.retryErr = test.err
-		w = workflowRunHTTPRequest(handler, http.MethodPost, "/api/v1/workflow-runs/"+run.ID.String()+"/retries", `{"expectedVersion":1}`, uuid.NewString())
+		w = workflowRunHTTPRequest(handler, http.MethodPost, "/api/v1/workflow-runs/"+run.ID.String()+"/retries", `{"expectedVersion":1,"mode":"original_configuration"}`, uuid.NewString())
 		if w.Code != http.StatusConflict || !strings.Contains(w.Body.String(), `"code":"`+test.code+`"`) {
 			t.Fatalf("rewrite retry err=%v status=%d body=%s", test.err, w.Code, w.Body.String())
 		}
 	}
 }
 
+func TestWorkflowRunHTTPRetryModesAndOptions(t *testing.T) {
+	run := workflowRunHTTPFixture()
+	app := &fakeWorkflowRunApplication{run: run, retryOptions: workflowrun.RetryOptions{RunID: run.ID, Retryability: "runtime_retry", CurrentConfiguration: workflowrun.RetryOption{Mode: "current_configuration", Enabled: true, Reasons: []workflowrun.RetryReason{}}, OriginalConfiguration: workflowrun.RetryOption{Mode: "original_configuration", Reasons: []workflowrun.RetryReason{{Code: "snapshot_incomplete", Message: "disabled"}}}}}
+	handler := workflowRunHTTPHandler(app)
+	w := workflowRunHTTPRequest(handler, http.MethodGet, "/api/v1/workflow-runs/"+run.ID.String()+"/retry-options", "", "")
+	if w.Code != http.StatusOK || !strings.Contains(w.Body.String(), `"currentConfiguration":{"mode":"current_configuration","enabled":true`) {
+		t.Fatalf("retry options=%d %s", w.Code, w.Body.String())
+	}
+	for _, tc := range []struct {
+		name, body string
+		status     int
+		mode       string
+	}{
+		{"current", `{"expectedVersion":1,"mode":"current_configuration","reason":"safe"}`, http.StatusCreated, "current_configuration"},
+		{"original", `{"expectedVersion":1,"mode":"original_configuration"}`, http.StatusCreated, "original_configuration"},
+		{"legacy", `{"expectedVersion":1,"useCurrentConfiguration":false}`, http.StatusCreated, "original_configuration"},
+		{"matching compatibility", `{"expectedVersion":1,"mode":"current_configuration","useCurrentConfiguration":true}`, http.StatusCreated, "current_configuration"},
+		{"missing", `{"expectedVersion":1}`, http.StatusBadRequest, ""},
+		{"invalid", `{"expectedVersion":1,"mode":"automatic"}`, http.StatusBadRequest, ""},
+		{"conflict", `{"expectedVersion":1,"mode":"current_configuration","useCurrentConfiguration":false}`, http.StatusBadRequest, ""},
+		{"reason too long", `{"expectedVersion":1,"mode":"current_configuration","reason":"` + strings.Repeat("x", 501) + `"}`, http.StatusBadRequest, ""},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			w = workflowRunHTTPRequest(handler, http.MethodPost, "/api/v1/workflow-runs/"+run.ID.String()+"/retries", tc.body, uuid.NewString())
+			if w.Code != tc.status {
+				t.Fatalf("status=%d body=%s", w.Code, w.Body.String())
+			}
+			if tc.mode != "" && app.retryCommand.Mode != tc.mode {
+				t.Fatalf("mode=%s", app.retryCommand.Mode)
+			}
+		})
+	}
+}
+
+func TestWorkflowRunHTTPDTOIncludesFrozenFieldsWithoutSecretCanary(t *testing.T) {
+	run := workflowRunHTTPFixture()
+	phase, code, message := "output_validation", "invalid_output", "safe failure"
+	run.Status, run.FailurePhase, run.FailureCode, run.SafeErrorMessage, run.Retryability = workflowrun.StatusFailed, &phase, &code, &message, "runtime_retry"
+	run.BindingSnapshot = json.RawMessage(`{"bindingId":"11111111-1111-4111-8111-111111111111","bindingVersion":1,"stage":"review","secret":"SECRET_CANARY_R1"}`)
+	run.ConnectionSnapshot = json.RawMessage(`{"id":"22222222-2222-4222-8222-222222222222","name":"n8n","version":1,"connectionType":"n8n","baseUrl":"https://example.test","authType":"api_key","credentialFingerprint":"fp","validationStatus":"verified","enabled":true,"executable":true,"authorization":"SECRET_CANARY_R1"}`)
+	run.LlmPolicySnapshot = json.RawMessage(`{"strategy":"none","providerId":null,"providerName":null,"providerVersion":null,"model":null,"secretFingerprint":null,"validationStatus":null,"executable":true,"cookie":"SECRET_CANARY_R1"}`)
+	run.ConfigurationSnapshot = json.RawMessage(`{"workflowConfiguration":{"name":"Review","version":7},"secret":"SECRET_CANARY_R1"}`)
+	w := workflowRunHTTPRequest(workflowRunHTTPHandler(&fakeWorkflowRunApplication{run: run}), http.MethodGet, "/api/v1/workflow-runs/"+run.ID.String(), "", "")
+	if w.Code != http.StatusOK {
+		t.Fatalf("status=%d body=%s", w.Code, w.Body.String())
+	}
+	for _, field := range []string{"workflowName", "workflowConfigurationVersion", "displayStatus", "failurePhase", "failureCode", "safeError", "domainImpact", "connectionSummary", "llmPolicySummary", "retryability", "retryMode", "externalExecutionId", "cancellationRequestedAt", "timedOutAt", "bindingSnapshot", "connectionSnapshot", "llmPolicySnapshot"} {
+		if !strings.Contains(w.Body.String(), `"`+field+`"`) {
+			t.Errorf("missing %s: %s", field, w.Body.String())
+		}
+	}
+	if strings.Contains(w.Body.String(), "SECRET_CANARY_R1") {
+		t.Fatalf("secret canary leaked: %s", w.Body.String())
+	}
+}
+
 func TestWorkflowRunHTTPDetailsEventsAndSummary(t *testing.T) {
-	run := workflowRunHTTPFixture(); event := workflowrun.Event{ID: uuid.New(), RunID: run.ID, EventType: "queued", Status: workflowrun.StatusQueued, Payload: json.RawMessage(`{"cookie":"hidden","safe":true}`), CreatedAt: run.CreatedAt}
+	run := workflowRunHTTPFixture()
+	event := workflowrun.Event{ID: uuid.New(), RunID: run.ID, EventType: "queued", Status: workflowrun.StatusQueued, Payload: json.RawMessage(`{"cookie":"hidden","safe":true}`), CreatedAt: run.CreatedAt}
 	app := &fakeWorkflowRunApplication{run: run, events: []workflowrun.Event{event}, summary: workflowrun.Summary{TotalRuns: 1, ActiveRuns: 1, RecentRuns: []workflowrun.WorkflowRun{run}, LastRunAt: &run.CreatedAt}}
 	handler := workflowRunHTTPHandler(app)
-	for _, path := range []string{"/api/v1/workflow-runs/"+run.ID.String(), "/api/v1/workflow-runs/"+run.ID.String()+"/events", "/api/v1/projects/"+run.ProjectID.String()+"/workflow-run-summary"} {
+	for _, path := range []string{"/api/v1/workflow-runs/" + run.ID.String(), "/api/v1/workflow-runs/" + run.ID.String() + "/events", "/api/v1/projects/" + run.ProjectID.String() + "/workflow-run-summary"} {
 		w := workflowRunHTTPRequest(handler, http.MethodGet, path, "", "")
-		if w.Code != http.StatusOK || !strings.Contains(w.Body.String(), `"request_id"`) || strings.Contains(w.Body.String(), `"cookie":"hidden"`) { t.Fatalf("GET %s = %d: %s", path, w.Code, w.Body.String()) }
+		if w.Code != http.StatusOK || !strings.Contains(w.Body.String(), `"request_id"`) || strings.Contains(w.Body.String(), `"cookie":"hidden"`) {
+			t.Fatalf("GET %s = %d: %s", path, w.Code, w.Body.String())
+		}
 	}
 	app.getErr = workflowrun.ErrNotFound
 	w := workflowRunHTTPRequest(handler, http.MethodGet, "/api/v1/workflow-runs/"+run.ID.String(), "", "")
-	if w.Code != http.StatusNotFound || !strings.Contains(w.Body.String(), "workflow_run_not_found") { t.Fatalf("not found = %d: %s", w.Code, w.Body.String()) }
+	if w.Code != http.StatusNotFound || !strings.Contains(w.Body.String(), "workflow_run_not_found") {
+		t.Fatalf("not found = %d: %s", w.Code, w.Body.String())
+	}
 	app.getErr = errors.New("token=unsafe internal database")
 	w = workflowRunHTTPRequest(handler, http.MethodGet, "/api/v1/workflow-runs/"+run.ID.String(), "", "")
-	if w.Code != http.StatusInternalServerError || strings.Contains(w.Body.String(), "unsafe") { t.Fatalf("internal error leaked: %d: %s", w.Code, w.Body.String()) }
+	if w.Code != http.StatusInternalServerError || strings.Contains(w.Body.String(), "unsafe") {
+		t.Fatalf("internal error leaked: %d: %s", w.Code, w.Body.String())
+	}
 }
 
 func TestWorkflowRunHTTPDetailProjectsDirectRetryParent(t *testing.T) {

@@ -2,13 +2,13 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 import { ApiError } from "../../lib/api.ts";
-import { cancelWorkflowRun, createWorkflowRun, formatWorkflowRunTime, getProjectWorkflowRunSummary, getWorkflowRun, listWorkflowRunEvents, retryWorkflowRun } from "./workflow-run-api.ts";
+import { cancelWorkflowRun, createWorkflowRun, formatWorkflowRunTime, getProjectWorkflowRunSummary, getWorkflowRun, getWorkflowRunRetryOptions, listWorkflowRunEvents, retryWorkflowRun } from "./workflow-run-api.ts";
 
 const source = readFileSync(new URL("./workflow-run-api.ts", import.meta.url), "utf8");
 const page = readFileSync(new URL("./workflow-runs-page.tsx", import.meta.url), "utf8");
 
 test("workflow run API keeps all frozen server-side filters and maps the Runtime list response", () => {
-  for (const text of ["projectId", "stage", "status", "q", "startTime", "endTime", "limit", "offset", "response.items.map(mapWorkflowRun)"]) assert.ok(source.includes(text));
+  for (const text of ["projectId", "stage", "workflowConfigurationId", "status", "displayStatus", "connectionId", "providerId", "model", "configurationVersion", "retryability", "triggerSource", "q", "from", "to", "startTime", "endTime", "limit", "offset", "response.items.map(mapWorkflowRun)"]) assert.ok(source.includes(text));
   assert.match(source, /apiRequest<WorkflowRunList>\(`\/workflow-runs\?\$\{workflowRunQuery\(query\)\}`/);
   assert.doesNotMatch(source, /content-workflow-runs/);
 });
@@ -31,6 +31,21 @@ test("Runtime detail API functions send the frozen paths, versions, keys, and co
   const detail = await getWorkflowRun("run/id"); const events = await listWorkflowRunEvents("run/id"); await cancelWorkflowRun("run/id", 3, "cancel-key"); await retryWorkflowRun("run/id", 3, "retry-key", "original_configuration", { replacement: true });
   assert.equal(detail.createdAtLabel, "—"); assert.equal(events[0].title, "已创建运行"); assert.match(calls[0].url, /run%2Fid/); assert.equal((calls[2].init?.headers as Record<string,string>)["Idempotency-Key"], "cancel-key"); assert.deepEqual(JSON.parse(String(calls[3].init?.body)), { expectedVersion: 3, mode: "original_configuration", inputOverride: { replacement: true } }); assert.equal(formatWorkflowRunTime("bad"), "—");
 });
+test("Retry Options and Retry Request use the exact frozen response and explicit body", async () => {
+  const calls: Array<{ url: string; init?: RequestInit }> = [];
+  global.fetch = async (url, init) => {
+    calls.push({ url: String(url), init });
+    const data = String(url).endsWith("/retry-options") ? { runId: "run/id", retryability: "runtime_retry", currentConfiguration: { mode: "current_configuration", enabled: true, reasons: [] }, originalConfiguration: { mode: "original_configuration", enabled: false, reasons: [{ code: "snapshot_incomplete", message: "disabled" }] }, resultConsumptionRetryRequired: false } : run;
+    return new Response(JSON.stringify({ data, request_id: "req" }), { status: String(url).includes("retries") ? 201 : 200 });
+  };
+  const options = await getWorkflowRunRetryOptions("run/id");
+  await retryWorkflowRun("run/id", 3, "retry-key", "original_configuration", { replacement: true }, "safe reason");
+  assert.equal(options.runId, "run/id");
+  assert.equal(options.originalConfiguration.enabled, false);
+  assert.match(calls[0].url, /run%2Fid\/retry-options$/);
+  assert.deepEqual(JSON.parse(String(calls[1].init?.body)), { expectedVersion: 3, mode: "original_configuration", reason: "safe reason", inputOverride: { replacement: true } });
+});
+
 test("Runtime detail API functions preserve ErrorEnvelope failures", async () => { global.fetch = async () => new Response(JSON.stringify({ error: { code: "version_conflict", message: "changed", details: {} }, request_id: "req" }), { status: 409 }); await assert.rejects(getWorkflowRun("run"), (error: unknown) => error instanceof ApiError && error.code === "version_conflict"); });
 
 test("Project summary and CreateRun use the real frozen endpoints, map safe fallbacks, and preserve ErrorEnvelope failures", async () => {

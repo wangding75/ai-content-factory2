@@ -107,8 +107,12 @@ def test_binding_and_runtime_recovery():
     assert_command("/api/v1/workflow-runs/{runId}/cancel", "cancelWorkflowRun", schema="WorkflowRunCommandRequest")
     assert "mode" in SCHEMAS["WorkflowRunRetryRequest"]["properties"]
     assert "expectedVersion" in SCHEMAS["WorkflowRunRetryRequest"]["required"]
+    # New mode and the single deprecated boolean compatibility path are explicit;
+    # no omitted boolean zero value can select original_configuration.
+    assert len(SCHEMAS["WorkflowRunRetryRequest"]["oneOf"]) == 4
     run = SCHEMAS["Iteration14WorkflowRun"]["properties"]
-    assert {"displayStatus", "failurePhase", "failureCode", "safeError", "domainImpact", "retryability", "retryMode", "externalExecutionId", "cancellationRequestedAt", "timedOutAt", "bindingSnapshot", "connectionSnapshot", "llmPolicySnapshot"} <= set(run)
+    frozen_fields = {"workflowName", "workflowConfigurationVersion", "displayStatus", "failurePhase", "failureCode", "safeError", "domainImpact", "connectionSummary", "llmPolicySummary", "retryability", "retryMode", "externalExecutionId", "cancellationRequestedAt", "timedOutAt", "bindingSnapshot", "connectionSnapshot", "llmPolicySnapshot"}
+    assert frozen_fields <= set(run)
     events = set(SCHEMAS["WorkflowRunEvent"]["properties"]["eventType"]["enum"])
     assert {"cancel_requested", "timed_out", "output_validation_failed", "result_consumption_failed", "retry_created"} <= events
 

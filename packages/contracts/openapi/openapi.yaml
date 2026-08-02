@@ -4066,6 +4066,16 @@ components:
       type: object
       additionalProperties: false
       required: [expectedVersion]
+      description: New clients send mode. Legacy clients may send useCurrentConfiguration alone. When both fields are sent they must describe the same mode; conflicting pairs are invalid.
+      oneOf:
+        - required: [mode]
+          not: {required: [useCurrentConfiguration]}
+        - required: [useCurrentConfiguration]
+          not: {required: [mode]}
+        - required: [mode, useCurrentConfiguration]
+          properties: {mode: {const: current_configuration}, useCurrentConfiguration: {const: true}}
+        - required: [mode, useCurrentConfiguration]
+          properties: {mode: {const: original_configuration}, useCurrentConfiguration: {const: false}}
       properties:
         expectedVersion: {type: integer, minimum: 1, description: Version of the original WorkflowRun named by runId.}
         mode: {$ref: "#/components/schemas/RetryMode"}

@@ -227,7 +227,7 @@ export function ContentReviewWorkspace({
           `/projects/${projectId}/works/${workId}/review?reportId=${encodeURIComponent(result.report.id)}`,
         );
       } else {
-        await retryWorkflowRun(run.id, run.version, command.key);
+        await retryWorkflowRun(run.id, run.version, command.key, "original_configuration");
         setDetail(null);
         await loadSummary();
       }

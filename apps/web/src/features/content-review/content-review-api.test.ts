@@ -11,13 +11,14 @@ import {
   retryReviewResultConsumption,
   updateReviewIssue,
 } from "./content-review-api.ts";
+import type { WorkflowRunDto } from "../workflow-runs/workflow-run-api.ts";
 
 const originalFetch = global.fetch;
 test.after(() => {
   global.fetch = originalFetch;
 });
 
-const run = {
+const run: WorkflowRunDto = {
   id: "run/id",
   runNumber: "RUN-17",
   projectId: "project",
@@ -25,14 +26,32 @@ const run = {
   subjectType: "content_version",
   subjectId: "version",
   workflowConfigurationId: "configuration",
+  workflowName: "审核工作流",
+  workflowConfigurationVersion: 1,
   triggerSource: "manual",
+  retryOfRunId: null,
   status: "queued",
+  displayStatus: "queued",
+  failurePhase: null,
+  failureCode: null,
+  safeError: null,
+  domainImpact: [],
+  connectionSummary: null,
+  llmPolicySummary: null,
+  retryability: "not_retryable",
+  retryMode: null,
+  externalExecutionId: null,
+  cancellationRequestedAt: null,
+  timedOutAt: null,
   inputPayload: {},
   outputPayload: null,
   errorCode: null,
   errorMessage: null,
   errorDetails: null,
   configurationSnapshot: {},
+  bindingSnapshot: { bindingId: "binding", bindingVersion: 1, stage: "review" },
+  connectionSnapshot: {},
+  llmPolicySnapshot: {},
   startedAt: null,
   finishedAt: null,
   cancelledAt: null,

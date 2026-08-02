@@ -33,7 +33,7 @@ export function ContentGenerationStatus({ projectId, summary, onRefresh, onCandi
     try {
       const key = await getOrCreateOperation(scope, retryPayload);
       if (summary.state === "result_consumption_failed") await retryContentGenerationResultConsumption(run.id, run.version, key);
-      else await retryWorkflowRun(run.id, run.version, key);
+      else await retryWorkflowRun(run.id, run.version, key, "original_configuration");
       clearOperation(scope);
       await onRefresh();
     } catch { setRetryError({ identity: retryIdentity, message: copy.retryFailure }); }

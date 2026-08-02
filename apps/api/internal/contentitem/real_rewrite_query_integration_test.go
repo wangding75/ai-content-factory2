@@ -138,10 +138,10 @@ func TestRealRewriteHistoryResultAndSetCurrentCAS(t *testing.T) {
 		t.Fatal(err)
 	}
 	request := SetCurrentRequest{
-		CandidateVersionID: candidate.ID,
+		CandidateVersionID:       candidate.ID,
 		ExpectedCurrentVersionID: currentDetail.CurrentVersion.ID,
-		ExpectedCurrentVersion: currentDetail.CurrentVersion.Version,
-		IdempotencyKey: "rewrite-set-current",
+		ExpectedCurrentVersion:   currentDetail.CurrentVersion.Version,
+		IdempotencyKey:           "rewrite-set-current",
 	}
 	first, err := generation.SetCurrent(f.ctx, f.item.Detail.Item.ID, request)
 	if err != nil || first.CurrentVersion.ID != candidate.ID ||
@@ -286,7 +286,7 @@ func TestRealRewriteRuntimeRetryInheritanceReplayAndConcurrentSingleActive(t *te
 	}
 	original = setRewriteRunState(t, f, original.ID, workflowrun.StatusFailed, nil)
 	command := workflowrun.RetryCommand{
-		RunID: original.ID, ExpectedVersion: original.Version, IdempotencyKey: "runtime-retry",
+		RunID: original.ID, ExpectedVersion: original.Version, Mode: "original_configuration", IdempotencyKey: "runtime-retry",
 	}
 	retried, replayed, err := f.runs.RetryRunWithReplay(f.ctx, command)
 	if err != nil || replayed || retried.RetryOfRunID == nil || *retried.RetryOfRunID != original.ID ||
@@ -323,7 +323,7 @@ func TestRealRewriteRuntimeRetryInheritanceReplayAndConcurrentSingleActive(t *te
 		go func() {
 			defer group.Done()
 			_, _, retryErr := concurrent.runs.RetryRunWithReplay(concurrent.ctx, workflowrun.RetryCommand{
-				RunID: original.ID, ExpectedVersion: original.Version, IdempotencyKey: uuid.NewString(),
+				RunID: original.ID, ExpectedVersion: original.Version, Mode: "original_configuration", IdempotencyKey: uuid.NewString(),
 			})
 			mutex.Lock()
 			defer mutex.Unlock()
@@ -387,7 +387,7 @@ func TestRealRewriteRuntimeRetryEligibilityMatrix(t *testing.T) {
 			}
 			beforeRuns := count(t, f.ctx, f.repo.db, "SELECT COUNT(*) FROM workflow_run_records WHERE stage='rewrite' AND subject_id=$1", f.report.ID)
 			retry, _, retryErr := f.runs.RetryRunWithReplay(f.ctx, workflowrun.RetryCommand{
-				RunID: run.ID, ExpectedVersion: run.Version, IdempotencyKey: "eligibility",
+				RunID: run.ID, ExpectedVersion: run.Version, Mode: "original_configuration", IdempotencyKey: "eligibility",
 			})
 			if test.wantAllowed {
 				if retryErr != nil || retry.RetryOfRunID == nil || *retry.RetryOfRunID != run.ID {
@@ -411,12 +411,12 @@ func TestRealRewriteRuntimeRetryEligibilityMatrix(t *testing.T) {
 	}
 	run = setRewriteRunState(t, f, run.ID, workflowrun.StatusFailed, nil)
 	if _, _, err = f.runs.RetryRunWithReplay(f.ctx, workflowrun.RetryCommand{
-		RunID: run.ID, ExpectedVersion: run.Version, InputOverride: json.RawMessage(`{"override":true}`), IdempotencyKey: "override",
+		RunID: run.ID, ExpectedVersion: run.Version, Mode: "original_configuration", InputOverride: json.RawMessage(`{"override":true}`), IdempotencyKey: "override",
 	}); !errors.Is(err, workflowrun.ErrValidation) {
 		t.Fatalf("input override err=%v", err)
 	}
 	if _, _, err = f.runs.RetryRunWithReplay(f.ctx, workflowrun.RetryCommand{
-		RunID: run.ID, ExpectedVersion: run.Version, UseCurrentConfiguration: true, IdempotencyKey: "current-config",
+		RunID: run.ID, ExpectedVersion: run.Version, Mode: "current_configuration", IdempotencyKey: "current-config",
 	}); !errors.Is(err, workflowrun.ErrValidation) {
 		t.Fatalf("current configuration err=%v", err)
 	}
@@ -448,10 +448,10 @@ func TestRealRewriteSetCurrentConcurrentCASAndEligibility(t *testing.T) {
 		go func(index int) {
 			defer wait.Done()
 			results[index], errs[index] = generation.SetCurrent(f.ctx, current.Item.ID, SetCurrentRequest{
-				CandidateVersionID: candidates[index],
+				CandidateVersionID:       candidates[index],
 				ExpectedCurrentVersionID: current.CurrentVersion.ID,
-				ExpectedCurrentVersion: current.CurrentVersion.Version,
-				IdempotencyKey: "set-current-" + uuid.NewString(),
+				ExpectedCurrentVersion:   current.CurrentVersion.Version,
+				IdempotencyKey:           "set-current-" + uuid.NewString(),
 			})
 		}(i)
 	}
