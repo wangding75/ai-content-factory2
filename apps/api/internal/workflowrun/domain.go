@@ -119,6 +119,29 @@ func (r WorkflowRun) Cancel(at time.Time) (WorkflowRun, error) {
 	return r.transition(StatusCancelled, at.UTC(), nil, nil)
 }
 
+// RequestCancellation records the durable intent before an executor attempts
+// external cancellation. This prevents a second client from submitting a
+// duplicate cancel request while preserving a single terminal transition.
+func (r WorkflowRun) RequestCancellation(at time.Time) (WorkflowRun, error) {
+	return r.transition(StatusCancelling, at.UTC(), nil, nil)
+}
+
+func (r WorkflowRun) Timeout(at time.Time, failure Failure) (WorkflowRun, error) {
+	if strings.TrimSpace(failure.Code) == "" || strings.TrimSpace(failure.Message) == "" {
+		return WorkflowRun{}, ErrValidation
+	}
+	if !canTransition(r.Status, StatusTimedOut) {
+		return WorkflowRun{}, ErrInvalidTransition
+	}
+	r.Status, r.UpdatedAt, r.Version = StatusTimedOut, at.UTC(), r.Version+1
+	code, message := strings.TrimSpace(failure.Code), strings.TrimSpace(failure.Message)
+	r.ErrorCode, r.ErrorMessage, r.FailureCode, r.SafeErrorMessage = &code, &message, &code, &message
+	phase := "external_execution"
+	r.FailurePhase = &phase
+	r.FinishedAt, r.TimedOutAt = &at, &at
+	return r, nil
+}
+
 func (r WorkflowRun) transition(next Status, at time.Time, output json.RawMessage, failure *Failure) (WorkflowRun, error) {
 	if !canTransition(r.Status, next) {
 		return WorkflowRun{}, ErrInvalidTransition
@@ -134,12 +157,16 @@ func (r WorkflowRun) transition(next Status, at time.Time, output json.RawMessag
 		r.ErrorCode, r.ErrorMessage, r.ErrorDetails, r.FinishedAt = &code, &message, RedactJSON(failure.Details), &at
 	case StatusCancelled:
 		r.CancelledAt = &at
+	case StatusCancelling:
+		r.CancellationRequestedAt = &at
 	}
 	return r, nil
 }
 
 func canTransition(from, to Status) bool {
-	return (from == StatusQueued && (to == StatusRunning || to == StatusCancelled)) || (from == StatusRunning && (to == StatusSucceeded || to == StatusFailed || to == StatusCancelled))
+	return (from == StatusQueued && (to == StatusRunning || to == StatusCancelling || to == StatusCancelled || to == StatusTimedOut)) ||
+		(from == StatusRunning && (to == StatusSucceeded || to == StatusFailed || to == StatusCancelling || to == StatusCancelled || to == StatusTimedOut)) ||
+		(from == StatusCancelling && to == StatusCancelled)
 }
 
 func (r WorkflowRun) validate() error {
