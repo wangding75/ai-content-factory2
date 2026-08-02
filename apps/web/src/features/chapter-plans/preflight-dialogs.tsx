@@ -1,6 +1,8 @@
 "use client";
 
 import { Icon } from "@/components/ui/icons";
+import { WorkflowPreflightBlocker } from "@/components/workflow-preflight-blocker";
+import { toWorkflowPreflightReasons } from "@/components/workflow-preflight-reason";
 import type {
   ChapterPlanningBlockerItem,
   ChapterPlanningPreflightBlocked,
@@ -180,6 +182,7 @@ export function PreflightReportDialog({
           {/* Blockers list */}
           {blockedReport && (
             <div className="chapter-plan-preflight-section">
+              <WorkflowPreflightBlocker reasons={toWorkflowPreflightReasons(blockedReport.blockers)} />
               <h4>阻断原因列表</h4>
               <ul className="chapter-plan-preflight-list">
                 {blockedReport.blockers.map((item, index) => (

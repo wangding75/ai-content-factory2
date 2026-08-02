@@ -25,15 +25,15 @@ export function workflowPreflightRepairLink(
     case "provider:enable":
     case "provider:models":
     case "provider:edit":
-      return { href: withQuery("/settings", { providerId: target.providerId }), known: true };
+      return target.providerId ? { href: withQuery("/settings", { providerId: target.providerId }), known: true } : { href: "/settings", known: false };
     case "connection:verify":
     case "connection:enable":
     case "connection:edit":
-      return { href: withQuery("/settings", { tab: "connections", connectionId: target.connectionId }), known: true };
+      return target.connectionId ? { href: withQuery("/settings", { tab: "connections", connectionId: target.connectionId }), known: true } : { href: "/settings?tab=connections", known: false };
     case "workflow_configuration:verify":
     case "workflow_configuration:enable":
     case "workflow_configuration:edit":
-      return { href: withQuery("/settings", { tab: "workflows", workflowConfigurationId: target.workflowConfigurationId }), known: true };
+      return target.workflowConfigurationId ? { href: withQuery("/settings", { tab: "workflows", workflowConfigurationId: target.workflowConfigurationId }), known: true } : { href: "/settings?tab=workflows", known: false };
     case "workflow_binding:configure":
     case "workflow_binding:repair":
       return target.projectId && target.stage

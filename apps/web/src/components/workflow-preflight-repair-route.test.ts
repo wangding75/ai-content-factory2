@@ -37,4 +37,7 @@ test("maps every binding action to the selected project stage", () => {
 test("uses a safe configuration link when an action or binding target is unknown", () => {
   assert.deepEqual(workflowPreflightRepairLink("future:repair", target), { href: "/settings", known: false });
   assert.deepEqual(workflowPreflightRepairLink("workflow_binding:configure", { projectId: "project" }), { href: "/settings", known: false });
+  assert.deepEqual(workflowPreflightRepairLink("provider:edit", {}), { href: "/settings", known: false });
+  assert.deepEqual(workflowPreflightRepairLink("connection:edit", {}), { href: "/settings?tab=connections", known: false });
+  assert.deepEqual(workflowPreflightRepairLink("workflow_configuration:edit", {}), { href: "/settings?tab=workflows", known: false });
 });

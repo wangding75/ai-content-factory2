@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Icon } from "@/components/ui/icons";
+import { WorkflowPreflightBlocker } from "@/components/workflow-preflight-blocker";
+import { toWorkflowPreflightReasons } from "@/components/workflow-preflight-reason";
 import type { ContentVersion } from "@/features/content-items/content-item-http-api";
 import {
   createContentReviewRun,
@@ -338,6 +340,7 @@ export function ContentReviewDrawer({
               <p className="checking">{copy.drawer.checking}</p>
             ) : preflight ? (
               <>
+                {preflight.status === "blocked" && <WorkflowPreflightBlocker reasons={toWorkflowPreflightReasons(preflight.checks.filter((check) => check.status === "blocked"))} />}
                 <p className={preflight.status}>
                   {preflight.status === "passed"
                     ? copy.drawer.passed

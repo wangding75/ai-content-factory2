@@ -29,6 +29,14 @@ test("rewrite create renders the frozen availability, preflight, configuration a
   assert.doesNotMatch(api, /reviewReportSnapshot: \{ id: string/);
 });
 
+test("rewrite renders the shared blocker only for blocked preflight results", () => {
+  const page = readFileSync(new URL("./rewrite-workspace.tsx", import.meta.url), "utf8");
+  assert.match(page, /WorkflowPreflightBlocker/);
+  assert.match(page, /rewritePreflightBlockerReasons\(preflight\)/);
+  assert.match(page, /preflight\?\.status === "blocked"/);
+  assert.match(page, /preflight\?\.status === "passed"/);
+});
+
 test("create lifecycle invalidates changed input, preserves unknown results and clears deterministic conflicts", () => {
   const page = readFileSync(new URL("./rewrite-workspace.tsx", import.meta.url), "utf8");
   assert.match(page, /clearPreflight/);

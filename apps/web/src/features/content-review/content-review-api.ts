@@ -66,6 +66,8 @@ export interface ReviewPreflightCheck {
     | "review_input_valid";
   status: "passed" | "warning" | "blocked";
   message: string;
+  repairAction?: string;
+  repairTarget?: { providerId?: string; connectionId?: string; workflowConfigurationId?: string; projectId?: string; stage?: string } | null;
 }
 
 export interface ReviewPreflightReport {

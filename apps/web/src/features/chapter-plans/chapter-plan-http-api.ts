@@ -102,6 +102,8 @@ export interface ChapterPlanningPreflightItem {
   safeReason?: string;
   retryAction?: string;
   details?: ChapterPlanningItemDetails;
+  repairAction?: string;
+  repairTarget?: { providerId?: string; connectionId?: string; workflowConfigurationId?: string; projectId?: string; stage?: string } | null;
 }
 
 export interface ChapterPlanningBlockerItem {
@@ -111,6 +113,8 @@ export interface ChapterPlanningBlockerItem {
   safeReason: string;
   retryAction: string;
   details?: ChapterPlanningItemDetails;
+  repairAction?: string;
+  repairTarget?: { providerId?: string; connectionId?: string; workflowConfigurationId?: string; projectId?: string; stage?: string } | null;
 }
 
 export interface ChapterPlanningInputSummary {

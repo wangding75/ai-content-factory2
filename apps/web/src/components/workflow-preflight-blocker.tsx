@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { workflowPreflightRepairLink, type WorkflowPreflightRepairTarget } from "./workflow-preflight-repair-route";
 
-export type WorkflowPreflightBlockerReason = { message: string; repairAction?: string } & WorkflowPreflightRepairTarget;
+export type WorkflowPreflightBlockerReason = { code: string; message: string; repairAction?: string } & WorkflowPreflightRepairTarget;
 
 export function WorkflowPreflightBlocker({ reasons }: { reasons: WorkflowPreflightBlockerReason[] }) {
   if (!reasons.length) return null;
