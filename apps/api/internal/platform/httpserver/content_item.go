@@ -27,14 +27,16 @@ type contentItemApplication interface {
 	GetReview(context.Context, contentitem.GetReviewCommand) (contentitem.ReviewDetail, error)
 }
 
-func registerContentItemRoutes(mux *http.ServeMux, app contentItemApplication) {
+func registerContentItemRoutes(mux *http.ServeMux, app contentItemApplication, registerLegacyMock bool) {
 	mux.HandleFunc("POST /api/v1/chapter-plans/{chapterPlanId}/content", createContentItemHandler(app))
 	mux.HandleFunc("GET /api/v1/content-items/{contentItemId}", getContentItemHandler(app))
 	mux.HandleFunc("PUT /api/v1/content-items/{contentItemId}/draft", saveContentDraftHandler(app))
-	mux.HandleFunc("POST /api/v1/content-items/{contentItemId}/mock-generate", mockGenerateContentHandler(app))
-	mux.HandleFunc("POST /api/v1/content-items/{contentItemId}/reviews/mock", mockReviewContentHandler(app))
 	mux.HandleFunc("GET /api/v1/content-items/{contentItemId}/reviews", listReviewsHandler(app))
 	mux.HandleFunc("GET /api/v1/reviews/{reviewId}", getReviewHandler(app))
+	if registerLegacyMock {
+		mux.HandleFunc("POST /api/v1/content-items/{contentItemId}/mock-generate", mockGenerateContentHandler(app))
+		mux.HandleFunc("POST /api/v1/content-items/{contentItemId}/reviews/mock", mockReviewContentHandler(app))
+	}
 }
 
 type contentItemResponse struct {

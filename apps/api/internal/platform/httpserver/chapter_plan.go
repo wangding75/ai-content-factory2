@@ -95,17 +95,18 @@ type mockGenerateChapterPlansRequest struct {
 	GenerationNotes              json.RawMessage `json:"generation_notes"`
 }
 
-func registerChapterPlanRoutes(mux *http.ServeMux, service chapterPlanApplication) {
+func registerChapterPlanRoutes(mux *http.ServeMux, service chapterPlanApplication, registerLegacyMock bool) {
 	if runs, ok := service.(chapterPlanRunApplication); ok {
 		registerChapterPlanRunRoutes(mux, runs)
 	}
 	mux.HandleFunc("GET /api/v1/projects/{projectId}/chapter-plans", listChapterPlansHandler(service))
-	mux.HandleFunc("POST /api/v1/projects/{projectId}/chapter-plans/mock-generate", generateMockChapterPlansHandler(service))
 	mux.HandleFunc("GET /api/v1/chapter-plans/{chapterPlanId}", getChapterPlanHandler(service))
 	mux.HandleFunc("PATCH /api/v1/chapter-plans/{chapterPlanId}", updateChapterPlanHandler(service))
 	mux.HandleFunc("DELETE /api/v1/chapter-plans/{chapterPlanId}", deleteChapterPlanHandler(service))
 	mux.HandleFunc("POST /api/v1/projects/{projectId}/chapter-plans/confirm", confirmChapterPlansHandler(service))
-
+	if registerLegacyMock {
+		mux.HandleFunc("POST /api/v1/projects/{projectId}/chapter-plans/mock-generate", generateMockChapterPlansHandler(service))
+	}
 	mux.HandleFunc("GET /api/v1/projects/{projectId}/chapter-plan-candidate-batches", listCandidateBatchesHandler(service))
 	mux.HandleFunc("GET /api/v1/chapter-plan-candidate-batches/{batchId}", getCandidateBatchHandler(service))
 	mux.HandleFunc("GET /api/v1/chapter-plan-candidate-batches/{batchId}/candidates", listCandidatesHandler(service))

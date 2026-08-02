@@ -51,8 +51,6 @@ func main() {
 	}
 	contentRepository := contentitem.NewPostgresRepository(pool)
 	contentItems := contentitem.NewApplication(contentRepository, nil)
-	rewriteService := contentitem.NewMockRewriteService(contentRepository, contentitem.DeterministicMockRewriteProvider{}, contentitem.NewPgxRewriteTransactionRunner(pool))
-	iteration07 := contentitem.NewIteration07Application(rewriteService, contentitem.NewQueryService(contentRepository))
 	iteration08 := contentitem.NewGlobalLiteService(contentitem.NewQueryService(contentRepository))
 	globalConfigurations, err := globalconfig.NewService(pool, cfg.ConfigurationEncryptionKey)
 	if err != nil {
@@ -66,21 +64,22 @@ func main() {
 		globalConfigurations,
 	)
 	workflowRuns.SetWorkflowExecutor(workflowrun.NewN8NWorkflowExecutor(globalConfigurations.RuntimeHTTPClient()))
-	contentGeneration := contentitem.NewGenerationService(contentRepository, workflowbinding.NewPostgresRepository(pool), globalConfigurations, workflowRuns, hmacSecret)
+	runtimeBridge := workflowrun.NewRuntimeBridge(workflowRuns)
+	contentGeneration := contentitem.NewGenerationService(contentRepository, workflowbinding.NewPostgresRepository(pool), globalConfigurations, runtimeBridge, hmacSecret)
 	workflowRuns.SetContentSucceededConsumer(contentGeneration)
-	realReview := contentitem.NewRealReviewService(contentRepository, workflowbinding.NewPostgresRepository(pool), globalConfigurations, workflowRuns, hmacSecret)
+	realReview := contentitem.NewRealReviewService(contentRepository, workflowbinding.NewPostgresRepository(pool), globalConfigurations, runtimeBridge, hmacSecret)
 	contentItems.SetRealReviewService(realReview)
 	workflowRuns.SetReviewSucceededConsumer(realReview)
-	realRewrite := contentitem.NewRealRewriteService(contentRepository, workflowbinding.NewPostgresRepository(pool), globalConfigurations, workflowRuns, hmacSecret)
+	realRewrite := contentitem.NewRealRewriteService(contentRepository, workflowbinding.NewPostgresRepository(pool), globalConfigurations, runtimeBridge, hmacSecret)
 	workflowRuns.SetRewriteSucceededConsumer(realRewrite)
-	chapterPlans.ConfigureChapterPlanningRuntime(workflowbinding.NewPostgresRepository(pool), globalConfigurations, globalConfigurations, workflowRuns)
+	chapterPlans.ConfigureChapterPlanningRuntime(workflowbinding.NewPostgresRepository(pool), globalConfigurations, globalConfigurations, runtimeBridge)
 	workflowRuns.SetSucceededConsumer(chapterplan.NewRuntimeConsumer(chapterplan.NewResultIngestor(pool), chapterplan.NewConsumptionRepository(pool)))
 	workerContext, stopWorker := context.WithCancel(context.Background())
 	defer stopWorker()
 	go workflowRuns.RunWorker(workerContext, time.Second, func(workerErr error) {
 		log.Printf("workflow worker: %v", workerErr)
 	})
-	server := httpserver.New(cfg.APIAddress, projects, plannings, materials, projectMaterials, storylines, foreshadowings, chapterPlans, contentItems, iteration07, iteration08, contentGeneration, realReview, realRewrite, globalConfigurations, workflowbinding.NewCloseLoop(pool, projectRepository, globalConfigurations), workflowRuns)
+	server := httpserver.New(cfg.APIAddress, projects, plannings, materials, projectMaterials, storylines, foreshadowings, chapterPlans, contentItems, iteration08, contentGeneration, realReview, realRewrite, globalConfigurations, workflowbinding.NewCloseLoop(pool, projectRepository, globalConfigurations), workflowRuns)
 	log.Printf("api listening on %s", cfg.APIAddress)
 	if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 		log.Fatal(err)

@@ -35,6 +35,13 @@ type apiError struct {
 
 func New(address string, projects *project.Service, services ...any) *Server {
 	mux := http.NewServeMux()
+	realWorkflowStages := false
+	for _, service := range services {
+		switch service.(type) {
+		case *contentitem.GenerationService, *contentitem.RealReviewService, *contentitem.RealRewriteService:
+			realWorkflowStages = true
+		}
+	}
 	mux.HandleFunc("GET /healthz", healthHandler)
 	mux.HandleFunc("GET /readyz", readyHandler)
 	mux.HandleFunc("GET /api/v1/meta", metaHandler)
@@ -68,11 +75,11 @@ func New(address string, projects *project.Service, services ...any) *Server {
 			}
 		case chapterPlanApplication:
 			if value != nil {
-				registerChapterPlanRoutes(mux, value)
+				registerChapterPlanRoutes(mux, value, !realWorkflowStages)
 			}
 		case contentItemApplication:
 			if value != nil {
-				registerContentItemRoutes(mux, value)
+				registerContentItemRoutes(mux, value, !realWorkflowStages)
 			}
 		case *contentitem.Iteration07Application:
 			if value != nil {
@@ -83,11 +90,17 @@ func New(address string, projects *project.Service, services ...any) *Server {
 				registerIteration08Routes(mux, value)
 			}
 		case *contentitem.GenerationService:
-			if value != nil { registerContentGenerationRoutes(mux, value) }
+			if value != nil {
+				registerContentGenerationRoutes(mux, value)
+			}
 		case *contentitem.RealReviewService:
-			if value != nil { registerRealReviewRoutes(mux, value) }
+			if value != nil {
+				registerRealReviewRoutes(mux, value)
+			}
 		case *contentitem.RealRewriteService:
-			if value != nil { registerRealRewriteRoutes(mux, value) }
+			if value != nil {
+				registerRealRewriteRoutes(mux, value)
+			}
 		case *material.ProjectMaterialService:
 			if value != nil {
 				mux.HandleFunc("GET /api/v1/projects/{projectId}/materials", listProjectMaterialsHandler(value))
