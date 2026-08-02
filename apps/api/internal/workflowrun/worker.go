@@ -3,6 +3,7 @@ package workflowrun
 import (
 	"context"
 	"errors"
+	"strings"
 	"time"
 )
 
@@ -50,7 +51,7 @@ func (s *Service) RunWorker(ctx context.Context, interval time.Duration, onError
 				if validJSONObject(run.OutputPayload) {
 					continue
 				}
-				if run.ExternalExecutionID == nil {
+				if run.ExternalExecutionID == nil || strings.TrimSpace(*run.ExternalExecutionID) == "" {
 					continue
 				}
 				request, e := executionRequest(run)

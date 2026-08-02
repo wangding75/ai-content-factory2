@@ -182,7 +182,7 @@ func (r WorkflowRun) transition(next Status, at time.Time, output json.RawMessag
 
 func canTransition(from, to Status) bool {
 	return (from == StatusQueued && (to == StatusRunning || to == StatusCancelling)) ||
-		(from == StatusRunning && (to == StatusSucceeded || to == StatusFailed || to == StatusCancelling || to == StatusTimedOut)) ||
+		(from == StatusRunning && (to == StatusSucceeded || to == StatusFailed || to == StatusCancelling || to == StatusCancelled || to == StatusTimedOut)) ||
 		(from == StatusCancelling && to == StatusCancelled)
 }
 

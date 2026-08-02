@@ -488,6 +488,73 @@ func TestWorkerRecoversPersistedConsumptionWithoutExecutor(t *testing.T) {
 	}
 }
 
+func TestWorkerRecoversRunningExternalExecutionWithoutExecute(t *testing.T) {
+	for _, test := range []struct {
+		name       string
+		result     ExecutionResult
+		wantStatus Status
+	}{
+		{name: "still running", result: ExecutionResult{Status: ExecutionRunning}, wantStatus: StatusRunning},
+		{name: "succeeded", result: ExecutionResult{Status: ExecutionSucceeded, Output: json.RawMessage(`{"safe":true}`)}, wantStatus: StatusSucceeded},
+		{name: "failed", result: ExecutionResult{Status: ExecutionFailed, ErrorCode: "upstream_execution_failed", ErrorMessage: "workflow execution failed"}, wantStatus: StatusFailed},
+		{name: "cancelled", result: ExecutionResult{Status: ExecutionCancelled}, wantStatus: StatusCancelled},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			service, store, projectID := fixtureService(t)
+			now, externalID := service.now(), "external-recovery"
+			run := WorkflowRun{ID: uuid.New(), RunNumber: "WR-RECOVER-QUERY", ProjectID: projectID, Stage: "review", WorkflowConfigurationID: uuid.New(), TriggerSource: "manual", Status: StatusRunning, ConfigurationSnapshot: json.RawMessage(`{"workflowConnection":{"id":"` + uuid.NewString() + `"},"workflowConfiguration":{"defaultParameters":{}}}`), InputPayload: json.RawMessage(`{}`), ExternalExecutionID: &externalID, StartedAt: &now, CreatedAt: now, UpdatedAt: now, Version: 2}
+			store.runs[run.ID] = run
+			consumer := &transactionalConsumerSpy{}
+			service.SetReviewSucceededConsumer(consumer)
+			executor := &FakeWorkflowExecutor{QueryResult: test.result}
+			service.SetWorkflowExecutor(executor)
+			ctx, cancel := context.WithCancel(context.Background())
+			done := make(chan struct{})
+			go func() {
+				service.RunWorker(ctx, time.Hour, func(err error) { t.Errorf("worker error: %v", err) })
+				close(done)
+			}()
+			deadline := time.Now().Add(time.Second)
+			for store.runs[run.ID].Status != test.wantStatus && time.Now().Before(deadline) {
+				time.Sleep(time.Millisecond)
+			}
+			cancel()
+			<-done
+			updated := store.runs[run.ID]
+			if updated.Status != test.wantStatus || executor.QueryCalls < 1 || executor.ExecuteCalls != 0 {
+				t.Fatalf("updated=%+v query=%d execute=%d", updated, executor.QueryCalls, executor.ExecuteCalls)
+			}
+			if test.wantStatus == StatusRunning && updated.Version != run.Version {
+				t.Fatalf("running recovery changed version: %d", updated.Version)
+			}
+			if test.wantStatus == StatusSucceeded && consumer.consumptions != 1 {
+				t.Fatalf("consumptions=%d", consumer.consumptions)
+			}
+		})
+	}
+}
+
+func TestWorkerDoesNotQueryOrExecuteRunningRunWithoutExternalExecutionID(t *testing.T) {
+	service, store, projectID := fixtureService(t)
+	now := service.now()
+	run := WorkflowRun{ID: uuid.New(), RunNumber: "WR-NO-EXTERNAL-ID", ProjectID: projectID, Stage: "review", WorkflowConfigurationID: uuid.New(), TriggerSource: "manual", Status: StatusRunning, ConfigurationSnapshot: json.RawMessage(`{"workflowConnection":{"id":"` + uuid.NewString() + `"},"workflowConfiguration":{"defaultParameters":{}}}`), InputPayload: json.RawMessage(`{}`), StartedAt: &now, CreatedAt: now, UpdatedAt: now, Version: 2}
+	store.runs[run.ID] = run
+	executor := &FakeWorkflowExecutor{}
+	service.SetWorkflowExecutor(executor)
+	ctx, cancel := context.WithCancel(context.Background())
+	done := make(chan struct{})
+	go func() {
+		service.RunWorker(ctx, time.Hour, func(err error) { t.Errorf("worker error: %v", err) })
+		close(done)
+	}()
+	time.Sleep(10 * time.Millisecond)
+	cancel()
+	<-done
+	if executor.QueryCalls != 0 || executor.ExecuteCalls != 0 || store.runs[run.ID].Status != StatusRunning {
+		t.Fatalf("query=%d execute=%d run=%+v", executor.QueryCalls, executor.ExecuteCalls, store.runs[run.ID])
+	}
+}
+
 type succeededConsumerSpy struct {
 	calls int
 	stage string

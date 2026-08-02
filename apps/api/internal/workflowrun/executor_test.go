@@ -100,3 +100,61 @@ func TestN8NWorkflowExecutorRejectsUnsafeWebhookReference(t *testing.T) {
 		t.Fatalf("err=%v", err)
 	}
 }
+
+func TestN8NWorkflowExecutorQueryParsesTerminalAndRunningResponses(t *testing.T) {
+	for _, test := range []struct {
+		name       string
+		body       string
+		wantStatus ExecutionStatus
+		wantOutput string
+	}{
+		{name: "running", body: `{"status":"running"}`, wantStatus: ExecutionRunning},
+		{name: "waiting", body: `{"status":"waiting"}`, wantStatus: ExecutionRunning},
+		{name: "success data", body: `{"status":"success","data":{"result":"ok"}}`, wantStatus: ExecutionSucceeded, wantOutput: `{"result":"ok"}`},
+		{name: "success output", body: `{"status":"succeeded","output":{"result":"ok"}}`, wantStatus: ExecutionSucceeded, wantOutput: `{"result":"ok"}`},
+		{name: "failed", body: `{"status":"error","message":"token=secret"}`, wantStatus: ExecutionFailed},
+		{name: "cancelled", body: `{"status":"canceled"}`, wantStatus: ExecutionCancelled},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				if r.Method != http.MethodGet || r.URL.Path != "/api/v1/executions/execution-42" {
+					t.Fatalf("request=%s %s", r.Method, r.URL.Path)
+				}
+				_, _ = w.Write([]byte(test.body))
+			}))
+			defer server.Close()
+			snapshot := json.RawMessage(`{"workflowConnection":{"type":"n8n","baseUrl":"` + server.URL + `","timeoutSeconds":5}}`)
+			result, err := NewN8NWorkflowExecutor(server.Client()).Query(context.Background(), ExecutionRequest{ConfigurationSnapshot: snapshot, ExternalExecutionID: "execution-42"})
+			if err != nil || result.Status != test.wantStatus || result.ExternalExecutionID != "execution-42" || (test.wantOutput != "" && string(result.Output) != test.wantOutput) {
+				t.Fatalf("result=%+v err=%v", result, err)
+			}
+			if result.Status == ExecutionFailed && (result.ErrorCode != "upstream_execution_failed" || result.ErrorMessage != "workflow execution failed") {
+				t.Fatalf("unsafe failure=%+v", result)
+			}
+		})
+	}
+}
+
+func TestN8NWorkflowExecutorQueryRejectsInvalidResponses(t *testing.T) {
+	for _, body := range []string{
+		`{"status":"unknown"}`,
+		`{"status":"success","data":[]}`,
+		`not json`,
+	} {
+		t.Run(body, func(t *testing.T) {
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { _, _ = w.Write([]byte(body)) }))
+			defer server.Close()
+			snapshot := json.RawMessage(`{"workflowConnection":{"type":"n8n","baseUrl":"` + server.URL + `","timeoutSeconds":5}}`)
+			if _, err := NewN8NWorkflowExecutor(server.Client()).Query(context.Background(), ExecutionRequest{ConfigurationSnapshot: snapshot, ExternalExecutionID: "execution-42"}); !errors.Is(err, ErrInvalidExecutionResult) {
+				t.Fatalf("err=%v", err)
+			}
+		})
+	}
+}
+
+func TestN8NWorkflowExecutorQueryRejectsMissingExternalExecutionID(t *testing.T) {
+	snapshot := json.RawMessage(`{"workflowConnection":{"type":"n8n","baseUrl":"https://example.test","timeoutSeconds":5}}`)
+	if _, err := NewN8NWorkflowExecutor(nil).Query(context.Background(), ExecutionRequest{ConfigurationSnapshot: snapshot}); !errors.Is(err, ErrExecutorUnavailable) {
+		t.Fatalf("err=%v", err)
+	}
+}

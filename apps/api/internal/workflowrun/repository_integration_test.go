@@ -610,6 +610,58 @@ func TestRepositoryAtomicRunAndEventWrites(t *testing.T) {
 	}
 }
 
+func TestRepositoryRestartRecoveryExternalIDAndTerminalClaimAreDurable(t *testing.T) {
+	db, ctx := openDB(t)
+	repo := NewPostgresRepository(db)
+	projectID, workflowID := fixture(t, ctx, db)
+	run := newRun(t, projectID, workflowID, "WR-RESTART-RECOVERY")
+	running, err := run.Start(time.Now().UTC())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err = repo.Create(ctx, running); err != nil {
+		t.Fatal(err)
+	}
+	persisted, err := repo.SaveExternalExecutionID(ctx, running, "n8n-restart-execution")
+	if err != nil {
+		t.Fatal(err)
+	}
+	// Simulate a new API/worker process reading only the durable database fact.
+	recovered, err := NewPostgresRepository(db).GetByID(ctx, persisted.ID)
+	if err != nil || recovered.ExternalExecutionID == nil || *recovered.ExternalExecutionID != "n8n-restart-execution" || recovered.Status != StatusRunning {
+		t.Fatalf("recovered=%+v err=%v", recovered, err)
+	}
+
+	start := make(chan struct{})
+	results := make([]error, 2)
+	var group sync.WaitGroup
+	for i := range results {
+		group.Add(1)
+		go func(index int) {
+			defer group.Done()
+			<-start
+			_, _, results[index] = NewPostgresRepository(db).SaveOutputForConsumption(context.Background(), recovered, json.RawMessage(`{"safe":true}`), Event{ID: uuid.New(), RunID: recovered.ID, EventType: "output_validated", Status: StatusRunning, Payload: json.RawMessage(`{}`), CreatedAt: time.Now().UTC()})
+		}(i)
+	}
+	close(start)
+	group.Wait()
+	successes := 0
+	for _, result := range results {
+		if result == nil {
+			successes++
+		} else if !errors.Is(result, ErrVersionConflict) {
+			t.Fatalf("unexpected recovery claim error: %v", result)
+		}
+	}
+	if successes != 1 {
+		t.Fatalf("successful terminal claims=%d errors=%v", successes, results)
+	}
+	var events int
+	if err = db.QueryRow(ctx, "SELECT count(*) FROM workflow_run_events WHERE run_id=$1 AND event_type='output_validated'", recovered.ID).Scan(&events); err != nil || events != 1 {
+		t.Fatalf("output events=%d err=%v", events, err)
+	}
+}
+
 func TestRepositoryIdempotencyResultFailureRollsBackRunEventAndRecord(t *testing.T) {
 	db, ctx := openDB(t)
 	repo := NewPostgresRepository(db)

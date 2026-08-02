@@ -115,17 +115,58 @@ func (e *N8NWorkflowExecutor) executionControl(ctx context.Context, request Exec
 		return ExecutionResult{}, err
 	}
 	defer response.Body.Close()
-	_, _ = io.Copy(io.Discard, io.LimitReader(response.Body, 64*1024))
 	if response.StatusCode == http.StatusNotFound || response.StatusCode == http.StatusConflict {
+		_, _ = io.Copy(io.Discard, io.LimitReader(response.Body, 64*1024))
 		return ExecutionResult{Status: ExecutionCancelled, ExternalExecutionID: request.ExternalExecutionID}, nil
 	}
 	if response.StatusCode < 200 || response.StatusCode > 299 {
+		_, _ = io.Copy(io.Discard, io.LimitReader(response.Body, 64*1024))
 		return ExecutionResult{Status: ExecutionFailed, ErrorCode: "upstream_http_error", ErrorMessage: "workflow execution failed"}, nil
 	}
 	if method == http.MethodPost {
+		_, _ = io.Copy(io.Discard, io.LimitReader(response.Body, 64*1024))
 		return ExecutionResult{Status: ExecutionCancelled, ExternalExecutionID: request.ExternalExecutionID}, nil
 	}
-	return ExecutionResult{Status: ExecutionRunning, ExternalExecutionID: request.ExternalExecutionID}, nil
+	body, err := io.ReadAll(io.LimitReader(response.Body, maxWorkflowResponseBytes+1))
+	if err != nil || len(body) > maxWorkflowResponseBytes {
+		return ExecutionResult{}, ErrInvalidExecutionResult
+	}
+	return parseN8NQueryResponse(body, request.ExternalExecutionID)
+}
+
+// parseN8NQueryResponse accepts only the small n8n execution representation
+// required for restart recovery. It intentionally does not try to normalize
+// arbitrary n8n API versions or preserve an upstream response body.
+func parseN8NQueryResponse(body json.RawMessage, externalExecutionID string) (ExecutionResult, error) {
+	var response struct {
+		Status string          `json:"status"`
+		Data   json.RawMessage `json:"data"`
+		Output json.RawMessage `json:"output"`
+	}
+	if !validJSONObject(body) || json.Unmarshal(body, &response) != nil {
+		return ExecutionResult{}, ErrInvalidExecutionResult
+	}
+	result := ExecutionResult{ExternalExecutionID: externalExecutionID}
+	switch strings.ToLower(strings.TrimSpace(response.Status)) {
+	case "new", "waiting", "running":
+		result.Status = ExecutionRunning
+	case "success", "succeeded":
+		output := response.Output
+		if len(output) == 0 {
+			output = response.Data
+		}
+		if !validJSONObject(output) {
+			return ExecutionResult{}, ErrInvalidExecutionResult
+		}
+		result.Status, result.Output = ExecutionSucceeded, RedactJSON(output)
+	case "error", "failed", "crashed":
+		result.Status, result.ErrorCode, result.ErrorMessage = ExecutionFailed, "upstream_execution_failed", "workflow execution failed"
+	case "canceled", "cancelled":
+		result.Status = ExecutionCancelled
+	default:
+		return ExecutionResult{}, ErrInvalidExecutionResult
+	}
+	return result, nil
 }
 
 func n8nExecutionEndpoint(rawSnapshot json.RawMessage) (string, time.Duration, error) {
