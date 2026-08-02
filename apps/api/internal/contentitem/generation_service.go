@@ -41,7 +41,13 @@ type GenerationPreflightRequest struct {
 	AdditionalInstructions   *string
 	ActorID                  string
 }
-type GenerationCheck struct{ Code, Status, Message string }
+type GenerationCheck struct {
+	Code string
+	Status string
+	Message string
+	RepairAction string
+	RepairTarget *globalconfig.RepairTarget
+}
 type GenerationWorkflowSummary struct {
 	ID                                                uuid.UUID
 	Name, InputContractVersion, OutputContractVersion string
@@ -326,8 +332,14 @@ func (s *GenerationService) Preflight(ctx context.Context, itemID uuid.UUID, req
 		return result, err
 	}
 	result.ContextSnapshot, result.ContextSummary = contextSnapshot, contextSummary
+	target := func() *globalconfig.RepairTarget {
+		stage := "content_generation"
+		return &globalconfig.RepairTarget{ProjectID: &detail.Item.ProjectID, Stage: &stage}
+	}
 	checks := func(code, status, message string) {
-		result.Checks = append(result.Checks, GenerationCheck{code, status, message})
+		check := GenerationCheck{Code: code, Status: status, Message: message}
+		if status == "blocked" { check.RepairTarget = target() }
+		result.Checks = append(result.Checks, check)
 	}
 	var chapterStatus string
 	if err = s.repo.db.QueryRow(ctx, "SELECT status FROM chapter_plans WHERE id=$1 AND project_id=$2", detail.Item.ChapterPlanID, detail.Item.ProjectID).Scan(&chapterStatus); errors.Is(err, pgx.ErrNoRows) || chapterStatus != "confirmed" {

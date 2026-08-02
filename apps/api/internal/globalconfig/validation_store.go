@@ -158,7 +158,7 @@ func (s *Service) SetResourceEnabled(ctx context.Context, resource ValidationRes
 				return nil, auditErr
 			}
 		}
-		executable, reasons := EvaluateEligibility(EligibilityFact{Kind: string(resource), Status: ValidationStatus(status), Enabled: enabled, Version: version, VerifiedVersion: verifiedVersion, ModelAvailable: true, StrategyComplete: true, ReferenceExists: true, ReferenceActive: true, StageMatches: true, InputCompatible: true, OutputCompatible: true})
+		executable, reasons := EvaluateEligibility(EligibilityFact{Kind: string(resource), ResourceID: &id, Status: ValidationStatus(status), Enabled: enabled, Version: version, VerifiedVersion: verifiedVersion, ModelAvailable: true, StrategyComplete: true, ReferenceExists: true, ReferenceActive: true, StageMatches: true, InputCompatible: true, OutputCompatible: true})
 		return json.Marshal(EnableCommandResult{ID: id, Enabled: enabled, ValidationStatus: ValidationStatus(status), Version: version, Executable: executable, IneligibilityReasons: reasons})
 	})
 	if err != nil {
@@ -254,7 +254,7 @@ func (s *Service) RunValidationCommand(ctx context.Context, resource ValidationR
 	if err = tx.QueryRow(ctx, "SELECT enabled,last_verified_version FROM "+table+" WHERE id=$1", id).Scan(&enabled, &verifiedVersion); err != nil {
 		return ValidationCommandResult{}, err
 	}
-	executable, reasons := EvaluateEligibility(EligibilityFact{Kind: string(resource), Status: status, Enabled: enabled, Version: expectedVersion, VerifiedVersion: verifiedVersion, ModelAvailable: true, StrategyComplete: true, ReferenceExists: true, ReferenceActive: true, StageMatches: true, InputCompatible: true, OutputCompatible: true})
+	executable, reasons := EvaluateEligibility(EligibilityFact{Kind: string(resource), ResourceID: &id, Status: status, Enabled: enabled, Version: expectedVersion, VerifiedVersion: verifiedVersion, ModelAvailable: true, StrategyComplete: true, ReferenceExists: true, ReferenceActive: true, StageMatches: true, InputCompatible: true, OutputCompatible: true})
 	result := ValidationCommandResult{ID: id, ValidationStatus: status, VerifiedVersion: verifiedVersion, CheckedAt: checkedAt, Executable: executable, IneligibilityReasons: reasons}
 	if !outcome.Success {
 		result.SafeError = &ValidationSafeError{Code: code, Message: message, Retryable: code == "upstream_timeout" || code == "upstream_unavailable"}

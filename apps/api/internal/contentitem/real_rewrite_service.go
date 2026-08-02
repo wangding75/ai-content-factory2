@@ -50,6 +50,8 @@ type RewriteCheck struct {
 	Code    string `json:"code"`
 	Status  string `json:"status"`
 	Message string `json:"message"`
+	RepairAction string `json:"repairAction,omitempty"`
+	RepairTarget *globalconfig.RepairTarget `json:"repairTarget,omitempty"`
 }
 
 type RewriteSourceVersionSummary struct {
@@ -610,8 +612,14 @@ func (s *RealRewriteService) Preflight(ctx context.Context, reportID uuid.UUID, 
 		SelectedIssueSummary: RewriteSelectedIssueSummary{Total: len(issues), Items: issues},
 		RewriteOptions: request.RewriteOptions, OptionalInstructions: request.OptionalInstructions,
 	}
+	target := func() *globalconfig.RepairTarget {
+		stage := "rewrite"
+		return &globalconfig.RepairTarget{ProjectID: &report.ProjectID, Stage: &stage}
+	}
 	add := func(code, status, message string) {
-		result.Checks = append(result.Checks, RewriteCheck{Code: code, Status: status, Message: message})
+		check := RewriteCheck{Code: code, Status: status, Message: message}
+		if status == "blocked" { check.RepairTarget = target() }
+		result.Checks = append(result.Checks, check)
 	}
 	add("review_report_ready", "passed", "审核报告可用于重写")
 	add("source_version_fixed", "passed", "来源正文版本已固定")

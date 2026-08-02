@@ -73,12 +73,26 @@ func (s *Service) ListStages(ctx context.Context, projectID uuid.UUID) ([]StageR
 			read.WorkflowConfigurationSummary = &summary
 			read.Executable = summary.Executable
 			if !summary.Executable {
-				read.IneligibilityReasons = append([]NonExecutableReason(nil), summary.IneligibilityReasons...)
+				read.IneligibilityReasons = bindingRepairReasons(summary.IneligibilityReasons, projectID, stage)
 			}
 		}
 		out = append(out, read)
 	}
 	return out, nil
+}
+
+func bindingRepairReasons(reasons []NonExecutableReason, projectID uuid.UUID, stage WorkflowBindingStage) []NonExecutableReason {
+	out := make([]NonExecutableReason, len(reasons))
+	stageValue := stage.String()
+	for index, reason := range reasons {
+		out[index] = reason
+		if reason.RepairAction == "" { continue }
+		var target RepairTarget
+		if reason.RepairTarget != nil { target = *reason.RepairTarget }
+		target.ProjectID, target.Stage = &projectID, &stageValue
+		out[index].RepairTarget = &target
+	}
+	return out
 }
 
 func (s *Service) loadSummary(ctx context.Context, workflowID uuid.UUID) (ReadWorkflowConfiguration, error) {

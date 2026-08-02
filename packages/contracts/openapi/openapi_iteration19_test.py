@@ -129,6 +129,17 @@ def test_list_filters_and_shared_safe_schemas():
     }
 
 
+def test_repair_targets_are_shared_and_safe():
+    target = SCHEMAS["RepairTarget"]
+    assert target["additionalProperties"] is False
+    assert set(target["properties"]) == {"providerId", "connectionId", "workflowConfigurationId", "projectId", "stage"}
+    for name in ("providerId", "connectionId", "workflowConfigurationId", "projectId"):
+        assert target["properties"][name]["format"] == "uuid"
+    assert target["properties"]["stage"]["$ref"].endswith("/ApplicableStage")
+    for name in ("ValidationCheck", "NonExecutableReason", "ContentGenerationCheck", "ContentReviewCheck", "ContentRewriteCheck", "ChapterPlanningBlockerItem"):
+        assert SCHEMAS[name]["properties"]["repairTarget"]["$ref"].endswith("/RepairTarget")
+
+
 if __name__ == "__main__":
     for name, value in sorted(globals().copy().items()):
         if name.startswith("test_") and callable(value):

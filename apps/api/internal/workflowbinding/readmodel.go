@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/local/ai-content-factory/apps/api/internal/globalconfig"
 )
 
 // ReadWorkflowConfiguration is the read-only subset of the Iteration 12 global
@@ -58,7 +59,11 @@ type NonExecutableReason struct {
 	Code         string `json:"code"`
 	Message      string `json:"message"`
 	RepairAction string `json:"repairAction,omitempty"`
+	RepairTarget *RepairTarget `json:"repairTarget,omitempty"`
 }
+
+// RepairTarget is shared with global execution eligibility responses.
+type RepairTarget = globalconfig.RepairTarget
 
 // UnbindResult is the internal DELETE result.
 type UnbindResult struct {

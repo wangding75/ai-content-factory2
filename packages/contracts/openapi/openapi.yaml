@@ -2214,6 +2214,15 @@ components:
     ApplicableStage:
       type: string
       enum: [chapter_planning, content_generation, review, rewrite]
+    RepairTarget:
+      type: object
+      additionalProperties: false
+      properties:
+        providerId: {type: string, format: uuid}
+        connectionId: {type: string, format: uuid}
+        workflowConfigurationId: {type: string, format: uuid}
+        projectId: {type: string, format: uuid}
+        stage: {$ref: "#/components/schemas/ApplicableStage"}
     WorkflowConfiguration:
       type: object
       additionalProperties: false
@@ -4205,6 +4214,8 @@ components:
         code: {$ref: "#/components/schemas/ContentReviewCheckCode"}
         status: {$ref: "#/components/schemas/ContentReviewCheckStatus"}
         message: {type: string, minLength: 1, maxLength: 300}
+        repairAction: {type: string}
+        repairTarget: {$ref: "#/components/schemas/RepairTarget"}
     ContentReviewSourceVersionSummary:
       type: object
       additionalProperties: false
@@ -4594,6 +4605,8 @@ components:
         code: {$ref: "#/components/schemas/ContentRewriteCheckCode"}
         status: {$ref: "#/components/schemas/ContentRewriteCheckStatus"}
         message: {type: string, minLength: 1, maxLength: 300}
+        repairAction: {type: string}
+        repairTarget: {$ref: "#/components/schemas/RepairTarget"}
     RewriteIssueSnapshot:
       type: object
       additionalProperties: false
@@ -4835,6 +4848,8 @@ components:
         code: {$ref: "#/components/schemas/ContentGenerationCheckCode"}
         status: {$ref: "#/components/schemas/ContentGenerationCheckStatus"}
         message: {type: string, minLength: 1, maxLength: 300}
+        repairAction: {type: string}
+        repairTarget: {$ref: "#/components/schemas/RepairTarget"}
     ContentGenerationContextSummary:
       type: object
       additionalProperties: false
@@ -4982,7 +4997,7 @@ components:
     ChapterPlanningItemDetails: {type: object, additionalProperties: false, properties: {action: {type: string, maxLength: 160}, field: {type: string, maxLength: 80}, resourceId: {type: string, format: uuid}, safeSummary: {type: string, maxLength: 500}}}
     ChapterPlanningPreflightItem: {type: object, additionalProperties: false, required: [code, message, severity, details], properties: {code: {type: string, minLength: 1, maxLength: 80}, message: {type: string, minLength: 1, maxLength: 300}, severity: {$ref: "#/components/schemas/ChapterPlanningItemSeverity"}, details: {$ref: "#/components/schemas/ChapterPlanningItemDetails"}}}
     ChapterPlanningBlockerCode: {type: string, enum: [project_binding_missing, execution_integration_unavailable, active_run_conflict, storyline_reference_invalid, generation_input_invalid]}
-    ChapterPlanningBlockerItem: {type: object, additionalProperties: false, required: [code, message, safeReason, retryAction], properties: {code: {$ref: "#/components/schemas/ChapterPlanningBlockerCode"}, message: {type: string, minLength: 1, maxLength: 300}, safeReason: {type: string, minLength: 1, maxLength: 500}, retryAction: {type: string, minLength: 1, maxLength: 160}}}
+    ChapterPlanningBlockerItem: {type: object, additionalProperties: false, required: [code, message, safeReason, retryAction], properties: {code: {$ref: "#/components/schemas/ChapterPlanningBlockerCode"}, message: {type: string, minLength: 1, maxLength: 300}, safeReason: {type: string, minLength: 1, maxLength: 500}, retryAction: {type: string, minLength: 1, maxLength: 160}, repairTarget: {$ref: "#/components/schemas/RepairTarget"}}}
     ChapterPlanningNormalizedTargetSummary: {type: object, additionalProperties: false, required: [startChapterNo, endChapterNo, requestedChapterCount], properties: {startChapterNo: {type: integer, minimum: 1, maximum: 100}, endChapterNo: {type: integer, minimum: 1, maximum: 100}, requestedChapterCount: {type: integer, minimum: 1, maximum: 100}}, description: "Normalized for full, append and range. endChapterNo - startChapterNo + 1 equals requestedChapterCount."}
     ChapterPlanningInputSummary: {type: object, additionalProperties: false, required: [generationMode, target, storylineSelection, contextOptions], properties: {generationMode: {$ref: "#/components/schemas/ChapterPlanningGenerationMode"}, target: {$ref: "#/components/schemas/ChapterPlanningNormalizedTargetSummary"}, storylineSelection: {$ref: "#/components/schemas/ChapterPlanningStorylineSelection"}, contextOptions: {$ref: "#/components/schemas/ChapterPlanningContextOptions"}}}
     ChapterPlanningExecutionConfigurationSummary: {type: object, additionalProperties: false, required: [stage, workflowBindingId, workflowBindingVersion], properties: {stage: {type: string, const: chapter_planning}, workflowBindingId: {type: string, format: uuid}, workflowBindingVersion: {type: integer, minimum: 1}}}
@@ -5110,6 +5125,7 @@ components:
         status: {$ref: "#/components/schemas/ContentReviewCheckStatus"}
         message: {type: string}
         repairAction: {type: string}
+        repairTarget: {$ref: "#/components/schemas/RepairTarget"}
     NonExecutableReason:
       type: object
       additionalProperties: false
@@ -5118,6 +5134,7 @@ components:
         code: {type: string}
         message: {type: string}
         repairAction: {type: string}
+        repairTarget: {$ref: "#/components/schemas/RepairTarget"}
     VerifyLlmProviderRequest:
       type: object
       additionalProperties: false

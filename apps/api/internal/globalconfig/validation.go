@@ -4,6 +4,8 @@ import (
 	"errors"
 	"sort"
 	"strings"
+
+	"github.com/google/uuid"
 )
 
 type ValidationStatus string
@@ -55,10 +57,24 @@ type IneligibilityReason struct {
 	Code         string `json:"code"`
 	Message      string `json:"message"`
 	RepairAction string `json:"repairAction,omitempty"`
+	RepairTarget *RepairTarget `json:"repairTarget,omitempty"`
+}
+
+// RepairTarget contains only the safe, routable resource identifiers needed
+// to repair an execution-eligibility failure.
+type RepairTarget struct {
+	ProviderID              *uuid.UUID `json:"providerId,omitempty"`
+	ConnectionID            *uuid.UUID `json:"connectionId,omitempty"`
+	WorkflowConfigurationID *uuid.UUID `json:"workflowConfigurationId,omitempty"`
+	ProjectID               *uuid.UUID `json:"projectId,omitempty"`
+	Stage                   *string    `json:"stage,omitempty"`
 }
 
 type EligibilityFact struct {
 	Kind             string
+	ResourceID       *uuid.UUID
+	ConnectionID     *uuid.UUID
+	WorkflowConfigurationID *uuid.UUID
 	Status           ValidationStatus
 	Enabled          bool
 	Version          int
@@ -81,44 +97,44 @@ func EvaluateEligibility(facts ...EligibilityFact) (bool, []IneligibilityReason)
 		}
 		switch fact.Status {
 		case ValidationUnverified:
-			reasons = append(reasons, reason(prefix+"_unverified", "This integration has not been verified.", prefix+":verify"))
+			reasons = append(reasons, reason(prefix+"_unverified", "This integration has not been verified.", prefix+":verify", fact))
 		case ValidationVerifying:
-			reasons = append(reasons, reason(prefix+"_verification_in_progress", "This integration is being verified.", prefix+":view"))
+			reasons = append(reasons, reason(prefix+"_verification_in_progress", "This integration is being verified.", prefix+":view", fact))
 		case ValidationFailed:
-			reasons = append(reasons, reason(prefix+"_verification_failed", "This integration did not pass verification.", prefix+":verify"))
+			reasons = append(reasons, reason(prefix+"_verification_failed", "This integration did not pass verification.", prefix+":verify", fact))
 		case ValidationStale:
-			reasons = append(reasons, reason(prefix+"_stale", "This integration changed after verification.", prefix+":verify"))
+			reasons = append(reasons, reason(prefix+"_stale", "This integration changed after verification.", prefix+":verify", fact))
 		case ValidationVerified:
 			if fact.VerifiedVersion == nil || *fact.VerifiedVersion != fact.Version {
-				reasons = append(reasons, reason(prefix+"_stale", "The current integration version has not been verified.", prefix+":verify"))
+				reasons = append(reasons, reason(prefix+"_stale", "The current integration version has not been verified.", prefix+":verify", fact))
 			}
 		default:
-			reasons = append(reasons, reason(prefix+"_unverified", "This integration has not been verified.", prefix+":verify"))
+			reasons = append(reasons, reason(prefix+"_unverified", "This integration has not been verified.", prefix+":verify", fact))
 		}
 		if !fact.Enabled {
-			reasons = append(reasons, reason(prefix+"_disabled", "This integration is disabled.", prefix+":enable"))
+			reasons = append(reasons, reason(prefix+"_disabled", "This integration is disabled.", prefix+":enable", fact))
 		}
 		if prefix == "provider" && !fact.ModelAvailable {
-			reasons = append(reasons, reason("model_unavailable", "The selected model is unavailable.", "provider:models"))
+			reasons = append(reasons, reason("model_unavailable", "The selected model is unavailable.", "provider:models", fact))
 		}
 		if prefix == "workflow_configuration" {
 			if !fact.StrategyComplete {
-				reasons = append(reasons, reason("llm_strategy_incomplete", "The LLM strategy is incomplete.", "workflow_configuration:edit"))
+				reasons = append(reasons, reason("llm_strategy_incomplete", "The LLM strategy is incomplete.", "workflow_configuration:edit", fact))
 			}
 			if !fact.ReferenceExists {
-				reasons = append(reasons, reason("workflow_reference_not_found", "The workflow reference was not found.", "workflow_configuration:edit"))
+				reasons = append(reasons, reason("workflow_reference_not_found", "The workflow reference was not found.", "workflow_configuration:edit", fact))
 			}
 			if !fact.ReferenceActive {
-				reasons = append(reasons, reason("workflow_not_active", "The referenced workflow is not active.", "workflow_configuration:edit"))
+				reasons = append(reasons, reason("workflow_not_active", "The referenced workflow is not active.", "workflow_configuration:edit", fact))
 			}
 			if !fact.StageMatches {
-				reasons = append(reasons, reason("workflow_stage_mismatch", "The workflow does not support this stage.", "workflow_configuration:edit"))
+				reasons = append(reasons, reason("workflow_stage_mismatch", "The workflow does not support this stage.", "workflow_configuration:edit", fact))
 			}
 			if !fact.InputCompatible {
-				reasons = append(reasons, reason("input_contract_incompatible", "The workflow input contract is incompatible.", "workflow_configuration:edit"))
+				reasons = append(reasons, reason("input_contract_incompatible", "The workflow input contract is incompatible.", "workflow_configuration:edit", fact))
 			}
 			if !fact.OutputCompatible {
-				reasons = append(reasons, reason("output_contract_incompatible", "The workflow output contract is incompatible.", "workflow_configuration:edit"))
+				reasons = append(reasons, reason("output_contract_incompatible", "The workflow output contract is incompatible.", "workflow_configuration:edit", fact))
 			}
 		}
 	}
@@ -131,8 +147,17 @@ func EvaluateEligibility(facts ...EligibilityFact) (bool, []IneligibilityReason)
 	return len(reasons) == 0, reasons
 }
 
-func reason(code, message, repair string) IneligibilityReason {
-	return IneligibilityReason{Code: code, Message: message, RepairAction: repair}
+func reason(code, message, repair string, fact EligibilityFact) IneligibilityReason {
+	target := &RepairTarget{ConnectionID: fact.ConnectionID, WorkflowConfigurationID: fact.WorkflowConfigurationID}
+	switch fact.Kind {
+	case "provider": target.ProviderID = fact.ResourceID
+	case "connection": target.ConnectionID = fact.ResourceID
+	case "workflow_configuration": target.WorkflowConfigurationID = fact.ResourceID
+	}
+	if target.ProviderID == nil && target.ConnectionID == nil && target.WorkflowConfigurationID == nil {
+		target = nil
+	}
+	return IneligibilityReason{Code: code, Message: message, RepairAction: repair, RepairTarget: target}
 }
 func reasonPriority(code string) int {
 	switch {

@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/local/ai-content-factory/apps/api/internal/globalconfig"
 	"github.com/local/ai-content-factory/apps/api/internal/storyline"
 	"github.com/local/ai-content-factory/apps/api/internal/workflowbinding"
 	"github.com/local/ai-content-factory/apps/api/internal/workflowrun"
@@ -28,12 +29,16 @@ type PreflightRequest struct {
 	AdditionalInstructions *string                 `json:"additionalInstructions"`
 	ActorID                string                  `json:"-"`
 }
-type PreflightBlocker struct{ Code, Message, RetryAction, SafeReason string }
+type PreflightBlocker struct {
+	Code, Message, RetryAction, SafeReason string
+	RepairTarget *globalconfig.RepairTarget
+}
 type PreflightResult struct {
 	Passed         bool
 	Token          string
 	ExpiresAt      time.Time
 	InputDigest    string
+	ProjectID      uuid.UUID
 	Target         BatchTarget
 	BindingID      uuid.UUID
 	BindingVersion int
@@ -233,7 +238,10 @@ func blockedPreflight(result PreflightResult, code, message, retryAction, safeRe
 	result.Passed = false
 	result.Token = ""
 	result.ExpiresAt = time.Time{}
-	result.Blockers = append(result.Blockers, PreflightBlocker{Code: code, Message: message, RetryAction: retryAction, SafeReason: safeReason})
+	stage := "chapter_planning"
+	var target *globalconfig.RepairTarget
+	if result.ProjectID != uuid.Nil { target = &globalconfig.RepairTarget{ProjectID: &result.ProjectID, Stage: &stage} }
+	result.Blockers = append(result.Blockers, PreflightBlocker{Code: code, Message: message, RetryAction: retryAction, SafeReason: safeReason, RepairTarget: target})
 	return result
 }
 
@@ -259,14 +267,14 @@ func (s *Service) Preflight(ctx context.Context, projectID uuid.UUID, request Pr
 		if err != nil {
 			return PreflightResult{}, err
 		}
-		return blockedPreflight(PreflightResult{InputDigest: digest}, "generation_input_invalid", "generation input is invalid", "review_generation_input", "All generation options must be provided."), nil
+		return blockedPreflight(PreflightResult{InputDigest: digest, ProjectID: projectID}, "generation_input_invalid", "generation input is invalid", "review_generation_input", "All generation options must be provided."), nil
 	}
 	if request.StorylineSelectionMode != "auto_balanced" && request.StorylineSelectionMode != "specified" || request.StorylineSelectionMode == "specified" && len(request.StorylineIDs) == 0 {
 		digest, err := invalidPreflightInputDigest(projectID, request)
 		if err != nil {
 			return PreflightResult{}, err
 		}
-		return blockedPreflight(PreflightResult{InputDigest: digest}, "storyline_reference_invalid", "storyline selection is invalid", "review_storyline_selection", "Choose valid project storylines."), nil
+		return blockedPreflight(PreflightResult{InputDigest: digest, ProjectID: projectID}, "storyline_reference_invalid", "storyline selection is invalid", "review_storyline_selection", "Choose valid project storylines."), nil
 	}
 	plans, err := s.plans.ListByProject(ctx, projectID)
 	if err != nil {
@@ -284,13 +292,13 @@ func (s *Service) Preflight(ctx context.Context, projectID uuid.UUID, request Pr
 		if digestErr != nil {
 			return PreflightResult{}, digestErr
 		}
-		return blockedPreflight(PreflightResult{InputDigest: digest}, "generation_input_invalid", "generation target is invalid", "review_generation_target", "The requested chapter range is not available."), nil
+		return blockedPreflight(PreflightResult{InputDigest: digest, ProjectID: projectID}, "generation_input_invalid", "generation target is invalid", "review_generation_target", "The requested chapter range is not available."), nil
 	}
 	snapshot, err := s.snapshot(ctx, projectID, request, target)
 	if err != nil {
 		return PreflightResult{}, err
 	}
-	result := PreflightResult{Target: target}
+	result := PreflightResult{Target: target, ProjectID: projectID}
 	digest, err := digestGenerationContext(snapshot)
 	if err != nil {
 		return result, err

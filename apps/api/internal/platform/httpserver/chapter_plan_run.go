@@ -83,7 +83,9 @@ func chapterPlanPreflightHandler(app chapterPlanRunApplication) http.HandlerFunc
 		}
 		blockers := make([]any, 0, len(result.Blockers))
 		for _, blocker := range result.Blockers {
-			blockers = append(blockers, map[string]any{"code": blocker.Code, "message": blocker.Message, "safeReason": blocker.SafeReason, "retryAction": blocker.RetryAction})
+			item := map[string]any{"code": blocker.Code, "message": blocker.Message, "safeReason": blocker.SafeReason, "retryAction": blocker.RetryAction}
+			if blocker.RepairTarget != nil { item["repairTarget"] = blocker.RepairTarget }
+			blockers = append(blockers, item)
 		}
 		var inputSummary any
 		if completePreflightInputSummary(body, result) {

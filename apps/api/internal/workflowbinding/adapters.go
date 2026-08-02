@@ -53,7 +53,7 @@ func (w workflowReader) GetWorkflow(ctx context.Context, id uuid.UUID) (ReadWork
 		IneligibilityReasons: func() []NonExecutableReason {
 			reasons := make([]NonExecutableReason, len(wf.IneligibilityReasons))
 			for index, reason := range wf.IneligibilityReasons {
-				reasons[index] = NonExecutableReason{Code: reason.Code, Message: reason.Message, RepairAction: reason.RepairAction}
+				reasons[index] = NonExecutableReason{Code: reason.Code, Message: reason.Message, RepairAction: reason.RepairAction, RepairTarget: reason.RepairTarget}
 			}
 			return reasons
 		}(),

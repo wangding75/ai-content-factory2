@@ -930,12 +930,12 @@ func (s *Service) hydrateWorkflowEligibility(ctx context.Context, workflow *Work
 				if availabilityErr != nil {
 					return availabilityErr
 				}
-				providerFact = EligibilityFact{Kind: "provider", Status: ValidationStatus(provider.ValidationStatus), Enabled: provider.Enabled, Version: provider.Version, VerifiedVersion: provider.VerifiedVersion, ModelAvailable: available}
+				providerFact = EligibilityFact{Kind: "provider", ResourceID: &provider.ID, Status: ValidationStatus(provider.ValidationStatus), Enabled: provider.Enabled, Version: provider.Version, VerifiedVersion: provider.VerifiedVersion, ModelAvailable: available}
 			}
 		}
 	}
-	workflowFact := EligibilityFact{Kind: "workflow_configuration", Status: ValidationStatus(workflow.ValidationStatus), Enabled: workflow.Enabled, Version: workflow.Version, VerifiedVersion: workflow.VerifiedVersion, StrategyComplete: strategyComplete, ReferenceExists: true, ReferenceActive: true, StageMatches: true, InputCompatible: validContractVersion(workflow.InputContractVersion), OutputCompatible: validContractVersion(workflow.OutputContractVersion)}
-	connectionFact := EligibilityFact{Kind: "connection", Status: ValidationStatus(connection.ValidationStatus), Enabled: connection.Enabled, Version: connection.Version, VerifiedVersion: connection.VerifiedVersion}
+	workflowFact := EligibilityFact{Kind: "workflow_configuration", ResourceID: &workflow.ID, ConnectionID: &connection.ID, Status: ValidationStatus(workflow.ValidationStatus), Enabled: workflow.Enabled, Version: workflow.Version, VerifiedVersion: workflow.VerifiedVersion, StrategyComplete: strategyComplete, ReferenceExists: true, ReferenceActive: true, StageMatches: true, InputCompatible: validContractVersion(workflow.InputContractVersion), OutputCompatible: validContractVersion(workflow.OutputContractVersion)}
+	connectionFact := EligibilityFact{Kind: "connection", ResourceID: &connection.ID, WorkflowConfigurationID: &workflow.ID, Status: ValidationStatus(connection.ValidationStatus), Enabled: connection.Enabled, Version: connection.Version, VerifiedVersion: connection.VerifiedVersion}
 	workflow.Executable, workflow.IneligibilityReasons = EvaluateEligibility(workflowFact, connectionFact, providerFact)
 	return nil
 }
@@ -1620,7 +1620,7 @@ func finalizeCommon(x *Common, kind string) []IneligibilityReason {
 	x.ValidationStatus = x.IntegrationStatus
 	var reasons []IneligibilityReason
 	x.Executable, reasons = EvaluateEligibility(EligibilityFact{
-		Kind: kind, Status: ValidationStatus(x.IntegrationStatus), Enabled: x.Enabled,
+		Kind: kind, ResourceID: &x.ID, Status: ValidationStatus(x.IntegrationStatus), Enabled: x.Enabled,
 		Version: x.Version, VerifiedVersion: x.VerifiedVersion, ModelAvailable: true,
 		StrategyComplete: true, ReferenceExists: true, ReferenceActive: true,
 		StageMatches: true, InputCompatible: true, OutputCompatible: true,

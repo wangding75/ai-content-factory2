@@ -53,9 +53,11 @@ type ReviewPreflightRequest struct {
 }
 
 type ReviewCheck struct {
-	Code    string `json:"code"`
-	Status  string `json:"status"`
-	Message string `json:"message"`
+	Code         string                     `json:"code"`
+	Status       string                     `json:"status"`
+	Message      string                     `json:"message"`
+	RepairAction string                     `json:"repairAction,omitempty"`
+	RepairTarget *globalconfig.RepairTarget `json:"repairTarget,omitempty"`
 }
 
 type ReviewSourceVersionSummary struct {
@@ -538,8 +540,16 @@ func (s *RealReviewService) Preflight(ctx context.Context, versionID uuid.UUID, 
 		Status: "blocked", Checks: []ReviewCheck{}, SourceContentVersionSummary: reviewSourceSummary(source),
 		ReviewDimensions: append([]string(nil), frozenReviewDimensions...),
 	}
+	target := func() *globalconfig.RepairTarget {
+		stage := "review"
+		return &globalconfig.RepairTarget{ProjectID: &source.Item.ProjectID, Stage: &stage}
+	}
 	add := func(code, status, message string) {
-		result.Checks = append(result.Checks, ReviewCheck{Code: code, Status: status, Message: message})
+		check := ReviewCheck{Code: code, Status: status, Message: message}
+		if status == "blocked" {
+			check.RepairTarget = target()
+		}
+		result.Checks = append(result.Checks, check)
 	}
 	if strings.TrimSpace(source.Version.Title) == "" || strings.TrimSpace(source.Version.Content) == "" {
 		add("source_version_saved", "blocked", "来源正文尚不可审核")

@@ -4,6 +4,8 @@ import (
 	"errors"
 	"reflect"
 	"testing"
+
+	"github.com/google/uuid"
 )
 
 func TestValidationTransitionTable(t *testing.T) {
@@ -41,10 +43,11 @@ func ValidationUnverifiedEventForTest() ValidationEvent { return ValidationEvent
 
 func TestEvaluateEligibilityStableOrderingAndRecovery(t *testing.T) {
 	version := 3
+	workflowID, connectionID, providerID := uuid.New(), uuid.New(), uuid.New()
 	facts := []EligibilityFact{
-		{Kind: "workflow_configuration", Status: ValidationStale, Enabled: true, Version: 3, VerifiedVersion: &version, StrategyComplete: false, ReferenceExists: true, ReferenceActive: true, StageMatches: true, InputCompatible: true, OutputCompatible: true},
-		{Kind: "connection", Status: ValidationVerified, Enabled: false, Version: 3, VerifiedVersion: &version, ModelAvailable: true, StrategyComplete: true, ReferenceExists: true, ReferenceActive: true, StageMatches: true, InputCompatible: true, OutputCompatible: true},
-		{Kind: "provider", Status: ValidationVerified, Enabled: true, Version: 3, VerifiedVersion: &version, ModelAvailable: false, StrategyComplete: true, ReferenceExists: true, ReferenceActive: true, StageMatches: true, InputCompatible: true, OutputCompatible: true},
+		{Kind: "workflow_configuration", ResourceID: &workflowID, ConnectionID: &connectionID, Status: ValidationStale, Enabled: true, Version: 3, VerifiedVersion: &version, StrategyComplete: false, ReferenceExists: true, ReferenceActive: true, StageMatches: true, InputCompatible: true, OutputCompatible: true},
+		{Kind: "connection", ResourceID: &connectionID, WorkflowConfigurationID: &workflowID, Status: ValidationVerified, Enabled: false, Version: 3, VerifiedVersion: &version, ModelAvailable: true, StrategyComplete: true, ReferenceExists: true, ReferenceActive: true, StageMatches: true, InputCompatible: true, OutputCompatible: true},
+		{Kind: "provider", ResourceID: &providerID, Status: ValidationVerified, Enabled: true, Version: 3, VerifiedVersion: &version, ModelAvailable: false, StrategyComplete: true, ReferenceExists: true, ReferenceActive: true, StageMatches: true, InputCompatible: true, OutputCompatible: true},
 	}
 	executable, first := EvaluateEligibility(facts...)
 	_, second := EvaluateEligibility(facts...)
@@ -58,6 +61,14 @@ func TestEvaluateEligibilityStableOrderingAndRecovery(t *testing.T) {
 		if first[index].RepairAction == "" {
 			t.Fatalf("missing repair action: %+v", first[index])
 		}
+		if first[index].RepairTarget == nil {
+			t.Fatalf("missing repair target: %+v", first[index])
+		}
+	}
+	if first[0].RepairTarget.WorkflowConfigurationID == nil || *first[0].RepairTarget.WorkflowConfigurationID != workflowID ||
+		first[1].RepairTarget.ConnectionID == nil || *first[1].RepairTarget.ConnectionID != connectionID ||
+		first[3].RepairTarget.ProviderID == nil || *first[3].RepairTarget.ProviderID != providerID {
+		t.Fatalf("unexpected repair targets: %+v", first)
 	}
 	if !reflect.DeepEqual(gotCodes, wantCodes) {
 		t.Fatalf("codes=%v want=%v", gotCodes, wantCodes)
