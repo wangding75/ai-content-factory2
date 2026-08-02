@@ -440,7 +440,11 @@ func TestRepositorySummaryCountsQueuedAndRunningOnly(t *testing.T) {
 	if _, err = repo.Create(ctx, failed); err != nil {
 		t.Fatal(err)
 	}
-	cancelled, err := newRun(t, p, w, "WR-SUMMARY-CANCELLED").Cancel(time.Now().UTC())
+	cancelling, err := newRun(t, p, w, "WR-SUMMARY-CANCELLED").RequestCancellation(time.Now().UTC())
+	if err != nil {
+		t.Fatal(err)
+	}
+	cancelled, err := cancelling.Cancel(time.Now().UTC())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -597,7 +601,7 @@ func TestWorkflowRunPersistentIdempotencyReplayConcurrencyAndRestart(t *testing.
 		t.Fatal(err)
 	}
 	cancelReplay, err := newService().CancelRun(ctx, RunCommand{RunID: created.ID, ExpectedVersion: created.Version, IdempotencyKey: "workflow-run-cancel"})
-	if err != nil || cancelReplay.Status != StatusCancelled {
+	if err != nil || cancelReplay.Status != StatusCancelling {
 		t.Fatalf("cancel replay=%+v err=%v", cancelReplay, err)
 	}
 	if _, err = newService().CancelRun(ctx, RunCommand{RunID: created.ID, ExpectedVersion: created.Version + 1, IdempotencyKey: "workflow-run-cancel"}); !errors.Is(err, ErrIdempotencyConflict) {
@@ -628,6 +632,21 @@ func TestWorkflowRunPersistentIdempotencyReplayConcurrencyAndRestart(t *testing.
 		t.Fatalf("runs=%d events=%d", runs, events)
 	}
 	if _, err = first.CancelRun(ctx, RunCommand{RunID: results[0].ID, ExpectedVersion: results[0].Version, IdempotencyKey: "workflow-run-concurrent-cancel"}); err != nil {
+		t.Fatal(err)
+	}
+	// The HTTP command intentionally leaves cancellation asynchronous; resolve the
+	// fixture through the worker-owned terminal transition before testing retry.
+	repo := NewPostgresRepository(db)
+	current, err := repo.GetByID(ctx, created.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	next, err := current.Cancel(time.Now().UTC())
+	if err != nil {
+		t.Fatal(err)
+	}
+	cancelReplay, _, err = repo.UpdateStatusWithEvent(ctx, current, next, Event{ID: uuid.New(), RunID: current.ID, EventType: "cancelled", Status: StatusCancelled, Payload: json.RawMessage(`{}`), CreatedAt: next.UpdatedAt})
+	if err != nil {
 		t.Fatal(err)
 	}
 	retried, err := first.RetryRun(ctx, RetryCommand{RunID: created.ID, ExpectedVersion: cancelReplay.Version, Mode: "original_configuration", InputOverride: json.RawMessage(`{"override":true}`), IdempotencyKey: "workflow-run-retry"})

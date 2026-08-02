@@ -49,7 +49,11 @@ func TestWorkflowRunFailureAndCancellation(t *testing.T) {
 	if failed.Status != StatusFailed || failed.ErrorCode == nil || failed.ErrorDetails == nil {
 		t.Fatalf("failed=%+v", failed)
 	}
-	cancelled, err := r.Cancel(now)
+	cancelling, err := r.RequestCancellation(now)
+	if err != nil {
+		t.Fatal(err)
+	}
+	cancelled, err := cancelling.Cancel(now)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -75,25 +79,37 @@ func TestWorkflowRunRedactsSensitivePayloadFields(t *testing.T) {
 	if string(run.ConfigurationSnapshot) != `{"authorization":"[REDACTED]","nested":{"api_key":"[REDACTED]"}}` {
 		t.Fatalf("snapshot=%s", run.ConfigurationSnapshot)
 	}
-	if string(run.InputPayload) != `{"content":"safe","idempotencyKey":"[REDACTED]"}` { t.Fatalf("input=%s", run.InputPayload) }
+	if string(run.InputPayload) != `{"content":"safe","idempotencyKey":"[REDACTED]"}` {
+		t.Fatalf("input=%s", run.InputPayload)
+	}
 }
 func TestWorkflowRunTriggerSourcesAreFrozen(t *testing.T) {
 	for _, source := range []string{"manual", "retry", "system", "api"} {
-		if _, err := New(uuid.New(), uuid.New(), uuid.New(), "WR-"+source, "review", source, json.RawMessage(`{}`), json.RawMessage(`{}`)); err != nil { t.Fatalf("%s: %v", source, err) }
+		if _, err := New(uuid.New(), uuid.New(), uuid.New(), "WR-"+source, "review", source, json.RawMessage(`{}`), json.RawMessage(`{}`)); err != nil {
+			t.Fatalf("%s: %v", source, err)
+		}
 	}
 	for _, source := range []string{"project", "workflow_center", "other"} {
-		if _, err := New(uuid.New(), uuid.New(), uuid.New(), "WR-"+source, "review", source, json.RawMessage(`{}`), json.RawMessage(`{}`)); !errors.Is(err, ErrValidation) { t.Fatalf("%s: %v", source, err) }
+		if _, err := New(uuid.New(), uuid.New(), uuid.New(), "WR-"+source, "review", source, json.RawMessage(`{}`), json.RawMessage(`{}`)); !errors.Is(err, ErrValidation) {
+			t.Fatalf("%s: %v", source, err)
+		}
 	}
 }
 
 func TestWorkflowRunSubjectIsOptionalButMustBePaired(t *testing.T) {
 	run := testRun(t)
-	if _, err := NewFromDB(run); err != nil { t.Fatalf("historical run=%v", err) }
+	if _, err := NewFromDB(run); err != nil {
+		t.Fatalf("historical run=%v", err)
+	}
 	subjectType, subjectID := "content_item", uuid.New()
 	run.SubjectType, run.SubjectID = &subjectType, &subjectID
-	if _, err := NewFromDB(run); err != nil { t.Fatalf("content subject=%v", err) }
+	if _, err := NewFromDB(run); err != nil {
+		t.Fatalf("content subject=%v", err)
+	}
 	run.SubjectID = nil
-	if _, err := NewFromDB(run); !errors.Is(err, ErrValidation) { t.Fatalf("unpaired subject=%v", err) }
+	if _, err := NewFromDB(run); !errors.Is(err, ErrValidation) {
+		t.Fatalf("unpaired subject=%v", err)
+	}
 }
 
 func TestContentGenerationResultEventTypesAreFrozen(t *testing.T) {

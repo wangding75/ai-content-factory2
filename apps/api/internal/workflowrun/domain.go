@@ -156,7 +156,7 @@ func (r WorkflowRun) transition(next Status, at time.Time, output json.RawMessag
 		code, message := strings.TrimSpace(failure.Code), strings.TrimSpace(failure.Message)
 		r.ErrorCode, r.ErrorMessage, r.ErrorDetails, r.FinishedAt = &code, &message, RedactJSON(failure.Details), &at
 	case StatusCancelled:
-		r.CancelledAt = &at
+		r.CancelledAt, r.FinishedAt = &at, &at
 	case StatusCancelling:
 		r.CancellationRequestedAt = &at
 	}
@@ -164,8 +164,8 @@ func (r WorkflowRun) transition(next Status, at time.Time, output json.RawMessag
 }
 
 func canTransition(from, to Status) bool {
-	return (from == StatusQueued && (to == StatusRunning || to == StatusCancelling || to == StatusCancelled || to == StatusTimedOut)) ||
-		(from == StatusRunning && (to == StatusSucceeded || to == StatusFailed || to == StatusCancelling || to == StatusCancelled || to == StatusTimedOut)) ||
+	return (from == StatusQueued && (to == StatusRunning || to == StatusCancelling)) ||
+		(from == StatusRunning && (to == StatusSucceeded || to == StatusFailed || to == StatusCancelling || to == StatusTimedOut)) ||
 		(from == StatusCancelling && to == StatusCancelled)
 }
 

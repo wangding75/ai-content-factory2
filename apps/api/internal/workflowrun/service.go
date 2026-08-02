@@ -53,6 +53,7 @@ type Store interface {
 	ListEvents(context.Context, uuid.UUID) ([]Event, error)
 	AddEvent(context.Context, Event) (Event, error)
 	UpdateStatusWithEvent(context.Context, WorkflowRun, WorkflowRun, Event) (WorkflowRun, Event, error)
+	SaveExternalExecutionID(context.Context, WorkflowRun, string) (WorkflowRun, error)
 	QuerySummary(context.Context, uuid.UUID, int) (Summary, error)
 	Count(context.Context, ListFilter) (int, error)
 	ExecuteIdempotent(context.Context, string, string, string, func(Store) (WorkflowRun, error)) (WorkflowRun, error)
@@ -200,10 +201,19 @@ func (s *Service) ExecuteRun(ctx context.Context, runID uuid.UUID) (WorkflowRun,
 	}
 	result, err := s.executor.Execute(ctx, request)
 	if err != nil {
+		if errors.Is(err, ErrExecutionTimeout) {
+			return s.timeoutExecution(ctx, run)
+		}
 		return s.failExecution(ctx, run, executionErrorCode(err), "workflow execution failed")
 	}
 	if !validExecutionResult(result) {
 		return s.failExecution(ctx, run, "invalid_response", "workflow execution returned an invalid result")
+	}
+	if strings.TrimSpace(result.ExternalExecutionID) != "" {
+		run, err = s.store.SaveExternalExecutionID(ctx, run, result.ExternalExecutionID)
+		if err != nil {
+			return WorkflowRun{}, mapStoreError(err)
+		}
 	}
 	return s.applyExecutionResult(ctx, run, result)
 }
@@ -269,6 +279,15 @@ func (s *Service) failExecution(ctx context.Context, run WorkflowRun, code, mess
 	return updated, mapStoreError(err)
 }
 
+func (s *Service) timeoutExecution(ctx context.Context, run WorkflowRun) (WorkflowRun, error) {
+	next, err := run.Timeout(s.now(), Failure{Code: "upstream_timeout", Message: "workflow execution timed out"})
+	if err != nil {
+		return WorkflowRun{}, err
+	}
+	updated, _, err := s.store.UpdateStatusWithEvent(ctx, run, next, Event{ID: s.newID(), RunID: run.ID, EventType: "timed_out", Status: StatusTimedOut, Payload: json.RawMessage(`{}`), CreatedAt: next.UpdatedAt})
+	return updated, mapStoreError(err)
+}
+
 func executionRequest(run WorkflowRun) (ExecutionRequest, error) {
 	var snapshot struct {
 		WorkflowConnection struct {
@@ -281,7 +300,11 @@ func executionRequest(run WorkflowRun) (ExecutionRequest, error) {
 	if json.Unmarshal(run.ConfigurationSnapshot, &snapshot) != nil || snapshot.WorkflowConnection.ID == uuid.Nil {
 		return ExecutionRequest{}, ErrValidation
 	}
-	return ExecutionRequest{RunID: run.ID, ProjectID: run.ProjectID, Stage: run.Stage, WorkflowConfigurationID: run.WorkflowConfigurationID, WorkflowConnectionID: snapshot.WorkflowConnection.ID, ConfigurationSnapshot: RedactJSON(run.ConfigurationSnapshot), Input: RedactJSON(run.InputPayload), Parameters: RedactJSON(snapshot.WorkflowConfiguration.DefaultParameters), Metadata: map[string]string{}, CorrelationID: run.ID.String()}, nil
+	request := ExecutionRequest{RunID: run.ID, ProjectID: run.ProjectID, Stage: run.Stage, WorkflowConfigurationID: run.WorkflowConfigurationID, WorkflowConnectionID: snapshot.WorkflowConnection.ID, ConfigurationSnapshot: RedactJSON(run.ConfigurationSnapshot), Input: RedactJSON(run.InputPayload), Parameters: RedactJSON(snapshot.WorkflowConfiguration.DefaultParameters), Metadata: map[string]string{}, CorrelationID: run.ID.String()}
+	if run.ExternalExecutionID != nil {
+		request.ExternalExecutionID = *run.ExternalExecutionID
+	}
+	return request, nil
 }
 func executionEventPayload(result ExecutionResult) json.RawMessage {
 	b, _ := json.Marshal(map[string]any{"externalExecutionId": result.ExternalExecutionID, "metadata": result.Metadata})
@@ -585,14 +608,17 @@ func (s *Service) CancelRun(ctx context.Context, command RunCommand) (WorkflowRu
 		if current.Version != command.ExpectedVersion {
 			return WorkflowRun{}, ErrVersionConflict
 		}
-		next, err := current.Cancel(s.now())
+		if current.Status == StatusCancelling || current.Status == StatusCancelled {
+			return current, nil
+		}
+		next, err := current.RequestCancellation(s.now())
 		if errors.Is(err, ErrInvalidTransition) {
 			return WorkflowRun{}, ErrNotCancellable
 		}
 		if err != nil {
 			return WorkflowRun{}, err
 		}
-		updated, _, err := store.UpdateStatusWithEvent(ctx, current, next, Event{ID: s.newID(), RunID: next.ID, EventType: "cancelled", Status: StatusCancelled, Payload: json.RawMessage(`{}`), CreatedAt: next.UpdatedAt})
+		updated, _, err := store.UpdateStatusWithEvent(ctx, current, next, Event{ID: s.newID(), RunID: next.ID, EventType: "cancel_requested", Status: StatusCancelling, Payload: json.RawMessage(`{}`), CreatedAt: next.UpdatedAt})
 		return updated, mapStoreError(err)
 	})
 }

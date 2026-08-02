@@ -52,7 +52,7 @@ func TestExecutionFailureIsDomainTransition(t *testing.T) {
 	store.runs[id] = WorkflowRun{ID: id, RunNumber: "WR-FAIL", ProjectID: projectID, Stage: "review", WorkflowConfigurationID: uuid.New(), TriggerSource: "manual", Status: StatusQueued, ConfigurationSnapshot: json.RawMessage(`{"workflowConnection":{"id":"` + connectionID.String() + `"}}`), InputPayload: json.RawMessage(`{}`), CreatedAt: now, UpdatedAt: now, Version: 1}
 	s.SetWorkflowExecutor(&FakeWorkflowExecutor{ExecuteError: ErrExecutionTimeout})
 	updated, err := s.ExecuteRun(context.Background(), id)
-	if err != nil || updated.Status != StatusFailed || updated.ErrorCode == nil || *updated.ErrorCode != "timeout" {
+	if err != nil || updated.Status != StatusTimedOut || updated.ErrorCode == nil || *updated.ErrorCode != "upstream_timeout" || updated.TimedOutAt == nil {
 		t.Fatalf("run=%+v err=%v", updated, err)
 	}
 }

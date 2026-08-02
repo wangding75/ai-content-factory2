@@ -120,6 +120,23 @@ func (s *serviceStore) UpdateStatusWithEvent(_ context.Context, current, next Wo
 	s.events[next.ID] = append(s.events[next.ID], event)
 	return next, event, nil
 }
+func (s *serviceStore) SaveExternalExecutionID(_ context.Context, current WorkflowRun, id string) (WorkflowRun, error) {
+	r := s.runs[current.ID]
+	if r.Version != current.Version {
+		return WorkflowRun{}, ErrVersionConflict
+	}
+	if r.ExternalExecutionID != nil {
+		if *r.ExternalExecutionID == id {
+			return r, nil
+		}
+		return WorkflowRun{}, ErrVersionConflict
+	}
+	r.ExternalExecutionID = &id
+	r.Version++
+	r.UpdatedAt = time.Now().UTC()
+	s.runs[r.ID] = r
+	return r, nil
+}
 func (s *serviceStore) QuerySummary(_ context.Context, _ uuid.UUID, _ int) (Summary, error) {
 	return Summary{}, nil
 }
@@ -283,7 +300,7 @@ func TestRetryAndCancelVersionRules(t *testing.T) {
 	q := WorkflowRun{ID: uuid.New(), RunNumber: "WR-2", ProjectID: projectID, Stage: "review", WorkflowConfigurationID: uuid.New(), TriggerSource: "manual", Status: StatusQueued, ConfigurationSnapshot: json.RawMessage(`{}`), InputPayload: json.RawMessage(`{}`), CreatedAt: now, UpdatedAt: now, Version: 1}
 	store.runs[q.ID] = q
 	cancelled, e := s.CancelRun(context.Background(), RunCommand{RunID: q.ID, ExpectedVersion: 1, IdempotencyKey: "x"})
-	if e != nil || cancelled.Status != StatusCancelled || len(store.events[q.ID]) != 1 {
+	if e != nil || cancelled.Status != StatusCancelling || len(store.events[q.ID]) != 1 {
 		t.Fatalf("run=%+v err=%v", cancelled, e)
 	}
 }

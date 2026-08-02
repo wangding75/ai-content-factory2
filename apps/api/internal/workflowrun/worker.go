@@ -2,61 +2,54 @@ package workflowrun
 
 import (
 	"context"
+	"errors"
 	"time"
 )
 
+// RunWorker uses versioned transitions as its claim: every worker may observe a
+// candidate, but only one can advance its version and write the terminal event.
 func (s *Service) RunWorker(ctx context.Context, interval time.Duration, onError func(error)) {
 	if interval <= 0 {
 		interval = time.Second
 	}
+	report := func(err error) {
+		if err != nil && onError != nil && ctx.Err() == nil {
+			onError(err)
+		}
+	}
 	process := func() {
-		runs, err := s.store.List(ctx, ListFilter{Status: string(StatusQueued), Limit: 100})
-		if err != nil {
-			if onError != nil && ctx.Err() == nil {
-				onError(err)
-			}
-			return
-		}
-		for _, run := range runs {
-			if _, err = s.ExecuteRun(ctx, run.ID); err != nil && onError != nil && ctx.Err() == nil {
-				onError(err)
-			}
-		}
-		cancelling, err := s.store.List(ctx, ListFilter{Status: string(StatusCancelling), Limit: 100})
-		if err != nil {
-			if onError != nil && ctx.Err() == nil {
-				onError(err)
-			}
-			return
-		}
-		for _, run := range cancelling {
-			if run.Status != StatusCancelling {
+		for _, status := range []Status{StatusCancelling, StatusQueued, StatusRunning} {
+			runs, err := s.store.List(ctx, ListFilter{Status: string(status), Limit: 100})
+			if err != nil {
+				report(err)
 				continue
 			}
-			request, requestErr := executionRequest(run)
-			if requestErr != nil {
-				if onError != nil {
-					onError(requestErr)
+			for _, run := range runs {
+				if run.Status == StatusCancelling {
+					report(s.completeCancellation(ctx, run))
+					continue
 				}
-				continue
-			}
-			_, cancelErr := s.executor.Cancel(ctx, request)
-			if cancelErr != nil {
-				if onError != nil {
-					onError(cancelErr)
+				if run.Status == StatusQueued {
+					_, err = s.ExecuteRun(ctx, run.ID)
+					report(err)
+					continue
 				}
-				continue
-			}
-			next, transitionErr := run.Cancel(s.now())
-			if transitionErr != nil {
-				if onError != nil {
-					onError(transitionErr)
+				// A running execution is recovered only when it has a durable external id.
+				if run.ExternalExecutionID == nil {
+					continue
 				}
-				continue
-			}
-			_, _, updateErr := s.store.UpdateStatusWithEvent(ctx, run, next, Event{ID: s.newID(), RunID: run.ID, EventType: "cancelled", Status: StatusCancelled, Payload: []byte(`{}`), CreatedAt: next.UpdatedAt})
-			if updateErr != nil && onError != nil {
-				onError(updateErr)
+				request, e := executionRequest(run)
+				if e != nil {
+					report(e)
+					continue
+				}
+				result, e := s.executor.Query(ctx, request)
+				if errors.Is(e, ErrExecutionTimeout) {
+					_, e = s.timeoutExecution(ctx, run)
+				} else if e == nil {
+					_, e = s.applyExecutionResult(ctx, run, result)
+				}
+				report(e)
 			}
 		}
 	}
@@ -71,4 +64,29 @@ func (s *Service) RunWorker(ctx context.Context, interval time.Duration, onError
 			process()
 		}
 	}
+}
+
+func (s *Service) completeCancellation(ctx context.Context, run WorkflowRun) error {
+	if run.StartedAt != nil {
+		if run.ExternalExecutionID == nil {
+			return ErrExecutorUnavailable
+		}
+		request, err := executionRequest(run)
+		if err != nil {
+			return err
+		}
+		result, err := s.executor.Cancel(ctx, request)
+		if err != nil {
+			return err
+		}
+		if result.Status != ExecutionCancelled {
+			return ErrExecutorUnavailable
+		}
+	}
+	next, err := run.Cancel(s.now())
+	if err != nil {
+		return err
+	}
+	_, _, err = s.store.UpdateStatusWithEvent(ctx, run, next, Event{ID: s.newID(), RunID: run.ID, EventType: "cancelled", Status: StatusCancelled, Payload: executionEventPayload(ExecutionResult{}), CreatedAt: next.UpdatedAt})
+	return mapStoreError(err)
 }

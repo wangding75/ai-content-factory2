@@ -384,6 +384,28 @@ func (r *Repository) UpdateStatus(ctx context.Context, value WorkflowRun) (Workf
 	}
 	return updated, nil
 }
+
+func (r *Repository) SaveExternalExecutionID(ctx context.Context, current WorkflowRun, externalID string) (WorkflowRun, error) {
+	externalID = strings.TrimSpace(externalID)
+	if externalID == "" {
+		return current, nil
+	}
+	if current.ExternalExecutionID != nil {
+		if *current.ExternalExecutionID == externalID {
+			return current, nil
+		}
+		return WorkflowRun{}, ErrVersionConflict
+	}
+	now := time.Now().UTC()
+	updated, err := scanRun(r.db.QueryRow(ctx, "UPDATE workflow_run_records SET external_execution_id=$1,updated_at=$2,version=version+1 WHERE id=$3 AND version=$4 AND external_execution_id IS NULL RETURNING "+runColumns, externalID, now, current.ID, current.Version))
+	if errors.Is(err, pgx.ErrNoRows) {
+		return WorkflowRun{}, ErrVersionConflict
+	}
+	if err != nil {
+		return WorkflowRun{}, fmt.Errorf("save external execution id: %w", err)
+	}
+	return updated, nil
+}
 func (r *Repository) AddEvent(ctx context.Context, value Event) (Event, error) {
 	if value.ID == uuid.Nil || value.RunID == uuid.Nil || value.EventType == "" || !validJSONObject(value.Payload) {
 		return Event{}, ErrValidation

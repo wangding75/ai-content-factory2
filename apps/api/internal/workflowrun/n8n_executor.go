@@ -77,8 +77,55 @@ func (e *N8NWorkflowExecutor) Execute(ctx context.Context, request ExecutionRequ
 	}, nil
 }
 
-func (e *N8NWorkflowExecutor) Cancel(context.Context, ExecutionRequest) (ExecutionResult, error) {
-	return ExecutionResult{}, ErrExecutorUnavailable
+func (e *N8NWorkflowExecutor) Cancel(ctx context.Context, request ExecutionRequest) (ExecutionResult, error) {
+	return e.executionControl(ctx, request, http.MethodPost)
+}
+
+func (e *N8NWorkflowExecutor) Query(ctx context.Context, request ExecutionRequest) (ExecutionResult, error) {
+	return e.executionControl(ctx, request, http.MethodGet)
+}
+
+func (e *N8NWorkflowExecutor) executionControl(ctx context.Context, request ExecutionRequest, method string) (ExecutionResult, error) {
+	if strings.TrimSpace(request.ExternalExecutionID) == "" {
+		return ExecutionResult{}, ErrExecutorUnavailable
+	}
+	base, timeout, err := n8nBaseEndpoint(request.ConfigurationSnapshot)
+	if err != nil {
+		return ExecutionResult{}, err
+	}
+	endpoint, err := url.Parse(base)
+	if err != nil {
+		return ExecutionResult{}, ErrExecutorUnavailable
+	}
+	endpoint.Path = path.Join(endpoint.Path, "api", "v1", "executions", request.ExternalExecutionID)
+	if method == http.MethodPost {
+		endpoint.Path = path.Join(endpoint.Path, "stop")
+	}
+	requestCtx, cancel := context.WithTimeout(ctx, timeout)
+	defer cancel()
+	httpRequest, err := http.NewRequestWithContext(requestCtx, method, endpoint.String(), nil)
+	if err != nil {
+		return ExecutionResult{}, err
+	}
+	response, err := e.client.Do(httpRequest)
+	if err != nil {
+		if errors.Is(requestCtx.Err(), context.DeadlineExceeded) {
+			return ExecutionResult{}, ErrExecutionTimeout
+		}
+		return ExecutionResult{}, err
+	}
+	defer response.Body.Close()
+	_, _ = io.Copy(io.Discard, io.LimitReader(response.Body, 64*1024))
+	if response.StatusCode == http.StatusNotFound || response.StatusCode == http.StatusConflict {
+		return ExecutionResult{Status: ExecutionCancelled, ExternalExecutionID: request.ExternalExecutionID}, nil
+	}
+	if response.StatusCode < 200 || response.StatusCode > 299 {
+		return ExecutionResult{Status: ExecutionFailed, ErrorCode: "upstream_http_error", ErrorMessage: "workflow execution failed"}, nil
+	}
+	if method == http.MethodPost {
+		return ExecutionResult{Status: ExecutionCancelled, ExternalExecutionID: request.ExternalExecutionID}, nil
+	}
+	return ExecutionResult{Status: ExecutionRunning, ExternalExecutionID: request.ExternalExecutionID}, nil
 }
 
 func n8nExecutionEndpoint(rawSnapshot json.RawMessage) (string, time.Duration, error) {
@@ -113,6 +160,25 @@ func n8nExecutionEndpoint(rawSnapshot json.RawMessage) (string, time.Duration, e
 		return "", 0, ErrExecutorUnavailable
 	}
 	endpoint.Path = path.Join(endpoint.Path, "webhook", reference)
+	endpoint.RawQuery, endpoint.Fragment = "", ""
+	return endpoint.String(), time.Duration(snapshot.WorkflowConnection.TimeoutSeconds) * time.Second, nil
+}
+
+func n8nBaseEndpoint(rawSnapshot json.RawMessage) (string, time.Duration, error) {
+	var snapshot struct {
+		WorkflowConnection struct {
+			Type           string `json:"type"`
+			BaseURL        string `json:"baseUrl"`
+			TimeoutSeconds int    `json:"timeoutSeconds"`
+		} `json:"workflowConnection"`
+	}
+	if json.Unmarshal(rawSnapshot, &snapshot) != nil || snapshot.WorkflowConnection.Type != "n8n" || snapshot.WorkflowConnection.TimeoutSeconds < 1 || snapshot.WorkflowConnection.TimeoutSeconds > 300 {
+		return "", 0, ErrExecutorUnavailable
+	}
+	endpoint, err := url.Parse(snapshot.WorkflowConnection.BaseURL)
+	if err != nil || (endpoint.Scheme != "http" && endpoint.Scheme != "https") || endpoint.Host == "" || endpoint.User != nil {
+		return "", 0, ErrExecutorUnavailable
+	}
 	endpoint.RawQuery, endpoint.Fragment = "", ""
 	return endpoint.String(), time.Duration(snapshot.WorkflowConnection.TimeoutSeconds) * time.Second, nil
 }
