@@ -1101,10 +1101,11 @@ func (s *Service) runnableConfiguration(ctx context.Context, id uuid.UUID, stage
 	if err != nil {
 		return globalconfig.Workflow{}, globalconfig.Connection{}, mapConnectionError(err)
 	}
-	if !contains(configuration.ApplicableStages, stage.String()) {
+	eligibility := globalconfig.EvaluateWorkflowExecutionEligibility(configuration, connection, stage.String())
+	if !eligibility.Executable {
 		return globalconfig.Workflow{}, globalconfig.Connection{}, ErrNotRunnable
 	}
-	return configuration, connection, nil
+	return eligibility.Workflow, eligibility.Connection, nil
 }
 
 func configurationSnapshot(binding workflowbinding.ProjectWorkflowBinding, configuration globalconfig.Workflow, connection globalconfig.Connection, createdAt time.Time) (json.RawMessage, error) {

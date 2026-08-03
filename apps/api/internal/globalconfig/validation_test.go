@@ -84,3 +84,22 @@ func TestEvaluateEligibilityStableOrderingAndRecovery(t *testing.T) {
 		t.Fatalf("recovered executable=%v reasons=%+v", executable, reasons)
 	}
 }
+
+func TestEvaluateEligibilityRequiresReadableConnectionCredential(t *testing.T) {
+	version := 2
+	connectionID := uuid.New()
+	executable, reasons := EvaluateEligibility(EligibilityFact{
+		Kind: "connection", ResourceID: &connectionID, Status: ValidationVerified, Enabled: true,
+		Version: version, VerifiedVersion: &version, CredentialRequired: true, CredentialAvailable: false,
+	})
+	if executable || len(reasons) != 1 || reasons[0].Code != "connection_credential_unavailable" {
+		t.Fatalf("executable=%v reasons=%+v", executable, reasons)
+	}
+	executable, reasons = EvaluateEligibility(EligibilityFact{
+		Kind: "connection", ResourceID: &connectionID, Status: ValidationVerified, Enabled: true,
+		Version: version, VerifiedVersion: &version, CredentialRequired: true, CredentialAvailable: true,
+	})
+	if !executable || len(reasons) != 0 {
+		t.Fatalf("recovered executable=%v reasons=%+v", executable, reasons)
+	}
+}

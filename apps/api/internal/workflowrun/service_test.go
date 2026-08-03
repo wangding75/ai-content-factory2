@@ -217,7 +217,11 @@ type serviceConfigs struct {
 }
 
 func (s serviceConfigs) GetWorkflow(context.Context, uuid.UUID) (globalconfig.Workflow, error) {
-	return s.w, s.err
+	workflow := s.w
+	if workflow.Enabled && workflow.IntegrationStatus == "verified" {
+		workflow.Executable = true
+	}
+	return workflow, s.err
 }
 
 type serviceConnections struct {
@@ -226,7 +230,11 @@ type serviceConnections struct {
 }
 
 func (s serviceConnections) GetConnection(context.Context, uuid.UUID) (globalconfig.Connection, error) {
-	return s.c, s.err
+	connection := s.c
+	if connection.Enabled && connection.IntegrationStatus == "verified" {
+		connection.Executable = true
+	}
+	return connection, s.err
 }
 
 func fixtureService(t *testing.T) (*Service, *serviceStore, uuid.UUID) {

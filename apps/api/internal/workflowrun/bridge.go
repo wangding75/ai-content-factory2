@@ -6,12 +6,20 @@ import (
 	"github.com/google/uuid"
 )
 
+// ChapterPlanningRuntime is the narrow runtime boundary required by chapter
+// planning. Protected stages must use the explicit idempotent scope operation
+// instead of the generic CreateRun entry point.
+type ChapterPlanningRuntime interface {
+	CreateRunIdempotentForScope(context.Context, string, uuid.UUID, string, string, CreateRunPreparation) (WorkflowRun, error)
+	RetryResultConsumption(context.Context, uuid.UUID, int) (WorkflowRun, error)
+}
+
 // RuntimeBridge is the only runtime boundary used by the four domain stages.
 // It deliberately exposes existing WorkflowRun operations only: execution and
 // result consumption remain separate concerns owned by the runtime and domain.
 type RuntimeBridge interface {
+	ChapterPlanningRuntime
 	CreateRun(context.Context, CreateRunCommand) (WorkflowRun, error)
-	CreateRunIdempotentForScope(context.Context, string, uuid.UUID, string, string, CreateRunPreparation) (WorkflowRun, error)
 	CreateRunForPreflightToken(context.Context, uuid.UUID, string, string, CreateRunPreparation) (WorkflowRun, error)
 	CreateRunForPreflightTokenIdempotent(context.Context, uuid.UUID, string, string, string, CreateRunTxPreparation) (WorkflowRun, error)
 	CreateRunForPreflightTokenIdempotentForScope(context.Context, string, uuid.UUID, string, string, string, CreateRunTxPreparation) (WorkflowRun, error)
@@ -62,3 +70,4 @@ func (b bridge) RetryResultConsumption(ctx context.Context, id uuid.UUID, expect
 }
 
 var _ RuntimeBridge = bridge{}
+var _ ChapterPlanningRuntime = bridge{}

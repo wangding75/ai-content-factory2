@@ -611,13 +611,11 @@ func workflowBindingIntegrationServer(t *testing.T, pool *pgxpool.Pool) http.Han
 func TestWorkflowBindingHandlerIntegration(t *testing.T) {
 	pool, ctx := workflowBindingIntegrationDatabase(t)
 	projectID := uuid.New()
-	connID := uuid.New()
 	wfID := uuid.New()
 
-	t.Cleanup(func() { cleanupWorkflowBindingHTTPFixture(t, pool, projectID, wfID, connID) })
-
 	insertWorkflowBindingProject(t, ctx, pool, projectID)
-	insertWorkflowBindingWorkflow(t, ctx, pool, wfID, connID, []string{"chapter_planning"})
+	connID := insertWorkflowBindingWorkflow(t, ctx, pool, projectID, wfID, []string{"chapter_planning"})
+	t.Cleanup(func() { cleanupWorkflowBindingHTTPFixture(t, pool, projectID, wfID, connID) })
 
 	h := workflowBindingIntegrationServer(t, pool)
 	call := func(method, path, body, key string) *httptest.ResponseRecorder {
@@ -755,13 +753,22 @@ func insertWorkflowBindingProject(t *testing.T, ctx context.Context, pool *pgxpo
 	}
 }
 
-func insertWorkflowBindingWorkflow(t *testing.T, ctx context.Context, pool *pgxpool.Pool, wfID, connID uuid.UUID, stages []string) {
+func insertWorkflowBindingWorkflow(t *testing.T, ctx context.Context, pool *pgxpool.Pool, projectID, wfID uuid.UUID, stages []string) uuid.UUID {
 	t.Helper()
 	now := time.Now().UTC()
-	_, err := pool.Exec(ctx, `INSERT INTO workflow_connections (id, name, connection_type, base_url, auth_type, timeout_seconds, type_config, integration_status, enabled, last_verified_version, created_at, updated_at)
-		VALUES ($1, $2, 'n8n', 'http://localhost', 'api_key', 30, '{}', 'verified', true, 1, $3, $4)`, connID, "test-conn-"+connID.String()[:8], now, now)
+	service, err := globalconfig.NewService(pool, "iteration-13-http-test-key")
 	if err != nil {
-		t.Fatalf("insert connection fixture: %v", err)
+		t.Fatal(err)
+	}
+	credential := "workflow-binding-http-fixture-key"
+	connection, err := service.CreateConnection(ctx, globalconfig.ConnectionCreate{Name: "test-conn-" + projectID.String()[:8], ConnectionType: "n8n", BaseURL: "https://n8n.example.test", AuthType: "api_key", TimeoutSeconds: 30, TypeConfig: json.RawMessage(`{"referenceType":"workflow_id","referenceValue":"fixture"}`), Credential: &credential}, "workflow-binding-http-"+projectID.String())
+	if err != nil {
+		t.Fatalf("create connection fixture: %v", err)
+	}
+	connID := connection.ID
+	_, err = pool.Exec(ctx, "UPDATE workflow_connections SET integration_status='verified',enabled=true,last_verified_version=version,last_verified_at=$2,updated_at=$2 WHERE id=$1", connID, now)
+	if err != nil {
+		t.Fatalf("verify connection fixture: %v", err)
 	}
 	raw, _ := json.Marshal(stages)
 	_, err = pool.Exec(ctx, `INSERT INTO workflow_configurations (id, name, connection_id, applicable_stages, type_config, input_contract_version, output_contract_version, default_parameters, integration_status, enabled, last_verified_version, created_at, updated_at)
@@ -769,6 +776,7 @@ func insertWorkflowBindingWorkflow(t *testing.T, ctx context.Context, pool *pgxp
 	if err != nil {
 		t.Fatalf("insert workflow fixture: %v", err)
 	}
+	return connID
 }
 
 func cleanupWorkflowBindingHTTPFixture(t *testing.T, pool *pgxpool.Pool, projectID, workflowID, connectionID uuid.UUID) {
@@ -782,8 +790,10 @@ func cleanupWorkflowBindingHTTPFixture(t *testing.T, pool *pgxpool.Pool, project
 	}{
 		{"DELETE FROM project_workflow_bindings WHERE project_id=$1", []any{projectID}},
 		{"DELETE FROM idempotency_records WHERE scope LIKE $1", []any{"project_workflow_binding:%:" + project + ":%"}},
+		{"DELETE FROM idempotency_records WHERE scope='workflow-connection:create' AND idempotency_key=$1", []any{"workflow-binding-http-" + project}},
 		{"DELETE FROM audit_logs WHERE payload->>'projectId'=$1 OR payload->>'project_id'=$1", []any{project}},
 		{"DELETE FROM workflow_configurations WHERE id=$1", []any{workflowID}},
+		{"DELETE FROM audit_logs WHERE subject_id=$1", []any{connectionID.String()}},
 		{"DELETE FROM workflow_connections WHERE id=$1", []any{connectionID}},
 		{"DELETE FROM projects WHERE id=$1", []any{projectID}},
 	}

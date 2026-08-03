@@ -113,15 +113,10 @@ type Service struct {
 	bindingReader  interface {
 		GetByProjectAndStage(context.Context, uuid.UUID, workflowbinding.WorkflowBindingStage) (workflowbinding.ProjectWorkflowBinding, error)
 	}
-	workflowReader interface {
-		GetWorkflow(context.Context, uuid.UUID) (globalconfig.Workflow, error)
+	eligibilityReader interface {
+		EvaluateWorkflowExecutionEligibility(context.Context, uuid.UUID, string) (globalconfig.WorkflowExecutionEligibility, error)
 	}
-	connectionReader interface {
-		GetConnection(context.Context, uuid.UUID) (globalconfig.Connection, error)
-	}
-	runCreator interface {
-		CreateRun(context.Context, workflowrun.CreateRunCommand) (workflowrun.WorkflowRun, error)
-	}
+	runtime workflowrun.ChapterPlanningRuntime
 }
 
 func NewService(projects projectReader, plans store, storylines storylineReader, materials materialReader, foreshadowings foreshadowingReader) *Service {
@@ -143,14 +138,10 @@ func NewPostgresService(projects projectReader, pool *pgxpool.Pool, hmacSecret s
 // from workflowrun persistence internals.
 func (s *Service) ConfigureChapterPlanningRuntime(bindings interface {
 	GetByProjectAndStage(context.Context, uuid.UUID, workflowbinding.WorkflowBindingStage) (workflowbinding.ProjectWorkflowBinding, error)
-}, workflows interface {
-	GetWorkflow(context.Context, uuid.UUID) (globalconfig.Workflow, error)
-}, connections interface {
-	GetConnection(context.Context, uuid.UUID) (globalconfig.Connection, error)
-}, runs interface {
-	CreateRun(context.Context, workflowrun.CreateRunCommand) (workflowrun.WorkflowRun, error)
-}) {
-	s.bindingReader, s.workflowReader, s.connectionReader, s.runCreator = bindings, workflows, connections, runs
+}, eligibility interface {
+	EvaluateWorkflowExecutionEligibility(context.Context, uuid.UUID, string) (globalconfig.WorkflowExecutionEligibility, error)
+}, runtime workflowrun.ChapterPlanningRuntime) {
+	s.bindingReader, s.eligibilityReader, s.runtime = bindings, eligibility, runtime
 }
 
 func (s *Service) List(ctx context.Context, projectID uuid.UUID) ([]Plan, error) {
@@ -171,13 +162,10 @@ func (s *Service) RetryChapterPlanningResultConsumption(ctx context.Context, run
 	if runID == uuid.Nil || expectedVersion < 1 || strings.TrimSpace(idempotencyKey) == "" || len(idempotencyKey) > 128 {
 		return workflowrun.WorkflowRun{}, ErrValidation
 	}
-	runtime, ok := s.runCreator.(interface {
-		RetryResultConsumption(context.Context, uuid.UUID, int) (workflowrun.WorkflowRun, error)
-	})
-	if !ok {
+	if s.runtime == nil {
 		return workflowrun.WorkflowRun{}, workflowrun.ErrNotRetryable
 	}
-	return runtime.RetryResultConsumption(ctx, runID, expectedVersion)
+	return s.runtime.RetryResultConsumption(ctx, runID, expectedVersion)
 }
 func (s *Service) Get(ctx context.Context, id uuid.UUID) (Plan, error) {
 	p, err := s.plans.GetByID(ctx, id)

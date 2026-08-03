@@ -75,9 +75,19 @@ func (e *N8NWorkflowExecutor) Execute(ctx context.Context, request ExecutionRequ
 	if err != nil || len(output) > maxWorkflowResponseBytes || !validJSONObject(output) {
 		return ExecutionResult{Status: ExecutionFailed, ErrorCode: "invalid_response", ErrorMessage: "workflow execution failed"}, nil
 	}
+	externalExecutionID := strings.TrimSpace(response.Header.Get("X-N8N-Execution-Id"))
+	var acknowledgement struct {
+		Accepted bool `json:"accepted"`
+	}
+	if json.Unmarshal(output, &acknowledgement) == nil && acknowledgement.Accepted {
+		if externalExecutionID == "" {
+			return ExecutionResult{Status: ExecutionFailed, ErrorCode: "invalid_response", ErrorMessage: "workflow execution failed"}, nil
+		}
+		return ExecutionResult{Status: ExecutionRunning, ExternalExecutionID: externalExecutionID, Metadata: map[string]string{}}, nil
+	}
 	return ExecutionResult{
 		Status: ExecutionSucceeded, Output: json.RawMessage(output),
-		ExternalExecutionID: strings.TrimSpace(response.Header.Get("X-N8N-Execution-Id")),
+		ExternalExecutionID: externalExecutionID,
 		Metadata:            map[string]string{},
 	}, nil
 }

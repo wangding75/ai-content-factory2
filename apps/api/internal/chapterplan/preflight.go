@@ -326,24 +326,30 @@ func (s *Service) Preflight(ctx context.Context, projectID uuid.UUID, request Pr
 			}
 		}
 	}
-	if s.bindingReader == nil || s.workflowReader == nil || s.connectionReader == nil {
+	if s.bindingReader == nil || s.eligibilityReader == nil {
 		return blockedPreflight(result, "project_binding_missing", "chapter-planning workflow binding is missing", "configure_workflow", "This project has no executable chapter-planning workflow."), nil
 	}
 	binding, err := s.bindingReader.GetByProjectAndStage(ctx, projectID, workflowbinding.StageChapterPlanning)
 	if err != nil {
 		return blockedPreflight(result, "project_binding_missing", "chapter-planning workflow binding is missing", "configure_workflow", "This project has no executable chapter-planning workflow."), nil
 	}
-	workflow, err := s.workflowReader.GetWorkflow(ctx, binding.WorkflowConfigurationID)
+	if binding.ProjectID != projectID || binding.Stage != workflowbinding.StageChapterPlanning || binding.WorkflowConfigurationID == uuid.Nil {
+		return blockedPreflight(result, "workflow_stage_mismatch", "chapter-planning workflow binding is invalid", "configure_workflow", "The project binding does not match chapter planning."), nil
+	}
+	eligibility, err := s.eligibilityReader.EvaluateWorkflowExecutionEligibility(ctx, binding.WorkflowConfigurationID, "chapter_planning")
 	if err != nil {
 		return blockedPreflight(result, "execution_integration_unavailable", "workflow configuration is unavailable", "review_workflow_configuration", "The configured workflow cannot execute."), nil
 	}
-	connection, err := s.connectionReader.GetConnection(ctx, workflow.ConnectionID)
-	if err != nil {
-		return blockedPreflight(result, "execution_integration_unavailable", "workflow connection is unavailable", "review_workflow_connection", "The configured workflow cannot execute."), nil
+	if !eligibility.Executable {
+		if len(eligibility.Reasons) == 0 {
+			return blockedPreflight(result, "execution_integration_unavailable", "workflow execution is unavailable", "review_workflow_configuration", "The configured workflow cannot execute."), nil
+		}
+		for _, reason := range eligibility.Reasons {
+			result.Blockers = append(result.Blockers, PreflightBlocker{Code: reason.Code, Message: reason.Message, RetryAction: reason.RepairAction, SafeReason: reason.Message, RepairTarget: reason.RepairTarget})
+		}
+		return result, nil
 	}
-	if !workflow.Enabled || !connection.Enabled {
-		return blockedPreflight(result, "execution_integration_unavailable", "workflow execution is unavailable", "enable_workflow", "The configured workflow cannot execute."), nil
-	}
+	workflow := eligibility.Workflow
 	if repo, ok := s.plans.(*Repository); ok {
 		active, err := repo.ActiveChapterPlanningRun(ctx, projectID)
 		if err != nil {
@@ -379,7 +385,7 @@ func (s *Service) Preflight(ctx context.Context, projectID uuid.UUID, request Pr
 }
 
 func (s *Service) CreateChapterPlanningRun(ctx context.Context, projectID uuid.UUID, actorID, token, key string) (workflowrun.WorkflowRun, error) {
-	if s.runCreator == nil {
+	if s.runtime == nil {
 		return workflowrun.WorkflowRun{}, ErrWorkflowNotConfigured
 	}
 	repo, ok := s.plans.(*Repository)
@@ -428,20 +434,10 @@ func (s *Service) CreateChapterPlanningRun(ctx context.Context, projectID uuid.U
 		}
 		return workflowrun.CreateRunCommand{ProjectID: projectID, Stage: "chapter_planning", InputPayload: payload, TriggerSource: "manual"}, nil
 	}
-	if creator, supported := s.runCreator.(interface {
-		CreateRunIdempotent(context.Context, uuid.UUID, string, string, workflowrun.CreateRunPreparation) (workflowrun.WorkflowRun, error)
-	}); supported {
-		requestHash := workflowrun.Fingerprint(struct {
-			ProjectID uuid.UUID
-			ActorID   string
-			Token     string
-		}{ProjectID: projectID, ActorID: actorID, Token: token})
-		return creator.CreateRunIdempotent(ctx, projectID, key, requestHash, prepare)
-	}
-	command, err := prepare()
-	if err != nil {
-		return workflowrun.WorkflowRun{}, err
-	}
-	command.IdempotencyKey = key
-	return s.runCreator.CreateRun(ctx, command)
+	requestHash := workflowrun.Fingerprint(struct {
+		ProjectID uuid.UUID
+		ActorID   string
+		Token     string
+	}{ProjectID: projectID, ActorID: actorID, Token: token})
+	return s.runtime.CreateRunIdempotentForScope(ctx, "createChapterPlanRun", projectID, key, requestHash, prepare)
 }

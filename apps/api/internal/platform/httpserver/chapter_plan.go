@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
+	"log/slog"
 	"net/http"
 	"sort"
 	"strconv"
@@ -370,6 +372,24 @@ func chapterPlanningDetails(retryAction, safeReason string) map[string]any {
 		"retryAction": retryAction,
 		"safeReason":  safeReason,
 	}
+}
+
+func logUnknownChapterPlanningCreateError(r *http.Request, projectID uuid.UUID, err error) {
+	if errors.Is(err, chapterplan.ErrPreflightTokenExpired) || errors.Is(err, chapterplan.ErrPreflightTokenInvalid) || errors.Is(err, chapterplan.ErrPreflightInputChanged) || errors.Is(err, chapterplan.ErrWorkflowNotConfigured) || errors.Is(err, workflowrun.ErrIdempotencyConflict) || errors.Is(err, workflowrun.ErrValidation) || errors.Is(err, workflowrun.ErrBindingNotFound) || errors.Is(err, workflowrun.ErrConfigurationNotFound) || errors.Is(err, workflowrun.ErrConnectionNotFound) || errors.Is(err, workflowrun.ErrNotRunnable) {
+		return
+	}
+	types := make([]string, 0, 4)
+	for cause := err; cause != nil && len(types) < 4; cause = errors.Unwrap(cause) {
+		types = append(types, fmt.Sprintf("%T", cause))
+	}
+	slog.Error("chapter planning create run failed",
+		"request_id", requestIDFrom(r),
+		"operation", "create_chapter_planning_run",
+		"stage", "chapter_planning",
+		"project_id", projectID.String(),
+		"error_type", fmt.Sprintf("%T", err),
+		"wrapped_cause", strings.Join(types, " <- "),
+	)
 }
 
 func chapterPlanServiceError(w http.ResponseWriter, r *http.Request, err error) {

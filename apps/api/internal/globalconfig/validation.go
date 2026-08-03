@@ -86,6 +86,8 @@ type EligibilityFact struct {
 	StageMatches     bool
 	InputCompatible  bool
 	OutputCompatible bool
+	CredentialRequired  bool
+	CredentialAvailable bool
 }
 
 func EvaluateEligibility(facts ...EligibilityFact) (bool, []IneligibilityReason) {
@@ -113,6 +115,9 @@ func EvaluateEligibility(facts ...EligibilityFact) (bool, []IneligibilityReason)
 		}
 		if !fact.Enabled {
 			reasons = append(reasons, reason(prefix+"_disabled", "This integration is disabled.", prefix+":enable", fact))
+		}
+		if fact.CredentialRequired && !fact.CredentialAvailable {
+			reasons = append(reasons, reason(prefix+"_credential_unavailable", "The integration credential is unavailable.", prefix+":edit", fact))
 		}
 		if prefix == "provider" && !fact.ModelAvailable {
 			reasons = append(reasons, reason("model_unavailable", "The selected model is unavailable.", "provider:models", fact))

@@ -140,6 +140,7 @@ func createChapterPlanRunHandler(app chapterPlanRunApplication) http.HandlerFunc
 		}
 		run, err := app.CreateChapterPlanningRun(r.Context(), id, actorID, body.PreflightToken, key)
 		if err != nil {
+			logUnknownChapterPlanningCreateError(r, id, err)
 			chapterPlanRunError(w, r, err)
 			return
 		}
@@ -159,6 +160,10 @@ func chapterPlanRunError(w http.ResponseWriter, r *http.Request, err error) {
 		writeError(w, r, 422, "workflow_not_configured", "workflow is not configured", details)
 	case errors.Is(err, workflowrun.ErrIdempotencyConflict):
 		writeError(w, r, 409, "idempotency_key_reused_with_different_payload", "idempotency key was reused", details)
+	case errors.Is(err, workflowrun.ErrValidation):
+		writeError(w, r, 400, "validation_error", "invalid chapter planning run request", details)
+	case errors.Is(err, workflowrun.ErrBindingNotFound), errors.Is(err, workflowrun.ErrConfigurationNotFound), errors.Is(err, workflowrun.ErrConnectionNotFound), errors.Is(err, workflowrun.ErrNotRunnable):
+		writeError(w, r, 422, "workflow_not_configured", "workflow is not executable", details)
 	default:
 		writeError(w, r, 500, "internal_error", "internal server error", map[string]any{})
 	}

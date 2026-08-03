@@ -94,6 +94,21 @@ func TestN8NWorkflowExecutorPostsRuntimeEnvelope(t *testing.T) {
 	}
 }
 
+func TestN8NWorkflowExecutorPersistsAcceptedExecutionForQueryRecovery(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set("X-N8N-Execution-Id", "execution-running-42")
+		_, _ = w.Write([]byte(`{"accepted":true}`))
+	}))
+	defer server.Close()
+
+	snapshot := json.RawMessage(`{"workflowConnection":{"type":"n8n","baseUrl":"` + server.URL + `","timeoutSeconds":5},"workflowConfiguration":{"typeConfig":{"referenceType":"webhook_path","referenceValue":"chapter-planning"}}}`)
+	result, err := NewN8NWorkflowExecutor(server.Client()).Execute(context.Background(), ExecutionRequest{RunID: uuid.New(), ProjectID: uuid.New(), Stage: "chapter_planning", ConfigurationSnapshot: snapshot, Input: json.RawMessage(`{}`)})
+	if err != nil || result.Status != ExecutionRunning || result.ExternalExecutionID != "execution-running-42" || len(result.Output) != 0 {
+		t.Fatalf("result=%+v err=%v", result, err)
+	}
+}
+
 func TestN8NWorkflowExecutorRejectsUnsafeWebhookReference(t *testing.T) {
 	snapshot := json.RawMessage(`{"workflowConnection":{"type":"n8n","baseUrl":"https://example.test","timeoutSeconds":5},"workflowConfiguration":{"typeConfig":{"referenceType":"webhook_path","referenceValue":"../escape"}}}`)
 	if _, _, err := n8nExecutionEndpoint(snapshot); !errors.Is(err, ErrExecutorUnavailable) {

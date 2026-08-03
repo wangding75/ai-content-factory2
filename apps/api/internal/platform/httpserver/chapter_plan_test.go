@@ -53,6 +53,8 @@ type fakeChapterPlanRunApplication struct {
 	retryID   uuid.UUID
 	retryVer  int
 	retryKey  string
+	createRun workflowrun.WorkflowRun
+	createErr error
 }
 
 type testPrincipalProvider struct {
@@ -70,7 +72,7 @@ func (f *fakeChapterPlanRunApplication) Preflight(_ context.Context, projectID u
 }
 
 func (f *fakeChapterPlanRunApplication) CreateChapterPlanningRun(context.Context, uuid.UUID, string, string, string) (workflowrun.WorkflowRun, error) {
-	return workflowrun.WorkflowRun{}, nil
+	return f.createRun, f.createErr
 }
 
 func (f *fakeChapterPlanRunApplication) RetryChapterPlanningResultConsumption(_ context.Context, runID uuid.UUID, expectedVersion int, key string) (workflowrun.WorkflowRun, error) {
@@ -90,6 +92,33 @@ func TestChapterPlanningResultConsumptionRetryRouteUsesOriginalRun(t *testing.T)
 	mux.ServeHTTP(response, request)
 	if response.Code != http.StatusOK || fake.retryID != runID || fake.retryVer != 3 || fake.retryKey != "chapter-consume" || !strings.Contains(response.Body.String(), runID.String()) {
 		t.Fatalf("status=%d body=%s retryID=%s version=%d key=%s", response.Code, response.Body.String(), fake.retryID, fake.retryVer, fake.retryKey)
+	}
+}
+
+func TestCreateChapterPlanningRunMapsEligibilityAndUnknownErrorsSafely(t *testing.T) {
+	projectID := uuid.New()
+	for _, test := range []struct {
+		name string
+		err  error
+		wantStatus int
+		wantCode string
+	}{
+		{"eligibility", workflowrun.ErrNotRunnable, http.StatusUnprocessableEntity, "workflow_not_configured"},
+		{"validation", workflowrun.ErrValidation, http.StatusBadRequest, "validation_error"},
+		{"unknown", errors.New("Authorization: secret-token upstream response"), http.StatusInternalServerError, "internal_error"},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			fake := &fakeChapterPlanRunApplication{createErr: test.err}
+			request := httptest.NewRequest(http.MethodPost, "/api/v1/projects/"+projectID.String()+"/chapter-plan-runs", strings.NewReader(`{"preflightToken":"safe-test-token"}`))
+			request.SetPathValue("projectId", projectID.String())
+			request.Header.Set("Content-Type", "application/json")
+			request.Header.Set("Idempotency-Key", "chapter-create-error")
+			response := httptest.NewRecorder()
+			withRequestID(createChapterPlanRunHandler(fake)).ServeHTTP(response, request)
+			if response.Code != test.wantStatus || !strings.Contains(response.Body.String(), `"code":"`+test.wantCode+`"`) || strings.Contains(response.Body.String(), "secret-token") {
+				t.Fatalf("status=%d body=%s", response.Code, response.Body.String())
+			}
+		})
 	}
 }
 

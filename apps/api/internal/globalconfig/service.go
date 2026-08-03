@@ -17,6 +17,8 @@ import (
 	"net/http"
 	"net/url"
 	"path"
+	"slices"
+	"sort"
 	"strings"
 	"time"
 
@@ -90,6 +92,9 @@ type Connection struct {
 	TypeConfig            json.RawMessage `json:"typeConfig"`
 	HasCredential         bool            `json:"hasCredential"`
 	CredentialFingerprint *string         `json:"credentialFingerprint"`
+	encryptedCredential   *string
+	credentialReadable    bool
+	ineligibilityReasons  []IneligibilityReason
 }
 type Workflow struct {
 	Common
@@ -107,6 +112,12 @@ type Workflow struct {
 	LlmStrategy           string                `json:"llmStrategy"`
 	LlmProviderID         *uuid.UUID            `json:"llmProviderId"`
 	LlmModel              *string               `json:"llmModel"`
+}
+type WorkflowExecutionEligibility struct {
+	Workflow   Workflow
+	Connection Connection
+	Executable bool
+	Reasons    []IneligibilityReason
 }
 type ProviderModel struct {
 	ID           uuid.UUID  `json:"id"`
@@ -651,7 +662,10 @@ func (s *Service) CreateConnection(ctx context.Context, r ConnectionCreate, key 
 func (s *Service) GetConnection(ctx context.Context, id uuid.UUID) (Connection, error) {
 	var x Connection
 	e := scanConnection(s.pool.QueryRow(ctx, "SELECT "+connectionColumns+" FROM workflow_connections WHERE id=$1", id), &x)
-	return x, notFound(e)
+	if e = notFound(e); e != nil {
+		return x, e
+	}
+	return x, s.hydrateConnectionEligibility(ctx, &x)
 }
 
 func GetConnectionForShare(ctx context.Context, tx pgx.Tx, id uuid.UUID) (Connection, error) {
@@ -675,6 +689,9 @@ func (s *Service) ListConnections(ctx context.Context, o ListOptions) ([]Connect
 	for rows.Next() {
 		var x Connection
 		if e = scanConnection(rows, &x); e != nil {
+			return nil, 0, e
+		}
+		if e = s.hydrateConnectionEligibility(ctx, &x); e != nil {
 			return nil, 0, e
 		}
 		out = append(out, x)
@@ -847,12 +864,58 @@ func (s *Service) CreateWorkflow(ctx context.Context, r WorkflowCreate, key stri
 	return out, err
 }
 func (s *Service) GetWorkflow(ctx context.Context, id uuid.UUID) (Workflow, error) {
-	var x Workflow
-	e := scanWorkflow(s.pool.QueryRow(ctx, "SELECT "+workflowColumns+" FROM workflow_configurations w JOIN workflow_connections c ON c.id=w.connection_id WHERE w.id=$1", id), &x)
-	if e != nil {
-		return x, notFound(e)
+	eligibility, err := s.EvaluateWorkflowExecutionEligibility(ctx, id, "")
+	return eligibility.Workflow, err
+}
+
+func (s *Service) EvaluateWorkflowExecutionEligibility(ctx context.Context, id uuid.UUID, requiredStage string) (WorkflowExecutionEligibility, error) {
+	var workflow Workflow
+	err := scanWorkflow(s.pool.QueryRow(ctx, "SELECT "+workflowColumns+" FROM workflow_configurations w JOIN workflow_connections c ON c.id=w.connection_id WHERE w.id=$1", id), &workflow)
+	if err != nil {
+		return WorkflowExecutionEligibility{}, notFound(err)
 	}
-	return x, s.hydrateWorkflowEligibility(ctx, &x)
+	connection, err := s.hydrateWorkflowEligibility(ctx, &workflow, requiredStage)
+	if err != nil {
+		return WorkflowExecutionEligibility{}, err
+	}
+	return EvaluateWorkflowExecutionEligibility(workflow, connection, requiredStage), nil
+}
+
+func EvaluateWorkflowExecutionEligibility(workflow Workflow, connection Connection, requiredStage string) WorkflowExecutionEligibility {
+	reasons := append([]IneligibilityReason(nil), workflow.IneligibilityReasons...)
+	if !workflow.Executable && len(reasons) == 0 {
+		reasons = append(reasons, IneligibilityReason{Code: "workflow_configuration_not_executable", Message: "The workflow configuration cannot execute.", RepairAction: "workflow_configuration:view"})
+	}
+	if !connection.Executable {
+		reasons = append(reasons, connection.ineligibilityReasons...)
+		if len(connection.ineligibilityReasons) == 0 {
+			reasons = append(reasons, IneligibilityReason{Code: "connection_not_executable", Message: "The workflow connection cannot execute.", RepairAction: "connection:view"})
+		}
+	}
+	if strings.TrimSpace(requiredStage) != "" && !slices.Contains(workflow.ApplicableStages, requiredStage) {
+		reasons = append(reasons, IneligibilityReason{Code: "workflow_stage_mismatch", Message: "The workflow does not support this stage.", RepairAction: "workflow_configuration:edit", RepairTarget: &RepairTarget{ConnectionID: &connection.ID, WorkflowConfigurationID: &workflow.ID}})
+	}
+	reasons = uniqueEligibilityReasons(reasons)
+	return WorkflowExecutionEligibility{Workflow: workflow, Connection: connection, Executable: workflow.Executable && connection.Executable && len(reasons) == 0, Reasons: reasons}
+}
+
+func uniqueEligibilityReasons(reasons []IneligibilityReason) []IneligibilityReason {
+	seen := make(map[string]struct{}, len(reasons))
+	out := make([]IneligibilityReason, 0, len(reasons))
+	for _, value := range reasons {
+		if _, exists := seen[value.Code]; exists {
+			continue
+		}
+		seen[value.Code] = struct{}{}
+		out = append(out, value)
+	}
+	sort.SliceStable(out, func(i, j int) bool {
+		if reasonPriority(out[i].Code) == reasonPriority(out[j].Code) {
+			return out[i].Code < out[j].Code
+		}
+		return reasonPriority(out[i].Code) < reasonPriority(out[j].Code)
+	})
+	return out
 }
 
 func GetWorkflowForShare(ctx context.Context, tx pgx.Tx, id uuid.UUID) (Workflow, error) {
@@ -903,7 +966,7 @@ func (s *Service) ListWorkflows(ctx context.Context, o ListOptions) ([]Workflow,
 		if e = scanWorkflow(rows, &x); e != nil {
 			return nil, 0, e
 		}
-		if e = s.hydrateWorkflowEligibility(ctx, &x); e != nil {
+		if _, e = s.hydrateWorkflowEligibility(ctx, &x, ""); e != nil {
 			return nil, 0, e
 		}
 		out = append(out, x)
@@ -911,10 +974,10 @@ func (s *Service) ListWorkflows(ctx context.Context, o ListOptions) ([]Workflow,
 	return out, n, rows.Err()
 }
 
-func (s *Service) hydrateWorkflowEligibility(ctx context.Context, workflow *Workflow) error {
+func (s *Service) hydrateWorkflowEligibility(ctx context.Context, workflow *Workflow, requiredStage string) (Connection, error) {
 	connection, err := s.GetConnection(ctx, workflow.ConnectionID)
 	if err != nil {
-		return err
+		return Connection{}, err
 	}
 	providerFact := EligibilityFact{Kind: "provider", Status: ValidationVerified, Enabled: true, Version: 1, VerifiedVersion: intPointer(1), ModelAvailable: true}
 	strategyComplete := true
@@ -928,15 +991,35 @@ func (s *Service) hydrateWorkflowEligibility(ctx context.Context, workflow *Work
 			} else {
 				available, availabilityErr := s.providerModelAvailable(ctx, provider.ID, *workflow.LlmModel)
 				if availabilityErr != nil {
-					return availabilityErr
+					return Connection{}, availabilityErr
 				}
 				providerFact = EligibilityFact{Kind: "provider", ResourceID: &provider.ID, Status: ValidationStatus(provider.ValidationStatus), Enabled: provider.Enabled, Version: provider.Version, VerifiedVersion: provider.VerifiedVersion, ModelAvailable: available}
 			}
 		}
 	}
-	workflowFact := EligibilityFact{Kind: "workflow_configuration", ResourceID: &workflow.ID, ConnectionID: &connection.ID, Status: ValidationStatus(workflow.ValidationStatus), Enabled: workflow.Enabled, Version: workflow.Version, VerifiedVersion: workflow.VerifiedVersion, StrategyComplete: strategyComplete, ReferenceExists: true, ReferenceActive: true, StageMatches: true, InputCompatible: validContractVersion(workflow.InputContractVersion), OutputCompatible: validContractVersion(workflow.OutputContractVersion)}
-	connectionFact := EligibilityFact{Kind: "connection", ResourceID: &connection.ID, WorkflowConfigurationID: &workflow.ID, Status: ValidationStatus(connection.ValidationStatus), Enabled: connection.Enabled, Version: connection.Version, VerifiedVersion: connection.VerifiedVersion}
+	stageMatches := len(workflow.ApplicableStages) > 0
+	if strings.TrimSpace(requiredStage) != "" {
+		stageMatches = slices.Contains(workflow.ApplicableStages, requiredStage)
+	}
+	workflowFact := EligibilityFact{Kind: "workflow_configuration", ResourceID: &workflow.ID, ConnectionID: &connection.ID, Status: ValidationStatus(workflow.ValidationStatus), Enabled: workflow.Enabled, Version: workflow.Version, VerifiedVersion: workflow.VerifiedVersion, StrategyComplete: strategyComplete, ReferenceExists: true, ReferenceActive: true, StageMatches: stageMatches, InputCompatible: validContractVersion(workflow.InputContractVersion), OutputCompatible: validContractVersion(workflow.OutputContractVersion)}
+	connectionFact := EligibilityFact{Kind: "connection", ResourceID: &connection.ID, WorkflowConfigurationID: &workflow.ID, Status: ValidationStatus(connection.ValidationStatus), Enabled: connection.Enabled, Version: connection.Version, VerifiedVersion: connection.VerifiedVersion, CredentialRequired: connection.AuthType == "api_key", CredentialAvailable: connection.credentialReadable}
 	workflow.Executable, workflow.IneligibilityReasons = EvaluateEligibility(workflowFact, connectionFact, providerFact)
+	return connection, nil
+}
+
+func (s *Service) hydrateConnectionEligibility(ctx context.Context, connection *Connection) error {
+	credential := ""
+	var err error
+	if connection.encryptedCredential != nil && *connection.encryptedCredential != "" {
+		credential, err = s.unseal(*connection.encryptedCredential)
+	}
+	connection.credentialReadable = err == nil && strings.TrimSpace(credential) != ""
+	connection.Executable, connection.ineligibilityReasons = EvaluateEligibility(EligibilityFact{
+		Kind: "connection", ResourceID: &connection.ID, Status: ValidationStatus(connection.ValidationStatus), Enabled: connection.Enabled,
+		Version: connection.Version, VerifiedVersion: connection.VerifiedVersion, ModelAvailable: true,
+		StrategyComplete: true, ReferenceExists: true, ReferenceActive: true, StageMatches: true,
+		InputCompatible: true, OutputCompatible: true, CredentialRequired: connection.AuthType == "api_key", CredentialAvailable: connection.credentialReadable,
+	})
 	return nil
 }
 
@@ -1596,10 +1679,10 @@ func scanProvider(r scanner, x *Provider) error {
 	return err
 }
 
-const connectionColumns = "id,name,connection_type,base_url,auth_type,timeout_seconds,type_config,encrypted_credential IS NOT NULL,credential_fingerprint,integration_status,enabled,last_verified_version,validation_details,last_verified_at,last_error_code,last_error_message,version,created_at,updated_at"
+const connectionColumns = "id,name,connection_type,base_url,auth_type,timeout_seconds,type_config,encrypted_credential IS NOT NULL,encrypted_credential,credential_fingerprint,integration_status,enabled,last_verified_version,validation_details,last_verified_at,last_error_code,last_error_message,version,created_at,updated_at"
 
 func scanConnection(r scanner, x *Connection) error {
-	err := r.Scan(&x.ID, &x.Name, &x.ConnectionType, &x.BaseURL, &x.AuthType, &x.TimeoutSeconds, &x.TypeConfig, &x.HasCredential, &x.CredentialFingerprint, &x.IntegrationStatus, &x.Enabled, &x.VerifiedVersion, &x.ValidationDetails, &x.LastVerifiedAt, &x.LastErrorCode, &x.LastErrorMessage, &x.Version, &x.CreatedAt, &x.UpdatedAt)
+	err := r.Scan(&x.ID, &x.Name, &x.ConnectionType, &x.BaseURL, &x.AuthType, &x.TimeoutSeconds, &x.TypeConfig, &x.HasCredential, &x.encryptedCredential, &x.CredentialFingerprint, &x.IntegrationStatus, &x.Enabled, &x.VerifiedVersion, &x.ValidationDetails, &x.LastVerifiedAt, &x.LastErrorCode, &x.LastErrorMessage, &x.Version, &x.CreatedAt, &x.UpdatedAt)
 	finalizeCommon(&x.Common, "connection")
 	return err
 }

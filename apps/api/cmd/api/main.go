@@ -74,7 +74,7 @@ func main() {
 	workflowRuns.SetReviewSucceededConsumer(realReview)
 	realRewrite := contentitem.NewRealRewriteService(contentRepository, workflowbinding.NewPostgresRepository(pool), globalConfigurations, runtimeBridge, hmacSecret)
 	workflowRuns.SetRewriteSucceededConsumer(realRewrite)
-	chapterPlans.ConfigureChapterPlanningRuntime(workflowbinding.NewPostgresRepository(pool), globalConfigurations, globalConfigurations, runtimeBridge)
+	chapterPlans.ConfigureChapterPlanningRuntime(workflowbinding.NewPostgresRepository(pool), globalConfigurations, runtimeBridge)
 	workflowRuns.SetSucceededConsumer(chapterplan.NewRuntimeConsumer(chapterplan.NewResultIngestor(pool), chapterplan.NewConsumptionRepository(pool)))
 	workerContext, stopWorker := context.WithCancel(context.Background())
 	defer stopWorker()

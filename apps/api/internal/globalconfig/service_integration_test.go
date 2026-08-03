@@ -256,6 +256,10 @@ func TestIteration19ConfigurationPersistenceRoundTrip(t *testing.T) {
 		t.Fatal(err)
 	}
 	providerID, connectionID, workflowID := uuid.New(), uuid.New(), uuid.New()
+	encryptedCredential, credentialFingerprint, err := service.seal("iteration-19-n8n-api-key")
+	if err != nil {
+		t.Fatal(err)
+	}
 	t.Cleanup(func() {
 		_, _ = pool.Exec(context.Background(), "DELETE FROM workflow_configurations WHERE id=$1", workflowID)
 		_, _ = pool.Exec(context.Background(), "DELETE FROM workflow_connections WHERE id=$1", connectionID)
@@ -268,8 +272,8 @@ func TestIteration19ConfigurationPersistenceRoundTrip(t *testing.T) {
 		t.Fatal(err)
 	}
 	if _, err = pool.Exec(ctx, `INSERT INTO workflow_connections(
-		id,name,connection_type,base_url,auth_type,timeout_seconds,type_config,integration_status,enabled,last_verified_version,last_verified_at,validation_details,version
-	) VALUES($1,$2,'n8n','https://n8n.example.test','api_key',30,'{}','verified',true,4,NOW(),'{"probe":"safe"}',4)`, connectionID, "connection-"+connectionID.String()); err != nil {
+		id,name,connection_type,base_url,auth_type,timeout_seconds,type_config,encrypted_credential,credential_fingerprint,integration_status,enabled,last_verified_version,last_verified_at,validation_details,version
+	) VALUES($1,$2,'n8n','https://n8n.example.test','api_key',30,'{}',$3,$4,'verified',true,4,NOW(),'{"probe":"safe"}',4)`, connectionID, "connection-"+connectionID.String(), encryptedCredential, credentialFingerprint); err != nil {
 		t.Fatal(err)
 	}
 	if _, err = pool.Exec(ctx, `INSERT INTO workflow_configurations(
@@ -300,6 +304,22 @@ func TestIteration19ConfigurationPersistenceRoundTrip(t *testing.T) {
 	workflow, err := service.GetWorkflow(ctx, workflowID)
 	if err != nil || workflow.VerifiedVersion == nil || *workflow.VerifiedVersion != 5 || workflow.LlmProviderID == nil || *workflow.LlmProviderID != providerID || workflow.LlmModel == nil || *workflow.LlmModel != "model-i19" || workflow.LlmStrategy != "acf_managed" || !workflow.Executable {
 		t.Fatalf("workflow round-trip=%+v err=%v", workflow, err)
+	}
+	if _, err = pool.Exec(ctx, "UPDATE workflow_connections SET encrypted_credential=NULL,credential_fingerprint=NULL WHERE id=$1", connectionID); err != nil {
+		t.Fatal(err)
+	}
+	eligibility, err := service.EvaluateWorkflowExecutionEligibility(ctx, workflowID, "review")
+	if err != nil || eligibility.Executable {
+		t.Fatalf("missing credential eligibility=%+v err=%v", eligibility, err)
+	}
+	foundCredentialReason := false
+	for _, reason := range eligibility.Reasons {
+		if reason.Code == "connection_credential_unavailable" {
+			foundCredentialReason = true
+		}
+	}
+	if !foundCredentialReason {
+		t.Fatalf("missing credential reasons=%+v", eligibility.Reasons)
 	}
 	name := "must-not-write"
 	if _, err = service.UpdateWorkflow(ctx, workflowID, WorkflowUpdate{ExpectedVersion: 4, Name: &name}); !errors.Is(err, ErrVersionConflict) {
@@ -339,14 +359,22 @@ func verificationIntegrationDatabase(t *testing.T) (*pgxpool.Pool, context.Conte
 func insertVerificationConnection(t *testing.T, ctx context.Context, pool *pgxpool.Pool, connected bool) uuid.UUID {
 	t.Helper()
 	id := uuid.New()
+	service, err := NewService(pool, "verification-replay-key")
+	if err != nil {
+		t.Fatal(err)
+	}
+	encryptedCredential, credentialFingerprint, err := service.seal("verification-api-key")
+	if err != nil {
+		t.Fatal(err)
+	}
 	status, enabled := "unverified", false
 	if connected {
 		status, enabled = "verified", true
 	}
-	_, err := pool.Exec(ctx, `INSERT INTO workflow_connections
-		(id,name,connection_type,base_url,auth_type,timeout_seconds,type_config,integration_status,enabled,last_verified_version)
-		VALUES ($1,$2,'n8n','http://verification.example.test:5678','api_key',30,'{"referenceType":"workflow_id","referenceValue":"verification"}',$3::text,$4,CASE WHEN $3::text='verified' THEN 1 ELSE NULL END)`,
-		id, "verification-connection-"+id.String(), status, enabled)
+	_, err = pool.Exec(ctx, `INSERT INTO workflow_connections
+		(id,name,connection_type,base_url,auth_type,timeout_seconds,type_config,encrypted_credential,credential_fingerprint,integration_status,enabled,last_verified_version)
+		VALUES ($1,$2,'n8n','http://verification.example.test:5678','api_key',30,'{"referenceType":"workflow_id","referenceValue":"verification"}',$3,$4,$5::text,$6,CASE WHEN $5::text='verified' THEN 1 ELSE NULL END)`,
+		id, "verification-connection-"+id.String(), encryptedCredential, credentialFingerprint, status, enabled)
 	if err != nil {
 		t.Fatalf("insert verification connection: %v", err)
 	}

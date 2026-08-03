@@ -28,23 +28,29 @@ func (r preflightBindingReader) GetByProjectAndStage(context.Context, uuid.UUID,
 	return r.binding, r.err
 }
 
-type preflightWorkflowReader struct{ workflow globalconfig.Workflow }
+type preflightWorkflowReader struct {
+	workflow   globalconfig.Workflow
+	connection globalconfig.Connection
+}
 
 func (r preflightWorkflowReader) GetWorkflow(context.Context, uuid.UUID) (globalconfig.Workflow, error) {
 	return r.workflow, nil
 }
-
-type preflightConnectionReader struct{ connection globalconfig.Connection }
-
-func (r preflightConnectionReader) GetConnection(context.Context, uuid.UUID) (globalconfig.Connection, error) {
-	return r.connection, nil
+func (r preflightWorkflowReader) EvaluateWorkflowExecutionEligibility(context.Context, uuid.UUID, string) (globalconfig.WorkflowExecutionEligibility, error) {
+	return globalconfig.WorkflowExecutionEligibility{Workflow: r.workflow, Connection: r.connection, Executable: true, Reasons: []globalconfig.IneligibilityReason{}}, nil
 }
 
 type preflightRunCreator struct{ calls int }
 
-func (r *preflightRunCreator) CreateRun(context.Context, workflowrun.CreateRunCommand) (workflowrun.WorkflowRun, error) {
+func (r *preflightRunCreator) CreateRunIdempotentForScope(_ context.Context, _ string, _ uuid.UUID, _ string, _ string, prepare workflowrun.CreateRunPreparation) (workflowrun.WorkflowRun, error) {
 	r.calls++
+	if _, err := prepare(); err != nil {
+		return workflowrun.WorkflowRun{}, err
+	}
 	return workflowrun.WorkflowRun{ID: uuid.New()}, nil
+}
+func (r *preflightRunCreator) RetryResultConsumption(context.Context, uuid.UUID, int) (workflowrun.WorkflowRun, error) {
+	return workflowrun.WorkflowRun{}, workflowrun.ErrNotRetryable
 }
 
 type mutablePreflightBindingReader struct {
@@ -55,16 +61,34 @@ func (r *mutablePreflightBindingReader) GetByProjectAndStage(context.Context, uu
 	return r.binding, nil
 }
 
-type mutablePreflightWorkflowReader struct{ workflow globalconfig.Workflow }
+type mutablePreflightWorkflowReader struct {
+	workflow   globalconfig.Workflow
+	connection *mutablePreflightConnectionReader
+}
 
 func (r *mutablePreflightWorkflowReader) GetWorkflow(context.Context, uuid.UUID) (globalconfig.Workflow, error) {
-	return r.workflow, nil
+	workflow := r.workflow
+	if r.connection != nil {
+		workflow.Executable = workflow.Enabled && r.connection.connection.Enabled
+	}
+	return workflow, nil
+}
+func (r *mutablePreflightWorkflowReader) EvaluateWorkflowExecutionEligibility(_ context.Context, _ uuid.UUID, stage string) (globalconfig.WorkflowExecutionEligibility, error) {
+	connection := globalconfig.Connection{}
+	if r.connection != nil {
+		connection = r.connection.connection
+	}
+	executable := r.workflow.Enabled && connection.Enabled && slices.Contains(r.workflow.ApplicableStages, stage)
+	r.workflow.Executable, connection.Executable = executable, executable
+	return globalconfig.WorkflowExecutionEligibility{Workflow: r.workflow, Connection: connection, Executable: executable, Reasons: []globalconfig.IneligibilityReason{}}, nil
 }
 
 type mutablePreflightConnectionReader struct{ connection globalconfig.Connection }
 
 func (r *mutablePreflightConnectionReader) GetConnection(context.Context, uuid.UUID) (globalconfig.Connection, error) {
-	return r.connection, nil
+	connection := r.connection
+	connection.Executable = connection.Enabled
+	return connection, nil
 }
 
 type preflightPersistenceState struct {
@@ -137,8 +161,7 @@ func newPostgresPreflightService(t *testing.T, ctx context.Context, db *pgxpool.
 	runs := &preflightRunCreator{}
 	service.ConfigureChapterPlanningRuntime(
 		preflightBindingReader{binding: workflowbinding.ProjectWorkflowBinding{ID: uuid.New(), ProjectID: f.project, Stage: workflowbinding.StageChapterPlanning, WorkflowConfigurationID: workflowID, Version: 1}, err: bindingErr},
-		preflightWorkflowReader{workflow: globalconfig.Workflow{Common: globalconfig.Common{ID: workflowID, Enabled: true, Version: 1}, ConnectionID: connectionID, WorkflowType: "n8n"}},
-		preflightConnectionReader{connection: globalconfig.Connection{Common: globalconfig.Common{ID: connectionID, Enabled: true, Version: 1}}},
+		preflightWorkflowReader{workflow: globalconfig.Workflow{Common: globalconfig.Common{ID: workflowID, Enabled: true, Version: 1}, ConnectionID: connectionID, WorkflowType: "n8n"}, connection: globalconfig.Connection{Common: globalconfig.Common{ID: connectionID, Enabled: true, Version: 1}}},
 		runs,
 	)
 	return service, runs
@@ -371,6 +394,7 @@ func TestPostgresPersistedGenerationContextDigestMatchesSnapshot(t *testing.T) {
 	bindings := &mutablePreflightBindingReader{binding: workflowbinding.ProjectWorkflowBinding{ID: uuid.New(), ProjectID: f.project, Stage: workflowbinding.StageChapterPlanning, WorkflowConfigurationID: workflowID, Version: 7}}
 	workflows := &mutablePreflightWorkflowReader{workflow: globalconfig.Workflow{Common: globalconfig.Common{ID: workflowID, Enabled: true, Version: 11}, ConnectionID: connectionID, WorkflowType: "n8n", ApplicableStages: []string{"chapter_planning"}, TypeConfig: json.RawMessage(`{"providerSecret":"must-not-persist"}`), DefaultParameters: json.RawMessage(`{"authorization":"must-not-persist"}`)}}
 	connections := &mutablePreflightConnectionReader{connection: globalconfig.Connection{Common: globalconfig.Common{ID: connectionID, Enabled: true, Version: 13}, ConnectionType: "n8n", BaseURL: "http://internal.example.test/private?token=must-not-persist", TypeConfig: json.RawMessage(`{"credential":"must-not-persist"}`)}}
+	workflows.connection = connections
 	runs := workflowrun.NewService(workflowrun.NewPostgresRepository(db), project.NewPostgresRepository(db), bindings, workflows, connections)
 	service, err := NewPostgresService(project.NewPostgresRepository(db), db, "test-hmac-secret-1234567890")
 	baseTime := time.Date(2026, time.July, 31, 4, 26, 0, 0, time.UTC)
@@ -378,7 +402,7 @@ func TestPostgresPersistedGenerationContextDigestMatchesSnapshot(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	service.ConfigureChapterPlanningRuntime(bindings, workflows, connections, runs)
+	service.ConfigureChapterPlanningRuntime(bindings, workflows, workflowrun.NewRuntimeBridge(runs))
 	request := postgresPreflightRequest()
 	request.StorylineSelectionMode = "specified"
 	request.StorylineIDs = []uuid.UUID{f.storylines[2], f.storylines[0]}
@@ -570,12 +594,13 @@ func TestPostgresPreflightCreateConsumeUsesFrozenBaseSnapshot(t *testing.T) {
 	bindings := &mutablePreflightBindingReader{binding: workflowbinding.ProjectWorkflowBinding{ID: uuid.New(), ProjectID: f.project, Stage: workflowbinding.StageChapterPlanning, WorkflowConfigurationID: workflowID, Version: 4}}
 	workflows := &mutablePreflightWorkflowReader{workflow: globalconfig.Workflow{Common: globalconfig.Common{ID: workflowID, Enabled: true, Version: 5}, ConnectionID: connectionID, WorkflowType: "n8n", ApplicableStages: []string{"chapter_planning"}}}
 	connections := &mutablePreflightConnectionReader{connection: globalconfig.Connection{Common: globalconfig.Common{ID: connectionID, Enabled: true, Version: 6}}}
+	workflows.connection = connections
 	runtime := workflowrun.NewService(workflowrun.NewPostgresRepository(db), project.NewPostgresRepository(db), bindings, workflows, connections)
 	service, err := NewPostgresService(project.NewPostgresRepository(db), db, "test-hmac-secret-1234567890")
 	if err != nil {
 		t.Fatal(err)
 	}
-	service.ConfigureChapterPlanningRuntime(bindings, workflows, connections, runtime)
+	service.ConfigureChapterPlanningRuntime(bindings, workflows, workflowrun.NewRuntimeBridge(runtime))
 	for _, tc := range []struct {
 		name, want string
 		mutate     func(*NormalizedCandidate)
