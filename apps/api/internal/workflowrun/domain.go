@@ -62,6 +62,9 @@ type WorkflowRun struct {
 	Retryability            string          `json:"retryability"`
 	RetryMode               *string         `json:"retryMode"`
 	ExternalExecutionID     *string         `json:"externalExecutionId"`
+	WorkflowConnectionID    *uuid.UUID      `json:"workflowConnectionId"`
+	DeadlineAt              *time.Time      `json:"deadlineAt"`
+	CancellationReason      *string         `json:"cancellationReason"`
 	CancellationRequestedAt *time.Time      `json:"cancellationRequestedAt"`
 	TimedOutAt              *time.Time      `json:"timedOutAt"`
 	BindingSnapshot         json.RawMessage `json:"bindingSnapshot"`
@@ -123,6 +126,7 @@ func (r WorkflowRun) CompleteResultConsumption(at time.Time) (WorkflowRun, error
 	r.FinishedAt = &at
 	r.ErrorCode, r.ErrorMessage, r.ErrorDetails = nil, nil, nil
 	r.FailurePhase, r.FailureCode, r.SafeErrorMessage = nil, nil, nil
+	r.CancellationReason = nil
 	r.Retryability = "not_retryable"
 	return r, nil
 }
@@ -139,8 +143,20 @@ func (r WorkflowRun) Cancel(at time.Time) (WorkflowRun, error) {
 // RequestCancellation records the durable intent before an executor attempts
 // external cancellation. This prevents a second client from submitting a
 // duplicate cancel request while preserving a single terminal transition.
-func (r WorkflowRun) RequestCancellation(at time.Time) (WorkflowRun, error) {
-	return r.transition(StatusCancelling, at.UTC(), nil, nil)
+func (r WorkflowRun) RequestCancellation(at time.Time, reason ...string) (WorkflowRun, error) {
+	value := "user"
+	if len(reason) == 1 {
+		value = strings.TrimSpace(reason[0])
+	}
+	if value != "user" && value != "timeout" {
+		return WorkflowRun{}, ErrValidation
+	}
+	next, err := r.transition(StatusCancelling, at.UTC(), nil, nil)
+	if err != nil {
+		return WorkflowRun{}, err
+	}
+	next.CancellationReason = &value
+	return next, nil
 }
 
 func (r WorkflowRun) Timeout(at time.Time, failure Failure) (WorkflowRun, error) {
@@ -155,6 +171,8 @@ func (r WorkflowRun) Timeout(at time.Time, failure Failure) (WorkflowRun, error)
 	r.ErrorCode, r.ErrorMessage, r.FailureCode, r.SafeErrorMessage = &code, &message, &code, &message
 	phase := "external_execution"
 	r.FailurePhase = &phase
+	reason := "timeout"
+	r.CancellationReason = &reason
 	r.FinishedAt, r.TimedOutAt = &at, &at
 	return r, nil
 }
@@ -169,9 +187,11 @@ func (r WorkflowRun) transition(next Status, at time.Time, output json.RawMessag
 		r.StartedAt = &at
 	case StatusSucceeded:
 		r.OutputPayload, r.FinishedAt = output, &at
+		r.CancellationReason = nil
 	case StatusFailed:
 		code, message := strings.TrimSpace(failure.Code), strings.TrimSpace(failure.Message)
 		r.ErrorCode, r.ErrorMessage, r.ErrorDetails, r.FinishedAt = &code, &message, RedactJSON(failure.Details), &at
+		r.CancellationReason = nil
 	case StatusCancelled:
 		r.CancelledAt, r.FinishedAt = &at, &at
 	case StatusCancelling:
@@ -181,9 +201,9 @@ func (r WorkflowRun) transition(next Status, at time.Time, output json.RawMessag
 }
 
 func canTransition(from, to Status) bool {
-	return (from == StatusQueued && (to == StatusRunning || to == StatusCancelling || to == StatusCancelled)) ||
+	return (from == StatusQueued && (to == StatusRunning || to == StatusCancelling || to == StatusCancelled || to == StatusTimedOut)) ||
 		(from == StatusRunning && (to == StatusSucceeded || to == StatusFailed || to == StatusCancelling || to == StatusCancelled || to == StatusTimedOut)) ||
-		(from == StatusCancelling && (to == StatusSucceeded || to == StatusFailed || to == StatusCancelled))
+		(from == StatusCancelling && (to == StatusSucceeded || to == StatusFailed || to == StatusCancelled || to == StatusTimedOut))
 }
 
 func (r WorkflowRun) validate() error {
@@ -216,6 +236,12 @@ func (r WorkflowRun) validate() error {
 		return ErrValidation
 	}
 	if r.RetryMode != nil && *r.RetryMode != "current_configuration" && *r.RetryMode != "original_configuration" {
+		return ErrValidation
+	}
+	if r.WorkflowConnectionID != nil && *r.WorkflowConnectionID == uuid.Nil || r.DeadlineAt != nil && r.DeadlineAt.Before(r.CreatedAt) {
+		return ErrValidation
+	}
+	if r.CancellationReason != nil && *r.CancellationReason != "user" && *r.CancellationReason != "timeout" {
 		return ErrValidation
 	}
 	return nil

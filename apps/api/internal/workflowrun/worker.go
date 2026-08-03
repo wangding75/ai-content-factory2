@@ -38,6 +38,11 @@ func (s *Service) RunWorker(ctx context.Context, interval time.Duration, onError
 					report(s.completeCancellation(ctx, run))
 					continue
 				}
+				if s.deadlineExpired(run) {
+					_, expiryErr := s.expireRun(ctx, run)
+					report(expiryErr)
+					continue
+				}
 				if run.Status == StatusQueued {
 					_, err = s.ExecuteRun(ctx, run.ID)
 					report(err)
@@ -81,6 +86,10 @@ func (s *Service) RunWorker(ctx context.Context, interval time.Duration, onError
 
 func (s *Service) completeCancellation(ctx context.Context, run WorkflowRun) error {
 	if run.ExternalExecutionID == nil || strings.TrimSpace(*run.ExternalExecutionID) == "" {
+		if run.CancellationReason != nil && *run.CancellationReason == "timeout" {
+			_, err := s.timeoutExecution(ctx, run)
+			return err
+		}
 		return ErrExecutorUnavailable
 	}
 	request, err := executionRequest(run)

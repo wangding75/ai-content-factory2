@@ -26,6 +26,7 @@ type fakeWorkflowRunApplication struct {
 	summary                                                                workflowrun.Summary
 	retryReplay                                                            bool
 	retryOptions                                                           workflowrun.RetryOptions
+	executionStartedID, executionWorkflowID, executionRevision              string
 	createErr, listErr, getErr, eventsErr, cancelErr, retryErr, summaryErr error
 }
 
@@ -60,6 +61,10 @@ func (f *fakeWorkflowRunApplication) GetRetryOptions(context.Context, uuid.UUID)
 }
 func (f *fakeWorkflowRunApplication) GetProjectRunSummary(context.Context, uuid.UUID) (workflowrun.Summary, error) {
 	return f.summary, f.summaryErr
+}
+func (f *fakeWorkflowRunApplication) RecordExecutionStarted(_ context.Context, _ uuid.UUID, executionID, workflowID, revision string) (workflowrun.WorkflowRun, error) {
+	f.executionStartedID, f.executionWorkflowID, f.executionRevision = executionID, workflowID, revision
+	return f.run, f.getErr
 }
 
 func workflowRunHTTPHandler(app workflowRunApplication) http.Handler {
@@ -223,6 +228,26 @@ func TestN8NCancellationStatusRequiresDedicatedCredential(t *testing.T) {
 				t.Fatalf("body=%s", w.Body.String())
 			}
 		})
+	}
+}
+
+func TestN8NExecutionStartedRequiresDedicatedCredentialAndMapsBody(t *testing.T) {
+	t.Setenv("ACF_N8N_EXECUTION_STARTED_TOKEN", "execution-token")
+	run := workflowRunHTTPFixture()
+	run.Status = workflowrun.StatusRunning
+	app := &fakeWorkflowRunApplication{run: run}
+	handler := workflowRunHTTPHandler(app)
+	path := "/api/internal/n8n/workflow-runs/" + run.ID.String() + "/execution-started"
+	unauthorized := workflowRunHTTPRequest(handler, http.MethodPost, path, `{"executionId":"execution-1"}`, "")
+	if unauthorized.Code != http.StatusUnauthorized {
+		t.Fatalf("unauthorized=%d %s", unauthorized.Code, unauthorized.Body.String())
+	}
+	req := httptest.NewRequest(http.MethodPost, path, strings.NewReader(`{"executionId":"execution-1","workflowId":"workflow-1","revision":"revision-1"}`))
+	req.Header.Set("X-ACF-N8N-EXECUTION-TOKEN", "execution-token")
+	w := httptest.NewRecorder()
+	handler.ServeHTTP(w, req)
+	if w.Code != http.StatusOK || app.executionStartedID != "execution-1" || app.executionWorkflowID != "workflow-1" || app.executionRevision != "revision-1" || strings.Contains(w.Body.String(), "execution-token") {
+		t.Fatalf("status=%d body=%s app=%+v", w.Code, w.Body.String(), app)
 	}
 }
 

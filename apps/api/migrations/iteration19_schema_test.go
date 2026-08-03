@@ -73,6 +73,30 @@ func TestIteration19DownReversesOwnedObjects(t *testing.T) {
 	}
 }
 
+func TestWorkflowRunRuntimeIntegrityMigration(t *testing.T) {
+	t.Parallel()
+	up := readMigration(t, "000022_workflow_run_runtime_integrity.up.sql")
+	for _, fragment := range []string{
+		"ADD COLUMN workflow_connection_id UUID NULL",
+		"ADD COLUMN deadline_at TIMESTAMPTZ NULL",
+		"ADD COLUMN cancellation_reason TEXT NULL",
+		"workflow_run_records_connection_execution_unique_idx",
+		"resolved_webhook_path",
+		"resolved_workflow_id",
+		"resolved_workflow_revision",
+	} {
+		if !strings.Contains(up, fragment) {
+			t.Errorf("Migration 22 up is missing %q", fragment)
+		}
+	}
+	down := readMigration(t, "000022_workflow_run_runtime_integrity.down.sql")
+	for _, fragment := range []string{"DROP COLUMN cancellation_reason", "DROP COLUMN deadline_at", "DROP COLUMN workflow_connection_id", "DROP COLUMN resolved_webhook_path"} {
+		if !strings.Contains(down, fragment) {
+			t.Errorf("Migration 22 down is missing %q", fragment)
+		}
+	}
+}
+
 func readMigration(t *testing.T, name string) string {
 	t.Helper()
 	contents, err := os.ReadFile(name)

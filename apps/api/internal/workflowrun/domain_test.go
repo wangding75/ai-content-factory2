@@ -61,6 +61,19 @@ func TestWorkflowRunFailureAndCancellation(t *testing.T) {
 		t.Fatalf("cancelled=%+v", cancelled)
 	}
 }
+func TestWorkflowRunTimeoutReasonsAndQueuedDeadlineTransition(t *testing.T) {
+	now := time.Now().UTC()
+	queued := testRun(t)
+	timedOut, err := queued.Timeout(now, Failure{Code: "workflow_deadline_exceeded", Message: "workflow run timed out"})
+	if err != nil || timedOut.Status != StatusTimedOut || timedOut.StartedAt != nil || timedOut.CancellationReason == nil || *timedOut.CancellationReason != "timeout" {
+		t.Fatalf("timedOut=%+v err=%v", timedOut, err)
+	}
+	running, _ := testRun(t).Start(now)
+	cancelling, err := running.RequestCancellation(now.Add(time.Second), "timeout")
+	if err != nil || cancelling.CancellationReason == nil || *cancelling.CancellationReason != "timeout" || cancelling.Status != StatusCancelling {
+		t.Fatalf("cancelling=%+v err=%v", cancelling, err)
+	}
+}
 func TestWorkflowRunRejectsIllegalTransitionAndInvalidFailure(t *testing.T) {
 	r := testRun(t)
 	if _, err := r.Succeed(time.Now(), json.RawMessage(`{}`)); !errors.Is(err, ErrInvalidTransition) {

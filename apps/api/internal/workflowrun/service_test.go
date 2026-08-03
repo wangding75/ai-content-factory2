@@ -249,6 +249,59 @@ func fixtureService(t *testing.T) (*Service, *serviceStore, uuid.UUID) {
 	s.now = func() time.Time { return now }
 	return s, store, projectID
 }
+func TestPersistedDeadlineStateMachineUsesInjectedClock(t *testing.T) {
+	s, store, projectID := fixtureService(t)
+	now := s.now()
+	connectionID := uuid.New()
+	deadline := now.Add(-time.Second)
+	queued := WorkflowRun{ID: uuid.New(), RunNumber: "WR-DEADLINE-QUEUED", ProjectID: projectID, Stage: "review", WorkflowConfigurationID: uuid.New(), TriggerSource: "manual", Status: StatusQueued, ConfigurationSnapshot: json.RawMessage(`{"workflowConnection":{"id":"` + connectionID.String() + `"},"workflowConfiguration":{"defaultParameters":{}}}`), InputPayload: json.RawMessage(`{}`), WorkflowConnectionID: &connectionID, DeadlineAt: &deadline, CreatedAt: now.Add(-time.Minute), UpdatedAt: now.Add(-time.Minute), Version: 1}
+	store.runs[queued.ID] = queued
+	fake := &FakeWorkflowExecutor{}
+	s.SetWorkflowExecutor(fake)
+	expired, err := s.ExecuteRun(context.Background(), queued.ID)
+	if err != nil || expired.Status != StatusTimedOut || fake.ExecuteCalls != 0 || expired.CancellationReason == nil || *expired.CancellationReason != "timeout" || len(store.events[queued.ID]) != 1 {
+		t.Fatalf("expired=%+v calls=%d events=%+v err=%v", expired, fake.ExecuteCalls, store.events[queued.ID], err)
+	}
+
+	started := now.Add(-2 * time.Minute)
+	running := queued
+	running.ID, running.RunNumber, running.Status, running.Version = uuid.New(), "WR-DEADLINE-RUNNING", StatusRunning, 2
+	running.StartedAt, running.CreatedAt, running.UpdatedAt = &started, started, started
+	store.runs[running.ID] = running
+	cancelling, err := s.expireRun(context.Background(), running)
+	if err != nil || cancelling.Status != StatusCancelling || cancelling.CancellationReason == nil || *cancelling.CancellationReason != "timeout" {
+		t.Fatalf("cancelling=%+v err=%v", cancelling, err)
+	}
+	if err = s.completeCancellation(context.Background(), cancelling); err != nil {
+		t.Fatal(err)
+	}
+	terminal := store.runs[running.ID]
+	if terminal.Status != StatusTimedOut || terminal.CancellationReason == nil || *terminal.CancellationReason != "timeout" {
+		t.Fatalf("terminal=%+v", terminal)
+	}
+}
+
+func TestExecutionStartedCASIsIdempotentAndRejectsConflicts(t *testing.T) {
+	s, store, projectID := fixtureService(t)
+	now := s.now()
+	connectionID, runID := uuid.New(), uuid.New()
+	run := WorkflowRun{ID: runID, RunNumber: "WR-EXECUTION-CALLBACK", ProjectID: projectID, Stage: "review", WorkflowConfigurationID: uuid.New(), TriggerSource: "manual", Status: StatusRunning, ConfigurationSnapshot: json.RawMessage(`{"workflowConnection":{"id":"` + connectionID.String() + `"},"workflowConfiguration":{"defaultParameters":{},"typeConfig":{"referenceType":"workflow_id"},"resolvedWorkflowId":"workflow-1","resolvedWorkflowRevision":"revision-1"}}`), InputPayload: json.RawMessage(`{}`), WorkflowConnectionID: &connectionID, StartedAt: &now, CreatedAt: now, UpdatedAt: now, Version: 2}
+	store.runs[runID] = run
+	first, err := s.RecordExecutionStarted(context.Background(), runID, "execution-1", "workflow-1", "revision-1")
+	if err != nil || first.ExternalExecutionID == nil || *first.ExternalExecutionID != "execution-1" || len(store.events[runID]) != 1 {
+		t.Fatalf("first=%+v events=%+v err=%v", first, store.events[runID], err)
+	}
+	replay, err := s.RecordExecutionStarted(context.Background(), runID, "execution-1", "workflow-1", "revision-1")
+	if err != nil || replay.ID != first.ID || len(store.events[runID]) != 1 {
+		t.Fatalf("replay=%+v events=%+v err=%v", replay, store.events[runID], err)
+	}
+	if _, err = s.RecordExecutionStarted(context.Background(), runID, "execution-2", "workflow-1", "revision-1"); !errors.Is(err, ErrVersionConflict) {
+		t.Fatalf("conflict=%v", err)
+	}
+	if _, err = s.RecordExecutionStarted(context.Background(), runID, "execution-1", "workflow-other", "revision-1"); !errors.Is(err, ErrValidation) {
+		t.Fatalf("identity=%v", err)
+	}
+}
 func TestCreateRunProtectsDomainOwnedStages(t *testing.T) {
 	s, _, projectID := fixtureService(t)
 	if _, e := s.CreateRun(context.Background(), CreateRunCommand{ProjectID: projectID, Stage: "bad", InputPayload: json.RawMessage(`{}`), IdempotencyKey: "bad-stage"}); !errors.Is(e, ErrValidation) {
@@ -590,7 +643,8 @@ func TestCancelRunQueuesLocalCancellationAndClaimsExternalCancellation(t *testin
 func TestWorkerCancellingUsesQueryForRealTerminalState(t *testing.T) {
 	service, store, projectID := fixtureService(t)
 	now, externalID := service.now(), "cancelling-external"
-	run := WorkflowRun{ID: uuid.New(), RunNumber: "WR-CANCELLING", ProjectID: projectID, Stage: "review", WorkflowConfigurationID: uuid.New(), TriggerSource: "manual", Status: StatusCancelling, ConfigurationSnapshot: json.RawMessage(`{"workflowConnection":{"id":"` + uuid.NewString() + `"},"workflowConfiguration":{"defaultParameters":{}}}`), InputPayload: json.RawMessage(`{}`), ExternalExecutionID: &externalID, StartedAt: &now, CancellationRequestedAt: &now, CreatedAt: now, UpdatedAt: now, Version: 3}
+	reason := "user"
+	run := WorkflowRun{ID: uuid.New(), RunNumber: "WR-CANCELLING", ProjectID: projectID, Stage: "review", WorkflowConfigurationID: uuid.New(), TriggerSource: "manual", Status: StatusCancelling, ConfigurationSnapshot: json.RawMessage(`{"workflowConnection":{"id":"` + uuid.NewString() + `"},"workflowConfiguration":{"defaultParameters":{}}}`), InputPayload: json.RawMessage(`{}`), ExternalExecutionID: &externalID, CancellationReason: &reason, StartedAt: &now, CancellationRequestedAt: &now, CreatedAt: now, UpdatedAt: now, Version: 3}
 	store.runs[run.ID] = run
 	fake := &FakeWorkflowExecutor{CancelResult: ExecutionResult{Status: ExecutionAccepted}, QueryResult: ExecutionResult{Status: ExecutionCancelled}}
 	service.SetWorkflowExecutor(fake)

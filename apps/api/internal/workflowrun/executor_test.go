@@ -45,14 +45,14 @@ func TestFakeWorkflowExecutorAndServiceMapping(t *testing.T) {
 	}
 }
 
-func TestExecutionFailureIsDomainTransition(t *testing.T) {
+func TestExecutionTransportTimeoutRemainsRecoverable(t *testing.T) {
 	s, store, projectID := fixtureService(t)
 	id, connectionID := uuid.New(), uuid.New()
 	now := s.now()
 	store.runs[id] = WorkflowRun{ID: id, RunNumber: "WR-FAIL", ProjectID: projectID, Stage: "review", WorkflowConfigurationID: uuid.New(), TriggerSource: "manual", Status: StatusQueued, ConfigurationSnapshot: json.RawMessage(`{"workflowConnection":{"id":"` + connectionID.String() + `"}}`), InputPayload: json.RawMessage(`{}`), CreatedAt: now, UpdatedAt: now, Version: 1}
 	s.SetWorkflowExecutor(&FakeWorkflowExecutor{ExecuteError: ErrExecutionTimeout})
 	updated, err := s.ExecuteRun(context.Background(), id)
-	if err != nil || updated.Status != StatusTimedOut || updated.ErrorCode == nil || *updated.ErrorCode != "upstream_timeout" || updated.TimedOutAt == nil {
+	if !errors.Is(err, ErrExecutionTimeout) || updated.Status != StatusRunning || updated.ErrorCode != nil || updated.TimedOutAt != nil {
 		t.Fatalf("run=%+v err=%v", updated, err)
 	}
 }
@@ -113,6 +113,14 @@ func TestN8NWorkflowExecutorRejectsUnsafeWebhookReference(t *testing.T) {
 	snapshot := json.RawMessage(`{"workflowConnection":{"type":"n8n","baseUrl":"https://example.test","timeoutSeconds":5},"workflowConfiguration":{"typeConfig":{"referenceType":"webhook_path","referenceValue":"../escape"}}}`)
 	if _, _, err := n8nExecutionEndpoint(snapshot); !errors.Is(err, ErrExecutorUnavailable) {
 		t.Fatalf("err=%v", err)
+	}
+}
+
+func TestN8NWorkflowExecutorUsesResolvedWebhookForWorkflowID(t *testing.T) {
+	snapshot := json.RawMessage(`{"workflowConnection":{"type":"n8n","baseUrl":"https://example.test","timeoutSeconds":5},"workflowConfiguration":{"resolvedWebhookPath":"resolved-hook","typeConfig":{"referenceType":"workflow_id","referenceValue":"workflow-1"}}}`)
+	endpoint, _, err := n8nExecutionEndpoint(snapshot)
+	if err != nil || endpoint != "https://example.test/webhook/resolved-hook" {
+		t.Fatalf("endpoint=%q err=%v", endpoint, err)
 	}
 }
 

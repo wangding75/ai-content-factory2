@@ -8,6 +8,7 @@ services:
       N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS: "true"
       ACF_API_BASE_URL: ${ACF_API_BASE_URL:-http://api:8080}
       ACF_N8N_CANCEL_STATUS_TOKEN: ${ACF_N8N_CANCEL_STATUS_TOKEN:-local-development-n8n-cancel-status-token}
+      ACF_N8N_EXECUTION_STARTED_TOKEN: ${ACF_N8N_EXECUTION_STARTED_TOKEN:-local-development-n8n-execution-started-token}
     ports:
       - "15678:5678"
     volumes:

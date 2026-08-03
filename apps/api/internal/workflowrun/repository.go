@@ -32,7 +32,7 @@ func (r *Repository) Transaction() pgx.Tx {
 	return tx
 }
 
-const runColumns = "id, run_number, project_id, stage, subject_type, subject_id, workflow_configuration_id, trigger_source, status, configuration_snapshot, input_payload, output_payload, error_code, error_message, error_details, retry_of_run_id, failure_phase, failure_code, safe_error_message, retryability, retry_mode, external_execution_id, cancellation_requested_at, timed_out_at, binding_snapshot, connection_snapshot, llm_policy_snapshot, started_at, finished_at, cancelled_at, created_at, updated_at, version"
+const runColumns = "id, run_number, project_id, stage, subject_type, subject_id, workflow_configuration_id, trigger_source, status, configuration_snapshot, input_payload, output_payload, error_code, error_message, error_details, retry_of_run_id, failure_phase, failure_code, safe_error_message, retryability, retry_mode, external_execution_id, workflow_connection_id, deadline_at, cancellation_reason, cancellation_requested_at, timed_out_at, binding_snapshot, connection_snapshot, llm_policy_snapshot, started_at, finished_at, cancelled_at, created_at, updated_at, version"
 
 func prefixedRunColumns(alias string) string {
 	columns := strings.Split(runColumns, ", ")
@@ -124,7 +124,7 @@ type Summary struct {
 
 func scanRun(row pgx.Row) (WorkflowRun, error) {
 	var r WorkflowRun
-	if err := row.Scan(&r.ID, &r.RunNumber, &r.ProjectID, &r.Stage, &r.SubjectType, &r.SubjectID, &r.WorkflowConfigurationID, &r.TriggerSource, &r.Status, &r.ConfigurationSnapshot, &r.InputPayload, &r.OutputPayload, &r.ErrorCode, &r.ErrorMessage, &r.ErrorDetails, &r.RetryOfRunID, &r.FailurePhase, &r.FailureCode, &r.SafeErrorMessage, &r.Retryability, &r.RetryMode, &r.ExternalExecutionID, &r.CancellationRequestedAt, &r.TimedOutAt, &r.BindingSnapshot, &r.ConnectionSnapshot, &r.LlmPolicySnapshot, &r.StartedAt, &r.FinishedAt, &r.CancelledAt, &r.CreatedAt, &r.UpdatedAt, &r.Version); err != nil {
+	if err := row.Scan(&r.ID, &r.RunNumber, &r.ProjectID, &r.Stage, &r.SubjectType, &r.SubjectID, &r.WorkflowConfigurationID, &r.TriggerSource, &r.Status, &r.ConfigurationSnapshot, &r.InputPayload, &r.OutputPayload, &r.ErrorCode, &r.ErrorMessage, &r.ErrorDetails, &r.RetryOfRunID, &r.FailurePhase, &r.FailureCode, &r.SafeErrorMessage, &r.Retryability, &r.RetryMode, &r.ExternalExecutionID, &r.WorkflowConnectionID, &r.DeadlineAt, &r.CancellationReason, &r.CancellationRequestedAt, &r.TimedOutAt, &r.BindingSnapshot, &r.ConnectionSnapshot, &r.LlmPolicySnapshot, &r.StartedAt, &r.FinishedAt, &r.CancelledAt, &r.CreatedAt, &r.UpdatedAt, &r.Version); err != nil {
 		return WorkflowRun{}, err
 	}
 	return NewFromDB(r)
@@ -146,7 +146,7 @@ func (r *Repository) Create(ctx context.Context, value WorkflowRun) (WorkflowRun
 		return WorkflowRun{}, err
 	}
 	value = normalizedPersistenceRun(validated)
-	created, err := scanRun(r.db.QueryRow(ctx, "INSERT INTO workflow_run_records ("+runColumns+") VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,$26,$27,$28,$29,$30,$31,$32,$33) RETURNING "+runColumns, value.ID, value.RunNumber, value.ProjectID, value.Stage, value.SubjectType, value.SubjectID, value.WorkflowConfigurationID, value.TriggerSource, value.Status, value.ConfigurationSnapshot, value.InputPayload, nullableJSON(value.OutputPayload), value.ErrorCode, value.ErrorMessage, nullableJSON(value.ErrorDetails), value.RetryOfRunID, value.FailurePhase, value.FailureCode, value.SafeErrorMessage, value.Retryability, value.RetryMode, value.ExternalExecutionID, value.CancellationRequestedAt, value.TimedOutAt, value.BindingSnapshot, value.ConnectionSnapshot, value.LlmPolicySnapshot, value.StartedAt, value.FinishedAt, value.CancelledAt, value.CreatedAt, value.UpdatedAt, value.Version))
+	created, err := scanRun(r.db.QueryRow(ctx, "INSERT INTO workflow_run_records ("+runColumns+") VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,$26,$27,$28,$29,$30,$31,$32,$33,$34,$35,$36) RETURNING "+runColumns, value.ID, value.RunNumber, value.ProjectID, value.Stage, value.SubjectType, value.SubjectID, value.WorkflowConfigurationID, value.TriggerSource, value.Status, value.ConfigurationSnapshot, value.InputPayload, nullableJSON(value.OutputPayload), value.ErrorCode, value.ErrorMessage, nullableJSON(value.ErrorDetails), value.RetryOfRunID, value.FailurePhase, value.FailureCode, value.SafeErrorMessage, value.Retryability, value.RetryMode, value.ExternalExecutionID, value.WorkflowConnectionID, value.DeadlineAt, value.CancellationReason, value.CancellationRequestedAt, value.TimedOutAt, value.BindingSnapshot, value.ConnectionSnapshot, value.LlmPolicySnapshot, value.StartedAt, value.FinishedAt, value.CancelledAt, value.CreatedAt, value.UpdatedAt, value.Version))
 	if err != nil {
 		var postgresError *pgconn.PgError
 		if errors.As(err, &postgresError) && postgresError.ConstraintName == "workflow_run_records_active_rewrite_subject_idx" {
@@ -404,7 +404,7 @@ func (r *Repository) UpdateStatus(ctx context.Context, value WorkflowRun) (Workf
 	if value.Version < 2 {
 		return WorkflowRun{}, ErrValidation
 	}
-	updated, err := scanRun(r.db.QueryRow(ctx, "UPDATE workflow_run_records SET status=$1, output_payload=$2, error_code=$3, error_message=$4, error_details=$5, failure_phase=$6, failure_code=$7, safe_error_message=$8, retryability=$9, retry_mode=$10, external_execution_id=$11, cancellation_requested_at=$12, timed_out_at=$13, started_at=$14, finished_at=$15, cancelled_at=$16, updated_at=$17, version=$18 WHERE id=$19 AND version=$20 RETURNING "+runColumns, value.Status, nullableJSON(value.OutputPayload), value.ErrorCode, value.ErrorMessage, nullableJSON(value.ErrorDetails), value.FailurePhase, value.FailureCode, value.SafeErrorMessage, normalizedPersistenceRun(value).Retryability, value.RetryMode, value.ExternalExecutionID, value.CancellationRequestedAt, value.TimedOutAt, value.StartedAt, value.FinishedAt, value.CancelledAt, value.UpdatedAt, value.Version, value.ID, value.Version-1))
+	updated, err := scanRun(r.db.QueryRow(ctx, "UPDATE workflow_run_records SET status=$1, output_payload=$2, error_code=$3, error_message=$4, error_details=$5, failure_phase=$6, failure_code=$7, safe_error_message=$8, retryability=$9, retry_mode=$10, external_execution_id=$11, cancellation_reason=$12, cancellation_requested_at=$13, timed_out_at=$14, started_at=$15, finished_at=$16, cancelled_at=$17, updated_at=$18, version=$19 WHERE id=$20 AND version=$21 RETURNING "+runColumns, value.Status, nullableJSON(value.OutputPayload), value.ErrorCode, value.ErrorMessage, nullableJSON(value.ErrorDetails), value.FailurePhase, value.FailureCode, value.SafeErrorMessage, normalizedPersistenceRun(value).Retryability, value.RetryMode, value.ExternalExecutionID, value.CancellationReason, value.CancellationRequestedAt, value.TimedOutAt, value.StartedAt, value.FinishedAt, value.CancelledAt, value.UpdatedAt, value.Version, value.ID, value.Version-1))
 	if errors.Is(err, pgx.ErrNoRows) {
 		existing, e := r.GetByID(ctx, value.ID)
 		if errors.Is(e, ErrNotFound) {

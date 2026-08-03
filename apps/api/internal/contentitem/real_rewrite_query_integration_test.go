@@ -415,10 +415,11 @@ func TestRealRewriteRuntimeRetryEligibilityMatrix(t *testing.T) {
 	}); !errors.Is(err, workflowrun.ErrValidation) {
 		t.Fatalf("input override err=%v", err)
 	}
-	if _, _, err = f.runs.RetryRunWithReplay(f.ctx, workflowrun.RetryCommand{
+	currentRetry, replayed, err := f.runs.RetryRunWithReplay(f.ctx, workflowrun.RetryCommand{
 		RunID: run.ID, ExpectedVersion: run.Version, Mode: "current_configuration", IdempotencyKey: "current-config",
-	}); !errors.Is(err, workflowrun.ErrValidation) {
-		t.Fatalf("current configuration err=%v", err)
+	})
+	if err != nil || replayed || currentRetry.RetryOfRunID == nil || *currentRetry.RetryOfRunID != run.ID || currentRetry.RetryMode == nil || *currentRetry.RetryMode != "current_configuration" {
+		t.Fatalf("current configuration retry=%+v replayed=%v err=%v", currentRetry, replayed, err)
 	}
 }
 

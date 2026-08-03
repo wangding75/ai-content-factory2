@@ -5,6 +5,7 @@ import (
 	"errors"
 	"io"
 	"net/http"
+	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -36,15 +37,21 @@ type apiError struct {
 func New(address string, projects *project.Service, services ...any) *Server {
 	mux := http.NewServeMux()
 	realWorkflowStages := false
+	var runtimeConfigurations *globalconfig.Service
+	workerEnabled := false
 	for _, service := range services {
-		switch service.(type) {
+		switch value := service.(type) {
 		case *contentitem.GenerationService, *contentitem.RealReviewService, *contentitem.RealRewriteService:
 			realWorkflowStages = true
+		case *globalconfig.Service:
+			runtimeConfigurations = value
+		case workflowRunApplication:
+			workerEnabled = value != nil
 		}
 	}
 	mux.HandleFunc("GET /healthz", healthHandler)
 	mux.HandleFunc("GET /readyz", readyHandler)
-	mux.HandleFunc("GET /api/v1/meta", metaHandler)
+	mux.HandleFunc("GET /api/v1/meta", metaHandlerWithRuntime(runtimeConfigurations, workerEnabled, realWorkflowStages))
 	mux.HandleFunc("GET /api/v1/project-types", listProjectTypesHandler)
 	mux.HandleFunc("GET /api/v1/projects", listProjectsHandler(projects))
 	mux.HandleFunc("POST /api/v1/projects", createProjectHandler(projects))
@@ -135,7 +142,21 @@ func readyHandler(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, r, http.StatusOK, map[string]any{"status": "ready", "checks": map[string]string{"api": "ok"}})
 }
 func metaHandler(w http.ResponseWriter, r *http.Request) {
-	writeJSON(w, r, http.StatusOK, map[string]any{"product": "AI Content Factory 2.0", "scope": "P0", "content_packs": []string{"novel"}, "workflow_provider": "mock", "real_ai": "disabled", "external_workflow": "disabled", "publishing": "disabled"})
+	metaHandlerWithRuntime(nil, false, false)(w, r)
+}
+func metaHandlerWithRuntime(configurations *globalconfig.Service, workerEnabled, realWorkflowStages bool) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		provider, external := "mock", "disabled"
+		stages := []string{}
+		if workerEnabled && configurations != nil {
+			provider, external = "n8n", "enabled"
+		}
+		if realWorkflowStages {
+			stages = []string{"chapter_planning", "content_generation", "review", "rewrite"}
+		}
+		configured := configurations != nil && configurations.N8NRuntimeConfigured(r.Context())
+		writeJSON(w, r, http.StatusOK, map[string]any{"product": "AI Content Factory 2.0", "scope": "P0", "environment": os.Getenv("APP_ENV"), "content_packs": []string{"novel"}, "workflow_provider": provider, "external_workflow": external, "externalWorkflowEnabled": external == "enabled", "workerEnabled": workerEnabled, "registeredStages": stages, "n8nRuntimeConfigured": configured, "real_ai": "disabled", "publishing": "disabled"})
+	}
 }
 func writeJSON(w http.ResponseWriter, r *http.Request, status int, data any) {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")

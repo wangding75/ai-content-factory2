@@ -37,6 +37,7 @@ services:
       CONFIGURATION_ENCRYPTION_KEY: ${CONFIGURATION_ENCRYPTION_KEY:-local-development-configuration-encryption-key}
       CHAPTER_PLAN_IDEMPOTENCY_HMAC_SECRET: ${CHAPTER_PLAN_IDEMPOTENCY_HMAC_SECRET:-local-development-chapter-plan-hmac-secret}
       ACF_N8N_CANCEL_STATUS_TOKEN: ${ACF_N8N_CANCEL_STATUS_TOKEN:-local-development-n8n-cancel-status-token}
+      ACF_N8N_EXECUTION_STARTED_TOKEN: ${ACF_N8N_EXECUTION_STARTED_TOKEN:-local-development-n8n-execution-started-token}
     ports:
       - "18080:8080"
     healthcheck:

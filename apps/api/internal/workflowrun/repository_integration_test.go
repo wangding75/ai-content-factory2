@@ -72,9 +72,52 @@ func newRun(t *testing.T, p, w uuid.UUID, n string) WorkflowRun {
 	return v
 }
 
+func TestExternalExecutionIDIsUniqueWithinConnectionOnly(t *testing.T) {
+	db, ctx := openDB(t)
+	projectID, workflowID := fixture(t, ctx, db)
+	var connectionID uuid.UUID
+	if err := db.QueryRow(ctx, "SELECT connection_id FROM workflow_configurations WHERE id=$1", workflowID).Scan(&connectionID); err != nil {
+		t.Fatal(err)
+	}
+	secondConnectionID := uuid.New()
+	if _, err := db.Exec(ctx, "INSERT INTO workflow_connections(id,name,connection_type,base_url,auth_type,timeout_seconds,type_config) VALUES($1,$2,'n8n','http://localhost','api_key',30,'{}')", secondConnectionID, "workflowrun-second-"+secondConnectionID.String()[:8]); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		_, _ = db.Exec(context.Background(), "DELETE FROM workflow_run_records WHERE project_id=$1", projectID)
+		_, _ = db.Exec(context.Background(), "DELETE FROM workflow_connections WHERE id=$1", secondConnectionID)
+	})
+	insert := func(connection *uuid.UUID, externalID string) error {
+		_, err := db.Exec(ctx, `INSERT INTO workflow_run_records(
+			id,run_number,project_id,stage,workflow_configuration_id,trigger_source,status,
+			configuration_snapshot,input_payload,binding_snapshot,connection_snapshot,llm_policy_snapshot,
+			workflow_connection_id,external_execution_id
+		) VALUES($1,$2,$3,'review',$4,'manual','queued','{}','{}','{}','{}','{}',$5,$6)`, uuid.New(), "WR-UNIQUE-"+uuid.NewString()[:8], projectID, workflowID, connection, externalID)
+		return err
+	}
+	if err := insert(&connectionID, "shared-execution"); err != nil {
+		t.Fatal(err)
+	}
+	if err := insert(&connectionID, "shared-execution"); err == nil {
+		t.Fatal("duplicate external execution id in one connection was accepted")
+	}
+	if err := insert(&secondConnectionID, "shared-execution"); err != nil {
+		t.Fatalf("same external id in another connection: %v", err)
+	}
+	if err := insert(nil, "shared-execution"); err != nil {
+		t.Fatalf("first NULL connection: %v", err)
+	}
+	if err := insert(nil, "shared-execution"); err != nil {
+		t.Fatalf("second NULL connection: %v", err)
+	}
+}
+
 func contentGenerationService(t *testing.T, repo *Repository, projectID, workflowID uuid.UUID) *Service {
 	t.Helper()
-	connectionID := uuid.New()
+	var connectionID uuid.UUID
+	if err := repo.db.QueryRow(context.Background(), "SELECT connection_id FROM workflow_configurations WHERE id=$1", workflowID).Scan(&connectionID); err != nil {
+		t.Fatal(err)
+	}
 	s := NewService(repo, serviceProjects{p: project.Project{ID: projectID}}, serviceBindings{b: workflowbinding.ProjectWorkflowBinding{ID: uuid.New(), ProjectID: projectID, Stage: workflowbinding.StageContentGeneration, WorkflowConfigurationID: workflowID, Version: 1}}, serviceConfigs{w: globalconfig.Workflow{Common: globalconfig.Common{ID: workflowID, Enabled: true, IntegrationStatus: "verified", Version: 1}, ConnectionID: connectionID, ApplicableStages: []string{"content_generation"}, TypeConfig: json.RawMessage(`{}`), DefaultParameters: json.RawMessage(`{}`)}}, serviceConnections{c: globalconfig.Connection{Common: globalconfig.Common{ID: connectionID, Enabled: true, IntegrationStatus: "verified", Version: 1}, ConnectionType: "n8n", BaseURL: "http://localhost", AuthType: "api_key", TypeConfig: json.RawMessage(`{}`)}})
 	return s
 }
@@ -411,7 +454,8 @@ func TestRepositoryListsCancellingAndTimedOutStatuses(t *testing.T) {
 	projectID, workflowID := fixture(t, ctx, db)
 	now := time.Now().UTC()
 	cancelling := newRun(t, projectID, workflowID, "WR-I19-CANCELLING")
-	cancelling.Status, cancelling.StartedAt, cancelling.CancellationRequestedAt, cancelling.Version = StatusCancelling, &now, &now, 2
+	reason := "user"
+	cancelling.Status, cancelling.StartedAt, cancelling.CancellationRequestedAt, cancelling.CancellationReason, cancelling.Version = StatusCancelling, &now, &now, &reason, 2
 	if _, err := repo.Create(ctx, cancelling); err != nil {
 		t.Fatal(err)
 	}
@@ -726,8 +770,12 @@ func TestRepositoryListEventsHasStableCreatedAtIDOrder(t *testing.T) {
 func TestWorkflowRunPersistentIdempotencyReplayConcurrencyAndRestart(t *testing.T) {
 	db, ctx := openDB(t)
 	p, w := fixture(t, ctx, db)
+	var persistedConnectionID uuid.UUID
+	if err := db.QueryRow(ctx, "SELECT connection_id FROM workflow_configurations WHERE id=$1", w).Scan(&persistedConnectionID); err != nil {
+		t.Fatal(err)
+	}
 	newService := func() *Service {
-		connectionID := uuid.New()
+		connectionID := persistedConnectionID
 		return NewService(NewPostgresRepository(db), serviceProjects{p: project.Project{ID: p}}, serviceBindings{b: workflowbinding.ProjectWorkflowBinding{ID: uuid.New(), ProjectID: p, Stage: workflowbinding.StageChapterPlanning, WorkflowConfigurationID: w, Version: 1}}, serviceConfigs{w: globalconfig.Workflow{Common: globalconfig.Common{ID: w, Version: 1, Enabled: true, IntegrationStatus: "verified"}, ConnectionID: connectionID, ApplicableStages: []string{"chapter_planning"}, TypeConfig: json.RawMessage(`{}`), DefaultParameters: json.RawMessage(`{}`)}}, serviceConnections{c: globalconfig.Connection{Common: globalconfig.Common{ID: connectionID, Version: 1, Enabled: true, IntegrationStatus: "verified"}, ConnectionType: "n8n", BaseURL: "http://localhost", AuthType: "api_key", TypeConfig: json.RawMessage(`{}`)}})
 	}
 	create := func(service *Service, input json.RawMessage, trigger, key string) (WorkflowRun, error) {

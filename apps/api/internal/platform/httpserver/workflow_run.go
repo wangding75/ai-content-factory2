@@ -24,6 +24,7 @@ type workflowRunApplication interface {
 	CancelRun(context.Context, workflowrun.RunCommand) (workflowrun.WorkflowRun, error)
 	RetryRun(context.Context, workflowrun.RetryCommand) (workflowrun.WorkflowRun, error)
 	GetRetryOptions(context.Context, uuid.UUID) (workflowrun.RetryOptions, error)
+	RecordExecutionStarted(context.Context, uuid.UUID, string, string, string) (workflowrun.WorkflowRun, error)
 	GetProjectRunSummary(context.Context, uuid.UUID) (workflowrun.Summary, error)
 }
 
@@ -43,6 +44,12 @@ type workflowRunRetryRequest struct {
 	Reason                  *string         `json:"reason"`
 	UseCurrentConfiguration *bool           `json:"useCurrentConfiguration"`
 	InputOverride           json.RawMessage `json:"inputOverride"`
+}
+
+type executionStartedRequest struct {
+	ExecutionID string `json:"executionId"`
+	WorkflowID  string `json:"workflowId"`
+	Revision    string `json:"revision"`
 }
 
 type workflowRunDTO struct {
@@ -105,7 +112,34 @@ func registerWorkflowRunRoutes(mux *http.ServeMux, app workflowRunApplication) {
 	mux.HandleFunc("POST /api/v1/workflow-runs/{runId}/retries", retryWorkflowRunHandler(app))
 	mux.HandleFunc("GET /api/v1/workflow-runs/{runId}/retry-options", getWorkflowRunRetryOptionsHandler(app))
 	mux.HandleFunc("GET /api/internal/n8n/workflow-runs/{runId}/cancellation", n8nCancellationStatusHandler(app))
+	mux.HandleFunc("POST /api/internal/n8n/workflow-runs/{runId}/execution-started", n8nExecutionStartedHandler(app))
 	mux.HandleFunc("GET /api/v1/projects/{projectId}/workflow-run-summary", getProjectWorkflowRunSummaryHandler(app))
+}
+
+func n8nExecutionStartedHandler(app workflowRunApplication) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		expected := os.Getenv("ACF_N8N_EXECUTION_STARTED_TOKEN")
+		provided := r.Header.Get("X-ACF-N8N-EXECUTION-TOKEN")
+		if expected == "" || subtle.ConstantTimeCompare([]byte(expected), []byte(provided)) != 1 {
+			writeError(w, r, http.StatusUnauthorized, "unauthenticated", "authentication required", map[string]any{})
+			return
+		}
+		id, ok := workflowRunID(w, r)
+		if !ok {
+			return
+		}
+		var body executionStartedRequest
+		if decodeBody(r, &body) != nil || strings.TrimSpace(body.ExecutionID) == "" || len(strings.TrimSpace(body.ExecutionID)) > 200 || len(strings.TrimSpace(body.WorkflowID)) > 200 || len(strings.TrimSpace(body.Revision)) > 200 {
+			workflowRunValidationError(w, r, "invalid execution-started request")
+			return
+		}
+		run, err := app.RecordExecutionStarted(r.Context(), id, body.ExecutionID, body.WorkflowID, body.Revision)
+		if err != nil {
+			workflowRunServiceError(w, r, err)
+			return
+		}
+		writeJSON(w, r, http.StatusOK, map[string]any{"runId": run.ID, "externalExecutionId": run.ExternalExecutionID, "status": run.Status, "version": run.Version})
+	}
 }
 
 // n8nCancellationStatusHandler exposes only the cancellation fact required by
@@ -599,6 +633,8 @@ func workflowRunServiceError(w http.ResponseWriter, r *http.Request, err error) 
 		writeError(w, r, http.StatusNotFound, "workflow_run_not_found", "workflow run not found", map[string]any{})
 	case errors.Is(err, workflowrun.ErrVersionConflict):
 		writeError(w, r, http.StatusConflict, "version_conflict", "workflow run version conflict", map[string]any{})
+	case errors.Is(err, workflowrun.ErrInvalidTransition):
+		writeError(w, r, http.StatusConflict, "workflow_run_state_conflict", "workflow run state does not accept this operation", map[string]any{})
 	case errors.Is(err, workflowrun.ErrIdempotencyConflict):
 		writeError(w, r, http.StatusConflict, "idempotency_key_reused_with_different_payload", "idempotency key conflicts with a different request", map[string]any{})
 	case errors.Is(err, workflowrun.ErrRewriteVersionConflict):

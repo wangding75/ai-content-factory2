@@ -69,7 +69,7 @@ func (e *N8NWorkflowExecutor) Execute(ctx context.Context, request ExecutionRequ
 	defer response.Body.Close()
 	if response.StatusCode < 200 || response.StatusCode > 299 {
 		_, _ = io.Copy(io.Discard, io.LimitReader(response.Body, 64*1024))
-		return ExecutionResult{Status: ExecutionFailed, ErrorCode: "upstream_http_error", ErrorMessage: "workflow execution failed"}, nil
+		return ExecutionResult{}, ErrExecutorUnavailable
 	}
 	output, err := io.ReadAll(io.LimitReader(response.Body, maxWorkflowResponseBytes+1))
 	if err != nil || len(output) > maxWorkflowResponseBytes || !validJSONObject(output) {
@@ -201,6 +201,7 @@ func n8nExecutionEndpoint(rawSnapshot json.RawMessage) (string, time.Duration, e
 			TimeoutSeconds int    `json:"timeoutSeconds"`
 		} `json:"workflowConnection"`
 		WorkflowConfiguration struct {
+			ResolvedWebhookPath string `json:"resolvedWebhookPath"`
 			TypeConfig struct {
 				ReferenceType  string `json:"referenceType"`
 				ReferenceValue string `json:"referenceValue"`
@@ -209,12 +210,16 @@ func n8nExecutionEndpoint(rawSnapshot json.RawMessage) (string, time.Duration, e
 	}
 	if json.Unmarshal(rawSnapshot, &snapshot) != nil ||
 		snapshot.WorkflowConnection.Type != "n8n" ||
-		snapshot.WorkflowConfiguration.TypeConfig.ReferenceType != "webhook_path" ||
 		snapshot.WorkflowConnection.TimeoutSeconds < 1 ||
 		snapshot.WorkflowConnection.TimeoutSeconds > 300 {
 		return "", 0, ErrExecutorUnavailable
 	}
 	reference := strings.TrimSpace(snapshot.WorkflowConfiguration.TypeConfig.ReferenceValue)
+	if snapshot.WorkflowConfiguration.TypeConfig.ReferenceType == "workflow_id" {
+		reference = strings.TrimSpace(snapshot.WorkflowConfiguration.ResolvedWebhookPath)
+	} else if snapshot.WorkflowConfiguration.TypeConfig.ReferenceType != "webhook_path" {
+		return "", 0, ErrExecutorUnavailable
+	}
 	if reference == "" || reference == "." || strings.HasPrefix(reference, "/") ||
 		reference == ".." || strings.HasPrefix(reference, "../") ||
 		path.Clean(reference) != reference || strings.ContainsAny(reference, "?#") {

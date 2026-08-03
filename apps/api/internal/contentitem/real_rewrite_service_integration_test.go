@@ -61,7 +61,7 @@ func newRealRewriteFixture(t *testing.T) realRewriteFixture {
 		t.Fatalf("review result=%+v err=%v", result, err)
 	}
 	connectionID, workflowID, bindingID := uuid.New(), uuid.New(), uuid.New()
-	if _, err = review.repo.db.Exec(review.ctx, "INSERT INTO workflow_connections(id,name,connection_type,base_url,auth_type,timeout_seconds,type_config,integration_status,enabled,last_verified_version) VALUES($1,$2,'n8n','http://rewrite-fixture','api_key',5,'{}','verified',true,1)", connectionID, "rewrite-"+connectionID.String()); err != nil {
+	if _, err = review.repo.db.Exec(review.ctx, "INSERT INTO workflow_connections(id,name,connection_type,base_url,auth_type,timeout_seconds,type_config,integration_status,enabled,last_verified_version) VALUES($1,$2,'n8n','http://rewrite-fixture','api_key',5,'{\"referenceType\":\"webhook_path\",\"referenceValue\":\"rewrite-fixture\"}','verified',true,1)", connectionID, "rewrite-"+connectionID.String()); err != nil {
 		t.Fatal(err)
 	}
 	typeConfig := json.RawMessage(`{"referenceType":"webhook_path","referenceValue":"rewrite-fixture"}`)
@@ -73,6 +73,14 @@ func newRealRewriteFixture(t *testing.T) realRewriteFixture {
 	}
 	configs, err := globalconfig.NewService(review.repo.db, "real-rewrite-integration-key")
 	if err != nil {
+		t.Fatal(err)
+	}
+	credential := "real-rewrite-runtime-credential"
+	connection, err := configs.UpdateConnection(review.ctx, connectionID, globalconfig.ConnectionUpdate{ExpectedVersion: 1, Credential: &credential})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err = review.repo.db.Exec(review.ctx, "UPDATE workflow_connections SET integration_status='verified',last_verified_version=version,enabled=true WHERE id=$1 AND version=$2", connectionID, connection.Version); err != nil {
 		t.Fatal(err)
 	}
 	runs := workflowrun.NewService(

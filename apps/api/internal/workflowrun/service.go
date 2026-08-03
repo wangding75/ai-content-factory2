@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 	"net/url"
 	"strings"
 	"time"
@@ -140,6 +141,7 @@ type Service struct {
 	newID             func() uuid.UUID
 	newRunNumber      func() string
 	executor          WorkflowExecutor
+	runTimeout        time.Duration
 	succeededConsumer interface {
 		ConsumeSucceededRun(context.Context, WorkflowRun) error
 	}
@@ -155,7 +157,7 @@ type Service struct {
 }
 
 func NewService(store Store, projects ProjectReader, bindings BindingReader, configurations ConfigurationReader, connections ConnectionReader) *Service {
-	return &Service{store: store, projects: projects, bindings: bindings, configurations: configurations, connections: connections, now: func() time.Time { return time.Now().UTC() }, newID: uuid.New, newRunNumber: func() string { return "WR-" + strings.ToUpper(uuid.NewString()[:8]) }, executor: UnavailableWorkflowExecutor{}}
+	return &Service{store: store, projects: projects, bindings: bindings, configurations: configurations, connections: connections, now: func() time.Time { return time.Now().UTC() }, newID: uuid.New, newRunNumber: func() string { return "WR-" + strings.ToUpper(uuid.NewString()[:8]) }, executor: UnavailableWorkflowExecutor{}, runTimeout: 15 * time.Minute}
 }
 
 func (s *Service) SetWorkflowExecutor(executor WorkflowExecutor) {
@@ -192,9 +194,8 @@ func (s *Service) ExecuteRun(ctx context.Context, runID uuid.UUID) (WorkflowRun,
 	if err != nil {
 		return WorkflowRun{}, err
 	}
-	request, err := executionRequest(run)
-	if err != nil {
-		return WorkflowRun{}, ErrValidation
+	if s.deadlineExpired(run) {
+		return s.expireRun(ctx, run)
 	}
 	if run.Status == StatusQueued {
 		next, startErr := run.Start(s.now())
@@ -209,18 +210,22 @@ func (s *Service) ExecuteRun(ctx context.Context, runID uuid.UUID) (WorkflowRun,
 	} else if run.Status != StatusRunning {
 		return WorkflowRun{}, ErrInvalidTransition
 	}
+	request, err := executionRequest(run)
+	if err != nil {
+		return WorkflowRun{}, ErrValidation
+	}
 	result, err := s.executor.Execute(ctx, request)
 	if err != nil {
-		if errors.Is(err, ErrExecutionTimeout) {
-			return s.timeoutExecution(ctx, run)
-		}
-		return s.failExecution(ctx, run, executionErrorCode(err), "workflow execution failed")
+		// A submit timeout, connection interruption, or upstream 5xx is an
+		// ambiguous transport result. The durable running Run is recovered by
+		// the execution-started callback and Query; it is never made terminal here.
+		return run, err
 	}
 	if !validExecutionResult(result) {
 		return s.failExecution(ctx, run, "invalid_response", "workflow execution returned an invalid result")
 	}
 	if strings.TrimSpace(result.ExternalExecutionID) != "" {
-		run, err = s.store.SaveExternalExecutionID(ctx, run, result.ExternalExecutionID)
+		run, err = s.RecordExecutionStarted(ctx, run.ID, result.ExternalExecutionID, "", "")
 		if err != nil {
 			return WorkflowRun{}, mapStoreError(err)
 		}
@@ -247,6 +252,9 @@ func (s *Service) applyExecutionResult(ctx context.Context, run WorkflowRun, res
 		return s.consumeStoredResult(ctx, stored)
 	}
 	if result.Status == ExecutionCancelled {
+		if run.CancellationReason != nil && *run.CancellationReason == "timeout" {
+			return s.timeoutExecution(ctx, run)
+		}
 		next, err := run.Cancel(s.now())
 		if err != nil {
 			return WorkflowRun{}, err
@@ -357,6 +365,84 @@ func (s *Service) timeoutExecution(ctx context.Context, run WorkflowRun) (Workfl
 	}
 	updated, _, err := s.store.UpdateStatusWithEvent(ctx, run, next, Event{ID: s.newID(), RunID: run.ID, EventType: "timed_out", Status: StatusTimedOut, Payload: json.RawMessage(`{}`), CreatedAt: next.UpdatedAt})
 	return updated, mapStoreError(err)
+}
+
+func (s *Service) deadlineExpired(run WorkflowRun) bool {
+	return run.DeadlineAt != nil && !s.now().Before(run.DeadlineAt.UTC())
+}
+
+func (s *Service) expireRun(ctx context.Context, run WorkflowRun) (WorkflowRun, error) {
+	if run.Status == StatusQueued {
+		return s.timeoutExecution(ctx, run)
+	}
+	if run.Status == StatusRunning {
+		next, err := run.RequestCancellation(s.now(), "timeout")
+		if err != nil {
+			return WorkflowRun{}, err
+		}
+		updated, _, err := s.store.UpdateStatusWithEvent(ctx, run, next, Event{ID: s.newID(), RunID: run.ID, EventType: "cancel_requested", Status: StatusCancelling, Payload: json.RawMessage(`{"reason":"timeout"}`), CreatedAt: next.UpdatedAt})
+		return updated, mapStoreError(err)
+	}
+	return run, nil
+}
+
+// RecordExecutionStarted closes the submit/callback crash window. It is CAS
+// idempotent for the same external ID and rejects a conflicting ID without
+// changing terminal or unrelated Runs.
+func (s *Service) RecordExecutionStarted(ctx context.Context, runID uuid.UUID, externalID, workflowID, revision string) (WorkflowRun, error) {
+	if runID == uuid.Nil || strings.TrimSpace(externalID) == "" || len(strings.TrimSpace(externalID)) > 200 {
+		return WorkflowRun{}, ErrValidation
+	}
+	run, err := s.store.GetByID(ctx, runID)
+	if err != nil {
+		return WorkflowRun{}, mapStoreError(err)
+	}
+	if run.Status != StatusRunning && run.Status != StatusCancelling {
+		return WorkflowRun{}, ErrInvalidTransition
+	}
+	if !executionIdentityMatches(run.ConfigurationSnapshot, workflowID, revision) {
+		return WorkflowRun{}, ErrValidation
+	}
+	if run.ExternalExecutionID != nil {
+		if *run.ExternalExecutionID == strings.TrimSpace(externalID) {
+			return run, nil
+		}
+		log.Printf("workflow execution-started conflict run_id=%s", run.ID)
+		return WorkflowRun{}, ErrVersionConflict
+	}
+	updated, err := s.store.SaveExternalExecutionID(ctx, run, strings.TrimSpace(externalID))
+	if err != nil {
+		return WorkflowRun{}, mapStoreError(err)
+	}
+	_, eventErr := s.store.AddEvent(ctx, Event{ID: s.newID(), RunID: run.ID, EventType: "execution_started", Status: updated.Status, Payload: mustSafeJSON(map[string]any{"externalExecutionId": strings.TrimSpace(externalID)}), CreatedAt: s.now()})
+	if eventErr != nil {
+		return WorkflowRun{}, mapStoreError(eventErr)
+	}
+	return updated, nil
+}
+
+func executionIdentityMatches(snapshot json.RawMessage, workflowID, revision string) bool {
+	workflowID, revision = strings.TrimSpace(workflowID), strings.TrimSpace(revision)
+	if workflowID == "" && revision == "" {
+		return true
+	}
+	var value struct {
+		WorkflowConfiguration struct {
+			ResolvedWorkflowID       string `json:"resolvedWorkflowId"`
+			ResolvedWorkflowRevision string `json:"resolvedWorkflowRevision"`
+			TypeConfig struct {
+				ReferenceType string `json:"referenceType"`
+			} `json:"typeConfig"`
+		} `json:"workflowConfiguration"`
+	}
+	if json.Unmarshal(snapshot, &value) != nil {
+		return false
+	}
+	if value.WorkflowConfiguration.TypeConfig.ReferenceType != "workflow_id" {
+		return revision == ""
+	}
+	return (workflowID == "" || workflowID == value.WorkflowConfiguration.ResolvedWorkflowID) &&
+		(revision == "" || revision == value.WorkflowConfiguration.ResolvedWorkflowRevision)
 }
 
 func executionRequest(run WorkflowRun) (ExecutionRequest, error) {
@@ -620,6 +706,12 @@ func (s *Service) createRun(ctx context.Context, store Store, command CreateRunC
 	}
 	now := s.now()
 	run.CreatedAt, run.UpdatedAt = now, now
+	deadline := now.Add(s.runTimeout)
+	run.DeadlineAt = &deadline
+	if connection.ID != uuid.Nil {
+		connectionID := connection.ID
+		run.WorkflowConnectionID = &connectionID
+	}
 	created, _, err := store.CreateWithInitialEvent(ctx, run, Event{ID: s.newID(), RunID: run.ID, EventType: "queued", Status: StatusQueued, Payload: json.RawMessage(`{}`), CreatedAt: now})
 	return created, mapStoreError(err)
 }
@@ -688,6 +780,8 @@ func (s *Service) CancelRun(ctx context.Context, command RunCommand) (WorkflowRu
 			if cancelErr != nil {
 				return WorkflowRun{}, cancelErr
 			}
+			reason := "user"
+			next.CancellationReason = &reason
 			updated, _, updateErr := store.UpdateStatusWithEvent(ctx, current, next, Event{ID: s.newID(), RunID: next.ID, EventType: "cancelled", Status: StatusCancelled, Payload: json.RawMessage(`{}`), CreatedAt: next.UpdatedAt})
 			return updated, mapStoreError(updateErr)
 		}
@@ -922,9 +1016,6 @@ func (s *Service) RetryRunWithReplay(ctx context.Context, command RetryCommand) 
 		if err != nil {
 			return WorkflowRun{}, mapStoreError(err)
 		}
-		if discovered.Stage == "rewrite" && mode == "current_configuration" {
-			return WorkflowRun{}, ErrValidation
-		}
 		var original WorkflowRun
 		if discovered.Stage == "rewrite" {
 			rewriteStore, ok := store.(interface {
@@ -1033,6 +1124,17 @@ func (s *Service) RetryRunWithReplay(ctx context.Context, command RetryCommand) 
 			run.InputPayload = input
 		}
 		run.CreatedAt, run.UpdatedAt, run.RetryOfRunID = now, now, &original.ID
+		deadline := now.Add(s.runTimeout)
+		run.DeadlineAt = &deadline
+		if mode == "current_configuration" {
+			configuration, _ := s.configurations.GetWorkflow(ctx, configurationID)
+			if configuration.ConnectionID != uuid.Nil {
+				connectionID := configuration.ConnectionID
+				run.WorkflowConnectionID = &connectionID
+			}
+		} else {
+			run.WorkflowConnectionID = original.WorkflowConnectionID
+		}
 		created, _, err := store.CreateWithInitialEvent(ctx, run, Event{ID: s.newID(), RunID: run.ID, EventType: "queued", Status: StatusQueued, Payload: json.RawMessage(`{}`), CreatedAt: now})
 		return created, mapStoreError(err)
 	})
@@ -1109,7 +1211,7 @@ func (s *Service) runnableConfiguration(ctx context.Context, id uuid.UUID, stage
 }
 
 func configurationSnapshot(binding workflowbinding.ProjectWorkflowBinding, configuration globalconfig.Workflow, connection globalconfig.Connection, createdAt time.Time) (json.RawMessage, error) {
-	v := map[string]any{"projectId": binding.ProjectID, "stage": binding.Stage.String(), "binding": map[string]any{"id": binding.ID, "version": binding.Version}, "workflowConfiguration": map[string]any{"id": configuration.ID, "name": configuration.Name, "version": configuration.Version, "typeConfig": configuration.TypeConfig, "inputContractVersion": configuration.InputContractVersion, "outputContractVersion": configuration.OutputContractVersion, "defaultParameters": configuration.DefaultParameters, "llmStrategy": configuration.LlmStrategy, "llmProviderId": configuration.LlmProviderID, "llmModel": configuration.LlmModel, "validationStatus": configuration.ValidationStatus, "enabled": configuration.Enabled, "executable": configuration.Executable}, "workflowConnection": map[string]any{"id": connection.ID, "name": connection.Name, "version": connection.Version, "type": connection.ConnectionType, "baseUrl": safeBaseURL(connection.BaseURL), "authType": connection.AuthType, "timeoutSeconds": connection.TimeoutSeconds, "typeConfig": connection.TypeConfig, "validationStatus": connection.ValidationStatus, "enabled": connection.Enabled, "executable": connection.Executable}, "createdAt": createdAt.UTC()}
+	v := map[string]any{"projectId": binding.ProjectID, "stage": binding.Stage.String(), "binding": map[string]any{"id": binding.ID, "version": binding.Version}, "workflowConfiguration": map[string]any{"id": configuration.ID, "name": configuration.Name, "version": configuration.Version, "typeConfig": configuration.TypeConfig, "resolvedWebhookPath": configuration.ResolvedWebhookPath, "resolvedWorkflowId": configuration.ResolvedWorkflowID, "resolvedWorkflowRevision": configuration.ResolvedRevision, "inputContractVersion": configuration.InputContractVersion, "outputContractVersion": configuration.OutputContractVersion, "defaultParameters": configuration.DefaultParameters, "llmStrategy": configuration.LlmStrategy, "llmProviderId": configuration.LlmProviderID, "llmModel": configuration.LlmModel, "validationStatus": configuration.ValidationStatus, "enabled": configuration.Enabled, "executable": configuration.Executable}, "workflowConnection": map[string]any{"id": connection.ID, "name": connection.Name, "version": connection.Version, "type": connection.ConnectionType, "baseUrl": safeBaseURL(connection.BaseURL), "authType": connection.AuthType, "timeoutSeconds": connection.TimeoutSeconds, "typeConfig": connection.TypeConfig, "validationStatus": connection.ValidationStatus, "enabled": connection.Enabled, "executable": connection.Executable}, "createdAt": createdAt.UTC()}
 	b, err := json.Marshal(v)
 	if err != nil {
 		return nil, err

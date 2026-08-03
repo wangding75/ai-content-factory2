@@ -112,6 +112,9 @@ type Workflow struct {
 	LlmStrategy           string                `json:"llmStrategy"`
 	LlmProviderID         *uuid.UUID            `json:"llmProviderId"`
 	LlmModel              *string               `json:"llmModel"`
+	ResolvedWebhookPath   *string               `json:"-"`
+	ResolvedWorkflowID    *string               `json:"-"`
+	ResolvedRevision      *string               `json:"-"`
 }
 type WorkflowExecutionEligibility struct {
 	Workflow   Workflow
@@ -1179,7 +1182,7 @@ func (s *Service) updateWorkflowTx(ctx context.Context, tx pgx.Tx, id uuid.UUID,
 	if !validWorkflow(cur.Name, cur.ApplicableStages, cur.TypeConfig, cur.InputContractVersion, cur.OutputContractVersion, cur.DefaultParameters) || !validNote(cur.Note) || !validLlmPolicy(cur.LlmStrategy, cur.LlmProviderID, cur.LlmModel) {
 		return Workflow{}, ErrValidation
 	}
-	tag, e := tx.Exec(ctx, "UPDATE workflow_configurations SET name=$2,connection_id=$3,applicable_stages=$4,type_config=$5,input_contract_version=$6,output_contract_version=$7,default_parameters=$8,note=$9,llm_strategy=$10,llm_provider_id=$11,llm_model=$12,integration_status='stale',validation_details='{}'::jsonb,version=version+1,updated_at=NOW() WHERE id=$1 AND version=$13", id, cur.Name, cur.ConnectionID, mustJSON(cur.ApplicableStages), cur.TypeConfig, cur.InputContractVersion, cur.OutputContractVersion, cur.DefaultParameters, cur.Note, cur.LlmStrategy, cur.LlmProviderID, cur.LlmModel, r.ExpectedVersion)
+	tag, e := tx.Exec(ctx, "UPDATE workflow_configurations SET name=$2,connection_id=$3,applicable_stages=$4,type_config=$5,input_contract_version=$6,output_contract_version=$7,default_parameters=$8,note=$9,llm_strategy=$10,llm_provider_id=$11,llm_model=$12,integration_status='stale',validation_details='{}'::jsonb,resolved_webhook_path=NULL,resolved_workflow_id=NULL,resolved_workflow_revision=NULL,version=version+1,updated_at=NOW() WHERE id=$1 AND version=$13", id, cur.Name, cur.ConnectionID, mustJSON(cur.ApplicableStages), cur.TypeConfig, cur.InputContractVersion, cur.OutputContractVersion, cur.DefaultParameters, cur.Note, cur.LlmStrategy, cur.LlmProviderID, cur.LlmModel, r.ExpectedVersion)
 	if e != nil {
 		return Workflow{}, unique(e)
 	}
@@ -1243,6 +1246,14 @@ func (s *Service) VerifyWorkflowConfiguration(ctx context.Context, id uuid.UUID,
 		var refErr error
 		if cfg.ReferenceType == "workflow_id" {
 			ref, refErr = s.n8nWorkflow(ctx, connection, cfg.ReferenceValue)
+			if refErr == nil {
+				resolvedConfig := workflow
+				resolvedConfig.TypeConfig = mustJSON(map[string]string{"referenceType": "webhook_path", "referenceValue": ref.WebhookPath})
+				refErr = s.probeWorkflow(ctx, connection, resolvedConfig)
+				if refErr == nil {
+					ref.Stages = workflow.ApplicableStages
+				}
+			}
 		} else {
 			refErr = s.probeWorkflow(ctx, connection, workflow)
 			ref = workflowReferenceCheck{Exists: refErr == nil, Active: refErr == nil, Stages: workflow.ApplicableStages}
@@ -1258,6 +1269,13 @@ func (s *Service) VerifyWorkflowConfiguration(ctx context.Context, id uuid.UUID,
 		}
 		if !connectionOK || !ref.Exists || !ref.Active || !containsAll(ref.Stages, workflow.ApplicableStages) || !validContractVersion(workflow.InputContractVersion) || !validContractVersion(workflow.OutputContractVersion) || !strategyOK {
 			return validationOutcome(&safehttp.Error{Code: "configuration_verification_failed"}, safeChecks(checks...))
+		}
+		if cfg.ReferenceType == "workflow_id" {
+			if _, persistErr := s.pool.Exec(ctx, `UPDATE workflow_configurations
+				SET resolved_webhook_path=$1,resolved_workflow_id=$2,resolved_workflow_revision=$3,updated_at=NOW()
+				WHERE id=$4 AND version=$5`, ref.WebhookPath, ref.WorkflowID, ref.Revision, id, expectedVersion); persistErr != nil {
+				return validationOutcome(persistErr, safeChecks(checks...))
+			}
 		}
 		return validationOutcome(nil, safeChecks(checks...))
 	})
@@ -1544,6 +1562,19 @@ func (s *Service) RuntimeHTTPClient() *http.Client {
 	return s.verificationHTTPClient()
 }
 
+// N8NRuntimeConfigured reports only durable system capability. It does not
+// probe a particular Connection, so one transient upstream failure cannot make
+// the whole installation appear disabled.
+func (s *Service) N8NRuntimeConfigured(ctx context.Context) bool {
+	var configured bool
+	err := s.pool.QueryRow(ctx, `SELECT EXISTS(
+		SELECT 1 FROM workflow_connections
+		WHERE connection_type='n8n' AND integration_status='verified'
+		  AND enabled=true AND last_verified_version=version
+	)`).Scan(&configured)
+	return err == nil && configured
+}
+
 // verificationURL validates only syntax. Every resolved address is checked in
 // DialContext immediately before use, which prevents DNS rebinding bypasses.
 func verificationURL(baseURL, suffix string) (string, error) {
@@ -1687,11 +1718,11 @@ func scanConnection(r scanner, x *Connection) error {
 	return err
 }
 
-const workflowColumns = "w.id,w.name,w.connection_id,c.name,c.connection_type,'n8n',w.applicable_stages,w.type_config,w.input_contract_version,w.output_contract_version,w.default_parameters,w.note,w.llm_strategy,w.llm_provider_id,w.llm_model,w.integration_status,w.enabled,w.last_verified_version,w.validation_details,w.last_verified_at,w.last_error_code,w.last_error_message,w.version,w.created_at,w.updated_at"
+const workflowColumns = "w.id,w.name,w.connection_id,c.name,c.connection_type,'n8n',w.applicable_stages,w.type_config,w.input_contract_version,w.output_contract_version,w.default_parameters,w.note,w.llm_strategy,w.llm_provider_id,w.llm_model,w.resolved_webhook_path,w.resolved_workflow_id,w.resolved_workflow_revision,w.integration_status,w.enabled,w.last_verified_version,w.validation_details,w.last_verified_at,w.last_error_code,w.last_error_message,w.version,w.created_at,w.updated_at"
 
 func scanWorkflow(r scanner, x *Workflow) error {
 	var raw json.RawMessage
-	e := r.Scan(&x.ID, &x.Name, &x.ConnectionID, &x.ConnectionName, &x.ConnectionType, &x.WorkflowType, &raw, &x.TypeConfig, &x.InputContractVersion, &x.OutputContractVersion, &x.DefaultParameters, &x.Note, &x.LlmStrategy, &x.LlmProviderID, &x.LlmModel, &x.IntegrationStatus, &x.Enabled, &x.VerifiedVersion, &x.ValidationDetails, &x.LastVerifiedAt, &x.LastErrorCode, &x.LastErrorMessage, &x.Version, &x.CreatedAt, &x.UpdatedAt)
+	e := r.Scan(&x.ID, &x.Name, &x.ConnectionID, &x.ConnectionName, &x.ConnectionType, &x.WorkflowType, &raw, &x.TypeConfig, &x.InputContractVersion, &x.OutputContractVersion, &x.DefaultParameters, &x.Note, &x.LlmStrategy, &x.LlmProviderID, &x.LlmModel, &x.ResolvedWebhookPath, &x.ResolvedWorkflowID, &x.ResolvedRevision, &x.IntegrationStatus, &x.Enabled, &x.VerifiedVersion, &x.ValidationDetails, &x.LastVerifiedAt, &x.LastErrorCode, &x.LastErrorMessage, &x.Version, &x.CreatedAt, &x.UpdatedAt)
 	if e == nil {
 		e = json.Unmarshal(raw, &x.ApplicableStages)
 	}

@@ -201,8 +201,12 @@ func TestVerificationIdempotencyReplayBehavior(t *testing.T) {
 		if _, err = service.VerifyWorkflowConfiguration(ctx, workflowID, 2, "workflow-success"); !errors.Is(err, ErrIdempotency) {
 			t.Fatalf("different payload error=%v, want ErrIdempotency", err)
 		}
-		if probes.Load() != 1 || transactionDuringProbe.Load() {
+		if probes.Load() != 2 || transactionDuringProbe.Load() {
 			t.Fatalf("probe count=%d transactionDuringProbe=%v", probes.Load(), transactionDuringProbe.Load())
+		}
+		var resolvedPath, resolvedWorkflowID, resolvedRevision string
+		if err = pool.QueryRow(ctx, "SELECT resolved_webhook_path,resolved_workflow_id,resolved_workflow_revision FROM workflow_configurations WHERE id=$1", workflowID).Scan(&resolvedPath, &resolvedWorkflowID, &resolvedRevision); err != nil || resolvedPath != "verification" || resolvedWorkflowID != "verification" || resolvedRevision != "revision-1" {
+			t.Fatalf("resolution path=%q workflow=%q revision=%q err=%v", resolvedPath, resolvedWorkflowID, resolvedRevision, err)
 		}
 		assertVerificationState(t, ctx, pool, "workflow_configurations", workflowID, 1, 1, 1)
 		if _, err = service.SetResourceEnabled(ctx, ValidationResourceWorkflow, workflowID, 1, true, "workflow-enable"); err != nil {
@@ -217,7 +221,7 @@ func TestVerificationIdempotencyReplayBehavior(t *testing.T) {
 		if err != nil || disabledReplay.Version != disabled.Version || disabledReplay.Enabled {
 			t.Fatalf("disable replay=%+v err=%v", disabledReplay, err)
 		}
-		if probes.Load() != 1 {
+		if probes.Load() != 2 {
 			t.Fatalf("disable triggered probe count=%d", probes.Load())
 		}
 		assertVerificationRecordCount(t, ctx, pool, "workflow disable audit", "SELECT COUNT(*) FROM audit_logs WHERE subject_id=$1 AND action='workflow_configuration.disable'", workflowID.String(), 1)
@@ -386,7 +390,7 @@ func insertVerificationWorkflow(t *testing.T, ctx context.Context, pool *pgxpool
 	id := uuid.New()
 	_, err := pool.Exec(ctx, `INSERT INTO workflow_configurations
 		(id,name,connection_id,applicable_stages,type_config,input_contract_version,output_contract_version,default_parameters)
-		VALUES ($1,$2,$3,'["chapter_planning"]','{"referenceType":"webhook_path","referenceValue":"verification"}','v1','v1','{}')`,
+		VALUES ($1,$2,$3,'["chapter_planning"]','{"referenceType":"workflow_id","referenceValue":"verification"}','v1','v1','{}')`,
 		id, "verification-workflow-"+id.String(), connectionID)
 	if err != nil {
 		t.Fatalf("insert verification workflow: %v", err)
@@ -458,7 +462,7 @@ func serveVerificationProbe(connection net.Conn, fail bool) {
 	}
 	response := []byte(`{}`)
 	if strings.Contains(request.URL.Path, "/api/v1/workflows/") {
-		response = []byte(`{"id":"verification","active":true,"tags":[{"name":"acf-stage:chapter_planning"}]}`)
+		response = []byte(`{"id":"verification","active":true,"versionId":"revision-1","nodes":[{"type":"n8n-nodes-base.webhook","parameters":{"path":"verification"}}],"tags":[{"name":"acf-stage:chapter_planning"}]}`)
 	}
 	if request.Method == http.MethodPost {
 		var payload struct {

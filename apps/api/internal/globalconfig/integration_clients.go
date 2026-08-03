@@ -4,7 +4,9 @@ import (
 	"context"
 	"crypto/aes"
 	"crypto/cipher"
+	"crypto/sha256"
 	"encoding/base64"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -30,6 +32,14 @@ type providerModelResponse struct {
 type n8nWorkflowResponse struct {
 	ID     string `json:"id"`
 	Active bool   `json:"active"`
+	VersionID string `json:"versionId"`
+	Nodes []struct {
+		Type string `json:"type"`
+		Disabled bool `json:"disabled"`
+		Parameters struct {
+			Path string `json:"path"`
+		} `json:"parameters"`
+	} `json:"nodes"`
 	Tags   []struct {
 		Name string `json:"name"`
 	} `json:"tags"`
@@ -39,6 +49,9 @@ type workflowReferenceCheck struct {
 	Exists bool
 	Active bool
 	Stages []string
+	WorkflowID string
+	Revision string
+	WebhookPath string
 }
 
 func (s *Service) unseal(ciphertext string) (string, error) {
@@ -185,6 +198,24 @@ func (s *Service) n8nWorkflow(ctx context.Context, connection Connection, refere
 		return workflowReferenceCheck{}, err
 	}
 	check := workflowReferenceCheck{Exists: strings.TrimSpace(payload.ID) != "", Active: payload.Active}
+	check.WorkflowID = strings.TrimSpace(payload.ID)
+	check.Revision = strings.TrimSpace(payload.VersionID)
+	for _, node := range payload.Nodes {
+		if node.Type != "n8n-nodes-base.webhook" || node.Disabled || strings.TrimSpace(node.Parameters.Path) == "" {
+			continue
+		}
+		if check.WebhookPath != "" {
+			return workflowReferenceCheck{}, &safehttp.Error{Code: "workflow_reference_not_found", Message: "The workflow does not have one unambiguous production webhook.", Retryable: false}
+		}
+		check.WebhookPath = strings.TrimSpace(node.Parameters.Path)
+	}
+	if !check.Exists || check.WebhookPath == "" {
+		return workflowReferenceCheck{}, &safehttp.Error{Code: "workflow_reference_not_found", Message: "The workflow does not have a production webhook.", Retryable: false}
+	}
+	if check.Revision == "" {
+		digest := sha256.Sum256([]byte(check.WorkflowID + "\x00" + check.WebhookPath))
+		check.Revision = hex.EncodeToString(digest[:])
+	}
 	for _, tag := range payload.Tags {
 		name := strings.TrimSpace(tag.Name)
 		if strings.HasPrefix(name, "acf-stage:") {
