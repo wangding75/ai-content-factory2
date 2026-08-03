@@ -314,6 +314,29 @@ func TestRealReviewSummaryRestoresAllEightStatesAndFactPriority(t *testing.T) {
 		return run
 	}
 	queued := createRun("summary-queued")
+	// Pin to queued before state assertions. The shared development API worker may race
+	// and advance a freshly created run to running between CreateRun and Summary.
+	if _, err := f.repo.db.Exec(f.ctx, `
+		UPDATE workflow_run_records
+		SET status='queued',
+		    started_at=NULL,
+		    finished_at=NULL,
+		    cancelled_at=NULL,
+		    timed_out_at=NULL,
+		    cancellation_requested_at=NULL,
+		    cancellation_reason=NULL,
+		    external_execution_id=NULL,
+		    failure_phase=NULL,
+		    failure_code=NULL,
+		    safe_error_message=NULL,
+		    error_code=NULL,
+		    error_message=NULL,
+		    error_details=NULL,
+		    updated_at=created_at,
+		    version=1
+		WHERE id=$1`, queued.ID); err != nil {
+		t.Fatal(err)
+	}
 	assertState("queued")
 	if _, err := f.repo.db.Exec(f.ctx, "UPDATE workflow_configurations SET enabled=false WHERE id=$1", f.workflow); err != nil {
 		t.Fatal(err)

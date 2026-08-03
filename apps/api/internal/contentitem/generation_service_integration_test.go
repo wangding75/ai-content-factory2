@@ -661,6 +661,15 @@ func insertGenerationSource(t *testing.T, ctx context.Context, db *pgxpool.Pool,
 	if e != nil {
 		t.Fatal(e)
 	}
+	revisionID := uuid.New()
+	_, e = tx.Exec(ctx, "INSERT INTO chapter_plan_revisions(id,chapter_plan_id,project_id,revision_no,snapshot,change_type,created_by) VALUES($1,$2,$3,1,$4,'manual_create','test')", revisionID, planID, projectID, []byte(`{"chapterNo":99,"title":"source","summary":"source","chapterPurpose":"other","storylineRefs":[],"materialRefs":[],"foreshadowingRefs":[]}`))
+	if e != nil {
+		t.Fatal(e)
+	}
+	_, e = tx.Exec(ctx, "UPDATE chapter_plans SET current_revision_id=$1 WHERE id=$2", revisionID, planID)
+	if e != nil {
+		t.Fatal(e)
+	}
 	_, e = tx.Exec(ctx, "INSERT INTO content_items(id,project_id,chapter_plan_id,title,status,current_version_id) VALUES($1,$2,$3,'source','draft',$4)", itemID, projectID, planID, versionID)
 	if e != nil {
 		t.Fatal(e)

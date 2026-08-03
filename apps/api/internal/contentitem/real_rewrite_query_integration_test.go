@@ -386,8 +386,14 @@ func TestRealRewriteRuntimeRetryEligibilityMatrix(t *testing.T) {
 				}
 			}
 			beforeRuns := count(t, f.ctx, f.repo.db, "SELECT COUNT(*) FROM workflow_run_records WHERE stage='rewrite' AND subject_id=$1", f.report.ID)
+			// Reload version: the shared development API worker may advance queued/running
+			// runs between CreateRun and RetryRun, which must not be treated as eligibility success.
+			latest, latestErr := f.runs.GetRun(f.ctx, run.ID)
+			if latestErr != nil {
+				t.Fatal(latestErr)
+			}
 			retry, _, retryErr := f.runs.RetryRunWithReplay(f.ctx, workflowrun.RetryCommand{
-				RunID: run.ID, ExpectedVersion: run.Version, Mode: "original_configuration", IdempotencyKey: "eligibility",
+				RunID: run.ID, ExpectedVersion: latest.Version, Mode: "original_configuration", IdempotencyKey: "eligibility",
 			})
 			if test.wantAllowed {
 				if retryErr != nil || retry.RetryOfRunID == nil || *retry.RetryOfRunID != run.ID {
@@ -396,7 +402,7 @@ func TestRealRewriteRuntimeRetryEligibilityMatrix(t *testing.T) {
 				return
 			}
 			if !errors.Is(retryErr, workflowrun.ErrNotRetryable) {
-				t.Fatalf("retry err=%v", retryErr)
+				t.Fatalf("retry err=%v latestStatus=%s latestVersion=%d", retryErr, latest.Status, latest.Version)
 			}
 			if count(t, f.ctx, f.repo.db, "SELECT COUNT(*) FROM workflow_run_records WHERE stage='rewrite' AND subject_id=$1", f.report.ID) != beforeRuns {
 				t.Fatal("rejected retry created a run")

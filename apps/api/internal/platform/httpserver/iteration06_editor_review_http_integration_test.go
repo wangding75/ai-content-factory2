@@ -202,6 +202,15 @@ func i06FixtureData(t *testing.T, ctx context.Context, p *pgxpool.Pool) i06Fixtu
 		if err != nil {
 			t.Fatal(err)
 		}
+		// Keep fixtures DC-CURVER-003 clean on the shared development database.
+		revisionID := uuid.New()
+		snapshot := []byte(`{"chapterNo":1,"title":"fixture","summary":"summary","chapterPurpose":"other","storylineRefs":[],"materialRefs":[],"foreshadowingRefs":[]}`)
+		if _, err = tx.Exec(ctx, "INSERT INTO chapter_plan_revisions(id,chapter_plan_id,project_id,revision_no,snapshot,change_type,created_by) VALUES($1,$2,$3,1,$4,'manual_create','i06')", revisionID, x.id, f.project, snapshot); err != nil {
+			t.Fatal(err)
+		}
+		if _, err = tx.Exec(ctx, "UPDATE chapter_plans SET current_revision_id=$1 WHERE id=$2", revisionID, x.id); err != nil {
+			t.Fatal(err)
+		}
 	}
 	if err = tx.Commit(ctx); err != nil {
 		t.Fatal(err)

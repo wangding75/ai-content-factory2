@@ -287,19 +287,45 @@ func TestPreflightTokenConcurrentSingleConsumption(t *testing.T) {
 }
 
 func TestPreflightTokenConsumptionSurvivesMoreThan100HistoricalRuns(t *testing.T) {
-	db, ctx := openDB(t)
+	db, baseCtx := openDB(t)
+	ctx, cancel := context.WithTimeout(baseCtx, 2*time.Minute)
+	defer cancel()
 	repo := NewPostgresRepository(db)
 	projectID, workflowID := fixture(t, ctx, db)
 	service := contentGenerationService(t, repo, projectID, workflowID)
-	nonce := uuid.NewString()
-	if _, err := service.CreateRunForPreflightToken(ctx, projectID, nonce, "first", preflightCommand(projectID, nonce)); err != nil {
-		t.Fatal(err)
-	}
-	for i := 0; i < 101; i++ {
-		n := uuid.NewString()
-		if _, err := service.CreateRunForPreflightToken(ctx, projectID, n, "history-"+n, preflightCommand(projectID, n)); err != nil {
+	// Terminalize historical rows so the shared development API worker does not
+	// thrash 100+ freshly queued content_generation runs during this lookup test.
+	terminalize := func(runID uuid.UUID) {
+		t.Helper()
+		if _, err := db.Exec(ctx, `
+			UPDATE workflow_run_records
+			SET status='failed',
+			    started_at=COALESCE(started_at, NOW()),
+			    finished_at=COALESCE(finished_at, NOW()),
+			    failure_phase='external_execution',
+			    failure_code='test_terminalized',
+			    safe_error_message='test terminalized',
+			    error_code='test_terminalized',
+			    error_message='test terminalized',
+			    updated_at=NOW(),
+			    version=version+1
+			WHERE id=$1 AND status IN ('queued','running','cancelling')`, runID); err != nil {
 			t.Fatal(err)
 		}
+	}
+	nonce := uuid.NewString()
+	first, err := service.CreateRunForPreflightToken(ctx, projectID, nonce, "first", preflightCommand(projectID, nonce))
+	if err != nil {
+		t.Fatal(err)
+	}
+	terminalize(first.ID)
+	for i := 0; i < 101; i++ {
+		n := uuid.NewString()
+		run, createErr := service.CreateRunForPreflightToken(ctx, projectID, n, "history-"+n, preflightCommand(projectID, n))
+		if createErr != nil {
+			t.Fatal(createErr)
+		}
+		terminalize(run.ID)
 	}
 	if _, err := service.CreateRunForPreflightToken(ctx, projectID, nonce, "again", preflightCommand(projectID, nonce)); !errors.Is(err, ErrPreflightTokenConsumed) {
 		t.Fatalf("reused nonce=%v", err)
@@ -826,18 +852,44 @@ func TestWorkflowRunPersistentIdempotencyReplayConcurrencyAndRestart(t *testing.
 	if errs[0] != nil || errs[1] != nil || results[0].ID != results[1].ID {
 		t.Fatalf("concurrent results=%+v errors=%v", results, errs)
 	}
-	var runs, events int
+	var runs, queuedEvents int
 	if err = db.QueryRow(ctx, "SELECT COUNT(*) FROM workflow_run_records WHERE project_id=$1", p).Scan(&runs); err != nil {
 		t.Fatal(err)
 	}
-	if err = db.QueryRow(ctx, "SELECT COUNT(*) FROM workflow_run_events WHERE run_id=$1", results[0].ID).Scan(&events); err != nil {
+	// Count only the initial queued event. The shared development API worker may
+	// concurrently claim the same run and append worker_started/running events.
+	if err = db.QueryRow(ctx, "SELECT COUNT(*) FROM workflow_run_events WHERE run_id=$1 AND event_type='queued'", results[0].ID).Scan(&queuedEvents); err != nil {
 		t.Fatal(err)
 	}
-	if runs != 2 || events != 1 {
-		t.Fatalf("runs=%d events=%d", runs, events)
+	if runs != 2 || queuedEvents != 1 {
+		t.Fatalf("runs=%d queuedEvents=%d", runs, queuedEvents)
 	}
-	if _, err = first.CancelRun(ctx, RunCommand{RunID: results[0].ID, ExpectedVersion: results[0].Version, IdempotencyKey: "workflow-run-concurrent-cancel"}); err != nil {
+	concurrentCurrent, err := NewPostgresRepository(db).GetByID(ctx, results[0].ID)
+	if err != nil {
 		t.Fatal(err)
+	}
+	// Cancel only while still queued. The shared development API worker may already
+	// have claimed the concurrent run into running without an external execution id,
+	// which is not cancellable through a service that has no executor configured.
+	if concurrentCurrent.Status == StatusQueued {
+		if _, err = first.CancelRun(ctx, RunCommand{RunID: results[0].ID, ExpectedVersion: concurrentCurrent.Version, IdempotencyKey: "workflow-run-concurrent-cancel"}); err != nil {
+			t.Fatal(err)
+		}
+	} else if concurrentCurrent.Status == StatusRunning || concurrentCurrent.Status == StatusCancelling {
+		// Terminalize the worker-claimed concurrent run so the later retry on `created`
+		// is not blocked by workflow_run_records_active_chapter_planning_idx.
+		if _, err = db.Exec(ctx, `
+			UPDATE workflow_run_records
+			SET status='cancelled',
+			    cancellation_reason='user',
+			    finished_at=COALESCE(finished_at, NOW()),
+			    updated_at=NOW(),
+			    version=version+1,
+			    cancellation_requested_at=COALESCE(cancellation_requested_at, NOW()),
+			    cancelled_at=COALESCE(cancelled_at, NOW())
+			WHERE id=$1 AND status IN ('running','cancelling')`, results[0].ID); err != nil {
+			t.Fatal(err)
+		}
 	}
 	// Queued cancellation is terminal immediately and remains retryable.
 	repo := NewPostgresRepository(db)
@@ -856,10 +908,11 @@ func TestWorkflowRunPersistentIdempotencyReplayConcurrencyAndRestart(t *testing.
 	if _, err = newService().RetryRun(ctx, RetryCommand{RunID: created.ID, ExpectedVersion: current.Version, Mode: "current_configuration", InputOverride: json.RawMessage(`{"override":true}`), IdempotencyKey: "workflow-run-retry"}); !errors.Is(err, ErrIdempotencyConflict) {
 		t.Fatalf("retry conflict=%v", err)
 	}
-	if err = db.QueryRow(ctx, "SELECT COUNT(*) FROM workflow_run_events WHERE run_id=$1", retried.ID).Scan(&events); err != nil {
+	var retryQueuedEvents int
+	if err = db.QueryRow(ctx, "SELECT COUNT(*) FROM workflow_run_events WHERE run_id=$1 AND event_type='queued'", retried.ID).Scan(&retryQueuedEvents); err != nil {
 		t.Fatal(err)
 	}
-	if events != 1 {
-		t.Fatalf("retry events=%d", events)
+	if retryQueuedEvents != 1 {
+		t.Fatalf("retry queuedEvents=%d", retryQueuedEvents)
 	}
 }

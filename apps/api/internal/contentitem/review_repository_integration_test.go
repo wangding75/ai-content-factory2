@@ -120,6 +120,13 @@ func TestPostgresMockReviewRollbackFailureAndRelations(t *testing.T) {
 	if _, err = db.Exec(ctx, "INSERT INTO chapter_plans(id,project_id,chapter_no,title,summary,status,source,created_by,confirmed_at) VALUES($1,$2,3,'other','s','confirmed','mock_generated','i06',NOW())", otherPlan, f.project); err != nil {
 		t.Fatal(err)
 	}
+	otherRevision := uuid.New()
+	if _, err = db.Exec(ctx, "INSERT INTO chapter_plan_revisions(id,chapter_plan_id,project_id,revision_no,snapshot,change_type,created_by) VALUES($1,$2,$3,1,$4,'manual_create','i06')", otherRevision, otherPlan, f.project, []byte(`{"chapterNo":3,"title":"other","summary":"s","chapterPurpose":"other","storylineRefs":[],"materialRefs":[],"foreshadowingRefs":[]}`)); err != nil {
+		t.Fatal(err)
+	}
+	if _, err = db.Exec(ctx, "UPDATE chapter_plans SET current_revision_id=$1 WHERE id=$2", otherRevision, otherPlan); err != nil {
+		t.Fatal(err)
+	}
 	y, err := r.CreateOrGet(ctx, otherPlan)
 	if err != nil {
 		t.Fatal(err)
