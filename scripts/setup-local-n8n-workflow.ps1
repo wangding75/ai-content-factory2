@@ -23,9 +23,13 @@ if ($LASTEXITCODE -ne 0) {
   throw 'Docker is not available.'
 }
 
-$n8n = & docker compose -f compose.yml -f compose.n8n.yml ps --format json n8n | ConvertFrom-Json
-if ($n8n.State -ne 'running' -or $n8n.Health -ne 'healthy') {
-  throw 'The n8n container must be running and healthy.'
+$n8nContainerId = (& docker compose -f compose.yml -f compose.n8n.yml ps -q n8n).Trim()
+if ([string]::IsNullOrWhiteSpace($n8nContainerId)) {
+	throw 'The n8n container is not running.'
+}
+$n8nStatus = (& docker inspect -f "{{.State.Status}} {{if .State.Health}}{{.State.Health.Status}}{{end}}" $n8nContainerId).Trim()
+if ($n8nStatus -ne 'running healthy') {
+	throw 'The n8n container must be running and healthy.'
 }
 
 $health = Invoke-WebRequest -UseBasicParsing http://127.0.0.1:15678/healthz

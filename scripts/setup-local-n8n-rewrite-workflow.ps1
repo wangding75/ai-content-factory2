@@ -2,11 +2,11 @@
 param()
 
 $ErrorActionPreference = 'Stop'
-$workflowName = 'ACF Iteration 16 Local Content Generation'
-$workflowId = 'f4e32de0-16a0-4100-8000-000000000001'
-$webhookPath = 'acf-iteration-16-local-content-generation'
-$workflowPath = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..\infra\n8n\workflows\iteration-16-local-content-generation.json'))
-$containerPath = '/tmp/iteration-16-local-content-generation.json'
+$workflowName = 'ACF Iteration 18 Local Rewrite'
+$workflowId = 'f4e32de0-18a0-4100-8000-000000000001'
+$webhookPath = 'acf-iteration-18-local-rewrite'
+$workflowPath = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..\infra\n8n\workflows\iteration-18-local-rewrite.json'))
+$containerPath = '/tmp/iteration-18-local-rewrite.json'
 
 function Invoke-N8nCli { param([Parameter(Mandatory)][string[]]$Arguments); & docker compose -f compose.yml -f compose.n8n.yml exec -T n8n n8n @Arguments; if ($LASTEXITCODE -ne 0) { throw "n8n CLI failed: n8n $($Arguments -join ' ')" } }
 

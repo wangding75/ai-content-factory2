@@ -146,7 +146,9 @@ type Platform struct {
 }
 type ListOptions struct {
 	Query, Type, ConnectionID, IntegrationStatus, ApplicableStage string
+	ValidationStatus, LlmStrategy string
 	Enabled                                                       *bool
+	Executable                                                    *bool
 	Limit, Offset                                                 int
 }
 type ProviderCreate struct {
@@ -366,6 +368,12 @@ func (s *Service) ListProviders(ctx context.Context, o ListOptions) ([]Provider,
 		var x Provider
 		if e = scanProvider(rows, &x); e != nil {
 			return nil, 0, e
+		}
+		if o.ValidationStatus != "" && x.ValidationStatus != o.ValidationStatus {
+			continue
+		}
+		if o.Executable != nil && x.Executable != *o.Executable {
+			continue
 		}
 		xs = append(xs, x)
 	}
@@ -971,6 +979,15 @@ func (s *Service) ListWorkflows(ctx context.Context, o ListOptions) ([]Workflow,
 		}
 		if _, e = s.hydrateWorkflowEligibility(ctx, &x, ""); e != nil {
 			return nil, 0, e
+		}
+		if o.ValidationStatus != "" && x.ValidationStatus != o.ValidationStatus {
+			continue
+		}
+		if o.Executable != nil && x.Executable != *o.Executable {
+			continue
+		}
+		if o.LlmStrategy != "" && x.LlmStrategy != o.LlmStrategy {
+			continue
 		}
 		out = append(out, x)
 	}
@@ -1765,6 +1782,10 @@ func where(o ListOptions, typeColumn string, _ any) (string, []any) {
 	if o.Enabled != nil {
 		a = append(a, *o.Enabled)
 		p = append(p, fmt.Sprintf("enabled=$%d", len(a)))
+	}
+	if o.ValidationStatus != "" {
+		a = append(a, o.ValidationStatus)
+		p = append(p, fmt.Sprintf("integration_status=$%d", len(a)))
 	}
 	if len(p) == 0 {
 		return "", a

@@ -252,7 +252,7 @@ func validRewriteReport(report rewriteReportFacts) bool {
 		report.SourceContentVersionID == report.Source.Version.ID &&
 		report.SourceContentVersionVersion == report.Source.Version.Version &&
 		report.SourceContentHash == reviewContentHash(report.Source.Version.Content) &&
-		report.Source.Version.Status == ContentVersionStatusFrozen && report.Source.Version.FrozenAt != nil &&
+		(report.Source.Version.Status == ContentVersionStatusFrozen || report.Source.Version.Status == ContentVersionStatusEditableDraft) &&
 		(report.Conclusion == "passed" || report.Conclusion == "needs_changes") &&
 		utf8.RuneCountInString(strings.TrimSpace(report.Source.Version.Title)) >= 1 &&
 		utf8.RuneCountInString(report.Source.Version.Title) <= 120 &&

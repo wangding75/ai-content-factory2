@@ -139,7 +139,20 @@ func ValidateDestination(ctx context.Context, u *url.URL, policy Policy) ([]net.
 	policy = policy.withDefaults()
 	host := strings.ToLower(strings.TrimSuffix(u.Hostname(), "."))
 	if policy.TrustedHosts[host] {
-		return policy.Resolver(ctx, host)
+		ips, err := policy.Resolver(ctx, host)
+		if err != nil || len(ips) == 0 {
+			return nil, safeError(CodeDNSResolutionFailed, "The integration host could not be resolved.", true)
+		}
+		for _, ip := range ips {
+			addr, ok := netip.AddrFromSlice(ip)
+			if !ok {
+				return nil, safeError(CodeDNSResolutionFailed, "The integration host could not be resolved.", true)
+			}
+			if restricted(addr.Unmap()) && !policy.TrustedHosts[host] {
+				return nil, safeError(CodeUnsafeBaseURL, "The integration host resolves to a restricted address.", false)
+			}
+		}
+		return ips, nil
 	}
 	if literal, err := netip.ParseAddr(host); err == nil {
 		literal = literal.Unmap()

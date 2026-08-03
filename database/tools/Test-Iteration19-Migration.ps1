@@ -32,6 +32,7 @@ $databaseNames = @(
 )
 $temporaryRoot = Join-Path ([System.IO.Path]::GetTempPath()) "acf-i19-migration-$suffix"
 $migration18Root = Join-Path $temporaryRoot 'migrations-18'
+$migration22Root = Join-Path $temporaryRoot 'migrations-22'
 
 function Assert-TemporaryDatabaseName {
     param([Parameter(Mandatory = $true)][string]$Name)
@@ -93,6 +94,21 @@ function Invoke-Migrate {
     }
 }
 
+function Invoke-MigrateDownToVersion {
+    param(
+        [Parameter(Mandatory = $true)][string]$TargetUrl,
+        [Parameter(Mandatory = $true)][int]$TargetVersion
+    )
+
+    while ($true) {
+        $current = [int](Invoke-Psql -TargetUrl $TargetUrl -Sql 'SELECT COALESCE(MAX(version), 0) FROM schema_migrations;' -Scalar)
+        if ($current -le $TargetVersion) {
+            return
+        }
+        Invoke-Migrate -TargetUrl $TargetUrl -Arguments @('down', '1')
+    }
+}
+
 function Get-SchemaFingerprint {
     param([Parameter(Mandatory = $true)][string]$TargetUrl)
     $sql = @'
@@ -119,9 +135,13 @@ FROM schema_objects;
 }
 
 New-Item -ItemType Directory -Path $migration18Root -Force | Out-Null
+New-Item -ItemType Directory -Path $migration22Root -Force | Out-Null
 Get-ChildItem -LiteralPath $migrationRoot -File -Filter '*.sql' |
     Where-Object { $_.Name -match '^0000(0[1-9]|1[0-8])_' } |
     ForEach-Object { Copy-Item -LiteralPath $_.FullName -Destination (Join-Path $migration18Root $_.Name) }
+Get-ChildItem -LiteralPath $migrationRoot -File -Filter '*.sql' |
+    Where-Object { $_.Name -match '^0000(0[1-9]|1[0-9]|2[0-2])_' } |
+    ForEach-Object { Copy-Item -LiteralPath $_.FullName -Destination (Join-Path $migration22Root $_.Name) }
 
 $adminUrl = Get-AdminUrl
 try {
@@ -137,7 +157,7 @@ try {
     Invoke-Migrate -TargetUrl $baselineUrl -Arguments @('up') -MigrationsDirectory $migration18Root
     Invoke-Migrate -TargetUrl $directUrl -Arguments @('up')
     Invoke-Migrate -TargetUrl $cycleUrl -Arguments @('up')
-    Invoke-Migrate -TargetUrl $cycleUrl -Arguments @('down', '1')
+    Invoke-MigrateDownToVersion -TargetUrl $cycleUrl -TargetVersion 18
 
     $downVersion = Invoke-Psql -TargetUrl $cycleUrl -Sql 'SELECT COALESCE(MAX(version), 0) FROM schema_migrations;' -Scalar
     if ($downVersion -ne '18') { throw "Migration down ended at version $downVersion instead of 18." }
@@ -154,11 +174,11 @@ try {
         throw "Migration 19 repeated up schema differs from direct up: direct=$directFingerprint cycle=$cycleFingerprint"
     }
     $finalVersion = Invoke-Psql -TargetUrl $cycleUrl -Sql 'SELECT COALESCE(MAX(version), 0) FROM schema_migrations;' -Scalar
-    if ($finalVersion -ne '19') { throw "Migration cycle ended at version $finalVersion instead of 19." }
+    if ($finalVersion -ne '22') { throw "Migration cycle ended at version $finalVersion instead of 22." }
 
     Write-Output "[PASS] Down schema matches direct version 18: $baselineFingerprint"
     Write-Output "[PASS] Direct up schema matches up/down/up: $directFingerprint"
-    Write-Output '[PASS] Migration cycle ended at version 19.'
+    Write-Output '[PASS] Migration cycle ended at version 22.'
 }
 finally {
     foreach ($databaseName in $databaseNames) {

@@ -1136,6 +1136,16 @@ func (s *Service) RetryRunWithReplay(ctx context.Context, command RetryCommand) 
 			run.WorkflowConnectionID = original.WorkflowConnectionID
 		}
 		created, _, err := store.CreateWithInitialEvent(ctx, run, Event{ID: s.newID(), RunID: run.ID, EventType: "queued", Status: StatusQueued, Payload: json.RawMessage(`{}`), CreatedAt: now})
+		if err != nil {
+			return WorkflowRun{}, mapStoreError(err)
+		}
+		retryPayload, marshalErr := json.Marshal(map[string]any{"sourceRunId": original.ID, "mode": mode})
+		if marshalErr != nil {
+			return WorkflowRun{}, marshalErr
+		}
+		if _, err = store.AddEvent(ctx, Event{ID: s.newID(), RunID: original.ID, EventType: "retry_created", Status: original.Status, Payload: retryPayload, CreatedAt: now}); err != nil {
+			return WorkflowRun{}, mapStoreError(err)
+		}
 		return created, mapStoreError(err)
 	})
 	if errors.Is(executeErr, ErrVersionConflict) || errors.Is(executeErr, ErrIdempotencyConflict) {

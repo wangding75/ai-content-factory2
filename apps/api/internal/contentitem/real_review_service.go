@@ -713,13 +713,22 @@ func (s *RealReviewService) CreateRunWithReplay(ctx context.Context, versionID u
 			return workflowrun.CreateRunCommand{}, ErrReviewActiveRun
 		}
 		sourceVersion := source.Version.Version
+		sourceStatus := source.Version.Status
+		sourceFrozenAt := source.Version.FrozenAt
 		if source.Version.Status == ContentVersionStatusEditableDraft {
-			err = tx.QueryRow(ctx, "UPDATE content_versions SET status='frozen',frozen_at=NOW(),version=version+1,updated_at=NOW() WHERE id=$1 AND version=$2 RETURNING version", source.Version.ID, source.Version.Version).Scan(&sourceVersion)
-			if errors.Is(err, pgx.ErrNoRows) {
-				return workflowrun.CreateRunCommand{}, ErrReviewPreflightChanged
-			}
-			if err != nil {
-				return workflowrun.CreateRunCommand{}, err
+			if source.Version.Source == ContentVersionSourceWorkflowGenerated || source.Version.Source == ContentVersionSourceWorkflowRewrite {
+				now := s.now().UTC()
+				sourceStatus = ContentVersionStatusFrozen
+				sourceFrozenAt = &now
+			} else {
+				err = tx.QueryRow(ctx, "UPDATE content_versions SET status='frozen',frozen_at=NOW(),version=version+1,updated_at=NOW() WHERE id=$1 AND version=$2 RETURNING version,frozen_at", source.Version.ID, source.Version.Version).Scan(&sourceVersion, &sourceFrozenAt)
+				if errors.Is(err, pgx.ErrNoRows) {
+					return workflowrun.CreateRunCommand{}, ErrReviewPreflightChanged
+				}
+				if err != nil {
+					return workflowrun.CreateRunCommand{}, err
+				}
+				sourceStatus = ContentVersionStatusFrozen
 			}
 		} else if source.Version.Status != ContentVersionStatusFrozen {
 			return workflowrun.CreateRunCommand{}, ErrReviewNotReviewable
@@ -735,6 +744,11 @@ func (s *RealReviewService) CreateRunWithReplay(ctx context.Context, versionID u
 			SourceContentHash: claims.SourceContentHash, SourceTitle: source.Version.Title,
 			SourceContent: source.Version.Content, OptionalInstructions: claims.OptionalInstructions,
 			ReviewDimensions: dimensions, WorkflowRunID: runID, CorrelationID: runID.String(),
+		}
+		if sourceStatus == ContentVersionStatusFrozen {
+			source.Version.Status = ContentVersionStatusFrozen
+			source.Version.FrozenAt = sourceFrozenAt
+			source.Version.Version = sourceVersion
 		}
 		payload, err := json.Marshal(input)
 		if err != nil {

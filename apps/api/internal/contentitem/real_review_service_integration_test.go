@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -761,6 +762,40 @@ func TestRealReviewContentItemStatusUsesImmutableSourceVersion(t *testing.T) {
 			t.Fatalf("current=%s status=%s reviewed=%v", currentID, status, reviewed)
 		}
 	})
+}
+
+func TestRealReviewCreateRunAcceptsWorkflowGeneratedCurrentVersion(t *testing.T) {
+	f := newRealReviewFixture(t)
+	runID := uuid.New()
+	runNumber := "WR-" + strings.ToUpper(runID.String()[:8])
+	if _, err := f.repo.db.Exec(f.ctx, "INSERT INTO workflow_run_records(id,run_number,project_id,stage,workflow_configuration_id,trigger_source,status,configuration_snapshot,input_payload,started_at,finished_at,created_at,updated_at) VALUES($1,$2,$3,'content_generation',$4,'manual','succeeded','{}','{}',NOW(),NOW(),NOW(),NOW())", runID, runNumber, f.item.Detail.Item.ProjectID, f.workflow); err != nil {
+		t.Fatal(err)
+	}
+	generatedID := uuid.New()
+	if _, err := f.repo.db.Exec(f.ctx, "INSERT INTO content_versions(id,content_item_id,version_no,source_content_version_id,source_content_version_version,source_workflow_run_id,title,content,summary,word_count,source,status,version,created_at,updated_at) VALUES($1,$2,2,$3,$4,$5,'候选正文','来自 workflow_generated 的候选正文。','候选摘要',12,'workflow_generated','editable_draft',1,NOW(),NOW())", generatedID, f.item.Detail.Item.ID, f.item.Detail.CurrentVersion.ID, f.item.Detail.CurrentVersion.Version, runID); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := f.repo.db.Exec(f.ctx, "UPDATE content_items SET current_version_id=$1,status='draft',reviewed_at=NULL,version=version+1,updated_at=NOW() WHERE id=$2", generatedID, f.item.Detail.Item.ID); err != nil {
+		t.Fatal(err)
+	}
+	f.item.Detail, _ = f.repo.GetByID(f.ctx, f.item.Detail.Item.ID)
+	preflight := f.preflight(t)
+	run, _, err := f.service.CreateRunWithReplay(f.ctx, f.item.Detail.CurrentVersion.ID, "reviewer", *preflight.PreflightToken, "generated-current")
+	if err != nil {
+		t.Fatalf("run=%+v err=%v", run, err)
+	}
+	if run.Stage != "review" || run.Status != workflowrun.StatusQueued || run.SubjectID == nil || *run.SubjectID != generatedID {
+		t.Fatalf("run=%+v", run)
+	}
+	var currentVersion int
+	var currentStatus string
+	var frozenAt *time.Time
+	if err := f.repo.db.QueryRow(f.ctx, "SELECT version,status,frozen_at FROM content_versions WHERE id=$1", generatedID).Scan(&currentVersion, &currentStatus, &frozenAt); err != nil {
+		t.Fatal(err)
+	}
+	if currentVersion != 1 || currentStatus != ContentVersionStatusEditableDraft || frozenAt != nil {
+		t.Fatalf("generated version mutated unexpectedly: version=%d status=%s frozenAt=%v", currentVersion, currentStatus, frozenAt)
+	}
 }
 
 func TestP0ReviewWithoutWorkflowRunRemainsReadable(t *testing.T) {

@@ -392,6 +392,9 @@ func TestContentGenerationRuntimeRetryEligibilityMatrix(t *testing.T) {
 			if replayErr != nil || replay.ID != retried.ID || len(store.runs) != 2 {
 				t.Fatalf("replay=%+v err=%v runs=%d", replay, replayErr, len(store.runs))
 			}
+			if len(store.events[id]) != len(tc.events)+1 || store.events[id][len(store.events[id])-1].EventType != "retry_created" {
+				t.Fatalf("source events=%+v", store.events[id])
+			}
 		})
 	}
 }

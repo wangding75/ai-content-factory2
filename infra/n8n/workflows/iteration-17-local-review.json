@@ -1,0 +1,146 @@
+{
+  "createdAt": "2026-08-03T00:00:00.000Z",
+  "updatedAt": "2026-08-03T00:00:00.000Z",
+  "id": "f4e32de0-17a0-4100-8000-000000000001",
+  "name": "ACF Iteration 17 Local Review",
+  "active": false,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "acf-iteration-17-local-review",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "f4e32de0-17a0-4100-8000-000000000011",
+      "name": "Production Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -420,
+        0
+      ],
+      "webhookId": "f4e32de0-17a0-4100-8000-000000000021"
+    },
+    {
+      "parameters": {
+        "method": "={{ $('Production Webhook').item.json.body?.probeType === 'acf_workflow_verification' ? 'GET' : 'POST' }}",
+        "url": "={{ $('Production Webhook').item.json.body?.probeType === 'acf_workflow_verification' ? $env.ACF_API_BASE_URL + '/healthz' : $env.ACF_API_BASE_URL + '/api/internal/n8n/workflow-runs/' + $('Production Webhook').item.json.body.runId + '/execution-started' }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-ACF-N8N-EXECUTION-TOKEN",
+              "value": "={{ $env.ACF_N8N_EXECUTION_STARTED_TOKEN }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ JSON.stringify({executionId:$execution.id,workflowId:$workflow.id}) }}",
+        "options": {}
+      },
+      "id": "f4e32de0-17a0-4100-8000-000000000025",
+      "name": "Register External Execution Immediately",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -300,
+        0
+      ],
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 1000
+    },
+    {
+      "parameters": {
+        "jsCode": "const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i; const fail=(code,message,field)=>({error:{code,message,field}}); const request=$('Production Webhook').all()[0]?.json?.body; if(!request||typeof request!=='object'||Array.isArray(request)) return [{json:fail('invalid_request','Request body must be a JSON object.','body')}]; if(request.probeType==='acf_workflow_verification'){ if(request.stage!=='review'||typeof request.contractVersion!=='string'||!request.contractVersion||typeof request.requestId!=='string'||!request.requestId) return [{json:fail('invalid_request','Verification probe fields are invalid.','probeType')}]; return [{json:{verified:true,stage:'review',contractVersion:request.contractVersion,requestId:request.requestId}}]; } const {runId,projectId,stage,input}=request; if(!UUID.test(runId||'')) return [{json:fail('invalid_request','runId must be a UUID.','runId')}]; if(!UUID.test(projectId||'')) return [{json:fail('invalid_request','projectId must be a UUID.','projectId')}]; if(stage!=='review') return [{json:fail('invalid_request','stage must be review.','stage')}]; if(!input||typeof input!=='object'||Array.isArray(input)||input.schemaVersion!=='review.input.v1'||!UUID.test(input.contentItemId||'')||!UUID.test(input.sourceContentVersionId||'')||!Number.isInteger(input.sourceContentVersionVersion)||input.sourceContentVersionVersion<1||typeof input.sourceTitle!=='string'||!input.sourceTitle.trim()||typeof input.sourceContent!=='string'||!input.sourceContent.trim()||!Array.isArray(input.reviewDimensions)||input.reviewDimensions.length<1||input.reviewDimensions.length>5) return [{json:fail('invalid_request','Runtime input is invalid.','input')}]; const instructions=(typeof input.optionalInstructions==='string'&&input.optionalInstructions.trim())?input.optionalInstructions.trim():''; const needsChanges=instructions.includes('[force-fail]')||input.sourceContent.includes('[force-fail]'); const issues=needsChanges?[{issueKey:'character-consistency-1',position:1,categoryKey:'character_consistency',categoryLabel:'角色一致性',severity:'warning',title:'人物行为与设定不一致',description:'关键情节中的人物行为与前文设定存在偏差，需要在重写中修正。',evidence:{quote:'他在明知潮汐异常的情况下依然独自前往灯塔。',sourceRefs:['sourceContentVersion']},location:{paragraphStart:1,paragraphEnd:1,sentenceStart:1,sentenceEnd:1},suggestion:'补充角色动机，或调整行动决策与已知设定保持一致。'}]:[]; const recommendations=needsChanges?[{position:1,priority:'medium',title:'补足角色动机',description:'在冲突前插入一段心理准备，解释主角为何仍坚持前往灯塔。'}]:[]; const summary=needsChanges?'检测到需要修正的角色一致性问题。':'正文满足当前审核维度要求。'; return [{json:{schemaVersion:'review.output.v1',conclusion:needsChanges?'needs_changes':'passed',summary,passedRuleCount:needsChanges?4:8,issues,recommendations}}];"
+      },
+      "id": "f4e32de0-17a0-4100-8000-000000000012",
+      "name": "Validate Request and Produce Review Result",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -120,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "={{ JSON.stringify($json) }}",
+        "options": {
+          "responseCode": "={{ $json.error ? 400 : 200 }}",
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "X-N8N-Execution-Id",
+                "value": "={{ $execution.id }}"
+              }
+            ]
+          }
+        }
+      },
+      "id": "f4e32de0-17a0-4100-8000-000000000013",
+      "name": "Return Runtime Output or Contract Error",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        120,
+        0
+      ]
+    }
+  ],
+  "connections": {
+    "Production Webhook": {
+      "main": [
+        [
+          {
+            "node": "Register External Execution Immediately",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Register External Execution Immediately": {
+      "main": [
+        [
+          {
+            "node": "Validate Request and Produce Review Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Request and Produce Review Result": {
+      "main": [
+        [
+          {
+            "node": "Return Runtime Output or Contract Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "pinData": null,
+  "versionId": "f4e32de0-17a0-4100-8000-000000000031",
+  "triggerCount": 0,
+  "tags": [
+    {
+      "name": "acf-stage:review"
+    }
+  ]
+}

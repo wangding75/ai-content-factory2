@@ -348,6 +348,20 @@ func TestRealRewritePreflightValidationAndAvailabilityReasons(t *testing.T) {
 	}
 }
 
+func TestRealRewriteAvailabilityAllowsWorkflowGeneratedReviewedSource(t *testing.T) {
+	f := newRealRewriteFixture(t)
+	if _, err := f.repo.db.Exec(f.ctx, "UPDATE content_versions SET status='editable_draft',frozen_at=NULL WHERE id=$1", f.report.SourceContentVersionID); err != nil {
+		t.Fatal(err)
+	}
+	availability, err := f.service.Availability(f.ctx, f.report.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !availability.Available || availability.Reason != nil || availability.ConfigurationSummary == nil || availability.OpenIssueCount != 1 {
+		t.Fatalf("availability=%+v", availability)
+	}
+}
+
 func TestRealRewriteCreateRollbackOnExpiredActorSourceIssueAndConfigurationDrift(t *testing.T) {
 	cases := []struct {
 		name   string

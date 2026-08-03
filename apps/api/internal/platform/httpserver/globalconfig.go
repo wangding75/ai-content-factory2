@@ -2,6 +2,7 @@ package httpserver
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"github.com/google/uuid"
 	"github.com/local/ai-content-factory/apps/api/internal/globalconfig"
@@ -74,7 +75,19 @@ func registerGlobalConfigurationRoutes(m *http.ServeMux, s *globalconfig.Service
 			configurationError(w, r, err)
 			return
 		}
-		writeJSON(w, r, 200, map[string]any{"items": models})
+		items := make([]map[string]any, 0, len(models))
+		for _, model := range models {
+			items = append(items, map[string]any{
+				"modelName": model.ModelKey,
+				"displayName": model.ModelKey,
+				"capabilities": []string{},
+				"source": model.Source,
+				"available": model.Availability == "available",
+				"discoveredAt": model.CreatedAt,
+				"lastSeenAt": model.LastSeenAt,
+			})
+		}
+		writeJSON(w, r, 200, map[string]any{"items": items, "total": len(items), "limit": len(items), "offset": 0})
 	})
 	m.HandleFunc("POST /api/v1/llm-providers/{providerId}/models/discover", func(w http.ResponseWriter, r *http.Request) {
 		id, ok := configurationID(w, r, "providerId")
@@ -95,7 +108,19 @@ func registerGlobalConfigurationRoutes(m *http.ServeMux, s *globalconfig.Service
 			configurationError(w, r, err)
 			return
 		}
-		writeJSON(w, r, 200, map[string]any{"items": models})
+		items := make([]map[string]any, 0, len(models))
+		for _, model := range models {
+			items = append(items, map[string]any{
+				"modelName": model.ModelKey,
+				"displayName": model.ModelKey,
+				"capabilities": []string{},
+				"source": model.Source,
+				"available": model.Availability == "available",
+				"discoveredAt": model.CreatedAt,
+				"lastSeenAt": model.LastSeenAt,
+			})
+		}
+		writeJSON(w, r, 200, map[string]any{"items": items, "total": len(items), "limit": len(items), "offset": 0})
 	})
 	m.HandleFunc("POST /api/v1/llm-providers/{providerId}/verify", func(w http.ResponseWriter, r *http.Request) {
 		id, ok := configurationID(w, r, "providerId")
@@ -104,7 +129,7 @@ func registerGlobalConfigurationRoutes(m *http.ServeMux, s *globalconfig.Service
 		}
 		var body struct {
 			ExpectedVersion int    `json:"expectedVersion"`
-			Model           string `json:"model"`
+			OptionalModel   string `json:"optionalModel"`
 		}
 		if !configurationBody(w, r, &body) || body.ExpectedVersion < 1 {
 			writeError(w, r, 400, "validation_error", "invalid configuration", map[string]any{})
@@ -114,8 +139,29 @@ func registerGlobalConfigurationRoutes(m *http.ServeMux, s *globalconfig.Service
 		if !ok {
 			return
 		}
-		value, err := s.VerifyProvider(r.Context(), id, body.ExpectedVersion, key, body.Model)
-		configurationRead(w, r, value, err)
+		value, err := s.VerifyProvider(r.Context(), id, body.ExpectedVersion, key, body.OptionalModel)
+		if err != nil {
+			configurationError(w, r, err)
+			return
+		}
+		checks := []any{}
+		if len(value.ValidationDetails) != 0 {
+			var details map[string]any
+			if json.Unmarshal(value.ValidationDetails, &details) == nil {
+				if rawChecks, ok := details["checks"].([]any); ok {
+					checks = rawChecks
+				}
+			}
+		}
+		writeJSON(w, r, 200, map[string]any{
+			"validationStatus": value.ValidationStatus,
+			"verifiedVersion": value.VerifiedVersion,
+			"checkedAt": value.LastVerifiedAt,
+			"modelSummary": value.DefaultModel,
+			"checks": checks,
+			"executable": value.Executable,
+			"safeError": nil,
+		})
 	})
 	for _, action := range []struct {
 		path    string
@@ -351,7 +397,7 @@ func configurationPatchKey(w http.ResponseWriter, r *http.Request) (string, bool
 	return key, true
 }
 func configurationListOptions(w http.ResponseWriter, r *http.Request) (globalconfig.ListOptions, bool) {
-	o := globalconfig.ListOptions{Query: strings.TrimSpace(r.URL.Query().Get("q")), Type: r.URL.Query().Get("providerType"), ConnectionID: r.URL.Query().Get("connectionId"), IntegrationStatus: r.URL.Query().Get("integrationStatus"), Limit: 20}
+	o := globalconfig.ListOptions{Query: strings.TrimSpace(r.URL.Query().Get("q")), Type: r.URL.Query().Get("providerType"), ConnectionID: r.URL.Query().Get("connectionId"), IntegrationStatus: r.URL.Query().Get("integrationStatus"), ValidationStatus: strings.TrimSpace(r.URL.Query().Get("validationStatus")), LlmStrategy: strings.TrimSpace(r.URL.Query().Get("llmStrategy")), Limit: 20}
 	if o.Type == "" {
 		o.Type = r.URL.Query().Get("connectionType")
 	}
@@ -391,7 +437,15 @@ func configurationListOptions(w http.ResponseWriter, r *http.Request) (globalcon
 			writeError(w, r, 400, "validation_error", "invalid query", map[string]any{"fields": map[string]string{"enabled": "invalid_boolean"}})
 			return o, false
 		}
-		o.Enabled = &value
+			o.Enabled = &value
+	}
+	if raw, exists := r.URL.Query()["executable"]; exists {
+		value, err := strconv.ParseBool(raw[0])
+		if err != nil {
+			writeError(w, r, 400, "validation_error", "invalid query", map[string]any{"fields": map[string]string{"executable": "invalid_boolean"}})
+			return o, false
+		}
+		o.Executable = &value
 	}
 	if o.Type != "" && !globalconfig.ValidType(r.URL.Path, o.Type) {
 		writeError(w, r, 400, "validation_error", "invalid query", map[string]any{"fields": map[string]string{"type": "invalid_enum"}})
