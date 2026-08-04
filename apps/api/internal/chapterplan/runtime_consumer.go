@@ -70,7 +70,17 @@ func (c *RuntimeConsumer) ConsumeResultTx(ctx context.Context, tx pgx.Tx, run wo
 	// forbidden here: Docker clock drift vs the app clock produced DC-TIME-007
 	// reverse-order events (result_consumed before run.created_at).
 	eventAt := workflowrun.EventCreatedAt(time.Now().UTC(), run.CreatedAt)
-	_, err = tx.Exec(ctx, "INSERT INTO workflow_run_events(id,run_id,event_type,status,payload,created_at) VALUES($1,$2,'result_consumed',$3,'{}',$4) ON CONFLICT DO NOTHING", uuid.New(), run.ID, run.Status, eventAt)
+	var exists bool
+	if err = tx.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM workflow_run_events WHERE run_id=$1 AND event_type='result_consumed')", run.ID).Scan(&exists); err != nil {
+		return err
+	}
+	if exists {
+		return nil
+	}
+	_, err = workflowrun.AddEventTx(ctx, tx, workflowrun.Event{
+		ID: uuid.New(), RunID: run.ID, EventType: "result_consumed", Status: run.Status,
+		Payload: json.RawMessage(`{}`), CreatedAt: eventAt,
+	})
 	return err
 }
 

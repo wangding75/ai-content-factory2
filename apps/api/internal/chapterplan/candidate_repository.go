@@ -415,7 +415,7 @@ func (r *Repository) GetChapterPlanningSummary(ctx context.Context, projectID uu
 		'createdAt', created_at,
 		'updatedAt', updated_at,
 		'version', version
-	)::jsonb FROM workflow_run_records WHERE project_id = $1 AND stage = 'chapter_planning' AND status IN ('queued', 'running') ORDER BY created_at DESC LIMIT 1`
+	)::jsonb FROM workflow_run_records WHERE project_id = $1 AND stage = 'chapter_planning' AND status IN ('queued', 'running', 'cancelling') ORDER BY created_at DESC LIMIT 1`
 
 	err = r.db.QueryRow(ctx, activeRunQuery, projectID).Scan(&activeRunPayload)
 	if errors.Is(err, pgx.ErrNoRows) || len(activeRunPayload) == 0 {
@@ -433,7 +433,7 @@ func (r *Repository) ActiveChapterPlanningRun(ctx context.Context, projectID uui
 	var exists bool
 	err := r.db.QueryRow(ctx, `SELECT EXISTS(
 		SELECT 1 FROM workflow_run_records
-		WHERE project_id = $1 AND stage = 'chapter_planning' AND status IN ('queued', 'running')
+		WHERE project_id = $1 AND stage = 'chapter_planning' AND status IN ('queued', 'running', 'cancelling')
 	)`, projectID).Scan(&exists)
 	return exists, err
 }

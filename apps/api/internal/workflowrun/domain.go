@@ -85,12 +85,23 @@ type Event struct {
 	Status    Status
 	Payload   json.RawMessage
 	CreatedAt time.Time
+	// Sequence is the durable per-run business order. It is allocated inside the
+	// write transaction and is the only ordering key for timelines. created_at is display-only.
+	Sequence int64
 }
 
 // TimestampPrecision matches PostgreSQL timestamptz storage (microseconds).
 // All durable WorkflowRun / Event timestamps are normalized to this precision
 // before persistence so app clocks and DB round-trips cannot invent reverse order.
 const TimestampPrecision = time.Microsecond
+
+// ActiveStatuses is the frozen Active set for uniqueness, conflict checks, and summaries.
+var ActiveStatuses = []Status{StatusQueued, StatusRunning, StatusCancelling}
+
+// IsActiveStatus reports whether status is part of the frozen Active set.
+func IsActiveStatus(status Status) bool {
+	return status == StatusQueued || status == StatusRunning || status == StatusCancelling
+}
 
 // NormalizeTimestamp converts a wall time to UTC and truncates to the durable
 // database precision used by workflow_run_records / workflow_run_events.
@@ -114,6 +125,21 @@ func EventCreatedAt(eventAt, runCreatedAt time.Time) time.Time {
 	return eventAt
 }
 
+// RunUpdatedAt clamps a service-supplied write time so durable updated_at never
+// moves earlier than created_at or the existing updated_at (PostgreSQL microsecond precision).
+func RunUpdatedAt(supplied, createdAt, updatedAt time.Time) time.Time {
+	at := NormalizeTimestamp(supplied)
+	createdAt = NormalizeTimestamp(createdAt)
+	updatedAt = NormalizeTimestamp(updatedAt)
+	if at.Before(createdAt) {
+		at = createdAt
+	}
+	if at.Before(updatedAt) {
+		at = updatedAt
+	}
+	return at
+}
+
 func New(id, projectID, workflowConfigurationID uuid.UUID, runNumber, stage, triggerSource string, snapshot, input json.RawMessage) (WorkflowRun, error) {
 	now := NormalizeTimestamp(time.Now().UTC())
 	run := WorkflowRun{ID: id, RunNumber: runNumber, ProjectID: projectID, Stage: stage, WorkflowConfigurationID: workflowConfigurationID, TriggerSource: triggerSource, Status: StatusQueued, ConfigurationSnapshot: RedactJSON(snapshot), InputPayload: RedactJSON(input), Retryability: "not_retryable", BindingSnapshot: json.RawMessage(`{}`), ConnectionSnapshot: json.RawMessage(`{}`), LlmPolicySnapshot: json.RawMessage(`{}`), CreatedAt: now, UpdatedAt: now, Version: 1}
@@ -131,13 +157,13 @@ func NewFromDB(run WorkflowRun) (WorkflowRun, error) {
 }
 
 func (r WorkflowRun) Start(at time.Time) (WorkflowRun, error) {
-	return r.transition(StatusRunning, at.UTC(), nil, nil)
+	return r.transition(StatusRunning, at, nil, nil)
 }
 func (r WorkflowRun) Succeed(at time.Time, output json.RawMessage) (WorkflowRun, error) {
 	if !validJSONObject(output) {
 		return WorkflowRun{}, ErrValidation
 	}
-	return r.transition(StatusSucceeded, at.UTC(), output, nil)
+	return r.transition(StatusSucceeded, at, output, nil)
 }
 
 // CompleteResultConsumption is the only path that can recover an existing
@@ -148,7 +174,7 @@ func (r WorkflowRun) CompleteResultConsumption(at time.Time) (WorkflowRun, error
 		(r.Status != StatusFailed || r.FailurePhase == nil || *r.FailurePhase != "result_consumption")) {
 		return WorkflowRun{}, ErrInvalidTransition
 	}
-	at = at.UTC()
+	at = RunUpdatedAt(at, r.CreatedAt, r.UpdatedAt)
 	r.Status, r.UpdatedAt, r.Version = StatusSucceeded, at, r.Version+1
 	r.FinishedAt = &at
 	r.ErrorCode, r.ErrorMessage, r.ErrorDetails = nil, nil, nil
@@ -161,10 +187,10 @@ func (r WorkflowRun) Fail(at time.Time, failure Failure) (WorkflowRun, error) {
 	if strings.TrimSpace(failure.Code) == "" || strings.TrimSpace(failure.Message) == "" || !validJSONObject(failure.Details) {
 		return WorkflowRun{}, ErrValidation
 	}
-	return r.transition(StatusFailed, at.UTC(), nil, &failure)
+	return r.transition(StatusFailed, at, nil, &failure)
 }
 func (r WorkflowRun) Cancel(at time.Time) (WorkflowRun, error) {
-	return r.transition(StatusCancelled, at.UTC(), nil, nil)
+	return r.transition(StatusCancelled, at, nil, nil)
 }
 
 // RequestCancellation records the durable intent before an executor attempts
@@ -178,7 +204,7 @@ func (r WorkflowRun) RequestCancellation(at time.Time, reason ...string) (Workfl
 	if value != "user" && value != "timeout" {
 		return WorkflowRun{}, ErrValidation
 	}
-	next, err := r.transition(StatusCancelling, at.UTC(), nil, nil)
+	next, err := r.transition(StatusCancelling, at, nil, nil)
 	if err != nil {
 		return WorkflowRun{}, err
 	}
@@ -193,7 +219,8 @@ func (r WorkflowRun) Timeout(at time.Time, failure Failure) (WorkflowRun, error)
 	if !canTransition(r.Status, StatusTimedOut) {
 		return WorkflowRun{}, ErrInvalidTransition
 	}
-	r.Status, r.UpdatedAt, r.Version = StatusTimedOut, at.UTC(), r.Version+1
+	at = RunUpdatedAt(at, r.CreatedAt, r.UpdatedAt)
+	r.Status, r.UpdatedAt, r.Version = StatusTimedOut, at, r.Version+1
 	code, message := strings.TrimSpace(failure.Code), strings.TrimSpace(failure.Message)
 	r.ErrorCode, r.ErrorMessage, r.FailureCode, r.SafeErrorMessage = &code, &message, &code, &message
 	phase := "external_execution"
@@ -208,6 +235,7 @@ func (r WorkflowRun) transition(next Status, at time.Time, output json.RawMessag
 	if !canTransition(r.Status, next) {
 		return WorkflowRun{}, ErrInvalidTransition
 	}
+	at = RunUpdatedAt(at, r.CreatedAt, r.UpdatedAt)
 	r.Status, r.UpdatedAt, r.Version = next, at, r.Version+1
 	switch next {
 	case StatusRunning:

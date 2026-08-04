@@ -268,7 +268,11 @@ func TestRealReviewInvalidOutputAndConsumptionRetryBoundaries(t *testing.T) {
 	if _, err = f.repo.db.Exec(f.ctx, "UPDATE workflow_run_records SET status='succeeded',output_payload=$1,started_at=$3,finished_at=$3,updated_at=$3,version=2 WHERE id=$2", json.RawMessage(validReviewOutput), consumptionRun.ID, consumedAt); err != nil {
 		t.Fatal(err)
 	}
-	if _, err = f.repo.db.Exec(f.ctx, "INSERT INTO workflow_run_events(id,run_id,event_type,status,payload) VALUES($1,$2,'result_consumption_failed','succeeded','{}')", uuid.New(), consumptionRun.ID); err != nil {
+	if _, err = f.repo.db.Exec(f.ctx, `WITH seq AS (
+		UPDATE workflow_run_records SET next_event_sequence = next_event_sequence + 1 WHERE id=$1 RETURNING next_event_sequence - 1 AS sequence
+	)
+	INSERT INTO workflow_run_events(id,run_id,event_type,status,payload,created_at,sequence)
+	SELECT $2,$1,'result_consumption_failed','succeeded','{}',NOW(),seq.sequence FROM seq`, consumptionRun.ID, uuid.New()); err != nil {
 		t.Fatal(err)
 	}
 	beforeRuns := count(t, f.ctx, f.repo.db, "SELECT count(*) FROM workflow_run_records WHERE project_id=$1", f.item.Detail.Item.ProjectID)
@@ -394,7 +398,11 @@ func TestRealReviewSummaryRestoresAllEightStatesAndFactPriority(t *testing.T) {
 	if _, err := f.repo.db.Exec(f.ctx, "UPDATE workflow_run_records SET status='succeeded',output_payload=$1,started_at=$3,finished_at=$3,updated_at=$3,version=2 WHERE id=$2", json.RawMessage(validReviewOutput), consumptionRun.ID, consumptionCompletedAt); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := f.repo.db.Exec(f.ctx, "INSERT INTO workflow_run_events(id,run_id,event_type,status,payload) VALUES($1,$2,'result_consumption_failed','succeeded','{}')", uuid.New(), consumption.ID); err != nil {
+	if _, err := f.repo.db.Exec(f.ctx, `WITH seq AS (
+		UPDATE workflow_run_records SET next_event_sequence = next_event_sequence + 1 WHERE id=$1 RETURNING next_event_sequence - 1 AS sequence
+	)
+	INSERT INTO workflow_run_events(id,run_id,event_type,status,payload,created_at,sequence)
+	SELECT $2,$1,'result_consumption_failed','succeeded','{}',NOW(),seq.sequence FROM seq`, consumption.ID, uuid.New()); err != nil {
 		t.Fatal(err)
 	}
 	assertState("result_consumption_failed")

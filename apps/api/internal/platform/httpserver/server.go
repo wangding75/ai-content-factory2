@@ -1,6 +1,7 @@
 package httpserver
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"io"
@@ -133,7 +134,16 @@ func New(address string, projects *project.Service, services ...any) *Server {
 	return &Server{httpServer: &http.Server{Addr: address, Handler: withRequestID(mux), ReadHeaderTimeout: 5 * time.Second, ReadTimeout: 15 * time.Second, WriteTimeout: 30 * time.Second, IdleTimeout: 60 * time.Second}}
 }
 func (s *Server) ListenAndServe() error { return s.httpServer.ListenAndServe() }
-func (s *Server) Shutdown() error       { return s.httpServer.Close() }
+
+// Shutdown drains in-flight HTTP requests. The normal path never uses Close().
+func (s *Server) Shutdown(ctx context.Context) error {
+	if ctx == nil {
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithTimeout(context.Background(), 20*time.Second)
+		defer cancel()
+	}
+	return s.httpServer.Shutdown(ctx)
+}
 func (s *Server) Handler() http.Handler { return s.httpServer.Handler }
 func healthHandler(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, r, http.StatusOK, map[string]any{"status": "ok", "service": "api"})

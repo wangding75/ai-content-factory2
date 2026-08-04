@@ -97,6 +97,33 @@ func TestWorkflowRunRuntimeIntegrityMigration(t *testing.T) {
 	}
 }
 
+func TestWorkflowRunCoreStabilityMigration(t *testing.T) {
+	t.Parallel()
+	up := readMigration(t, "000023_workflow_run_core_stability.up.sql")
+	for _, fragment := range []string{
+		"ADD COLUMN next_event_sequence BIGINT NOT NULL DEFAULT 1",
+		"ADD COLUMN sequence BIGINT NULL",
+		"workflow_run_events_run_id_sequence_unique",
+		"workflow_run_events_run_sequence_idx",
+		"status IN ('queued', 'running', 'cancelling')",
+		"workflow_run_records_active_chapter_planning_idx",
+	} {
+		if !strings.Contains(up, fragment) {
+			t.Errorf("Migration 23 up is missing %q", fragment)
+		}
+	}
+	down := readMigration(t, "000023_workflow_run_core_stability.down.sql")
+	for _, fragment := range []string{
+		"DROP COLUMN IF EXISTS sequence",
+		"DROP COLUMN IF EXISTS next_event_sequence",
+		"status IN ('queued', 'running')",
+	} {
+		if !strings.Contains(down, fragment) {
+			t.Errorf("Migration 23 down is missing %q", fragment)
+		}
+	}
+}
+
 func readMigration(t *testing.T, name string) string {
 	t.Helper()
 	contents, err := os.ReadFile(name)

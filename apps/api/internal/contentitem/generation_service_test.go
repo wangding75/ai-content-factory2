@@ -157,6 +157,11 @@ func (r generationErrorRow) Scan(...any) error{return r.err}
 
 func (tx *generationFailureTx) QueryRow(ctx context.Context, sql string, args ...any) pgx.Row {
 	if strings.Contains(sql,"SELECT v.content_item_id,i.project_id,v.version FROM content_versions")&&tx.sourceErr!=nil{return generationErrorRow{tx.sourceErr}}
+	// AddEventTx allocates sequence and inserts via QueryRow ... RETURNING.
+	if strings.Contains(sql, "INSERT INTO workflow_run_events") && tx.eventErr != nil {
+		tx.eventAttempts++
+		return generationErrorRow{tx.eventErr}
+	}
 	return tx.Tx.QueryRow(ctx,sql,args...)
 }
 

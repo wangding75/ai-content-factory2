@@ -155,7 +155,11 @@ func insertSucceededGenerationRun(t *testing.T, ctx context.Context, db *pgxpool
 }
 func insertGenerationEvent(t *testing.T, ctx context.Context, db *pgxpool.Pool, runID uuid.UUID, eventType string) {
 	t.Helper()
-	if _, e := db.Exec(ctx, "INSERT INTO workflow_run_events(id,run_id,event_type,status,payload,created_at) VALUES($1,$2,$3,'succeeded','{}',NOW())", uuid.New(), runID, eventType); e != nil {
+	if _, e := db.Exec(ctx, `WITH seq AS (
+		UPDATE workflow_run_records SET next_event_sequence = next_event_sequence + 1 WHERE id=$1 RETURNING next_event_sequence - 1 AS sequence
+	)
+	INSERT INTO workflow_run_events(id,run_id,event_type,status,payload,created_at,sequence)
+	SELECT $2,$1,$3,'succeeded','{}',NOW(),seq.sequence FROM seq`, runID, uuid.New(), eventType); e != nil {
 		t.Fatal(e)
 	}
 }

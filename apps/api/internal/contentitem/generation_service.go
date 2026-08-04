@@ -521,7 +521,7 @@ func (s *GenerationService) Summary(ctx context.Context, itemID uuid.UUID) (Gene
 	if len(list.Items) > 0 {
 		out.LatestRun = &list.Items[0]
 		for i := range list.Items {
-			if list.Items[i].Status == workflowrun.StatusQueued || list.Items[i].Status == workflowrun.StatusRunning {
+			if workflowrun.IsActiveStatus(list.Items[i].Status) {
 				out.ActiveRun = &list.Items[i]
 				break
 			}
@@ -961,7 +961,10 @@ func (s *GenerationService) consumeLocked(ctx context.Context, tx pgx.Tx, run wo
 		return ContentVersion{}, e
 	}
 	eventAt := workflowrun.EventCreatedAt(s.now(), run.CreatedAt)
-	if _, e = tx.Exec(ctx, "INSERT INTO workflow_run_events(id,run_id,event_type,status,payload,created_at) VALUES($1,$2,'result_consumed',$3,'{}',$4)", uuid.New(), run.ID, run.Status, eventAt); e != nil {
+	if _, e = workflowrun.AddEventTx(ctx, tx, workflowrun.Event{
+		ID: uuid.New(), RunID: run.ID, EventType: "result_consumed", Status: run.Status,
+		Payload: json.RawMessage(`{}`), CreatedAt: eventAt,
+	}); e != nil {
 		return ContentVersion{}, e
 	}
 	return created, nil

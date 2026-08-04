@@ -158,7 +158,7 @@ func TestResultConsumptionTransactionCommitsRuntimeFactAndDomainEventAtomically(
 	run := pendingConsumptionRun(t, ctx, repo, projectID, workflowID, "WR-CONSUME-COMMIT")
 
 	updated, replay, err := repo.ConsumeResult(ctx, run.ID, run.Version, time.Now().UTC(), false, func(ctx context.Context, tx pgx.Tx, locked WorkflowRun) error {
-		_, callbackErr := tx.Exec(ctx, "INSERT INTO workflow_run_events(id,run_id,event_type,status,payload) VALUES($1,$2,'result_consumed','running','{}')", uuid.New(), locked.ID)
+		_, callbackErr := AddEventTx(ctx, tx, Event{ID: uuid.New(), RunID: locked.ID, EventType: "result_consumed", Status: StatusRunning, Payload: json.RawMessage(`{}`), CreatedAt: time.Now().UTC()})
 		return callbackErr
 	})
 	if err != nil || replay || updated.Status != StatusSucceeded || updated.ID != run.ID {
@@ -184,7 +184,7 @@ func TestResultConsumptionTransactionRollsBackPartialDomainWriteAndCanRetry(t *t
 	canary := errors.New("domain write failed")
 
 	_, _, err := repo.ConsumeResult(ctx, run.ID, run.Version, time.Now().UTC(), false, func(ctx context.Context, tx pgx.Tx, locked WorkflowRun) error {
-		if _, insertErr := tx.Exec(ctx, "INSERT INTO workflow_run_events(id,run_id,event_type,status,payload) VALUES($1,$2,'result_consumed','running','{}')", uuid.New(), locked.ID); insertErr != nil {
+		if _, insertErr := AddEventTx(ctx, tx, Event{ID: uuid.New(), RunID: locked.ID, EventType: "result_consumed", Status: StatusRunning, Payload: json.RawMessage(`{}`), CreatedAt: time.Now().UTC()}); insertErr != nil {
 			return insertErr
 		}
 		return canary
@@ -696,7 +696,11 @@ func TestRepositoryRestartRecoveryExternalIDAndTerminalClaimAreDurable(t *testin
 	if _, err = repo.Create(ctx, running); err != nil {
 		t.Fatal(err)
 	}
-	persisted, err := repo.SaveExternalExecutionID(ctx, running, "n8n-restart-execution")
+	at := time.Now().UTC()
+	persisted, _, err := repo.RecordExecutionStartedAtomic(ctx, running.ID, "n8n-restart-execution", Event{
+		ID: uuid.New(), RunID: running.ID, EventType: "execution_started", Status: StatusRunning,
+		Payload: json.RawMessage(`{"externalExecutionId":"n8n-restart-execution"}`), CreatedAt: at,
+	}, at)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -772,7 +776,7 @@ func TestRepositoryIdempotencyResultFailureRollsBackRunEventAndRecord(t *testing
 	}
 }
 
-func TestRepositoryListEventsHasStableCreatedAtIDOrder(t *testing.T) {
+func TestRepositoryListEventsHasStableSequenceOrder(t *testing.T) {
 	db, ctx := openDB(t)
 	repo := NewPostgresRepository(db)
 	p, w := fixture(t, ctx, db)
@@ -782,18 +786,19 @@ func TestRepositoryListEventsHasStableCreatedAtIDOrder(t *testing.T) {
 	}
 	at := time.Now().UTC()
 	firstID, secondID := uuid.New(), uuid.New()
-	if firstID.String() > secondID.String() {
-		firstID, secondID = secondID, firstID
-	}
-	if _, err = repo.AddEvent(ctx, Event{ID: secondID, RunID: run.ID, EventType: "queued", Status: StatusQueued, Payload: json.RawMessage(`{}`), CreatedAt: at}); err != nil {
-		t.Fatal(err)
-	}
+	// Insert order defines sequence; identical created_at must not reorder by UUID.
 	if _, err = repo.AddEvent(ctx, Event{ID: firstID, RunID: run.ID, EventType: "queued", Status: StatusQueued, Payload: json.RawMessage(`{}`), CreatedAt: at}); err != nil {
 		t.Fatal(err)
 	}
+	if _, err = repo.AddEvent(ctx, Event{ID: secondID, RunID: run.ID, EventType: "worker_started", Status: StatusRunning, Payload: json.RawMessage(`{}`), CreatedAt: at}); err != nil {
+		t.Fatal(err)
+	}
 	events, err := repo.ListEvents(ctx, run.ID)
-	if err != nil || len(events) != 2 || events[0].ID != firstID {
+	if err != nil || len(events) != 2 {
 		t.Fatalf("events=%+v err=%v", events, err)
+	}
+	if events[0].ID != firstID || events[1].ID != secondID || events[0].Sequence != 1 || events[1].Sequence != 2 {
+		t.Fatalf("sequence order broken: %+v", events)
 	}
 }
 
@@ -1039,7 +1044,7 @@ func TestConsumeResultWithSkewedClockDoesNotReverseEventOrder(t *testing.T) {
 	// Consume with a clock behind the original run (mirrors the production result_consumed path).
 	updated, replay, err := repo.ConsumeResult(ctx, stored.ID, stored.Version, runAt.Add(-3*time.Millisecond), false, func(ctx context.Context, tx pgx.Tx, locked WorkflowRun) error {
 		eventAt := EventCreatedAt(runAt.Add(-3*time.Millisecond), locked.CreatedAt)
-		_, callbackErr := tx.Exec(ctx, "INSERT INTO workflow_run_events(id,run_id,event_type,status,payload,created_at) VALUES($1,$2,'result_consumed','running','{}',$3)", uuid.New(), locked.ID, eventAt)
+		_, callbackErr := AddEventTx(ctx, tx, Event{ID: uuid.New(), RunID: locked.ID, EventType: "result_consumed", Status: StatusRunning, Payload: json.RawMessage(`{}`), CreatedAt: eventAt})
 		return callbackErr
 	})
 	if err != nil || replay {

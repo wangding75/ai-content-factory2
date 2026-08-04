@@ -66,6 +66,9 @@ func (s *serviceStore) CreateWithInitialEvent(_ context.Context, run WorkflowRun
 		return WorkflowRun{}, Event{}, s.createErr
 	}
 	s.runs[run.ID] = run
+	if event.Sequence < 1 {
+		event.Sequence = 1
+	}
 	s.events[run.ID] = append(s.events[run.ID], event)
 	return run, event, nil
 }
@@ -114,11 +117,57 @@ func (s *serviceStore) ListRecoverableResultConsumptions(_ context.Context, _ in
 	}
 	return out, nil
 }
+func (s *serviceStore) ListWorkerCandidates(_ context.Context, limit int, now time.Time) ([]WorkflowRun, error) {
+	if limit <= 0 {
+		limit = workerCandidateBatchLimit
+	}
+	type item struct {
+		run WorkflowRun
+	}
+	var items []item
+	for _, r := range s.runs {
+		switch r.Status {
+		case StatusQueued, StatusCancelling:
+			items = append(items, item{run: r})
+		case StatusRunning:
+			if validJSONObject(r.OutputPayload) {
+				continue
+			}
+			if r.ExternalExecutionID != nil && strings.TrimSpace(*r.ExternalExecutionID) != "" {
+				items = append(items, item{run: r})
+				continue
+			}
+			reference := r.UpdatedAt
+			if r.StartedAt != nil {
+				reference = *r.StartedAt
+			}
+			if !reference.After(now.Add(-missingExternalIDGracePeriod)) {
+				items = append(items, item{run: r})
+			}
+		}
+	}
+	// Oldest first for fairness.
+	for i := 0; i < len(items); i++ {
+		for j := i + 1; j < len(items); j++ {
+			if items[j].run.CreatedAt.Before(items[i].run.CreatedAt) || (items[j].run.CreatedAt.Equal(items[i].run.CreatedAt) && items[j].run.ID.String() < items[i].run.ID.String()) {
+				items[i], items[j] = items[j], items[i]
+			}
+		}
+	}
+	out := make([]WorkflowRun, 0, limit)
+	for i := 0; i < len(items) && i < limit; i++ {
+		out = append(out, items[i].run)
+	}
+	return out, nil
+}
 func (s *serviceStore) Count(_ context.Context, _ ListFilter) (int, error) { return len(s.runs), nil }
 func (s *serviceStore) ListEvents(_ context.Context, id uuid.UUID) ([]Event, error) {
 	return s.events[id], nil
 }
 func (s *serviceStore) AddEvent(_ context.Context, event Event) (Event, error) {
+	if event.Sequence < 1 {
+		event.Sequence = int64(len(s.events[event.RunID]) + 1)
+	}
 	s.events[event.RunID] = append(s.events[event.RunID], event)
 	return event, nil
 }
@@ -127,25 +176,48 @@ func (s *serviceStore) UpdateStatusWithEvent(_ context.Context, current, next Wo
 		return WorkflowRun{}, Event{}, ErrVersionConflict
 	}
 	s.runs[next.ID] = next
+	if event.Sequence < 1 {
+		event.Sequence = int64(len(s.events[next.ID]) + 1)
+	}
 	s.events[next.ID] = append(s.events[next.ID], event)
 	return next, event, nil
 }
-func (s *serviceStore) SaveExternalExecutionID(_ context.Context, current WorkflowRun, id string) (WorkflowRun, error) {
-	r := s.runs[current.ID]
-	if r.Version != current.Version {
-		return WorkflowRun{}, ErrVersionConflict
+func (s *serviceStore) RecordExecutionStartedAtomic(_ context.Context, runID uuid.UUID, externalID string, event Event, at time.Time) (WorkflowRun, Event, error) {
+	r, ok := s.runs[runID]
+	if !ok {
+		return WorkflowRun{}, Event{}, ErrNotFound
+	}
+	if r.Status != StatusRunning && r.Status != StatusCancelling {
+		return WorkflowRun{}, Event{}, ErrInvalidTransition
 	}
 	if r.ExternalExecutionID != nil {
-		if *r.ExternalExecutionID == id {
-			return r, nil
+		if *r.ExternalExecutionID != externalID {
+			return WorkflowRun{}, Event{}, ErrVersionConflict
 		}
-		return WorkflowRun{}, ErrVersionConflict
+		for _, existing := range s.events[runID] {
+			if existing.EventType == "execution_started" {
+				return r, existing, nil
+			}
+		}
+		if event.Sequence < 1 {
+			event.Sequence = int64(len(s.events[runID]) + 1)
+		}
+		event.Status = r.Status
+		event.CreatedAt = EventCreatedAt(at, r.CreatedAt)
+		s.events[runID] = append(s.events[runID], event)
+		return r, event, nil
 	}
-	r.ExternalExecutionID = &id
+	r.ExternalExecutionID = &externalID
 	r.Version++
-	r.UpdatedAt = time.Now().UTC()
+	r.UpdatedAt = RunUpdatedAt(at, r.CreatedAt, r.UpdatedAt)
 	s.runs[r.ID] = r
-	return r, nil
+	if event.Sequence < 1 {
+		event.Sequence = int64(len(s.events[runID]) + 1)
+	}
+	event.Status = r.Status
+	event.CreatedAt = EventCreatedAt(at, r.CreatedAt)
+	s.events[runID] = append(s.events[runID], event)
+	return r, event, nil
 }
 func (s *serviceStore) SaveOutputForConsumption(_ context.Context, current WorkflowRun, output json.RawMessage, event Event) (WorkflowRun, Event, error) {
 	r := s.runs[current.ID]
@@ -154,6 +226,9 @@ func (s *serviceStore) SaveOutputForConsumption(_ context.Context, current Workf
 	}
 	r.OutputPayload, r.Version, r.UpdatedAt = output, r.Version+1, event.CreatedAt
 	s.runs[r.ID] = r
+	if event.Sequence < 1 {
+		event.Sequence = int64(len(s.events[r.ID]) + 1)
+	}
 	s.events[r.ID] = append(s.events[r.ID], event)
 	return r, event, nil
 }
@@ -578,8 +653,11 @@ func TestWorkerRecoversRunningExternalExecutionWithoutExecute(t *testing.T) {
 				service.RunWorker(ctx, time.Hour, func(err error) { t.Errorf("worker error: %v", err) })
 				close(done)
 			}()
-			deadline := time.Now().Add(time.Second)
-			for store.runs[run.ID].Status != test.wantStatus && time.Now().Before(deadline) {
+			deadline := time.Now().Add(2 * time.Second)
+			for time.Now().Before(deadline) {
+				if executor.QueryCalls >= 1 && store.runs[run.ID].Status == test.wantStatus {
+					break
+				}
 				time.Sleep(time.Millisecond)
 			}
 			cancel()

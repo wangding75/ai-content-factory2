@@ -356,7 +356,7 @@ func (s *Service) Preflight(ctx context.Context, projectID uuid.UUID, request Pr
 			return result, err
 		}
 		if active {
-			return blockedPreflight(result, "active_run_conflict", "a chapter-planning run is already active", "wait_for_active_run", "Only one queued or running chapter-planning run is allowed."), nil
+			return blockedPreflight(result, "active_run_conflict", "a chapter-planning run is already active", "wait_for_active_run", "Only one queued, running, or cancelling chapter-planning run is allowed."), nil
 		}
 	}
 	bindingSnap, err := json.Marshal(map[string]any{"stage": "chapter_planning", "workflowBindingId": binding.ID, "workflowBindingVersion": binding.Version, "workflowConfigurationId": workflow.ID, "workflowConfigurationVersion": workflow.Version, "workflowConfigurationSource": workflow.WorkflowType})

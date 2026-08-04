@@ -53,10 +53,11 @@ type Store interface {
 	GetByID(context.Context, uuid.UUID) (WorkflowRun, error)
 	List(context.Context, ListFilter) ([]WorkflowRun, error)
 	ListRecoverableResultConsumptions(context.Context, int, time.Time) ([]WorkflowRun, error)
+	ListWorkerCandidates(context.Context, int, time.Time) ([]WorkflowRun, error)
 	ListEvents(context.Context, uuid.UUID) ([]Event, error)
 	AddEvent(context.Context, Event) (Event, error)
 	UpdateStatusWithEvent(context.Context, WorkflowRun, WorkflowRun, Event) (WorkflowRun, Event, error)
-	SaveExternalExecutionID(context.Context, WorkflowRun, string) (WorkflowRun, error)
+	RecordExecutionStartedAtomic(context.Context, uuid.UUID, string, Event, time.Time) (WorkflowRun, Event, error)
 	SaveOutputForConsumption(context.Context, WorkflowRun, json.RawMessage, Event) (WorkflowRun, Event, error)
 	ConsumeResult(context.Context, uuid.UUID, int, time.Time, bool, func(context.Context, pgx.Tx, WorkflowRun) error) (WorkflowRun, bool, error)
 	MarkResultConsumptionFailure(context.Context, uuid.UUID, string, string, string, time.Time) (WorkflowRun, error)
@@ -386,11 +387,13 @@ func (s *Service) expireRun(ctx context.Context, run WorkflowRun) (WorkflowRun, 
 	return run, nil
 }
 
-// RecordExecutionStarted closes the submit/callback crash window. It is CAS
-// idempotent for the same external ID and rejects a conflicting ID without
-// changing terminal or unrelated Runs.
+// RecordExecutionStarted closes the submit/callback crash window. External ID
+// persistence and the execution_started event share one repository transaction
+// so partial success is impossible. Same-ID retries are idempotent and repair a
+// missing event; a different ID is a stable conflict.
 func (s *Service) RecordExecutionStarted(ctx context.Context, runID uuid.UUID, externalID, workflowID, revision string) (WorkflowRun, error) {
-	if runID == uuid.Nil || strings.TrimSpace(externalID) == "" || len(strings.TrimSpace(externalID)) > 200 {
+	externalID = strings.TrimSpace(externalID)
+	if runID == uuid.Nil || externalID == "" || len(externalID) > 200 {
 		return WorkflowRun{}, ErrValidation
 	}
 	run, err := s.store.GetByID(ctx, runID)
@@ -403,20 +406,21 @@ func (s *Service) RecordExecutionStarted(ctx context.Context, runID uuid.UUID, e
 	if !executionIdentityMatches(run.ConfigurationSnapshot, workflowID, revision) {
 		return WorkflowRun{}, ErrValidation
 	}
-	if run.ExternalExecutionID != nil {
-		if *run.ExternalExecutionID == strings.TrimSpace(externalID) {
-			return run, nil
-		}
+	if run.ExternalExecutionID != nil && *run.ExternalExecutionID != externalID {
 		log.Printf("workflow execution-started conflict run_id=%s", run.ID)
 		return WorkflowRun{}, ErrVersionConflict
 	}
-	updated, err := s.store.SaveExternalExecutionID(ctx, run, strings.TrimSpace(externalID))
-	if err != nil {
-		return WorkflowRun{}, mapStoreError(err)
+	at := NormalizeTimestamp(s.now())
+	event := Event{
+		ID: s.newID(), RunID: runID, EventType: "execution_started", Status: run.Status,
+		Payload: mustSafeJSON(map[string]any{"externalExecutionId": externalID}), CreatedAt: at,
 	}
-	_, eventErr := s.store.AddEvent(ctx, Event{ID: s.newID(), RunID: run.ID, EventType: "execution_started", Status: updated.Status, Payload: mustSafeJSON(map[string]any{"externalExecutionId": strings.TrimSpace(externalID)}), CreatedAt: s.now()})
-	if eventErr != nil {
-		return WorkflowRun{}, mapStoreError(eventErr)
+	updated, _, err := s.store.RecordExecutionStartedAtomic(ctx, runID, externalID, event, at)
+	if err != nil {
+		if errors.Is(err, ErrVersionConflict) {
+			log.Printf("workflow execution-started conflict run_id=%s", runID)
+		}
+		return WorkflowRun{}, mapStoreError(err)
 	}
 	return updated, nil
 }

@@ -472,7 +472,10 @@ func (s *RealRewriteService) consumeRewriteLocked(
 	if err != nil {
 		return ContentVersion{}, err
 	}
-	if _, err = tx.Exec(ctx, "INSERT INTO workflow_run_events(id,run_id,event_type,status,payload,created_at) VALUES($1,$2,'result_consumed','succeeded',$3,$4)", uuid.New(), run.ID, payload, workflowrun.EventCreatedAt(s.now(), run.CreatedAt)); err != nil {
+	if _, err = workflowrun.AddEventTx(ctx, tx, workflowrun.Event{
+		ID: uuid.New(), RunID: run.ID, EventType: "result_consumed", Status: workflowrun.StatusSucceeded,
+		Payload: payload, CreatedAt: workflowrun.EventCreatedAt(s.now(), run.CreatedAt),
+	}); err != nil {
 		return ContentVersion{}, err
 	}
 	return created, nil
@@ -569,7 +572,10 @@ func (s *RealRewriteService) recordRewriteFailure(ctx context.Context, runID uui
 	if err != nil {
 		return err
 	}
-	if _, err = tx.Exec(ctx, "INSERT INTO workflow_run_events(id,run_id,event_type,status,payload,created_at) VALUES($1,$2,$3,'succeeded',$4,$5)", uuid.New(), run.ID, eventType, payload, occurredAt); err != nil {
+	if _, err = workflowrun.AddEventTx(ctx, tx, workflowrun.Event{
+		ID: uuid.New(), RunID: run.ID, EventType: eventType, Status: workflowrun.StatusSucceeded,
+		Payload: payload, CreatedAt: occurredAt,
+	}); err != nil {
 		return err
 	}
 	return tx.Commit(ctx)

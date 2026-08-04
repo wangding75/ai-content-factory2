@@ -270,6 +270,11 @@ func (tx *rewriteConsumerFailureTx) QueryRow(ctx context.Context, query string, 
 		tx.candidateHits++
 		return rewriteConsumerFailureRow{err: tx.candidateErr}
 	}
+	// AddEventTx inserts via QueryRow ... RETURNING (sequence allocation uses UPDATE RETURNING first).
+	if strings.Contains(query, "INSERT INTO workflow_run_events") && tx.eventErr != nil {
+		tx.eventHits++
+		return rewriteConsumerFailureRow{err: tx.eventErr}
+	}
 	return tx.Tx.QueryRow(ctx, query, args...)
 }
 

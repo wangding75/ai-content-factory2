@@ -577,7 +577,7 @@ func (s *RealReviewService) Preflight(ctx context.Context, versionID uuid.UUID, 
 	add("workflow_configuration_available", "passed", "审核工作流配置可用")
 	add("workflow_connection_available", "passed", "审核工作流连接可用")
 	var active bool
-	err = s.repo.db.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM workflow_run_records WHERE project_id=$1 AND stage='review' AND subject_type='content_version' AND subject_id=$2 AND status IN ('queued','running'))", source.Item.ProjectID, versionID).Scan(&active)
+	err = s.repo.db.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM workflow_run_records WHERE project_id=$1 AND stage='review' AND subject_type='content_version' AND subject_id=$2 AND status IN ('queued','running','cancelling'))", source.Item.ProjectID, versionID).Scan(&active)
 	if err != nil {
 		return result, err
 	}
@@ -706,7 +706,7 @@ func (s *RealReviewService) CreateRunWithReplay(ctx context.Context, versionID u
 			return workflowrun.CreateRunCommand{}, ErrReviewPreflightChanged
 		}
 		var active bool
-		if err = tx.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM workflow_run_records WHERE project_id=$1 AND stage='review' AND subject_type='content_version' AND subject_id=$2 AND status IN ('queued','running'))", source.Item.ProjectID, source.Version.ID).Scan(&active); err != nil {
+		if err = tx.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM workflow_run_records WHERE project_id=$1 AND stage='review' AND subject_type='content_version' AND subject_id=$2 AND status IN ('queued','running','cancelling'))", source.Item.ProjectID, source.Version.ID).Scan(&active); err != nil {
 			return workflowrun.CreateRunCommand{}, err
 		}
 		if active {
@@ -1114,7 +1114,10 @@ func (s *RealReviewService) consumeReviewLocked(ctx context.Context, tx pgx.Tx, 
 	// Application clock + run.created_at floor. Never use DB NOW(): host/container
 	// clock skew made result_consumed land before run.created_at (DC-TIME-007 / event 51).
 	eventAt := workflowrun.EventCreatedAt(s.now(), run.CreatedAt)
-	if _, err = tx.Exec(ctx, "INSERT INTO workflow_run_events(id,run_id,event_type,status,payload,created_at) VALUES($1,$2,'result_consumed','succeeded','{}',$3)", uuid.New(), run.ID, eventAt); err != nil {
+	if _, err = workflowrun.AddEventTx(ctx, tx, workflowrun.Event{
+		ID: uuid.New(), RunID: run.ID, EventType: "result_consumed", Status: workflowrun.StatusSucceeded,
+		Payload: json.RawMessage(`{}`), CreatedAt: eventAt,
+	}); err != nil {
 		return RealReviewResult{}, err
 	}
 	return RealReviewResult{Report: report, Issues: issues, Recommendations: recommendations, WorkflowRun: run}, nil
@@ -1141,7 +1144,10 @@ func (s *RealReviewService) recordReviewFailure(ctx context.Context, run workflo
 		message = "审核输出未通过结构校验"
 	}
 	payload, _ := json.Marshal(map[string]any{"code": eventType, "message": message, "correlationId": run.ID.String()})
-	if _, err = tx.Exec(ctx, "INSERT INTO workflow_run_events(id,run_id,event_type,status,payload,created_at) VALUES($1,$2,$3,$4,$5,$6)", uuid.New(), run.ID, eventType, run.Status, payload, workflowrun.EventCreatedAt(s.now(), run.CreatedAt)); err != nil {
+	if _, err = workflowrun.AddEventTx(ctx, tx, workflowrun.Event{
+		ID: uuid.New(), RunID: run.ID, EventType: eventType, Status: run.Status,
+		Payload: payload, CreatedAt: workflowrun.EventCreatedAt(s.now(), run.CreatedAt),
+	}); err != nil {
 		return err
 	}
 	return tx.Commit(ctx)
@@ -1381,7 +1387,7 @@ func (s *RealReviewService) Summary(ctx context.Context, itemID uuid.UUID) (Cont
 	}
 	summary.LatestRun = &latest
 	var activeID uuid.UUID
-	activeErr := s.repo.db.QueryRow(ctx, "SELECT r.id FROM workflow_run_records r JOIN content_versions v ON v.id=r.subject_id AND v.content_item_id=$1 WHERE r.project_id=$2 AND r.stage='review' AND r.subject_type='content_version' AND r.status IN ('queued','running') ORDER BY r.created_at DESC,r.id DESC LIMIT 1", itemID, detail.Item.ProjectID).Scan(&activeID)
+	activeErr := s.repo.db.QueryRow(ctx, "SELECT r.id FROM workflow_run_records r JOIN content_versions v ON v.id=r.subject_id AND v.content_item_id=$1 WHERE r.project_id=$2 AND r.stage='review' AND r.subject_type='content_version' AND r.status IN ('queued','running','cancelling') ORDER BY r.created_at DESC,r.id DESC LIMIT 1", itemID, detail.Item.ProjectID).Scan(&activeID)
 	if activeErr == nil {
 		active, runErr := s.runs.GetRun(ctx, activeID)
 		if runErr != nil {

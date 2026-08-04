@@ -131,13 +131,86 @@ func scanRun(row pgx.Row) (WorkflowRun, error) {
 }
 func scanEvent(row pgx.Row) (Event, error) {
 	var e Event
-	if err := row.Scan(&e.ID, &e.RunID, &e.EventType, &e.Status, &e.Payload, &e.CreatedAt); err != nil {
+	if err := row.Scan(&e.ID, &e.RunID, &e.EventType, &e.Status, &e.Payload, &e.CreatedAt, &e.Sequence); err != nil {
 		return Event{}, err
 	}
-	if e.ID == uuid.Nil || e.RunID == uuid.Nil || e.EventType == "" || !validJSONObject(e.Payload) {
+	if e.ID == uuid.Nil || e.RunID == uuid.Nil || e.EventType == "" || e.Sequence < 1 || !validJSONObject(e.Payload) {
 		return Event{}, ErrValidation
 	}
 	return e, nil
+}
+
+func mapActiveConstraint(err error) error {
+	var postgresError *pgconn.PgError
+	if !errors.As(err, &postgresError) || postgresError.Code != "23505" {
+		return err
+	}
+	switch postgresError.ConstraintName {
+	case "workflow_run_records_active_rewrite_subject_idx":
+		return ErrActiveRewriteRun
+	case "workflow_run_records_active_content_generation_subject_idx",
+		"workflow_run_records_active_review_subject_idx",
+		"workflow_run_records_active_chapter_planning_idx":
+		return ErrActiveRewriteRun
+	default:
+		return err
+	}
+}
+
+// allocateEventSequence must run inside a transaction that already holds the run
+// row (or will not race with other writers). Sequences are unique and strictly
+// increasing per run; gaps are allowed.
+func (r *Repository) allocateEventSequence(ctx context.Context, runID uuid.UUID) (int64, error) {
+	var sequence int64
+	err := r.db.QueryRow(ctx, `UPDATE workflow_run_records
+		SET next_event_sequence = next_event_sequence + 1
+		WHERE id = $1
+		RETURNING next_event_sequence - 1`, runID).Scan(&sequence)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return 0, ErrNotFound
+	}
+	if err != nil {
+		return 0, fmt.Errorf("allocate workflow run event sequence: %w", err)
+	}
+	if sequence < 1 {
+		return 0, ErrValidation
+	}
+	return sequence, nil
+}
+
+// AddEventTx inserts an event inside an existing transaction with a durable sequence.
+// Domain consumers must use this instead of raw INSERT into workflow_run_events.
+func AddEventTx(ctx context.Context, tx pgx.Tx, value Event) (Event, error) {
+	if tx == nil {
+		return Event{}, ErrValidation
+	}
+	return NewPostgresRepositoryTx(tx).insertEvent(ctx, value)
+}
+
+func (r *Repository) insertEvent(ctx context.Context, value Event) (Event, error) {
+	if value.ID == uuid.Nil || value.RunID == uuid.Nil || value.EventType == "" || !validJSONObject(value.Payload) {
+		return Event{}, ErrValidation
+	}
+	value.Payload = RedactJSON(value.Payload)
+	value.CreatedAt = NormalizeTimestamp(value.CreatedAt)
+	if value.Sequence < 1 {
+		sequence, err := r.allocateEventSequence(ctx, value.RunID)
+		if err != nil {
+			return Event{}, err
+		}
+		value.Sequence = sequence
+	}
+	created, err := scanEvent(r.db.QueryRow(ctx, `INSERT INTO workflow_run_events (id,run_id,event_type,status,payload,created_at,sequence)
+		SELECT $1,$2,$3,$4,$5, GREATEST($6::timestamptz, r.created_at), $7
+		FROM workflow_run_records r WHERE r.id=$2
+		RETURNING id,run_id,event_type,status,payload,created_at,sequence`, value.ID, value.RunID, value.EventType, value.Status, value.Payload, value.CreatedAt, value.Sequence))
+	if errors.Is(err, pgx.ErrNoRows) {
+		return Event{}, ErrNotFound
+	}
+	if err != nil {
+		return Event{}, fmt.Errorf("add workflow run event: %w", err)
+	}
+	return created, nil
 }
 
 func (r *Repository) Create(ctx context.Context, value WorkflowRun) (WorkflowRun, error) {
@@ -150,9 +223,8 @@ func (r *Repository) Create(ctx context.Context, value WorkflowRun) (WorkflowRun
 	value.UpdatedAt = NormalizeTimestamp(value.UpdatedAt)
 	created, err := scanRun(r.db.QueryRow(ctx, "INSERT INTO workflow_run_records ("+runColumns+") VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,$26,$27,$28,$29,$30,$31,$32,$33,$34,$35,$36) RETURNING "+runColumns, value.ID, value.RunNumber, value.ProjectID, value.Stage, value.SubjectType, value.SubjectID, value.WorkflowConfigurationID, value.TriggerSource, value.Status, value.ConfigurationSnapshot, value.InputPayload, nullableJSON(value.OutputPayload), value.ErrorCode, value.ErrorMessage, nullableJSON(value.ErrorDetails), value.RetryOfRunID, value.FailurePhase, value.FailureCode, value.SafeErrorMessage, value.Retryability, value.RetryMode, value.ExternalExecutionID, value.WorkflowConnectionID, value.DeadlineAt, value.CancellationReason, value.CancellationRequestedAt, value.TimedOutAt, value.BindingSnapshot, value.ConnectionSnapshot, value.LlmPolicySnapshot, value.StartedAt, value.FinishedAt, value.CancelledAt, value.CreatedAt, value.UpdatedAt, value.Version))
 	if err != nil {
-		var postgresError *pgconn.PgError
-		if errors.As(err, &postgresError) && postgresError.ConstraintName == "workflow_run_records_active_rewrite_subject_idx" {
-			return WorkflowRun{}, ErrActiveRewriteRun
+		if mapped := mapActiveConstraint(err); !errors.Is(mapped, err) {
+			return WorkflowRun{}, mapped
 		}
 		return WorkflowRun{}, fmt.Errorf("create workflow run: %w", err)
 	}
@@ -306,7 +378,7 @@ func (r *Repository) ValidateRewriteRetryRelations(ctx context.Context, run Work
 		return ErrNotRetryable
 	}
 	var active bool
-	if err = r.db.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM workflow_run_records WHERE project_id=$1 AND stage='rewrite' AND subject_type='review_report' AND subject_id=$2 AND status IN ('queued','running'))", run.ProjectID, input.ReviewReportID).Scan(&active); err != nil {
+	if err = r.db.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM workflow_run_records WHERE project_id=$1 AND stage='rewrite' AND subject_type='review_report' AND subject_id=$2 AND status IN ('queued','running','cancelling'))", run.ProjectID, input.ReviewReportID).Scan(&active); err != nil {
 		return err
 	}
 	if active {
@@ -315,7 +387,7 @@ func (r *Repository) ValidateRewriteRetryRelations(ctx context.Context, run Work
 	return nil
 }
 func (r *Repository) FindActive(ctx context.Context, projectID uuid.UUID, stage string, subjectType string, subjectID uuid.UUID) (WorkflowRun, error) {
-	value, err := scanRun(r.db.QueryRow(ctx, "SELECT "+runColumns+" FROM workflow_run_records WHERE project_id=$1 AND stage=$2 AND subject_type=$3 AND subject_id=$4 AND status IN ('queued','running') ORDER BY created_at DESC,id DESC LIMIT 1", projectID, stage, subjectType, subjectID))
+	value, err := scanRun(r.db.QueryRow(ctx, "SELECT "+runColumns+" FROM workflow_run_records WHERE project_id=$1 AND stage=$2 AND subject_type=$3 AND subject_id=$4 AND status IN ('queued','running','cancelling') ORDER BY created_at DESC,id DESC LIMIT 1", projectID, stage, subjectType, subjectID))
 	if errors.Is(err, pgx.ErrNoRows) {
 		return WorkflowRun{}, ErrNotFound
 	}
@@ -387,6 +459,49 @@ func (r *Repository) ListRecoverableResultConsumptions(ctx context.Context, limi
 	}
 	return out, nil
 }
+
+// ListWorkerCandidates returns the oldest processable Active Runs for workers.
+// It never reuses the UI List path (newest-first, status-filtered limit 100).
+// Running rows without an external execution id only appear after the grace
+// window so they cannot permanently occupy the candidate set.
+func (r *Repository) ListWorkerCandidates(ctx context.Context, limit int, now time.Time) ([]WorkflowRun, error) {
+	if limit <= 0 || limit > workerCandidateBatchLimit {
+		limit = workerCandidateBatchLimit
+	}
+	now = NormalizeTimestamp(now)
+	graceBefore := now.Add(-missingExternalIDGracePeriod)
+	rows, err := r.db.Query(ctx, "SELECT "+runColumns+` FROM workflow_run_records
+		WHERE status IN ('queued', 'cancelling')
+		   OR (
+		        status = 'running'
+		        AND output_payload IS NULL
+		        AND (
+		            (external_execution_id IS NOT NULL AND btrim(external_execution_id) <> '')
+		            OR (
+		                (external_execution_id IS NULL OR btrim(external_execution_id) = '')
+		                AND COALESCE(started_at, updated_at) <= $1
+		            )
+		        )
+		   )
+		ORDER BY created_at ASC, id ASC
+		LIMIT $2`, graceBefore, limit)
+	if err != nil {
+		return nil, fmt.Errorf("list worker candidates: %w", err)
+	}
+	defer rows.Close()
+	out := make([]WorkflowRun, 0, limit)
+	for rows.Next() {
+		value, scanErr := scanRun(rows)
+		if scanErr != nil {
+			return nil, fmt.Errorf("scan worker candidate: %w", scanErr)
+		}
+		out = append(out, value)
+	}
+	if err = rows.Err(); err != nil {
+		return nil, fmt.Errorf("iterate worker candidates: %w", err)
+	}
+	return out, nil
+}
 func (r *Repository) Count(ctx context.Context, f ListFilter) (int, error) {
 	if f.StartTime != nil && f.EndTime != nil && f.StartTime.After(*f.EndTime) {
 		return 0, ErrValidation
@@ -406,7 +521,9 @@ func (r *Repository) UpdateStatus(ctx context.Context, value WorkflowRun) (Workf
 	if value.Version < 2 {
 		return WorkflowRun{}, ErrValidation
 	}
-	updated, err := scanRun(r.db.QueryRow(ctx, "UPDATE workflow_run_records SET status=$1, output_payload=$2, error_code=$3, error_message=$4, error_details=$5, failure_phase=$6, failure_code=$7, safe_error_message=$8, retryability=$9, retry_mode=$10, external_execution_id=$11, cancellation_reason=$12, cancellation_requested_at=$13, timed_out_at=$14, started_at=$15, finished_at=$16, cancelled_at=$17, updated_at=$18, version=$19 WHERE id=$20 AND version=$21 RETURNING "+runColumns, value.Status, nullableJSON(value.OutputPayload), value.ErrorCode, value.ErrorMessage, nullableJSON(value.ErrorDetails), value.FailurePhase, value.FailureCode, value.SafeErrorMessage, normalizedPersistenceRun(value).Retryability, value.RetryMode, value.ExternalExecutionID, value.CancellationReason, value.CancellationRequestedAt, value.TimedOutAt, value.StartedAt, value.FinishedAt, value.CancelledAt, value.UpdatedAt, value.Version, value.ID, value.Version-1))
+	value.UpdatedAt = NormalizeTimestamp(value.UpdatedAt)
+	// Persist updated_at with a lower bound so a skewed service clock cannot reverse durable time.
+	updated, err := scanRun(r.db.QueryRow(ctx, "UPDATE workflow_run_records SET status=$1, output_payload=$2, error_code=$3, error_message=$4, error_details=$5, failure_phase=$6, failure_code=$7, safe_error_message=$8, retryability=$9, retry_mode=$10, external_execution_id=$11, cancellation_reason=$12, cancellation_requested_at=$13, timed_out_at=$14, started_at=$15, finished_at=$16, cancelled_at=$17, updated_at=GREATEST($18::timestamptz, created_at, updated_at), version=$19 WHERE id=$20 AND version=$21 RETURNING "+runColumns, value.Status, nullableJSON(value.OutputPayload), value.ErrorCode, value.ErrorMessage, nullableJSON(value.ErrorDetails), value.FailurePhase, value.FailureCode, value.SafeErrorMessage, normalizedPersistenceRun(value).Retryability, value.RetryMode, value.ExternalExecutionID, value.CancellationReason, value.CancellationRequestedAt, value.TimedOutAt, value.StartedAt, value.FinishedAt, value.CancelledAt, value.UpdatedAt, value.Version, value.ID, value.Version-1))
 	if errors.Is(err, pgx.ErrNoRows) {
 		existing, e := r.GetByID(ctx, value.ID)
 		if errors.Is(e, ErrNotFound) {
@@ -424,26 +541,96 @@ func (r *Repository) UpdateStatus(ctx context.Context, value WorkflowRun) (Workf
 	return updated, nil
 }
 
-func (r *Repository) SaveExternalExecutionID(ctx context.Context, current WorkflowRun, externalID string) (WorkflowRun, error) {
+// RecordExecutionStartedAtomic persists external_execution_id and the
+// execution_started event in one transaction. Same-ID retries are idempotent and
+// repair a missing event; a different ID is a stable conflict; terminal Runs refuse write-back.
+func (r *Repository) RecordExecutionStartedAtomic(ctx context.Context, runID uuid.UUID, externalID string, event Event, at time.Time) (WorkflowRun, Event, error) {
 	externalID = strings.TrimSpace(externalID)
-	if externalID == "" {
-		return current, nil
+	if r.pool == nil || runID == uuid.Nil || externalID == "" || event.RunID != runID || event.EventType != "execution_started" {
+		return WorkflowRun{}, Event{}, ErrValidation
 	}
-	if current.ExternalExecutionID != nil {
-		if *current.ExternalExecutionID == externalID {
-			return current, nil
+	at = NormalizeTimestamp(at)
+	event.CreatedAt = at
+	event.Payload = RedactJSON(event.Payload)
+	if !validJSONObject(event.Payload) {
+		event.Payload = mustSafeJSON(map[string]any{"externalExecutionId": externalID})
+	}
+	tx, err := r.pool.Begin(ctx)
+	if err != nil {
+		return WorkflowRun{}, Event{}, fmt.Errorf("begin execution started transaction: %w", err)
+	}
+	defer tx.Rollback(ctx)
+	txRepo := NewPostgresRepositoryTx(tx)
+	run, err := txRepo.GetByIDForUpdate(ctx, runID)
+	if err != nil {
+		return WorkflowRun{}, Event{}, err
+	}
+	if run.Status != StatusRunning && run.Status != StatusCancelling {
+		return WorkflowRun{}, Event{}, ErrInvalidTransition
+	}
+	event.Status = run.Status
+	event.CreatedAt = EventCreatedAt(at, run.CreatedAt)
+	if run.ExternalExecutionID != nil {
+		if *run.ExternalExecutionID != externalID {
+			return WorkflowRun{}, Event{}, ErrVersionConflict
 		}
-		return WorkflowRun{}, ErrVersionConflict
+		var existingID uuid.UUID
+		lookupErr := tx.QueryRow(ctx, "SELECT id FROM workflow_run_events WHERE run_id=$1 AND event_type='execution_started' LIMIT 1", runID).Scan(&existingID)
+		if lookupErr == nil {
+			createdEvent, listErr := txRepo.GetEventByID(ctx, existingID)
+			if listErr != nil {
+				return WorkflowRun{}, Event{}, listErr
+			}
+			if err = tx.Commit(ctx); err != nil {
+				return WorkflowRun{}, Event{}, err
+			}
+			return run, createdEvent, nil
+		}
+		if !errors.Is(lookupErr, pgx.ErrNoRows) {
+			return WorkflowRun{}, Event{}, lookupErr
+		}
+		// Same external id, missing event: repair inside the locked transaction.
+		createdEvent, insertErr := txRepo.insertEvent(ctx, event)
+		if insertErr != nil {
+			return WorkflowRun{}, Event{}, insertErr
+		}
+		if err = tx.Commit(ctx); err != nil {
+			return WorkflowRun{}, Event{}, err
+		}
+		return run, createdEvent, nil
 	}
-	now := NormalizeTimestamp(time.Now().UTC())
-	updated, err := scanRun(r.db.QueryRow(ctx, "UPDATE workflow_run_records SET external_execution_id=$1,updated_at=$2,version=version+1 WHERE id=$3 AND version=$4 AND external_execution_id IS NULL RETURNING "+runColumns, externalID, now, current.ID, current.Version))
+	updatedAt := RunUpdatedAt(at, run.CreatedAt, run.UpdatedAt)
+	updated, err := scanRun(tx.QueryRow(ctx, `UPDATE workflow_run_records
+		SET external_execution_id=$1,
+		    updated_at=GREATEST($2::timestamptz, created_at, updated_at),
+		    version=version+1
+		WHERE id=$3 AND version=$4 AND external_execution_id IS NULL AND status IN ('running','cancelling')
+		RETURNING `+runColumns, externalID, updatedAt, runID, run.Version))
 	if errors.Is(err, pgx.ErrNoRows) {
-		return WorkflowRun{}, ErrVersionConflict
+		return WorkflowRun{}, Event{}, ErrVersionConflict
 	}
 	if err != nil {
-		return WorkflowRun{}, fmt.Errorf("save external execution id: %w", err)
+		return WorkflowRun{}, Event{}, fmt.Errorf("save external execution id: %w", err)
 	}
-	return updated, nil
+	createdEvent, err := txRepo.insertEvent(ctx, event)
+	if err != nil {
+		return WorkflowRun{}, Event{}, err
+	}
+	if err = tx.Commit(ctx); err != nil {
+		return WorkflowRun{}, Event{}, fmt.Errorf("commit execution started transaction: %w", err)
+	}
+	return updated, createdEvent, nil
+}
+
+func (r *Repository) GetEventByID(ctx context.Context, id uuid.UUID) (Event, error) {
+	event, err := scanEvent(r.db.QueryRow(ctx, "SELECT id,run_id,event_type,status,payload,created_at,sequence FROM workflow_run_events WHERE id=$1", id))
+	if errors.Is(err, pgx.ErrNoRows) {
+		return Event{}, ErrNotFound
+	}
+	if err != nil {
+		return Event{}, fmt.Errorf("get workflow run event: %w", err)
+	}
+	return event, nil
 }
 
 // SaveOutputForConsumption durably records a successful external result before
@@ -462,7 +649,7 @@ func (r *Repository) SaveOutputForConsumption(ctx context.Context, current Workf
 		return WorkflowRun{}, Event{}, err
 	}
 	defer tx.Rollback(ctx)
-	updated, err := scanRun(tx.QueryRow(ctx, "UPDATE workflow_run_records SET output_payload=$1,updated_at=$2,version=version+1 WHERE id=$3 AND version=$4 AND status IN ('running','cancelling') AND output_payload IS NULL RETURNING "+runColumns, RedactJSON(output), event.CreatedAt, current.ID, current.Version))
+	updated, err := scanRun(tx.QueryRow(ctx, "UPDATE workflow_run_records SET output_payload=$1,updated_at=GREATEST($2::timestamptz, created_at, updated_at),version=version+1 WHERE id=$3 AND version=$4 AND status IN ('running','cancelling') AND output_payload IS NULL RETURNING "+runColumns, RedactJSON(output), event.CreatedAt, current.ID, current.Version))
 	if errors.Is(err, pgx.ErrNoRows) {
 		return WorkflowRun{}, Event{}, ErrVersionConflict
 	}
@@ -532,20 +719,27 @@ func (r *Repository) ConsumeResult(ctx context.Context, runID uuid.UUID, expecte
 	if err != nil {
 		return WorkflowRun{}, false, err
 	}
-	updated, err := scanRun(tx.QueryRow(ctx, "UPDATE workflow_run_records SET status='succeeded',error_code=NULL,error_message=NULL,error_details=NULL,failure_phase=NULL,failure_code=NULL,safe_error_message=NULL,retryability='not_retryable',finished_at=$2,updated_at=$2,version=$3 WHERE id=$1 AND version=$4 RETURNING "+runColumns, runID, at, next.Version, run.Version))
+	updated, err := scanRun(tx.QueryRow(ctx, "UPDATE workflow_run_records SET status='succeeded',error_code=NULL,error_message=NULL,error_details=NULL,failure_phase=NULL,failure_code=NULL,safe_error_message=NULL,retryability='not_retryable',finished_at=$2,updated_at=GREATEST($2::timestamptz, created_at, updated_at),version=$3 WHERE id=$1 AND version=$4 RETURNING "+runColumns, runID, at, next.Version, run.Version))
 	if err != nil {
 		return WorkflowRun{}, false, err
 	}
 	if _, err = tx.Exec(ctx, "UPDATE workflow_run_result_consumptions SET status='completed',lease_until=NULL,completed_at=$2,updated_at=$2 WHERE workflow_run_id=$1", runID, at); err != nil {
 		return WorkflowRun{}, false, err
 	}
+	txRepo := NewPostgresRepositoryTx(tx)
 	if retried {
-		if _, err = tx.Exec(ctx, "INSERT INTO workflow_run_events(id,run_id,event_type,status,payload,created_at) VALUES($1,$2,'result_consumption_retried','succeeded',$3,$4)", uuid.New(), runID, json.RawMessage(`{"retried":true}`), at); err != nil {
+		if _, err = txRepo.insertEvent(ctx, Event{ID: uuid.New(), RunID: runID, EventType: "result_consumption_retried", Status: StatusSucceeded, Payload: json.RawMessage(`{"retried":true}`), CreatedAt: at}); err != nil {
 			return WorkflowRun{}, false, err
 		}
 	}
-	if _, err = tx.Exec(ctx, "INSERT INTO workflow_run_events(id,run_id,event_type,status,payload,created_at) VALUES($1,$2,'succeeded','succeeded','{}',$3) ON CONFLICT DO NOTHING", uuid.New(), runID, at); err != nil {
+	var succeededExists bool
+	if err = tx.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM workflow_run_events WHERE run_id=$1 AND event_type='succeeded')", runID).Scan(&succeededExists); err != nil {
 		return WorkflowRun{}, false, err
+	}
+	if !succeededExists {
+		if _, err = txRepo.insertEvent(ctx, Event{ID: uuid.New(), RunID: runID, EventType: "succeeded", Status: StatusSucceeded, Payload: json.RawMessage(`{}`), CreatedAt: at}); err != nil {
+			return WorkflowRun{}, false, err
+		}
 	}
 	if err = tx.Commit(ctx); err != nil {
 		return WorkflowRun{}, false, fmt.Errorf("commit result consumption: %w", err)
@@ -574,15 +768,21 @@ func (r *Repository) MarkResultConsumptionFailure(ctx context.Context, runID uui
 	if phase == "result_consumption" {
 		retryability = "result_consumption_retry"
 	}
-	updated, err := scanRun(tx.QueryRow(ctx, "UPDATE workflow_run_records SET status='failed',error_code=$2,error_message=$3,error_details='{}',failure_phase=$4,failure_code=$2,safe_error_message=$3,retryability=$5,finished_at=$6,updated_at=$6,version=version+1 WHERE id=$1 AND status IN ('running','failed') RETURNING "+runColumns, runID, code, message, phase, retryability, at))
+	updated, err := scanRun(tx.QueryRow(ctx, "UPDATE workflow_run_records SET status='failed',error_code=$2,error_message=$3,error_details='{}',failure_phase=$4,failure_code=$2,safe_error_message=$3,retryability=$5,finished_at=$6,updated_at=GREATEST($6::timestamptz, created_at, updated_at),version=version+1 WHERE id=$1 AND status IN ('running','failed') RETURNING "+runColumns, runID, code, message, phase, retryability, at))
 	if err != nil {
 		return WorkflowRun{}, err
 	}
 	if _, err = tx.Exec(ctx, "UPDATE workflow_run_result_consumptions SET status='failed',lease_until=NULL,attempt_count=attempt_count+1,failure_code=$2,safe_error_message=$3,updated_at=$4 WHERE workflow_run_id=$1", runID, code, message, at); err != nil {
 		return WorkflowRun{}, err
 	}
-	if _, err = tx.Exec(ctx, "INSERT INTO workflow_run_events(id,run_id,event_type,status,payload,created_at) VALUES($1,$2,$3,'failed','{}',$4) ON CONFLICT DO NOTHING", uuid.New(), runID, code, at); err != nil {
+	var failureExists bool
+	if err = tx.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM workflow_run_events WHERE run_id=$1 AND event_type=$2)", runID, code).Scan(&failureExists); err != nil {
 		return WorkflowRun{}, err
+	}
+	if !failureExists {
+		if _, err = NewPostgresRepositoryTx(tx).insertEvent(ctx, Event{ID: uuid.New(), RunID: runID, EventType: code, Status: StatusFailed, Payload: json.RawMessage(`{}`), CreatedAt: at}); err != nil {
+			return WorkflowRun{}, err
+		}
 	}
 	if err = tx.Commit(ctx); err != nil {
 		return WorkflowRun{}, err
@@ -590,28 +790,34 @@ func (r *Repository) MarkResultConsumptionFailure(ctx context.Context, runID uui
 	return updated, nil
 }
 func (r *Repository) AddEvent(ctx context.Context, value Event) (Event, error) {
-	if value.ID == uuid.Nil || value.RunID == uuid.Nil || value.EventType == "" || !validJSONObject(value.Payload) {
-		return Event{}, ErrValidation
+	// Standalone AddEvent must allocate sequence and insert under one transaction
+	// when a pool is available so concurrent writers cannot share a sequence.
+	if r.pool != nil {
+		tx, err := r.pool.Begin(ctx)
+		if err != nil {
+			return Event{}, fmt.Errorf("begin workflow run event transaction: %w", err)
+		}
+		defer tx.Rollback(ctx)
+		var locked uuid.UUID
+		if err = tx.QueryRow(ctx, "SELECT id FROM workflow_run_records WHERE id=$1 FOR UPDATE", value.RunID).Scan(&locked); err != nil {
+			if errors.Is(err, pgx.ErrNoRows) {
+				return Event{}, ErrNotFound
+			}
+			return Event{}, err
+		}
+		created, err := NewPostgresRepositoryTx(tx).insertEvent(ctx, value)
+		if err != nil {
+			return Event{}, err
+		}
+		if err = tx.Commit(ctx); err != nil {
+			return Event{}, err
+		}
+		return created, nil
 	}
-	value.Payload = RedactJSON(value.Payload)
-	// Persist event.created_at as GREATEST(app clock, run.created_at) so every
-	// repository entry point shares the DC-TIME-007 invariant, including
-	// recovery events written after API/worker restarts with a skewed clock.
-	value.CreatedAt = NormalizeTimestamp(value.CreatedAt)
-	created, err := scanEvent(r.db.QueryRow(ctx, `INSERT INTO workflow_run_events (id,run_id,event_type,status,payload,created_at)
-		SELECT $1,$2,$3,$4,$5, GREATEST($6::timestamptz, r.created_at)
-		FROM workflow_run_records r WHERE r.id=$2
-		RETURNING id,run_id,event_type,status,payload,created_at`, value.ID, value.RunID, value.EventType, value.Status, value.Payload, value.CreatedAt))
-	if errors.Is(err, pgx.ErrNoRows) {
-		return Event{}, ErrNotFound
-	}
-	if err != nil {
-		return Event{}, fmt.Errorf("add workflow run event: %w", err)
-	}
-	return created, nil
+	return r.insertEvent(ctx, value)
 }
 func (r *Repository) ListEvents(ctx context.Context, runID uuid.UUID) ([]Event, error) {
-	rows, err := r.db.Query(ctx, "SELECT id,run_id,event_type,status,payload,created_at FROM workflow_run_events WHERE run_id=$1 ORDER BY created_at ASC,id ASC", runID)
+	rows, err := r.db.Query(ctx, "SELECT id,run_id,event_type,status,payload,created_at,sequence FROM workflow_run_events WHERE run_id=$1 ORDER BY sequence ASC", runID)
 	if err != nil {
 		return nil, fmt.Errorf("list workflow run events: %w", err)
 	}
@@ -774,7 +980,7 @@ func (r *Repository) QuerySummary(ctx context.Context, projectID uuid.UUID, rece
 		recentLimit = 3
 	}
 	var s Summary
-	if err := r.db.QueryRow(ctx, "SELECT COUNT(*), COUNT(*) FILTER (WHERE status IN ('queued','running')), COUNT(*) FILTER (WHERE status='failed' AND created_at >= NOW() - INTERVAL '7 days'), MAX(created_at) FROM workflow_run_records WHERE project_id=$1", projectID).Scan(&s.TotalRuns, &s.ActiveRuns, &s.RecentFailedRuns, &s.LastRunAt); err != nil {
+	if err := r.db.QueryRow(ctx, "SELECT COUNT(*), COUNT(*) FILTER (WHERE status IN ('queued','running','cancelling')), COUNT(*) FILTER (WHERE status='failed' AND created_at >= NOW() - INTERVAL '7 days'), MAX(created_at) FROM workflow_run_records WHERE project_id=$1", projectID).Scan(&s.TotalRuns, &s.ActiveRuns, &s.RecentFailedRuns, &s.LastRunAt); err != nil {
 		return Summary{}, fmt.Errorf("query workflow run totals: %w", err)
 	}
 	s.RunningCount = s.ActiveRuns
