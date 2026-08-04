@@ -130,3 +130,40 @@ func TestContentGenerationResultEventTypesAreFrozen(t *testing.T) {
 		t.Fatalf("result event types drifted: %q, %q", EventTypeResultConsumed, EventTypeResultConsumptionFailed)
 	}
 }
+
+func TestEventCreatedAtEnforcesRunFloorAndMicrosecondPrecision(t *testing.T) {
+	runAt := time.Date(2026, 8, 3, 9, 43, 54, 678859123, time.UTC)
+	// Clock behind the run (restart / container skew): must clamp up.
+	if got := EventCreatedAt(runAt.Add(-time.Millisecond), runAt); !got.Equal(NormalizeTimestamp(runAt)) {
+		t.Fatalf("clock rollback: got %v want %v", got, NormalizeTimestamp(runAt))
+	}
+	// Same instant after precision truncation.
+	if got := EventCreatedAt(runAt, runAt); !got.Equal(NormalizeTimestamp(runAt)) {
+		t.Fatalf("same clock: got %v want %v", got, NormalizeTimestamp(runAt))
+	}
+	// Nanosecond residue must not survive into durable timestamps.
+	withNanos := time.Date(2026, 8, 3, 9, 43, 54, 678859999, time.UTC)
+	if got := EventCreatedAt(withNanos, runAt); got.Nanosecond()%1000 != 0 {
+		t.Fatalf("nanoseconds not truncated: %v", got)
+	}
+	// Later event keeps its own time after truncation.
+	later := runAt.Add(2 * time.Millisecond)
+	if got := EventCreatedAt(later, runAt); !got.Equal(NormalizeTimestamp(later)) {
+		t.Fatalf("later event: got %v want %v", got, NormalizeTimestamp(later))
+	}
+	// Local zone input is forced to UTC.
+	local := time.Date(2026, 8, 3, 17, 43, 54, 678859000, time.FixedZone("CST", 8*3600))
+	if got := EventCreatedAt(local, runAt); got.Location() != time.UTC {
+		t.Fatalf("expected UTC location, got %v", got.Location())
+	}
+}
+
+func TestNewNormalizesCreatedAtToDatabasePrecision(t *testing.T) {
+	run := testRun(t)
+	if run.CreatedAt.Nanosecond()%1000 != 0 || run.UpdatedAt.Nanosecond()%1000 != 0 {
+		t.Fatalf("New left nanoseconds in durable timestamps: created=%v updated=%v", run.CreatedAt, run.UpdatedAt)
+	}
+	if !run.CreatedAt.Equal(run.UpdatedAt) {
+		t.Fatalf("New should stamp created/updated with one clock read: %v vs %v", run.CreatedAt, run.UpdatedAt)
+	}
+}

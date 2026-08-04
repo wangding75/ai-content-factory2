@@ -472,7 +472,7 @@ func (s *RealRewriteService) consumeRewriteLocked(
 	if err != nil {
 		return ContentVersion{}, err
 	}
-	if _, err = tx.Exec(ctx, "INSERT INTO workflow_run_events(id,run_id,event_type,status,payload,created_at) VALUES($1,$2,'result_consumed','succeeded',$3,$4)", uuid.New(), run.ID, payload, s.now().UTC()); err != nil {
+	if _, err = tx.Exec(ctx, "INSERT INTO workflow_run_events(id,run_id,event_type,status,payload,created_at) VALUES($1,$2,'result_consumed','succeeded',$3,$4)", uuid.New(), run.ID, payload, workflowrun.EventCreatedAt(s.now(), run.CreatedAt)); err != nil {
 		return ContentVersion{}, err
 	}
 	return created, nil
@@ -561,7 +561,7 @@ func (s *RealRewriteService) recordRewriteFailure(ctx context.Context, runID uui
 	if eventType == workflowrun.EventTypeOutputValidationFailed {
 		message = "重写输出未通过结构校验"
 	}
-	occurredAt := s.now().UTC()
+	occurredAt := workflowrun.EventCreatedAt(s.now(), run.CreatedAt)
 	payload, err := json.Marshal(map[string]any{
 		"code": eventType, "message": message, "correlationId": run.ID.String(),
 		"occurredAt": occurredAt,

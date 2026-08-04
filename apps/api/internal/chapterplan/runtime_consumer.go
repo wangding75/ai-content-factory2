@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
@@ -65,7 +66,11 @@ func (c *RuntimeConsumer) ConsumeResultTx(ctx context.Context, tx pgx.Tx, run wo
 	if err != nil {
 		return err
 	}
-	_, err = tx.Exec(ctx, "INSERT INTO workflow_run_events(id,run_id,event_type,status,payload,created_at) VALUES($1,$2,'result_consumed',$3,'{}',NOW()) ON CONFLICT DO NOTHING", uuid.New(), run.ID, run.Status)
+	// Use the application clock clamped to run.created_at. PostgreSQL NOW() is
+	// forbidden here: Docker clock drift vs the app clock produced DC-TIME-007
+	// reverse-order events (result_consumed before run.created_at).
+	eventAt := workflowrun.EventCreatedAt(time.Now().UTC(), run.CreatedAt)
+	_, err = tx.Exec(ctx, "INSERT INTO workflow_run_events(id,run_id,event_type,status,payload,created_at) VALUES($1,$2,'result_consumed',$3,'{}',$4) ON CONFLICT DO NOTHING", uuid.New(), run.ID, run.Status, eventAt)
 	return err
 }
 

@@ -704,7 +704,7 @@ func (s *Service) createRun(ctx context.Context, store Store, command CreateRunC
 	if _, err = NewFromDB(run); err != nil {
 		return WorkflowRun{}, err
 	}
-	now := s.now()
+	now := NormalizeTimestamp(s.now())
 	run.CreatedAt, run.UpdatedAt = now, now
 	deadline := now.Add(s.runTimeout)
 	run.DeadlineAt = &deadline
@@ -1100,7 +1100,7 @@ func (s *Service) RetryRunWithReplay(ctx context.Context, command RetryCommand) 
 		if err != nil {
 			return WorkflowRun{}, err
 		}
-		now := s.now()
+		now := NormalizeTimestamp(s.now())
 		run.SubjectType, run.SubjectID = original.SubjectType, original.SubjectID
 		run.Retryability = "not_retryable"
 		retryMode := mode
@@ -1143,7 +1143,7 @@ func (s *Service) RetryRunWithReplay(ctx context.Context, command RetryCommand) 
 		if marshalErr != nil {
 			return WorkflowRun{}, marshalErr
 		}
-		if _, err = store.AddEvent(ctx, Event{ID: s.newID(), RunID: original.ID, EventType: "retry_created", Status: original.Status, Payload: retryPayload, CreatedAt: now}); err != nil {
+		if _, err = store.AddEvent(ctx, Event{ID: s.newID(), RunID: original.ID, EventType: "retry_created", Status: original.Status, Payload: retryPayload, CreatedAt: EventCreatedAt(now, original.CreatedAt)}); err != nil {
 			return WorkflowRun{}, mapStoreError(err)
 		}
 		return created, mapStoreError(err)

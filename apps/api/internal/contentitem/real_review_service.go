@@ -1111,7 +1111,10 @@ func (s *RealReviewService) consumeReviewLocked(ctx context.Context, tx pgx.Tx, 
 			return RealReviewResult{}, err
 		}
 	}
-	if _, err = tx.Exec(ctx, "INSERT INTO workflow_run_events(id,run_id,event_type,status,payload,created_at) VALUES($1,$2,'result_consumed','succeeded','{}',NOW())", uuid.New(), run.ID); err != nil {
+	// Application clock + run.created_at floor. Never use DB NOW(): host/container
+	// clock skew made result_consumed land before run.created_at (DC-TIME-007 / event 51).
+	eventAt := workflowrun.EventCreatedAt(s.now(), run.CreatedAt)
+	if _, err = tx.Exec(ctx, "INSERT INTO workflow_run_events(id,run_id,event_type,status,payload,created_at) VALUES($1,$2,'result_consumed','succeeded','{}',$3)", uuid.New(), run.ID, eventAt); err != nil {
 		return RealReviewResult{}, err
 	}
 	return RealReviewResult{Report: report, Issues: issues, Recommendations: recommendations, WorkflowRun: run}, nil
@@ -1138,7 +1141,7 @@ func (s *RealReviewService) recordReviewFailure(ctx context.Context, run workflo
 		message = "审核输出未通过结构校验"
 	}
 	payload, _ := json.Marshal(map[string]any{"code": eventType, "message": message, "correlationId": run.ID.String()})
-	if _, err = tx.Exec(ctx, "INSERT INTO workflow_run_events(id,run_id,event_type,status,payload,created_at) VALUES($1,$2,$3,$4,$5,$6)", uuid.New(), run.ID, eventType, run.Status, payload, s.now().UTC()); err != nil {
+	if _, err = tx.Exec(ctx, "INSERT INTO workflow_run_events(id,run_id,event_type,status,payload,created_at) VALUES($1,$2,$3,$4,$5,$6)", uuid.New(), run.ID, eventType, run.Status, payload, workflowrun.EventCreatedAt(s.now(), run.CreatedAt)); err != nil {
 		return err
 	}
 	return tx.Commit(ctx)

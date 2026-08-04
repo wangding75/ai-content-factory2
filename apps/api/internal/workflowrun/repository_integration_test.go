@@ -26,13 +26,17 @@ func openDB(t *testing.T) (*pgxpool.Pool, context.Context) {
 	if raw == "" {
 		t.Fatal("DATABASE_URL is not set; PostgreSQL integration test is required")
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
-	t.Cleanup(cancel)
-	db, err := pgxpool.New(ctx, raw)
+	// Connection setup only uses a short deadline. The returned context must
+	// outlive multi-step fixtures (100+ run history) and full-suite contention.
+	connectCtx, connectCancel := context.WithTimeout(context.Background(), 15*time.Second)
+	db, err := pgxpool.New(connectCtx, raw)
+	connectCancel()
 	if err != nil {
 		t.Fatal(err)
 	}
 	t.Cleanup(db.Close)
+	ctx, cancel := context.WithCancel(context.Background())
+	t.Cleanup(cancel)
 	return db, ctx
 }
 func fixture(t *testing.T, ctx context.Context, db *pgxpool.Pool) (uuid.UUID, uuid.UUID) {
@@ -791,6 +795,324 @@ func TestRepositoryListEventsHasStableCreatedAtIDOrder(t *testing.T) {
 	if err != nil || len(events) != 2 || events[0].ID != firstID {
 		t.Fatalf("events=%+v err=%v", events, err)
 	}
+}
+
+func assertEventNotBeforeRun(t *testing.T, ctx context.Context, db *pgxpool.Pool, runID uuid.UUID) {
+	t.Helper()
+	var skew int
+	if err := db.QueryRow(ctx, `SELECT COUNT(*) FROM workflow_run_events e
+		JOIN workflow_run_records r ON r.id = e.run_id
+		WHERE e.run_id=$1 AND e.created_at < r.created_at`, runID).Scan(&skew); err != nil {
+		t.Fatal(err)
+	}
+	if skew != 0 {
+		t.Fatalf("DC-TIME-007 skew count=%d for run %s", skew, runID)
+	}
+}
+
+func TestCreateWithInitialEventSharesClockAndPrecision(t *testing.T) {
+	db, ctx := openDB(t)
+	repo := NewPostgresRepository(db)
+	p, w := fixture(t, ctx, db)
+	// Fixed clock with nanosecond residue that PostgreSQL would otherwise round.
+	clock := time.Date(2026, 8, 3, 9, 43, 54, 678859123, time.UTC)
+	run := newRun(t, p, w, "WR-TIME-CREATE")
+	run.CreatedAt, run.UpdatedAt = clock, clock
+	created, event, err := repo.CreateWithInitialEvent(ctx, run, Event{
+		ID: uuid.New(), RunID: run.ID, EventType: "queued", Status: StatusQueued,
+		Payload: json.RawMessage(`{}`), CreatedAt: clock,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if created.CreatedAt.After(event.CreatedAt) {
+		t.Fatalf("initial event before run: event=%v run=%v", event.CreatedAt, created.CreatedAt)
+	}
+	if !event.CreatedAt.Equal(created.CreatedAt) && event.CreatedAt.Before(created.CreatedAt) {
+		t.Fatalf("event %v < run %v", event.CreatedAt, created.CreatedAt)
+	}
+	assertEventNotBeforeRun(t, ctx, db, created.ID)
+	// Round-trip precision: both sides stored as microsecond timestamptz.
+	if created.CreatedAt.Nanosecond()%1000 != 0 || event.CreatedAt.Nanosecond()%1000 != 0 {
+		t.Fatalf("read-back retained sub-microsecond noise: run=%v event=%v", created.CreatedAt, event.CreatedAt)
+	}
+}
+
+func TestAddEventClampsClockRollbackToRunCreatedAt(t *testing.T) {
+	db, ctx := openDB(t)
+	repo := NewPostgresRepository(db)
+	p, w := fixture(t, ctx, db)
+	runAt := time.Date(2026, 8, 3, 10, 0, 0, 500000000, time.UTC)
+	run := newRun(t, p, w, "WR-TIME-CLAMP")
+	run.CreatedAt, run.UpdatedAt = runAt, runAt
+	created, _, err := repo.CreateWithInitialEvent(ctx, run, Event{
+		ID: uuid.New(), RunID: run.ID, EventType: "queued", Status: StatusQueued,
+		Payload: json.RawMessage(`{}`), CreatedAt: runAt,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	// Simulate restarted worker whose clock is 1ms behind the durable run.
+	skewed := created.CreatedAt.Add(-time.Millisecond)
+	event, err := repo.AddEvent(ctx, Event{
+		ID: uuid.New(), RunID: created.ID, EventType: "worker_started", Status: StatusRunning,
+		Payload: json.RawMessage(`{}`), CreatedAt: skewed,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if event.CreatedAt.Before(created.CreatedAt) {
+		t.Fatalf("clamped event still before run: event=%v run=%v", event.CreatedAt, created.CreatedAt)
+	}
+	if !event.CreatedAt.Equal(created.CreatedAt) {
+		t.Fatalf("expected clamp to run.created_at=%v got %v", created.CreatedAt, event.CreatedAt)
+	}
+	assertEventNotBeforeRun(t, ctx, db, created.ID)
+}
+
+func TestEventNanosecondBoundaryDoesNotReverseOrder(t *testing.T) {
+	db, ctx := openDB(t)
+	repo := NewPostgresRepository(db)
+	p, w := fixture(t, ctx, db)
+	// 999ns residual after the same microsecond: both must collapse to one microsecond.
+	base := time.Date(2026, 8, 3, 11, 0, 0, 123456000, time.UTC)
+	run := newRun(t, p, w, "WR-TIME-NS")
+	run.CreatedAt, run.UpdatedAt = base.Add(999*time.Nanosecond), base.Add(999*time.Nanosecond)
+	created, initial, err := repo.CreateWithInitialEvent(ctx, run, Event{
+		ID: uuid.New(), RunID: run.ID, EventType: "queued", Status: StatusQueued,
+		Payload: json.RawMessage(`{}`), CreatedAt: base,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if initial.CreatedAt.Before(created.CreatedAt) {
+		t.Fatalf("precision boundary reversed order: event=%v run=%v", initial.CreatedAt, created.CreatedAt)
+	}
+	assertEventNotBeforeRun(t, ctx, db, created.ID)
+}
+
+func TestTerminalEventsWithSkewedClockDoNotViolateTimeInvariant(t *testing.T) {
+	db, ctx := openDB(t)
+	repo := NewPostgresRepository(db)
+	p, w := fixture(t, ctx, db)
+	runAt := time.Date(2026, 8, 3, 12, 0, 0, 0, time.UTC)
+	skewed := runAt.Add(-5 * time.Millisecond)
+
+	type terminalCase struct {
+		name      string
+		eventType string
+		status    Status
+		// needRunning first transitions queued -> running so terminal edges stay single-step.
+		needRunning bool
+		apply       func(WorkflowRun) (WorkflowRun, error)
+	}
+	cases := []terminalCase{
+		{"succeeded", "succeeded", StatusSucceeded, true, func(r WorkflowRun) (WorkflowRun, error) {
+			return r.Succeed(skewed, json.RawMessage(`{"ok":true}`))
+		}},
+		{"failed", "failed", StatusFailed, true, func(r WorkflowRun) (WorkflowRun, error) {
+			return r.Fail(skewed, Failure{Code: "X", Message: "safe", Details: json.RawMessage(`{}`)})
+		}},
+		{"cancelled", "cancelled", StatusCancelled, false, func(r WorkflowRun) (WorkflowRun, error) {
+			return r.Cancel(skewed)
+		}},
+		{"timed_out", "timed_out", StatusTimedOut, false, func(r WorkflowRun) (WorkflowRun, error) {
+			return r.Timeout(skewed, Failure{Code: "upstream_timeout", Message: "workflow execution timed out"})
+		}},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			run := newRun(t, p, w, "WR-TERM-"+tc.name)
+			run.CreatedAt, run.UpdatedAt = runAt, runAt
+			current, _, err := repo.CreateWithInitialEvent(ctx, run, Event{
+				ID: uuid.New(), RunID: run.ID, EventType: "queued", Status: StatusQueued,
+				Payload: json.RawMessage(`{}`), CreatedAt: runAt,
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
+			if tc.needRunning {
+				started, startErr := current.Start(runAt)
+				if startErr != nil {
+					t.Fatal(startErr)
+				}
+				current, _, err = repo.UpdateStatusWithEvent(ctx, current, started, Event{
+					ID: uuid.New(), RunID: current.ID, EventType: "worker_started", Status: StatusRunning,
+					Payload: json.RawMessage(`{}`), CreatedAt: runAt,
+				})
+				if err != nil {
+					t.Fatal(err)
+				}
+			}
+			next, err := tc.apply(current)
+			if err != nil {
+				t.Fatal(err)
+			}
+			// Domain may carry the skewed UpdatedAt; repository clamp must still protect the event.
+			_, event, err := repo.UpdateStatusWithEvent(ctx, current, next, Event{
+				ID: uuid.New(), RunID: current.ID, EventType: tc.eventType, Status: tc.status,
+				Payload: json.RawMessage(`{}`), CreatedAt: skewed,
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
+			if event.CreatedAt.Before(current.CreatedAt) {
+				t.Fatalf("%s event before run: %v < %v", tc.name, event.CreatedAt, current.CreatedAt)
+			}
+			assertEventNotBeforeRun(t, ctx, db, current.ID)
+		})
+	}
+}
+
+func TestRecoveredWorkerStartedEventWithSkewedClock(t *testing.T) {
+	db, ctx := openDB(t)
+	repo := NewPostgresRepository(db)
+	p, w := fixture(t, ctx, db)
+	runAt := time.Date(2026, 8, 3, 13, 0, 0, 250000000, time.UTC)
+	run := newRun(t, p, w, "WR-RECOVER-CLOCK")
+	run.CreatedAt, run.UpdatedAt = runAt, runAt
+	created, _, err := repo.CreateWithInitialEvent(ctx, run, Event{
+		ID: uuid.New(), RunID: run.ID, EventType: "queued", Status: StatusQueued,
+		Payload: json.RawMessage(`{}`), CreatedAt: runAt,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	// New worker process after restart: injected clock is earlier than the durable run.
+	workerClock := created.CreatedAt.Add(-2 * time.Millisecond)
+	next, err := created.Start(workerClock)
+	if err != nil {
+		t.Fatal(err)
+	}
+	// Domain Start stamps UpdatedAt from the skewed clock; AddEvent / UpdateStatusWithEvent must clamp the event.
+	if next.UpdatedAt.Before(created.CreatedAt) {
+		// expected for this scenario — proves the test exercises rollback
+	}
+	updated, event, err := repo.UpdateStatusWithEvent(ctx, created, next, Event{
+		ID: uuid.New(), RunID: created.ID, EventType: "worker_started", Status: StatusRunning,
+		Payload: json.RawMessage(`{}`), CreatedAt: workerClock,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if event.CreatedAt.Before(created.CreatedAt) {
+		t.Fatalf("recovered worker_started before run: %v < %v", event.CreatedAt, created.CreatedAt)
+	}
+	if updated.ID != created.ID || updated.Status != StatusRunning {
+		t.Fatalf("unexpected run state: %+v", updated)
+	}
+	assertEventNotBeforeRun(t, ctx, db, created.ID)
+}
+
+func TestConsumeResultWithSkewedClockDoesNotReverseEventOrder(t *testing.T) {
+	db, ctx := openDB(t)
+	repo := NewPostgresRepository(db)
+	p, w := fixture(t, ctx, db)
+	runAt := time.Date(2026, 8, 3, 14, 0, 0, 0, time.UTC)
+	run := newRun(t, p, w, "WR-CONSUME-SKEW")
+	run.CreatedAt, run.UpdatedAt = runAt, runAt
+	created, _, err := repo.CreateWithInitialEvent(ctx, run, Event{
+		ID: uuid.New(), RunID: run.ID, EventType: "queued", Status: StatusQueued,
+		Payload: json.RawMessage(`{}`), CreatedAt: runAt,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	running, err := created.Start(runAt)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, _, err = repo.UpdateStatusWithEvent(ctx, created, running, Event{
+		ID: uuid.New(), RunID: created.ID, EventType: "worker_started", Status: StatusRunning,
+		Payload: json.RawMessage(`{}`), CreatedAt: runAt,
+	}); err != nil {
+		t.Fatal(err)
+	}
+	running.Version = 2
+	stored, _, err := repo.SaveOutputForConsumption(ctx, running, json.RawMessage(`{"schemaVersion":"review.output.v1"}`), Event{
+		ID: uuid.New(), RunID: running.ID, EventType: "output_validated", Status: StatusRunning,
+		Payload: json.RawMessage(`{}`), CreatedAt: runAt.Add(-time.Millisecond),
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	// Consume with a clock behind the original run (mirrors the production result_consumed path).
+	updated, replay, err := repo.ConsumeResult(ctx, stored.ID, stored.Version, runAt.Add(-3*time.Millisecond), false, func(ctx context.Context, tx pgx.Tx, locked WorkflowRun) error {
+		eventAt := EventCreatedAt(runAt.Add(-3*time.Millisecond), locked.CreatedAt)
+		_, callbackErr := tx.Exec(ctx, "INSERT INTO workflow_run_events(id,run_id,event_type,status,payload,created_at) VALUES($1,$2,'result_consumed','running','{}',$3)", uuid.New(), locked.ID, eventAt)
+		return callbackErr
+	})
+	if err != nil || replay {
+		t.Fatalf("consume err=%v replay=%v", err, replay)
+	}
+	if updated.Status != StatusSucceeded {
+		t.Fatalf("status=%s", updated.Status)
+	}
+	assertEventNotBeforeRun(t, ctx, db, stored.ID)
+}
+
+func TestConcurrentSaveOutputForConsumptionKeepsEventTimeInvariant(t *testing.T) {
+	db, ctx := openDB(t)
+	repo := NewPostgresRepository(db)
+	p, w := fixture(t, ctx, db)
+	runAt := time.Date(2026, 8, 3, 15, 0, 0, 0, time.UTC)
+	run := newRun(t, p, w, "WR-MULTI-WORKER-TIME")
+	run.CreatedAt, run.UpdatedAt = runAt, runAt
+	created, _, err := repo.CreateWithInitialEvent(ctx, run, Event{
+		ID: uuid.New(), RunID: run.ID, EventType: "queued", Status: StatusQueued,
+		Payload: json.RawMessage(`{}`), CreatedAt: runAt,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	running, err := created.Start(runAt)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, _, err = repo.UpdateStatusWithEvent(ctx, created, running, Event{
+		ID: uuid.New(), RunID: created.ID, EventType: "worker_started", Status: StatusRunning,
+		Payload: json.RawMessage(`{}`), CreatedAt: runAt,
+	}); err != nil {
+		t.Fatal(err)
+	}
+	running.Version = 2
+	const workers = 8
+	var wg sync.WaitGroup
+	errs := make([]error, workers)
+	for i := 0; i < workers; i++ {
+		wg.Add(1)
+		go func(index int) {
+			defer wg.Done()
+			// Each worker uses a slightly different skewed clock.
+			clock := runAt.Add(-time.Duration(index+1) * time.Millisecond)
+			_, _, errs[index] = NewPostgresRepository(db).SaveOutputForConsumption(context.Background(), running, json.RawMessage(`{"safe":true}`), Event{
+				ID: uuid.New(), RunID: running.ID, EventType: "output_validated", Status: StatusRunning,
+				Payload: json.RawMessage(`{}`), CreatedAt: clock,
+			})
+		}(i)
+	}
+	wg.Wait()
+	success, conflict := 0, 0
+	for _, e := range errs {
+		if e == nil {
+			success++
+		} else if errors.Is(e, ErrVersionConflict) {
+			conflict++
+		} else {
+			t.Fatalf("unexpected error: %v", e)
+		}
+	}
+	if success != 1 || conflict != workers-1 {
+		t.Fatalf("CAS broken: success=%d conflict=%d", success, conflict)
+	}
+	var eventCount int
+	if err := db.QueryRow(ctx, "SELECT count(*) FROM workflow_run_events WHERE run_id=$1 AND event_type='output_validated'", running.ID).Scan(&eventCount); err != nil {
+		t.Fatal(err)
+	}
+	if eventCount != 1 {
+		t.Fatalf("expected one output_validated event, got %d", eventCount)
+	}
+	assertEventNotBeforeRun(t, ctx, db, running.ID)
 }
 
 func TestWorkflowRunPersistentIdempotencyReplayConcurrencyAndRestart(t *testing.T) {

@@ -87,8 +87,35 @@ type Event struct {
 	CreatedAt time.Time
 }
 
+// TimestampPrecision matches PostgreSQL timestamptz storage (microseconds).
+// All durable WorkflowRun / Event timestamps are normalized to this precision
+// before persistence so app clocks and DB round-trips cannot invent reverse order.
+const TimestampPrecision = time.Microsecond
+
+// NormalizeTimestamp converts a wall time to UTC and truncates to the durable
+// database precision used by workflow_run_records / workflow_run_events.
+func NormalizeTimestamp(t time.Time) time.Time {
+	return t.UTC().Truncate(TimestampPrecision)
+}
+
+// EventCreatedAt enforces the durable invariant:
+//
+//	event.created_at >= workflow_run.created_at
+//
+// Callers pass the injected application clock value for eventAt. When the clock
+// has skewed behind the run (restart, fake clock, container drift relative to a
+// previously persisted run), the run's created_at is used so DC-TIME-007 stays clean.
+func EventCreatedAt(eventAt, runCreatedAt time.Time) time.Time {
+	eventAt = NormalizeTimestamp(eventAt)
+	runCreatedAt = NormalizeTimestamp(runCreatedAt)
+	if eventAt.Before(runCreatedAt) {
+		return runCreatedAt
+	}
+	return eventAt
+}
+
 func New(id, projectID, workflowConfigurationID uuid.UUID, runNumber, stage, triggerSource string, snapshot, input json.RawMessage) (WorkflowRun, error) {
-	now := time.Now().UTC()
+	now := NormalizeTimestamp(time.Now().UTC())
 	run := WorkflowRun{ID: id, RunNumber: runNumber, ProjectID: projectID, Stage: stage, WorkflowConfigurationID: workflowConfigurationID, TriggerSource: triggerSource, Status: StatusQueued, ConfigurationSnapshot: RedactJSON(snapshot), InputPayload: RedactJSON(input), Retryability: "not_retryable", BindingSnapshot: json.RawMessage(`{}`), ConnectionSnapshot: json.RawMessage(`{}`), LlmPolicySnapshot: json.RawMessage(`{}`), CreatedAt: now, UpdatedAt: now, Version: 1}
 	if err := run.validate(); err != nil {
 		return WorkflowRun{}, err

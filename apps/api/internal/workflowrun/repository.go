@@ -146,6 +146,8 @@ func (r *Repository) Create(ctx context.Context, value WorkflowRun) (WorkflowRun
 		return WorkflowRun{}, err
 	}
 	value = normalizedPersistenceRun(validated)
+	value.CreatedAt = NormalizeTimestamp(value.CreatedAt)
+	value.UpdatedAt = NormalizeTimestamp(value.UpdatedAt)
 	created, err := scanRun(r.db.QueryRow(ctx, "INSERT INTO workflow_run_records ("+runColumns+") VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,$26,$27,$28,$29,$30,$31,$32,$33,$34,$35,$36) RETURNING "+runColumns, value.ID, value.RunNumber, value.ProjectID, value.Stage, value.SubjectType, value.SubjectID, value.WorkflowConfigurationID, value.TriggerSource, value.Status, value.ConfigurationSnapshot, value.InputPayload, nullableJSON(value.OutputPayload), value.ErrorCode, value.ErrorMessage, nullableJSON(value.ErrorDetails), value.RetryOfRunID, value.FailurePhase, value.FailureCode, value.SafeErrorMessage, value.Retryability, value.RetryMode, value.ExternalExecutionID, value.WorkflowConnectionID, value.DeadlineAt, value.CancellationReason, value.CancellationRequestedAt, value.TimedOutAt, value.BindingSnapshot, value.ConnectionSnapshot, value.LlmPolicySnapshot, value.StartedAt, value.FinishedAt, value.CancelledAt, value.CreatedAt, value.UpdatedAt, value.Version))
 	if err != nil {
 		var postgresError *pgconn.PgError
@@ -433,7 +435,7 @@ func (r *Repository) SaveExternalExecutionID(ctx context.Context, current Workfl
 		}
 		return WorkflowRun{}, ErrVersionConflict
 	}
-	now := time.Now().UTC()
+	now := NormalizeTimestamp(time.Now().UTC())
 	updated, err := scanRun(r.db.QueryRow(ctx, "UPDATE workflow_run_records SET external_execution_id=$1,updated_at=$2,version=version+1 WHERE id=$3 AND version=$4 AND external_execution_id IS NULL RETURNING "+runColumns, externalID, now, current.ID, current.Version))
 	if errors.Is(err, pgx.ErrNoRows) {
 		return WorkflowRun{}, ErrVersionConflict
@@ -454,6 +456,7 @@ func (r *Repository) SaveOutputForConsumption(ctx context.Context, current Workf
 	if r.pool == nil {
 		return WorkflowRun{}, Event{}, ErrValidation
 	}
+	event.CreatedAt = EventCreatedAt(event.CreatedAt, current.CreatedAt)
 	tx, err := r.pool.Begin(ctx)
 	if err != nil {
 		return WorkflowRun{}, Event{}, err
@@ -504,6 +507,9 @@ func (r *Repository) ConsumeResult(ctx context.Context, runID uuid.UUID, expecte
 	if err != nil {
 		return WorkflowRun{}, false, err
 	}
+	// Clamp application clock to the durable run timestamp so terminal events
+	// never violate DC-TIME-007 when the worker clock is behind the original run.
+	at = EventCreatedAt(at, run.CreatedAt)
 	if run.Version != expectedVersion && state != "completed" {
 		return WorkflowRun{}, false, ErrVersionConflict
 	}
@@ -516,7 +522,7 @@ func (r *Repository) ConsumeResult(ctx context.Context, runID uuid.UUID, expecte
 	if !validJSONObject(run.OutputPayload) || (run.Status != StatusRunning && (run.Status != StatusFailed || run.FailurePhase == nil || *run.FailurePhase != "result_consumption")) {
 		return WorkflowRun{}, false, ErrInvalidTransition
 	}
-	if _, err = tx.Exec(ctx, "UPDATE workflow_run_result_consumptions SET status='in_progress',lease_until=$2,attempt_count=attempt_count+1,failure_code=NULL,safe_error_message=NULL,updated_at=$2 WHERE workflow_run_id=$1", runID, at.UTC()); err != nil {
+	if _, err = tx.Exec(ctx, "UPDATE workflow_run_result_consumptions SET status='in_progress',lease_until=$2,attempt_count=attempt_count+1,failure_code=NULL,safe_error_message=NULL,updated_at=$2 WHERE workflow_run_id=$1", runID, at); err != nil {
 		return WorkflowRun{}, false, err
 	}
 	if err = consume(ctx, tx, run); err != nil {
@@ -526,19 +532,19 @@ func (r *Repository) ConsumeResult(ctx context.Context, runID uuid.UUID, expecte
 	if err != nil {
 		return WorkflowRun{}, false, err
 	}
-	updated, err := scanRun(tx.QueryRow(ctx, "UPDATE workflow_run_records SET status='succeeded',error_code=NULL,error_message=NULL,error_details=NULL,failure_phase=NULL,failure_code=NULL,safe_error_message=NULL,retryability='not_retryable',finished_at=$2,updated_at=$2,version=$3 WHERE id=$1 AND version=$4 RETURNING "+runColumns, runID, at.UTC(), next.Version, run.Version))
+	updated, err := scanRun(tx.QueryRow(ctx, "UPDATE workflow_run_records SET status='succeeded',error_code=NULL,error_message=NULL,error_details=NULL,failure_phase=NULL,failure_code=NULL,safe_error_message=NULL,retryability='not_retryable',finished_at=$2,updated_at=$2,version=$3 WHERE id=$1 AND version=$4 RETURNING "+runColumns, runID, at, next.Version, run.Version))
 	if err != nil {
 		return WorkflowRun{}, false, err
 	}
-	if _, err = tx.Exec(ctx, "UPDATE workflow_run_result_consumptions SET status='completed',lease_until=NULL,completed_at=$2,updated_at=$2 WHERE workflow_run_id=$1", runID, at.UTC()); err != nil {
+	if _, err = tx.Exec(ctx, "UPDATE workflow_run_result_consumptions SET status='completed',lease_until=NULL,completed_at=$2,updated_at=$2 WHERE workflow_run_id=$1", runID, at); err != nil {
 		return WorkflowRun{}, false, err
 	}
 	if retried {
-		if _, err = tx.Exec(ctx, "INSERT INTO workflow_run_events(id,run_id,event_type,status,payload,created_at) VALUES($1,$2,'result_consumption_retried','succeeded',$3,$4)", uuid.New(), runID, json.RawMessage(`{"retried":true}`), at.UTC()); err != nil {
+		if _, err = tx.Exec(ctx, "INSERT INTO workflow_run_events(id,run_id,event_type,status,payload,created_at) VALUES($1,$2,'result_consumption_retried','succeeded',$3,$4)", uuid.New(), runID, json.RawMessage(`{"retried":true}`), at); err != nil {
 			return WorkflowRun{}, false, err
 		}
 	}
-	if _, err = tx.Exec(ctx, "INSERT INTO workflow_run_events(id,run_id,event_type,status,payload,created_at) VALUES($1,$2,'succeeded','succeeded','{}',$3) ON CONFLICT DO NOTHING", uuid.New(), runID, at.UTC()); err != nil {
+	if _, err = tx.Exec(ctx, "INSERT INTO workflow_run_events(id,run_id,event_type,status,payload,created_at) VALUES($1,$2,'succeeded','succeeded','{}',$3) ON CONFLICT DO NOTHING", uuid.New(), runID, at); err != nil {
 		return WorkflowRun{}, false, err
 	}
 	if err = tx.Commit(ctx); err != nil {
@@ -563,18 +569,19 @@ func (r *Repository) MarkResultConsumptionFailure(ctx context.Context, runID uui
 	if run.Status == StatusSucceeded {
 		return run, nil
 	}
+	at = EventCreatedAt(at, run.CreatedAt)
 	retryability := "not_retryable"
 	if phase == "result_consumption" {
 		retryability = "result_consumption_retry"
 	}
-	updated, err := scanRun(tx.QueryRow(ctx, "UPDATE workflow_run_records SET status='failed',error_code=$2,error_message=$3,error_details='{}',failure_phase=$4,failure_code=$2,safe_error_message=$3,retryability=$5,finished_at=$6,updated_at=$6,version=version+1 WHERE id=$1 AND status IN ('running','failed') RETURNING "+runColumns, runID, code, message, phase, retryability, at.UTC()))
+	updated, err := scanRun(tx.QueryRow(ctx, "UPDATE workflow_run_records SET status='failed',error_code=$2,error_message=$3,error_details='{}',failure_phase=$4,failure_code=$2,safe_error_message=$3,retryability=$5,finished_at=$6,updated_at=$6,version=version+1 WHERE id=$1 AND status IN ('running','failed') RETURNING "+runColumns, runID, code, message, phase, retryability, at))
 	if err != nil {
 		return WorkflowRun{}, err
 	}
-	if _, err = tx.Exec(ctx, "UPDATE workflow_run_result_consumptions SET status='failed',lease_until=NULL,attempt_count=attempt_count+1,failure_code=$2,safe_error_message=$3,updated_at=$4 WHERE workflow_run_id=$1", runID, code, message, at.UTC()); err != nil {
+	if _, err = tx.Exec(ctx, "UPDATE workflow_run_result_consumptions SET status='failed',lease_until=NULL,attempt_count=attempt_count+1,failure_code=$2,safe_error_message=$3,updated_at=$4 WHERE workflow_run_id=$1", runID, code, message, at); err != nil {
 		return WorkflowRun{}, err
 	}
-	if _, err = tx.Exec(ctx, "INSERT INTO workflow_run_events(id,run_id,event_type,status,payload,created_at) VALUES($1,$2,$3,'failed','{}',$4) ON CONFLICT DO NOTHING", uuid.New(), runID, code, at.UTC()); err != nil {
+	if _, err = tx.Exec(ctx, "INSERT INTO workflow_run_events(id,run_id,event_type,status,payload,created_at) VALUES($1,$2,$3,'failed','{}',$4) ON CONFLICT DO NOTHING", uuid.New(), runID, code, at); err != nil {
 		return WorkflowRun{}, err
 	}
 	if err = tx.Commit(ctx); err != nil {
@@ -587,7 +594,17 @@ func (r *Repository) AddEvent(ctx context.Context, value Event) (Event, error) {
 		return Event{}, ErrValidation
 	}
 	value.Payload = RedactJSON(value.Payload)
-	created, err := scanEvent(r.db.QueryRow(ctx, "INSERT INTO workflow_run_events (id,run_id,event_type,status,payload,created_at) VALUES ($1,$2,$3,$4,$5,$6) RETURNING id,run_id,event_type,status,payload,created_at", value.ID, value.RunID, value.EventType, value.Status, value.Payload, value.CreatedAt))
+	// Persist event.created_at as GREATEST(app clock, run.created_at) so every
+	// repository entry point shares the DC-TIME-007 invariant, including
+	// recovery events written after API/worker restarts with a skewed clock.
+	value.CreatedAt = NormalizeTimestamp(value.CreatedAt)
+	created, err := scanEvent(r.db.QueryRow(ctx, `INSERT INTO workflow_run_events (id,run_id,event_type,status,payload,created_at)
+		SELECT $1,$2,$3,$4,$5, GREATEST($6::timestamptz, r.created_at)
+		FROM workflow_run_records r WHERE r.id=$2
+		RETURNING id,run_id,event_type,status,payload,created_at`, value.ID, value.RunID, value.EventType, value.Status, value.Payload, value.CreatedAt))
+	if errors.Is(err, pgx.ErrNoRows) {
+		return Event{}, ErrNotFound
+	}
 	if err != nil {
 		return Event{}, fmt.Errorf("add workflow run event: %w", err)
 	}

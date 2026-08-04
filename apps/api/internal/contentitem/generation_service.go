@@ -960,7 +960,8 @@ func (s *GenerationService) consumeLocked(ctx context.Context, tx pgx.Tx, run wo
 	if e != nil {
 		return ContentVersion{}, e
 	}
-	if _, e = tx.Exec(ctx, "INSERT INTO workflow_run_events(id,run_id,event_type,status,payload,created_at) VALUES($1,$2,'result_consumed',$3,'{}',NOW())", uuid.New(), run.ID, run.Status); e != nil {
+	eventAt := workflowrun.EventCreatedAt(s.now(), run.CreatedAt)
+	if _, e = tx.Exec(ctx, "INSERT INTO workflow_run_events(id,run_id,event_type,status,payload,created_at) VALUES($1,$2,'result_consumed',$3,'{}',$4)", uuid.New(), run.ID, run.Status, eventAt); e != nil {
 		return ContentVersion{}, e
 	}
 	return created, nil
