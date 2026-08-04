@@ -8,12 +8,14 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"os"
 	"path"
 	"strings"
 	"time"
 
 	"github.com/google/uuid"
 	"github.com/local/ai-content-factory/apps/api/internal/platform/config"
+	"github.com/local/ai-content-factory/apps/api/internal/platform/safehttp"
 )
 
 // Default max matches config.DefaultN8NExecutionResultMaxBytes when unset on the executor.
@@ -27,7 +29,8 @@ type N8NWorkflowExecutor struct {
 
 func NewN8NWorkflowExecutor(client *http.Client, credential ...func(context.Context, uuid.UUID) (string, error)) *N8NWorkflowExecutor {
 	if client == nil {
-		client = &http.Client{}
+		// Credential-safe default: no proxy, no redirects, shared destination policy.
+		client = safehttp.New(safehttp.CredentialPolicy(os.Getenv("APP_ENV"))).HTTPClient()
 	}
 	e := &N8NWorkflowExecutor{client: client, maxBytes: defaultExecutorResultMaxBytes}
 	if len(credential) == 1 {

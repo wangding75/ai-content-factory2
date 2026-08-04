@@ -105,8 +105,12 @@ func (s *Service) RuntimeConnectionCredential(ctx context.Context, id uuid.UUID)
 	return s.connectionCredential(ctx, id)
 }
 
-func integrationURL(base string, suffix string) (string, error) {
-	u, err := safehttp.NormalizeURL(base, integrationOutboundPolicy())
+func (s *Service) integrationURL(base string, suffix string) (string, error) {
+	policy := integrationOutboundPolicy()
+	if s != nil {
+		policy = s.credentialOutboundPolicy()
+	}
+	u, err := safehttp.NormalizeURL(base, policy)
 	if err != nil {
 		return "", err
 	}
@@ -120,7 +124,7 @@ func integrationURL(base string, suffix string) (string, error) {
 }
 
 func (s *Service) integrationRequest(ctx context.Context, baseURL, suffix, credential, header string, timeout int, target any) error {
-	endpoint, err := integrationURL(baseURL, suffix)
+	endpoint, err := s.integrationURL(baseURL, suffix)
 	if err != nil {
 		return err
 	}

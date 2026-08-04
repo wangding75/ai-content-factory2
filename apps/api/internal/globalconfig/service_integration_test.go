@@ -377,7 +377,7 @@ func insertVerificationConnection(t *testing.T, ctx context.Context, pool *pgxpo
 	}
 	_, err = pool.Exec(ctx, `INSERT INTO workflow_connections
 		(id,name,connection_type,base_url,auth_type,timeout_seconds,type_config,encrypted_credential,credential_fingerprint,integration_status,enabled,last_verified_version)
-		VALUES ($1,$2,'n8n','http://verification.example.test:5678','api_key',30,'{"referenceType":"workflow_id","referenceValue":"verification"}',$3,$4,$5::text,$6,CASE WHEN $5::text='verified' THEN 1 ELSE NULL END)`,
+		VALUES ($1,$2,'n8n','http://n8n:5678','api_key',30,'{"referenceType":"workflow_id","referenceValue":"verification"}',$3,$4,$5::text,$6,CASE WHEN $5::text='verified' THEN 1 ELSE NULL END)`,
 		id, "verification-connection-"+id.String(), encryptedCredential, credentialFingerprint, status, enabled)
 	if err != nil {
 		t.Fatalf("insert verification connection: %v", err)
@@ -434,8 +434,10 @@ func verificationWorkflowScopePattern(ids []uuid.UUID) string {
 func configureVerificationProbe(service *Service, pool *pgxpool.Pool, fail bool) (*atomic.Int32, *atomic.Bool) {
 	var probes atomic.Int32
 	var transactionDuringProbe atomic.Bool
+	// Docker-style n8n fixture: development cleartext exception + private DNS.
+	service.environment = "development"
 	service.resolveHost = func(context.Context, string) ([]net.IP, error) {
-		return []net.IP{net.ParseIP("203.0.113.20")}, nil
+		return []net.IP{net.ParseIP("172.20.0.3")}, nil
 	}
 	service.dialContext = func(_ context.Context, _, _ string) (net.Conn, error) {
 		probes.Add(1)

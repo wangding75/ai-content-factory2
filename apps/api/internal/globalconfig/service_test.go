@@ -13,6 +13,7 @@ import (
 )
 
 func TestVerificationOutboundAddressPolicy(t *testing.T) {
+	t.Setenv("APP_ENV", "development")
 	for _, test := range []struct {
 		name, host, ip string
 		allowed        bool
@@ -36,11 +37,19 @@ func TestVerificationOutboundAddressPolicy(t *testing.T) {
 	if _, err := verificationURL("http://n8n:5678", "healthz"); err != nil {
 		t.Fatalf("n8n should be accepted: %v", err)
 	}
+	t.Setenv("APP_ENV", "production")
+	if _, err := verificationURL("http://n8n:5678", "healthz"); err == nil {
+		t.Fatal("production must reject cleartext n8n credentials")
+	}
 }
 
 func TestVerificationHTTPClientRejectsPrivateResolutionAndRedirects(t *testing.T) {
-	service := &Service{resolveHost: func(context.Context, string) ([]net.IP, error) { return []net.IP{net.ParseIP("10.0.0.7")}, nil }}
-	request, err := http.NewRequest(http.MethodGet, "http://public.example.test/healthz", nil)
+	t.Setenv("APP_ENV", "development")
+	service := &Service{
+		environment: "development",
+		resolveHost: func(context.Context, string) ([]net.IP, error) { return []net.IP{net.ParseIP("10.0.0.7")}, nil },
+	}
+	request, err := http.NewRequest(http.MethodGet, "https://public.example.test/healthz", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -49,6 +58,7 @@ func TestVerificationHTTPClientRejectsPrivateResolutionAndRedirects(t *testing.T
 	}
 
 	service = &Service{
+		environment: "development",
 		resolveHost: func(context.Context, string) ([]net.IP, error) { return []net.IP{net.ParseIP("203.0.113.11")}, nil },
 		dialContext: func(_ context.Context, _, _ string) (net.Conn, error) {
 			client, server := net.Pipe()
@@ -61,13 +71,18 @@ func TestVerificationHTTPClientRejectsPrivateResolutionAndRedirects(t *testing.T
 						break
 					}
 				}
-				_, _ = io.WriteString(server, "HTTP/1.1 302 Found\r\nLocation: http://other.example.test\r\nContent-Length: 0\r\n\r\n")
+				_, _ = io.WriteString(server, "HTTP/1.1 302 Found\r\nLocation: https://other.example.test\r\nContent-Length: 0\r\n\r\n")
 			}()
 			return client, nil
 		},
 	}
+	request, err = http.NewRequest(http.MethodGet, "https://public.example.test/healthz", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	request.Header.Set("X-N8N-API-KEY", "test-credential-not-for-second-hop")
 	if _, err := service.verificationHTTPClient().Do(request); err == nil {
-		t.Fatal("redirect loop must be bounded")
+		t.Fatal("credentialed redirect must be rejected")
 	}
 }
 
@@ -117,8 +132,10 @@ func workflowProbeSuccess(_ int, request workflowProbeRequest) (int, workflowPro
 
 func workflowProbeService(t *testing.T, responder func(int, workflowProbeRequest) (int, workflowProbeResponse)) (*Service, *[]workflowProbeRequest) {
 	t.Helper()
+	t.Setenv("APP_ENV", "development")
 	requests := []workflowProbeRequest{}
 	service := &Service{
+		environment: "development",
 		resolveHost: func(context.Context, string) ([]net.IP, error) { return []net.IP{net.ParseIP("172.20.0.3")}, nil },
 		dialContext: func(_ context.Context, _, _ string) (net.Conn, error) {
 			client, server := net.Pipe()

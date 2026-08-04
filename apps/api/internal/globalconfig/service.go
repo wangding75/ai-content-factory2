@@ -17,6 +17,7 @@ import (
 	"net"
 	"net/http"
 	"net/url"
+	"os"
 	"path"
 	"slices"
 	"sort"
@@ -46,6 +47,7 @@ var (
 type Service struct {
 	pool                  *pgxpool.Pool
 	key                   []byte
+	environment           string
 	beforeIdempotencyLock func()
 	resolveHost           func(context.Context, string) ([]net.IP, error)
 	dialContext           func(context.Context, string, string) (net.Conn, error)
@@ -56,7 +58,22 @@ func NewService(pool *pgxpool.Pool, encryptionKey string) (*Service, error) {
 	if strings.TrimSpace(encryptionKey) == "" {
 		return nil, errors.New("CONFIGURATION_ENCRYPTION_KEY is required")
 	}
-	return &Service{pool: pool, key: b[:]}, nil
+	return &Service{pool: pool, key: b[:], environment: strings.TrimSpace(os.Getenv("APP_ENV"))}, nil
+}
+
+// SetEnvironment overrides APP_ENV for tests and controlled boot wiring.
+func (s *Service) SetEnvironment(environment string) {
+	if s == nil {
+		return
+	}
+	s.environment = strings.TrimSpace(environment)
+}
+
+func (s *Service) runtimeEnvironment() string {
+	if s != nil && strings.TrimSpace(s.environment) != "" {
+		return s.environment
+	}
+	return strings.TrimSpace(os.Getenv("APP_ENV"))
 }
 
 type Common struct {
@@ -1587,7 +1604,7 @@ func defaultJSON(v json.RawMessage) json.RawMessage {
 func mustJSON(v any) json.RawMessage { b, _ := json.Marshal(v); return b }
 
 func (s *Service) probeConnection(ctx context.Context, connection Connection) error {
-	endpoint, err := verificationURL(connection.BaseURL, "healthz")
+	endpoint, err := s.verificationURL(connection.BaseURL, "healthz")
 	if err != nil {
 		return err
 	}
@@ -1599,7 +1616,7 @@ func (s *Service) probeWorkflow(ctx context.Context, connection Connection, work
 	if err := json.Unmarshal(workflow.TypeConfig, &cfg); err != nil || cfg.ReferenceValue == "" || len(workflow.ApplicableStages) == 0 {
 		return ErrVerification
 	}
-	endpoint, err := verificationURL(connection.BaseURL, path.Join("webhook", cfg.ReferenceValue))
+	endpoint, err := s.verificationURL(connection.BaseURL, path.Join("webhook", cfg.ReferenceValue))
 	if err != nil {
 		return err
 	}
@@ -1665,11 +1682,12 @@ func (s *Service) probe(ctx context.Context, endpoint string, timeoutSeconds int
 }
 
 func (s *Service) verificationHTTPClient() *http.Client {
-	return safehttp.New(s.outboundPolicy()).HTTPClient()
+	// Credentialed integration client: no proxy, no redirects, shared policy.
+	return safehttp.New(s.credentialOutboundPolicy()).HTTPClient()
 }
 
-// RuntimeHTTPClient applies the same no-proxy, no-redirect, DNS-rebinding-safe
-// outbound policy used by explicit integration verification.
+// RuntimeHTTPClient is the single outbound client for n8n Execute/Query and any
+// other runtime call that may attach connection credentials.
 func (s *Service) RuntimeHTTPClient() *http.Client {
 	return s.verificationHTTPClient()
 }
@@ -1725,13 +1743,21 @@ func (s *Service) N8NRuntimeConfigured(ctx context.Context) bool {
 // verificationURL validates only syntax. Every resolved address is checked in
 // DialContext immediately before use, which prevents DNS rebinding bypasses.
 func verificationURL(baseURL, suffix string) (string, error) {
-	u, err := safehttp.NormalizeURL(baseURL, integrationOutboundPolicy())
+	return verificationURLWithPolicy(baseURL, suffix, integrationOutboundPolicy())
+}
+
+func verificationURLWithPolicy(baseURL, suffix string, policy safehttp.Policy) (string, error) {
+	u, err := safehttp.NormalizeURL(baseURL, policy)
 	if err != nil {
 		return "", ErrVerification
 	}
 	u.Path = path.Join(u.Path, suffix)
 	u.RawQuery, u.Fragment = "", ""
 	return u.String(), nil
+}
+
+func (s *Service) verificationURL(baseURL, suffix string) (string, error) {
+	return verificationURLWithPolicy(baseURL, suffix, s.credentialOutboundPolicy())
 }
 
 func verificationAddressAllowed(host string, ip net.IP) bool {
@@ -1742,19 +1768,29 @@ func verificationAddressAllowed(host string, ip net.IP) bool {
 	return err == nil
 }
 
+// integrationOutboundPolicy is the package-level credential policy used for URL
+// normalization before a Service instance is available (e.g. validation helpers).
 func integrationOutboundPolicy() safehttp.Policy {
-	policy := safehttp.DefaultPolicy()
-	policy.AllowedSchemes = map[string]bool{"https": true, "http": true}
-	policy.AllowedPorts = map[int]bool{80: true, 443: true, 5678: true}
-	policy.TrustedHosts = map[string]bool{"n8n": true}
+	return safehttp.CredentialPolicy(strings.TrimSpace(os.Getenv("APP_ENV")))
+}
+
+func (s *Service) credentialOutboundPolicy() safehttp.Policy {
+	policy := safehttp.CredentialPolicy(s.runtimeEnvironment())
+	if s != nil {
+		if s.resolveHost != nil {
+			policy.Resolver = s.resolveHost
+		}
+		if s.dialContext != nil {
+			policy.DialContext = s.dialContext
+		}
+	}
 	return policy
 }
 
+// outboundPolicy is the shared credential-bearing outbound policy for Provider
+// Verify, Model Discovery, Connection Verify and n8n runtime clients.
 func (s *Service) outboundPolicy() safehttp.Policy {
-	policy := integrationOutboundPolicy()
-	policy.Resolver = s.resolveHost
-	policy.DialContext = s.dialContext
-	return policy
+	return s.credentialOutboundPolicy()
 }
 
 func (s *Service) idempotent(ctx context.Context, scope, key string, request any, responseStatus int, fn func(pgx.Tx) (json.RawMessage, error)) (json.RawMessage, error) {

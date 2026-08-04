@@ -61,7 +61,7 @@ func newRealRewriteFixture(t *testing.T) realRewriteFixture {
 		t.Fatalf("review result=%+v err=%v", result, err)
 	}
 	connectionID, workflowID, bindingID := uuid.New(), uuid.New(), uuid.New()
-	if _, err = review.repo.db.Exec(review.ctx, "INSERT INTO workflow_connections(id,name,connection_type,base_url,auth_type,timeout_seconds,type_config,integration_status,enabled,last_verified_version) VALUES($1,$2,'n8n','http://rewrite-fixture','api_key',5,'{\"referenceType\":\"webhook_path\",\"referenceValue\":\"rewrite-fixture\"}','verified',true,1)", connectionID, "rewrite-"+connectionID.String()); err != nil {
+	if _, err = review.repo.db.Exec(review.ctx, "INSERT INTO workflow_connections(id,name,connection_type,base_url,auth_type,timeout_seconds,type_config,integration_status,enabled,last_verified_version) VALUES($1,$2,'n8n','https://api.example.test','api_key',5,'{\"referenceType\":\"webhook_path\",\"referenceValue\":\"rewrite-fixture\"}','verified',true,1)", connectionID, "rewrite-"+connectionID.String()); err != nil {
 		t.Fatal(err)
 	}
 	typeConfig := json.RawMessage(`{"referenceType":"webhook_path","referenceValue":"rewrite-fixture"}`)
