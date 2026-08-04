@@ -13,6 +13,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log"
 	"net"
 	"net/http"
 	"net/url"
@@ -1673,17 +1674,52 @@ func (s *Service) RuntimeHTTPClient() *http.Client {
 	return s.verificationHTTPClient()
 }
 
-// N8NRuntimeConfigured reports only durable system capability. It does not
-// probe a particular Connection, so one transient upstream failure cannot make
-// the whole installation appear disabled.
+// N8NRuntimeConfigured reports durable n8n runtime capability including
+// credential presence and decryptability with the current encryption key.
+// It does not perform outbound network probes against n8n.
 func (s *Service) N8NRuntimeConfigured(ctx context.Context) bool {
-	var configured bool
-	err := s.pool.QueryRow(ctx, `SELECT EXISTS(
-		SELECT 1 FROM workflow_connections
-		WHERE connection_type='n8n' AND integration_status='verified'
-		  AND enabled=true AND last_verified_version=version
-	)`).Scan(&configured)
-	return err == nil && configured
+	if s == nil || s.pool == nil {
+		return false
+	}
+	rows, err := s.pool.Query(ctx, `
+		SELECT id, encrypted_credential, credential_fingerprint, type_config
+		FROM workflow_connections
+		WHERE connection_type='n8n'
+		  AND enabled=true
+		  AND integration_status='verified'
+		  AND last_verified_version=version
+		ORDER BY updated_at DESC, id ASC`)
+	if err != nil {
+		return false
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var id uuid.UUID
+		var encrypted *string
+		var fingerprint *string
+		var typeConfig json.RawMessage
+		if err = rows.Scan(&id, &encrypted, &fingerprint, &typeConfig); err != nil {
+			return false
+		}
+		if fingerprint == nil || strings.TrimSpace(*fingerprint) == "" {
+			continue
+		}
+		if encrypted == nil || strings.TrimSpace(*encrypted) == "" {
+			continue
+		}
+		if !validN8n(typeConfig) {
+			continue
+		}
+		plain, unsealErr := s.unseal(*encrypted)
+		if unsealErr != nil || strings.TrimSpace(plain) == "" {
+			// Controlled diagnostic only; never return decrypt detail to callers.
+			log.Printf("n8n runtime credential unavailable connection_id=%s", id)
+			continue
+		}
+		return true
+	}
+	_ = rows.Err()
+	return false
 }
 
 // verificationURL validates only syntax. Every resolved address is checked in

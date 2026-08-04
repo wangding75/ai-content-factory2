@@ -16,11 +16,15 @@ import (
 	"github.com/local/ai-content-factory/apps/api/internal/globalconfig"
 	"github.com/local/ai-content-factory/apps/api/internal/material"
 	"github.com/local/ai-content-factory/apps/api/internal/planning"
+	"github.com/local/ai-content-factory/apps/api/internal/platform/ready"
 	"github.com/local/ai-content-factory/apps/api/internal/project"
 	"github.com/local/ai-content-factory/apps/api/internal/workflowbinding"
 )
 
-type Server struct{ httpServer *http.Server }
+type Server struct {
+	httpServer *http.Server
+	ready      *ready.Checker
+}
 type envelope struct {
 	Data      any    `json:"data"`
 	RequestID string `json:"request_id"`
@@ -40,6 +44,7 @@ func New(address string, projects *project.Service, services ...any) *Server {
 	realWorkflowStages := false
 	var runtimeConfigurations *globalconfig.Service
 	workerEnabled := false
+	var readiness *ready.Checker
 	for _, service := range services {
 		switch value := service.(type) {
 		case *contentitem.GenerationService, *contentitem.RealReviewService, *contentitem.RealRewriteService:
@@ -48,10 +53,13 @@ func New(address string, projects *project.Service, services ...any) *Server {
 			runtimeConfigurations = value
 		case workflowRunApplication:
 			workerEnabled = value != nil
+		case *ready.Checker:
+			readiness = value
 		}
 	}
+	server := &Server{ready: readiness}
 	mux.HandleFunc("GET /healthz", healthHandler)
-	mux.HandleFunc("GET /readyz", readyHandler)
+	mux.HandleFunc("GET /readyz", server.readyHandler)
 	mux.HandleFunc("GET /api/v1/meta", metaHandlerWithRuntime(runtimeConfigurations, workerEnabled, realWorkflowStages))
 	mux.HandleFunc("GET /api/v1/project-types", listProjectTypesHandler)
 	mux.HandleFunc("GET /api/v1/projects", listProjectsHandler(projects))
@@ -131,7 +139,8 @@ func New(address string, projects *project.Service, services ...any) *Server {
 			}
 		}
 	}
-	return &Server{httpServer: &http.Server{Addr: address, Handler: withRequestID(mux), ReadHeaderTimeout: 5 * time.Second, ReadTimeout: 15 * time.Second, WriteTimeout: 30 * time.Second, IdleTimeout: 60 * time.Second}}
+	server.httpServer = &http.Server{Addr: address, Handler: withRequestID(mux), ReadHeaderTimeout: 5 * time.Second, ReadTimeout: 15 * time.Second, WriteTimeout: 30 * time.Second, IdleTimeout: 60 * time.Second}
+	return server
 }
 func (s *Server) ListenAndServe() error { return s.httpServer.ListenAndServe() }
 
@@ -146,10 +155,25 @@ func (s *Server) Shutdown(ctx context.Context) error {
 }
 func (s *Server) Handler() http.Handler { return s.httpServer.Handler }
 func healthHandler(w http.ResponseWriter, r *http.Request) {
+	// Process liveness only — never depends on PostgreSQL or n8n.
 	writeJSON(w, r, http.StatusOK, map[string]any{"status": "ok", "service": "api"})
 }
-func readyHandler(w http.ResponseWriter, r *http.Request) {
-	writeJSON(w, r, http.StatusOK, map[string]any{"status": "ready", "checks": map[string]string{"api": "ok"}})
+
+// readyHandler reports critical dependency readiness. Without a configured
+// checker (unit tests), it falls back to process-only readiness.
+func (s *Server) readyHandler(w http.ResponseWriter, r *http.Request) {
+	if s == nil || s.ready == nil {
+		writeJSON(w, r, http.StatusOK, map[string]any{"status": "ready", "checks": map[string]string{"api": "ok", "ready": "ok"}})
+		return
+	}
+	result := s.ready.Check(r.Context())
+	status := http.StatusOK
+	bodyStatus := "ready"
+	if !result.Ready {
+		status = http.StatusServiceUnavailable
+		bodyStatus = "not_ready"
+	}
+	writeJSON(w, r, status, map[string]any{"status": bodyStatus, "checks": result.Checks})
 }
 func metaHandler(w http.ResponseWriter, r *http.Request) {
 	metaHandlerWithRuntime(nil, false, false)(w, r)

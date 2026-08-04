@@ -19,6 +19,7 @@ import (
 	"github.com/local/ai-content-factory/apps/api/internal/planning"
 	"github.com/local/ai-content-factory/apps/api/internal/platform/config"
 	"github.com/local/ai-content-factory/apps/api/internal/platform/httpserver"
+	"github.com/local/ai-content-factory/apps/api/internal/platform/ready"
 	"github.com/local/ai-content-factory/apps/api/internal/project"
 	"github.com/local/ai-content-factory/apps/api/internal/storyline"
 	"github.com/local/ai-content-factory/apps/api/internal/workflowbinding"
@@ -27,6 +28,10 @@ import (
 
 func main() {
 	cfg := config.Load()
+	migrationHead, err := ready.DiscoverMigrationHead(os.Getenv("MIGRATIONS_DIR"))
+	if err != nil {
+		log.Fatalf("discover migration head: %v", err)
+	}
 	bootCtx, bootCancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer bootCancel()
 	pool, err := pgxpool.New(bootCtx, cfg.DatabaseURL)
@@ -71,7 +76,9 @@ func main() {
 		globalConfigurations,
 		globalConfigurations,
 	)
-	workflowRuns.SetWorkflowExecutor(workflowrun.NewN8NWorkflowExecutor(globalConfigurations.RuntimeHTTPClient(), globalConfigurations.RuntimeConnectionCredential))
+	executor := workflowrun.NewN8NWorkflowExecutor(globalConfigurations.RuntimeHTTPClient(), globalConfigurations.RuntimeConnectionCredential)
+	executor.SetMaxResultBytes(cfg.N8NExecutionResultMaxBytes)
+	workflowRuns.SetWorkflowExecutor(executor)
 	runtimeBridge := workflowrun.NewRuntimeBridge(workflowRuns)
 	contentGeneration := contentitem.NewGenerationService(contentRepository, workflowbinding.NewPostgresRepository(pool), globalConfigurations, runtimeBridge, hmacSecret)
 	workflowRuns.SetContentSucceededConsumer(contentGeneration)
@@ -82,6 +89,15 @@ func main() {
 	workflowRuns.SetRewriteSucceededConsumer(realRewrite)
 	chapterPlans.ConfigureChapterPlanningRuntime(workflowbinding.NewPostgresRepository(pool), globalConfigurations, runtimeBridge)
 	workflowRuns.SetSucceededConsumer(chapterplan.NewRuntimeConsumer(chapterplan.NewResultIngestor(pool), chapterplan.NewConsumptionRepository(pool)))
+
+	workerHealth := workflowrun.NewWorkerHealth()
+	workflowRuns.SetWorkerHealth(workerHealth)
+	readiness := &ready.Checker{
+		Pool:                  pool,
+		ExpectedMigrationHead: migrationHead,
+		Worker:                workerHealth,
+		WorkerMaxIdle:         2 * time.Minute,
+	}
 
 	// Graceful lifecycle: SIGTERM/SIGINT stop workers first, drain HTTP, then close the pool.
 	rootCtx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
@@ -95,7 +111,7 @@ func main() {
 		})
 	}()
 
-	server := httpserver.New(cfg.APIAddress, projects, plannings, materials, projectMaterials, storylines, foreshadowings, chapterPlans, contentItems, iteration07, iteration08, contentGeneration, realReview, realRewrite, globalConfigurations, workflowbinding.NewCloseLoop(pool, projectRepository, globalConfigurations), workflowRuns)
+	server := httpserver.New(cfg.APIAddress, projects, plannings, materials, projectMaterials, storylines, foreshadowings, chapterPlans, contentItems, iteration07, iteration08, contentGeneration, realReview, realRewrite, globalConfigurations, workflowbinding.NewCloseLoop(pool, projectRepository, globalConfigurations), workflowRuns, readiness)
 	httpErr := make(chan error, 1)
 	go func() {
 		log.Printf("api listening on %s", cfg.APIAddress)

@@ -15,6 +15,14 @@ const (
 	missingExternalIDGracePeriod = 2 * time.Minute
 )
 
+// SetWorkerHealth attaches a readiness health recorder for the worker loop.
+func (s *Service) SetWorkerHealth(health *WorkerHealth) {
+	if s == nil {
+		return
+	}
+	s.workerHealth = health
+}
+
 // RunWorker uses versioned transitions as its claim: every worker may observe a
 // candidate, but only one can advance its version and write the terminal event.
 // When ctx is cancelled the worker stops claiming new candidates and waits for
@@ -22,6 +30,11 @@ const (
 func (s *Service) RunWorker(ctx context.Context, interval time.Duration, onError func(error)) {
 	if interval <= 0 {
 		interval = time.Second
+	}
+	health := s.workerHealth
+	if health != nil {
+		health.MarkStarted()
+		defer health.MarkStopped()
 	}
 	report := func(err error) {
 		if err != nil && onError != nil && ctx.Err() == nil {
@@ -38,9 +51,20 @@ func (s *Service) RunWorker(ctx context.Context, interval time.Duration, onError
 		if ctx.Err() != nil {
 			return
 		}
+		loopAt := s.now()
+		if health != nil {
+			health.MarkLoopStart(loopAt)
+		}
+		var loopErr error
+		defer func() {
+			if health != nil {
+				health.MarkLoopComplete(s.now(), loopErr)
+			}
+		}()
 		now := s.now()
 		consumptions, err := s.store.ListRecoverableResultConsumptions(ctx, workerCandidateBatchLimit, now)
 		if err != nil {
+			loopErr = err
 			report(err)
 		} else {
 			for _, run := range consumptions {
@@ -55,6 +79,7 @@ func (s *Service) RunWorker(ctx context.Context, interval time.Duration, onError
 		}
 		candidates, err := s.store.ListWorkerCandidates(ctx, workerCandidateBatchLimit, now)
 		if err != nil {
+			loopErr = err
 			report(err)
 			return
 		}

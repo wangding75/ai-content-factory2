@@ -171,6 +171,7 @@ type Service struct {
 	newRunNumber      func() string
 	executor          WorkflowExecutor
 	runTimeout        time.Duration
+	workerHealth      *WorkerHealth
 	succeededConsumer interface {
 		ConsumeSucceededRun(context.Context, WorkflowRun) error
 	}

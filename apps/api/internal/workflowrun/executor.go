@@ -15,7 +15,45 @@ var (
 	ErrExecutionTimeout       = errors.New("workflow execution timed out")
 	ErrExecutionNotFound      = errors.New("workflow execution not found")
 	ErrInvalidExecutionResult = errors.New("invalid workflow execution result")
+	// Permanent output-contract failures (converged to failed, never infinite Query).
+	ErrExecutionOutputMissing        = errors.New("execution output missing")
+	ErrExecutionOutputMultipleItems  = errors.New("execution output multiple items")
+	ErrExecutionOutputInvalidShape   = errors.New("execution output invalid shape")
+	ErrExecutionResultTooLarge       = errors.New("execution result too large")
 )
+
+// PermanentExecutionOutputCodes are durable business failures for successful
+// upstream executions whose payload violates the frozen single-item contract.
+var PermanentExecutionOutputCodes = map[string]struct{}{
+	"execution_output_missing":         {},
+	"execution_output_multiple_items":  {},
+	"execution_output_invalid_shape":   {},
+	"execution_result_too_large":       {},
+}
+
+// IsPermanentExecutionOutputError reports whether err is a frozen output-contract failure.
+func IsPermanentExecutionOutputError(err error) bool {
+	return errors.Is(err, ErrExecutionOutputMissing) ||
+		errors.Is(err, ErrExecutionOutputMultipleItems) ||
+		errors.Is(err, ErrExecutionOutputInvalidShape) ||
+		errors.Is(err, ErrExecutionResultTooLarge)
+}
+
+// PermanentExecutionOutputCode maps a permanent output error to a stable code.
+func PermanentExecutionOutputCode(err error) string {
+	switch {
+	case errors.Is(err, ErrExecutionOutputMissing):
+		return "execution_output_missing"
+	case errors.Is(err, ErrExecutionOutputMultipleItems):
+		return "execution_output_multiple_items"
+	case errors.Is(err, ErrExecutionOutputInvalidShape):
+		return "execution_output_invalid_shape"
+	case errors.Is(err, ErrExecutionResultTooLarge):
+		return "execution_result_too_large"
+	default:
+		return ""
+	}
+}
 
 type ExecutionStatus string
 
