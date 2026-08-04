@@ -631,7 +631,7 @@ func workflowRunServiceError(w http.ResponseWriter, r *http.Request, err error) 
 		writeError(w, r, http.StatusConflict, "workflow_not_runnable", "workflow is not runnable", map[string]any{})
 	case errors.Is(err, workflowrun.ErrNotFound):
 		writeError(w, r, http.StatusNotFound, "workflow_run_not_found", "workflow run not found", map[string]any{})
-	case errors.Is(err, workflowrun.ErrVersionConflict):
+	case errors.Is(err, workflowrun.ErrVersionConflict), errors.Is(err, workflowrun.ErrRetryConfigurationChanged):
 		writeError(w, r, http.StatusConflict, "version_conflict", "workflow run version conflict", map[string]any{})
 	case errors.Is(err, workflowrun.ErrInvalidTransition):
 		writeError(w, r, http.StatusConflict, "workflow_run_state_conflict", "workflow run state does not accept this operation", map[string]any{})
@@ -645,7 +645,7 @@ func workflowRunServiceError(w http.ResponseWriter, r *http.Request, err error) 
 		writeError(w, r, http.StatusConflict, "active_rewrite_run_conflict", "an active rewrite run already exists", map[string]any{})
 	case errors.Is(err, workflowrun.ErrNotCancellable):
 		writeError(w, r, http.StatusConflict, "validation_error", "workflow run cannot be cancelled", map[string]any{})
-	case errors.Is(err, workflowrun.ErrNotRetryable):
+	case errors.Is(err, workflowrun.ErrNotRetryable), errors.Is(err, workflowrun.ErrRetrySnapshotInvalid):
 		writeError(w, r, http.StatusConflict, "validation_error", "workflow run cannot be retried", map[string]any{})
 	case errors.Is(err, workflowrun.ErrExecutorUnavailable):
 		writeError(w, r, http.StatusServiceUnavailable, "executor_unavailable", "workflow executor is unavailable", map[string]any{})

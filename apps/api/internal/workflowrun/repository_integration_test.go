@@ -582,21 +582,26 @@ func TestRepositorySummaryCountsQueuedAndRunningOnly(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	running, err := queued.Start(time.Now().UTC())
-	if err != nil {
-		t.Fatal(err)
-	}
 	if _, err = repo.Create(ctx, newRun(t, p, w, "WR-SUMMARY-RUNNING")); err != nil {
 		t.Fatal(err)
 	}
-	storedRunning, err := repo.GetByID(ctx, queued.ID)
+	// Re-read before CAS transition: a live API worker on the shared development
+	// database may claim the queued fixture between create and update.
+	stored, err := repo.GetByID(ctx, queued.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err = repo.UpdateStatus(ctx, running); err != nil {
-		t.Fatal(err)
+	if stored.Status == StatusQueued {
+		running, startErr := stored.Start(time.Now().UTC())
+		if startErr != nil {
+			t.Fatal(startErr)
+		}
+		if _, err = repo.UpdateStatus(ctx, running); err != nil {
+			t.Fatal(err)
+		}
+	} else if stored.Status != StatusRunning && stored.Status != StatusCancelling {
+		t.Fatalf("unexpected status after create: %+v", stored)
 	}
-	_ = storedRunning
 	succeeded, err := newRun(t, p, w, "WR-SUMMARY-SUCCEEDED").Start(time.Now().UTC())
 	if err != nil {
 		t.Fatal(err)

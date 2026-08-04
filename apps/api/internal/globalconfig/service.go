@@ -352,18 +352,15 @@ func (s *Service) GetProvider(ctx context.Context, id uuid.UUID) (Provider, erro
 	return x, notFound(e)
 }
 func (s *Service) ListProviders(ctx context.Context, o ListOptions) ([]Provider, int, error) {
-	q, args := where(o, "", nil)
-	var total int
-	if e := s.pool.QueryRow(ctx, "SELECT COUNT(*) FROM llm_provider_configurations"+q, args...).Scan(&total); e != nil {
-		return nil, 0, e
-	}
-	args = append(args, o.Limit, o.Offset)
-	rows, e := s.pool.Query(ctx, "SELECT "+providerColumns+" FROM llm_provider_configurations"+q+fmt.Sprintf(" ORDER BY updated_at DESC,id ASC LIMIT $%d OFFSET $%d", len(args)-1, len(args)), args...)
+	// SQL pushes static filters; executable is derived after finalizeCommon, so
+	// candidates are fully filtered before total/offset/limit are applied.
+	q, args := where(o, "provider_type", nil)
+	rows, e := s.pool.Query(ctx, "SELECT "+providerColumns+" FROM llm_provider_configurations"+q+" ORDER BY updated_at DESC,id ASC", args...)
 	if e != nil {
 		return nil, 0, e
 	}
 	defer rows.Close()
-	xs := []Provider{}
+	filtered := make([]Provider, 0)
 	for rows.Next() {
 		var x Provider
 		if e = scanProvider(rows, &x); e != nil {
@@ -375,9 +372,12 @@ func (s *Service) ListProviders(ctx context.Context, o ListOptions) ([]Provider,
 		if o.Executable != nil && x.Executable != *o.Executable {
 			continue
 		}
-		xs = append(xs, x)
+		filtered = append(filtered, x)
 	}
-	return xs, total, rows.Err()
+	if e = rows.Err(); e != nil {
+		return nil, 0, e
+	}
+	return paginateSlice(filtered, o.Limit, o.Offset), len(filtered), nil
 }
 func (s *Service) ListProviderModels(ctx context.Context, providerID uuid.UUID) ([]ProviderModel, error) {
 	rows, err := s.pool.Query(ctx, "SELECT id,provider_id,model_key,source,availability,last_seen_at,created_at,updated_at FROM llm_provider_models WHERE provider_id=$1 ORDER BY model_key ASC,id ASC", providerID)
@@ -685,18 +685,14 @@ func GetConnectionForShare(ctx context.Context, tx pgx.Tx, id uuid.UUID) (Connec
 	return x, notFound(e)
 }
 func (s *Service) ListConnections(ctx context.Context, o ListOptions) ([]Connection, int, error) {
+	// Static filters in SQL; credential-aware executable is finalized then filtered before pagination.
 	q, args := where(o, "connection_type", nil)
-	var n int
-	if e := s.pool.QueryRow(ctx, "SELECT COUNT(*) FROM workflow_connections"+q, args...).Scan(&n); e != nil {
-		return nil, 0, e
-	}
-	args = append(args, o.Limit, o.Offset)
-	rows, e := s.pool.Query(ctx, "SELECT "+connectionColumns+" FROM workflow_connections"+q+fmt.Sprintf(" ORDER BY updated_at DESC,id ASC LIMIT $%d OFFSET $%d", len(args)-1, len(args)), args...)
+	rows, e := s.pool.Query(ctx, "SELECT "+connectionColumns+" FROM workflow_connections"+q+" ORDER BY updated_at DESC,id ASC", args...)
 	if e != nil {
 		return nil, 0, e
 	}
 	defer rows.Close()
-	out := []Connection{}
+	filtered := make([]Connection, 0)
 	for rows.Next() {
 		var x Connection
 		if e = scanConnection(rows, &x); e != nil {
@@ -705,9 +701,18 @@ func (s *Service) ListConnections(ctx context.Context, o ListOptions) ([]Connect
 		if e = s.hydrateConnectionEligibility(ctx, &x); e != nil {
 			return nil, 0, e
 		}
-		out = append(out, x)
+		if o.ValidationStatus != "" && x.ValidationStatus != o.ValidationStatus {
+			continue
+		}
+		if o.Executable != nil && x.Executable != *o.Executable {
+			continue
+		}
+		filtered = append(filtered, x)
 	}
-	return out, n, rows.Err()
+	if e = rows.Err(); e != nil {
+		return nil, 0, e
+	}
+	return paginateSlice(filtered, o.Limit, o.Offset), len(filtered), nil
 }
 func (s *Service) UpdateConnection(ctx context.Context, id uuid.UUID, r ConnectionUpdate) (Connection, error) {
 	tx, err := s.pool.Begin(ctx)
@@ -935,51 +940,29 @@ func GetWorkflowForShare(ctx context.Context, tx pgx.Tx, id uuid.UUID) (Workflow
 	return x, notFound(e)
 }
 func (s *Service) ListWorkflows(ctx context.Context, o ListOptions) ([]Workflow, int, error) {
-	where := ""
-	args := []any{}
-	if strings.TrimSpace(o.Query) != "" {
-		args = append(args, "%"+strings.TrimSpace(o.Query)+"%")
-		where = " WHERE w.name ILIKE $1"
-	}
-	if o.ConnectionID != "" {
-		args = append(args, o.ConnectionID)
-		where += map[bool]string{true: " AND", false: " WHERE"}[where != ""] + fmt.Sprintf(" w.connection_id=$%d", len(args))
-	}
-	if o.Type != "" {
-		args = append(args, o.Type)
-		where += map[bool]string{true: " AND", false: " WHERE"}[where != ""] + fmt.Sprintf(" c.connection_type=$%d", len(args))
-	}
-	if o.IntegrationStatus != "" {
-		args = append(args, o.IntegrationStatus)
-		where += map[bool]string{true: " AND", false: " WHERE"}[where != ""] + fmt.Sprintf(" w.integration_status=$%d", len(args))
-	}
-	if o.Enabled != nil {
-		args = append(args, *o.Enabled)
-		where += map[bool]string{true: " AND", false: " WHERE"}[where != ""] + fmt.Sprintf(" w.enabled=$%d", len(args))
-	}
-	if o.ApplicableStage != "" {
-		args = append(args, o.ApplicableStage)
-		where += map[bool]string{true: " AND", false: " WHERE"}[where != ""] + fmt.Sprintf(" w.applicable_stages::jsonb ? $%d", len(args))
-	}
-	var n int
-	if e := s.pool.QueryRow(ctx, "SELECT COUNT(*) FROM workflow_configurations w JOIN workflow_connections c ON c.id=w.connection_id"+where, args...).Scan(&n); e != nil {
-		return nil, 0, e
-	}
-	args = append(args, o.Limit, o.Offset)
-	rows, e := s.pool.Query(ctx, "SELECT "+workflowColumns+" FROM workflow_configurations w JOIN workflow_connections c ON c.id=w.connection_id"+where+fmt.Sprintf(" ORDER BY w.updated_at DESC,w.id ASC LIMIT $%d OFFSET $%d", len(args)-1, len(args)), args...)
+	whereClause, args := workflowListWhere(o)
+	rows, e := s.pool.Query(ctx, "SELECT "+workflowColumns+" FROM workflow_configurations w JOIN workflow_connections c ON c.id=w.connection_id"+whereClause+" ORDER BY w.updated_at DESC,w.id ASC", args...)
 	if e != nil {
 		return nil, 0, e
 	}
 	defer rows.Close()
-	out := []Workflow{}
+	candidates := make([]Workflow, 0)
 	for rows.Next() {
 		var x Workflow
 		if e = scanWorkflow(rows, &x); e != nil {
 			return nil, 0, e
 		}
-		if _, e = s.hydrateWorkflowEligibility(ctx, &x, ""); e != nil {
-			return nil, 0, e
-		}
+		candidates = append(candidates, x)
+	}
+	if e = rows.Err(); e != nil {
+		return nil, 0, e
+	}
+	// Batch-load connections/providers once for the filtered candidate set (bounded by SQL filters).
+	if e = s.hydrateWorkflowsEligibilityBatch(ctx, candidates); e != nil {
+		return nil, 0, e
+	}
+	filtered := make([]Workflow, 0, len(candidates))
+	for _, x := range candidates {
 		if o.ValidationStatus != "" && x.ValidationStatus != o.ValidationStatus {
 			continue
 		}
@@ -989,9 +972,47 @@ func (s *Service) ListWorkflows(ctx context.Context, o ListOptions) ([]Workflow,
 		if o.LlmStrategy != "" && x.LlmStrategy != o.LlmStrategy {
 			continue
 		}
-		out = append(out, x)
+		filtered = append(filtered, x)
 	}
-	return out, n, rows.Err()
+	return paginateSlice(filtered, o.Limit, o.Offset), len(filtered), nil
+}
+
+func workflowListWhere(o ListOptions) (string, []any) {
+	where := ""
+	args := []any{}
+	add := func(clause string, value any) {
+		args = append(args, value)
+		if where == "" {
+			where = " WHERE " + fmt.Sprintf(clause, len(args))
+			return
+		}
+		where += " AND " + fmt.Sprintf(clause, len(args))
+	}
+	if strings.TrimSpace(o.Query) != "" {
+		add("w.name ILIKE $%d", "%"+strings.TrimSpace(o.Query)+"%")
+	}
+	if o.ConnectionID != "" {
+		add("w.connection_id=$%d", o.ConnectionID)
+	}
+	if o.Type != "" {
+		add("c.connection_type=$%d", o.Type)
+	}
+	if o.IntegrationStatus != "" {
+		add("w.integration_status=$%d", o.IntegrationStatus)
+	}
+	if o.ValidationStatus != "" {
+		add("w.integration_status=$%d", o.ValidationStatus)
+	}
+	if o.Enabled != nil {
+		add("w.enabled=$%d", *o.Enabled)
+	}
+	if o.ApplicableStage != "" {
+		add("w.applicable_stages::jsonb ? $%d", o.ApplicableStage)
+	}
+	if o.LlmStrategy != "" {
+		add("COALESCE(NULLIF(w.llm_strategy,''),'none')=$%d", o.LlmStrategy)
+	}
+	return where, args
 }
 
 func (s *Service) hydrateWorkflowEligibility(ctx context.Context, workflow *Workflow, requiredStage string) (Connection, error) {
@@ -999,21 +1020,89 @@ func (s *Service) hydrateWorkflowEligibility(ctx context.Context, workflow *Work
 	if err != nil {
 		return Connection{}, err
 	}
+	return connection, s.applyWorkflowEligibility(ctx, workflow, connection, requiredStage, nil)
+}
+
+// hydrateWorkflowsEligibilityBatch loads related connections and providers once
+// for the candidate set so list filtering does not issue unbounded per-row queries.
+func (s *Service) hydrateWorkflowsEligibilityBatch(ctx context.Context, workflows []Workflow) error {
+	if len(workflows) == 0 {
+		return nil
+	}
+	connectionIDs := make([]uuid.UUID, 0, len(workflows))
+	providerIDs := make([]uuid.UUID, 0)
+	seenConn := map[uuid.UUID]struct{}{}
+	seenProv := map[uuid.UUID]struct{}{}
+	for i := range workflows {
+		if _, ok := seenConn[workflows[i].ConnectionID]; !ok && workflows[i].ConnectionID != uuid.Nil {
+			seenConn[workflows[i].ConnectionID] = struct{}{}
+			connectionIDs = append(connectionIDs, workflows[i].ConnectionID)
+		}
+		if workflows[i].LlmStrategy == "acf_managed" && workflows[i].LlmProviderID != nil {
+			if _, ok := seenProv[*workflows[i].LlmProviderID]; !ok {
+				seenProv[*workflows[i].LlmProviderID] = struct{}{}
+				providerIDs = append(providerIDs, *workflows[i].LlmProviderID)
+			}
+		}
+	}
+	connections := map[uuid.UUID]Connection{}
+	for _, id := range connectionIDs {
+		connection, err := s.GetConnection(ctx, id)
+		if err != nil {
+			return err
+		}
+		connections[id] = connection
+	}
+	providers := map[uuid.UUID]Provider{}
+	for _, id := range providerIDs {
+		provider, err := s.GetProvider(ctx, id)
+		if err != nil {
+			// Missing provider is an eligibility fact, not a list failure.
+			continue
+		}
+		providers[id] = provider
+	}
+	for i := range workflows {
+		connection, ok := connections[workflows[i].ConnectionID]
+		if !ok {
+			return ErrNotFound
+		}
+		if err := s.applyWorkflowEligibility(ctx, &workflows[i], connection, "", providers); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (s *Service) applyWorkflowEligibility(ctx context.Context, workflow *Workflow, connection Connection, requiredStage string, providers map[uuid.UUID]Provider) error {
 	providerFact := EligibilityFact{Kind: "provider", Status: ValidationVerified, Enabled: true, Version: 1, VerifiedVersion: intPointer(1), ModelAvailable: true}
 	strategyComplete := true
 	if workflow.LlmStrategy == "acf_managed" {
 		if workflow.LlmProviderID == nil || workflow.LlmModel == nil {
 			strategyComplete = false
 		} else {
-			provider, providerErr := s.GetProvider(ctx, *workflow.LlmProviderID)
-			if providerErr != nil {
-				strategyComplete = false
-			} else {
+			var provider Provider
+			var ok bool
+			if providers != nil {
+				provider, ok = providers[*workflow.LlmProviderID]
+			}
+			if !ok {
+				loaded, providerErr := s.GetProvider(ctx, *workflow.LlmProviderID)
+				if providerErr != nil {
+					strategyComplete = false
+				} else {
+					provider = loaded
+					ok = true
+				}
+			}
+			if ok {
 				available, availabilityErr := s.providerModelAvailable(ctx, provider.ID, *workflow.LlmModel)
 				if availabilityErr != nil {
-					return Connection{}, availabilityErr
+					return availabilityErr
 				}
 				providerFact = EligibilityFact{Kind: "provider", ResourceID: &provider.ID, Status: ValidationStatus(provider.ValidationStatus), Enabled: provider.Enabled, Version: provider.Version, VerifiedVersion: provider.VerifiedVersion, ModelAvailable: available}
+			} else {
+				strategyComplete = false
 			}
 		}
 	}
@@ -1024,7 +1113,7 @@ func (s *Service) hydrateWorkflowEligibility(ctx context.Context, workflow *Work
 	workflowFact := EligibilityFact{Kind: "workflow_configuration", ResourceID: &workflow.ID, ConnectionID: &connection.ID, Status: ValidationStatus(workflow.ValidationStatus), Enabled: workflow.Enabled, Version: workflow.Version, VerifiedVersion: workflow.VerifiedVersion, StrategyComplete: strategyComplete, ReferenceExists: true, ReferenceActive: true, StageMatches: stageMatches, InputCompatible: validContractVersion(workflow.InputContractVersion), OutputCompatible: validContractVersion(workflow.OutputContractVersion)}
 	connectionFact := EligibilityFact{Kind: "connection", ResourceID: &connection.ID, WorkflowConfigurationID: &workflow.ID, Status: ValidationStatus(connection.ValidationStatus), Enabled: connection.Enabled, Version: connection.Version, VerifiedVersion: connection.VerifiedVersion, CredentialRequired: connection.AuthType == "api_key", CredentialAvailable: connection.credentialReadable}
 	workflow.Executable, workflow.IneligibilityReasons = EvaluateEligibility(workflowFact, connectionFact, providerFact)
-	return connection, nil
+	return nil
 }
 
 func (s *Service) hydrateConnectionEligibility(ctx context.Context, connection *Connection) error {
@@ -1111,26 +1200,31 @@ func (s *Service) GetPlatform(ctx context.Context, id uuid.UUID) (Platform, erro
 	return x, notFound(e)
 }
 func (s *Service) ListPlatforms(ctx context.Context, o ListOptions) ([]Platform, int, error) {
+	// Platform list must finalize derived validation/executable before filter and pagination.
 	q, args := where(o, "platform_type", nil)
-	var n int
-	if e := s.pool.QueryRow(ctx, "SELECT COUNT(*) FROM distribution_platform_configurations"+q, args...).Scan(&n); e != nil {
-		return nil, 0, e
-	}
-	args = append(args, o.Limit, o.Offset)
-	rows, e := s.pool.Query(ctx, "SELECT "+platformColumns+" FROM distribution_platform_configurations"+q+fmt.Sprintf(" ORDER BY updated_at DESC,id ASC LIMIT $%d OFFSET $%d", len(args)-1, len(args)), args...)
+	rows, e := s.pool.Query(ctx, "SELECT "+platformColumns+" FROM distribution_platform_configurations"+q+" ORDER BY updated_at DESC,id ASC", args...)
 	if e != nil {
 		return nil, 0, e
 	}
 	defer rows.Close()
-	out := []Platform{}
+	filtered := make([]Platform, 0)
 	for rows.Next() {
 		var x Platform
 		if e = scanPlatform(rows, &x); e != nil {
 			return nil, 0, e
 		}
-		out = append(out, x)
+		if o.ValidationStatus != "" && x.ValidationStatus != o.ValidationStatus {
+			continue
+		}
+		if o.Executable != nil && x.Executable != *o.Executable {
+			continue
+		}
+		filtered = append(filtered, x)
 	}
-	return out, n, rows.Err()
+	if e = rows.Err(); e != nil {
+		return nil, 0, e
+	}
+	return paginateSlice(filtered, o.Limit, o.Offset), len(filtered), nil
 }
 func (s *Service) UpdateWorkflow(ctx context.Context, id uuid.UUID, r WorkflowUpdate) (Workflow, error) {
 	tx, err := s.pool.Begin(ctx)
@@ -1762,8 +1856,29 @@ func finalizeCommon(x *Common, kind string) []IneligibilityReason {
 const platformColumns = "id,name,platform_type,account_identifier,endpoint_url,auth_type,timeout_seconds,type_config,note,encrypted_credential IS NOT NULL,credential_fingerprint,integration_status,enabled,last_verified_at,last_error_code,last_error_message,version,created_at,updated_at"
 
 func scanPlatform(r scanner, x *Platform) error {
-	return r.Scan(&x.ID, &x.Name, &x.PlatformType, &x.AccountIdentifier, &x.EndpointURL, &x.AuthType, &x.TimeoutSeconds, &x.TypeConfig, &x.Note, &x.HasCredential, &x.CredentialFingerprint, &x.IntegrationStatus, &x.Enabled, &x.LastVerifiedAt, &x.LastErrorCode, &x.LastErrorMessage, &x.Version, &x.CreatedAt, &x.UpdatedAt)
+	err := r.Scan(&x.ID, &x.Name, &x.PlatformType, &x.AccountIdentifier, &x.EndpointURL, &x.AuthType, &x.TimeoutSeconds, &x.TypeConfig, &x.Note, &x.HasCredential, &x.CredentialFingerprint, &x.IntegrationStatus, &x.Enabled, &x.LastVerifiedAt, &x.LastErrorCode, &x.LastErrorMessage, &x.Version, &x.CreatedAt, &x.UpdatedAt)
+	// Platform previously skipped finalize, leaving validationStatus/executable at zero values.
+	finalizeCommon(&x.Common, "distribution_platform")
+	return err
 }
+
+func paginateSlice[T any](items []T, limit, offset int) []T {
+	if offset < 0 {
+		offset = 0
+	}
+	if limit <= 0 {
+		limit = 20
+	}
+	if offset >= len(items) {
+		return []T{}
+	}
+	end := offset + limit
+	if end > len(items) {
+		end = len(items)
+	}
+	return items[offset:end]
+}
+
 func where(o ListOptions, typeColumn string, _ any) (string, []any) {
 	a := []any{}
 	p := []string{}

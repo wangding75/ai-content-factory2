@@ -282,8 +282,17 @@ type serviceBindings struct {
 	err error
 }
 
-func (s serviceBindings) GetByProjectAndStage(context.Context, uuid.UUID, workflowbinding.WorkflowBindingStage) (workflowbinding.ProjectWorkflowBinding, error) {
-	return s.b, s.err
+func (s serviceBindings) GetByProjectAndStage(_ context.Context, _ uuid.UUID, stage workflowbinding.WorkflowBindingStage) (workflowbinding.ProjectWorkflowBinding, error) {
+	if s.err != nil {
+		return workflowbinding.ProjectWorkflowBinding{}, s.err
+	}
+	out := s.b
+	// Keep fixture stage aligned with the requested stage so Current Configuration
+	// Retry snapshots remain consistent across domain stages under test.
+	if stage != "" {
+		out.Stage = stage
+	}
+	return out, nil
 }
 
 type serviceConfigs struct {

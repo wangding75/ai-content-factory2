@@ -34,7 +34,35 @@ var (
 	ErrRewriteVersionConflict     = errors.New("rewrite workflow run version conflict")
 	ErrRewriteIdempotencyConflict = errors.New("rewrite idempotency conflict")
 	ErrProtectedStage             = errors.New("workflow stage requires its domain command")
+	// ErrRetryConfigurationChanged is returned when Binding/Workflow/Connection
+	// versions change between preparation and Run creation (mixed snapshots forbidden).
+	ErrRetryConfigurationChanged = errors.New("retry configuration version conflict")
+	// ErrRetrySnapshotInvalid is returned when a prepared retry snapshot fails closed validation.
+	ErrRetrySnapshotInvalid = errors.New("retry configuration snapshot invalid")
 )
+
+// PreparedRetryConfiguration is the single immutable result of one consistent
+// configuration read for Current Configuration Retry. Every Run field and
+// snapshot must be assigned from this object; no further config reads may
+// participate in snapshot generation after it is built.
+type PreparedRetryConfiguration struct {
+	ProjectID                      uuid.UUID
+	Stage                          string
+	BindingID                      uuid.UUID
+	BindingVersion                 int
+	WorkflowConfigurationID        uuid.UUID
+	WorkflowConfigurationVersion   int
+	WorkflowConnectionID           uuid.UUID
+	ConnectionVersion              int
+	CredentialFingerprint          *string
+	WorkflowType                   string
+	LLMStrategy                    string
+	ConfigurationSnapshot          json.RawMessage
+	BindingSnapshot                json.RawMessage
+	ConnectionSnapshot             json.RawMessage
+	LlmPolicySnapshot              json.RawMessage
+	Executable                     bool
+}
 
 type ProjectReader interface {
 	Get(context.Context, uuid.UUID) (project.Project, error)
@@ -1078,27 +1106,19 @@ func (s *Service) RetryRunWithReplay(ctx context.Context, command RetryCommand) 
 			}
 			input = command.InputOverride
 		}
+		var prepared PreparedRetryConfiguration
 		snapshot, configurationID := original.ConfigurationSnapshot, original.WorkflowConfigurationID
 		if mode == "current_configuration" {
-			stage, parseErr := workflowbinding.ParseStage(original.Stage)
-			if parseErr != nil {
-				return WorkflowRun{}, ErrValidation
+			prepared, err = s.prepareCurrentRetryConfiguration(ctx, original.ProjectID, original.Stage)
+			if err != nil {
+				return WorkflowRun{}, err
 			}
-			binding, bindErr := s.bindings.GetByProjectAndStage(ctx, original.ProjectID, stage)
-			if bindErr != nil {
-				return WorkflowRun{}, mapBindingError(bindErr)
+			// Re-read only for version/fingerprint consistency. These results must
+			// not regenerate any snapshot fields.
+			if err = s.verifyPreparedRetryConfiguration(ctx, prepared); err != nil {
+				return WorkflowRun{}, err
 			}
-			configuration, connection, configErr := s.runnableConfiguration(ctx, binding.WorkflowConfigurationID, stage)
-			if configErr != nil {
-				return WorkflowRun{}, configErr
-			}
-			snapshot, configErr = configurationSnapshot(binding, configuration, connection, s.now())
-			if configErr != nil {
-				return WorkflowRun{}, fmt.Errorf("build workflow run snapshot: %w", configErr)
-			}
-			configurationID = configuration.ID
-			// Snapshot projections always describe the configuration actually chosen for the retry.
-			_ = binding
+			snapshot, configurationID = prepared.ConfigurationSnapshot, prepared.WorkflowConfigurationID
 		}
 		run, err := New(s.newID(), original.ProjectID, configurationID, s.newRunNumber(), original.Stage, "retry", snapshot, input)
 		if err != nil {
@@ -1110,15 +1130,12 @@ func (s *Service) RetryRunWithReplay(ctx context.Context, command RetryCommand) 
 		retryMode := mode
 		run.RetryMode = &retryMode
 		if mode == "current_configuration" {
-			stage, _ := workflowbinding.ParseStage(original.Stage)
-			binding, _ := s.bindings.GetByProjectAndStage(ctx, original.ProjectID, stage)
-			configuration, _ := s.configurations.GetWorkflow(ctx, configurationID)
-			connection, _ := s.connections.GetConnection(ctx, configuration.ConnectionID)
-			s.populateRunSnapshots(ctx, &run, binding, configuration, connection)
+			applyPreparedRetryConfiguration(&run, prepared)
 		} else {
 			run.BindingSnapshot = RedactJSON(original.BindingSnapshot)
 			run.ConnectionSnapshot = RedactJSON(original.ConnectionSnapshot)
 			run.LlmPolicySnapshot = RedactJSON(original.LlmPolicySnapshot)
+			run.WorkflowConnectionID = original.WorkflowConnectionID
 		}
 		if original.Stage == "rewrite" {
 			input, err = rewriteRetryPayload(input, run.ID)
@@ -1130,15 +1147,6 @@ func (s *Service) RetryRunWithReplay(ctx context.Context, command RetryCommand) 
 		run.CreatedAt, run.UpdatedAt, run.RetryOfRunID = now, now, &original.ID
 		deadline := now.Add(s.runTimeout)
 		run.DeadlineAt = &deadline
-		if mode == "current_configuration" {
-			configuration, _ := s.configurations.GetWorkflow(ctx, configurationID)
-			if configuration.ConnectionID != uuid.Nil {
-				connectionID := configuration.ConnectionID
-				run.WorkflowConnectionID = &connectionID
-			}
-		} else {
-			run.WorkflowConnectionID = original.WorkflowConnectionID
-		}
 		created, _, err := store.CreateWithInitialEvent(ctx, run, Event{ID: s.newID(), RunID: run.ID, EventType: "queued", Status: StatusQueued, Payload: json.RawMessage(`{}`), CreatedAt: now})
 		if err != nil {
 			return WorkflowRun{}, mapStoreError(err)
@@ -1230,7 +1238,208 @@ func configurationSnapshot(binding workflowbinding.ProjectWorkflowBinding, confi
 	if err != nil {
 		return nil, err
 	}
-	return RedactJSON(b), nil
+	out := RedactJSON(b)
+	if !validJSONObject(out) {
+		return nil, ErrRetrySnapshotInvalid
+	}
+	return out, nil
+}
+
+// prepareCurrentRetryConfiguration performs one consistent Binding → Workflow →
+// Connection read, eligibility check, and full snapshot generation.
+func (s *Service) prepareCurrentRetryConfiguration(ctx context.Context, projectID uuid.UUID, stageStr string) (PreparedRetryConfiguration, error) {
+	stage, err := workflowbinding.ParseStage(stageStr)
+	if err != nil {
+		return PreparedRetryConfiguration{}, ErrValidation
+	}
+	binding, err := s.bindings.GetByProjectAndStage(ctx, projectID, stage)
+	if err != nil {
+		return PreparedRetryConfiguration{}, mapBindingError(err)
+	}
+	configuration, connection, err := s.runnableConfiguration(ctx, binding.WorkflowConfigurationID, stage)
+	if err != nil {
+		return PreparedRetryConfiguration{}, err
+	}
+	if binding.ID == uuid.Nil || binding.Version < 1 || configuration.ID == uuid.Nil || configuration.Version < 1 || connection.ID == uuid.Nil || connection.Version < 1 {
+		return PreparedRetryConfiguration{}, ErrRetrySnapshotInvalid
+	}
+	now := NormalizeTimestamp(s.now())
+	configSnap, err := configurationSnapshot(binding, configuration, connection, now)
+	if err != nil {
+		return PreparedRetryConfiguration{}, err
+	}
+	bindingSnap, err := requiredJSONObject(map[string]any{
+		"bindingId": binding.ID, "bindingVersion": binding.Version, "stage": binding.Stage.String(),
+	})
+	if err != nil {
+		return PreparedRetryConfiguration{}, err
+	}
+	connectionSnap, err := requiredJSONObject(map[string]any{
+		"id": connection.ID, "name": connection.Name, "version": connection.Version,
+		"connectionType": connection.ConnectionType, "baseUrl": safeBaseURL(connection.BaseURL),
+		"authType": connection.AuthType, "credentialFingerprint": connection.CredentialFingerprint,
+	})
+	if err != nil {
+		return PreparedRetryConfiguration{}, err
+	}
+	strategy := configuration.LlmStrategy
+	if strategy == "" {
+		strategy = "none"
+	}
+	policy := map[string]any{
+		"strategy": strategy, "providerId": configuration.LlmProviderID, "providerName": nil,
+		"providerVersion": nil, "model": configuration.LlmModel, "secretFingerprint": nil,
+	}
+	if configuration.LlmStrategy == "acf_managed" {
+		if configuration.LlmProviderID == nil {
+			return PreparedRetryConfiguration{}, ErrNotRunnable
+		}
+		reader, ok := s.configurations.(interface {
+			GetProvider(context.Context, uuid.UUID) (globalconfig.Provider, error)
+		})
+		if !ok {
+			return PreparedRetryConfiguration{}, ErrNotRunnable
+		}
+		provider, providerErr := reader.GetProvider(ctx, *configuration.LlmProviderID)
+		if providerErr != nil {
+			return PreparedRetryConfiguration{}, mapConfigurationError(providerErr)
+		}
+		policy["providerName"], policy["providerVersion"], policy["secretFingerprint"] = provider.Name, provider.Version, provider.SecretFingerprint
+	}
+	llmSnap, err := requiredJSONObject(policy)
+	if err != nil {
+		return PreparedRetryConfiguration{}, err
+	}
+	prepared := PreparedRetryConfiguration{
+		ProjectID:                    projectID,
+		Stage:                        stage.String(),
+		BindingID:                    binding.ID,
+		BindingVersion:               binding.Version,
+		WorkflowConfigurationID:      configuration.ID,
+		WorkflowConfigurationVersion: configuration.Version,
+		WorkflowConnectionID:         connection.ID,
+		ConnectionVersion:            connection.Version,
+		CredentialFingerprint:        connection.CredentialFingerprint,
+		WorkflowType:                 configuration.WorkflowType,
+		LLMStrategy:                  strategy,
+		ConfigurationSnapshot:        configSnap,
+		BindingSnapshot:              bindingSnap,
+		ConnectionSnapshot:           connectionSnap,
+		LlmPolicySnapshot:            llmSnap,
+		Executable:                   configuration.Executable && connection.Executable,
+	}
+	if err = prepared.validate(); err != nil {
+		return PreparedRetryConfiguration{}, err
+	}
+	return prepared, nil
+}
+
+// verifyPreparedRetryConfiguration re-reads configuration only to confirm versions
+// and credential fingerprint still match the immutable prepared object.
+func (s *Service) verifyPreparedRetryConfiguration(ctx context.Context, prepared PreparedRetryConfiguration) error {
+	stage, err := workflowbinding.ParseStage(prepared.Stage)
+	if err != nil {
+		return ErrValidation
+	}
+	binding, err := s.bindings.GetByProjectAndStage(ctx, prepared.ProjectID, stage)
+	if err != nil {
+		return mapBindingError(err)
+	}
+	if binding.ID != prepared.BindingID || binding.Version != prepared.BindingVersion || binding.WorkflowConfigurationID != prepared.WorkflowConfigurationID {
+		return ErrRetryConfigurationChanged
+	}
+	configuration, err := s.configurations.GetWorkflow(ctx, prepared.WorkflowConfigurationID)
+	if err != nil {
+		return mapConfigurationError(err)
+	}
+	if configuration.ID != prepared.WorkflowConfigurationID || configuration.Version != prepared.WorkflowConfigurationVersion || configuration.ConnectionID != prepared.WorkflowConnectionID {
+		return ErrRetryConfigurationChanged
+	}
+	connection, err := s.connections.GetConnection(ctx, prepared.WorkflowConnectionID)
+	if err != nil {
+		return mapConnectionError(err)
+	}
+	if connection.ID != prepared.WorkflowConnectionID || connection.Version != prepared.ConnectionVersion || !sameStringPointer(connection.CredentialFingerprint, prepared.CredentialFingerprint) {
+		return ErrRetryConfigurationChanged
+	}
+	return nil
+}
+
+func applyPreparedRetryConfiguration(run *WorkflowRun, prepared PreparedRetryConfiguration) {
+	if run == nil {
+		return
+	}
+	run.WorkflowConfigurationID = prepared.WorkflowConfigurationID
+	run.ConfigurationSnapshot = prepared.ConfigurationSnapshot
+	run.BindingSnapshot = prepared.BindingSnapshot
+	run.ConnectionSnapshot = prepared.ConnectionSnapshot
+	run.LlmPolicySnapshot = prepared.LlmPolicySnapshot
+	connectionID := prepared.WorkflowConnectionID
+	run.WorkflowConnectionID = &connectionID
+}
+
+func (p PreparedRetryConfiguration) validate() error {
+	if p.BindingID == uuid.Nil || p.BindingVersion < 1 || p.WorkflowConfigurationID == uuid.Nil || p.WorkflowConfigurationVersion < 1 || p.WorkflowConnectionID == uuid.Nil || p.ConnectionVersion < 1 {
+		return ErrRetrySnapshotInvalid
+	}
+	if !validJSONObject(p.ConfigurationSnapshot) || !validJSONObject(p.BindingSnapshot) || !validJSONObject(p.ConnectionSnapshot) || !validJSONObject(p.LlmPolicySnapshot) {
+		return ErrRetrySnapshotInvalid
+	}
+	var binding struct {
+		BindingID      uuid.UUID `json:"bindingId"`
+		BindingVersion int       `json:"bindingVersion"`
+		Stage          string    `json:"stage"`
+	}
+	var connection struct {
+		ID                    uuid.UUID `json:"id"`
+		Version               int       `json:"version"`
+		CredentialFingerprint *string   `json:"credentialFingerprint"`
+	}
+	var configuration struct {
+		WorkflowConfiguration struct {
+			ID      uuid.UUID `json:"id"`
+			Version int       `json:"version"`
+		} `json:"workflowConfiguration"`
+		WorkflowConnection struct {
+			ID      uuid.UUID `json:"id"`
+			Version int       `json:"version"`
+		} `json:"workflowConnection"`
+		Binding struct {
+			ID      uuid.UUID `json:"id"`
+			Version int       `json:"version"`
+		} `json:"binding"`
+	}
+	if json.Unmarshal(p.BindingSnapshot, &binding) != nil || binding.BindingID != p.BindingID || binding.BindingVersion != p.BindingVersion || binding.Stage != p.Stage {
+		return ErrRetrySnapshotInvalid
+	}
+	if json.Unmarshal(p.ConnectionSnapshot, &connection) != nil || connection.ID != p.WorkflowConnectionID || connection.Version != p.ConnectionVersion || !sameStringPointer(connection.CredentialFingerprint, p.CredentialFingerprint) {
+		return ErrRetrySnapshotInvalid
+	}
+	if json.Unmarshal(p.ConfigurationSnapshot, &configuration) != nil ||
+		configuration.WorkflowConfiguration.ID != p.WorkflowConfigurationID ||
+		configuration.WorkflowConfiguration.Version != p.WorkflowConfigurationVersion ||
+		configuration.WorkflowConnection.ID != p.WorkflowConnectionID ||
+		configuration.WorkflowConnection.Version != p.ConnectionVersion ||
+		configuration.Binding.ID != p.BindingID ||
+		configuration.Binding.Version != p.BindingVersion {
+		return ErrRetrySnapshotInvalid
+	}
+	if !p.Executable {
+		return ErrNotRunnable
+	}
+	return nil
+}
+
+func requiredJSONObject(value any) (json.RawMessage, error) {
+	encoded, err := json.Marshal(value)
+	if err != nil {
+		return nil, ErrRetrySnapshotInvalid
+	}
+	out := RedactJSON(encoded)
+	if !validJSONObject(out) {
+		return nil, ErrRetrySnapshotInvalid
+	}
+	return out, nil
 }
 
 func (s *Service) populateRunSnapshots(ctx context.Context, run *WorkflowRun, binding workflowbinding.ProjectWorkflowBinding, configuration globalconfig.Workflow, connection globalconfig.Connection) {
