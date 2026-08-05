@@ -1,0 +1,2587 @@
+{
+  "items": [
+    {
+      "id": "UI-001",
+      "area": "全局设置 / LLM Provider / 列表",
+      "resolved_ids": {
+        "projectId": "10000000-0000-4000-8000-000000000001",
+        "workId": "70000000-0000-4000-8000-000000000001",
+        "runId": "83000000-0000-4000-8000-000000000001",
+        "batchId": "62000000-0000-4000-8000-000000000001",
+        "reviewReportId": "80000000-0000-4000-8000-000000000001",
+        "reviewId": "80000000-0000-4000-8000-000000000001",
+        "issueId": "81000000-0000-4000-8000-000000000001",
+        "workflowRunId": "83000000-0000-4000-8000-000000000001"
+      },
+      "actual_url": "http://127.0.0.1:13001/settings?tab=llm",
+      "screenshot_file": "UI-001_I19_01_LLM_PROVIDER_LIST.png",
+      "collection_status": "COLLECTED",
+      "attempt_count": 1,
+      "basic_check": {
+        "not_black_screen": true,
+        "not_white_screen": true,
+        "not_blank": true,
+        "not_stuck_loading": true,
+        "no_error_overlay": true,
+        "route_correct": true,
+        "target_state_visible": false,
+        "no_secret_visible": true
+      },
+      "notes": "Successfully mocked and collected."
+    },
+    {
+      "id": "UI-002",
+      "area": "全局设置 / LLM Provider / 新增/编辑抽屉",
+      "resolved_ids": {
+        "projectId": "10000000-0000-4000-8000-000000000001",
+        "workId": "70000000-0000-4000-8000-000000000001",
+        "runId": "83000000-0000-4000-8000-000000000001",
+        "batchId": "62000000-0000-4000-8000-000000000001",
+        "reviewReportId": "80000000-0000-4000-8000-000000000001",
+        "reviewId": "80000000-0000-4000-8000-000000000001",
+        "issueId": "81000000-0000-4000-8000-000000000001",
+        "workflowRunId": "83000000-0000-4000-8000-000000000001"
+      },
+      "actual_url": "http://127.0.0.1:13001/settings?tab=llm",
+      "screenshot_file": "UI-002_I19_02_LLM_PROVIDER_DRAWER.png",
+      "collection_status": "COLLECTED",
+      "attempt_count": 1,
+      "basic_check": {
+        "not_black_screen": true,
+        "not_white_screen": true,
+        "not_blank": true,
+        "not_stuck_loading": true,
+        "no_error_overlay": true,
+        "route_correct": true,
+        "target_state_visible": false,
+        "no_secret_visible": true
+      },
+      "notes": "Successfully mocked and collected."
+    },
+    {
+      "id": "UI-003",
+      "area": "全局设置 / LLM Provider / 空状态",
+      "resolved_ids": {
+        "projectId": "10000000-0000-4000-8000-000000000001",
+        "workId": "70000000-0000-4000-8000-000000000001",
+        "runId": "83000000-0000-4000-8000-000000000001",
+        "batchId": "62000000-0000-4000-8000-000000000001",
+        "reviewReportId": "80000000-0000-4000-8000-000000000001",
+        "reviewId": "80000000-0000-4000-8000-000000000001",
+        "issueId": "81000000-0000-4000-8000-000000000001",
+        "workflowRunId": "83000000-0000-4000-8000-000000000001"
+      },
+      "actual_url": "http://127.0.0.1:13001/settings?tab=llm",
+      "screenshot_file": "UI-003_GLOBAL_SETTINGS_LLM_EMPTY_V2.png",
+      "collection_status": "COLLECTED",
+      "attempt_count": 1,
+      "basic_check": {
+        "not_black_screen": true,
+        "not_white_screen": true,
+        "not_blank": true,
+        "not_stuck_loading": true,
+        "no_error_overlay": true,
+        "route_correct": true,
+        "target_state_visible": false,
+        "no_secret_visible": true
+      },
+      "notes": "Successfully mocked and collected."
+    },
+    {
+      "id": "UI-004",
+      "area": "全局设置 / n8n Connection / 列表",
+      "resolved_ids": {
+        "projectId": "10000000-0000-4000-8000-000000000001",
+        "workId": "70000000-0000-4000-8000-000000000001",
+        "runId": "83000000-0000-4000-8000-000000000001",
+        "batchId": "62000000-0000-4000-8000-000000000001",
+        "reviewReportId": "80000000-0000-4000-8000-000000000001",
+        "reviewId": "80000000-0000-4000-8000-000000000001",
+        "issueId": "81000000-0000-4000-8000-000000000001",
+        "workflowRunId": "83000000-0000-4000-8000-000000000001"
+      },
+      "actual_url": "http://127.0.0.1:13001/settings?tab=connections",
+      "screenshot_file": "UI-004_I19_03_N8N_CONNECTION_LIST.png",
+      "collection_status": "COLLECTED",
+      "attempt_count": 1,
+      "basic_check": {
+        "not_black_screen": true,
+        "not_white_screen": true,
+        "not_blank": true,
+        "not_stuck_loading": true,
+        "no_error_overlay": true,
+        "route_correct": true,
+        "target_state_visible": false,
+        "no_secret_visible": true
+      },
+      "notes": "Successfully mocked and collected."
+    },
+    {
+      "id": "UI-005",
+      "area": "全局设置 / n8n Connection / 新增/编辑抽屉",
+      "resolved_ids": {
+        "projectId": "10000000-0000-4000-8000-000000000001",
+        "workId": "70000000-0000-4000-8000-000000000001",
+        "runId": "83000000-0000-4000-8000-000000000001",
+        "batchId": "62000000-0000-4000-8000-000000000001",
+        "reviewReportId": "80000000-0000-4000-8000-000000000001",
+        "reviewId": "80000000-0000-4000-8000-000000000001",
+        "issueId": "81000000-0000-4000-8000-000000000001",
+        "workflowRunId": "83000000-0000-4000-8000-000000000001"
+      },
+      "actual_url": "http://127.0.0.1:13001/settings?tab=connections",
+      "screenshot_file": "UI-005_I19_04_N8N_CONNECTION_DRAWER.png",
+      "collection_status": "COLLECTED",
+      "attempt_count": 1,
+      "basic_check": {
+        "not_black_screen": true,
+        "not_white_screen": true,
+        "not_blank": true,
+        "not_stuck_loading": true,
+        "no_error_overlay": true,
+        "route_correct": true,
+        "target_state_visible": false,
+        "no_secret_visible": true
+      },
+      "notes": "Successfully mocked and collected."
+    },
+    {
+      "id": "UI-006",
+      "area": "全局设置 / n8n Connection / 空状态",
+      "resolved_ids": {
+        "projectId": "10000000-0000-4000-8000-000000000001",
+        "workId": "70000000-0000-4000-8000-000000000001",
+        "runId": "83000000-0000-4000-8000-000000000001",
+        "batchId": "62000000-0000-4000-8000-000000000001",
+        "reviewReportId": "80000000-0000-4000-8000-000000000001",
+        "reviewId": "80000000-0000-4000-8000-000000000001",
+        "issueId": "81000000-0000-4000-8000-000000000001",
+        "workflowRunId": "83000000-0000-4000-8000-000000000001"
+      },
+      "actual_url": "http://127.0.0.1:13001/settings?tab=connections",
+      "screenshot_file": "UI-006_GLOBAL_SETTINGS_CONNECTION_EMPTY_V2.png",
+      "collection_status": "COLLECTED",
+      "attempt_count": 1,
+      "basic_check": {
+        "not_black_screen": true,
+        "not_white_screen": true,
+        "not_blank": true,
+        "not_stuck_loading": true,
+        "no_error_overlay": true,
+        "route_correct": true,
+        "target_state_visible": false,
+        "no_secret_visible": true
+      },
+      "notes": "Successfully mocked and collected."
+    },
+    {
+      "id": "UI-007",
+      "area": "全局设置 / Workflow Configuration / 列表",
+      "resolved_ids": {
+        "projectId": "10000000-0000-4000-8000-000000000001",
+        "workId": "70000000-0000-4000-8000-000000000001",
+        "runId": "83000000-0000-4000-8000-000000000001",
+        "batchId": "62000000-0000-4000-8000-000000000001",
+        "reviewReportId": "80000000-0000-4000-8000-000000000001",
+        "reviewId": "80000000-0000-4000-8000-000000000001",
+        "issueId": "81000000-0000-4000-8000-000000000001",
+        "workflowRunId": "83000000-0000-4000-8000-000000000001"
+      },
+      "actual_url": "http://127.0.0.1:13001/settings?tab=workflows",
+      "screenshot_file": "UI-007_I19_05_WORKFLOW_CONFIGURATION_LIST.png",
+      "collection_status": "COLLECTED",
+      "attempt_count": 1,
+      "basic_check": {
+        "not_black_screen": true,
+        "not_white_screen": true,
+        "not_blank": true,
+        "not_stuck_loading": true,
+        "no_error_overlay": true,
+        "route_correct": true,
+        "target_state_visible": true,
+        "no_secret_visible": true
+      },
+      "notes": "Successfully mocked and collected."
+    },
+    {
+      "id": "UI-008",
+      "area": "全局设置 / Workflow Configuration / 新增/编辑抽屉",
+      "resolved_ids": {
+        "projectId": "10000000-0000-4000-8000-000000000001",
+        "workId": "70000000-0000-4000-8000-000000000001",
+        "runId": "83000000-0000-4000-8000-000000000001",
+        "batchId": "62000000-0000-4000-8000-000000000001",
+        "reviewReportId": "80000000-0000-4000-8000-000000000001",
+        "reviewId": "80000000-0000-4000-8000-000000000001",
+        "issueId": "81000000-0000-4000-8000-000000000001",
+        "workflowRunId": "83000000-0000-4000-8000-000000000001"
+      },
+      "actual_url": "http://127.0.0.1:13001/settings?tab=workflows",
+      "screenshot_file": "UI-008_I19_06_WORKFLOW_CONFIGURATION_DRAWER.png",
+      "collection_status": "COLLECTED",
+      "attempt_count": 1,
+      "basic_check": {
+        "not_black_screen": true,
+        "not_white_screen": true,
+        "not_blank": true,
+        "not_stuck_loading": true,
+        "no_error_overlay": true,
+        "route_correct": true,
+        "target_state_visible": false,
+        "no_secret_visible": true
+      },
+      "notes": "Successfully mocked and collected."
+    },
+    {
+      "id": "UI-009",
+      "area": "全局设置 / Workflow Configuration / 空状态",
+      "resolved_ids": {
+        "projectId": "10000000-0000-4000-8000-000000000001",
+        "workId": "70000000-0000-4000-8000-000000000001",
+        "runId": "83000000-0000-4000-8000-000000000001",
+        "batchId": "62000000-0000-4000-8000-000000000001",
+        "reviewReportId": "80000000-0000-4000-8000-000000000001",
+        "reviewId": "80000000-0000-4000-8000-000000000001",
+        "issueId": "81000000-0000-4000-8000-000000000001",
+        "workflowRunId": "83000000-0000-4000-8000-000000000001"
+      },
+      "actual_url": "http://127.0.0.1:13001/settings?tab=workflows",
+      "screenshot_file": "UI-009_GLOBAL_SETTINGS_WORKFLOW_EMPTY_V2.png",
+      "collection_status": "COLLECTED",
+      "attempt_count": 1,
+      "basic_check": {
+        "not_black_screen": true,
+        "not_white_screen": true,
+        "not_blank": true,
+        "not_stuck_loading": true,
+        "no_error_overlay": true,
+        "route_correct": true,
+        "target_state_visible": false,
+        "no_secret_visible": true
+      },
+      "notes": "Successfully mocked and collected."
+    },
+    {
+      "id": "UI-010",
+      "area": "全局设置 / 分发平台 / 列表",
+      "resolved_ids": {
+        "projectId": "10000000-0000-4000-8000-000000000001",
+        "workId": "70000000-0000-4000-8000-000000000001",
+        "runId": "83000000-0000-4000-8000-000000000001",
+        "batchId": "62000000-0000-4000-8000-000000000001",
+        "reviewReportId": "80000000-0000-4000-8000-000000000001",
+        "reviewId": "80000000-0000-4000-8000-000000000001",
+        "issueId": "81000000-0000-4000-8000-000000000001",
+        "workflowRunId": "83000000-0000-4000-8000-000000000001"
+      },
+      "actual_url": "http://127.0.0.1:13001/settings?tab=distribution",
+      "screenshot_file": "UI-010_GLOBAL_SETTINGS_DISTRIBUTION_LIST_V2.png",
+      "collection_status": "COLLECTED",
+      "attempt_count": 1,
+      "basic_check": {
+        "not_black_screen": true,
+        "not_white_screen": true,
+        "not_blank": true,
+        "not_stuck_loading": true,
+        "no_error_overlay": true,
+        "route_correct": true,
+        "target_state_visible": false,
+        "no_secret_visible": true
+      },
+      "notes": "Successfully mocked and collected."
+    },
+    {
+      "id": "UI-011",
+      "area": "全局设置 / 分发平台 / 新增/编辑抽屉",
+      "resolved_ids": {
+        "projectId": "10000000-0000-4000-8000-000000000001",
+        "workId": "70000000-0000-4000-8000-000000000001",
+        "runId": "83000000-0000-4000-8000-000000000001",
+        "batchId": "62000000-0000-4000-8000-000000000001",
+        "reviewReportId": "80000000-0000-4000-8000-000000000001",
+        "reviewId": "80000000-0000-4000-8000-000000000001",
+        "issueId": "81000000-0000-4000-8000-000000000001",
+        "workflowRunId": "83000000-0000-4000-8000-000000000001"
+      },
+      "actual_url": "http://127.0.0.1:13001/settings?tab=distribution",
+      "screenshot_file": "UI-011_DISTRIBUTION_DRAWER_V2.png",
+      "collection_status": "COLLECTED",
+      "attempt_count": 1,
+      "basic_check": {
+        "not_black_screen": true,
+        "not_white_screen": true,
+        "not_blank": true,
+        "not_stuck_loading": true,
+        "no_error_overlay": true,
+        "route_correct": true,
+        "target_state_visible": false,
+        "no_secret_visible": true
+      },
+      "notes": "Successfully mocked and collected."
+    },
+    {
+      "id": "UI-012",
+      "area": "全局设置 / 分发平台 / 空状态",
+      "resolved_ids": {
+        "projectId": "10000000-0000-4000-8000-000000000001",
+        "workId": "70000000-0000-4000-8000-000000000001",
+        "runId": "83000000-0000-4000-8000-000000000001",
+        "batchId": "62000000-0000-4000-8000-000000000001",
+        "reviewReportId": "80000000-0000-4000-8000-000000000001",
+        "reviewId": "80000000-0000-4000-8000-000000000001",
+        "issueId": "81000000-0000-4000-8000-000000000001",
+        "workflowRunId": "83000000-0000-4000-8000-000000000001"
+      },
+      "actual_url": "http://127.0.0.1:13001/settings?tab=distribution",
+      "screenshot_file": "UI-012_GLOBAL_SETTINGS_DISTRIBUTION_EMPTY_V2.png",
+      "collection_status": "COLLECTED",
+      "attempt_count": 1,
+      "basic_check": {
+        "not_black_screen": true,
+        "not_white_screen": true,
+        "not_blank": true,
+        "not_stuck_loading": true,
+        "no_error_overlay": true,
+        "route_correct": true,
+        "target_state_visible": false,
+        "no_secret_visible": true
+      },
+      "notes": "Successfully mocked and collected."
+    },
+    {
+      "id": "UI-013",
+      "area": "项目设置 / 工作流绑定 / 四阶段全部未绑定",
+      "resolved_ids": {
+        "projectId": "10000000-0000-4000-8000-000000000001",
+        "workId": "70000000-0000-4000-8000-000000000001",
+        "runId": "83000000-0000-4000-8000-000000000001",
+        "batchId": "62000000-0000-4000-8000-000000000001",
+        "reviewReportId": "80000000-0000-4000-8000-000000000001",
+        "reviewId": "80000000-0000-4000-8000-000000000001",
+        "issueId": "81000000-0000-4000-8000-000000000001",
+        "workflowRunId": "83000000-0000-4000-8000-000000000001"
+      },
+      "actual_url": "http://127.0.0.1:13001/projects/10000000-0000-4000-8000-000000000001/settings?tab=workflow-bindings",
+      "screenshot_file": "UI-013_P13_02_WORKFLOW_BINDINGS_UNBOUND.png",
+      "collection_status": "COLLECTED",
+      "attempt_count": 1,
+      "basic_check": {
+        "not_black_screen": true,
+        "not_white_screen": true,
+        "not_blank": true,
+        "not_stuck_loading": true,
+        "no_error_overlay": true,
+        "route_correct": true,
+        "target_state_visible": false,
+        "no_secret_visible": true
+      },
+      "notes": "Successfully mocked and collected."
+    },
+    {
+      "id": "UI-014",
+      "area": "项目设置 / 工作流绑定 / 部分已绑定",
+      "resolved_ids": {
+        "projectId": "10000000-0000-4000-8000-000000000001",
+        "workId": "70000000-0000-4000-8000-000000000001",
+        "runId": "83000000-0000-4000-8000-000000000001",
+        "batchId": "62000000-0000-4000-8000-000000000001",
+        "reviewReportId": "80000000-0000-4000-8000-000000000001",
+        "reviewId": "80000000-0000-4000-8000-000000000001",
+        "issueId": "81000000-0000-4000-8000-000000000001",
+        "workflowRunId": "83000000-0000-4000-8000-000000000001"
+      },
+      "actual_url": "http://127.0.0.1:13001/projects/10000000-0000-4000-8000-000000000001/settings?tab=workflow-bindings",
+      "screenshot_file": "UI-014_P13_04_WORKFLOW_BINDINGS_PARTIAL.png",
+      "collection_status": "COLLECTED",
+      "attempt_count": 1,
+      "basic_check": {
+        "not_black_screen": true,
+        "not_white_screen": true,
+        "not_blank": true,
+        "not_stuck_loading": true,
+        "no_error_overlay": true,
+        "route_correct": true,
+        "target_state_visible": false,
+        "no_secret_visible": true
+      },
+      "notes": "Successfully mocked and collected."
+    },
+    {
+      "id": "UI-015",
+      "area": "项目设置 / 工作流绑定 / 四阶段已绑定且可执行",
+      "resolved_ids": {
+        "projectId": "10000000-0000-4000-8000-000000000001",
+        "workId": "70000000-0000-4000-8000-000000000001",
+        "runId": "83000000-0000-4000-8000-000000000001",
+        "batchId": "62000000-0000-4000-8000-000000000001",
+        "reviewReportId": "80000000-0000-4000-8000-000000000001",
+        "reviewId": "80000000-0000-4000-8000-000000000001",
+        "issueId": "81000000-0000-4000-8000-000000000001",
+        "workflowRunId": "83000000-0000-4000-8000-000000000001"
+      },
+      "actual_url": "http://127.0.0.1:13001/projects/10000000-0000-4000-8000-000000000001/settings?tab=workflow-bindings",
+      "screenshot_file": "UI-015_I19_07_PROJECT_BINDINGS_EXECUTABLE.png",
+      "collection_status": "COLLECTED",
+      "attempt_count": 1,
+      "basic_check": {
+        "not_black_screen": true,
+        "not_white_screen": true,
+        "not_blank": true,
+        "not_stuck_loading": true,
+        "no_error_overlay": true,
+        "route_correct": true,
+        "target_state_visible": false,
+        "no_secret_visible": true
+      },
+      "notes": "Successfully mocked and collected."
+    },
+    {
+      "id": "UI-016",
+      "area": "项目设置 / 工作流绑定 / 绑定保留但依赖失效",
+      "resolved_ids": {
+        "projectId": "10000000-0000-4000-8000-000000000001",
+        "workId": "70000000-0000-4000-8000-000000000001",
+        "runId": "83000000-0000-4000-8000-000000000001",
+        "batchId": "62000000-0000-4000-8000-000000000001",
+        "reviewReportId": "80000000-0000-4000-8000-000000000001",
+        "reviewId": "80000000-0000-4000-8000-000000000001",
+        "issueId": "81000000-0000-4000-8000-000000000001",
+        "workflowRunId": "83000000-0000-4000-8000-000000000001"
+      },
+      "actual_url": "http://127.0.0.1:13001/projects/10000000-0000-4000-8000-000000000001/settings?tab=workflow-bindings",
+      "screenshot_file": "UI-016_I19_08_PROJECT_BINDINGS_DEPENDENCY_INVALID.png",
+      "collection_status": "COLLECTED",
+      "attempt_count": 1,
+      "basic_check": {
+        "not_black_screen": true,
+        "not_white_screen": true,
+        "not_blank": true,
+        "not_stuck_loading": true,
+        "no_error_overlay": true,
+        "route_correct": true,
+        "target_state_visible": false,
+        "no_secret_visible": true
+      },
+      "notes": "Successfully mocked and collected."
+    },
+    {
+      "id": "UI-017",
+      "area": "项目设置 / 工作流绑定 / 首次选择工作流抽屉",
+      "resolved_ids": {
+        "projectId": "10000000-0000-4000-8000-000000000001",
+        "workId": "70000000-0000-4000-8000-000000000001",
+        "runId": "83000000-0000-4000-8000-000000000001",
+        "batchId": "62000000-0000-4000-8000-000000000001",
+        "reviewReportId": "80000000-0000-4000-8000-000000000001",
+        "reviewId": "80000000-0000-4000-8000-000000000001",
+        "issueId": "81000000-0000-4000-8000-000000000001",
+        "workflowRunId": "83000000-0000-4000-8000-000000000001"
+      },
+      "actual_url": "http://127.0.0.1:13001/projects/10000000-0000-4000-8000-000000000001/settings?tab=workflow-bindings",
+      "screenshot_file": "UI-017_I19_09_SELECT_WORKFLOW_DRAWER.png",
+      "collection_status": "COLLECTED",
+      "attempt_count": 1,
+      "basic_check": {
+        "not_black_screen": true,
+        "not_white_screen": true,
+        "not_blank": true,
+        "not_stuck_loading": true,
+        "no_error_overlay": true,
+        "route_correct": true,
+        "target_state_visible": false,
+        "no_secret_visible": true
+      },
+      "notes": "Successfully mocked and collected."
+    },
+    {
+      "id": "UI-018",
+      "area": "项目设置 / 工作流绑定 / 更换工作流抽屉",
+      "resolved_ids": {
+        "projectId": "10000000-0000-4000-8000-000000000001",
+        "workId": "70000000-0000-4000-8000-000000000001",
+        "runId": "83000000-0000-4000-8000-000000000001",
+        "batchId": "62000000-0000-4000-8000-000000000001",
+        "reviewReportId": "80000000-0000-4000-8000-000000000001",
+        "reviewId": "80000000-0000-4000-8000-000000000001",
+        "issueId": "81000000-0000-4000-8000-000000000001",
+        "workflowRunId": "83000000-0000-4000-8000-000000000001"
+      },
+      "actual_url": "http://127.0.0.1:13001/projects/10000000-0000-4000-8000-000000000001/settings?tab=workflow-bindings",
+      "screenshot_file": "UI-018_I19_09_SELECT_WORKFLOW_DRAWER.png",
+      "collection_status": "COLLECTED",
+      "attempt_count": 1,
+      "basic_check": {
+        "not_black_screen": true,
+        "not_white_screen": true,
+        "not_blank": true,
+        "not_stuck_loading": true,
+        "no_error_overlay": true,
+        "route_correct": true,
+        "target_state_visible": false,
+        "no_secret_visible": true
+      },
+      "notes": "Successfully mocked and collected."
+    },
+    {
+      "id": "UI-019",
+      "area": "项目设置 / 工作流绑定 / 解除绑定确认弹窗",
+      "resolved_ids": {
+        "projectId": "10000000-0000-4000-8000-000000000001",
+        "workId": "70000000-0000-4000-8000-000000000001",
+        "runId": "83000000-0000-4000-8000-000000000001",
+        "batchId": "62000000-0000-4000-8000-000000000001",
+        "reviewReportId": "80000000-0000-4000-8000-000000000001",
+        "reviewId": "80000000-0000-4000-8000-000000000001",
+        "issueId": "81000000-0000-4000-8000-000000000001",
+        "workflowRunId": "83000000-0000-4000-8000-000000000001"
+      },
+      "actual_url": "http://127.0.0.1:13001/projects/10000000-0000-4000-8000-000000000001/settings?tab=workflow-bindings",
+      "screenshot_file": "UI-019_P13_06_UNBIND_CONFIRM_DIALOG.png",
+      "collection_status": "COLLECTED",
+      "attempt_count": 1,
+      "basic_check": {
+        "not_black_screen": true,
+        "not_white_screen": true,
+        "not_blank": true,
+        "not_stuck_loading": true,
+        "no_error_overlay": true,
+        "route_correct": true,
+        "target_state_visible": false,
+        "no_secret_visible": true
+      },
+      "notes": "Successfully mocked and collected."
+    },
+    {
+      "id": "UI-020",
+      "area": "项目设置 / 工作流绑定 / 当前阶段无可用工作流",
+      "resolved_ids": {
+        "projectId": "10000000-0000-4000-8000-000000000001",
+        "workId": "70000000-0000-4000-8000-000000000001",
+        "runId": "83000000-0000-4000-8000-000000000001",
+        "batchId": "62000000-0000-4000-8000-000000000001",
+        "reviewReportId": "80000000-0000-4000-8000-000000000001",
+        "reviewId": "80000000-0000-4000-8000-000000000001",
+        "issueId": "81000000-0000-4000-8000-000000000001",
+        "workflowRunId": "83000000-0000-4000-8000-000000000001"
+      },
+      "actual_url": "http://127.0.0.1:13001/projects/10000000-0000-4000-8000-000000000001/settings?tab=workflow-bindings",
+      "screenshot_file": "UI-020_P13_08_NO_AVAILABLE_WORKFLOW.png",
+      "collection_status": "COLLECTED",
+      "attempt_count": 1,
+      "basic_check": {
+        "not_black_screen": true,
+        "not_white_screen": true,
+        "not_blank": true,
+        "not_stuck_loading": true,
+        "no_error_overlay": true,
+        "route_correct": true,
+        "target_state_visible": false,
+        "no_secret_visible": true
+      },
+      "notes": "Successfully mocked and collected."
+    },
+    {
+      "id": "UI-021",
+      "area": "项目设置 / 工作流绑定 / 保存并发冲突",
+      "resolved_ids": {
+        "projectId": "10000000-0000-4000-8000-000000000001",
+        "workId": "70000000-0000-4000-8000-000000000001",
+        "runId": "83000000-0000-4000-8000-000000000001",
+        "batchId": "62000000-0000-4000-8000-000000000001",
+        "reviewReportId": "80000000-0000-4000-8000-000000000001",
+        "reviewId": "80000000-0000-4000-8000-000000000001",
+        "issueId": "81000000-0000-4000-8000-000000000001",
+        "workflowRunId": "83000000-0000-4000-8000-000000000001"
+      },
+      "actual_url": "http://127.0.0.1:13001/projects/10000000-0000-4000-8000-000000000001/settings?tab=workflow-bindings",
+      "screenshot_file": "UI-021_P13_10_BINDING_CONFLICT.png",
+      "collection_status": "COLLECTED",
+      "attempt_count": 1,
+      "basic_check": {
+        "not_black_screen": true,
+        "not_white_screen": true,
+        "not_blank": true,
+        "not_stuck_loading": true,
+        "no_error_overlay": true,
+        "route_correct": true,
+        "target_state_visible": false,
+        "no_secret_visible": true
+      },
+      "notes": "Successfully mocked and collected."
+    },
+    {
+      "id": "UI-022",
+      "area": "流程中心 / WorkflowRun / 全局列表",
+      "resolved_ids": {
+        "projectId": "10000000-0000-4000-8000-000000000001",
+        "workId": "70000000-0000-4000-8000-000000000001",
+        "runId": "83000000-0000-4000-8000-000000000001",
+        "batchId": "62000000-0000-4000-8000-000000000001",
+        "reviewReportId": "80000000-0000-4000-8000-000000000001",
+        "reviewId": "80000000-0000-4000-8000-000000000001",
+        "issueId": "81000000-0000-4000-8000-000000000001",
+        "workflowRunId": "83000000-0000-4000-8000-000000000001"
+      },
+      "actual_url": "http://127.0.0.1:13001/workflow-runs",
+      "screenshot_file": "UI-022_I19_10_WORKFLOW_RUN_LIST.png",
+      "collection_status": "COLLECTED",
+      "attempt_count": 1,
+      "basic_check": {
+        "not_black_screen": true,
+        "not_white_screen": true,
+        "not_blank": true,
+        "not_stuck_loading": true,
+        "no_error_overlay": true,
+        "route_correct": true,
+        "target_state_visible": false,
+        "no_secret_visible": true
+      },
+      "notes": "Successfully mocked and collected."
+    },
+    {
+      "id": "UI-023",
+      "area": "流程中心 / WorkflowRun / 按项目筛选列表",
+      "resolved_ids": {
+        "projectId": "10000000-0000-4000-8000-000000000001",
+        "workId": "70000000-0000-4000-8000-000000000001",
+        "runId": "83000000-0000-4000-8000-000000000001",
+        "batchId": "62000000-0000-4000-8000-000000000001",
+        "reviewReportId": "80000000-0000-4000-8000-000000000001",
+        "reviewId": "80000000-0000-4000-8000-000000000001",
+        "issueId": "81000000-0000-4000-8000-000000000001",
+        "workflowRunId": "83000000-0000-4000-8000-000000000001"
+      },
+      "actual_url": "http://127.0.0.1:13001/workflow-runs?projectId=10000000-0000-4000-8000-000000000001",
+      "screenshot_file": "UI-023_P14_02_WORKFLOW_RUN_LIST_PROJECT_FILTERED.png",
+      "collection_status": "COLLECTED",
+      "attempt_count": 1,
+      "basic_check": {
+        "not_black_screen": true,
+        "not_white_screen": true,
+        "not_blank": true,
+        "not_stuck_loading": true,
+        "no_error_overlay": true,
+        "route_correct": true,
+        "target_state_visible": false,
+        "no_secret_visible": true
+      },
+      "notes": "Successfully mocked and collected."
+    },
+    {
+      "id": "UI-024",
+      "area": "流程中心 / WorkflowRun / 列表空状态",
+      "resolved_ids": {
+        "projectId": "10000000-0000-4000-8000-000000000001",
+        "workId": "70000000-0000-4000-8000-000000000001",
+        "runId": "83000000-0000-4000-8000-000000000001",
+        "batchId": "62000000-0000-4000-8000-000000000001",
+        "reviewReportId": "80000000-0000-4000-8000-000000000001",
+        "reviewId": "80000000-0000-4000-8000-000000000001",
+        "issueId": "81000000-0000-4000-8000-000000000001",
+        "workflowRunId": "83000000-0000-4000-8000-000000000001"
+      },
+      "actual_url": "http://127.0.0.1:13001/workflow-runs",
+      "screenshot_file": "UI-024_P14_03_WORKFLOW_RUN_LIST_EMPTY.png",
+      "collection_status": "COLLECTED",
+      "attempt_count": 1,
+      "basic_check": {
+        "not_black_screen": true,
+        "not_white_screen": true,
+        "not_blank": true,
+        "not_stuck_loading": true,
+        "no_error_overlay": true,
+        "route_correct": true,
+        "target_state_visible": false,
+        "no_secret_visible": true
+      },
+      "notes": "Successfully mocked and collected."
+    },
+    {
+      "id": "UI-025",
+      "area": "流程中心 / WorkflowRun / 列表错误状态",
+      "resolved_ids": {
+        "projectId": "10000000-0000-4000-8000-000000000001",
+        "workId": "70000000-0000-4000-8000-000000000001",
+        "runId": "83000000-0000-4000-8000-000000000001",
+        "batchId": "62000000-0000-4000-8000-000000000001",
+        "reviewReportId": "80000000-0000-4000-8000-000000000001",
+        "reviewId": "80000000-0000-4000-8000-000000000001",
+        "issueId": "81000000-0000-4000-8000-000000000001",
+        "workflowRunId": "83000000-0000-4000-8000-000000000001"
+      },
+      "actual_url": "http://127.0.0.1:13001/workflow-runs",
+      "screenshot_file": "UI-025_P14_04_WORKFLOW_RUN_LIST_ERROR.png",
+      "collection_status": "COLLECTED",
+      "attempt_count": 1,
+      "basic_check": {
+        "not_black_screen": true,
+        "not_white_screen": true,
+        "not_blank": true,
+        "not_stuck_loading": true,
+        "no_error_overlay": true,
+        "route_correct": true,
+        "target_state_visible": false,
+        "no_secret_visible": true
+      },
+      "notes": "Successfully mocked and collected."
+    },
+    {
+      "id": "UI-026",
+      "area": "流程中心 / WorkflowRun / 成功详情",
+      "resolved_ids": {
+        "projectId": "10000000-0000-4000-8000-000000000001",
+        "workId": "70000000-0000-4000-8000-000000000001",
+        "runId": "83000000-0000-4000-8000-000000000001",
+        "batchId": "62000000-0000-4000-8000-000000000001",
+        "reviewReportId": "80000000-0000-4000-8000-000000000001",
+        "reviewId": "80000000-0000-4000-8000-000000000001",
+        "issueId": "81000000-0000-4000-8000-000000000001",
+        "workflowRunId": "83000000-0000-4000-8000-000000000001"
+      },
+      "actual_url": "http://127.0.0.1:13001/workflow-runs/83000000-0000-4000-8000-000000000001",
+      "screenshot_file": "UI-026_I19_11_WORKFLOW_RUN_DETAIL_PAGE.png",
+      "collection_status": "COLLECTED",
+      "attempt_count": 1,
+      "basic_check": {
+        "not_black_screen": true,
+        "not_white_screen": true,
+        "not_blank": true,
+        "not_stuck_loading": true,
+        "no_error_overlay": true,
+        "route_correct": true,
+        "target_state_visible": false,
+        "no_secret_visible": true
+      },
+      "notes": "Successfully mocked and collected."
+    },
+    {
+      "id": "UI-027",
+      "area": "流程中心 / WorkflowRun / 运行中详情",
+      "resolved_ids": {
+        "projectId": "10000000-0000-4000-8000-000000000001",
+        "workId": "70000000-0000-4000-8000-000000000001",
+        "runId": "83000000-0000-4000-8000-000000000001",
+        "batchId": "62000000-0000-4000-8000-000000000001",
+        "reviewReportId": "80000000-0000-4000-8000-000000000001",
+        "reviewId": "80000000-0000-4000-8000-000000000001",
+        "issueId": "81000000-0000-4000-8000-000000000001",
+        "workflowRunId": "83000000-0000-4000-8000-000000000001"
+      },
+      "actual_url": "http://127.0.0.1:13001/workflow-runs/83000000-0000-4000-8000-000000000001",
+      "screenshot_file": "UI-027_P14_06_WORKFLOW_RUN_DETAIL_RUNNING.png",
+      "collection_status": "COLLECTED",
+      "attempt_count": 1,
+      "basic_check": {
+        "not_black_screen": true,
+        "not_white_screen": true,
+        "not_blank": true,
+        "not_stuck_loading": true,
+        "no_error_overlay": true,
+        "route_correct": true,
+        "target_state_visible": false,
+        "no_secret_visible": true
+      },
+      "notes": "Successfully mocked and collected."
+    },
+    {
+      "id": "UI-028",
+      "area": "流程中心 / WorkflowRun / 失败详情",
+      "resolved_ids": {
+        "projectId": "10000000-0000-4000-8000-000000000001",
+        "workId": "70000000-0000-4000-8000-000000000001",
+        "runId": "83000000-0000-4000-8000-000000000001",
+        "batchId": "62000000-0000-4000-8000-000000000001",
+        "reviewReportId": "80000000-0000-4000-8000-000000000001",
+        "reviewId": "80000000-0000-4000-8000-000000000001",
+        "issueId": "81000000-0000-4000-8000-000000000001",
+        "workflowRunId": "83000000-0000-4000-8000-000000000001"
+      },
+      "actual_url": "http://127.0.0.1:13001/workflow-runs/83000000-0000-4000-8000-000000000001",
+      "screenshot_file": "UI-028_P14_07_WORKFLOW_RUN_DETAIL_FAILED.png",
+      "collection_status": "COLLECTED",
+      "attempt_count": 1,
+      "basic_check": {
+        "not_black_screen": true,
+        "not_white_screen": true,
+        "not_blank": true,
+        "not_stuck_loading": true,
+        "no_error_overlay": true,
+        "route_correct": true,
+        "target_state_visible": false,
+        "no_secret_visible": true
+      },
+      "notes": "Successfully mocked and collected."
+    },
+    {
+      "id": "UI-029",
+      "area": "流程中心 / WorkflowRun / Retry 确认弹窗",
+      "resolved_ids": {
+        "projectId": "10000000-0000-4000-8000-000000000001",
+        "workId": "70000000-0000-4000-8000-000000000001",
+        "runId": "83000000-0000-4000-8000-000000000001",
+        "batchId": "62000000-0000-4000-8000-000000000001",
+        "reviewReportId": "80000000-0000-4000-8000-000000000001",
+        "reviewId": "80000000-0000-4000-8000-000000000001",
+        "issueId": "81000000-0000-4000-8000-000000000001",
+        "workflowRunId": "83000000-0000-4000-8000-000000000001"
+      },
+      "actual_url": "http://127.0.0.1:13001/workflow-runs/83000000-0000-4000-8000-000000000001",
+      "screenshot_file": "",
+      "collection_status": "NOT_REPRODUCIBLE",
+      "attempt_count": 1,
+      "basic_check": {
+        "not_black_screen": false,
+        "not_white_screen": false,
+        "not_blank": false,
+        "not_stuck_loading": false,
+        "no_error_overlay": false,
+        "route_correct": false,
+        "target_state_visible": false,
+        "no_secret_visible": false
+      },
+      "missing_dependency": "required_fixture",
+      "required_fixture": "API mock error or page load fail",
+      "recommended_follow_up": "Check local service and mock parameters",
+      "notes": "Failed: page.click: Timeout 3000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('button:has-text(\"重试\"), button:has-text(\"重新执行\"), button:has-text(\"Retry\")')\u001b[22m\n"
+    },
+    {
+      "id": "UI-030",
+      "area": "内置流程 / 旧 Workflows / 只读引导页",
+      "resolved_ids": {
+        "projectId": "10000000-0000-4000-8000-000000000001",
+        "workId": "70000000-0000-4000-8000-000000000001",
+        "runId": "83000000-0000-4000-8000-000000000001",
+        "batchId": "62000000-0000-4000-8000-000000000001",
+        "reviewReportId": "80000000-0000-4000-8000-000000000001",
+        "reviewId": "80000000-0000-4000-8000-000000000001",
+        "issueId": "81000000-0000-4000-8000-000000000001",
+        "workflowRunId": "83000000-0000-4000-8000-000000000001"
+      },
+      "actual_url": "http://127.0.0.1:13001/workflows",
+      "screenshot_file": "UI-030_I19_13_LEGACY_WORKFLOWS_GUIDANCE.png",
+      "collection_status": "COLLECTED",
+      "attempt_count": 1,
+      "basic_check": {
+        "not_black_screen": true,
+        "not_white_screen": true,
+        "not_blank": true,
+        "not_stuck_loading": true,
+        "no_error_overlay": true,
+        "route_correct": true,
+        "target_state_visible": false,
+        "no_secret_visible": true
+      },
+      "notes": "Successfully mocked and collected."
+    },
+    {
+      "id": "UI-031",
+      "area": "项目概览 / 运行摘要 / 项目 WorkflowRun 摘要",
+      "resolved_ids": {
+        "projectId": "10000000-0000-4000-8000-000000000001",
+        "workId": "70000000-0000-4000-8000-000000000001",
+        "runId": "83000000-0000-4000-8000-000000000001",
+        "batchId": "62000000-0000-4000-8000-000000000001",
+        "reviewReportId": "80000000-0000-4000-8000-000000000001",
+        "reviewId": "80000000-0000-4000-8000-000000000001",
+        "issueId": "81000000-0000-4000-8000-000000000001",
+        "workflowRunId": "83000000-0000-4000-8000-000000000001"
+      },
+      "actual_url": "http://127.0.0.1:13001/projects/10000000-0000-4000-8000-000000000001",
+      "screenshot_file": "UI-031_P14_10_PROJECT_WORKFLOW_RUN_SUMMARY.png",
+      "collection_status": "COLLECTED",
+      "attempt_count": 1,
+      "basic_check": {
+        "not_black_screen": true,
+        "not_white_screen": true,
+        "not_blank": true,
+        "not_stuck_loading": true,
+        "no_error_overlay": true,
+        "route_correct": true,
+        "target_state_visible": false,
+        "no_secret_visible": true
+      },
+      "notes": "Successfully mocked and collected."
+    },
+    {
+      "id": "UI-032",
+      "area": "章节规划 / 章节规划 / 主线剧情扩展运行中",
+      "resolved_ids": {
+        "projectId": "10000000-0000-4000-8000-000000000001",
+        "workId": "70000000-0000-4000-8000-000000000001",
+        "runId": "83000000-0000-4000-8000-000000000001",
+        "batchId": "62000000-0000-4000-8000-000000000001",
+        "reviewReportId": "80000000-0000-4000-8000-000000000001",
+        "reviewId": "80000000-0000-4000-8000-000000000001",
+        "issueId": "81000000-0000-4000-8000-000000000001",
+        "workflowRunId": "83000000-0000-4000-8000-000000000001"
+      },
+      "actual_url": "http://127.0.0.1:13001/projects/10000000-0000-4000-8000-000000000001/chapter-plans",
+      "screenshot_file": "UI-032_P15_C1_RUNNING_MAINLINE_EXPANSION.png",
+      "collection_status": "COLLECTED",
+      "attempt_count": 1,
+      "basic_check": {
+        "not_black_screen": true,
+        "not_white_screen": true,
+        "not_blank": true,
+        "not_stuck_loading": true,
+        "no_error_overlay": true,
+        "route_correct": true,
+        "target_state_visible": false,
+        "no_secret_visible": true
+      },
+      "notes": "Successfully mocked and collected."
+    },
+    {
+      "id": "UI-033",
+      "area": "章节规划 / 章节规划 / 局部范围生成运行中",
+      "resolved_ids": {
+        "projectId": "10000000-0000-4000-8000-000000000001",
+        "workId": "70000000-0000-4000-8000-000000000001",
+        "runId": "83000000-0000-4000-8000-000000000001",
+        "batchId": "62000000-0000-4000-8000-000000000001",
+        "reviewReportId": "80000000-0000-4000-8000-000000000001",
+        "reviewId": "80000000-0000-4000-8000-000000000001",
+        "issueId": "81000000-0000-4000-8000-000000000001",
+        "workflowRunId": "83000000-0000-4000-8000-000000000001"
+      },
+      "actual_url": "http://127.0.0.1:13001/projects/10000000-0000-4000-8000-000000000001/chapter-plans",
+      "screenshot_file": "UI-033_P15_C1_RUNNING_PARTIAL_RANGE.png",
+      "collection_status": "COLLECTED",
+      "attempt_count": 1,
+      "basic_check": {
+        "not_black_screen": true,
+        "not_white_screen": true,
+        "not_blank": true,
+        "not_stuck_loading": true,
+        "no_error_overlay": true,
+        "route_correct": true,
+        "target_state_visible": false,
+        "no_secret_visible": true
+      },
+      "notes": "Successfully mocked and collected."
+    },
+    {
+      "id": "UI-034",
+      "area": "章节规划 / 章节规划 / 完整章节规划运行中",
+      "resolved_ids": {
+        "projectId": "10000000-0000-4000-8000-000000000001",
+        "workId": "70000000-0000-4000-8000-000000000001",
+        "runId": "83000000-0000-4000-8000-000000000001",
+        "batchId": "62000000-0000-4000-8000-000000000001",
+        "reviewReportId": "80000000-0000-4000-8000-000000000001",
+        "reviewId": "80000000-0000-4000-8000-000000000001",
+        "issueId": "81000000-0000-4000-8000-000000000001",
+        "workflowRunId": "83000000-0000-4000-8000-000000000001"
+      },
+      "actual_url": "http://127.0.0.1:13001/projects/10000000-0000-4000-8000-000000000001/chapter-plans",
+      "screenshot_file": "UI-034_P15_C1_RUNNING_FULL_PLAN.png",
+      "collection_status": "COLLECTED",
+      "attempt_count": 1,
+      "basic_check": {
+        "not_black_screen": true,
+        "not_white_screen": true,
+        "not_blank": true,
+        "not_stuck_loading": true,
+        "no_error_overlay": true,
+        "route_correct": true,
+        "target_state_visible": false,
+        "no_secret_visible": true
+      },
+      "notes": "Successfully mocked and collected."
+    },
+    {
+      "id": "UI-035",
+      "area": "章节规划 / 章节规划 / 局部生成剩余时间",
+      "resolved_ids": {
+        "projectId": "10000000-0000-4000-8000-000000000001",
+        "workId": "70000000-0000-4000-8000-000000000001",
+        "runId": "83000000-0000-4000-8000-000000000001",
+        "batchId": "62000000-0000-4000-8000-000000000001",
+        "reviewReportId": "80000000-0000-4000-8000-000000000001",
+        "reviewId": "80000000-0000-4000-8000-000000000001",
+        "issueId": "81000000-0000-4000-8000-000000000001",
+        "workflowRunId": "83000000-0000-4000-8000-000000000001"
+      },
+      "actual_url": "http://127.0.0.1:13001/projects/10000000-0000-4000-8000-000000000001/chapter-plans",
+      "screenshot_file": "UI-035_P15_C1_RUNNING_PARTIAL_ETA.png",
+      "collection_status": "COLLECTED",
+      "attempt_count": 1,
+      "basic_check": {
+        "not_black_screen": true,
+        "not_white_screen": true,
+        "not_blank": true,
+        "not_stuck_loading": true,
+        "no_error_overlay": true,
+        "route_correct": true,
+        "target_state_visible": false,
+        "no_secret_visible": true
+      },
+      "notes": "Successfully mocked and collected."
+    },
+    {
+      "id": "UI-036",
+      "area": "章节规划 / 章节规划 / 结果校验中",
+      "resolved_ids": {
+        "projectId": "10000000-0000-4000-8000-000000000001",
+        "workId": "70000000-0000-4000-8000-000000000001",
+        "runId": "83000000-0000-4000-8000-000000000001",
+        "batchId": "62000000-0000-4000-8000-000000000001",
+        "reviewReportId": "80000000-0000-4000-8000-000000000001",
+        "reviewId": "80000000-0000-4000-8000-000000000001",
+        "issueId": "81000000-0000-4000-8000-000000000001",
+        "workflowRunId": "83000000-0000-4000-8000-000000000001"
+      },
+      "actual_url": "http://127.0.0.1:13001/projects/10000000-0000-4000-8000-000000000001/chapter-plans",
+      "screenshot_file": "UI-036_P15_C1_RUNNING_PARTIAL_VALIDATING.png",
+      "collection_status": "COLLECTED",
+      "attempt_count": 1,
+      "basic_check": {
+        "not_black_screen": true,
+        "not_white_screen": true,
+        "not_blank": true,
+        "not_stuck_loading": true,
+        "no_error_overlay": true,
+        "route_correct": true,
+        "target_state_visible": false,
+        "no_secret_visible": true
+      },
+      "notes": "Successfully mocked and collected."
+    },
+    {
+      "id": "UI-037",
+      "area": "章节规划 / 章节规划 / 章节状态与统计数据变体",
+      "resolved_ids": {
+        "projectId": "10000000-0000-4000-8000-000000000001",
+        "workId": "70000000-0000-4000-8000-000000000001",
+        "runId": "83000000-0000-4000-8000-000000000001",
+        "batchId": "62000000-0000-4000-8000-000000000001",
+        "reviewReportId": "80000000-0000-4000-8000-000000000001",
+        "reviewId": "80000000-0000-4000-8000-000000000001",
+        "issueId": "81000000-0000-4000-8000-000000000001",
+        "workflowRunId": "83000000-0000-4000-8000-000000000001"
+      },
+      "actual_url": "http://127.0.0.1:13001/projects/10000000-0000-4000-8000-000000000001/chapter-plans",
+      "screenshot_file": "UI-037_P15_C1_RUNNING_DATA_VARIANT.png",
+      "collection_status": "COLLECTED",
+      "attempt_count": 1,
+      "basic_check": {
+        "not_black_screen": true,
+        "not_white_screen": true,
+        "not_blank": true,
+        "not_stuck_loading": true,
+        "no_error_overlay": true,
+        "route_correct": true,
+        "target_state_visible": false,
+        "no_secret_visible": true
+      },
+      "notes": "Successfully mocked and collected."
+    },
+    {
+      "id": "UI-038",
+      "area": "章节规划 / 章节规划 / 失败且候选零写入",
+      "resolved_ids": {
+        "projectId": "10000000-0000-4000-8000-000000000001",
+        "workId": "70000000-0000-4000-8000-000000000001",
+        "runId": "83000000-0000-4000-8000-000000000001",
+        "batchId": "62000000-0000-4000-8000-000000000001",
+        "reviewReportId": "80000000-0000-4000-8000-000000000001",
+        "reviewId": "80000000-0000-4000-8000-000000000001",
+        "issueId": "81000000-0000-4000-8000-000000000001",
+        "workflowRunId": "83000000-0000-4000-8000-000000000001"
+      },
+      "actual_url": "http://127.0.0.1:13001/projects/10000000-0000-4000-8000-000000000001/chapter-plans",
+      "screenshot_file": "UI-038_P15_C1_FAILED_ATOMIC.png",
+      "collection_status": "COLLECTED",
+      "attempt_count": 1,
+      "basic_check": {
+        "not_black_screen": true,
+        "not_white_screen": true,
+        "not_blank": true,
+        "not_stuck_loading": true,
+        "no_error_overlay": true,
+        "route_correct": true,
+        "target_state_visible": false,
+        "no_secret_visible": true
+      },
+      "notes": "Successfully mocked and collected."
+    },
+    {
+      "id": "UI-039",
+      "area": "章节规划 / 章节规划 / 工作流未配置",
+      "resolved_ids": {
+        "projectId": "10000000-0000-4000-8000-000000000001",
+        "workId": "70000000-0000-4000-8000-000000000001",
+        "runId": "83000000-0000-4000-8000-000000000001",
+        "batchId": "62000000-0000-4000-8000-000000000001",
+        "reviewReportId": "80000000-0000-4000-8000-000000000001",
+        "reviewId": "80000000-0000-4000-8000-000000000001",
+        "issueId": "81000000-0000-4000-8000-000000000001",
+        "workflowRunId": "83000000-0000-4000-8000-000000000001"
+      },
+      "actual_url": "http://127.0.0.1:13001/projects/10000000-0000-4000-8000-000000000001/chapter-plans",
+      "screenshot_file": "UI-039_P15_C1_NOT_CONFIGURED.png",
+      "collection_status": "COLLECTED",
+      "attempt_count": 1,
+      "basic_check": {
+        "not_black_screen": true,
+        "not_white_screen": true,
+        "not_blank": true,
+        "not_stuck_loading": true,
+        "no_error_overlay": true,
+        "route_correct": true,
+        "target_state_visible": false,
+        "no_secret_visible": true
+      },
+      "notes": "Successfully mocked and collected."
+    },
+    {
+      "id": "UI-040",
+      "area": "章节规划 / 章节规划 / 生成参数抽屉",
+      "resolved_ids": {
+        "projectId": "10000000-0000-4000-8000-000000000001",
+        "workId": "70000000-0000-4000-8000-000000000001",
+        "runId": "83000000-0000-4000-8000-000000000001",
+        "batchId": "62000000-0000-4000-8000-000000000001",
+        "reviewReportId": "80000000-0000-4000-8000-000000000001",
+        "reviewId": "80000000-0000-4000-8000-000000000001",
+        "issueId": "81000000-0000-4000-8000-000000000001",
+        "workflowRunId": "83000000-0000-4000-8000-000000000001"
+      },
+      "actual_url": "http://127.0.0.1:13001/projects/10000000-0000-4000-8000-000000000001/chapter-plans",
+      "screenshot_file": "UI-040_P15_C2_GENERATION_SETTINGS.png",
+      "collection_status": "COLLECTED",
+      "attempt_count": 1,
+      "basic_check": {
+        "not_black_screen": true,
+        "not_white_screen": true,
+        "not_blank": true,
+        "not_stuck_loading": true,
+        "no_error_overlay": true,
+        "route_correct": true,
+        "target_state_visible": false,
+        "no_secret_visible": true
+      },
+      "notes": "Successfully mocked and collected."
+    },
+    {
+      "id": "UI-041",
+      "area": "章节规划 / 章节规划 / 预检进度弹窗",
+      "resolved_ids": {
+        "projectId": "10000000-0000-4000-8000-000000000001",
+        "workId": "70000000-0000-4000-8000-000000000001",
+        "runId": "83000000-0000-4000-8000-000000000001",
+        "batchId": "62000000-0000-4000-8000-000000000001",
+        "reviewReportId": "80000000-0000-4000-8000-000000000001",
+        "reviewId": "80000000-0000-4000-8000-000000000001",
+        "issueId": "81000000-0000-4000-8000-000000000001",
+        "workflowRunId": "83000000-0000-4000-8000-000000000001"
+      },
+      "actual_url": "http://127.0.0.1:13001/projects/10000000-0000-4000-8000-000000000001/chapter-plans",
+      "screenshot_file": "",
+      "collection_status": "NOT_REPRODUCIBLE",
+      "attempt_count": 1,
+      "basic_check": {
+        "not_black_screen": false,
+        "not_white_screen": false,
+        "not_blank": false,
+        "not_stuck_loading": false,
+        "no_error_overlay": false,
+        "route_correct": false,
+        "target_state_visible": false,
+        "no_secret_visible": false
+      },
+      "missing_dependency": "required_fixture",
+      "required_fixture": "API mock error or page load fail",
+      "recommended_follow_up": "Check local service and mock parameters",
+      "notes": "Failed: page.click: Timeout 3000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('button:has-text(\"发起生成\"), button:has-text(\"重新预检\")')\u001b[22m\n"
+    },
+    {
+      "id": "UI-042",
+      "area": "章节规划 / 章节规划 / 预检通过报告",
+      "resolved_ids": {
+        "projectId": "10000000-0000-4000-8000-000000000001",
+        "workId": "70000000-0000-4000-8000-000000000001",
+        "runId": "83000000-0000-4000-8000-000000000001",
+        "batchId": "62000000-0000-4000-8000-000000000001",
+        "reviewReportId": "80000000-0000-4000-8000-000000000001",
+        "reviewId": "80000000-0000-4000-8000-000000000001",
+        "issueId": "81000000-0000-4000-8000-000000000001",
+        "workflowRunId": "83000000-0000-4000-8000-000000000001"
+      },
+      "actual_url": "http://127.0.0.1:13001/projects/10000000-0000-4000-8000-000000000001/chapter-plans",
+      "screenshot_file": "",
+      "collection_status": "NOT_REPRODUCIBLE",
+      "attempt_count": 1,
+      "basic_check": {
+        "not_black_screen": false,
+        "not_white_screen": false,
+        "not_blank": false,
+        "not_stuck_loading": false,
+        "no_error_overlay": false,
+        "route_correct": false,
+        "target_state_visible": false,
+        "no_secret_visible": false
+      },
+      "missing_dependency": "required_fixture",
+      "required_fixture": "API mock error or page load fail",
+      "recommended_follow_up": "Check local service and mock parameters",
+      "notes": "Failed: page.click: Timeout 3000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('button:has-text(\"发起生成\"), button:has-text(\"重新预检\")')\u001b[22m\n"
+    },
+    {
+      "id": "UI-043",
+      "area": "章节规划 / 章节规划 / 预检阻断报告",
+      "resolved_ids": {
+        "projectId": "10000000-0000-4000-8000-000000000001",
+        "workId": "70000000-0000-4000-8000-000000000001",
+        "runId": "83000000-0000-4000-8000-000000000001",
+        "batchId": "62000000-0000-4000-8000-000000000001",
+        "reviewReportId": "80000000-0000-4000-8000-000000000001",
+        "reviewId": "80000000-0000-4000-8000-000000000001",
+        "issueId": "81000000-0000-4000-8000-000000000001",
+        "workflowRunId": "83000000-0000-4000-8000-000000000001"
+      },
+      "actual_url": "http://127.0.0.1:13001/projects/10000000-0000-4000-8000-000000000001/chapter-plans",
+      "screenshot_file": "UI-043_P15_C3_PREFLIGHT_BLOCKED.png",
+      "collection_status": "COLLECTED",
+      "attempt_count": 1,
+      "basic_check": {
+        "not_black_screen": true,
+        "not_white_screen": true,
+        "not_blank": true,
+        "not_stuck_loading": true,
+        "no_error_overlay": true,
+        "route_correct": true,
+        "target_state_visible": false,
+        "no_secret_visible": true
+      },
+      "notes": "Successfully mocked and collected."
+    },
+    {
+      "id": "UI-044",
+      "area": "章节规划 / 章节规划 / 任务创建成功提示",
+      "resolved_ids": {
+        "projectId": "10000000-0000-4000-8000-000000000001",
+        "workId": "70000000-0000-4000-8000-000000000001",
+        "runId": "83000000-0000-4000-8000-000000000001",
+        "batchId": "62000000-0000-4000-8000-000000000001",
+        "reviewReportId": "80000000-0000-4000-8000-000000000001",
+        "reviewId": "80000000-0000-4000-8000-000000000001",
+        "issueId": "81000000-0000-4000-8000-000000000001",
+        "workflowRunId": "83000000-0000-4000-8000-000000000001"
+      },
+      "actual_url": "http://127.0.0.1:13001/projects/10000000-0000-4000-8000-000000000001/chapter-plans",
+      "screenshot_file": "",
+      "collection_status": "NOT_REPRODUCIBLE",
+      "attempt_count": 1,
+      "basic_check": {
+        "not_black_screen": false,
+        "not_white_screen": false,
+        "not_blank": false,
+        "not_stuck_loading": false,
+        "no_error_overlay": false,
+        "route_correct": false,
+        "target_state_visible": false,
+        "no_secret_visible": false
+      },
+      "missing_dependency": "required_fixture",
+      "required_fixture": "API mock error or page load fail",
+      "recommended_follow_up": "Check local service and mock parameters",
+      "notes": "Failed: page.click: Timeout 3000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('button:has-text(\"发起生成\")')\u001b[22m\n"
+    },
+    {
+      "id": "UI-045",
+      "area": "章节规划 / 候选批次 / 候选批次列表",
+      "resolved_ids": {
+        "projectId": "10000000-0000-4000-8000-000000000001",
+        "workId": "70000000-0000-4000-8000-000000000001",
+        "runId": "83000000-0000-4000-8000-000000000001",
+        "batchId": "62000000-0000-4000-8000-000000000001",
+        "reviewReportId": "80000000-0000-4000-8000-000000000001",
+        "reviewId": "80000000-0000-4000-8000-000000000001",
+        "issueId": "81000000-0000-4000-8000-000000000001",
+        "workflowRunId": "83000000-0000-4000-8000-000000000001"
+      },
+      "actual_url": "http://127.0.0.1:13001/projects/10000000-0000-4000-8000-000000000001/chapter-plan-candidate-batches",
+      "screenshot_file": "UI-045_P15_C4_CANDIDATE_BATCH_LIST.png",
+      "collection_status": "COLLECTED",
+      "attempt_count": 1,
+      "basic_check": {
+        "not_black_screen": true,
+        "not_white_screen": true,
+        "not_blank": true,
+        "not_stuck_loading": true,
+        "no_error_overlay": true,
+        "route_correct": true,
+        "target_state_visible": false,
+        "no_secret_visible": true
+      },
+      "notes": "Successfully mocked and collected."
+    },
+    {
+      "id": "UI-046",
+      "area": "章节规划 / 候选批次 / 候选批次详情",
+      "resolved_ids": {
+        "projectId": "10000000-0000-4000-8000-000000000001",
+        "workId": "70000000-0000-4000-8000-000000000001",
+        "runId": "83000000-0000-4000-8000-000000000001",
+        "batchId": "62000000-0000-4000-8000-000000000001",
+        "reviewReportId": "80000000-0000-4000-8000-000000000001",
+        "reviewId": "80000000-0000-4000-8000-000000000001",
+        "issueId": "81000000-0000-4000-8000-000000000001",
+        "workflowRunId": "83000000-0000-4000-8000-000000000001"
+      },
+      "actual_url": "http://127.0.0.1:13001/projects/10000000-0000-4000-8000-000000000001/chapter-plan-candidate-batches/62000000-0000-4000-8000-000000000001",
+      "screenshot_file": "UI-046_P15_C5_CANDIDATE_BATCH_DETAIL.png",
+      "collection_status": "COLLECTED",
+      "attempt_count": 1,
+      "basic_check": {
+        "not_black_screen": true,
+        "not_white_screen": true,
+        "not_blank": true,
+        "not_stuck_loading": true,
+        "no_error_overlay": true,
+        "route_correct": true,
+        "target_state_visible": false,
+        "no_secret_visible": true
+      },
+      "notes": "Successfully mocked and collected."
+    },
+    {
+      "id": "UI-047",
+      "area": "章节规划 / 候选批次 / 编辑章节候选抽屉",
+      "resolved_ids": {
+        "projectId": "10000000-0000-4000-8000-000000000001",
+        "workId": "70000000-0000-4000-8000-000000000001",
+        "runId": "83000000-0000-4000-8000-000000000001",
+        "batchId": "62000000-0000-4000-8000-000000000001",
+        "reviewReportId": "80000000-0000-4000-8000-000000000001",
+        "reviewId": "80000000-0000-4000-8000-000000000001",
+        "issueId": "81000000-0000-4000-8000-000000000001",
+        "workflowRunId": "83000000-0000-4000-8000-000000000001"
+      },
+      "actual_url": "http://127.0.0.1:13001/projects/10000000-0000-4000-8000-000000000001/chapter-plan-candidate-batches/62000000-0000-4000-8000-000000000001",
+      "screenshot_file": "UI-047_P15_C6_CANDIDATE_EDIT_DRAWER.png",
+      "collection_status": "COLLECTED",
+      "attempt_count": 1,
+      "basic_check": {
+        "not_black_screen": true,
+        "not_white_screen": true,
+        "not_blank": true,
+        "not_stuck_loading": true,
+        "no_error_overlay": true,
+        "route_correct": true,
+        "target_state_visible": false,
+        "no_secret_visible": true
+      },
+      "notes": "Successfully mocked and collected."
+    },
+    {
+      "id": "UI-048",
+      "area": "章节规划 / 候选批次 / 当前章节与候选差异对比",
+      "resolved_ids": {
+        "projectId": "10000000-0000-4000-8000-000000000001",
+        "workId": "70000000-0000-4000-8000-000000000001",
+        "runId": "83000000-0000-4000-8000-000000000001",
+        "batchId": "62000000-0000-4000-8000-000000000001",
+        "reviewReportId": "80000000-0000-4000-8000-000000000001",
+        "reviewId": "80000000-0000-4000-8000-000000000001",
+        "issueId": "81000000-0000-4000-8000-000000000001",
+        "workflowRunId": "83000000-0000-4000-8000-000000000001"
+      },
+      "actual_url": "http://127.0.0.1:13001/projects/10000000-0000-4000-8000-000000000001/chapter-plan-candidate-batches/62000000-0000-4000-8000-000000000001",
+      "screenshot_file": "UI-048_P15_C7_CANDIDATE_COMPARE_DIALOG.png",
+      "collection_status": "COLLECTED",
+      "attempt_count": 1,
+      "basic_check": {
+        "not_black_screen": true,
+        "not_white_screen": true,
+        "not_blank": true,
+        "not_stuck_loading": true,
+        "no_error_overlay": true,
+        "route_correct": true,
+        "target_state_visible": false,
+        "no_secret_visible": true
+      },
+      "notes": "Successfully mocked and collected."
+    },
+    {
+      "id": "UI-049",
+      "area": "章节规划 / 候选批次 / 批量采用候选确认",
+      "resolved_ids": {
+        "projectId": "10000000-0000-4000-8000-000000000001",
+        "workId": "70000000-0000-4000-8000-000000000001",
+        "runId": "83000000-0000-4000-8000-000000000001",
+        "batchId": "62000000-0000-4000-8000-000000000001",
+        "reviewReportId": "80000000-0000-4000-8000-000000000001",
+        "reviewId": "80000000-0000-4000-8000-000000000001",
+        "issueId": "81000000-0000-4000-8000-000000000001",
+        "workflowRunId": "83000000-0000-4000-8000-000000000001"
+      },
+      "actual_url": "http://127.0.0.1:13001/projects/10000000-0000-4000-8000-000000000001/chapter-plan-candidate-batches/62000000-0000-4000-8000-000000000001",
+      "screenshot_file": "",
+      "collection_status": "NOT_REPRODUCIBLE",
+      "attempt_count": 1,
+      "basic_check": {
+        "not_black_screen": false,
+        "not_white_screen": false,
+        "not_blank": false,
+        "not_stuck_loading": false,
+        "no_error_overlay": false,
+        "route_correct": false,
+        "target_state_visible": false,
+        "no_secret_visible": false
+      },
+      "missing_dependency": "required_fixture",
+      "required_fixture": "API mock error or page load fail",
+      "recommended_follow_up": "Check local service and mock parameters",
+      "notes": "Failed: page.click: Timeout 3000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('button:has-text(\"采用\"), button:has-text(\"应用\"), button:has-text(\"接受规划\")')\u001b[22m\n\u001b[2m    - locator resolved to 2 elements. Proceeding with the first one: <button disabled type=\"button\" class=\"chapter-plan-button primary\">批量采用已选候选 (0)</button>\u001b[22m\n\u001b[2m  - attempting click action\u001b[22m\n\u001b[2m    2 × waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m      - element is not enabled\u001b[22m\n\u001b[2m    - retrying click action\u001b[22m\n\u001b[2m    - waiting 20ms\u001b[22m\n\u001b[2m    2 × waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m      - element is not enabled\u001b[22m\n\u001b[2m    - retrying click action\u001b[22m\n\u001b[2m      - waiting 100ms\u001b[22m\n\u001b[2m    6 × waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m      - element is not enabled\u001b[22m\n\u001b[2m    - retrying click action\u001b[22m\n\u001b[2m      - waiting 500ms\u001b[22m\n"
+    },
+    {
+      "id": "UI-050",
+      "area": "章节规划 / 候选批次 / 放弃候选批次确认",
+      "resolved_ids": {
+        "projectId": "10000000-0000-4000-8000-000000000001",
+        "workId": "70000000-0000-4000-8000-000000000001",
+        "runId": "83000000-0000-4000-8000-000000000001",
+        "batchId": "62000000-0000-4000-8000-000000000001",
+        "reviewReportId": "80000000-0000-4000-8000-000000000001",
+        "reviewId": "80000000-0000-4000-8000-000000000001",
+        "issueId": "81000000-0000-4000-8000-000000000001",
+        "workflowRunId": "83000000-0000-4000-8000-000000000001"
+      },
+      "actual_url": "http://127.0.0.1:13001/projects/10000000-0000-4000-8000-000000000001/chapter-plan-candidate-batches/62000000-0000-4000-8000-000000000001",
+      "screenshot_file": "UI-050_P15_C9_BATCH_ABANDON_DIALOG.png",
+      "collection_status": "COLLECTED",
+      "attempt_count": 1,
+      "basic_check": {
+        "not_black_screen": true,
+        "not_white_screen": true,
+        "not_blank": true,
+        "not_stuck_loading": true,
+        "no_error_overlay": true,
+        "route_correct": true,
+        "target_state_visible": false,
+        "no_secret_visible": true
+      },
+      "notes": "Successfully mocked and collected."
+    },
+    {
+      "id": "UI-051",
+      "area": "章节规划 / 候选批次 / 候选基线过期冲突",
+      "resolved_ids": {
+        "projectId": "10000000-0000-4000-8000-000000000001",
+        "workId": "70000000-0000-4000-8000-000000000001",
+        "runId": "83000000-0000-4000-8000-000000000001",
+        "batchId": "62000000-0000-4000-8000-000000000001",
+        "reviewReportId": "80000000-0000-4000-8000-000000000001",
+        "reviewId": "80000000-0000-4000-8000-000000000001",
+        "issueId": "81000000-0000-4000-8000-000000000001",
+        "workflowRunId": "83000000-0000-4000-8000-000000000001"
+      },
+      "actual_url": "http://127.0.0.1:13001/projects/10000000-0000-4000-8000-000000000001/chapter-plan-candidate-batches/62000000-0000-4000-8000-000000000001",
+      "screenshot_file": "",
+      "collection_status": "NOT_REPRODUCIBLE",
+      "attempt_count": 1,
+      "basic_check": {
+        "not_black_screen": false,
+        "not_white_screen": false,
+        "not_blank": false,
+        "not_stuck_loading": false,
+        "no_error_overlay": false,
+        "route_correct": false,
+        "target_state_visible": false,
+        "no_secret_visible": false
+      },
+      "missing_dependency": "required_fixture",
+      "required_fixture": "API mock error or page load fail",
+      "recommended_follow_up": "Check local service and mock parameters",
+      "notes": "Failed: page.click: Timeout 3000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('button:has-text(\"采用\"), button:has-text(\"应用\"), button:has-text(\"接受规划\")')\u001b[22m\n\u001b[2m    - locator resolved to 2 elements. Proceeding with the first one: <button disabled type=\"button\" class=\"chapter-plan-button primary\">批量采用已选候选 (0)</button>\u001b[22m\n\u001b[2m  - attempting click action\u001b[22m\n\u001b[2m    2 × waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m      - element is not enabled\u001b[22m\n\u001b[2m    - retrying click action\u001b[22m\n\u001b[2m    - waiting 20ms\u001b[22m\n\u001b[2m    2 × waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m      - element is not enabled\u001b[22m\n\u001b[2m    - retrying click action\u001b[22m\n\u001b[2m      - waiting 100ms\u001b[22m\n\u001b[2m    5 × waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m      - element is not enabled\u001b[22m\n\u001b[2m    - retrying click action\u001b[22m\n\u001b[2m      - waiting 500ms\u001b[22m\n"
+    },
+    {
+      "id": "UI-052",
+      "area": "故事线 / 章节关联 / 章节关联统计只读",
+      "resolved_ids": {
+        "projectId": "10000000-0000-4000-8000-000000000001",
+        "workId": "70000000-0000-4000-8000-000000000001",
+        "runId": "83000000-0000-4000-8000-000000000001",
+        "batchId": "62000000-0000-4000-8000-000000000001",
+        "reviewReportId": "80000000-0000-4000-8000-000000000001",
+        "reviewId": "80000000-0000-4000-8000-000000000001",
+        "issueId": "81000000-0000-4000-8000-000000000001",
+        "workflowRunId": "83000000-0000-4000-8000-000000000001"
+      },
+      "actual_url": "http://127.0.0.1:13001/projects/10000000-0000-4000-8000-000000000001/storylines",
+      "screenshot_file": "UI-052_P15_S1_STORYLINE_RELATION_READONLY.png",
+      "collection_status": "COLLECTED",
+      "attempt_count": 1,
+      "basic_check": {
+        "not_black_screen": true,
+        "not_white_screen": true,
+        "not_blank": true,
+        "not_stuck_loading": true,
+        "no_error_overlay": true,
+        "route_correct": true,
+        "target_state_visible": false,
+        "no_secret_visible": true
+      },
+      "notes": "Successfully mocked and collected."
+    },
+    {
+      "id": "UI-053",
+      "area": "正文生成 / 正文编辑器 / 章节目标 Tab",
+      "resolved_ids": {
+        "projectId": "10000000-0000-4000-8000-000000000001",
+        "workId": "70000000-0000-4000-8000-000000000001",
+        "runId": "83000000-0000-4000-8000-000000000001",
+        "batchId": "62000000-0000-4000-8000-000000000001",
+        "reviewReportId": "80000000-0000-4000-8000-000000000001",
+        "reviewId": "80000000-0000-4000-8000-000000000001",
+        "issueId": "81000000-0000-4000-8000-000000000001",
+        "workflowRunId": "83000000-0000-4000-8000-000000000001"
+      },
+      "actual_url": "http://127.0.0.1:13001/projects/10000000-0000-4000-8000-000000000001/works/70000000-0000-4000-8000-000000000001",
+      "screenshot_file": "UI-053_I16_D1_EDITOR_CHAPTER_GOAL.png",
+      "collection_status": "COLLECTED",
+      "attempt_count": 1,
+      "basic_check": {
+        "not_black_screen": true,
+        "not_white_screen": true,
+        "not_blank": true,
+        "not_stuck_loading": true,
+        "no_error_overlay": true,
+        "route_correct": true,
+        "target_state_visible": false,
+        "no_secret_visible": true
+      },
+      "notes": "Successfully mocked and collected."
+    },
+    {
+      "id": "UI-054",
+      "area": "正文生成 / 正文编辑器 / 故事情报 Tab",
+      "resolved_ids": {
+        "projectId": "10000000-0000-4000-8000-000000000001",
+        "workId": "70000000-0000-4000-8000-000000000001",
+        "runId": "83000000-0000-4000-8000-000000000001",
+        "batchId": "62000000-0000-4000-8000-000000000001",
+        "reviewReportId": "80000000-0000-4000-8000-000000000001",
+        "reviewId": "80000000-0000-4000-8000-000000000001",
+        "issueId": "81000000-0000-4000-8000-000000000001",
+        "workflowRunId": "83000000-0000-4000-8000-000000000001"
+      },
+      "actual_url": "http://127.0.0.1:13001/projects/10000000-0000-4000-8000-000000000001/works/70000000-0000-4000-8000-000000000001",
+      "screenshot_file": "",
+      "collection_status": "NOT_REPRODUCIBLE",
+      "attempt_count": 1,
+      "basic_check": {
+        "not_black_screen": false,
+        "not_white_screen": false,
+        "not_blank": false,
+        "not_stuck_loading": false,
+        "no_error_overlay": false,
+        "route_correct": false,
+        "target_state_visible": false,
+        "no_secret_visible": false
+      },
+      "missing_dependency": "required_fixture",
+      "required_fixture": "API mock error or page load fail",
+      "recommended_follow_up": "Check local service and mock parameters",
+      "notes": "Failed: page.click: Timeout 3000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('button:has-text(\"故事情报\"), button:has-text(\"设定背景\")')\u001b[22m\n"
+    },
+    {
+      "id": "UI-055",
+      "area": "正文生成 / 正文编辑器 / 素材库 Tab",
+      "resolved_ids": {
+        "projectId": "10000000-0000-4000-8000-000000000001",
+        "workId": "70000000-0000-4000-8000-000000000001",
+        "runId": "83000000-0000-4000-8000-000000000001",
+        "batchId": "62000000-0000-4000-8000-000000000001",
+        "reviewReportId": "80000000-0000-4000-8000-000000000001",
+        "reviewId": "80000000-0000-4000-8000-000000000001",
+        "issueId": "81000000-0000-4000-8000-000000000001",
+        "workflowRunId": "83000000-0000-4000-8000-000000000001"
+      },
+      "actual_url": "http://127.0.0.1:13001/projects/10000000-0000-4000-8000-000000000001/works/70000000-0000-4000-8000-000000000001",
+      "screenshot_file": "",
+      "collection_status": "NOT_REPRODUCIBLE",
+      "attempt_count": 1,
+      "basic_check": {
+        "not_black_screen": false,
+        "not_white_screen": false,
+        "not_blank": false,
+        "not_stuck_loading": false,
+        "no_error_overlay": false,
+        "route_correct": false,
+        "target_state_visible": false,
+        "no_secret_visible": false
+      },
+      "missing_dependency": "required_fixture",
+      "required_fixture": "API mock error or page load fail",
+      "recommended_follow_up": "Check local service and mock parameters",
+      "notes": "Failed: page.click: Timeout 3000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('button:has-text(\"素材库\"), button:has-text(\"关联素材\")')\u001b[22m\n"
+    },
+    {
+      "id": "UI-056",
+      "area": "正文生成 / 正文编辑器 / 生成正文运行前确认抽屉",
+      "resolved_ids": {
+        "projectId": "10000000-0000-4000-8000-000000000001",
+        "workId": "70000000-0000-4000-8000-000000000001",
+        "runId": "83000000-0000-4000-8000-000000000001",
+        "batchId": "62000000-0000-4000-8000-000000000001",
+        "reviewReportId": "80000000-0000-4000-8000-000000000001",
+        "reviewId": "80000000-0000-4000-8000-000000000001",
+        "issueId": "81000000-0000-4000-8000-000000000001",
+        "workflowRunId": "83000000-0000-4000-8000-000000000001"
+      },
+      "actual_url": "http://127.0.0.1:13001/projects/10000000-0000-4000-8000-000000000001/works/70000000-0000-4000-8000-000000000001",
+      "screenshot_file": "UI-056_I16_D2_GENERATE_CONFIRM.png",
+      "collection_status": "COLLECTED",
+      "attempt_count": 1,
+      "basic_check": {
+        "not_black_screen": true,
+        "not_white_screen": true,
+        "not_blank": true,
+        "not_stuck_loading": true,
+        "no_error_overlay": true,
+        "route_correct": true,
+        "target_state_visible": false,
+        "no_secret_visible": true
+      },
+      "notes": "Successfully mocked and collected."
+    },
+    {
+      "id": "UI-057",
+      "area": "正文生成 / 正文编辑器 / 生成正文已填写要求",
+      "resolved_ids": {
+        "projectId": "10000000-0000-4000-8000-000000000001",
+        "workId": "70000000-0000-4000-8000-000000000001",
+        "runId": "83000000-0000-4000-8000-000000000001",
+        "batchId": "62000000-0000-4000-8000-000000000001",
+        "reviewReportId": "80000000-0000-4000-8000-000000000001",
+        "reviewId": "80000000-0000-4000-8000-000000000001",
+        "issueId": "81000000-0000-4000-8000-000000000001",
+        "workflowRunId": "83000000-0000-4000-8000-000000000001"
+      },
+      "actual_url": "http://127.0.0.1:13001/projects/10000000-0000-4000-8000-000000000001/works/70000000-0000-4000-8000-000000000001",
+      "screenshot_file": "UI-057_I16_D2_GENERATE_REQUIREMENTS.png",
+      "collection_status": "COLLECTED",
+      "attempt_count": 1,
+      "basic_check": {
+        "not_black_screen": true,
+        "not_white_screen": true,
+        "not_blank": true,
+        "not_stuck_loading": true,
+        "no_error_overlay": true,
+        "route_correct": true,
+        "target_state_visible": false,
+        "no_secret_visible": true
+      },
+      "notes": "Successfully mocked and collected."
+    },
+    {
+      "id": "UI-058",
+      "area": "正文生成 / 正文编辑器 / 正文生成排队中",
+      "resolved_ids": {
+        "projectId": "10000000-0000-4000-8000-000000000001",
+        "workId": "70000000-0000-4000-8000-000000000001",
+        "runId": "83000000-0000-4000-8000-000000000001",
+        "batchId": "62000000-0000-4000-8000-000000000001",
+        "reviewReportId": "80000000-0000-4000-8000-000000000001",
+        "reviewId": "80000000-0000-4000-8000-000000000001",
+        "issueId": "81000000-0000-4000-8000-000000000001",
+        "workflowRunId": "83000000-0000-4000-8000-000000000001"
+      },
+      "actual_url": "http://127.0.0.1:13001/projects/10000000-0000-4000-8000-000000000001/works/70000000-0000-4000-8000-000000000001",
+      "screenshot_file": "UI-058_I16_D3_RUN_QUEUED.png",
+      "collection_status": "COLLECTED",
+      "attempt_count": 1,
+      "basic_check": {
+        "not_black_screen": true,
+        "not_white_screen": true,
+        "not_blank": true,
+        "not_stuck_loading": true,
+        "no_error_overlay": true,
+        "route_correct": true,
+        "target_state_visible": false,
+        "no_secret_visible": true
+      },
+      "notes": "Successfully mocked and collected."
+    },
+    {
+      "id": "UI-059",
+      "area": "正文生成 / 正文编辑器 / 正文生成运行中",
+      "resolved_ids": {
+        "projectId": "10000000-0000-4000-8000-000000000001",
+        "workId": "70000000-0000-4000-8000-000000000001",
+        "runId": "83000000-0000-4000-8000-000000000001",
+        "batchId": "62000000-0000-4000-8000-000000000001",
+        "reviewReportId": "80000000-0000-4000-8000-000000000001",
+        "reviewId": "80000000-0000-4000-8000-000000000001",
+        "issueId": "81000000-0000-4000-8000-000000000001",
+        "workflowRunId": "83000000-0000-4000-8000-000000000001"
+      },
+      "actual_url": "http://127.0.0.1:13001/projects/10000000-0000-4000-8000-000000000001/works/70000000-0000-4000-8000-000000000001",
+      "screenshot_file": "UI-059_I16_D3_RUN_RUNNING.png",
+      "collection_status": "COLLECTED",
+      "attempt_count": 1,
+      "basic_check": {
+        "not_black_screen": true,
+        "not_white_screen": true,
+        "not_blank": true,
+        "not_stuck_loading": true,
+        "no_error_overlay": true,
+        "route_correct": true,
+        "target_state_visible": false,
+        "no_secret_visible": true
+      },
+      "notes": "Successfully mocked and collected."
+    },
+    {
+      "id": "UI-060",
+      "area": "正文生成 / 正文编辑器 / 正文候选已创建",
+      "resolved_ids": {
+        "projectId": "10000000-0000-4000-8000-000000000001",
+        "workId": "70000000-0000-4000-8000-000000000001",
+        "runId": "83000000-0000-4000-8000-000000000001",
+        "batchId": "62000000-0000-4000-8000-000000000001",
+        "reviewReportId": "80000000-0000-4000-8000-000000000001",
+        "reviewId": "80000000-0000-4000-8000-000000000001",
+        "issueId": "81000000-0000-4000-8000-000000000001",
+        "workflowRunId": "83000000-0000-4000-8000-000000000001"
+      },
+      "actual_url": "http://127.0.0.1:13001/projects/10000000-0000-4000-8000-000000000001/works/70000000-0000-4000-8000-000000000001",
+      "screenshot_file": "UI-060_I16_D3_RUN_SUCCEEDED.png",
+      "collection_status": "COLLECTED",
+      "attempt_count": 1,
+      "basic_check": {
+        "not_black_screen": true,
+        "not_white_screen": true,
+        "not_blank": true,
+        "not_stuck_loading": true,
+        "no_error_overlay": true,
+        "route_correct": true,
+        "target_state_visible": false,
+        "no_secret_visible": true
+      },
+      "notes": "Successfully mocked and collected."
+    },
+    {
+      "id": "UI-061",
+      "area": "正文生成 / 正文编辑器 / 正文生成失败",
+      "resolved_ids": {
+        "projectId": "10000000-0000-4000-8000-000000000001",
+        "workId": "70000000-0000-4000-8000-000000000001",
+        "runId": "83000000-0000-4000-8000-000000000001",
+        "batchId": "62000000-0000-4000-8000-000000000001",
+        "reviewReportId": "80000000-0000-4000-8000-000000000001",
+        "reviewId": "80000000-0000-4000-8000-000000000001",
+        "issueId": "81000000-0000-4000-8000-000000000001",
+        "workflowRunId": "83000000-0000-4000-8000-000000000001"
+      },
+      "actual_url": "http://127.0.0.1:13001/projects/10000000-0000-4000-8000-000000000001/works/70000000-0000-4000-8000-000000000001",
+      "screenshot_file": "UI-061_I16_D3_RUN_FAILED.png",
+      "collection_status": "COLLECTED",
+      "attempt_count": 1,
+      "basic_check": {
+        "not_black_screen": true,
+        "not_white_screen": true,
+        "not_blank": true,
+        "not_stuck_loading": true,
+        "no_error_overlay": true,
+        "route_correct": true,
+        "target_state_visible": false,
+        "no_secret_visible": true
+      },
+      "notes": "Successfully mocked and collected."
+    },
+    {
+      "id": "UI-062",
+      "area": "正文生成 / 正文编辑器 / 正文候选版本比较",
+      "resolved_ids": {
+        "projectId": "10000000-0000-4000-8000-000000000001",
+        "workId": "70000000-0000-4000-8000-000000000001",
+        "runId": "83000000-0000-4000-8000-000000000001",
+        "batchId": "62000000-0000-4000-8000-000000000001",
+        "reviewReportId": "80000000-0000-4000-8000-000000000001",
+        "reviewId": "80000000-0000-4000-8000-000000000001",
+        "issueId": "81000000-0000-4000-8000-000000000001",
+        "workflowRunId": "83000000-0000-4000-8000-000000000001"
+      },
+      "actual_url": "http://127.0.0.1:13001/projects/10000000-0000-4000-8000-000000000001/works/70000000-0000-4000-8000-000000000001",
+      "screenshot_file": "",
+      "collection_status": "NOT_REPRODUCIBLE",
+      "attempt_count": 1,
+      "basic_check": {
+        "not_black_screen": false,
+        "not_white_screen": false,
+        "not_blank": false,
+        "not_stuck_loading": false,
+        "no_error_overlay": false,
+        "route_correct": false,
+        "target_state_visible": false,
+        "no_secret_visible": false
+      },
+      "missing_dependency": "required_fixture",
+      "required_fixture": "API mock error or page load fail",
+      "recommended_follow_up": "Check local service and mock parameters",
+      "notes": "Failed: page.click: Timeout 3000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('button:has-text(\"查看候选\"), button:has-text(\"对比候选\")')\u001b[22m\n"
+    },
+    {
+      "id": "UI-063",
+      "area": "正文生成 / 正文编辑器 / 正文生成工作流未配置",
+      "resolved_ids": {
+        "projectId": "10000000-0000-4000-8000-000000000001",
+        "workId": "70000000-0000-4000-8000-000000000001",
+        "runId": "83000000-0000-4000-8000-000000000001",
+        "batchId": "62000000-0000-4000-8000-000000000001",
+        "reviewReportId": "80000000-0000-4000-8000-000000000001",
+        "reviewId": "80000000-0000-4000-8000-000000000001",
+        "issueId": "81000000-0000-4000-8000-000000000001",
+        "workflowRunId": "83000000-0000-4000-8000-000000000001"
+      },
+      "actual_url": "http://127.0.0.1:13001/projects/10000000-0000-4000-8000-000000000001/works/70000000-0000-4000-8000-000000000001",
+      "screenshot_file": "UI-063_I16_D5_NOT_CONFIGURED.png",
+      "collection_status": "COLLECTED",
+      "attempt_count": 1,
+      "basic_check": {
+        "not_black_screen": true,
+        "not_white_screen": true,
+        "not_blank": true,
+        "not_stuck_loading": true,
+        "no_error_overlay": true,
+        "route_correct": true,
+        "target_state_visible": false,
+        "no_secret_visible": true
+      },
+      "notes": "Successfully mocked and collected."
+    },
+    {
+      "id": "UI-064",
+      "area": "内容审核 / 审核入口 / 正文编辑器提交审核入口",
+      "resolved_ids": {
+        "projectId": "10000000-0000-4000-8000-000000000001",
+        "workId": "70000000-0000-4000-8000-000000000001",
+        "runId": "83000000-0000-4000-8000-000000000001",
+        "batchId": "62000000-0000-4000-8000-000000000001",
+        "reviewReportId": "80000000-0000-4000-8000-000000000001",
+        "reviewId": "80000000-0000-4000-8000-000000000001",
+        "issueId": "81000000-0000-4000-8000-000000000001",
+        "workflowRunId": "83000000-0000-4000-8000-000000000001"
+      },
+      "actual_url": "http://127.0.0.1:13001/projects/10000000-0000-4000-8000-000000000001/works/70000000-0000-4000-8000-000000000001",
+      "screenshot_file": "UI-064_I17_D1_EDITOR_REVIEW_ENTRY.png",
+      "collection_status": "COLLECTED",
+      "attempt_count": 1,
+      "basic_check": {
+        "not_black_screen": true,
+        "not_white_screen": true,
+        "not_blank": true,
+        "not_stuck_loading": true,
+        "no_error_overlay": true,
+        "route_correct": true,
+        "target_state_visible": false,
+        "no_secret_visible": true
+      },
+      "notes": "Successfully mocked and collected."
+    },
+    {
+      "id": "UI-065",
+      "area": "内容审核 / 审核入口 / 发起内容审核抽屉",
+      "resolved_ids": {
+        "projectId": "10000000-0000-4000-8000-000000000001",
+        "workId": "70000000-0000-4000-8000-000000000001",
+        "runId": "83000000-0000-4000-8000-000000000001",
+        "batchId": "62000000-0000-4000-8000-000000000001",
+        "reviewReportId": "80000000-0000-4000-8000-000000000001",
+        "reviewId": "80000000-0000-4000-8000-000000000001",
+        "issueId": "81000000-0000-4000-8000-000000000001",
+        "workflowRunId": "83000000-0000-4000-8000-000000000001"
+      },
+      "actual_url": "http://127.0.0.1:13001/projects/10000000-0000-4000-8000-000000000001/works/70000000-0000-4000-8000-000000000001",
+      "screenshot_file": "UI-065_D2_SUBMIT_REVIEW_DRAWER.png",
+      "collection_status": "COLLECTED",
+      "attempt_count": 1,
+      "basic_check": {
+        "not_black_screen": true,
+        "not_white_screen": true,
+        "not_blank": true,
+        "not_stuck_loading": true,
+        "no_error_overlay": true,
+        "route_correct": true,
+        "target_state_visible": false,
+        "no_secret_visible": true
+      },
+      "notes": "Successfully mocked and collected."
+    },
+    {
+      "id": "UI-066",
+      "area": "内容审核 / 审核工作区 / 内容审核运行中",
+      "resolved_ids": {
+        "projectId": "10000000-0000-4000-8000-000000000001",
+        "workId": "70000000-0000-4000-8000-000000000001",
+        "runId": "83000000-0000-4000-8000-000000000001",
+        "batchId": "62000000-0000-4000-8000-000000000001",
+        "reviewReportId": "80000000-0000-4000-8000-000000000001",
+        "reviewId": "80000000-0000-4000-8000-000000000001",
+        "issueId": "81000000-0000-4000-8000-000000000001",
+        "workflowRunId": "83000000-0000-4000-8000-000000000001"
+      },
+      "actual_url": "http://127.0.0.1:13001/projects/10000000-0000-4000-8000-000000000001/works/70000000-0000-4000-8000-000000000001/review",
+      "screenshot_file": "UI-066_STATE_TASK_RUNNING_BAR.png",
+      "collection_status": "COLLECTED",
+      "attempt_count": 1,
+      "basic_check": {
+        "not_black_screen": true,
+        "not_white_screen": true,
+        "not_blank": true,
+        "not_stuck_loading": true,
+        "no_error_overlay": true,
+        "route_correct": true,
+        "target_state_visible": false,
+        "no_secret_visible": true
+      },
+      "notes": "Successfully mocked and collected."
+    },
+    {
+      "id": "UI-067",
+      "area": "内容审核 / 审核工作区 / 审核结果总览",
+      "resolved_ids": {
+        "projectId": "10000000-0000-4000-8000-000000000001",
+        "workId": "70000000-0000-4000-8000-000000000001",
+        "runId": "83000000-0000-4000-8000-000000000001",
+        "batchId": "62000000-0000-4000-8000-000000000001",
+        "reviewReportId": "80000000-0000-4000-8000-000000000001",
+        "reviewId": "80000000-0000-4000-8000-000000000001",
+        "issueId": "81000000-0000-4000-8000-000000000001",
+        "workflowRunId": "83000000-0000-4000-8000-000000000001"
+      },
+      "actual_url": "http://127.0.0.1:13001/projects/10000000-0000-4000-8000-000000000001/works/70000000-0000-4000-8000-000000000001/review?reportId=80000000-0000-4000-8000-000000000001",
+      "screenshot_file": "UI-067_D2_REVIEW_V2.png",
+      "collection_status": "COLLECTED",
+      "attempt_count": 1,
+      "basic_check": {
+        "not_black_screen": true,
+        "not_white_screen": true,
+        "not_blank": true,
+        "not_stuck_loading": true,
+        "no_error_overlay": true,
+        "route_correct": true,
+        "target_state_visible": false,
+        "no_secret_visible": true
+      },
+      "notes": "Successfully mocked and collected."
+    },
+    {
+      "id": "UI-068",
+      "area": "内容审核 / 审核工作区 / 问题详情与全文定位",
+      "resolved_ids": {
+        "projectId": "10000000-0000-4000-8000-000000000001",
+        "workId": "70000000-0000-4000-8000-000000000001",
+        "runId": "83000000-0000-4000-8000-000000000001",
+        "batchId": "62000000-0000-4000-8000-000000000001",
+        "reviewReportId": "80000000-0000-4000-8000-000000000001",
+        "reviewId": "80000000-0000-4000-8000-000000000001",
+        "issueId": "81000000-0000-4000-8000-000000000001",
+        "workflowRunId": "83000000-0000-4000-8000-000000000001"
+      },
+      "actual_url": "http://127.0.0.1:13001/projects/10000000-0000-4000-8000-000000000001/works/70000000-0000-4000-8000-000000000001/review?reportId=80000000-0000-4000-8000-000000000001&issueId=81000000-0000-4000-8000-000000000001&view=source",
+      "screenshot_file": "UI-068_I17_D2_REVIEW_ISSUE_DETAIL.png",
+      "collection_status": "COLLECTED",
+      "attempt_count": 1,
+      "basic_check": {
+        "not_black_screen": true,
+        "not_white_screen": true,
+        "not_blank": true,
+        "not_stuck_loading": true,
+        "no_error_overlay": true,
+        "route_correct": true,
+        "target_state_visible": false,
+        "no_secret_visible": true
+      },
+      "notes": "Successfully mocked and collected."
+    },
+    {
+      "id": "UI-069",
+      "area": "内容审核 / 审核工作区 / 审核任务失败",
+      "resolved_ids": {
+        "projectId": "10000000-0000-4000-8000-000000000001",
+        "workId": "70000000-0000-4000-8000-000000000001",
+        "runId": "83000000-0000-4000-8000-000000000001",
+        "batchId": "62000000-0000-4000-8000-000000000001",
+        "reviewReportId": "80000000-0000-4000-8000-000000000001",
+        "reviewId": "80000000-0000-4000-8000-000000000001",
+        "issueId": "81000000-0000-4000-8000-000000000001",
+        "workflowRunId": "83000000-0000-4000-8000-000000000001"
+      },
+      "actual_url": "http://127.0.0.1:13001/projects/10000000-0000-4000-8000-000000000001/works/70000000-0000-4000-8000-000000000001/review",
+      "screenshot_file": "UI-069_STATE_TASK_FAILED_NOTICE.png",
+      "collection_status": "COLLECTED",
+      "attempt_count": 1,
+      "basic_check": {
+        "not_black_screen": true,
+        "not_white_screen": true,
+        "not_blank": true,
+        "not_stuck_loading": true,
+        "no_error_overlay": true,
+        "route_correct": true,
+        "target_state_visible": false,
+        "no_secret_visible": true
+      },
+      "notes": "Successfully mocked and collected."
+    },
+    {
+      "id": "UI-070",
+      "area": "内容审核 / 审核工作区 / 审核工作流未配置",
+      "resolved_ids": {
+        "projectId": "10000000-0000-4000-8000-000000000001",
+        "workId": "70000000-0000-4000-8000-000000000001",
+        "runId": "83000000-0000-4000-8000-000000000001",
+        "batchId": "62000000-0000-4000-8000-000000000001",
+        "reviewReportId": "80000000-0000-4000-8000-000000000001",
+        "reviewId": "80000000-0000-4000-8000-000000000001",
+        "issueId": "81000000-0000-4000-8000-000000000001",
+        "workflowRunId": "83000000-0000-4000-8000-000000000001"
+      },
+      "actual_url": "http://127.0.0.1:13001/projects/10000000-0000-4000-8000-000000000001/works/70000000-0000-4000-8000-000000000001/review",
+      "screenshot_file": "UI-070_STATE_NOT_CONFIGURED_EMPTY.png",
+      "collection_status": "COLLECTED",
+      "attempt_count": 1,
+      "basic_check": {
+        "not_black_screen": true,
+        "not_white_screen": true,
+        "not_blank": true,
+        "not_stuck_loading": true,
+        "no_error_overlay": true,
+        "route_correct": true,
+        "target_state_visible": false,
+        "no_secret_visible": true
+      },
+      "notes": "Successfully mocked and collected."
+    },
+    {
+      "id": "UI-071",
+      "area": "内容审核 / 审核工作区 / 审核历史",
+      "resolved_ids": {
+        "projectId": "10000000-0000-4000-8000-000000000001",
+        "workId": "70000000-0000-4000-8000-000000000001",
+        "runId": "83000000-0000-4000-8000-000000000001",
+        "batchId": "62000000-0000-4000-8000-000000000001",
+        "reviewReportId": "80000000-0000-4000-8000-000000000001",
+        "reviewId": "80000000-0000-4000-8000-000000000001",
+        "issueId": "81000000-0000-4000-8000-000000000001",
+        "workflowRunId": "83000000-0000-4000-8000-000000000001"
+      },
+      "actual_url": "http://127.0.0.1:13001/projects/10000000-0000-4000-8000-000000000001/works/70000000-0000-4000-8000-000000000001/review/history",
+      "screenshot_file": "UI-071_I17_D2_REVIEW_HISTORY.png",
+      "collection_status": "COLLECTED",
+      "attempt_count": 1,
+      "basic_check": {
+        "not_black_screen": true,
+        "not_white_screen": true,
+        "not_blank": true,
+        "not_stuck_loading": true,
+        "no_error_overlay": true,
+        "route_correct": true,
+        "target_state_visible": false,
+        "no_secret_visible": true
+      },
+      "notes": "Successfully mocked and collected."
+    },
+    {
+      "id": "UI-072",
+      "area": "正文重写 / 重写工作区 / 选择问题并创建重写入口",
+      "resolved_ids": {
+        "projectId": "10000000-0000-4000-8000-000000000001",
+        "workId": "70000000-0000-4000-8000-000000000001",
+        "runId": "83000000-0000-4000-8000-000000000001",
+        "batchId": "62000000-0000-4000-8000-000000000001",
+        "reviewReportId": "80000000-0000-4000-8000-000000000001",
+        "reviewId": "80000000-0000-4000-8000-000000000001",
+        "issueId": "81000000-0000-4000-8000-000000000001",
+        "workflowRunId": "83000000-0000-4000-8000-000000000001"
+      },
+      "actual_url": "http://127.0.0.1:13001/projects/10000000-0000-4000-8000-000000000001/works/70000000-0000-4000-8000-000000000001/review?reportId=80000000-0000-4000-8000-000000000001",
+      "screenshot_file": "UI-072_I18_D2_REVIEW_REWRITE_ENTRY.png",
+      "collection_status": "COLLECTED",
+      "attempt_count": 1,
+      "basic_check": {
+        "not_black_screen": true,
+        "not_white_screen": true,
+        "not_blank": true,
+        "not_stuck_loading": true,
+        "no_error_overlay": true,
+        "route_correct": true,
+        "target_state_visible": false,
+        "no_secret_visible": true
+      },
+      "notes": "Successfully mocked and collected."
+    },
+    {
+      "id": "UI-073",
+      "area": "正文重写 / 重写工作区 / 创建正文重写",
+      "resolved_ids": {
+        "projectId": "10000000-0000-4000-8000-000000000001",
+        "workId": "70000000-0000-4000-8000-000000000001",
+        "runId": "83000000-0000-4000-8000-000000000001",
+        "batchId": "62000000-0000-4000-8000-000000000001",
+        "reviewReportId": "80000000-0000-4000-8000-000000000001",
+        "reviewId": "80000000-0000-4000-8000-000000000001",
+        "issueId": "81000000-0000-4000-8000-000000000001",
+        "workflowRunId": "83000000-0000-4000-8000-000000000001"
+      },
+      "actual_url": "http://127.0.0.1:13001/projects/10000000-0000-4000-8000-000000000001/works/70000000-0000-4000-8000-000000000001/rewrite?reportId=80000000-0000-4000-8000-000000000001",
+      "screenshot_file": "UI-073_I18_D4_CREATE_REWRITE.png",
+      "collection_status": "COLLECTED",
+      "attempt_count": 1,
+      "basic_check": {
+        "not_black_screen": true,
+        "not_white_screen": true,
+        "not_blank": true,
+        "not_stuck_loading": true,
+        "no_error_overlay": true,
+        "route_correct": true,
+        "target_state_visible": false,
+        "no_secret_visible": true
+      },
+      "notes": "Successfully mocked and collected."
+    },
+    {
+      "id": "UI-074",
+      "area": "正文重写 / 重写工作区 / 查看项目重写配置抽屉",
+      "resolved_ids": {
+        "projectId": "10000000-0000-4000-8000-000000000001",
+        "workId": "70000000-0000-4000-8000-000000000001",
+        "runId": "83000000-0000-4000-8000-000000000001",
+        "batchId": "62000000-0000-4000-8000-000000000001",
+        "reviewReportId": "80000000-0000-4000-8000-000000000001",
+        "reviewId": "80000000-0000-4000-8000-000000000001",
+        "issueId": "81000000-0000-4000-8000-000000000001",
+        "workflowRunId": "83000000-0000-4000-8000-000000000001"
+      },
+      "actual_url": "http://127.0.0.1:13001/projects/10000000-0000-4000-8000-000000000001/works/70000000-0000-4000-8000-000000000001/rewrite?reportId=80000000-0000-4000-8000-000000000001",
+      "screenshot_file": "UI-074_I18_D4_REWRITE_CONFIG_DRAWER.png",
+      "collection_status": "COLLECTED",
+      "attempt_count": 1,
+      "basic_check": {
+        "not_black_screen": true,
+        "not_white_screen": true,
+        "not_blank": true,
+        "not_stuck_loading": true,
+        "no_error_overlay": true,
+        "route_correct": true,
+        "target_state_visible": false,
+        "no_secret_visible": true
+      },
+      "notes": "Successfully mocked and collected."
+    },
+    {
+      "id": "UI-075",
+      "area": "正文重写 / 重写工作区 / 正文重写运行中",
+      "resolved_ids": {
+        "projectId": "10000000-0000-4000-8000-000000000001",
+        "workId": "70000000-0000-4000-8000-000000000001",
+        "runId": "83000000-0000-4000-8000-000000000001",
+        "batchId": "62000000-0000-4000-8000-000000000001",
+        "reviewReportId": "80000000-0000-4000-8000-000000000001",
+        "reviewId": "80000000-0000-4000-8000-000000000001",
+        "issueId": "81000000-0000-4000-8000-000000000001",
+        "workflowRunId": "83000000-0000-4000-8000-000000000001"
+      },
+      "actual_url": "http://127.0.0.1:13001/projects/10000000-0000-4000-8000-000000000001/works/70000000-0000-4000-8000-000000000001/rewrite?workflowRunId=83000000-0000-4000-8000-000000000001",
+      "screenshot_file": "UI-075_I18_D4_REWRITE_RUNNING.png",
+      "collection_status": "COLLECTED",
+      "attempt_count": 1,
+      "basic_check": {
+        "not_black_screen": true,
+        "not_white_screen": true,
+        "not_blank": true,
+        "not_stuck_loading": true,
+        "no_error_overlay": true,
+        "route_correct": true,
+        "target_state_visible": false,
+        "no_secret_visible": true
+      },
+      "notes": "Successfully mocked and collected."
+    },
+    {
+      "id": "UI-076",
+      "area": "正文重写 / 重写工作区 / 正文重写成功候选",
+      "resolved_ids": {
+        "projectId": "10000000-0000-4000-8000-000000000001",
+        "workId": "70000000-0000-4000-8000-000000000001",
+        "runId": "83000000-0000-4000-8000-000000000001",
+        "batchId": "62000000-0000-4000-8000-000000000001",
+        "reviewReportId": "80000000-0000-4000-8000-000000000001",
+        "reviewId": "80000000-0000-4000-8000-000000000001",
+        "issueId": "81000000-0000-4000-8000-000000000001",
+        "workflowRunId": "83000000-0000-4000-8000-000000000001"
+      },
+      "actual_url": "http://127.0.0.1:13001/projects/10000000-0000-4000-8000-000000000001/works/70000000-0000-4000-8000-000000000001/rewrite?workflowRunId=83000000-0000-4000-8000-000000000001",
+      "screenshot_file": "UI-076_I18_D5_REWRITE_RESULT.png",
+      "collection_status": "COLLECTED",
+      "attempt_count": 1,
+      "basic_check": {
+        "not_black_screen": true,
+        "not_white_screen": true,
+        "not_blank": true,
+        "not_stuck_loading": true,
+        "no_error_overlay": true,
+        "route_correct": true,
+        "target_state_visible": false,
+        "no_secret_visible": true
+      },
+      "notes": "Successfully mocked and collected."
+    },
+    {
+      "id": "UI-077",
+      "area": "正文重写 / 重写工作区 / 设为当前版本确认",
+      "resolved_ids": {
+        "projectId": "10000000-0000-4000-8000-000000000001",
+        "workId": "70000000-0000-4000-8000-000000000001",
+        "runId": "83000000-0000-4000-8000-000000000001",
+        "batchId": "62000000-0000-4000-8000-000000000001",
+        "reviewReportId": "80000000-0000-4000-8000-000000000001",
+        "reviewId": "80000000-0000-4000-8000-000000000001",
+        "issueId": "81000000-0000-4000-8000-000000000001",
+        "workflowRunId": "83000000-0000-4000-8000-000000000001"
+      },
+      "actual_url": "http://127.0.0.1:13001/projects/10000000-0000-4000-8000-000000000001/works/70000000-0000-4000-8000-000000000001/rewrite?workflowRunId=83000000-0000-4000-8000-000000000001",
+      "screenshot_file": "",
+      "collection_status": "NOT_REPRODUCIBLE",
+      "attempt_count": 1,
+      "basic_check": {
+        "not_black_screen": false,
+        "not_white_screen": false,
+        "not_blank": false,
+        "not_stuck_loading": false,
+        "no_error_overlay": false,
+        "route_correct": false,
+        "target_state_visible": false,
+        "no_secret_visible": false
+      },
+      "missing_dependency": "required_fixture",
+      "required_fixture": "API mock error or page load fail",
+      "recommended_follow_up": "Check local service and mock parameters",
+      "notes": "Failed: page.click: Timeout 3000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('button:has-text(\"设为当前版本\"), button:has-text(\"设为正文\")')\u001b[22m\n"
+    },
+    {
+      "id": "UI-078",
+      "area": "正文重写 / 重写工作区 / 重写结果提交失败",
+      "resolved_ids": {
+        "projectId": "10000000-0000-4000-8000-000000000001",
+        "workId": "70000000-0000-4000-8000-000000000001",
+        "runId": "83000000-0000-4000-8000-000000000001",
+        "batchId": "62000000-0000-4000-8000-000000000001",
+        "reviewReportId": "80000000-0000-4000-8000-000000000001",
+        "reviewId": "80000000-0000-4000-8000-000000000001",
+        "issueId": "81000000-0000-4000-8000-000000000001",
+        "workflowRunId": "83000000-0000-4000-8000-000000000001"
+      },
+      "actual_url": "http://127.0.0.1:13001/projects/10000000-0000-4000-8000-000000000001/works/70000000-0000-4000-8000-000000000001/rewrite?workflowRunId=83000000-0000-4000-8000-000000000001",
+      "screenshot_file": "UI-078_I18_D5_RESULT_CONSUMPTION_FAILED.png",
+      "collection_status": "COLLECTED",
+      "attempt_count": 1,
+      "basic_check": {
+        "not_black_screen": true,
+        "not_white_screen": true,
+        "not_blank": true,
+        "not_stuck_loading": true,
+        "no_error_overlay": true,
+        "route_correct": true,
+        "target_state_visible": false,
+        "no_secret_visible": true
+      },
+      "notes": "Successfully mocked and collected."
+    },
+    {
+      "id": "UI-079",
+      "area": "正文重写 / 重写工作区 / 重写任务执行失败",
+      "resolved_ids": {
+        "projectId": "10000000-0000-4000-8000-000000000001",
+        "workId": "70000000-0000-4000-8000-000000000001",
+        "runId": "83000000-0000-4000-8000-000000000001",
+        "batchId": "62000000-0000-4000-8000-000000000001",
+        "reviewReportId": "80000000-0000-4000-8000-000000000001",
+        "reviewId": "80000000-0000-4000-8000-000000000001",
+        "issueId": "81000000-0000-4000-8000-000000000001",
+        "workflowRunId": "83000000-0000-4000-8000-000000000001"
+      },
+      "actual_url": "http://127.0.0.1:13001/projects/10000000-0000-4000-8000-000000000001/works/70000000-0000-4000-8000-000000000001/rewrite?workflowRunId=83000000-0000-4000-8000-000000000001",
+      "screenshot_file": "UI-079_I18_D4_REWRITE_FAILED.png",
+      "collection_status": "COLLECTED",
+      "attempt_count": 1,
+      "basic_check": {
+        "not_black_screen": true,
+        "not_white_screen": true,
+        "not_blank": true,
+        "not_stuck_loading": true,
+        "no_error_overlay": true,
+        "route_correct": true,
+        "target_state_visible": false,
+        "no_secret_visible": true
+      },
+      "notes": "Successfully mocked and collected."
+    },
+    {
+      "id": "UI-080",
+      "area": "正文重写 / 重写工作区 / 未配置/配置失效/空状态",
+      "resolved_ids": {
+        "projectId": "10000000-0000-4000-8000-000000000001",
+        "workId": "70000000-0000-4000-8000-000000000001",
+        "runId": "83000000-0000-4000-8000-000000000001",
+        "batchId": "62000000-0000-4000-8000-000000000001",
+        "reviewReportId": "80000000-0000-4000-8000-000000000001",
+        "reviewId": "80000000-0000-4000-8000-000000000001",
+        "issueId": "81000000-0000-4000-8000-000000000001",
+        "workflowRunId": "83000000-0000-4000-8000-000000000001"
+      },
+      "actual_url": "http://127.0.0.1:13001/projects/10000000-0000-4000-8000-000000000001/works/70000000-0000-4000-8000-000000000001/rewrite?reportId=80000000-0000-4000-8000-000000000001",
+      "screenshot_file": "UI-080_I18_D4_REWRITE_AVAILABILITY.png",
+      "collection_status": "COLLECTED",
+      "attempt_count": 1,
+      "basic_check": {
+        "not_black_screen": true,
+        "not_white_screen": true,
+        "not_blank": true,
+        "not_stuck_loading": true,
+        "no_error_overlay": true,
+        "route_correct": true,
+        "target_state_visible": false,
+        "no_secret_visible": true
+      },
+      "notes": "Successfully mocked and collected."
+    },
+    {
+      "id": "UI-081",
+      "area": "共享升级状态 / 章节规划 / 共享预检阻断",
+      "resolved_ids": {
+        "projectId": "10000000-0000-4000-8000-000000000001",
+        "workId": "70000000-0000-4000-8000-000000000001",
+        "runId": "83000000-0000-4000-8000-000000000001",
+        "batchId": "62000000-0000-4000-8000-000000000001",
+        "reviewReportId": "80000000-0000-4000-8000-000000000001",
+        "reviewId": "80000000-0000-4000-8000-000000000001",
+        "issueId": "81000000-0000-4000-8000-000000000001",
+        "workflowRunId": "83000000-0000-4000-8000-000000000001"
+      },
+      "actual_url": "http://127.0.0.1:13001/projects/10000000-0000-4000-8000-000000000001/chapter-plans",
+      "screenshot_file": "UI-081_I19_14_SHARED_PREFLIGHT_BLOCKED.png",
+      "collection_status": "COLLECTED",
+      "attempt_count": 1,
+      "basic_check": {
+        "not_black_screen": true,
+        "not_white_screen": true,
+        "not_blank": true,
+        "not_stuck_loading": true,
+        "no_error_overlay": true,
+        "route_correct": true,
+        "target_state_visible": false,
+        "no_secret_visible": true
+      },
+      "notes": "Successfully mocked and collected."
+    },
+    {
+      "id": "UI-082",
+      "area": "共享升级状态 / 正文生成 / 共享预检阻断",
+      "resolved_ids": {
+        "projectId": "10000000-0000-4000-8000-000000000001",
+        "workId": "70000000-0000-4000-8000-000000000001",
+        "runId": "83000000-0000-4000-8000-000000000001",
+        "batchId": "62000000-0000-4000-8000-000000000001",
+        "reviewReportId": "80000000-0000-4000-8000-000000000001",
+        "reviewId": "80000000-0000-4000-8000-000000000001",
+        "issueId": "81000000-0000-4000-8000-000000000001",
+        "workflowRunId": "83000000-0000-4000-8000-000000000001"
+      },
+      "actual_url": "http://127.0.0.1:13001/projects/10000000-0000-4000-8000-000000000001/works/70000000-0000-4000-8000-000000000001",
+      "screenshot_file": "UI-082_I19_14_SHARED_PREFLIGHT_BLOCKED.png",
+      "collection_status": "COLLECTED",
+      "attempt_count": 1,
+      "basic_check": {
+        "not_black_screen": true,
+        "not_white_screen": true,
+        "not_blank": true,
+        "not_stuck_loading": true,
+        "no_error_overlay": true,
+        "route_correct": true,
+        "target_state_visible": false,
+        "no_secret_visible": true
+      },
+      "notes": "Successfully mocked and collected."
+    },
+    {
+      "id": "UI-083",
+      "area": "共享升级状态 / 内容审核 / 共享预检阻断",
+      "resolved_ids": {
+        "projectId": "10000000-0000-4000-8000-000000000001",
+        "workId": "70000000-0000-4000-8000-000000000001",
+        "runId": "83000000-0000-4000-8000-000000000001",
+        "batchId": "62000000-0000-4000-8000-000000000001",
+        "reviewReportId": "80000000-0000-4000-8000-000000000001",
+        "reviewId": "80000000-0000-4000-8000-000000000001",
+        "issueId": "81000000-0000-4000-8000-000000000001",
+        "workflowRunId": "83000000-0000-4000-8000-000000000001"
+      },
+      "actual_url": "http://127.0.0.1:13001/projects/10000000-0000-4000-8000-000000000001/works/70000000-0000-4000-8000-000000000001",
+      "screenshot_file": "UI-083_I19_14_SHARED_PREFLIGHT_BLOCKED.png",
+      "collection_status": "COLLECTED",
+      "attempt_count": 1,
+      "basic_check": {
+        "not_black_screen": true,
+        "not_white_screen": true,
+        "not_blank": true,
+        "not_stuck_loading": true,
+        "no_error_overlay": true,
+        "route_correct": true,
+        "target_state_visible": false,
+        "no_secret_visible": true
+      },
+      "notes": "Successfully mocked and collected."
+    },
+    {
+      "id": "UI-084",
+      "area": "共享升级状态 / 正文重写 / 共享预检阻断",
+      "resolved_ids": {
+        "projectId": "10000000-0000-4000-8000-000000000001",
+        "workId": "70000000-0000-4000-8000-000000000001",
+        "runId": "83000000-0000-4000-8000-000000000001",
+        "batchId": "62000000-0000-4000-8000-000000000001",
+        "reviewReportId": "80000000-0000-4000-8000-000000000001",
+        "reviewId": "80000000-0000-4000-8000-000000000001",
+        "issueId": "81000000-0000-4000-8000-000000000001",
+        "workflowRunId": "83000000-0000-4000-8000-000000000001"
+      },
+      "actual_url": "http://127.0.0.1:13001/projects/10000000-0000-4000-8000-000000000001/works/70000000-0000-4000-8000-000000000001/rewrite?reportId=80000000-0000-4000-8000-000000000001",
+      "screenshot_file": "UI-084_I19_14_SHARED_PREFLIGHT_BLOCKED.png",
+      "collection_status": "COLLECTED",
+      "attempt_count": 1,
+      "basic_check": {
+        "not_black_screen": true,
+        "not_white_screen": true,
+        "not_blank": true,
+        "not_stuck_loading": true,
+        "no_error_overlay": true,
+        "route_correct": true,
+        "target_state_visible": false,
+        "no_secret_visible": true
+      },
+      "notes": "Successfully mocked and collected."
+    },
+    {
+      "id": "UI-085",
+      "area": "共享升级状态 / 章节规划 / 共享运行恢复",
+      "resolved_ids": {
+        "projectId": "10000000-0000-4000-8000-000000000001",
+        "workId": "70000000-0000-4000-8000-000000000001",
+        "runId": "83000000-0000-4000-8000-000000000001",
+        "batchId": "62000000-0000-4000-8000-000000000001",
+        "reviewReportId": "80000000-0000-4000-8000-000000000001",
+        "reviewId": "80000000-0000-4000-8000-000000000001",
+        "issueId": "81000000-0000-4000-8000-000000000001",
+        "workflowRunId": "83000000-0000-4000-8000-000000000001"
+      },
+      "actual_url": "http://127.0.0.1:13001/projects/10000000-0000-4000-8000-000000000001/chapter-plans",
+      "screenshot_file": "UI-085_I19_15_SHARED_RUNTIME_RECOVERY.png",
+      "collection_status": "COLLECTED",
+      "attempt_count": 1,
+      "basic_check": {
+        "not_black_screen": true,
+        "not_white_screen": true,
+        "not_blank": true,
+        "not_stuck_loading": true,
+        "no_error_overlay": true,
+        "route_correct": true,
+        "target_state_visible": false,
+        "no_secret_visible": true
+      },
+      "notes": "Successfully mocked and collected."
+    },
+    {
+      "id": "UI-086",
+      "area": "共享升级状态 / 正文生成 / 共享运行恢复",
+      "resolved_ids": {
+        "projectId": "10000000-0000-4000-8000-000000000001",
+        "workId": "70000000-0000-4000-8000-000000000001",
+        "runId": "83000000-0000-4000-8000-000000000001",
+        "batchId": "62000000-0000-4000-8000-000000000001",
+        "reviewReportId": "80000000-0000-4000-8000-000000000001",
+        "reviewId": "80000000-0000-4000-8000-000000000001",
+        "issueId": "81000000-0000-4000-8000-000000000001",
+        "workflowRunId": "83000000-0000-4000-8000-000000000001"
+      },
+      "actual_url": "http://127.0.0.1:13001/projects/10000000-0000-4000-8000-000000000001/works/70000000-0000-4000-8000-000000000001",
+      "screenshot_file": "UI-086_I19_15_SHARED_RUNTIME_RECOVERY.png",
+      "collection_status": "COLLECTED",
+      "attempt_count": 1,
+      "basic_check": {
+        "not_black_screen": true,
+        "not_white_screen": true,
+        "not_blank": true,
+        "not_stuck_loading": true,
+        "no_error_overlay": true,
+        "route_correct": true,
+        "target_state_visible": false,
+        "no_secret_visible": true
+      },
+      "notes": "Successfully mocked and collected."
+    },
+    {
+      "id": "UI-087",
+      "area": "共享升级状态 / 内容审核 / 共享运行恢复",
+      "resolved_ids": {
+        "projectId": "10000000-0000-4000-8000-000000000001",
+        "workId": "70000000-0000-4000-8000-000000000001",
+        "runId": "83000000-0000-4000-8000-000000000001",
+        "batchId": "62000000-0000-4000-8000-000000000001",
+        "reviewReportId": "80000000-0000-4000-8000-000000000001",
+        "reviewId": "80000000-0000-4000-8000-000000000001",
+        "issueId": "81000000-0000-4000-8000-000000000001",
+        "workflowRunId": "83000000-0000-4000-8000-000000000001"
+      },
+      "actual_url": "http://127.0.0.1:13001/projects/10000000-0000-4000-8000-000000000001/works/70000000-0000-4000-8000-000000000001/review",
+      "screenshot_file": "UI-087_I19_15_SHARED_RUNTIME_RECOVERY.png",
+      "collection_status": "COLLECTED",
+      "attempt_count": 1,
+      "basic_check": {
+        "not_black_screen": true,
+        "not_white_screen": true,
+        "not_blank": true,
+        "not_stuck_loading": true,
+        "no_error_overlay": true,
+        "route_correct": true,
+        "target_state_visible": false,
+        "no_secret_visible": true
+      },
+      "notes": "Successfully mocked and collected."
+    },
+    {
+      "id": "UI-088",
+      "area": "共享升级状态 / 正文重写 / 共享运行恢复",
+      "resolved_ids": {
+        "projectId": "10000000-0000-4000-8000-000000000001",
+        "workId": "70000000-0000-4000-8000-000000000001",
+        "runId": "83000000-0000-4000-8000-000000000001",
+        "batchId": "62000000-0000-4000-8000-000000000001",
+        "reviewReportId": "80000000-0000-4000-8000-000000000001",
+        "reviewId": "80000000-0000-4000-8000-000000000001",
+        "issueId": "81000000-0000-4000-8000-000000000001",
+        "workflowRunId": "83000000-0000-4000-8000-000000000001"
+      },
+      "actual_url": "http://127.0.0.1:13001/projects/10000000-0000-4000-8000-000000000001/works/70000000-0000-4000-8000-000000000001/rewrite?workflowRunId=83000000-0000-4000-8000-000000000001",
+      "screenshot_file": "UI-088_I19_15_SHARED_RUNTIME_RECOVERY.png",
+      "collection_status": "COLLECTED",
+      "attempt_count": 1,
+      "basic_check": {
+        "not_black_screen": true,
+        "not_white_screen": true,
+        "not_blank": true,
+        "not_stuck_loading": true,
+        "no_error_overlay": true,
+        "route_correct": true,
+        "target_state_visible": false,
+        "no_secret_visible": true
+      },
+      "notes": "Successfully mocked and collected."
+    }
+  ],
+  "total": 88
+}
