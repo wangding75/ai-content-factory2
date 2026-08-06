@@ -1,7 +1,7 @@
 {
   "schema_version": "acf.ui-acceptance-collection.v1",
-  "collected_at": "2026-08-06T05:47:31.611Z",
-  "started_at": "2026-08-06T05:17:55.428Z",
+  "collected_at": "2026-08-06T06:14:10.821Z",
+  "started_at": "2026-08-06T05:58:24.735Z",
   "total": 88,
   "items": [
     {
@@ -44,6 +44,7 @@
       },
       "actual_observed_state": "AI Content Factory 内容创作平台 首页 项目 素材 作品 流程 设置 CA 创作管理员 设置 全局设置 LLM 配置 工作流配置 分发平台配置 LLM 配置 管理全局大模型连接，供项目工作流调用 添加 LLM 配置 全部类型 OpenAI-compatible 全部验证状态 未验证 已验证 验证失败 需重新验证 全部启用状态 未启用 已启用 共 2 个配置 配置名称 服务类型 默认模型 模型数 验证状态 执行资格 操作 acf-fixture-llm-enabled OpenAI-compatible fixture-model 0 已验证 可执行 编辑 acf-fixture-llm-disabled OpenAI-compatible fixture-disabled-model 0 未验证 暂不可执行 编辑 第 1 / 1 页上一页下一页",
       "screenshot_path": "screenshots/UI-001_I19_01_LLM_PROVIDER_LIST.png",
+      "screenshot_sha256": "492f7fb4dd5928bc510e130bda498fa2427869c32c70de2560eb019e4f166c03",
       "capture_status": "COLLECTED_TARGET",
       "attempt_count": 1,
       "basic_check": {
@@ -56,8 +57,9 @@
         "target_state_visible": true,
         "no_secret": true
       },
-      "notes": "打开 LLM Tab，等待列表稳定后截图",
-      "screenshot_sha256": "492f7fb4dd5928bc510e130bda498fa2427869c32c70de2560eb019e4f166c03"
+      "defect_classification": null,
+      "duplicate_hash_review": null,
+      "notes": "打开 LLM Tab，等待列表稳定后截图"
     },
     {
       "capture_id": "UI-002",
@@ -70,7 +72,7 @@
         "click:添加 LLM 配置|编辑"
       ],
       "selectors_used": [
-        "button/text ~ /添加 LLM 配置|编辑/"
+        "click:添加 LLM 配置"
       ],
       "expected_state": {
         "state_kind": "drawer",
@@ -105,6 +107,7 @@
       },
       "actual_observed_state": "AI Content Factory 内容创作平台 首页 项目 素材 作品 流程 设置 CA 创作管理员 设置 全局设置 LLM 配置 工作流配置 分发平台配置 LLM 配置 管理全局大模型连接，供项目工作流调用 添加 LLM 配置 全部类型 OpenAI-compatible 全部验证状态 未验证 已验证 验证失败 需重新验证 全部启用状态 未启用 已启用 共 2 个配置 配置名称 服务类型 默认模型 模型数 验证状态 执行资格 操作 acf-fixture-llm-enabled OpenAI-compatible fixture-model 0 已验证 可执行 编辑 acf-fixture-llm-disabled OpenAI-compatible fixture-disabled-model 0 未验证 暂不可执行 编辑 第 1 / 1 页上一页下一页 添加 LLM 配置 配置全",
       "screenshot_path": "screenshots/UI-002_I19_02_LLM_PROVIDER_DRAWER.png",
+      "screenshot_sha256": "1358a3500d124116050f1e47a3517af2a5b10bc5fccd6d0b0c8a35f3ca2118d6",
       "capture_status": "COLLECTED_TARGET",
       "attempt_count": 1,
       "basic_check": {
@@ -117,8 +120,9 @@
         "target_state_visible": true,
         "no_secret": true
       },
-      "notes": "打开新增或编辑抽屉，不提交",
-      "screenshot_sha256": "1358a3500d124116050f1e47a3517af2a5b10bc5fccd6d0b0c8a35f3ca2118d6"
+      "defect_classification": null,
+      "duplicate_hash_review": null,
+      "notes": "打开新增或编辑抽屉，不提交"
     },
     {
       "capture_id": "UI-003",
@@ -173,7 +177,8 @@
         "no_secret": true
       },
       "notes": "仅使用现有空状态；不可复现则记录",
-      "screenshot_sha256": "f1e78b65d9d3c7514f3accce4f04f1607bbccf5a768925997e8d333bd241fd01"
+      "screenshot_sha256": "f1e78b65d9d3c7514f3accce4f04f1607bbccf5a768925997e8d333bd241fd01",
+      "defect_classification": null
     },
     {
       "capture_id": "UI-004",
@@ -228,7 +233,8 @@
         "no_secret": true
       },
       "notes": "打开连接 Tab，等待列表稳定后截图",
-      "screenshot_sha256": "a821ddd7b4b1db26ac8f5b88475a68531bcc74088dfa38a6b2c39223d52f6076"
+      "screenshot_sha256": "a821ddd7b4b1db26ac8f5b88475a68531bcc74088dfa38a6b2c39223d52f6076",
+      "defect_classification": null
     },
     {
       "capture_id": "UI-005",
@@ -289,7 +295,8 @@
         "no_secret": true
       },
       "notes": "打开新增或编辑抽屉，不提交",
-      "screenshot_sha256": "26fe9bc164d78cd15c59ec4edf56c022c8a4721761c2e530c9c15e7148473c45"
+      "screenshot_sha256": "26fe9bc164d78cd15c59ec4edf56c022c8a4721761c2e530c9c15e7148473c45",
+      "defect_classification": null
     },
     {
       "capture_id": "UI-006",
@@ -344,7 +351,8 @@
         "no_secret": true
       },
       "notes": "仅使用现有空状态；不可复现则记录",
-      "screenshot_sha256": "1cdf688fe89aa45558a820997e31751f4eb914e2cbce12f6421f2ca13b3a429c"
+      "screenshot_sha256": "1cdf688fe89aa45558a820997e31751f4eb914e2cbce12f6421f2ca13b3a429c",
+      "defect_classification": null
     },
     {
       "capture_id": "UI-007",
@@ -399,7 +407,8 @@
         "no_secret": true
       },
       "notes": "打开工作流 Tab，等待列表稳定后截图",
-      "screenshot_sha256": "c6862803c3c8c0e26ba04dfdfc786d9a0c3115a7f3e73c8ff4ac36944e8c68b0"
+      "screenshot_sha256": "c6862803c3c8c0e26ba04dfdfc786d9a0c3115a7f3e73c8ff4ac36944e8c68b0",
+      "defect_classification": null
     },
     {
       "capture_id": "UI-008",
@@ -460,7 +469,8 @@
         "no_secret": true
       },
       "notes": "打开新增或编辑抽屉，不提交",
-      "screenshot_sha256": "403ef93d2c75ff2dc9674c6c650cd93e88ff791d7e4cc126ecc7ff42991bd73d"
+      "screenshot_sha256": "403ef93d2c75ff2dc9674c6c650cd93e88ff791d7e4cc126ecc7ff42991bd73d",
+      "defect_classification": null
     },
     {
       "capture_id": "UI-009",
@@ -515,7 +525,8 @@
         "no_secret": true
       },
       "notes": "仅使用现有空状态；不可复现则记录",
-      "screenshot_sha256": "356b4d97fe9482fb736551908167d43ae52e7f28c58de13dae6d9253cf307cdb"
+      "screenshot_sha256": "356b4d97fe9482fb736551908167d43ae52e7f28c58de13dae6d9253cf307cdb",
+      "defect_classification": null
     },
     {
       "capture_id": "UI-010",
@@ -570,7 +581,8 @@
         "no_secret": true
       },
       "notes": "打开分发平台 Tab，等待列表稳定后截图",
-      "screenshot_sha256": "4b0fcd5475ca6f37316b0f8cf5bfa3ce0be70321961dc5a21195c59e30ebcca7"
+      "screenshot_sha256": "4b0fcd5475ca6f37316b0f8cf5bfa3ce0be70321961dc5a21195c59e30ebcca7",
+      "defect_classification": null
     },
     {
       "capture_id": "UI-011",
@@ -631,7 +643,8 @@
         "no_secret": true
       },
       "notes": "打开新增或编辑抽屉，不提交",
-      "screenshot_sha256": "d2a54141875736f004aaf04409cb8463ea0997a67083d72910990664551dab2b"
+      "screenshot_sha256": "d2a54141875736f004aaf04409cb8463ea0997a67083d72910990664551dab2b",
+      "defect_classification": null
     },
     {
       "capture_id": "UI-012",
@@ -686,7 +699,8 @@
         "no_secret": true
       },
       "notes": "仅使用现有空状态；不可复现则记录",
-      "screenshot_sha256": "2b76c673ae385f729f1a41e8bd5123d1c6669f67e9753bf01a77fe754b2c5c3c"
+      "screenshot_sha256": "2b76c673ae385f729f1a41e8bd5123d1c6669f67e9753bf01a77fe754b2c5c3c",
+      "defect_classification": null
     },
     {
       "capture_id": "UI-013",
@@ -743,7 +757,8 @@
         "no_secret": true
       },
       "notes": "选择现有未绑定项目；不可复现则记录",
-      "screenshot_sha256": "3f52de3f87489dc8ac2a0a2e4306af77c913d877b8632075102bab8d37afdca1"
+      "screenshot_sha256": "3f52de3f87489dc8ac2a0a2e4306af77c913d877b8632075102bab8d37afdca1",
+      "defect_classification": null
     },
     {
       "capture_id": "UI-014",
@@ -800,7 +815,8 @@
         "no_secret": true
       },
       "notes": "选择现有部分绑定项目；不可复现则记录",
-      "screenshot_sha256": "f996785d482c81391064e8e6650892a5e9e9e398054bfeb02e1d5dfe1cddcb5a"
+      "screenshot_sha256": "f996785d482c81391064e8e6650892a5e9e9e398054bfeb02e1d5dfe1cddcb5a",
+      "defect_classification": null
     },
     {
       "capture_id": "UI-015",
@@ -857,7 +873,8 @@
         "no_secret": true
       },
       "notes": "选择现有全部可执行项目",
-      "screenshot_sha256": "d18e0c2afc31db85e4aeec3455f044be03556c1a1c6d8252a04624669662675d"
+      "screenshot_sha256": "d18e0c2afc31db85e4aeec3455f044be03556c1a1c6d8252a04624669662675d",
+      "defect_classification": null
     },
     {
       "capture_id": "UI-016",
@@ -901,7 +918,7 @@
       },
       "actual_observed_state": "AI Content Factory 内容创作平台 首页 项目 素材 作品 流程 设置 CA 创作管理员 项目 / ACF UI Acceptance Project ACF UI Acceptance Project 小说 策划中 更新于 2026年1月1日 16:00 Deterministic project used only for second-loop UI acceptance scenes. 概览 策划 素材 故事线 章节规划 审核 作品 设置 基本信息 工作流绑定 其他设置 工作流绑定 为项目的四个环节分别选择可复用的工作流。绑定不代表该工作流已经验证或可以执行。 4 / 4 已绑定 章节规划 为章节结构与创作目标选择工作流。 已绑定 · 已集成 acf-fixture-chapter-planning 类型 n8n 连接 acf-fixture-n8n-enabled",
       "screenshot_path": "screenshots/UI-016_I19_08_PROJECT_BINDINGS_DEPENDENCY_INVALID.png",
-      "capture_status": "COLLECTED_DEFECT",
+      "capture_status": "PRODUCT_DEFECT",
       "attempt_count": 2,
       "basic_check": {
         "not_black": true,
@@ -914,7 +931,8 @@
         "no_secret": true
       },
       "notes": "选择现有配置失效项目；不可复现则记录 ; failures: None of required texts found: [配置已变更, 不可执行]",
-      "screenshot_sha256": "de966d28e5a5a7482c814a47642964c0f112d8c9537f111043cf0e5affbd0308"
+      "screenshot_sha256": "de966d28e5a5a7482c814a47642964c0f112d8c9537f111043cf0e5affbd0308",
+      "defect_classification": "PRODUCT_DEFECT"
     },
     {
       "capture_id": "UI-017",
@@ -975,7 +993,8 @@
         "no_secret": true
       },
       "notes": "在未绑定阶段打开选择抽屉，不保存",
-      "screenshot_sha256": "e0c390fb749927e79607a7ca28e5d10ff399fba222b9f7132066054340241bc3"
+      "screenshot_sha256": "e0c390fb749927e79607a7ca28e5d10ff399fba222b9f7132066054340241bc3",
+      "defect_classification": null
     },
     {
       "capture_id": "UI-018",
@@ -1036,7 +1055,8 @@
         "no_secret": true
       },
       "notes": "在已绑定阶段打开更换抽屉，不保存",
-      "screenshot_sha256": "c0456ee8a3fa49c57637997e26c75b55644aeeaf8722ebcea27fd0c5c712d236"
+      "screenshot_sha256": "c0456ee8a3fa49c57637997e26c75b55644aeeaf8722ebcea27fd0c5c712d236",
+      "defect_classification": null
     },
     {
       "capture_id": "UI-019",
@@ -1051,7 +1071,7 @@
         "click:解除绑定"
       ],
       "selectors_used": [
-        "button/text ~ /解除绑定/"
+        "click:解除绑定"
       ],
       "expected_state": {
         "state_kind": "dialog",
@@ -1084,6 +1104,7 @@
       },
       "actual_observed_state": "AI Content Factory 内容创作平台 首页 项目 素材 作品 流程 设置 CA 创作管理员 项目 / ACF UI Acceptance Project ACF UI Acceptance Project 小说 策划中 更新于 2026年1月1日 16:00 Deterministic project used only for second-loop UI acceptance scenes. 概览 策划 素材 故事线 章节规划 审核 作品 设置 基本信息 工作流绑定 其他设置 工作流绑定 为项目的四个环节分别选择可复用的工作流。绑定不代表该工作流已经验证或可以执行。 4 / 4 已绑定 章节规划 为章节结构与创作目标选择工作流。 已绑定 · 已集成 acf-fixture-chapter-planning 类型 n8n 连接 acf-fixture-n8n-enabled",
       "screenshot_path": "screenshots/UI-019_P13_06_UNBIND_CONFIRM_DIALOG.png",
+      "screenshot_sha256": "7ca054739278f49d33022171069de06c4599b238a0725386c13475412bbe671c",
       "capture_status": "COLLECTED_TARGET",
       "attempt_count": 1,
       "basic_check": {
@@ -1096,8 +1117,9 @@
         "target_state_visible": true,
         "no_secret": true
       },
-      "notes": "点击解除绑定，仅打开确认弹窗，不确认",
-      "screenshot_sha256": "7ca054739278f49d33022171069de06c4599b238a0725386c13475412bbe671c"
+      "defect_classification": null,
+      "duplicate_hash_review": null,
+      "notes": "点击解除绑定，仅打开确认弹窗，不确认"
     },
     {
       "capture_id": "UI-020",
@@ -1141,7 +1163,7 @@
       },
       "actual_observed_state": "AI Content Factory 内容创作平台 首页 项目 素材 作品 流程 设置 CA 创作管理员 项目 / ACF UI Acceptance Project ACF UI Acceptance Project 小说 策划中 更新于 2026年1月1日 16:00 Deterministic project used only for second-loop UI acceptance scenes. 概览 策划 素材 故事线 章节规划 审核 作品 设置 基本信息 工作流绑定 其他设置 工作流绑定 为项目的四个环节分别选择可复用的工作流。绑定不代表该工作流已经验证或可以执行。 3 / 4 已绑定 章节规划 为章节结构与创作目标选择工作流。 已绑定 · 已集成 acf-fixture-chapter-planning 类型 n8n 连接 acf-fixture-n8n-enabled",
       "screenshot_path": "screenshots/UI-020_P13_08_NO_AVAILABLE_WORKFLOW.png",
-      "capture_status": "COLLECTED_DEFECT",
+      "capture_status": "PRODUCT_DEFECT",
       "attempt_count": 2,
       "basic_check": {
         "not_black": true,
@@ -1154,7 +1176,8 @@
         "no_secret": true
       },
       "notes": "使用现有无可用候选状态；不可复现则记录 ; failures: None of required texts found: [暂无可用工作流, 前往全局设置]",
-      "screenshot_sha256": "2555401f596781429413ba29840591d611ab2189f3bdcb4e5b3c06df17d52ce4"
+      "screenshot_sha256": "2555401f596781429413ba29840591d611ab2189f3bdcb4e5b3c06df17d52ce4",
+      "defect_classification": "PRODUCT_DEFECT"
     },
     {
       "capture_id": "UI-021",
@@ -1218,7 +1241,7 @@
       },
       "actual_observed_state": "AI Content Factory 内容创作平台 首页 项目 素材 作品 流程 设置 CA 创作管理员 项目 / ACF UI Acceptance Project ACF UI Acceptance Project 小说 策划中 更新于 2026年1月1日 16:00 Deterministic project used only for second-loop UI acceptance scenes. 概览 策划 素材 故事线 章节规划 审核 作品 设置 基本信息 工作流绑定 其他设置 工作流绑定 为项目的四个环节分别选择可复用的工作流。绑定不代表该工作流已经验证或可以执行。 4 / 4 已绑定 章节规划 为章节结构与创作目标选择工作流。 已绑定 · 已集成 acf-fixture-chapter-planning 类型 n8n 连接 acf-fixture-n8n-enabled",
       "screenshot_path": "screenshots/UI-021_P13_10_BINDING_CONFLICT.png",
-      "capture_status": "COLLECTED_DEFECT",
+      "capture_status": "PRODUCT_DEFECT",
       "attempt_count": 2,
       "basic_check": {
         "not_black": true,
@@ -1231,7 +1254,8 @@
         "no_secret": true
       },
       "notes": "在隔离验收库中通过受控版本递增触发真实 409 并发冲突；只修改固定验收绑定。 ; failures: None of required texts found: [配置已被更新, 冲突, 重新加载] | Target component not visible for state_kind=dialog",
-      "screenshot_sha256": "4939db42c067d64c166d688667d3d843b83dfea30d581445b47c5d9672520be4"
+      "screenshot_sha256": "4939db42c067d64c166d688667d3d843b83dfea30d581445b47c5d9672520be4",
+      "defect_classification": "PRODUCT_DEFECT"
     },
     {
       "capture_id": "UI-022",
@@ -1286,7 +1310,8 @@
         "no_secret": true
       },
       "notes": "打开列表并等待筛选数据稳定",
-      "screenshot_sha256": "601ef686286da9c1751d90e0372f0d8e330d4627412e65e0b43167e3bafc0862"
+      "screenshot_sha256": "601ef686286da9c1751d90e0372f0d8e330d4627412e65e0b43167e3bafc0862",
+      "defect_classification": null
     },
     {
       "capture_id": "UI-023",
@@ -1343,7 +1368,8 @@
         "no_secret": true
       },
       "notes": "选择有运行记录的 projectId",
-      "screenshot_sha256": "25541169ca6d9d10f2a43bc76a7eb6e22b471dfe1c66435a97a242fcf4e11b44"
+      "screenshot_sha256": "25541169ca6d9d10f2a43bc76a7eb6e22b471dfe1c66435a97a242fcf4e11b44",
+      "defect_classification": null
     },
     {
       "capture_id": "UI-024",
@@ -1391,7 +1417,7 @@
       },
       "actual_observed_state": "AI Content Factory 内容创作平台 首页 项目 素材 作品 流程 设置 CA 创作管理员 流程中心 / 运行记录 流程中心 统一查看所有项目的工作流运行情况。 搜索 所属项目 全部项目 ACF UI Acceptance Project ACF Fixture Novel ACF Fixture Short Film 业务环节 全部环节 章节规划 内容生成 审核 改写 状态 全部状态 等待执行 运行中 已成功 失败 已取消 时间范围 全部时间 今天 最近 7 天 最近 30 天 重置筛选 运行编号 项目 业务环节 状态 触发来源 创建时间 更新时间 操作 ACF-UI-DYNAMIC-REWRITE ACF Fixture Novel 内容改写 执行失败 手动触发 2026年1月1日 17:30 2026年1月1日 17:30 查看详情 ACF-UI-DYNAMIC-REV",
       "screenshot_path": "screenshots/UI-024_P14_03_WORKFLOW_RUN_LIST_EMPTY.png",
-      "capture_status": "COLLECTED_DEFECT",
+      "capture_status": "PRODUCT_DEFECT",
       "attempt_count": 2,
       "basic_check": {
         "not_black": true,
@@ -1404,7 +1430,8 @@
         "no_secret": true
       },
       "notes": "用无结果筛选复现，不修改数据 ; failures: None of required texts found: [暂无运行记录, 清除筛选]",
-      "screenshot_sha256": "2e7d10766c4e2b6e67111a214452d74371b43dee2e14ecdb18f77fccdb91f882"
+      "screenshot_sha256": "2e7d10766c4e2b6e67111a214452d74371b43dee2e14ecdb18f77fccdb91f882",
+      "defect_classification": "PRODUCT_DEFECT"
     },
     {
       "capture_id": "UI-025",
@@ -1446,7 +1473,7 @@
       },
       "actual_observed_state": "AI Content Factory 内容创作平台 首页 项目 素材 作品 流程 设置 CA 创作管理员 流程中心 / 运行记录 流程中心 统一查看所有项目的工作流运行情况。 搜索 所属项目 全部项目 业务环节 全部环节 章节规划 内容生成 审核 改写 状态 全部状态 等待执行 运行中 已成功 失败 已取消 时间范围 全部时间 今天 最近 7 天 最近 30 天 重置筛选 运行记录加载失败 暂时无法获取工作流运行记录，请稍后重试。 重新加载",
       "screenshot_path": "screenshots/UI-025_P14_04_WORKFLOW_RUN_LIST_ERROR.png",
-      "capture_status": "COLLECTED_DEFECT",
+      "capture_status": "PRODUCT_DEFECT",
       "attempt_count": 2,
       "basic_check": {
         "not_black": true,
@@ -1459,7 +1486,8 @@
         "no_secret": true
       },
       "notes": "由场景脚本停止 API，截图错误态后立即切换回 BASELINE。 ; failures: Target component not visible for state_kind=list",
-      "screenshot_sha256": "464de4bd0dad331b2f6380276c586b5ae7b36758d7219b8da42ca0d4b5f21751"
+      "screenshot_sha256": "464de4bd0dad331b2f6380276c586b5ae7b36758d7219b8da42ca0d4b5f21751",
+      "defect_classification": "PRODUCT_DEFECT"
     },
     {
       "capture_id": "UI-026",
@@ -1505,6 +1533,7 @@
       },
       "actual_observed_state": "AI Content Factory 内容创作平台 首页 项目 素材 作品 流程 设置 CA 创作管理员 ← 返回运行记录 流程中心 / 运行记录 运行详情 已成功 内容生成 · 手动触发 基本信息 运行编号 ACF-FIX-CG-0001 业务环节 内容生成 触发来源 手动触发 当前版本 v1 创建时间 2026年1月1日 12:10 更新时间 2026年1月1日 12:10 输入参数 {} 输出结果 {} 安全错误信息 {} 配置快照 {} 事件时间线 已创建运行 等待执行 · 2026年1月1日 12:10 {} 开始执行 运行中 · 2026年1月1日 12:10 {} 未知运行事件 运行中 · 2026年1月1日 12:10 {} 运行成功 已成功 · 2026年1月1日 12:10 {}",
       "screenshot_path": "screenshots/UI-026_I19_11_WORKFLOW_RUN_DETAIL_PAGE.png",
+      "screenshot_sha256": "24ac603eb6acf1a87ddfa4b0f58f9481b1597054c612c88c6b26790d898a5d7b",
       "capture_status": "COLLECTED_TARGET",
       "attempt_count": 1,
       "basic_check": {
@@ -1517,8 +1546,9 @@
         "target_state_visible": true,
         "no_secret": true
       },
-      "notes": "选择 succeeded Run",
-      "screenshot_sha256": "24ac603eb6acf1a87ddfa4b0f58f9481b1597054c612c88c6b26790d898a5d7b"
+      "defect_classification": null,
+      "duplicate_hash_review": null,
+      "notes": "选择 succeeded Run"
     },
     {
       "capture_id": "UI-027",
@@ -1575,7 +1605,8 @@
         "no_secret": true
       },
       "notes": "选择 queued/running Run；不可复现则记录",
-      "screenshot_sha256": "0c32ab6d7a7e57959cd7d70ced09ddc249f3baf975076e19d216ef60c98ce4e8"
+      "screenshot_sha256": "0c32ab6d7a7e57959cd7d70ced09ddc249f3baf975076e19d216ef60c98ce4e8",
+      "defect_classification": null
     },
     {
       "capture_id": "UI-028",
@@ -1621,7 +1652,8 @@
       },
       "actual_observed_state": "AI Content Factory 内容创作平台 首页 项目 素材 作品 流程 设置 CA 创作管理员 ← 返回运行记录 流程中心 / 运行记录 运行详情 执行失败 内容生成 · 手动触发 基本信息 运行编号 ACF-FIX-FAILED-0001 业务环节 内容生成 触发来源 手动触发 当前版本 v1 创建时间 2026年1月1日 15:20 更新时间 2026年1月1日 15:20 输入参数 {} 输出结果 暂无信息 安全错误信息 {} 配置快照 {} 事件时间线 已创建运行 等待执行 · 2026年1月1日 15:20 {} 开始执行 运行中 · 2026年1月1日 15:20 {} 运行失败 执行失败 · 2026年1月1日 15:20 {}",
       "screenshot_path": "screenshots/UI-028_P14_07_WORKFLOW_RUN_DETAIL_FAILED.png",
-      "capture_status": "COLLECTED_DEFECT",
+      "screenshot_sha256": "700edff1c45b0425ed8ce2a4ccb972772529f1b00311377dd56974fd0be7eb74",
+      "capture_status": "PRODUCT_DEFECT",
       "attempt_count": 1,
       "basic_check": {
         "not_black": true,
@@ -1633,8 +1665,9 @@
         "target_state_visible": false,
         "no_secret": true
       },
-      "notes": "选择 failed Run ; demoted: screenshot hash not unique across capture_ids",
-      "screenshot_sha256": "700edff1c45b0425ed8ce2a4ccb972772529f1b00311377dd56974fd0be7eb74"
+      "defect_classification": "CAPTURE_INTERACTION_FAILURE",
+      "duplicate_hash_review": "INVALID_DUPLICATE_pending",
+      "notes": "选择 failed Run ; demoted: non-unique screenshot hash"
     },
     {
       "capture_id": "UI-029",
@@ -1646,12 +1679,11 @@
         "runId": "50000000-0000-4000-8000-000000000007"
       },
       "actions_executed": [
-        "click_missed:重试",
         "click_missed:重试"
       ],
       "selectors_used": [
-        "MISS click ~ /重试/",
-        "MISS click ~ /重试/"
+        "MISS:重试",
+        "MISS:重试"
       ],
       "expected_state": {
         "state_kind": "dialog",
@@ -1686,7 +1718,8 @@
       },
       "actual_observed_state": "AI Content Factory 内容创作平台 首页 项目 素材 作品 流程 设置 CA 创作管理员 ← 返回运行记录 流程中心 / 运行记录 运行详情 执行失败 内容生成 · 手动触发 基本信息 运行编号 ACF-FIX-FAILED-0001 业务环节 内容生成 触发来源 手动触发 当前版本 v1 创建时间 2026年1月1日 15:20 更新时间 2026年1月1日 15:20 输入参数 {} 输出结果 暂无信息 安全错误信息 {} 配置快照 {} 事件时间线 已创建运行 等待执行 · 2026年1月1日 15:20 {} 开始执行 运行中 · 2026年1月1日 15:20 {} 运行失败 执行失败 · 2026年1月1日 15:20 {}",
       "screenshot_path": "screenshots/UI-029_I19_12_RETRY_CONFIRM_DIALOG.png",
-      "capture_status": "COLLECTED_DEFECT",
+      "screenshot_sha256": "700edff1c45b0425ed8ce2a4ccb972772529f1b00311377dd56974fd0be7eb74",
+      "capture_status": "PRODUCT_DEFECT",
       "attempt_count": 2,
       "basic_check": {
         "not_black": true,
@@ -1698,8 +1731,9 @@
         "target_state_visible": false,
         "no_secret": true
       },
-      "notes": "在可重试 Run 打开确认弹窗，不提交 ; failures: None of required texts found: [重试, 当前配置, 原配置] | Target component not visible for state_kind=dialog | Required click not found: click_missed:重试,click_missed:重试",
-      "screenshot_sha256": "700edff1c45b0425ed8ce2a4ccb972772529f1b00311377dd56974fd0be7eb74"
+      "defect_classification": "CAPTURE_INTERACTION_FAILURE",
+      "duplicate_hash_review": "INVALID_DUPLICATE",
+      "notes": "在可重试 Run 打开确认弹窗，不提交 ; failures: required click missed | dialog not visible | required text missing: [重试, 当前配置, 原配置]"
     },
     {
       "capture_id": "UI-030",
@@ -1754,7 +1788,8 @@
         "no_secret": true
       },
       "notes": "直接打开页面",
-      "screenshot_sha256": "0ab036cc300056bb4bbdd2029adadf3ad5371a7211cc3cbe4b2057fe087aba14"
+      "screenshot_sha256": "0ab036cc300056bb4bbdd2029adadf3ad5371a7211cc3cbe4b2057fe087aba14",
+      "defect_classification": null
     },
     {
       "capture_id": "UI-031",
@@ -1811,7 +1846,8 @@
         "no_secret": true
       },
       "notes": "选择有运行记录项目",
-      "screenshot_sha256": "6042a523a48ea1fd38fe74b2fde15fc6d67b7ac1ac2c9914ccd1cec6d5405a83"
+      "screenshot_sha256": "6042a523a48ea1fd38fe74b2fde15fc6d67b7ac1ac2c9914ccd1cec6d5405a83",
+      "defect_classification": null
     },
     {
       "capture_id": "UI-032",
@@ -1868,7 +1904,8 @@
         "no_secret": true
       },
       "notes": "选择对应现有运行状态",
-      "screenshot_sha256": "5108e500bd08ab8281fa4d275cf3705091ecb4c1f306610e6e38eda1f85aba8c"
+      "screenshot_sha256": "5108e500bd08ab8281fa4d275cf3705091ecb4c1f306610e6e38eda1f85aba8c",
+      "defect_classification": null
     },
     {
       "capture_id": "UI-033",
@@ -1925,7 +1962,8 @@
         "no_secret": true
       },
       "notes": "选择对应现有运行状态",
-      "screenshot_sha256": "d88f599c42ed96d4661ea1b50930c6c3dc6550fb0e67e663cd63a57b2d21b11e"
+      "screenshot_sha256": "d88f599c42ed96d4661ea1b50930c6c3dc6550fb0e67e663cd63a57b2d21b11e",
+      "defect_classification": null
     },
     {
       "capture_id": "UI-034",
@@ -1982,7 +2020,8 @@
         "no_secret": true
       },
       "notes": "选择对应现有运行状态",
-      "screenshot_sha256": "091de624d9f316578fc7a2519d6fdbe117423a3232755cd6e142f0448f918051"
+      "screenshot_sha256": "091de624d9f316578fc7a2519d6fdbe117423a3232755cd6e142f0448f918051",
+      "defect_classification": null
     },
     {
       "capture_id": "UI-035",
@@ -2039,7 +2078,8 @@
         "no_secret": true
       },
       "notes": "选择对应现有运行状态",
-      "screenshot_sha256": "cd3e33e8d0a17fd4fd894992040a7023d811a22e9444393b1cb10c97bf2d6699"
+      "screenshot_sha256": "cd3e33e8d0a17fd4fd894992040a7023d811a22e9444393b1cb10c97bf2d6699",
+      "defect_classification": null
     },
     {
       "capture_id": "UI-036",
@@ -2096,7 +2136,8 @@
         "no_secret": true
       },
       "notes": "选择对应现有运行状态",
-      "screenshot_sha256": "354587218c8abd8a60cb0b50fca9f1758d84bc96e2210e8395fe5b2bc33be927"
+      "screenshot_sha256": "354587218c8abd8a60cb0b50fca9f1758d84bc96e2210e8395fe5b2bc33be927",
+      "defect_classification": null
     },
     {
       "capture_id": "UI-037",
@@ -2140,7 +2181,8 @@
       },
       "actual_observed_state": "AI Content Factory 内容创作平台 首页 项目 素材 作品 流程 设置 CA 创作管理员 项目 / ACF Fixture Novel ACF Fixture Novel 小说 生产中 更新于 2026年1月1日 16:00 Deterministic end-to-end fixture project. 概览 策划 素材 故事线 章节规划 审核 作品 设置 章节规划 新增章节 auto_awesome 生成章节规划 当前章节 2 候选批次 1 article 全部章节 2 pending_actions 待确认 0 check_circle 已确认 2 edit_document 已生成草稿 0 状态 (全部) 待确认 已确认 已生成草稿 故事线 (全部) The Missing District The Red Index Card 来源 (全部) The blank",
       "screenshot_path": "screenshots/UI-037_P15_C1_RUNNING_DATA_VARIANT.png",
-      "capture_status": "COLLECTED_DEFECT",
+      "screenshot_sha256": "3b122490b4b67008e8c982535410b987332fd90c85e7715fb8574720115bf943",
+      "capture_status": "PRODUCT_DEFECT",
       "attempt_count": 1,
       "basic_check": {
         "not_black": true,
@@ -2152,8 +2194,9 @@
         "target_state_visible": false,
         "no_secret": true
       },
-      "notes": "使用现有数据变体 ; demoted: screenshot hash not unique across capture_ids",
-      "screenshot_sha256": "3b122490b4b67008e8c982535410b987332fd90c85e7715fb8574720115bf943"
+      "defect_classification": "CAPTURE_INTERACTION_FAILURE",
+      "duplicate_hash_review": "INVALID_DUPLICATE_pending",
+      "notes": "使用现有数据变体 ; demoted: non-unique screenshot hash"
     },
     {
       "capture_id": "UI-038",
@@ -2197,7 +2240,8 @@
       },
       "actual_observed_state": "AI Content Factory 内容创作平台 首页 项目 素材 作品 流程 设置 CA 创作管理员 项目 / ACF Fixture Novel ACF Fixture Novel 小说 生产中 更新于 2026年1月1日 16:00 Deterministic end-to-end fixture project. 概览 策划 素材 故事线 章节规划 审核 作品 设置 章节规划 新增章节 auto_awesome 生成章节规划 当前章节 2 候选批次 1 article 全部章节 2 pending_actions 待确认 0 check_circle 已确认 2 edit_document 已生成草稿 0 状态 (全部) 待确认 已确认 已生成草稿 故事线 (全部) The Missing District The Red Index Card 来源 (全部) The blank",
       "screenshot_path": "screenshots/UI-038_P15_C1_FAILED_ATOMIC.png",
-      "capture_status": "COLLECTED_DEFECT",
+      "screenshot_sha256": "3b122490b4b67008e8c982535410b987332fd90c85e7715fb8574720115bf943",
+      "capture_status": "PRODUCT_DEFECT",
       "attempt_count": 2,
       "basic_check": {
         "not_black": true,
@@ -2209,8 +2253,9 @@
         "target_state_visible": false,
         "no_secret": true
       },
-      "notes": "选择对应失败记录 ; failures: None of required texts found: [生成失败, 未写入]",
-      "screenshot_sha256": "3b122490b4b67008e8c982535410b987332fd90c85e7715fb8574720115bf943"
+      "defect_classification": "FIXTURE_STATE_MISMATCH",
+      "duplicate_hash_review": "INVALID_DUPLICATE",
+      "notes": "选择对应失败记录 ; failures: required text missing: [生成失败, 未写入]"
     },
     {
       "capture_id": "UI-039",
@@ -2254,7 +2299,7 @@
       },
       "actual_observed_state": "AI Content Factory 内容创作平台 首页 项目 素材 作品 流程 设置 CA 创作管理员 项目 / ACF UI Acceptance Project ACF UI Acceptance Project 小说 策划中 更新于 2026年1月1日 16:00 Deterministic project used only for second-loop UI acceptance scenes. 概览 策划 素材 故事线 章节规划 审核 作品 设置 章节规划 新增章节 auto_awesome 生成章节规划 当前章节 0 候选批次 0 article 全部章节 0 pending_actions 待确认 0 check_circle 已确认 0 edit_document 已生成草稿 0 状态 (全部) 待确认 已确认 已生成草稿 故事线 (全部) 来源 (全部) searc",
       "screenshot_path": "screenshots/UI-039_P15_C1_NOT_CONFIGURED.png",
-      "capture_status": "COLLECTED_DEFECT",
+      "capture_status": "PRODUCT_DEFECT",
       "attempt_count": 2,
       "basic_check": {
         "not_black": true,
@@ -2267,7 +2312,8 @@
         "no_secret": true
       },
       "notes": "选择现有未配置项目 ; failures: None of required texts found: [未配置, 工作流]",
-      "screenshot_sha256": "aa35956e6502d04b189ac8b94d6496fc0e1a947d3edeedabcd417b27c9886326"
+      "screenshot_sha256": "aa35956e6502d04b189ac8b94d6496fc0e1a947d3edeedabcd417b27c9886326",
+      "defect_classification": "PRODUCT_DEFECT"
     },
     {
       "capture_id": "UI-040",
@@ -2282,7 +2328,7 @@
         "click:生成章节规划"
       ],
       "selectors_used": [
-        "button/text ~ /生成章节规划/"
+        "click:生成章节规划"
       ],
       "expected_state": {
         "state_kind": "drawer",
@@ -2315,7 +2361,8 @@
       },
       "actual_observed_state": "AI Content Factory 内容创作平台 首页 项目 素材 作品 流程 设置 CA 创作管理员 项目 / ACF Fixture Novel ACF Fixture Novel 小说 生产中 更新于 2026年1月1日 16:00 Deterministic end-to-end fixture project. 概览 策划 素材 故事线 章节规划 审核 作品 设置 章节规划 新增章节 auto_awesome 生成章节规划 当前章节 2 候选批次 1 article 全部章节 2 pending_actions 待确认 0 check_circle 已确认 2 edit_document 已生成草稿 0 状态 (全部) 待确认 已确认 已生成草稿 故事线 (全部) The Missing District The Red Index Card 来源 (全部) The blank",
       "screenshot_path": "screenshots/UI-040_P15_C2_GENERATION_SETTINGS.png",
-      "capture_status": "COLLECTED_DEFECT",
+      "screenshot_sha256": "3cb3b183e05da8b629bd21a97eda3962fd17a74105fb26585115ff8357fe15ed",
+      "capture_status": "COLLECTED_TARGET",
       "attempt_count": 1,
       "basic_check": {
         "not_black": true,
@@ -2324,11 +2371,12 @@
         "not_browser_error": true,
         "no_error_overlay": true,
         "not_stuck_loading": true,
-        "target_state_visible": false,
+        "target_state_visible": true,
         "no_secret": true
       },
-      "notes": "打开生成抽屉，不提交 ; demoted: screenshot hash not unique across capture_ids",
-      "screenshot_sha256": "3cb3b183e05da8b629bd21a97eda3962fd17a74105fb26585115ff8357fe15ed"
+      "defect_classification": null,
+      "duplicate_hash_review": null,
+      "notes": "打开生成抽屉，不提交"
     },
     {
       "capture_id": "UI-041",
@@ -2388,7 +2436,7 @@
       },
       "actual_observed_state": "AI Content Factory 内容创作平台 首页 项目 素材 作品 流程 设置 CA 创作管理员 项目 / ACF Fixture Novel ACF Fixture Novel 小说 生产中 更新于 2026年1月1日 16:00 Deterministic end-to-end fixture project. 概览 策划 素材 故事线 章节规划 审核 作品 设置 章节规划 新增章节 auto_awesome 生成章节规划 当前章节 2 候选批次 1 article 全部章节 2 pending_actions 待确认 0 check_circle 已确认 2 edit_document 已生成草稿 0 状态 (全部) 待确认 已确认 已生成草稿 故事线 (全部) The Missing District The Red Index Card 来源 (全部) The blank",
       "screenshot_path": "screenshots/UI-041_P15_C2_PREFLIGHT_PROGRESS.png",
-      "capture_status": "COLLECTED_DEFECT",
+      "capture_status": "PRODUCT_DEFECT",
       "attempt_count": 2,
       "basic_check": {
         "not_black": true,
@@ -2401,7 +2449,9 @@
         "no_secret": true
       },
       "notes": "打开生成抽屉后启动受控表锁，再发起预检；截图后必须 RELEASE_HOLD。 ; failures: None of required texts found: [预检中, 正在检查, 请稍候]",
-      "screenshot_sha256": "fe20e73159989b3e1db8494bcb0993f4a40125b6bcd6e80b11c4fc96673fb241"
+      "screenshot_sha256": "fe20e73159989b3e1db8494bcb0993f4a40125b6bcd6e80b11c4fc96673fb241",
+      "defect_classification": "PRODUCT_DEFECT",
+      "duplicate_hash_review": "INVALID_DUPLICATE"
     },
     {
       "capture_id": "UI-042",
@@ -2414,17 +2464,13 @@
       },
       "actions_executed": [
         "click:生成章节规划",
-        "click:下一步|预检",
-        "click:生成章节规划",
         "click:下一步|预检"
       ],
       "selectors_used": [
-        "click ~ /生成章节规划/",
-        "click ~ /下一步|预检/",
-        "ov:生成章节规划",
-        "click ~ /生成章节规划/",
-        "click ~ /下一步|预检/",
-        "ov:生成章节规划"
+        "click:生成章节规划",
+        "click:预检",
+        "click:生成章节规划",
+        "click:预检"
       ],
       "expected_state": {
         "state_kind": "page_state",
@@ -2457,7 +2503,8 @@
       },
       "actual_observed_state": "AI Content Factory 内容创作平台 首页 项目 素材 作品 流程 设置 CA 创作管理员 项目 / ACF Fixture Novel ACF Fixture Novel 小说 生产中 更新于 2026年1月1日 16:00 Deterministic end-to-end fixture project. 概览 策划 素材 故事线 章节规划 审核 作品 设置 章节规划 新增章节 auto_awesome 生成章节规划 当前章节 2 候选批次 1 article 全部章节 2 pending_actions 待确认 0 check_circle 已确认 2 edit_document 已生成草稿 0 状态 (全部) 待确认 已确认 已生成草稿 故事线 (全部) The Missing District The Red Index Card 来源 (全部) The blank",
       "screenshot_path": "screenshots/UI-042_P15_C3_PREFLIGHT_PASS.png",
-      "capture_status": "COLLECTED_DEFECT",
+      "screenshot_sha256": "fe20e73159989b3e1db8494bcb0993f4a40125b6bcd6e80b11c4fc96673fb241",
+      "capture_status": "PRODUCT_DEFECT",
       "attempt_count": 2,
       "basic_check": {
         "not_black": true,
@@ -2469,8 +2516,9 @@
         "target_state_visible": false,
         "no_secret": true
       },
-      "notes": "运行只读预检或使用现有状态，不创建 Run ; failures: None of required texts found: [预检通过, 可以开始]",
-      "screenshot_sha256": "8a1426f538ee0a975ced35d362e721477197f05e6fdeab6958e48baa6c4df77d"
+      "defect_classification": "FIXTURE_STATE_MISMATCH",
+      "duplicate_hash_review": "INVALID_DUPLICATE",
+      "notes": "运行只读预检或使用现有状态，不创建 Run ; failures: required text missing: [预检通过, 可以开始]"
     },
     {
       "capture_id": "UI-043",
@@ -2482,10 +2530,7 @@
         "projectId": "10000000-0000-4000-8000-000000000001"
       },
       "actions_executed": [],
-      "selectors_used": [
-        "ov:生成章节规划",
-        "ov:生成章节规划"
-      ],
+      "selectors_used": [],
       "expected_state": {
         "state_kind": "error_or_blocked_state",
         "required_visible_text_any": [
@@ -2517,7 +2562,8 @@
       },
       "actual_observed_state": "AI Content Factory 内容创作平台 首页 项目 素材 作品 流程 设置 CA 创作管理员 项目 / ACF Fixture Novel ACF Fixture Novel 小说 生产中 更新于 2026年1月1日 16:00 Deterministic end-to-end fixture project. 概览 策划 素材 故事线 章节规划 审核 作品 设置 章节规划 新增章节 auto_awesome 生成章节规划 当前章节 2 候选批次 1 article 全部章节 2 pending_actions 待确认 0 check_circle 已确认 2 edit_document 已生成草稿 0 状态 (全部) 待确认 已确认 已生成草稿 故事线 (全部) The Missing District The Red Index Card 来源 (全部) The blank",
       "screenshot_path": "screenshots/UI-043_P15_C3_PREFLIGHT_BLOCKED.png",
-      "capture_status": "COLLECTED_DEFECT",
+      "screenshot_sha256": "3b122490b4b67008e8c982535410b987332fd90c85e7715fb8574720115bf943",
+      "capture_status": "PRODUCT_DEFECT",
       "attempt_count": 2,
       "basic_check": {
         "not_black": true,
@@ -2529,8 +2575,9 @@
         "target_state_visible": false,
         "no_secret": true
       },
-      "notes": "使用现有阻断状态 ; failures: None of required texts found: [预检未通过, 阻断原因]",
-      "screenshot_sha256": "3cb3b183e05da8b629bd21a97eda3962fd17a74105fb26585115ff8357fe15ed"
+      "defect_classification": "FIXTURE_STATE_MISMATCH",
+      "duplicate_hash_review": "INVALID_DUPLICATE",
+      "notes": "使用现有阻断状态 ; failures: required text missing: [预检未通过, 阻断原因]"
     },
     {
       "capture_id": "UI-044",
@@ -2544,20 +2591,15 @@
       "actions_executed": [
         "click:生成章节规划",
         "click:下一步|预检|开始预检",
-        "click_missed:创建任务|开始生成|确认生成",
-        "click:生成章节规划",
-        "click:下一步|预检|开始预检",
         "click_missed:创建任务|开始生成|确认生成"
       ],
       "selectors_used": [
-        "click ~ /生成章节规划/",
-        "click ~ /下一步|预检|开始预检/",
-        "MISS click ~ /创建任务|开始生成|确认生成/",
-        "ov:生成章节规划",
-        "click ~ /生成章节规划/",
-        "click ~ /下一步|预检|开始预检/",
-        "MISS click ~ /创建任务|开始生成|确认生成/",
-        "ov:生成章节规划"
+        "click:生成章节规划",
+        "click:预检",
+        "MISS:创建任务|开始生成|确认生成",
+        "click:生成章节规划",
+        "click:预检",
+        "MISS:创建任务|开始生成|确认生成"
       ],
       "expected_state": {
         "state_kind": "success_notice",
@@ -2590,7 +2632,8 @@
       },
       "actual_observed_state": "AI Content Factory 内容创作平台 首页 项目 素材 作品 流程 设置 CA 创作管理员 项目 / ACF Fixture Novel ACF Fixture Novel 小说 生产中 更新于 2026年1月1日 16:00 Deterministic end-to-end fixture project. 概览 策划 素材 故事线 章节规划 审核 作品 设置 章节规划 新增章节 auto_awesome 生成章节规划 当前章节 2 候选批次 1 article 全部章节 2 pending_actions 待确认 0 check_circle 已确认 2 edit_document 已生成草稿 0 状态 (全部) 待确认 已确认 已生成草稿 故事线 (全部) The Missing District The Red Index Card 来源 (全部) The blank",
       "screenshot_path": "screenshots/UI-044_P15_C3_RUN_CREATED.png",
-      "capture_status": "COLLECTED_DEFECT",
+      "screenshot_sha256": "fe20e73159989b3e1db8494bcb0993f4a40125b6bcd6e80b11c4fc96673fb241",
+      "capture_status": "PRODUCT_DEFECT",
       "attempt_count": 2,
       "basic_check": {
         "not_black": true,
@@ -2602,8 +2645,9 @@
         "target_state_visible": false,
         "no_secret": true
       },
-      "notes": "允许在隔离验收数据中创建一条真实章节规划 Run；下一场景会完整重载 Seed 并移除该临时 Run。 ; failures: None of required texts found: [任务已创建, 查看运行] | Required click not found: click_missed:创建任务|开始生成|确认生成,click_missed:创建任务|开始生成|确认生成",
-      "screenshot_sha256": "8a1426f538ee0a975ced35d362e721477197f05e6fdeab6958e48baa6c4df77d"
+      "defect_classification": "CAPTURE_INTERACTION_FAILURE",
+      "duplicate_hash_review": "INVALID_DUPLICATE",
+      "notes": "允许在隔离验收数据中创建一条真实章节规划 Run；下一场景会完整重载 Seed 并移除该临时 Run。 ; failures: required click missed | required text missing: [任务已创建, 查看运行]"
     },
     {
       "capture_id": "UI-045",
@@ -2660,7 +2704,8 @@
         "no_secret": true
       },
       "notes": "选择有候选批次项目",
-      "screenshot_sha256": "42bd0fccb7b65c96fd09075902c18720dc3d353246f59e4b1452f0428e97e72d"
+      "screenshot_sha256": "42bd0fccb7b65c96fd09075902c18720dc3d353246f59e4b1452f0428e97e72d",
+      "defect_classification": null
     },
     {
       "capture_id": "UI-046",
@@ -2718,7 +2763,8 @@
         "no_secret": true
       },
       "notes": "打开已有批次",
-      "screenshot_sha256": "e31e86c2b478aeff8623c288c5acbfd9f3d5c781f3df8a667d1de255f6f34520"
+      "screenshot_sha256": "e31e86c2b478aeff8623c288c5acbfd9f3d5c781f3df8a667d1de255f6f34520",
+      "defect_classification": null
     },
     {
       "capture_id": "UI-047",
@@ -2780,7 +2826,8 @@
         "no_secret": true
       },
       "notes": "打开编辑抽屉，不保存",
-      "screenshot_sha256": "b6ff851b4c02e345dbcc610f058c967ba5c4b040cdab4207a60e0d176f1736d9"
+      "screenshot_sha256": "b6ff851b4c02e345dbcc610f058c967ba5c4b040cdab4207a60e0d176f1736d9",
+      "defect_classification": null
     },
     {
       "capture_id": "UI-048",
@@ -2844,7 +2891,8 @@
         "no_secret": true
       },
       "notes": "打开差异对比",
-      "screenshot_sha256": "b7c3b5cd28f6c979930e786929145e7a0541401317ee9700b72ba794e99baf25"
+      "screenshot_sha256": "b7c3b5cd28f6c979930e786929145e7a0541401317ee9700b72ba794e99baf25",
+      "defect_classification": null
     },
     {
       "capture_id": "UI-049",
@@ -2906,7 +2954,8 @@
         "no_secret": true
       },
       "notes": "打开确认弹窗，不确认",
-      "screenshot_sha256": "b1f120cda261b6f994b809390f88129a0a63b502785b4d028c8438f255ae08dc"
+      "screenshot_sha256": "b1f120cda261b6f994b809390f88129a0a63b502785b4d028c8438f255ae08dc",
+      "defect_classification": null
     },
     {
       "capture_id": "UI-050",
@@ -2968,7 +3017,8 @@
         "no_secret": true
       },
       "notes": "打开确认弹窗，不确认",
-      "screenshot_sha256": "ff470fa6da5dd1b71093c86b532ef2d96aba534c921fcfae295a56f2ba3c42ae"
+      "screenshot_sha256": "ff470fa6da5dd1b71093c86b532ef2d96aba534c921fcfae295a56f2ba3c42ae",
+      "defect_classification": null
     },
     {
       "capture_id": "UI-051",
@@ -3011,9 +3061,10 @@
           "secret_absent"
         ]
       },
-      "actual_observed_state": "AI Content Factory 内容创作平台 首页 项目 素材 作品 流程 设置 CA 创作管理员 暂时无法加载项目",
+      "actual_observed_state": "AI Content Factory 内容创作平台 首页 项目 素材 作品 流程 设置 CA 创作管理员 项目 / ACF Fixture Novel ACF Fixture Novel 小说 生产中 更新于 2026年1月1日 16:00 Deterministic end-to-end fixture project. 概览 策划 素材 故事线 章节规划 审核 作品 设置 候选批次详情 追加后续 · 第 3–3 章 批量采用已选候选 (0) 放弃本批次 ← 返回批次列表 批次状态 待处理 总候选数 1 待处理 0 已过期 1 已采用 0 已丢弃 0 全部候选状态 待处理 已过期 已采用 已丢弃 全部差异类型 新设章节 替换候选 无变化 基线冲突 全部故事线 未命名故事线 清除筛选 选择 章节 候选标题与摘要 差异类型 状态 版本 关联故事线 操作 第 3 章 The Silent Ca",
       "screenshot_path": "screenshots/UI-051_P15_C10_STALE_CONFLICT_DIALOG.png",
-      "capture_status": "ROUTE_FAILED",
+      "screenshot_sha256": "da53e5a5c4724ff0f1d21378a5fe49546a81089028a1931c2a05712fe8a11cf9",
+      "capture_status": "COLLECTED_TARGET",
       "attempt_count": 1,
       "basic_check": {
         "not_black": true,
@@ -3022,11 +3073,12 @@
         "not_browser_error": true,
         "no_error_overlay": true,
         "not_stuck_loading": true,
-        "target_state_visible": false,
+        "target_state_visible": true,
         "no_secret": true
       },
-      "notes": "仅使用现有冲突状态；不得制造写冲突 ; failures: Scene switch failed: CANDIDATE_STALE",
-      "screenshot_sha256": "cfc1024af49361d97c10f30b8955ffdbebed47e6f21f22c28b314ac3fd684424"
+      "defect_classification": null,
+      "duplicate_hash_review": null,
+      "notes": "仅使用现有冲突状态；不得制造写冲突"
     },
     {
       "capture_id": "UI-052",
@@ -3083,7 +3135,8 @@
         "no_secret": true
       },
       "notes": "选择已有故事线项目",
-      "screenshot_sha256": "b75322e9f1b6cccbf584d71adaca756e6fe4df1feb28936fb423a97c3b821cb0"
+      "screenshot_sha256": "b75322e9f1b6cccbf584d71adaca756e6fe4df1feb28936fb423a97c3b821cb0",
+      "defect_classification": null
     },
     {
       "capture_id": "UI-053",
@@ -3099,7 +3152,7 @@
         "click:章节目标"
       ],
       "selectors_used": [
-        "role=tab name=\"章节目标\""
+        "tab_or_button:章节目标"
       ],
       "expected_state": {
         "state_kind": "page_state",
@@ -3130,7 +3183,8 @@
       },
       "actual_observed_state": "AI Content Factory 内容创作平台 首页 项目 素材 作品 流程 设置 CA 创作管理员 项目 / ACF Fixture Novel ACF Fixture Novel 小说 生产中 更新于 2026年1月1日 16:00 Deterministic end-to-end fixture project. 概览 策划 素材 故事线 章节规划 审核 作品 设置 正文生成未完成 Run ID: ACF-UI-DYNAMIC-CG 正文生成任务未完成 查看详情 重新执行 Runtime 章节导航 第 2 章 The Red Index Card 查看章节规划 第 2 章《The Red Index Card》 v3 工作流重写 可编辑草稿 已审核 27 字 保存草稿 生成正文 审核历史 查看审核结果 ¶ B ❝ — ↶ ↷ 标题 章节摘要 保存时清空摘要 正文 未保存 27 字",
       "screenshot_path": "screenshots/UI-053_I16_D1_EDITOR_CHAPTER_GOAL.png",
-      "capture_status": "COLLECTED_DEFECT",
+      "screenshot_sha256": "5803dbc315c707016e78cb51f19eb90ca2757cfa4f609ec4b73ef99f1059b781",
+      "capture_status": "PRODUCT_DEFECT",
       "attempt_count": 1,
       "basic_check": {
         "not_black": true,
@@ -3142,8 +3196,9 @@
         "target_state_visible": false,
         "no_secret": true
       },
-      "notes": "打开编辑器并选择章节目标 ; demoted: screenshot hash not unique across capture_ids",
-      "screenshot_sha256": "5803dbc315c707016e78cb51f19eb90ca2757cfa4f609ec4b73ef99f1059b781"
+      "defect_classification": "CAPTURE_INTERACTION_FAILURE",
+      "duplicate_hash_review": "INVALID_DUPLICATE_pending",
+      "notes": "打开编辑器并选择章节目标 ; demoted: non-unique screenshot hash"
     },
     {
       "capture_id": "UI-054",
@@ -3203,7 +3258,8 @@
         "no_secret": true
       },
       "notes": "选择故事情报 Tab",
-      "screenshot_sha256": "bd8c132947979f21d7441e2f6586e9c65e9c501847e4622c88217898f21357c3"
+      "screenshot_sha256": "bd8c132947979f21d7441e2f6586e9c65e9c501847e4622c88217898f21357c3",
+      "defect_classification": null
     },
     {
       "capture_id": "UI-055",
@@ -3263,7 +3319,8 @@
         "no_secret": true
       },
       "notes": "选择素材库 Tab",
-      "screenshot_sha256": "b9e34c3f86a06e31af41327eff33f37f34ea7d34ab50f34f5d7fff6c876c95e0"
+      "screenshot_sha256": "b9e34c3f86a06e31af41327eff33f37f34ea7d34ab50f34f5d7fff6c876c95e0",
+      "defect_classification": null
     },
     {
       "capture_id": "UI-056",
@@ -3276,12 +3333,11 @@
         "workId": "70000000-0000-4000-8000-000000000001"
       },
       "actions_executed": [
-        "click_missed:生成正文",
-        "click:生成正文"
+        "click_missed:生成正文"
       ],
       "selectors_used": [
-        "MISS click ~ /生成正文/",
-        "click force ~ /生成正文/"
+        "MISS:生成正文",
+        "MISS:生成正文"
       ],
       "expected_state": {
         "state_kind": "drawer",
@@ -3314,7 +3370,8 @@
       },
       "actual_observed_state": "AI Content Factory 内容创作平台 首页 项目 素材 作品 流程 设置 CA 创作管理员 项目 / ACF Fixture Novel ACF Fixture Novel 小说 生产中 更新于 2026年1月1日 16:00 Deterministic end-to-end fixture project. 概览 策划 素材 故事线 章节规划 审核 作品 设置 正文生成未完成 Run ID: ACF-UI-DYNAMIC-CG 正文生成任务未完成 查看详情 重新执行 Runtime 章节导航 第 2 章 The Red Index Card 查看章节规划 第 2 章《The Red Index Card》 v3 工作流重写 可编辑草稿 已审核 27 字 保存草稿 生成正文 审核历史 查看审核结果 ¶ B ❝ — ↶ ↷ 标题 章节摘要 保存时清空摘要 正文 未保存 27 字",
       "screenshot_path": "screenshots/UI-056_I16_D2_GENERATE_CONFIRM.png",
-      "capture_status": "COLLECTED_DEFECT",
+      "screenshot_sha256": "5803dbc315c707016e78cb51f19eb90ca2757cfa4f609ec4b73ef99f1059b781",
+      "capture_status": "PRODUCT_DEFECT",
       "attempt_count": 2,
       "basic_check": {
         "not_black": true,
@@ -3326,8 +3383,9 @@
         "target_state_visible": false,
         "no_secret": true
       },
-      "notes": "打开生成正文抽屉，不提交 ; failures: Required click not found: click_missed:生成正文",
-      "screenshot_sha256": "5803dbc315c707016e78cb51f19eb90ca2757cfa4f609ec4b73ef99f1059b781"
+      "defect_classification": "CAPTURE_INTERACTION_FAILURE",
+      "duplicate_hash_review": "INVALID_DUPLICATE",
+      "notes": "打开生成正文抽屉，不提交 ; failures: required click missed"
     },
     {
       "capture_id": "UI-057",
@@ -3382,7 +3440,7 @@
       },
       "actual_observed_state": "AI Content Factory 内容创作平台 首页 项目 素材 作品 流程 设置 CA 创作管理员 项目 / ACF Fixture Novel ACF Fixture Novel 小说 生产中 更新于 2026年1月1日 16:00 Deterministic end-to-end fixture project. 概览 策划 素材 故事线 章节规划 审核 作品 设置 正文生成未完成 Run ID: ACF-UI-DYNAMIC-CG 正文生成任务未完成 查看详情 重新执行 Runtime 章节导航 第 2 章 The Red Index Card 查看章节规划 第 2 章《The Red Index Card》 v3 工作流重写 可编辑草稿 已审核 27 字 保存草稿 生成正文 审核历史 查看审核结果 ¶ B ❝ — ↶ ↷ 标题 章节摘要 保存时清空摘要 正文 未保存 27 字",
       "screenshot_path": "screenshots/UI-057_I16_D2_GENERATE_REQUIREMENTS.png",
-      "capture_status": "COLLECTED_DEFECT",
+      "capture_status": "PRODUCT_DEFECT",
       "attempt_count": 2,
       "basic_check": {
         "not_black": true,
@@ -3395,7 +3453,8 @@
         "no_secret": true
       },
       "notes": "使用现有填写状态；不得提交 ; failures: None of required texts found: [保持克制的悬疑语气, 1800]",
-      "screenshot_sha256": "a4c5e331cf3d8cc3948c6a8a00b0f067d84a113f96609f8cc25c92b5bb17f177"
+      "screenshot_sha256": "a4c5e331cf3d8cc3948c6a8a00b0f067d84a113f96609f8cc25c92b5bb17f177",
+      "defect_classification": "PRODUCT_DEFECT"
     },
     {
       "capture_id": "UI-058",
@@ -3453,7 +3512,8 @@
         "no_secret": true
       },
       "notes": "选择 queued 记录",
-      "screenshot_sha256": "cb8317775da8d30c137340176ab837e9971a597a2bbec02598ef205d178d0af0"
+      "screenshot_sha256": "cb8317775da8d30c137340176ab837e9971a597a2bbec02598ef205d178d0af0",
+      "defect_classification": null
     },
     {
       "capture_id": "UI-059",
@@ -3511,7 +3571,8 @@
         "no_secret": true
       },
       "notes": "选择 running 记录",
-      "screenshot_sha256": "025c50cafc15ae3c26e96ea60f72035e44262d236afff66af125c1d0c8b89803"
+      "screenshot_sha256": "025c50cafc15ae3c26e96ea60f72035e44262d236afff66af125c1d0c8b89803",
+      "defect_classification": null
     },
     {
       "capture_id": "UI-060",
@@ -3569,7 +3630,8 @@
         "no_secret": true
       },
       "notes": "选择 candidate_ready 记录",
-      "screenshot_sha256": "80b4a1eec92543b0f89fbbc7d621673da3ea1011d86db94a3d477408af4a7120"
+      "screenshot_sha256": "80b4a1eec92543b0f89fbbc7d621673da3ea1011d86db94a3d477408af4a7120",
+      "defect_classification": null
     },
     {
       "capture_id": "UI-061",
@@ -3617,7 +3679,7 @@
       },
       "actual_observed_state": "AI Content Factory 内容创作平台 首页 项目 素材 作品 流程 设置 CA 创作管理员 项目 / ACF Fixture Novel ACF Fixture Novel 小说 生产中 更新于 2026年1月1日 16:00 Deterministic end-to-end fixture project. 概览 策划 素材 故事线 章节规划 审核 作品 设置 正文生成未完成 Run ID: ACF-UI-DYNAMIC-CG 正文生成任务未完成 收起详情 重新执行 Runtime 任务失败2026/1/1 19:10:00 章节导航 第 2 章 The Red Index Card 查看章节规划 第 2 章《The Red Index Card》 v3 工作流重写 可编辑草稿 已审核 27 字 保存草稿 生成正文 审核历史 查看审核结果 ¶ B ❝ — ↶ ↷ 标题 章节",
       "screenshot_path": "screenshots/UI-061_I16_D3_RUN_FAILED.png",
-      "capture_status": "COLLECTED_DEFECT",
+      "capture_status": "PRODUCT_DEFECT",
       "attempt_count": 2,
       "basic_check": {
         "not_black": true,
@@ -3630,7 +3692,8 @@
         "no_secret": true
       },
       "notes": "选择失败记录 ; failures: None of required texts found: [生成失败, 重试]",
-      "screenshot_sha256": "51ed13e4d8c4fe4d2b803468e8b1227e3a38fe40a64b05ea3d4fd74b3ceb763a"
+      "screenshot_sha256": "51ed13e4d8c4fe4d2b803468e8b1227e3a38fe40a64b05ea3d4fd74b3ceb763a",
+      "defect_classification": "PRODUCT_DEFECT"
     },
     {
       "capture_id": "UI-062",
@@ -3643,12 +3706,11 @@
         "workId": "70000000-0000-4000-8000-000000000001"
       },
       "actions_executed": [
-        "click_missed:查看候选|比较版本",
         "click_missed:查看候选|比较版本"
       ],
       "selectors_used": [
-        "MISS click ~ /查看候选|比较版本/",
-        "MISS click ~ /查看候选|比较版本/"
+        "MISS:查看候选|比较版本",
+        "MISS:查看候选|比较版本"
       ],
       "expected_state": {
         "state_kind": "page_state",
@@ -3683,7 +3745,8 @@
       },
       "actual_observed_state": "AI Content Factory 内容创作平台 首页 项目 素材 作品 流程 设置 CA 创作管理员 项目 / ACF Fixture Novel ACF Fixture Novel 小说 生产中 更新于 2026年1月1日 16:00 Deterministic end-to-end fixture project. 概览 策划 素材 故事线 章节规划 审核 作品 设置 正文生成未完成 Run ID: ACF-UI-DYNAMIC-CG 正文生成任务未完成 查看详情 重新执行 Runtime 章节导航 第 2 章 The Red Index Card 查看章节规划 第 2 章《The Red Index Card》 v3 工作流重写 可编辑草稿 已审核 27 字 保存草稿 生成正文 审核历史 查看审核结果 ¶ B ❝ — ↶ ↷ 标题 章节摘要 保存时清空摘要 正文 未保存 27 字",
       "screenshot_path": "screenshots/UI-062_I16_D4_CANDIDATE_VERSION.png",
-      "capture_status": "COLLECTED_DEFECT",
+      "screenshot_sha256": "5803dbc315c707016e78cb51f19eb90ca2757cfa4f609ec4b73ef99f1059b781",
+      "capture_status": "PRODUCT_DEFECT",
       "attempt_count": 2,
       "basic_check": {
         "not_black": true,
@@ -3695,8 +3758,9 @@
         "target_state_visible": false,
         "no_secret": true
       },
-      "notes": "打开已有候选版本 ; failures: None of required texts found: [当前版本, 候选版本, 比较] | Required click not found: click_missed:查看候选|比较版本,click_missed:查看候选|比较版本",
-      "screenshot_sha256": "5803dbc315c707016e78cb51f19eb90ca2757cfa4f609ec4b73ef99f1059b781"
+      "defect_classification": "CAPTURE_INTERACTION_FAILURE",
+      "duplicate_hash_review": "INVALID_DUPLICATE",
+      "notes": "打开已有候选版本 ; failures: required click missed | required text missing: [当前版本, 候选版本, 比较]"
     },
     {
       "capture_id": "UI-063",
@@ -3741,7 +3805,8 @@
       },
       "actual_observed_state": "AI Content Factory 内容创作平台 首页 项目 素材 作品 流程 设置 CA 创作管理员 项目 / ACF Fixture Novel ACF Fixture Novel 小说 生产中 更新于 2026年1月1日 16:00 Deterministic end-to-end fixture project. 概览 策划 素材 故事线 章节规划 审核 作品 设置 正文生成未完成 Run ID: ACF-UI-DYNAMIC-CG 正文生成任务未完成 查看详情 重新执行 Runtime 章节导航 第 2 章 The Red Index Card 查看章节规划 第 2 章《The Red Index Card》 v3 工作流重写 可编辑草稿 已审核 27 字 保存草稿 生成正文 审核历史 查看审核结果 ¶ B ❝ — ↶ ↷ 标题 章节摘要 保存时清空摘要 正文 未保存 27 字",
       "screenshot_path": "screenshots/UI-063_I16_D5_NOT_CONFIGURED.png",
-      "capture_status": "COLLECTED_DEFECT",
+      "screenshot_sha256": "5803dbc315c707016e78cb51f19eb90ca2757cfa4f609ec4b73ef99f1059b781",
+      "capture_status": "PRODUCT_DEFECT",
       "attempt_count": 2,
       "basic_check": {
         "not_black": true,
@@ -3753,8 +3818,9 @@
         "target_state_visible": false,
         "no_secret": true
       },
-      "notes": "选择未配置项目 ; failures: None of required texts found: [未配置, 正文生成工作流]",
-      "screenshot_sha256": "5803dbc315c707016e78cb51f19eb90ca2757cfa4f609ec4b73ef99f1059b781"
+      "defect_classification": "FIXTURE_STATE_MISMATCH",
+      "duplicate_hash_review": "INVALID_DUPLICATE",
+      "notes": "选择未配置项目 ; failures: required text missing: [未配置, 正文生成工作流]"
     },
     {
       "capture_id": "UI-064",
@@ -3797,7 +3863,8 @@
       },
       "actual_observed_state": "AI Content Factory 内容创作平台 首页 项目 素材 作品 流程 设置 CA 创作管理员 项目 / ACF Fixture Novel ACF Fixture Novel 小说 生产中 更新于 2026年1月1日 16:00 Deterministic end-to-end fixture project. 概览 策划 素材 故事线 章节规划 审核 作品 设置 正文生成未完成 Run ID: ACF-UI-DYNAMIC-CG 正文生成任务未完成 查看详情 重新执行 Runtime 章节导航 第 2 章 The Red Index Card 查看章节规划 第 2 章《The Red Index Card》 v3 工作流重写 可编辑草稿 已审核 27 字 保存草稿 生成正文 审核历史 查看审核结果 ¶ B ❝ — ↶ ↷ 标题 章节摘要 保存时清空摘要 正文 未保存 27 字",
       "screenshot_path": "screenshots/UI-064_I17_D1_EDITOR_REVIEW_ENTRY.png",
-      "capture_status": "COLLECTED_DEFECT",
+      "screenshot_sha256": "5803dbc315c707016e78cb51f19eb90ca2757cfa4f609ec4b73ef99f1059b781",
+      "capture_status": "PRODUCT_DEFECT",
       "attempt_count": 2,
       "basic_check": {
         "not_black": true,
@@ -3809,8 +3876,9 @@
         "target_state_visible": false,
         "no_secret": true
       },
-      "notes": "打开已保存正文 ; failures: None of required texts found: [提交审核]",
-      "screenshot_sha256": "5803dbc315c707016e78cb51f19eb90ca2757cfa4f609ec4b73ef99f1059b781"
+      "defect_classification": "FIXTURE_STATE_MISMATCH",
+      "duplicate_hash_review": "INVALID_DUPLICATE",
+      "notes": "打开已保存正文 ; failures: required text missing: [提交审核]"
     },
     {
       "capture_id": "UI-065",
@@ -3823,12 +3891,11 @@
         "workId": "70000000-0000-4000-8000-000000000001"
       },
       "actions_executed": [
-        "click_missed:提交审核|发起审核",
         "click_missed:提交审核|发起审核"
       ],
       "selectors_used": [
-        "MISS click ~ /提交审核|发起审核/",
-        "MISS click ~ /提交审核|发起审核/"
+        "MISS:提交审核|发起审核",
+        "MISS:提交审核|发起审核"
       ],
       "expected_state": {
         "state_kind": "drawer",
@@ -3861,7 +3928,8 @@
       },
       "actual_observed_state": "AI Content Factory 内容创作平台 首页 项目 素材 作品 流程 设置 CA 创作管理员 项目 / ACF Fixture Novel ACF Fixture Novel 小说 生产中 更新于 2026年1月1日 16:00 Deterministic end-to-end fixture project. 概览 策划 素材 故事线 章节规划 审核 作品 设置 正文生成未完成 Run ID: ACF-UI-DYNAMIC-CG 正文生成任务未完成 查看详情 重新执行 Runtime 章节导航 第 2 章 The Red Index Card 查看章节规划 第 2 章《The Red Index Card》 v3 工作流重写 可编辑草稿 已审核 27 字 保存草稿 生成正文 审核历史 查看审核结果 ¶ B ❝ — ↶ ↷ 标题 章节摘要 保存时清空摘要 正文 未保存 27 字",
       "screenshot_path": "screenshots/UI-065_D2_SUBMIT_REVIEW_DRAWER.png",
-      "capture_status": "COLLECTED_DEFECT",
+      "screenshot_sha256": "5803dbc315c707016e78cb51f19eb90ca2757cfa4f609ec4b73ef99f1059b781",
+      "capture_status": "PRODUCT_DEFECT",
       "attempt_count": 2,
       "basic_check": {
         "not_black": true,
@@ -3873,8 +3941,9 @@
         "target_state_visible": false,
         "no_secret": true
       },
-      "notes": "打开审核抽屉，不提交 ; failures: None of required texts found: [发起审核, 审核范围] | Required click not found: click_missed:提交审核|发起审核,click_missed:提交审核|发起审核",
-      "screenshot_sha256": "5803dbc315c707016e78cb51f19eb90ca2757cfa4f609ec4b73ef99f1059b781"
+      "defect_classification": "CAPTURE_INTERACTION_FAILURE",
+      "duplicate_hash_review": "INVALID_DUPLICATE",
+      "notes": "打开审核抽屉，不提交 ; failures: required click missed | required text missing: [发起审核, 审核范围]"
     },
     {
       "capture_id": "UI-066",
@@ -3932,7 +4001,8 @@
         "no_secret": true
       },
       "notes": "选择 queued/running 审核",
-      "screenshot_sha256": "5cffa3f40df3cc0a4b71b0a1e099e03d2c35b52f1cde7f8e19c9815408619c75"
+      "screenshot_sha256": "5cffa3f40df3cc0a4b71b0a1e099e03d2c35b52f1cde7f8e19c9815408619c75",
+      "defect_classification": null
     },
     {
       "capture_id": "UI-067",
@@ -3978,7 +4048,8 @@
       },
       "actual_observed_state": "This page couldn’t load Reload to try again, or go back. Reload Back",
       "screenshot_path": "screenshots/UI-067_D2_REVIEW_V2.png",
-      "capture_status": "COLLECTED_DEFECT",
+      "screenshot_sha256": "63bc9fada2b3502caae64e9b52b58cd16f8a252cb006097d129faaeb5b29da1e",
+      "capture_status": "PRODUCT_DEFECT",
       "attempt_count": 2,
       "basic_check": {
         "not_black": true,
@@ -3990,8 +4061,9 @@
         "target_state_visible": false,
         "no_secret": true
       },
-      "notes": "选择 review_ready 报告 ; failures: None of required texts found: [审核结果, 问题列表]",
-      "screenshot_sha256": "63bc9fada2b3502caae64e9b52b58cd16f8a252cb006097d129faaeb5b29da1e"
+      "defect_classification": "FIXTURE_STATE_MISMATCH",
+      "duplicate_hash_review": "INVALID_DUPLICATE",
+      "notes": "选择 review_ready 报告 ; failures: required text missing: [审核结果, 问题列表]"
     },
     {
       "capture_id": "UI-068",
@@ -4038,7 +4110,8 @@
       },
       "actual_observed_state": "This page couldn’t load Reload to try again, or go back. Reload Back",
       "screenshot_path": "screenshots/UI-068_I17_D2_REVIEW_ISSUE_DETAIL.png",
-      "capture_status": "COLLECTED_DEFECT",
+      "screenshot_sha256": "63bc9fada2b3502caae64e9b52b58cd16f8a252cb006097d129faaeb5b29da1e",
+      "capture_status": "PRODUCT_DEFECT",
       "attempt_count": 2,
       "basic_check": {
         "not_black": true,
@@ -4050,8 +4123,9 @@
         "target_state_visible": false,
         "no_secret": true
       },
-      "notes": "选择有定位信息的 Issue ; failures: None of required texts found: [问题详情, 全文定位]",
-      "screenshot_sha256": "63bc9fada2b3502caae64e9b52b58cd16f8a252cb006097d129faaeb5b29da1e"
+      "defect_classification": "FIXTURE_STATE_MISMATCH",
+      "duplicate_hash_review": "INVALID_DUPLICATE",
+      "notes": "选择有定位信息的 Issue ; failures: required text missing: [问题详情, 全文定位]"
     },
     {
       "capture_id": "UI-069",
@@ -4109,7 +4183,8 @@
         "no_secret": true
       },
       "notes": "选择失败审核",
-      "screenshot_sha256": "d1a646b930fb1446980cb66eda942ba8737bd64506371de326008a72e9cd393e"
+      "screenshot_sha256": "d1a646b930fb1446980cb66eda942ba8737bd64506371de326008a72e9cd393e",
+      "defect_classification": null
     },
     {
       "capture_id": "UI-070",
@@ -4167,7 +4242,8 @@
         "no_secret": true
       },
       "notes": "选择未配置项目",
-      "screenshot_sha256": "5c97a1e36ad1ed03e460635950c8039a10d2831bead8f3e86ab4bc83e36fa265"
+      "screenshot_sha256": "5c97a1e36ad1ed03e460635950c8039a10d2831bead8f3e86ab4bc83e36fa265",
+      "defect_classification": null
     },
     {
       "capture_id": "UI-071",
@@ -4225,7 +4301,8 @@
         "no_secret": true
       },
       "notes": "打开有历史记录的正文",
-      "screenshot_sha256": "27b6b64fb40725b7503c751ee10c84666fedb254393cd18b399a46d8d03cf7f1"
+      "screenshot_sha256": "27b6b64fb40725b7503c751ee10c84666fedb254393cd18b399a46d8d03cf7f1",
+      "defect_classification": null
     },
     {
       "capture_id": "UI-072",
@@ -4271,7 +4348,8 @@
       },
       "actual_observed_state": "This page couldn’t load Reload to try again, or go back. Reload Back",
       "screenshot_path": "screenshots/UI-072_I18_D2_REVIEW_REWRITE_ENTRY.png",
-      "capture_status": "COLLECTED_DEFECT",
+      "screenshot_sha256": "63bc9fada2b3502caae64e9b52b58cd16f8a252cb006097d129faaeb5b29da1e",
+      "capture_status": "PRODUCT_DEFECT",
       "attempt_count": 2,
       "basic_check": {
         "not_black": true,
@@ -4283,8 +4361,9 @@
         "target_state_visible": false,
         "no_secret": true
       },
-      "notes": "选择可处理 Issue，不创建任务 ; failures: None of required texts found: [创建重写, 已选择问题]",
-      "screenshot_sha256": "63bc9fada2b3502caae64e9b52b58cd16f8a252cb006097d129faaeb5b29da1e"
+      "defect_classification": "FIXTURE_STATE_MISMATCH",
+      "duplicate_hash_review": "INVALID_DUPLICATE",
+      "notes": "选择可处理 Issue，不创建任务 ; failures: required text missing: [创建重写, 已选择问题]"
     },
     {
       "capture_id": "UI-073",
@@ -4330,7 +4409,8 @@
       },
       "actual_observed_state": "AI Content Factory 内容创作平台 首页 项目 素材 作品 流程 设置 CA 创作管理员 暂时无法读取重写状态 暂时无法读取重写状态，请稍后重试。 重试",
       "screenshot_path": "screenshots/UI-073_I18_D4_CREATE_REWRITE.png",
-      "capture_status": "COLLECTED_DEFECT",
+      "screenshot_sha256": "c76b26b5efa3a8a899ea73512cbe353fcd32a62808a21d40e6fd41d871338ac6",
+      "capture_status": "PRODUCT_DEFECT",
       "attempt_count": 2,
       "basic_check": {
         "not_black": true,
@@ -4342,8 +4422,9 @@
         "target_state_visible": false,
         "no_secret": true
       },
-      "notes": "打开创建页，不提交 ; failures: None of required texts found: [创建正文重写, 所选问题]",
-      "screenshot_sha256": "c76b26b5efa3a8a899ea73512cbe353fcd32a62808a21d40e6fd41d871338ac6"
+      "defect_classification": "FIXTURE_STATE_MISMATCH",
+      "duplicate_hash_review": "INVALID_DUPLICATE",
+      "notes": "打开创建页，不提交 ; failures: required text missing: [创建正文重写, 所选问题]"
     },
     {
       "capture_id": "UI-074",
@@ -4357,12 +4438,11 @@
         "reviewReportId": "80000000-0000-4000-8000-000000000001"
       },
       "actions_executed": [
-        "click_missed:查看配置|重写配置",
         "click_missed:查看配置|重写配置"
       ],
       "selectors_used": [
-        "MISS click ~ /查看配置|重写配置/",
-        "MISS click ~ /查看配置|重写配置/"
+        "MISS:查看配置|重写配置",
+        "MISS:查看配置|重写配置"
       ],
       "expected_state": {
         "state_kind": "drawer",
@@ -4395,7 +4475,8 @@
       },
       "actual_observed_state": "AI Content Factory 内容创作平台 首页 项目 素材 作品 流程 设置 CA 创作管理员 暂时无法读取重写状态 暂时无法读取重写状态，请稍后重试。 重试",
       "screenshot_path": "screenshots/UI-074_I18_D4_REWRITE_CONFIG_DRAWER.png",
-      "capture_status": "COLLECTED_DEFECT",
+      "screenshot_sha256": "c76b26b5efa3a8a899ea73512cbe353fcd32a62808a21d40e6fd41d871338ac6",
+      "capture_status": "PRODUCT_DEFECT",
       "attempt_count": 2,
       "basic_check": {
         "not_black": true,
@@ -4407,8 +4488,9 @@
         "target_state_visible": false,
         "no_secret": true
       },
-      "notes": "打开配置抽屉 ; failures: None of required texts found: [重写配置, 工作流] | Required click not found: click_missed:查看配置|重写配置,click_missed:查看配置|重写配置",
-      "screenshot_sha256": "c76b26b5efa3a8a899ea73512cbe353fcd32a62808a21d40e6fd41d871338ac6"
+      "defect_classification": "CAPTURE_INTERACTION_FAILURE",
+      "duplicate_hash_review": "INVALID_DUPLICATE",
+      "notes": "打开配置抽屉 ; failures: required click missed | required text missing: [重写配置, 工作流]"
     },
     {
       "capture_id": "UI-075",
@@ -4454,7 +4536,7 @@
       },
       "actual_observed_state": "AI Content Factory 内容创作平台 首页 项目 素材 作品 流程 设置 CA 创作管理员 运行中 重写任务正在运行 正在依据固定来源版本生成候选正文。 固定来源版本 V2 · The Red Index Card 审核报告 已固定 已选问题 1 个 当前运行 ACF-UI-DYNAMIC-REWRITE 执行进度 未知运行事件 · 2026年1月1日 19:30 取消运行 刷新状态",
       "screenshot_path": "screenshots/UI-075_I18_D4_REWRITE_RUNNING.png",
-      "capture_status": "COLLECTED_DEFECT",
+      "capture_status": "PRODUCT_DEFECT",
       "attempt_count": 2,
       "basic_check": {
         "not_black": true,
@@ -4467,7 +4549,8 @@
         "no_secret": true
       },
       "notes": "选择 queued/running 重写 ; failures: None of required texts found: [重写中, 运行详情]",
-      "screenshot_sha256": "8e4315036c66251ee74795314270876b8393406b7d1cf19f9f298b961aaa9ce0"
+      "screenshot_sha256": "8e4315036c66251ee74795314270876b8393406b7d1cf19f9f298b961aaa9ce0",
+      "defect_classification": "PRODUCT_DEFECT"
     },
     {
       "capture_id": "UI-076",
@@ -4513,7 +4596,8 @@
       },
       "actual_observed_state": "AI Content Factory 内容创作平台 首页 项目 素材 作品 流程 设置 CA 创作管理员 配置检查 项目重写配置不可用 前往项目设置检查工作流与连接。 返回审核结果 刷新可用性",
       "screenshot_path": "screenshots/UI-076_I18_D5_REWRITE_RESULT.png",
-      "capture_status": "COLLECTED_DEFECT",
+      "screenshot_sha256": "f9aa2d2d07129b40646ad6a806e9a41f09382fb282905a956978a89dd4d4bcea",
+      "capture_status": "PRODUCT_DEFECT",
       "attempt_count": 2,
       "basic_check": {
         "not_black": true,
@@ -4525,8 +4609,9 @@
         "target_state_visible": false,
         "no_secret": true
       },
-      "notes": "选择 candidate_ready 重写 ; failures: None of required texts found: [重写候选, 设为当前版本]",
-      "screenshot_sha256": "f9aa2d2d07129b40646ad6a806e9a41f09382fb282905a956978a89dd4d4bcea"
+      "defect_classification": "FIXTURE_STATE_MISMATCH",
+      "duplicate_hash_review": "INVALID_DUPLICATE",
+      "notes": "选择 candidate_ready 重写 ; failures: required text missing: [重写候选, 设为当前版本]"
     },
     {
       "capture_id": "UI-077",
@@ -4540,12 +4625,11 @@
         "workflowRunId": "5a000000-0000-4000-8000-000000000004"
       },
       "actions_executed": [
-        "click_missed:设为当前版本",
         "click_missed:设为当前版本"
       ],
       "selectors_used": [
-        "MISS click ~ /设为当前版本/",
-        "MISS click ~ /设为当前版本/"
+        "MISS:设为当前版本",
+        "MISS:设为当前版本"
       ],
       "expected_state": {
         "state_kind": "dialog",
@@ -4578,7 +4662,8 @@
       },
       "actual_observed_state": "AI Content Factory 内容创作平台 首页 项目 素材 作品 流程 设置 CA 创作管理员 配置检查 项目重写配置不可用 前往项目设置检查工作流与连接。 返回审核结果 刷新可用性",
       "screenshot_path": "screenshots/UI-077_I18_D5_SET_CURRENT_CONFIRM.png",
-      "capture_status": "COLLECTED_DEFECT",
+      "screenshot_sha256": "f9aa2d2d07129b40646ad6a806e9a41f09382fb282905a956978a89dd4d4bcea",
+      "capture_status": "PRODUCT_DEFECT",
       "attempt_count": 2,
       "basic_check": {
         "not_black": true,
@@ -4590,8 +4675,9 @@
         "target_state_visible": false,
         "no_secret": true
       },
-      "notes": "打开确认弹窗，不确认 ; failures: None of required texts found: [设为当前版本, 确认] | Target component not visible for state_kind=dialog | Required click not found: click_missed:设为当前版本,click_missed:设为当前版本",
-      "screenshot_sha256": "f9aa2d2d07129b40646ad6a806e9a41f09382fb282905a956978a89dd4d4bcea"
+      "defect_classification": "CAPTURE_INTERACTION_FAILURE",
+      "duplicate_hash_review": "INVALID_DUPLICATE",
+      "notes": "打开确认弹窗，不确认 ; failures: required click missed | dialog not visible | required text missing: [设为当前版本, 确认]"
     },
     {
       "capture_id": "UI-078",
@@ -4605,9 +4691,7 @@
         "workflowRunId": "5a000000-0000-4000-8000-000000000004"
       },
       "actions_executed": [],
-      "selectors_used": [
-        "ov:重试"
-      ],
+      "selectors_used": [],
       "expected_state": {
         "state_kind": "error_or_blocked_state",
         "required_visible_text_any": [
@@ -4639,7 +4723,8 @@
       },
       "actual_observed_state": "AI Content Factory 内容创作平台 首页 项目 素材 作品 流程 设置 CA 创作管理员 暂时无法读取重写状态 暂时无法读取重写状态，请稍后重试。 重试",
       "screenshot_path": "screenshots/UI-078_I18_D5_RESULT_CONSUMPTION_FAILED.png",
-      "capture_status": "COLLECTED_DEFECT",
+      "screenshot_sha256": "c76b26b5efa3a8a899ea73512cbe353fcd32a62808a21d40e6fd41d871338ac6",
+      "capture_status": "PRODUCT_DEFECT",
       "attempt_count": 1,
       "basic_check": {
         "not_black": true,
@@ -4651,8 +4736,9 @@
         "target_state_visible": false,
         "no_secret": true
       },
-      "notes": "选择 result_consumption_failed ; demoted: screenshot hash not unique across capture_ids",
-      "screenshot_sha256": "c76b26b5efa3a8a899ea73512cbe353fcd32a62808a21d40e6fd41d871338ac6"
+      "defect_classification": "CAPTURE_INTERACTION_FAILURE",
+      "duplicate_hash_review": "INVALID_DUPLICATE_pending",
+      "notes": "选择 result_consumption_failed ; demoted: non-unique screenshot hash"
     },
     {
       "capture_id": "UI-079",
@@ -4666,10 +4752,7 @@
         "workflowRunId": "5a000000-0000-4000-8000-000000000004"
       },
       "actions_executed": [],
-      "selectors_used": [
-        "ov:重试",
-        "ov:重试"
-      ],
+      "selectors_used": [],
       "expected_state": {
         "state_kind": "error_or_blocked_state",
         "required_visible_text_any": [
@@ -4701,7 +4784,8 @@
       },
       "actual_observed_state": "AI Content Factory 内容创作平台 首页 项目 素材 作品 流程 设置 CA 创作管理员 暂时无法读取重写状态 暂时无法读取重写状态，请稍后重试。 重试",
       "screenshot_path": "screenshots/UI-079_I18_D4_REWRITE_FAILED.png",
-      "capture_status": "COLLECTED_DEFECT",
+      "screenshot_sha256": "c76b26b5efa3a8a899ea73512cbe353fcd32a62808a21d40e6fd41d871338ac6",
+      "capture_status": "PRODUCT_DEFECT",
       "attempt_count": 2,
       "basic_check": {
         "not_black": true,
@@ -4713,8 +4797,9 @@
         "target_state_visible": false,
         "no_secret": true
       },
-      "notes": "选择 runtime/output validation failed ; failures: None of required texts found: [重写失败, 错误原因]",
-      "screenshot_sha256": "c76b26b5efa3a8a899ea73512cbe353fcd32a62808a21d40e6fd41d871338ac6"
+      "defect_classification": "FIXTURE_STATE_MISMATCH",
+      "duplicate_hash_review": "INVALID_DUPLICATE",
+      "notes": "选择 runtime/output validation failed ; failures: required text missing: [重写失败, 错误原因]"
     },
     {
       "capture_id": "UI-080",
@@ -4760,7 +4845,8 @@
       },
       "actual_observed_state": "AI Content Factory 内容创作平台 首页 项目 素材 作品 流程 设置 CA 创作管理员 暂时无法读取重写状态 暂时无法读取重写状态，请稍后重试。 重试",
       "screenshot_path": "screenshots/UI-080_I18_D4_REWRITE_AVAILABILITY.png",
-      "capture_status": "COLLECTED_DEFECT",
+      "screenshot_sha256": "c76b26b5efa3a8a899ea73512cbe353fcd32a62808a21d40e6fd41d871338ac6",
+      "capture_status": "PRODUCT_DEFECT",
       "attempt_count": 2,
       "basic_check": {
         "not_black": true,
@@ -4772,8 +4858,9 @@
         "target_state_visible": false,
         "no_secret": true
       },
-      "notes": "选择对应现有不可用状态 ; failures: None of required texts found: [不可执行, 配置已变更]",
-      "screenshot_sha256": "c76b26b5efa3a8a899ea73512cbe353fcd32a62808a21d40e6fd41d871338ac6"
+      "defect_classification": "FIXTURE_STATE_MISMATCH",
+      "duplicate_hash_review": "INVALID_DUPLICATE",
+      "notes": "选择对应现有不可用状态 ; failures: required text missing: [不可执行, 配置已变更]"
     },
     {
       "capture_id": "UI-081",
@@ -4785,9 +4872,7 @@
         "projectId": "10000000-0000-4000-8000-000000000001"
       },
       "actions_executed": [],
-      "selectors_used": [
-        "ov:生成章节规划"
-      ],
+      "selectors_used": [],
       "expected_state": {
         "state_kind": "error_or_blocked_state",
         "required_visible_text_any": [
@@ -4819,7 +4904,8 @@
       },
       "actual_observed_state": "AI Content Factory 内容创作平台 首页 项目 素材 作品 流程 设置 CA 创作管理员 项目 / ACF Fixture Novel ACF Fixture Novel 小说 生产中 更新于 2026年1月1日 16:00 Deterministic end-to-end fixture project. 概览 策划 素材 故事线 章节规划 审核 作品 设置 章节规划 新增章节 auto_awesome 生成章节规划 当前章节 2 候选批次 1 article 全部章节 2 pending_actions 待确认 0 check_circle 已确认 2 edit_document 已生成草稿 0 状态 (全部) 待确认 已确认 已生成草稿 故事线 (全部) The Missing District The Red Index Card 来源 (全部) The blank",
       "screenshot_path": "screenshots/UI-081_I19_14_SHARED_PREFLIGHT_BLOCKED.png",
-      "capture_status": "COLLECTED_DEFECT",
+      "screenshot_sha256": "3b122490b4b67008e8c982535410b987332fd90c85e7715fb8574720115bf943",
+      "capture_status": "PRODUCT_DEFECT",
       "attempt_count": 1,
       "basic_check": {
         "not_black": true,
@@ -4831,8 +4917,9 @@
         "target_state_visible": false,
         "no_secret": true
       },
-      "notes": "打开章节规划发起区的阻断状态 ; demoted: shared screenshot hash with UI-040",
-      "screenshot_sha256": "3cb3b183e05da8b629bd21a97eda3962fd17a74105fb26585115ff8357fe15ed"
+      "defect_classification": "CAPTURE_INTERACTION_FAILURE",
+      "duplicate_hash_review": "INVALID_DUPLICATE_pending",
+      "notes": "打开章节规划发起区的阻断状态 ; demoted: non-unique screenshot hash"
     },
     {
       "capture_id": "UI-082",
@@ -4877,7 +4964,8 @@
       },
       "actual_observed_state": "AI Content Factory 内容创作平台 首页 项目 素材 作品 流程 设置 CA 创作管理员 项目 / ACF Fixture Novel ACF Fixture Novel 小说 生产中 更新于 2026年1月1日 16:00 Deterministic end-to-end fixture project. 概览 策划 素材 故事线 章节规划 审核 作品 设置 正文生成未完成 Run ID: ACF-UI-DYNAMIC-CG 正文生成任务未完成 查看详情 重新执行 Runtime 章节导航 第 2 章 The Red Index Card 查看章节规划 第 2 章《The Red Index Card》 v3 工作流重写 可编辑草稿 已审核 27 字 保存草稿 生成正文 审核历史 查看审核结果 ¶ B ❝ — ↶ ↷ 标题 章节摘要 保存时清空摘要 正文 未保存 27 字",
       "screenshot_path": "screenshots/UI-082_I19_14_SHARED_PREFLIGHT_BLOCKED.png",
-      "capture_status": "COLLECTED_DEFECT",
+      "screenshot_sha256": "5803dbc315c707016e78cb51f19eb90ca2757cfa4f609ec4b73ef99f1059b781",
+      "capture_status": "PRODUCT_DEFECT",
       "attempt_count": 1,
       "basic_check": {
         "not_black": true,
@@ -4889,8 +4977,9 @@
         "target_state_visible": false,
         "no_secret": true
       },
-      "notes": "打开正文生成抽屉的阻断状态 ; demoted: shared screenshot hash with UI-053",
-      "screenshot_sha256": "5803dbc315c707016e78cb51f19eb90ca2757cfa4f609ec4b73ef99f1059b781"
+      "defect_classification": "CAPTURE_INTERACTION_FAILURE",
+      "duplicate_hash_review": "INVALID_DUPLICATE_pending",
+      "notes": "打开正文生成抽屉的阻断状态 ; demoted: non-unique screenshot hash"
     },
     {
       "capture_id": "UI-083",
@@ -4935,7 +5024,8 @@
       },
       "actual_observed_state": "AI Content Factory 内容创作平台 首页 项目 素材 作品 流程 设置 CA 创作管理员 项目 / ACF Fixture Novel ACF Fixture Novel 小说 生产中 更新于 2026年1月1日 16:00 Deterministic end-to-end fixture project. 概览 策划 素材 故事线 章节规划 审核 作品 设置 正文生成未完成 Run ID: ACF-UI-DYNAMIC-CG 正文生成任务未完成 查看详情 重新执行 Runtime 章节导航 第 2 章 The Red Index Card 查看章节规划 第 2 章《The Red Index Card》 v3 工作流重写 可编辑草稿 已审核 27 字 保存草稿 生成正文 审核历史 查看审核结果 ¶ B ❝ — ↶ ↷ 标题 章节摘要 保存时清空摘要 正文 未保存 27 字",
       "screenshot_path": "screenshots/UI-083_I19_14_SHARED_PREFLIGHT_BLOCKED.png",
-      "capture_status": "COLLECTED_DEFECT",
+      "screenshot_sha256": "5803dbc315c707016e78cb51f19eb90ca2757cfa4f609ec4b73ef99f1059b781",
+      "capture_status": "PRODUCT_DEFECT",
       "attempt_count": 2,
       "basic_check": {
         "not_black": true,
@@ -4947,8 +5037,9 @@
         "target_state_visible": false,
         "no_secret": true
       },
-      "notes": "打开审核抽屉的阻断状态 ; failures: None of required texts found: [预检未通过, 内容审核]",
-      "screenshot_sha256": "5803dbc315c707016e78cb51f19eb90ca2757cfa4f609ec4b73ef99f1059b781"
+      "defect_classification": "FIXTURE_STATE_MISMATCH",
+      "duplicate_hash_review": "INVALID_DUPLICATE",
+      "notes": "打开审核抽屉的阻断状态 ; failures: required text missing: [预检未通过, 内容审核]"
     },
     {
       "capture_id": "UI-084",
@@ -4994,7 +5085,8 @@
       },
       "actual_observed_state": "AI Content Factory 内容创作平台 首页 项目 素材 作品 流程 设置 CA 创作管理员 暂时无法读取重写状态 暂时无法读取重写状态，请稍后重试。 重试",
       "screenshot_path": "screenshots/UI-084_I19_14_SHARED_PREFLIGHT_BLOCKED.png",
-      "capture_status": "COLLECTED_DEFECT",
+      "screenshot_sha256": "c76b26b5efa3a8a899ea73512cbe353fcd32a62808a21d40e6fd41d871338ac6",
+      "capture_status": "PRODUCT_DEFECT",
       "attempt_count": 2,
       "basic_check": {
         "not_black": true,
@@ -5006,8 +5098,9 @@
         "target_state_visible": false,
         "no_secret": true
       },
-      "notes": "打开重写页的阻断状态 ; failures: None of required texts found: [预检未通过, 正文重写]",
-      "screenshot_sha256": "c76b26b5efa3a8a899ea73512cbe353fcd32a62808a21d40e6fd41d871338ac6"
+      "defect_classification": "FIXTURE_STATE_MISMATCH",
+      "duplicate_hash_review": "INVALID_DUPLICATE",
+      "notes": "打开重写页的阻断状态 ; failures: required text missing: [预检未通过, 正文重写]"
     },
     {
       "capture_id": "UI-085",
@@ -5051,7 +5144,8 @@
       },
       "actual_observed_state": "AI Content Factory 内容创作平台 首页 项目 素材 作品 流程 设置 CA 创作管理员 项目 / ACF Fixture Novel ACF Fixture Novel 小说 生产中 更新于 2026年1月1日 16:00 Deterministic end-to-end fixture project. 概览 策划 素材 故事线 章节规划 审核 作品 设置 章节规划 新增章节 auto_awesome 生成章节规划 当前章节 2 候选批次 1 article 全部章节 2 pending_actions 待确认 0 check_circle 已确认 2 edit_document 已生成草稿 0 状态 (全部) 待确认 已确认 已生成草稿 故事线 (全部) The Missing District The Red Index Card 来源 (全部) The blank",
       "screenshot_path": "screenshots/UI-085_I19_15_SHARED_RUNTIME_RECOVERY.png",
-      "capture_status": "COLLECTED_DEFECT",
+      "screenshot_sha256": "3b122490b4b67008e8c982535410b987332fd90c85e7715fb8574720115bf943",
+      "capture_status": "PRODUCT_DEFECT",
       "attempt_count": 2,
       "basic_check": {
         "not_black": true,
@@ -5063,8 +5157,9 @@
         "target_state_visible": false,
         "no_secret": true
       },
-      "notes": "选择取消/超时/校验或消费失败状态 ; failures: None of required texts found: [超时, 恢复]",
-      "screenshot_sha256": "3b122490b4b67008e8c982535410b987332fd90c85e7715fb8574720115bf943"
+      "defect_classification": "FIXTURE_STATE_MISMATCH",
+      "duplicate_hash_review": "INVALID_DUPLICATE",
+      "notes": "选择取消/超时/校验或消费失败状态 ; failures: required text missing: [超时, 恢复]"
     },
     {
       "capture_id": "UI-086",
@@ -5109,7 +5204,7 @@
       },
       "actual_observed_state": "AI Content Factory 内容创作平台 首页 项目 素材 作品 流程 设置 CA 创作管理员 项目 / ACF Fixture Novel ACF Fixture Novel 小说 生产中 更新于 2026年1月1日 16:00 Deterministic end-to-end fixture project. 概览 策划 素材 故事线 章节规划 审核 作品 设置 正文生成未完成 Run ID: ACF-UI-DYNAMIC-CG 正文生成结果处理失败 查看详情 重试结果消费 章节导航 第 2 章 The Red Index Card 查看章节规划 第 2 章《The Red Index Card》 v3 工作流重写 可编辑草稿 已审核 27 字 保存草稿 生成正文 审核历史 查看审核结果 ¶ B ❝ — ↶ ↷ 标题 章节摘要 保存时清空摘要 正文 未保存 27 字 v3 最",
       "screenshot_path": "screenshots/UI-086_I19_15_SHARED_RUNTIME_RECOVERY.png",
-      "capture_status": "COLLECTED_DEFECT",
+      "capture_status": "PRODUCT_DEFECT",
       "attempt_count": 2,
       "basic_check": {
         "not_black": true,
@@ -5122,7 +5217,8 @@
         "no_secret": true
       },
       "notes": "选择取消/超时/校验或消费失败状态 ; failures: None of required texts found: [结果消费失败, 恢复]",
-      "screenshot_sha256": "1aa79b18c0f4c6c68810084e0fd7e98652574aeaaff66e5a5b40a8691e08881b"
+      "screenshot_sha256": "1aa79b18c0f4c6c68810084e0fd7e98652574aeaaff66e5a5b40a8691e08881b",
+      "defect_classification": "PRODUCT_DEFECT"
     },
     {
       "capture_id": "UI-087",
@@ -5180,7 +5276,8 @@
         "no_secret": true
       },
       "notes": "选择取消/超时/校验或消费失败状态",
-      "screenshot_sha256": "e7165312979637f45868a391b3ebac48de5cdbd7dc681da71a69c829d586b629"
+      "screenshot_sha256": "e7165312979637f45868a391b3ebac48de5cdbd7dc681da71a69c829d586b629",
+      "defect_classification": null
     },
     {
       "capture_id": "UI-088",
@@ -5226,7 +5323,8 @@
       },
       "actual_observed_state": "AI Content Factory 内容创作平台 首页 项目 素材 作品 流程 设置 CA 创作管理员 暂时无法读取重写状态 暂时无法读取重写状态，请稍后重试。 重试",
       "screenshot_path": "screenshots/UI-088_I19_15_SHARED_RUNTIME_RECOVERY.png",
-      "capture_status": "COLLECTED_DEFECT",
+      "screenshot_sha256": "c76b26b5efa3a8a899ea73512cbe353fcd32a62808a21d40e6fd41d871338ac6",
+      "capture_status": "PRODUCT_DEFECT",
       "attempt_count": 2,
       "basic_check": {
         "not_black": true,
@@ -5238,8 +5336,9 @@
         "target_state_visible": false,
         "no_secret": true
       },
-      "notes": "选择取消/超时/校验或消费失败状态 ; failures: None of required texts found: [超时, 恢复]",
-      "screenshot_sha256": "c76b26b5efa3a8a899ea73512cbe353fcd32a62808a21d40e6fd41d871338ac6"
+      "defect_classification": "FIXTURE_STATE_MISMATCH",
+      "duplicate_hash_review": "INVALID_DUPLICATE",
+      "notes": "选择取消/超时/校验或消费失败状态 ; failures: required text missing: [超时, 恢复]"
     }
   ]
 }

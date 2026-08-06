@@ -1,17 +1,12 @@
 {
   "last_completed_capture_id": "UI-088",
   "completed_count": 88,
-  "current_scene": "REWRITE_TIMED_OUT",
-  "current_time": "2026-08-06T05:46:07.541Z",
   "pending_capture_ids": [],
-  "failure_count": 23,
-  "started_at": "2026-08-06T05:17:55.428Z",
-  "finished_at": "2026-08-06T05:47:31.619Z",
+  "failure_count": 40,
+  "finished_at": "2026-08-06T06:14:10.828Z",
   "counts": {
-    "COLLECTED_TARGET": 46,
-    "COLLECTED_DEFECT": 41,
-    "ROUTE_FAILED": 1
+    "COLLECTED_TARGET": 48,
+    "PRODUCT_DEFECT": 40
   },
-  "duplicate_hash_pairs": 22,
-  "audit_note": "TARGET demoted if hash collides with any other capture_id"
+  "target_unique_sha256": 48
 }

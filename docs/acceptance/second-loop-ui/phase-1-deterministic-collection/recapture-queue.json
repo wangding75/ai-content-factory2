@@ -1,0 +1,925 @@
+{
+  "generated_at": "2026-08-06T05:56:47.317Z",
+  "count": 30,
+  "items": [
+    {
+      "capture_id": "UI-028",
+      "original_failure_class": "INVALID_DUPLICATE",
+      "scene": "BASELINE",
+      "route": "/workflow-runs/50000000-0000-4000-8000-000000000007",
+      "fixture_ids": {
+        "runId": "50000000-0000-4000-8000-000000000007"
+      },
+      "actions": [],
+      "target_assertion": {
+        "mode": "all",
+        "state_kind": "error_or_blocked_state",
+        "required_visible_text_any": [
+          "失败",
+          "失败原因",
+          "重试"
+        ],
+        "required_conditions": [
+          "route_matches",
+          "loading_absent",
+          "error_overlay_absent",
+          "target_component_visible",
+          "secret_absent"
+        ]
+      },
+      "old_sha256": "700edff1c45b0425ed8ce2a4ccb972772529f1b00311377dd56974fd0be7eb74",
+      "reason": "Invalid duplicate or interaction/fixture failure pending re-capture under lightweight scenes"
+    },
+    {
+      "capture_id": "UI-029",
+      "original_failure_class": "CAPTURE_INTERACTION_FAILURE",
+      "scene": "BASELINE",
+      "route": "/workflow-runs/50000000-0000-4000-8000-000000000007",
+      "fixture_ids": {
+        "runId": "50000000-0000-4000-8000-000000000007"
+      },
+      "actions": [
+        {
+          "type": "click",
+          "role": "button",
+          "name_regex": "重试"
+        }
+      ],
+      "target_assertion": {
+        "mode": "all",
+        "state_kind": "dialog",
+        "required_visible_text_any": [
+          "重试",
+          "当前配置",
+          "原配置"
+        ],
+        "required_conditions": [
+          "route_matches",
+          "loading_absent",
+          "error_overlay_absent",
+          "target_component_visible",
+          "secret_absent"
+        ]
+      },
+      "old_sha256": "700edff1c45b0425ed8ce2a4ccb972772529f1b00311377dd56974fd0be7eb74",
+      "reason": "Invalid duplicate or interaction/fixture failure pending re-capture under lightweight scenes"
+    },
+    {
+      "capture_id": "UI-037",
+      "original_failure_class": "INVALID_DUPLICATE",
+      "scene": "BASELINE",
+      "route": "/projects/10000000-0000-4000-8000-000000000001/chapter-plans",
+      "fixture_ids": {
+        "projectId": "10000000-0000-4000-8000-000000000001"
+      },
+      "actions": [],
+      "target_assertion": {
+        "mode": "all",
+        "state_kind": "page_state",
+        "required_visible_text_any": [
+          "章节",
+          "状态"
+        ],
+        "required_conditions": [
+          "route_matches",
+          "loading_absent",
+          "error_overlay_absent",
+          "target_component_visible",
+          "secret_absent"
+        ]
+      },
+      "old_sha256": "3b122490b4b67008e8c982535410b987332fd90c85e7715fb8574720115bf943",
+      "reason": "Invalid duplicate or interaction/fixture failure pending re-capture under lightweight scenes"
+    },
+    {
+      "capture_id": "UI-038",
+      "original_failure_class": "INVALID_DUPLICATE",
+      "scene": "CP_FAILED",
+      "route": "/projects/10000000-0000-4000-8000-000000000001/chapter-plans",
+      "fixture_ids": {
+        "projectId": "10000000-0000-4000-8000-000000000001"
+      },
+      "actions": [],
+      "target_assertion": {
+        "mode": "all",
+        "state_kind": "error_or_blocked_state",
+        "required_visible_text_any": [
+          "生成失败",
+          "未写入"
+        ],
+        "required_conditions": [
+          "route_matches",
+          "loading_absent",
+          "error_overlay_absent",
+          "target_component_visible",
+          "secret_absent"
+        ]
+      },
+      "old_sha256": "3b122490b4b67008e8c982535410b987332fd90c85e7715fb8574720115bf943",
+      "reason": "Invalid duplicate or interaction/fixture failure pending re-capture under lightweight scenes"
+    },
+    {
+      "capture_id": "UI-040",
+      "original_failure_class": "INVALID_DUPLICATE",
+      "scene": "BASELINE",
+      "route": "/projects/10000000-0000-4000-8000-000000000001/chapter-plans",
+      "fixture_ids": {
+        "projectId": "10000000-0000-4000-8000-000000000001"
+      },
+      "actions": [
+        {
+          "type": "click",
+          "role": "button",
+          "name_regex": "生成章节规划"
+        }
+      ],
+      "target_assertion": {
+        "mode": "all",
+        "state_kind": "drawer",
+        "required_visible_text_any": [
+          "生成章节规划",
+          "生成范围"
+        ],
+        "required_conditions": [
+          "route_matches",
+          "loading_absent",
+          "error_overlay_absent",
+          "target_component_visible",
+          "secret_absent"
+        ]
+      },
+      "old_sha256": "3cb3b183e05da8b629bd21a97eda3962fd17a74105fb26585115ff8357fe15ed",
+      "reason": "Invalid duplicate or interaction/fixture failure pending re-capture under lightweight scenes"
+    },
+    {
+      "capture_id": "UI-042",
+      "original_failure_class": "INVALID_DUPLICATE",
+      "scene": "BINDINGS_READY",
+      "route": "/projects/10000000-0000-4000-8000-000000000001/chapter-plans",
+      "fixture_ids": {
+        "projectId": "10000000-0000-4000-8000-000000000001"
+      },
+      "actions": [
+        {
+          "type": "click",
+          "role": "button",
+          "name_regex": "生成章节规划"
+        },
+        {
+          "type": "click",
+          "role": "button",
+          "name_regex": "下一步|预检"
+        }
+      ],
+      "target_assertion": {
+        "mode": "all",
+        "state_kind": "page_state",
+        "required_visible_text_any": [
+          "预检通过",
+          "可以开始"
+        ],
+        "required_conditions": [
+          "route_matches",
+          "loading_absent",
+          "error_overlay_absent",
+          "target_component_visible",
+          "secret_absent"
+        ]
+      },
+      "old_sha256": "8a1426f538ee0a975ced35d362e721477197f05e6fdeab6958e48baa6c4df77d",
+      "reason": "Invalid duplicate or interaction/fixture failure pending re-capture under lightweight scenes"
+    },
+    {
+      "capture_id": "UI-043",
+      "original_failure_class": "INVALID_DUPLICATE",
+      "scene": "PREFLIGHT_BLOCK_CP",
+      "route": "/projects/10000000-0000-4000-8000-000000000001/chapter-plans",
+      "fixture_ids": {
+        "projectId": "10000000-0000-4000-8000-000000000001"
+      },
+      "actions": [],
+      "target_assertion": {
+        "mode": "all",
+        "state_kind": "error_or_blocked_state",
+        "required_visible_text_any": [
+          "预检未通过",
+          "阻断原因"
+        ],
+        "required_conditions": [
+          "route_matches",
+          "loading_absent",
+          "error_overlay_absent",
+          "target_component_visible",
+          "secret_absent"
+        ]
+      },
+      "old_sha256": "3cb3b183e05da8b629bd21a97eda3962fd17a74105fb26585115ff8357fe15ed",
+      "reason": "Invalid duplicate or interaction/fixture failure pending re-capture under lightweight scenes"
+    },
+    {
+      "capture_id": "UI-044",
+      "original_failure_class": "CAPTURE_INTERACTION_FAILURE",
+      "scene": "BINDINGS_READY",
+      "route": "/projects/10000000-0000-4000-8000-000000000001/chapter-plans",
+      "fixture_ids": {
+        "projectId": "10000000-0000-4000-8000-000000000001"
+      },
+      "actions": [
+        {
+          "type": "click",
+          "role": "button",
+          "name_regex": "生成章节规划"
+        },
+        {
+          "type": "click",
+          "role": "button",
+          "name_regex": "下一步|预检|开始预检"
+        },
+        {
+          "type": "click",
+          "role": "button",
+          "name_regex": "创建任务|开始生成|确认生成"
+        }
+      ],
+      "target_assertion": {
+        "mode": "all",
+        "state_kind": "success_notice",
+        "required_visible_text_any": [
+          "任务已创建",
+          "查看运行"
+        ],
+        "required_conditions": [
+          "route_matches",
+          "loading_absent",
+          "error_overlay_absent",
+          "target_component_visible",
+          "secret_absent"
+        ]
+      },
+      "old_sha256": "8a1426f538ee0a975ced35d362e721477197f05e6fdeab6958e48baa6c4df77d",
+      "reason": "Invalid duplicate or interaction/fixture failure pending re-capture under lightweight scenes"
+    },
+    {
+      "capture_id": "UI-053",
+      "original_failure_class": "INVALID_DUPLICATE",
+      "scene": "BASELINE",
+      "route": "/projects/10000000-0000-4000-8000-000000000001/works/70000000-0000-4000-8000-000000000001",
+      "fixture_ids": {
+        "projectId": "10000000-0000-4000-8000-000000000001",
+        "workId": "70000000-0000-4000-8000-000000000001"
+      },
+      "actions": [
+        {
+          "type": "click",
+          "role": "tab_or_button",
+          "name": "章节目标"
+        }
+      ],
+      "target_assertion": {
+        "mode": "all",
+        "state_kind": "page_state",
+        "required_visible_text_any": [
+          "章节目标"
+        ],
+        "required_conditions": [
+          "route_matches",
+          "loading_absent",
+          "error_overlay_absent",
+          "target_component_visible",
+          "secret_absent"
+        ]
+      },
+      "old_sha256": "5803dbc315c707016e78cb51f19eb90ca2757cfa4f609ec4b73ef99f1059b781",
+      "reason": "Invalid duplicate or interaction/fixture failure pending re-capture under lightweight scenes"
+    },
+    {
+      "capture_id": "UI-056",
+      "original_failure_class": "CAPTURE_INTERACTION_FAILURE",
+      "scene": "BASELINE",
+      "route": "/projects/10000000-0000-4000-8000-000000000001/works/70000000-0000-4000-8000-000000000001",
+      "fixture_ids": {
+        "projectId": "10000000-0000-4000-8000-000000000001",
+        "workId": "70000000-0000-4000-8000-000000000001"
+      },
+      "actions": [
+        {
+          "type": "click",
+          "role": "button",
+          "name_regex": "生成正文"
+        }
+      ],
+      "target_assertion": {
+        "mode": "all",
+        "state_kind": "drawer",
+        "required_visible_text_any": [
+          "生成正文",
+          "生成要求"
+        ],
+        "required_conditions": [
+          "route_matches",
+          "loading_absent",
+          "error_overlay_absent",
+          "target_component_visible",
+          "secret_absent"
+        ]
+      },
+      "old_sha256": "5803dbc315c707016e78cb51f19eb90ca2757cfa4f609ec4b73ef99f1059b781",
+      "reason": "Invalid duplicate or interaction/fixture failure pending re-capture under lightweight scenes"
+    },
+    {
+      "capture_id": "UI-062",
+      "original_failure_class": "CAPTURE_INTERACTION_FAILURE",
+      "scene": "BASELINE",
+      "route": "/projects/10000000-0000-4000-8000-000000000001/works/70000000-0000-4000-8000-000000000001",
+      "fixture_ids": {
+        "projectId": "10000000-0000-4000-8000-000000000001",
+        "workId": "70000000-0000-4000-8000-000000000001"
+      },
+      "actions": [
+        {
+          "type": "click",
+          "role": "button",
+          "name_regex": "查看候选|比较版本"
+        }
+      ],
+      "target_assertion": {
+        "mode": "all",
+        "state_kind": "page_state",
+        "required_visible_text_any": [
+          "当前版本",
+          "候选版本",
+          "比较"
+        ],
+        "required_conditions": [
+          "route_matches",
+          "loading_absent",
+          "error_overlay_absent",
+          "target_component_visible",
+          "secret_absent"
+        ]
+      },
+      "old_sha256": "5803dbc315c707016e78cb51f19eb90ca2757cfa4f609ec4b73ef99f1059b781",
+      "reason": "Invalid duplicate or interaction/fixture failure pending re-capture under lightweight scenes"
+    },
+    {
+      "capture_id": "UI-063",
+      "original_failure_class": "INVALID_DUPLICATE",
+      "scene": "CG_NOT_CONFIGURED",
+      "route": "/projects/10000000-0000-4000-8000-000000000001/works/70000000-0000-4000-8000-000000000001",
+      "fixture_ids": {
+        "projectId": "10000000-0000-4000-8000-000000000001",
+        "workId": "70000000-0000-4000-8000-000000000001"
+      },
+      "actions": [],
+      "target_assertion": {
+        "mode": "all",
+        "state_kind": "error_or_blocked_state",
+        "required_visible_text_any": [
+          "未配置",
+          "正文生成工作流"
+        ],
+        "required_conditions": [
+          "route_matches",
+          "loading_absent",
+          "error_overlay_absent",
+          "target_component_visible",
+          "secret_absent"
+        ]
+      },
+      "old_sha256": "5803dbc315c707016e78cb51f19eb90ca2757cfa4f609ec4b73ef99f1059b781",
+      "reason": "Invalid duplicate or interaction/fixture failure pending re-capture under lightweight scenes"
+    },
+    {
+      "capture_id": "UI-064",
+      "original_failure_class": "INVALID_DUPLICATE",
+      "scene": "BASELINE",
+      "route": "/projects/10000000-0000-4000-8000-000000000001/works/70000000-0000-4000-8000-000000000001",
+      "fixture_ids": {
+        "projectId": "10000000-0000-4000-8000-000000000001",
+        "workId": "70000000-0000-4000-8000-000000000001"
+      },
+      "actions": [],
+      "target_assertion": {
+        "mode": "all",
+        "state_kind": "page_state",
+        "required_visible_text_any": [
+          "提交审核"
+        ],
+        "required_conditions": [
+          "route_matches",
+          "loading_absent",
+          "error_overlay_absent",
+          "target_component_visible",
+          "secret_absent"
+        ]
+      },
+      "old_sha256": "5803dbc315c707016e78cb51f19eb90ca2757cfa4f609ec4b73ef99f1059b781",
+      "reason": "Invalid duplicate or interaction/fixture failure pending re-capture under lightweight scenes"
+    },
+    {
+      "capture_id": "UI-065",
+      "original_failure_class": "CAPTURE_INTERACTION_FAILURE",
+      "scene": "BASELINE",
+      "route": "/projects/10000000-0000-4000-8000-000000000001/works/70000000-0000-4000-8000-000000000001",
+      "fixture_ids": {
+        "projectId": "10000000-0000-4000-8000-000000000001",
+        "workId": "70000000-0000-4000-8000-000000000001"
+      },
+      "actions": [
+        {
+          "type": "click",
+          "role": "button",
+          "name_regex": "提交审核|发起审核"
+        }
+      ],
+      "target_assertion": {
+        "mode": "all",
+        "state_kind": "drawer",
+        "required_visible_text_any": [
+          "发起审核",
+          "审核范围"
+        ],
+        "required_conditions": [
+          "route_matches",
+          "loading_absent",
+          "error_overlay_absent",
+          "target_component_visible",
+          "secret_absent"
+        ]
+      },
+      "old_sha256": "5803dbc315c707016e78cb51f19eb90ca2757cfa4f609ec4b73ef99f1059b781",
+      "reason": "Invalid duplicate or interaction/fixture failure pending re-capture under lightweight scenes"
+    },
+    {
+      "capture_id": "UI-067",
+      "original_failure_class": "INVALID_DUPLICATE",
+      "scene": "REVIEW_SUCCEEDED",
+      "route": "/projects/10000000-0000-4000-8000-000000000001/works/70000000-0000-4000-8000-000000000001/review?reportId=80000000-0000-4000-8000-000000000001",
+      "fixture_ids": {
+        "projectId": "10000000-0000-4000-8000-000000000001",
+        "workId": "70000000-0000-4000-8000-000000000001",
+        "reviewReportId": "80000000-0000-4000-8000-000000000001"
+      },
+      "actions": [],
+      "target_assertion": {
+        "mode": "all",
+        "state_kind": "page_state",
+        "required_visible_text_any": [
+          "审核结果",
+          "问题列表"
+        ],
+        "required_conditions": [
+          "route_matches",
+          "loading_absent",
+          "error_overlay_absent",
+          "target_component_visible",
+          "secret_absent"
+        ]
+      },
+      "old_sha256": "63bc9fada2b3502caae64e9b52b58cd16f8a252cb006097d129faaeb5b29da1e",
+      "reason": "Invalid duplicate or interaction/fixture failure pending re-capture under lightweight scenes"
+    },
+    {
+      "capture_id": "UI-068",
+      "original_failure_class": "INVALID_DUPLICATE",
+      "scene": "REVIEW_SUCCEEDED",
+      "route": "/projects/10000000-0000-4000-8000-000000000001/works/70000000-0000-4000-8000-000000000001/review?reportId=80000000-0000-4000-8000-000000000001&issueId=81000000-0000-4000-8000-000000000001&view=source",
+      "fixture_ids": {
+        "projectId": "10000000-0000-4000-8000-000000000001",
+        "workId": "70000000-0000-4000-8000-000000000001",
+        "reviewReportId": "80000000-0000-4000-8000-000000000001",
+        "issueId": "81000000-0000-4000-8000-000000000001"
+      },
+      "actions": [],
+      "target_assertion": {
+        "mode": "all",
+        "state_kind": "page_state",
+        "required_visible_text_any": [
+          "问题详情",
+          "全文定位"
+        ],
+        "required_conditions": [
+          "route_matches",
+          "loading_absent",
+          "error_overlay_absent",
+          "target_component_visible",
+          "secret_absent"
+        ]
+      },
+      "old_sha256": "63bc9fada2b3502caae64e9b52b58cd16f8a252cb006097d129faaeb5b29da1e",
+      "reason": "Invalid duplicate or interaction/fixture failure pending re-capture under lightweight scenes"
+    },
+    {
+      "capture_id": "UI-072",
+      "original_failure_class": "INVALID_DUPLICATE",
+      "scene": "BASELINE",
+      "route": "/projects/10000000-0000-4000-8000-000000000001/works/70000000-0000-4000-8000-000000000001/review?reportId=80000000-0000-4000-8000-000000000001",
+      "fixture_ids": {
+        "projectId": "10000000-0000-4000-8000-000000000001",
+        "workId": "70000000-0000-4000-8000-000000000001",
+        "reviewReportId": "80000000-0000-4000-8000-000000000001"
+      },
+      "actions": [],
+      "target_assertion": {
+        "mode": "all",
+        "state_kind": "page_state",
+        "required_visible_text_any": [
+          "创建重写",
+          "已选择问题"
+        ],
+        "required_conditions": [
+          "route_matches",
+          "loading_absent",
+          "error_overlay_absent",
+          "target_component_visible",
+          "secret_absent"
+        ]
+      },
+      "old_sha256": "63bc9fada2b3502caae64e9b52b58cd16f8a252cb006097d129faaeb5b29da1e",
+      "reason": "Invalid duplicate or interaction/fixture failure pending re-capture under lightweight scenes"
+    },
+    {
+      "capture_id": "UI-073",
+      "original_failure_class": "INVALID_DUPLICATE",
+      "scene": "BASELINE",
+      "route": "/projects/10000000-0000-4000-8000-000000000001/works/70000000-0000-4000-8000-000000000001/rewrite?reportId=80000000-0000-4000-8000-000000000001",
+      "fixture_ids": {
+        "projectId": "10000000-0000-4000-8000-000000000001",
+        "workId": "70000000-0000-4000-8000-000000000001",
+        "reviewReportId": "80000000-0000-4000-8000-000000000001"
+      },
+      "actions": [],
+      "target_assertion": {
+        "mode": "all",
+        "state_kind": "page_state",
+        "required_visible_text_any": [
+          "创建正文重写",
+          "所选问题"
+        ],
+        "required_conditions": [
+          "route_matches",
+          "loading_absent",
+          "error_overlay_absent",
+          "target_component_visible",
+          "secret_absent"
+        ]
+      },
+      "old_sha256": "c76b26b5efa3a8a899ea73512cbe353fcd32a62808a21d40e6fd41d871338ac6",
+      "reason": "Invalid duplicate or interaction/fixture failure pending re-capture under lightweight scenes"
+    },
+    {
+      "capture_id": "UI-074",
+      "original_failure_class": "CAPTURE_INTERACTION_FAILURE",
+      "scene": "BASELINE",
+      "route": "/projects/10000000-0000-4000-8000-000000000001/works/70000000-0000-4000-8000-000000000001/rewrite?reportId=80000000-0000-4000-8000-000000000001",
+      "fixture_ids": {
+        "projectId": "10000000-0000-4000-8000-000000000001",
+        "workId": "70000000-0000-4000-8000-000000000001",
+        "reviewReportId": "80000000-0000-4000-8000-000000000001"
+      },
+      "actions": [
+        {
+          "type": "click",
+          "role": "button",
+          "name_regex": "查看配置|重写配置"
+        }
+      ],
+      "target_assertion": {
+        "mode": "all",
+        "state_kind": "drawer",
+        "required_visible_text_any": [
+          "重写配置",
+          "工作流"
+        ],
+        "required_conditions": [
+          "route_matches",
+          "loading_absent",
+          "error_overlay_absent",
+          "target_component_visible",
+          "secret_absent"
+        ]
+      },
+      "old_sha256": "c76b26b5efa3a8a899ea73512cbe353fcd32a62808a21d40e6fd41d871338ac6",
+      "reason": "Invalid duplicate or interaction/fixture failure pending re-capture under lightweight scenes"
+    },
+    {
+      "capture_id": "UI-076",
+      "original_failure_class": "INVALID_DUPLICATE",
+      "scene": "REWRITE_SUCCEEDED",
+      "route": "/projects/10000000-0000-4000-8000-000000000001/works/70000000-0000-4000-8000-000000000001/rewrite?workflowRunId=5a000000-0000-4000-8000-000000000004",
+      "fixture_ids": {
+        "projectId": "10000000-0000-4000-8000-000000000001",
+        "workId": "70000000-0000-4000-8000-000000000001",
+        "workflowRunId": "5a000000-0000-4000-8000-000000000004"
+      },
+      "actions": [],
+      "target_assertion": {
+        "mode": "all",
+        "state_kind": "page_state",
+        "required_visible_text_any": [
+          "重写候选",
+          "设为当前版本"
+        ],
+        "required_conditions": [
+          "route_matches",
+          "loading_absent",
+          "error_overlay_absent",
+          "target_component_visible",
+          "secret_absent"
+        ]
+      },
+      "old_sha256": "f9aa2d2d07129b40646ad6a806e9a41f09382fb282905a956978a89dd4d4bcea",
+      "reason": "Invalid duplicate or interaction/fixture failure pending re-capture under lightweight scenes"
+    },
+    {
+      "capture_id": "UI-077",
+      "original_failure_class": "CAPTURE_INTERACTION_FAILURE",
+      "scene": "REWRITE_SUCCEEDED",
+      "route": "/projects/10000000-0000-4000-8000-000000000001/works/70000000-0000-4000-8000-000000000001/rewrite?workflowRunId=5a000000-0000-4000-8000-000000000004",
+      "fixture_ids": {
+        "projectId": "10000000-0000-4000-8000-000000000001",
+        "workId": "70000000-0000-4000-8000-000000000001",
+        "workflowRunId": "5a000000-0000-4000-8000-000000000004"
+      },
+      "actions": [
+        {
+          "type": "click",
+          "role": "button",
+          "name_regex": "设为当前版本"
+        }
+      ],
+      "target_assertion": {
+        "mode": "all",
+        "state_kind": "dialog",
+        "required_visible_text_any": [
+          "设为当前版本",
+          "确认"
+        ],
+        "required_conditions": [
+          "route_matches",
+          "loading_absent",
+          "error_overlay_absent",
+          "target_component_visible",
+          "secret_absent"
+        ]
+      },
+      "old_sha256": "f9aa2d2d07129b40646ad6a806e9a41f09382fb282905a956978a89dd4d4bcea",
+      "reason": "Invalid duplicate or interaction/fixture failure pending re-capture under lightweight scenes"
+    },
+    {
+      "capture_id": "UI-078",
+      "original_failure_class": "INVALID_DUPLICATE",
+      "scene": "REWRITE_RESULT_CONSUMPTION_FAILED",
+      "route": "/projects/10000000-0000-4000-8000-000000000001/works/70000000-0000-4000-8000-000000000001/rewrite?workflowRunId=5a000000-0000-4000-8000-000000000004",
+      "fixture_ids": {
+        "projectId": "10000000-0000-4000-8000-000000000001",
+        "workId": "70000000-0000-4000-8000-000000000001",
+        "workflowRunId": "5a000000-0000-4000-8000-000000000004"
+      },
+      "actions": [],
+      "target_assertion": {
+        "mode": "all",
+        "state_kind": "error_or_blocked_state",
+        "required_visible_text_any": [
+          "结果提交失败",
+          "重试"
+        ],
+        "required_conditions": [
+          "route_matches",
+          "loading_absent",
+          "error_overlay_absent",
+          "target_component_visible",
+          "secret_absent"
+        ]
+      },
+      "old_sha256": "c76b26b5efa3a8a899ea73512cbe353fcd32a62808a21d40e6fd41d871338ac6",
+      "reason": "Invalid duplicate or interaction/fixture failure pending re-capture under lightweight scenes"
+    },
+    {
+      "capture_id": "UI-079",
+      "original_failure_class": "INVALID_DUPLICATE",
+      "scene": "REWRITE_FAILED",
+      "route": "/projects/10000000-0000-4000-8000-000000000001/works/70000000-0000-4000-8000-000000000001/rewrite?workflowRunId=5a000000-0000-4000-8000-000000000004",
+      "fixture_ids": {
+        "projectId": "10000000-0000-4000-8000-000000000001",
+        "workId": "70000000-0000-4000-8000-000000000001",
+        "workflowRunId": "5a000000-0000-4000-8000-000000000004"
+      },
+      "actions": [],
+      "target_assertion": {
+        "mode": "all",
+        "state_kind": "error_or_blocked_state",
+        "required_visible_text_any": [
+          "重写失败",
+          "错误原因"
+        ],
+        "required_conditions": [
+          "route_matches",
+          "loading_absent",
+          "error_overlay_absent",
+          "target_component_visible",
+          "secret_absent"
+        ]
+      },
+      "old_sha256": "c76b26b5efa3a8a899ea73512cbe353fcd32a62808a21d40e6fd41d871338ac6",
+      "reason": "Invalid duplicate or interaction/fixture failure pending re-capture under lightweight scenes"
+    },
+    {
+      "capture_id": "UI-080",
+      "original_failure_class": "INVALID_DUPLICATE",
+      "scene": "REWRITE_UNAVAILABLE",
+      "route": "/projects/10000000-0000-4000-8000-000000000001/works/70000000-0000-4000-8000-000000000001/rewrite?reportId=80000000-0000-4000-8000-000000000001",
+      "fixture_ids": {
+        "projectId": "10000000-0000-4000-8000-000000000001",
+        "workId": "70000000-0000-4000-8000-000000000001",
+        "reviewReportId": "80000000-0000-4000-8000-000000000001"
+      },
+      "actions": [],
+      "target_assertion": {
+        "mode": "all",
+        "state_kind": "empty_state",
+        "required_visible_text_any": [
+          "不可执行",
+          "配置已变更"
+        ],
+        "required_conditions": [
+          "route_matches",
+          "loading_absent",
+          "error_overlay_absent",
+          "target_component_visible",
+          "secret_absent"
+        ]
+      },
+      "old_sha256": "c76b26b5efa3a8a899ea73512cbe353fcd32a62808a21d40e6fd41d871338ac6",
+      "reason": "Invalid duplicate or interaction/fixture failure pending re-capture under lightweight scenes"
+    },
+    {
+      "capture_id": "UI-081",
+      "original_failure_class": "INVALID_DUPLICATE",
+      "scene": "PREFLIGHT_BLOCK_CP",
+      "route": "/projects/10000000-0000-4000-8000-000000000001/chapter-plans",
+      "fixture_ids": {
+        "projectId": "10000000-0000-4000-8000-000000000001"
+      },
+      "actions": [],
+      "target_assertion": {
+        "mode": "all",
+        "state_kind": "error_or_blocked_state",
+        "required_visible_text_any": [
+          "预检未通过",
+          "章节规划"
+        ],
+        "required_conditions": [
+          "route_matches",
+          "loading_absent",
+          "error_overlay_absent",
+          "target_component_visible",
+          "secret_absent"
+        ]
+      },
+      "old_sha256": "3cb3b183e05da8b629bd21a97eda3962fd17a74105fb26585115ff8357fe15ed",
+      "reason": "Invalid duplicate or interaction/fixture failure pending re-capture under lightweight scenes"
+    },
+    {
+      "capture_id": "UI-082",
+      "original_failure_class": "INVALID_DUPLICATE",
+      "scene": "PREFLIGHT_BLOCK_CG",
+      "route": "/projects/10000000-0000-4000-8000-000000000001/works/70000000-0000-4000-8000-000000000001",
+      "fixture_ids": {
+        "projectId": "10000000-0000-4000-8000-000000000001",
+        "workId": "70000000-0000-4000-8000-000000000001"
+      },
+      "actions": [],
+      "target_assertion": {
+        "mode": "all",
+        "state_kind": "error_or_blocked_state",
+        "required_visible_text_any": [
+          "预检未通过",
+          "正文生成"
+        ],
+        "required_conditions": [
+          "route_matches",
+          "loading_absent",
+          "error_overlay_absent",
+          "target_component_visible",
+          "secret_absent"
+        ]
+      },
+      "old_sha256": "5803dbc315c707016e78cb51f19eb90ca2757cfa4f609ec4b73ef99f1059b781",
+      "reason": "Invalid duplicate or interaction/fixture failure pending re-capture under lightweight scenes"
+    },
+    {
+      "capture_id": "UI-083",
+      "original_failure_class": "INVALID_DUPLICATE",
+      "scene": "PREFLIGHT_BLOCK_REVIEW",
+      "route": "/projects/10000000-0000-4000-8000-000000000001/works/70000000-0000-4000-8000-000000000001",
+      "fixture_ids": {
+        "projectId": "10000000-0000-4000-8000-000000000001",
+        "workId": "70000000-0000-4000-8000-000000000001"
+      },
+      "actions": [],
+      "target_assertion": {
+        "mode": "all",
+        "state_kind": "error_or_blocked_state",
+        "required_visible_text_any": [
+          "预检未通过",
+          "内容审核"
+        ],
+        "required_conditions": [
+          "route_matches",
+          "loading_absent",
+          "error_overlay_absent",
+          "target_component_visible",
+          "secret_absent"
+        ]
+      },
+      "old_sha256": "5803dbc315c707016e78cb51f19eb90ca2757cfa4f609ec4b73ef99f1059b781",
+      "reason": "Invalid duplicate or interaction/fixture failure pending re-capture under lightweight scenes"
+    },
+    {
+      "capture_id": "UI-084",
+      "original_failure_class": "INVALID_DUPLICATE",
+      "scene": "PREFLIGHT_BLOCK_REWRITE",
+      "route": "/projects/10000000-0000-4000-8000-000000000001/works/70000000-0000-4000-8000-000000000001/rewrite?reportId=80000000-0000-4000-8000-000000000001",
+      "fixture_ids": {
+        "projectId": "10000000-0000-4000-8000-000000000001",
+        "workId": "70000000-0000-4000-8000-000000000001",
+        "reviewReportId": "80000000-0000-4000-8000-000000000001"
+      },
+      "actions": [],
+      "target_assertion": {
+        "mode": "all",
+        "state_kind": "error_or_blocked_state",
+        "required_visible_text_any": [
+          "预检未通过",
+          "正文重写"
+        ],
+        "required_conditions": [
+          "route_matches",
+          "loading_absent",
+          "error_overlay_absent",
+          "target_component_visible",
+          "secret_absent"
+        ]
+      },
+      "old_sha256": "c76b26b5efa3a8a899ea73512cbe353fcd32a62808a21d40e6fd41d871338ac6",
+      "reason": "Invalid duplicate or interaction/fixture failure pending re-capture under lightweight scenes"
+    },
+    {
+      "capture_id": "UI-085",
+      "original_failure_class": "INVALID_DUPLICATE",
+      "scene": "CP_TIMED_OUT",
+      "route": "/projects/10000000-0000-4000-8000-000000000001/chapter-plans",
+      "fixture_ids": {
+        "projectId": "10000000-0000-4000-8000-000000000001"
+      },
+      "actions": [],
+      "target_assertion": {
+        "mode": "all",
+        "state_kind": "page_state",
+        "required_visible_text_any": [
+          "超时",
+          "恢复"
+        ],
+        "required_conditions": [
+          "route_matches",
+          "loading_absent",
+          "error_overlay_absent",
+          "target_component_visible",
+          "secret_absent"
+        ]
+      },
+      "old_sha256": "3b122490b4b67008e8c982535410b987332fd90c85e7715fb8574720115bf943",
+      "reason": "Invalid duplicate or interaction/fixture failure pending re-capture under lightweight scenes"
+    },
+    {
+      "capture_id": "UI-088",
+      "original_failure_class": "INVALID_DUPLICATE",
+      "scene": "REWRITE_TIMED_OUT",
+      "route": "/projects/10000000-0000-4000-8000-000000000001/works/70000000-0000-4000-8000-000000000001/rewrite?workflowRunId=5a000000-0000-4000-8000-000000000004",
+      "fixture_ids": {
+        "projectId": "10000000-0000-4000-8000-000000000001",
+        "workId": "70000000-0000-4000-8000-000000000001",
+        "workflowRunId": "5a000000-0000-4000-8000-000000000004"
+      },
+      "actions": [],
+      "target_assertion": {
+        "mode": "all",
+        "state_kind": "page_state",
+        "required_visible_text_any": [
+          "超时",
+          "恢复"
+        ],
+        "required_conditions": [
+          "route_matches",
+          "loading_absent",
+          "error_overlay_absent",
+          "target_component_visible",
+          "secret_absent"
+        ]
+      },
+      "old_sha256": "c76b26b5efa3a8a899ea73512cbe353fcd32a62808a21d40e6fd41d871338ac6",
+      "reason": "Invalid duplicate or interaction/fixture failure pending re-capture under lightweight scenes"
+    }
+  ]
+}

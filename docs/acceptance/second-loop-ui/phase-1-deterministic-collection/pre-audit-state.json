@@ -1,0 +1,793 @@
+{
+  "frozen_at": "2026-08-06T05:49:59.632Z",
+  "git_head": "ee494f87b6562c95d2223588059551f1e5aa76b9",
+  "git_status": [
+    "?? .tmp/Invoke-FixtureAction.ps1\n?? .tmp/Invoke-FixtureScene.ps1\n?? .tmp/psql_wrapper.go\n?? .tmp/scene-baseline-err.txt\n?? .tmp/scene-baseline-out.txt\n?? .tmp/test-scene-switch.mjs\n?? .tmp/test-wrapper.mjs"
+  ],
+  "status_counts": {
+    "COLLECTED_TARGET": 46,
+    "COLLECTED_DEFECT": 41,
+    "ROUTE_FAILED": 1
+  },
+  "duplicate_hash_groups": [
+    {
+      "sha256": "700edff1c45b0425ed8ce2a4ccb972772529f1b00311377dd56974fd0be7eb74",
+      "capture_ids": [
+        "UI-028",
+        "UI-029"
+      ]
+    },
+    {
+      "sha256": "3b122490b4b67008e8c982535410b987332fd90c85e7715fb8574720115bf943",
+      "capture_ids": [
+        "UI-037",
+        "UI-038",
+        "UI-085"
+      ]
+    },
+    {
+      "sha256": "3cb3b183e05da8b629bd21a97eda3962fd17a74105fb26585115ff8357fe15ed",
+      "capture_ids": [
+        "UI-040",
+        "UI-043",
+        "UI-081"
+      ]
+    },
+    {
+      "sha256": "8a1426f538ee0a975ced35d362e721477197f05e6fdeab6958e48baa6c4df77d",
+      "capture_ids": [
+        "UI-042",
+        "UI-044"
+      ]
+    },
+    {
+      "sha256": "5803dbc315c707016e78cb51f19eb90ca2757cfa4f609ec4b73ef99f1059b781",
+      "capture_ids": [
+        "UI-053",
+        "UI-056",
+        "UI-062",
+        "UI-063",
+        "UI-064",
+        "UI-065",
+        "UI-082",
+        "UI-083"
+      ]
+    },
+    {
+      "sha256": "63bc9fada2b3502caae64e9b52b58cd16f8a252cb006097d129faaeb5b29da1e",
+      "capture_ids": [
+        "UI-067",
+        "UI-068",
+        "UI-072"
+      ]
+    },
+    {
+      "sha256": "c76b26b5efa3a8a899ea73512cbe353fcd32a62808a21d40e6fd41d871338ac6",
+      "capture_ids": [
+        "UI-073",
+        "UI-074",
+        "UI-078",
+        "UI-079",
+        "UI-080",
+        "UI-084",
+        "UI-088"
+      ]
+    },
+    {
+      "sha256": "f9aa2d2d07129b40646ad6a806e9a41f09382fb282905a956978a89dd4d4bcea",
+      "capture_ids": [
+        "UI-076",
+        "UI-077"
+      ]
+    }
+  ],
+  "manifest_sha256": "18ce9efb36afcbdaab369b49554a8ee8044c71f4f8a9a1fc1996f1419cd73b45",
+  "summary_sha256": "03653f608a654b15a231466e09ec591ee8ad033ca6cd0f13c32962df40f72b70",
+  "progress_sha256": "aeaccb270f00836b901868ff58166d0573256550f1aa573e2c772c50c289cfd8",
+  "items": [
+    {
+      "capture_id": "UI-001",
+      "capture_status": "COLLECTED_TARGET",
+      "screenshot_path": "screenshots/UI-001_I19_01_LLM_PROVIDER_LIST.png",
+      "screenshot_sha256": "492f7fb4dd5928bc510e130bda498fa2427869c32c70de2560eb019e4f166c03",
+      "scene": "BASELINE",
+      "function_point": "全局设置 / LLM Provider / 列表"
+    },
+    {
+      "capture_id": "UI-002",
+      "capture_status": "COLLECTED_TARGET",
+      "screenshot_path": "screenshots/UI-002_I19_02_LLM_PROVIDER_DRAWER.png",
+      "screenshot_sha256": "1358a3500d124116050f1e47a3517af2a5b10bc5fccd6d0b0c8a35f3ca2118d6",
+      "scene": "BASELINE",
+      "function_point": "全局设置 / LLM Provider / 新增/编辑抽屉"
+    },
+    {
+      "capture_id": "UI-003",
+      "capture_status": "COLLECTED_TARGET",
+      "screenshot_path": "screenshots/UI-003_GLOBAL_SETTINGS_LLM_EMPTY_V2.png",
+      "screenshot_sha256": "f1e78b65d9d3c7514f3accce4f04f1607bbccf5a768925997e8d333bd241fd01",
+      "scene": "LLM_EMPTY",
+      "function_point": "全局设置 / LLM Provider / 空状态"
+    },
+    {
+      "capture_id": "UI-004",
+      "capture_status": "COLLECTED_TARGET",
+      "screenshot_path": "screenshots/UI-004_I19_03_N8N_CONNECTION_LIST.png",
+      "screenshot_sha256": "a821ddd7b4b1db26ac8f5b88475a68531bcc74088dfa38a6b2c39223d52f6076",
+      "scene": "BASELINE",
+      "function_point": "全局设置 / n8n Connection / 列表"
+    },
+    {
+      "capture_id": "UI-005",
+      "capture_status": "COLLECTED_TARGET",
+      "screenshot_path": "screenshots/UI-005_I19_04_N8N_CONNECTION_DRAWER.png",
+      "screenshot_sha256": "26fe9bc164d78cd15c59ec4edf56c022c8a4721761c2e530c9c15e7148473c45",
+      "scene": "BASELINE",
+      "function_point": "全局设置 / n8n Connection / 新增/编辑抽屉"
+    },
+    {
+      "capture_id": "UI-006",
+      "capture_status": "COLLECTED_TARGET",
+      "screenshot_path": "screenshots/UI-006_GLOBAL_SETTINGS_CONNECTION_EMPTY_V2.png",
+      "screenshot_sha256": "1cdf688fe89aa45558a820997e31751f4eb914e2cbce12f6421f2ca13b3a429c",
+      "scene": "CONNECTION_EMPTY",
+      "function_point": "全局设置 / n8n Connection / 空状态"
+    },
+    {
+      "capture_id": "UI-007",
+      "capture_status": "COLLECTED_TARGET",
+      "screenshot_path": "screenshots/UI-007_I19_05_WORKFLOW_CONFIGURATION_LIST.png",
+      "screenshot_sha256": "c6862803c3c8c0e26ba04dfdfc786d9a0c3115a7f3e73c8ff4ac36944e8c68b0",
+      "scene": "BASELINE",
+      "function_point": "全局设置 / Workflow Configuration / 列表"
+    },
+    {
+      "capture_id": "UI-008",
+      "capture_status": "COLLECTED_TARGET",
+      "screenshot_path": "screenshots/UI-008_I19_06_WORKFLOW_CONFIGURATION_DRAWER.png",
+      "screenshot_sha256": "403ef93d2c75ff2dc9674c6c650cd93e88ff791d7e4cc126ecc7ff42991bd73d",
+      "scene": "BASELINE",
+      "function_point": "全局设置 / Workflow Configuration / 新增/编辑抽屉"
+    },
+    {
+      "capture_id": "UI-009",
+      "capture_status": "COLLECTED_TARGET",
+      "screenshot_path": "screenshots/UI-009_GLOBAL_SETTINGS_WORKFLOW_EMPTY_V2.png",
+      "screenshot_sha256": "356b4d97fe9482fb736551908167d43ae52e7f28c58de13dae6d9253cf307cdb",
+      "scene": "WORKFLOW_EMPTY",
+      "function_point": "全局设置 / Workflow Configuration / 空状态"
+    },
+    {
+      "capture_id": "UI-010",
+      "capture_status": "COLLECTED_TARGET",
+      "screenshot_path": "screenshots/UI-010_GLOBAL_SETTINGS_DISTRIBUTION_LIST_V2.png",
+      "screenshot_sha256": "4b0fcd5475ca6f37316b0f8cf5bfa3ce0be70321961dc5a21195c59e30ebcca7",
+      "scene": "BASELINE",
+      "function_point": "全局设置 / 分发平台 / 列表"
+    },
+    {
+      "capture_id": "UI-011",
+      "capture_status": "COLLECTED_TARGET",
+      "screenshot_path": "screenshots/UI-011_DISTRIBUTION_DRAWER_V2.png",
+      "screenshot_sha256": "d2a54141875736f004aaf04409cb8463ea0997a67083d72910990664551dab2b",
+      "scene": "BASELINE",
+      "function_point": "全局设置 / 分发平台 / 新增/编辑抽屉"
+    },
+    {
+      "capture_id": "UI-012",
+      "capture_status": "COLLECTED_TARGET",
+      "screenshot_path": "screenshots/UI-012_GLOBAL_SETTINGS_DISTRIBUTION_EMPTY_V2.png",
+      "screenshot_sha256": "2b76c673ae385f729f1a41e8bd5123d1c6669f67e9753bf01a77fe754b2c5c3c",
+      "scene": "DISTRIBUTION_EMPTY",
+      "function_point": "全局设置 / 分发平台 / 空状态"
+    },
+    {
+      "capture_id": "UI-013",
+      "capture_status": "COLLECTED_TARGET",
+      "screenshot_path": "screenshots/UI-013_P13_02_WORKFLOW_BINDINGS_UNBOUND.png",
+      "screenshot_sha256": "3f52de3f87489dc8ac2a0a2e4306af77c913d877b8632075102bab8d37afdca1",
+      "scene": "BINDINGS_UNBOUND",
+      "function_point": "项目设置 / 工作流绑定 / 四阶段全部未绑定"
+    },
+    {
+      "capture_id": "UI-014",
+      "capture_status": "COLLECTED_TARGET",
+      "screenshot_path": "screenshots/UI-014_P13_04_WORKFLOW_BINDINGS_PARTIAL.png",
+      "screenshot_sha256": "f996785d482c81391064e8e6650892a5e9e9e398054bfeb02e1d5dfe1cddcb5a",
+      "scene": "BINDINGS_PARTIAL",
+      "function_point": "项目设置 / 工作流绑定 / 部分已绑定"
+    },
+    {
+      "capture_id": "UI-015",
+      "capture_status": "COLLECTED_TARGET",
+      "screenshot_path": "screenshots/UI-015_I19_07_PROJECT_BINDINGS_EXECUTABLE.png",
+      "screenshot_sha256": "d18e0c2afc31db85e4aeec3455f044be03556c1a1c6d8252a04624669662675d",
+      "scene": "BINDINGS_READY",
+      "function_point": "项目设置 / 工作流绑定 / 四阶段已绑定且可执行"
+    },
+    {
+      "capture_id": "UI-016",
+      "capture_status": "COLLECTED_DEFECT",
+      "screenshot_path": "screenshots/UI-016_I19_08_PROJECT_BINDINGS_DEPENDENCY_INVALID.png",
+      "screenshot_sha256": "de966d28e5a5a7482c814a47642964c0f112d8c9537f111043cf0e5affbd0308",
+      "scene": "BINDINGS_INVALID",
+      "function_point": "项目设置 / 工作流绑定 / 绑定保留但依赖失效"
+    },
+    {
+      "capture_id": "UI-017",
+      "capture_status": "COLLECTED_TARGET",
+      "screenshot_path": "screenshots/UI-017_I19_09_SELECT_WORKFLOW_DRAWER.png",
+      "screenshot_sha256": "e0c390fb749927e79607a7ca28e5d10ff399fba222b9f7132066054340241bc3",
+      "scene": "BINDINGS_UNBOUND",
+      "function_point": "项目设置 / 工作流绑定 / 首次选择工作流抽屉"
+    },
+    {
+      "capture_id": "UI-018",
+      "capture_status": "COLLECTED_TARGET",
+      "screenshot_path": "screenshots/UI-018_I19_09_SELECT_WORKFLOW_DRAWER.png",
+      "screenshot_sha256": "c0456ee8a3fa49c57637997e26c75b55644aeeaf8722ebcea27fd0c5c712d236",
+      "scene": "BINDINGS_READY",
+      "function_point": "项目设置 / 工作流绑定 / 更换工作流抽屉"
+    },
+    {
+      "capture_id": "UI-019",
+      "capture_status": "COLLECTED_TARGET",
+      "screenshot_path": "screenshots/UI-019_P13_06_UNBIND_CONFIRM_DIALOG.png",
+      "screenshot_sha256": "7ca054739278f49d33022171069de06c4599b238a0725386c13475412bbe671c",
+      "scene": "BINDINGS_READY",
+      "function_point": "项目设置 / 工作流绑定 / 解除绑定确认弹窗"
+    },
+    {
+      "capture_id": "UI-020",
+      "capture_status": "COLLECTED_DEFECT",
+      "screenshot_path": "screenshots/UI-020_P13_08_NO_AVAILABLE_WORKFLOW.png",
+      "screenshot_sha256": "2555401f596781429413ba29840591d611ab2189f3bdcb4e5b3c06df17d52ce4",
+      "scene": "BINDINGS_NO_AVAILABLE",
+      "function_point": "项目设置 / 工作流绑定 / 当前阶段无可用工作流"
+    },
+    {
+      "capture_id": "UI-021",
+      "capture_status": "COLLECTED_DEFECT",
+      "screenshot_path": "screenshots/UI-021_P13_10_BINDING_CONFLICT.png",
+      "screenshot_sha256": "4939db42c067d64c166d688667d3d843b83dfea30d581445b47c5d9672520be4",
+      "scene": "BINDINGS_CONFLICT_BASE",
+      "function_point": "项目设置 / 工作流绑定 / 保存并发冲突"
+    },
+    {
+      "capture_id": "UI-022",
+      "capture_status": "COLLECTED_TARGET",
+      "screenshot_path": "screenshots/UI-022_I19_10_WORKFLOW_RUN_LIST.png",
+      "screenshot_sha256": "601ef686286da9c1751d90e0372f0d8e330d4627412e65e0b43167e3bafc0862",
+      "scene": "BASELINE",
+      "function_point": "流程中心 / WorkflowRun / 全局列表"
+    },
+    {
+      "capture_id": "UI-023",
+      "capture_status": "COLLECTED_TARGET",
+      "screenshot_path": "screenshots/UI-023_P14_02_WORKFLOW_RUN_LIST_PROJECT_FILTERED.png",
+      "screenshot_sha256": "25541169ca6d9d10f2a43bc76a7eb6e22b471dfe1c66435a97a242fcf4e11b44",
+      "scene": "BASELINE",
+      "function_point": "流程中心 / WorkflowRun / 按项目筛选列表"
+    },
+    {
+      "capture_id": "UI-024",
+      "capture_status": "COLLECTED_DEFECT",
+      "screenshot_path": "screenshots/UI-024_P14_03_WORKFLOW_RUN_LIST_EMPTY.png",
+      "screenshot_sha256": "2e7d10766c4e2b6e67111a214452d74371b43dee2e14ecdb18f77fccdb91f882",
+      "scene": "BASELINE",
+      "function_point": "流程中心 / WorkflowRun / 列表空状态"
+    },
+    {
+      "capture_id": "UI-025",
+      "capture_status": "COLLECTED_DEFECT",
+      "screenshot_path": "screenshots/UI-025_P14_04_WORKFLOW_RUN_LIST_ERROR.png",
+      "screenshot_sha256": "464de4bd0dad331b2f6380276c586b5ae7b36758d7219b8da42ca0d4b5f21751",
+      "scene": "API_STOPPED",
+      "function_point": "流程中心 / WorkflowRun / 列表错误状态"
+    },
+    {
+      "capture_id": "UI-026",
+      "capture_status": "COLLECTED_TARGET",
+      "screenshot_path": "screenshots/UI-026_I19_11_WORKFLOW_RUN_DETAIL_PAGE.png",
+      "screenshot_sha256": "24ac603eb6acf1a87ddfa4b0f58f9481b1597054c612c88c6b26790d898a5d7b",
+      "scene": "BASELINE",
+      "function_point": "流程中心 / WorkflowRun / 成功详情"
+    },
+    {
+      "capture_id": "UI-027",
+      "capture_status": "COLLECTED_TARGET",
+      "screenshot_path": "screenshots/UI-027_P14_06_WORKFLOW_RUN_DETAIL_RUNNING.png",
+      "screenshot_sha256": "0c32ab6d7a7e57959cd7d70ced09ddc249f3baf975076e19d216ef60c98ce4e8",
+      "scene": "REVIEW_RUNNING",
+      "function_point": "流程中心 / WorkflowRun / 运行中详情"
+    },
+    {
+      "capture_id": "UI-028",
+      "capture_status": "COLLECTED_DEFECT",
+      "screenshot_path": "screenshots/UI-028_P14_07_WORKFLOW_RUN_DETAIL_FAILED.png",
+      "screenshot_sha256": "700edff1c45b0425ed8ce2a4ccb972772529f1b00311377dd56974fd0be7eb74",
+      "scene": "BASELINE",
+      "function_point": "流程中心 / WorkflowRun / 失败详情"
+    },
+    {
+      "capture_id": "UI-029",
+      "capture_status": "COLLECTED_DEFECT",
+      "screenshot_path": "screenshots/UI-029_I19_12_RETRY_CONFIRM_DIALOG.png",
+      "screenshot_sha256": "700edff1c45b0425ed8ce2a4ccb972772529f1b00311377dd56974fd0be7eb74",
+      "scene": "BASELINE",
+      "function_point": "流程中心 / WorkflowRun / Retry 确认弹窗"
+    },
+    {
+      "capture_id": "UI-030",
+      "capture_status": "COLLECTED_TARGET",
+      "screenshot_path": "screenshots/UI-030_I19_13_LEGACY_WORKFLOWS_GUIDANCE.png",
+      "screenshot_sha256": "0ab036cc300056bb4bbdd2029adadf3ad5371a7211cc3cbe4b2057fe087aba14",
+      "scene": "BASELINE",
+      "function_point": "内置流程 / 旧 Workflows / 只读引导页"
+    },
+    {
+      "capture_id": "UI-031",
+      "capture_status": "COLLECTED_TARGET",
+      "screenshot_path": "screenshots/UI-031_P14_10_PROJECT_WORKFLOW_RUN_SUMMARY.png",
+      "screenshot_sha256": "6042a523a48ea1fd38fe74b2fde15fc6d67b7ac1ac2c9914ccd1cec6d5405a83",
+      "scene": "BASELINE",
+      "function_point": "项目概览 / 运行摘要 / 项目 WorkflowRun 摘要"
+    },
+    {
+      "capture_id": "UI-032",
+      "capture_status": "COLLECTED_TARGET",
+      "screenshot_path": "screenshots/UI-032_P15_C1_RUNNING_MAINLINE_EXPANSION.png",
+      "screenshot_sha256": "5108e500bd08ab8281fa4d275cf3705091ecb4c1f306610e6e38eda1f85aba8c",
+      "scene": "CP_RUNNING_MAINLINE",
+      "function_point": "章节规划 / 章节规划 / 主线剧情扩展运行中"
+    },
+    {
+      "capture_id": "UI-033",
+      "capture_status": "COLLECTED_TARGET",
+      "screenshot_path": "screenshots/UI-033_P15_C1_RUNNING_PARTIAL_RANGE.png",
+      "screenshot_sha256": "d88f599c42ed96d4661ea1b50930c6c3dc6550fb0e67e663cd63a57b2d21b11e",
+      "scene": "CP_RUNNING_PARTIAL",
+      "function_point": "章节规划 / 章节规划 / 局部范围生成运行中"
+    },
+    {
+      "capture_id": "UI-034",
+      "capture_status": "COLLECTED_TARGET",
+      "screenshot_path": "screenshots/UI-034_P15_C1_RUNNING_FULL_PLAN.png",
+      "screenshot_sha256": "091de624d9f316578fc7a2519d6fdbe117423a3232755cd6e142f0448f918051",
+      "scene": "CP_RUNNING_FULL",
+      "function_point": "章节规划 / 章节规划 / 完整章节规划运行中"
+    },
+    {
+      "capture_id": "UI-035",
+      "capture_status": "COLLECTED_TARGET",
+      "screenshot_path": "screenshots/UI-035_P15_C1_RUNNING_PARTIAL_ETA.png",
+      "screenshot_sha256": "cd3e33e8d0a17fd4fd894992040a7023d811a22e9444393b1cb10c97bf2d6699",
+      "scene": "CP_RUNNING_PARTIAL",
+      "function_point": "章节规划 / 章节规划 / 局部生成剩余时间"
+    },
+    {
+      "capture_id": "UI-036",
+      "capture_status": "COLLECTED_TARGET",
+      "screenshot_path": "screenshots/UI-036_P15_C1_RUNNING_PARTIAL_VALIDATING.png",
+      "screenshot_sha256": "354587218c8abd8a60cb0b50fca9f1758d84bc96e2210e8395fe5b2bc33be927",
+      "scene": "CP_VALIDATING",
+      "function_point": "章节规划 / 章节规划 / 结果校验中"
+    },
+    {
+      "capture_id": "UI-037",
+      "capture_status": "COLLECTED_DEFECT",
+      "screenshot_path": "screenshots/UI-037_P15_C1_RUNNING_DATA_VARIANT.png",
+      "screenshot_sha256": "3b122490b4b67008e8c982535410b987332fd90c85e7715fb8574720115bf943",
+      "scene": "BASELINE",
+      "function_point": "章节规划 / 章节规划 / 章节状态与统计数据变体"
+    },
+    {
+      "capture_id": "UI-038",
+      "capture_status": "COLLECTED_DEFECT",
+      "screenshot_path": "screenshots/UI-038_P15_C1_FAILED_ATOMIC.png",
+      "screenshot_sha256": "3b122490b4b67008e8c982535410b987332fd90c85e7715fb8574720115bf943",
+      "scene": "CP_FAILED",
+      "function_point": "章节规划 / 章节规划 / 失败且候选零写入"
+    },
+    {
+      "capture_id": "UI-039",
+      "capture_status": "COLLECTED_DEFECT",
+      "screenshot_path": "screenshots/UI-039_P15_C1_NOT_CONFIGURED.png",
+      "screenshot_sha256": "aa35956e6502d04b189ac8b94d6496fc0e1a947d3edeedabcd417b27c9886326",
+      "scene": "CP_NOT_CONFIGURED",
+      "function_point": "章节规划 / 章节规划 / 工作流未配置"
+    },
+    {
+      "capture_id": "UI-040",
+      "capture_status": "COLLECTED_DEFECT",
+      "screenshot_path": "screenshots/UI-040_P15_C2_GENERATION_SETTINGS.png",
+      "screenshot_sha256": "3cb3b183e05da8b629bd21a97eda3962fd17a74105fb26585115ff8357fe15ed",
+      "scene": "BASELINE",
+      "function_point": "章节规划 / 章节规划 / 生成参数抽屉"
+    },
+    {
+      "capture_id": "UI-041",
+      "capture_status": "COLLECTED_DEFECT",
+      "screenshot_path": "screenshots/UI-041_P15_C2_PREFLIGHT_PROGRESS.png",
+      "screenshot_sha256": "fe20e73159989b3e1db8494bcb0993f4a40125b6bcd6e80b11c4fc96673fb241",
+      "scene": "BINDINGS_READY",
+      "function_point": "章节规划 / 章节规划 / 预检进度弹窗"
+    },
+    {
+      "capture_id": "UI-042",
+      "capture_status": "COLLECTED_DEFECT",
+      "screenshot_path": "screenshots/UI-042_P15_C3_PREFLIGHT_PASS.png",
+      "screenshot_sha256": "8a1426f538ee0a975ced35d362e721477197f05e6fdeab6958e48baa6c4df77d",
+      "scene": "BINDINGS_READY",
+      "function_point": "章节规划 / 章节规划 / 预检通过报告"
+    },
+    {
+      "capture_id": "UI-043",
+      "capture_status": "COLLECTED_DEFECT",
+      "screenshot_path": "screenshots/UI-043_P15_C3_PREFLIGHT_BLOCKED.png",
+      "screenshot_sha256": "3cb3b183e05da8b629bd21a97eda3962fd17a74105fb26585115ff8357fe15ed",
+      "scene": "PREFLIGHT_BLOCK_CP",
+      "function_point": "章节规划 / 章节规划 / 预检阻断报告"
+    },
+    {
+      "capture_id": "UI-044",
+      "capture_status": "COLLECTED_DEFECT",
+      "screenshot_path": "screenshots/UI-044_P15_C3_RUN_CREATED.png",
+      "screenshot_sha256": "8a1426f538ee0a975ced35d362e721477197f05e6fdeab6958e48baa6c4df77d",
+      "scene": "BINDINGS_READY",
+      "function_point": "章节规划 / 章节规划 / 任务创建成功提示"
+    },
+    {
+      "capture_id": "UI-045",
+      "capture_status": "COLLECTED_TARGET",
+      "screenshot_path": "screenshots/UI-045_P15_C4_CANDIDATE_BATCH_LIST.png",
+      "screenshot_sha256": "42bd0fccb7b65c96fd09075902c18720dc3d353246f59e4b1452f0428e97e72d",
+      "scene": "BASELINE",
+      "function_point": "章节规划 / 候选批次 / 候选批次列表"
+    },
+    {
+      "capture_id": "UI-046",
+      "capture_status": "COLLECTED_TARGET",
+      "screenshot_path": "screenshots/UI-046_P15_C5_CANDIDATE_BATCH_DETAIL.png",
+      "screenshot_sha256": "e31e86c2b478aeff8623c288c5acbfd9f3d5c781f3df8a667d1de255f6f34520",
+      "scene": "BASELINE",
+      "function_point": "章节规划 / 候选批次 / 候选批次详情"
+    },
+    {
+      "capture_id": "UI-047",
+      "capture_status": "COLLECTED_TARGET",
+      "screenshot_path": "screenshots/UI-047_P15_C6_CANDIDATE_EDIT_DRAWER.png",
+      "screenshot_sha256": "b6ff851b4c02e345dbcc610f058c967ba5c4b040cdab4207a60e0d176f1736d9",
+      "scene": "BASELINE",
+      "function_point": "章节规划 / 候选批次 / 编辑章节候选抽屉"
+    },
+    {
+      "capture_id": "UI-048",
+      "capture_status": "COLLECTED_TARGET",
+      "screenshot_path": "screenshots/UI-048_P15_C7_CANDIDATE_COMPARE_DIALOG.png",
+      "screenshot_sha256": "b7c3b5cd28f6c979930e786929145e7a0541401317ee9700b72ba794e99baf25",
+      "scene": "BASELINE",
+      "function_point": "章节规划 / 候选批次 / 当前章节与候选差异对比"
+    },
+    {
+      "capture_id": "UI-049",
+      "capture_status": "COLLECTED_TARGET",
+      "screenshot_path": "screenshots/UI-049_P15_C8_BATCH_ADOPT_DIALOG.png",
+      "screenshot_sha256": "b1f120cda261b6f994b809390f88129a0a63b502785b4d028c8438f255ae08dc",
+      "scene": "BASELINE",
+      "function_point": "章节规划 / 候选批次 / 批量采用候选确认"
+    },
+    {
+      "capture_id": "UI-050",
+      "capture_status": "COLLECTED_TARGET",
+      "screenshot_path": "screenshots/UI-050_P15_C9_BATCH_ABANDON_DIALOG.png",
+      "screenshot_sha256": "ff470fa6da5dd1b71093c86b532ef2d96aba534c921fcfae295a56f2ba3c42ae",
+      "scene": "BASELINE",
+      "function_point": "章节规划 / 候选批次 / 放弃候选批次确认"
+    },
+    {
+      "capture_id": "UI-051",
+      "capture_status": "ROUTE_FAILED",
+      "screenshot_path": "screenshots/UI-051_P15_C10_STALE_CONFLICT_DIALOG.png",
+      "screenshot_sha256": "cfc1024af49361d97c10f30b8955ffdbebed47e6f21f22c28b314ac3fd684424",
+      "scene": "CANDIDATE_STALE",
+      "function_point": "章节规划 / 候选批次 / 候选基线过期冲突"
+    },
+    {
+      "capture_id": "UI-052",
+      "capture_status": "COLLECTED_TARGET",
+      "screenshot_path": "screenshots/UI-052_P15_S1_STORYLINE_RELATION_READONLY.png",
+      "screenshot_sha256": "b75322e9f1b6cccbf584d71adaca756e6fe4df1feb28936fb423a97c3b821cb0",
+      "scene": "BASELINE",
+      "function_point": "故事线 / 章节关联 / 章节关联统计只读"
+    },
+    {
+      "capture_id": "UI-053",
+      "capture_status": "COLLECTED_DEFECT",
+      "screenshot_path": "screenshots/UI-053_I16_D1_EDITOR_CHAPTER_GOAL.png",
+      "screenshot_sha256": "5803dbc315c707016e78cb51f19eb90ca2757cfa4f609ec4b73ef99f1059b781",
+      "scene": "BASELINE",
+      "function_point": "正文生成 / 正文编辑器 / 章节目标 Tab"
+    },
+    {
+      "capture_id": "UI-054",
+      "capture_status": "COLLECTED_TARGET",
+      "screenshot_path": "screenshots/UI-054_I16_D1_EDITOR_STORY_CONTEXT.png",
+      "screenshot_sha256": "bd8c132947979f21d7441e2f6586e9c65e9c501847e4622c88217898f21357c3",
+      "scene": "BASELINE",
+      "function_point": "正文生成 / 正文编辑器 / 故事情报 Tab"
+    },
+    {
+      "capture_id": "UI-055",
+      "capture_status": "COLLECTED_TARGET",
+      "screenshot_path": "screenshots/UI-055_I16_D1_EDITOR_MATERIALS.png",
+      "screenshot_sha256": "b9e34c3f86a06e31af41327eff33f37f34ea7d34ab50f34f5d7fff6c876c95e0",
+      "scene": "BASELINE",
+      "function_point": "正文生成 / 正文编辑器 / 素材库 Tab"
+    },
+    {
+      "capture_id": "UI-056",
+      "capture_status": "COLLECTED_DEFECT",
+      "screenshot_path": "screenshots/UI-056_I16_D2_GENERATE_CONFIRM.png",
+      "screenshot_sha256": "5803dbc315c707016e78cb51f19eb90ca2757cfa4f609ec4b73ef99f1059b781",
+      "scene": "BASELINE",
+      "function_point": "正文生成 / 正文编辑器 / 生成正文运行前确认抽屉"
+    },
+    {
+      "capture_id": "UI-057",
+      "capture_status": "COLLECTED_DEFECT",
+      "screenshot_path": "screenshots/UI-057_I16_D2_GENERATE_REQUIREMENTS.png",
+      "screenshot_sha256": "a4c5e331cf3d8cc3948c6a8a00b0f067d84a113f96609f8cc25c92b5bb17f177",
+      "scene": "BASELINE",
+      "function_point": "正文生成 / 正文编辑器 / 生成正文已填写要求"
+    },
+    {
+      "capture_id": "UI-058",
+      "capture_status": "COLLECTED_TARGET",
+      "screenshot_path": "screenshots/UI-058_I16_D3_RUN_QUEUED.png",
+      "screenshot_sha256": "cb8317775da8d30c137340176ab837e9971a597a2bbec02598ef205d178d0af0",
+      "scene": "CG_QUEUED",
+      "function_point": "正文生成 / 正文编辑器 / 正文生成排队中"
+    },
+    {
+      "capture_id": "UI-059",
+      "capture_status": "COLLECTED_TARGET",
+      "screenshot_path": "screenshots/UI-059_I16_D3_RUN_RUNNING.png",
+      "screenshot_sha256": "025c50cafc15ae3c26e96ea60f72035e44262d236afff66af125c1d0c8b89803",
+      "scene": "CG_RUNNING",
+      "function_point": "正文生成 / 正文编辑器 / 正文生成运行中"
+    },
+    {
+      "capture_id": "UI-060",
+      "capture_status": "COLLECTED_TARGET",
+      "screenshot_path": "screenshots/UI-060_I16_D3_RUN_SUCCEEDED.png",
+      "screenshot_sha256": "80b4a1eec92543b0f89fbbc7d621673da3ea1011d86db94a3d477408af4a7120",
+      "scene": "CG_SUCCEEDED",
+      "function_point": "正文生成 / 正文编辑器 / 正文候选已创建"
+    },
+    {
+      "capture_id": "UI-061",
+      "capture_status": "COLLECTED_DEFECT",
+      "screenshot_path": "screenshots/UI-061_I16_D3_RUN_FAILED.png",
+      "screenshot_sha256": "51ed13e4d8c4fe4d2b803468e8b1227e3a38fe40a64b05ea3d4fd74b3ceb763a",
+      "scene": "CG_FAILED",
+      "function_point": "正文生成 / 正文编辑器 / 正文生成失败"
+    },
+    {
+      "capture_id": "UI-062",
+      "capture_status": "COLLECTED_DEFECT",
+      "screenshot_path": "screenshots/UI-062_I16_D4_CANDIDATE_VERSION.png",
+      "screenshot_sha256": "5803dbc315c707016e78cb51f19eb90ca2757cfa4f609ec4b73ef99f1059b781",
+      "scene": "BASELINE",
+      "function_point": "正文生成 / 正文编辑器 / 正文候选版本比较"
+    },
+    {
+      "capture_id": "UI-063",
+      "capture_status": "COLLECTED_DEFECT",
+      "screenshot_path": "screenshots/UI-063_I16_D5_NOT_CONFIGURED.png",
+      "screenshot_sha256": "5803dbc315c707016e78cb51f19eb90ca2757cfa4f609ec4b73ef99f1059b781",
+      "scene": "CG_NOT_CONFIGURED",
+      "function_point": "正文生成 / 正文编辑器 / 正文生成工作流未配置"
+    },
+    {
+      "capture_id": "UI-064",
+      "capture_status": "COLLECTED_DEFECT",
+      "screenshot_path": "screenshots/UI-064_I17_D1_EDITOR_REVIEW_ENTRY.png",
+      "screenshot_sha256": "5803dbc315c707016e78cb51f19eb90ca2757cfa4f609ec4b73ef99f1059b781",
+      "scene": "BASELINE",
+      "function_point": "内容审核 / 审核入口 / 正文编辑器提交审核入口"
+    },
+    {
+      "capture_id": "UI-065",
+      "capture_status": "COLLECTED_DEFECT",
+      "screenshot_path": "screenshots/UI-065_D2_SUBMIT_REVIEW_DRAWER.png",
+      "screenshot_sha256": "5803dbc315c707016e78cb51f19eb90ca2757cfa4f609ec4b73ef99f1059b781",
+      "scene": "BASELINE",
+      "function_point": "内容审核 / 审核入口 / 发起内容审核抽屉"
+    },
+    {
+      "capture_id": "UI-066",
+      "capture_status": "COLLECTED_TARGET",
+      "screenshot_path": "screenshots/UI-066_STATE_TASK_RUNNING_BAR.png",
+      "screenshot_sha256": "5cffa3f40df3cc0a4b71b0a1e099e03d2c35b52f1cde7f8e19c9815408619c75",
+      "scene": "REVIEW_RUNNING",
+      "function_point": "内容审核 / 审核工作区 / 内容审核运行中"
+    },
+    {
+      "capture_id": "UI-067",
+      "capture_status": "COLLECTED_DEFECT",
+      "screenshot_path": "screenshots/UI-067_D2_REVIEW_V2.png",
+      "screenshot_sha256": "63bc9fada2b3502caae64e9b52b58cd16f8a252cb006097d129faaeb5b29da1e",
+      "scene": "REVIEW_SUCCEEDED",
+      "function_point": "内容审核 / 审核工作区 / 审核结果总览"
+    },
+    {
+      "capture_id": "UI-068",
+      "capture_status": "COLLECTED_DEFECT",
+      "screenshot_path": "screenshots/UI-068_I17_D2_REVIEW_ISSUE_DETAIL.png",
+      "screenshot_sha256": "63bc9fada2b3502caae64e9b52b58cd16f8a252cb006097d129faaeb5b29da1e",
+      "scene": "REVIEW_SUCCEEDED",
+      "function_point": "内容审核 / 审核工作区 / 问题详情与全文定位"
+    },
+    {
+      "capture_id": "UI-069",
+      "capture_status": "COLLECTED_TARGET",
+      "screenshot_path": "screenshots/UI-069_STATE_TASK_FAILED_NOTICE.png",
+      "screenshot_sha256": "d1a646b930fb1446980cb66eda942ba8737bd64506371de326008a72e9cd393e",
+      "scene": "REVIEW_FAILED",
+      "function_point": "内容审核 / 审核工作区 / 审核任务失败"
+    },
+    {
+      "capture_id": "UI-070",
+      "capture_status": "COLLECTED_TARGET",
+      "screenshot_path": "screenshots/UI-070_STATE_NOT_CONFIGURED_EMPTY.png",
+      "screenshot_sha256": "5c97a1e36ad1ed03e460635950c8039a10d2831bead8f3e86ab4bc83e36fa265",
+      "scene": "REVIEW_NOT_CONFIGURED",
+      "function_point": "内容审核 / 审核工作区 / 审核工作流未配置"
+    },
+    {
+      "capture_id": "UI-071",
+      "capture_status": "COLLECTED_TARGET",
+      "screenshot_path": "screenshots/UI-071_I17_D2_REVIEW_HISTORY.png",
+      "screenshot_sha256": "27b6b64fb40725b7503c751ee10c84666fedb254393cd18b399a46d8d03cf7f1",
+      "scene": "BASELINE",
+      "function_point": "内容审核 / 审核工作区 / 审核历史"
+    },
+    {
+      "capture_id": "UI-072",
+      "capture_status": "COLLECTED_DEFECT",
+      "screenshot_path": "screenshots/UI-072_I18_D2_REVIEW_REWRITE_ENTRY.png",
+      "screenshot_sha256": "63bc9fada2b3502caae64e9b52b58cd16f8a252cb006097d129faaeb5b29da1e",
+      "scene": "BASELINE",
+      "function_point": "正文重写 / 重写工作区 / 选择问题并创建重写入口"
+    },
+    {
+      "capture_id": "UI-073",
+      "capture_status": "COLLECTED_DEFECT",
+      "screenshot_path": "screenshots/UI-073_I18_D4_CREATE_REWRITE.png",
+      "screenshot_sha256": "c76b26b5efa3a8a899ea73512cbe353fcd32a62808a21d40e6fd41d871338ac6",
+      "scene": "BASELINE",
+      "function_point": "正文重写 / 重写工作区 / 创建正文重写"
+    },
+    {
+      "capture_id": "UI-074",
+      "capture_status": "COLLECTED_DEFECT",
+      "screenshot_path": "screenshots/UI-074_I18_D4_REWRITE_CONFIG_DRAWER.png",
+      "screenshot_sha256": "c76b26b5efa3a8a899ea73512cbe353fcd32a62808a21d40e6fd41d871338ac6",
+      "scene": "BASELINE",
+      "function_point": "正文重写 / 重写工作区 / 查看项目重写配置抽屉"
+    },
+    {
+      "capture_id": "UI-075",
+      "capture_status": "COLLECTED_DEFECT",
+      "screenshot_path": "screenshots/UI-075_I18_D4_REWRITE_RUNNING.png",
+      "screenshot_sha256": "8e4315036c66251ee74795314270876b8393406b7d1cf19f9f298b961aaa9ce0",
+      "scene": "REWRITE_RUNNING",
+      "function_point": "正文重写 / 重写工作区 / 正文重写运行中"
+    },
+    {
+      "capture_id": "UI-076",
+      "capture_status": "COLLECTED_DEFECT",
+      "screenshot_path": "screenshots/UI-076_I18_D5_REWRITE_RESULT.png",
+      "screenshot_sha256": "f9aa2d2d07129b40646ad6a806e9a41f09382fb282905a956978a89dd4d4bcea",
+      "scene": "REWRITE_SUCCEEDED",
+      "function_point": "正文重写 / 重写工作区 / 正文重写成功候选"
+    },
+    {
+      "capture_id": "UI-077",
+      "capture_status": "COLLECTED_DEFECT",
+      "screenshot_path": "screenshots/UI-077_I18_D5_SET_CURRENT_CONFIRM.png",
+      "screenshot_sha256": "f9aa2d2d07129b40646ad6a806e9a41f09382fb282905a956978a89dd4d4bcea",
+      "scene": "REWRITE_SUCCEEDED",
+      "function_point": "正文重写 / 重写工作区 / 设为当前版本确认"
+    },
+    {
+      "capture_id": "UI-078",
+      "capture_status": "COLLECTED_DEFECT",
+      "screenshot_path": "screenshots/UI-078_I18_D5_RESULT_CONSUMPTION_FAILED.png",
+      "screenshot_sha256": "c76b26b5efa3a8a899ea73512cbe353fcd32a62808a21d40e6fd41d871338ac6",
+      "scene": "REWRITE_RESULT_CONSUMPTION_FAILED",
+      "function_point": "正文重写 / 重写工作区 / 重写结果提交失败"
+    },
+    {
+      "capture_id": "UI-079",
+      "capture_status": "COLLECTED_DEFECT",
+      "screenshot_path": "screenshots/UI-079_I18_D4_REWRITE_FAILED.png",
+      "screenshot_sha256": "c76b26b5efa3a8a899ea73512cbe353fcd32a62808a21d40e6fd41d871338ac6",
+      "scene": "REWRITE_FAILED",
+      "function_point": "正文重写 / 重写工作区 / 重写任务执行失败"
+    },
+    {
+      "capture_id": "UI-080",
+      "capture_status": "COLLECTED_DEFECT",
+      "screenshot_path": "screenshots/UI-080_I18_D4_REWRITE_AVAILABILITY.png",
+      "screenshot_sha256": "c76b26b5efa3a8a899ea73512cbe353fcd32a62808a21d40e6fd41d871338ac6",
+      "scene": "REWRITE_UNAVAILABLE",
+      "function_point": "正文重写 / 重写工作区 / 未配置/配置失效/空状态"
+    },
+    {
+      "capture_id": "UI-081",
+      "capture_status": "COLLECTED_DEFECT",
+      "screenshot_path": "screenshots/UI-081_I19_14_SHARED_PREFLIGHT_BLOCKED.png",
+      "screenshot_sha256": "3cb3b183e05da8b629bd21a97eda3962fd17a74105fb26585115ff8357fe15ed",
+      "scene": "PREFLIGHT_BLOCK_CP",
+      "function_point": "共享升级状态 / 章节规划 / 共享预检阻断"
+    },
+    {
+      "capture_id": "UI-082",
+      "capture_status": "COLLECTED_DEFECT",
+      "screenshot_path": "screenshots/UI-082_I19_14_SHARED_PREFLIGHT_BLOCKED.png",
+      "screenshot_sha256": "5803dbc315c707016e78cb51f19eb90ca2757cfa4f609ec4b73ef99f1059b781",
+      "scene": "PREFLIGHT_BLOCK_CG",
+      "function_point": "共享升级状态 / 正文生成 / 共享预检阻断"
+    },
+    {
+      "capture_id": "UI-083",
+      "capture_status": "COLLECTED_DEFECT",
+      "screenshot_path": "screenshots/UI-083_I19_14_SHARED_PREFLIGHT_BLOCKED.png",
+      "screenshot_sha256": "5803dbc315c707016e78cb51f19eb90ca2757cfa4f609ec4b73ef99f1059b781",
+      "scene": "PREFLIGHT_BLOCK_REVIEW",
+      "function_point": "共享升级状态 / 内容审核 / 共享预检阻断"
+    },
+    {
+      "capture_id": "UI-084",
+      "capture_status": "COLLECTED_DEFECT",
+      "screenshot_path": "screenshots/UI-084_I19_14_SHARED_PREFLIGHT_BLOCKED.png",
+      "screenshot_sha256": "c76b26b5efa3a8a899ea73512cbe353fcd32a62808a21d40e6fd41d871338ac6",
+      "scene": "PREFLIGHT_BLOCK_REWRITE",
+      "function_point": "共享升级状态 / 正文重写 / 共享预检阻断"
+    },
+    {
+      "capture_id": "UI-085",
+      "capture_status": "COLLECTED_DEFECT",
+      "screenshot_path": "screenshots/UI-085_I19_15_SHARED_RUNTIME_RECOVERY.png",
+      "screenshot_sha256": "3b122490b4b67008e8c982535410b987332fd90c85e7715fb8574720115bf943",
+      "scene": "CP_TIMED_OUT",
+      "function_point": "共享升级状态 / 章节规划 / 共享运行恢复"
+    },
+    {
+      "capture_id": "UI-086",
+      "capture_status": "COLLECTED_DEFECT",
+      "screenshot_path": "screenshots/UI-086_I19_15_SHARED_RUNTIME_RECOVERY.png",
+      "screenshot_sha256": "1aa79b18c0f4c6c68810084e0fd7e98652574aeaaff66e5a5b40a8691e08881b",
+      "scene": "CG_RESULT_CONSUMPTION_FAILED",
+      "function_point": "共享升级状态 / 正文生成 / 共享运行恢复"
+    },
+    {
+      "capture_id": "UI-087",
+      "capture_status": "COLLECTED_TARGET",
+      "screenshot_path": "screenshots/UI-087_I19_15_SHARED_RUNTIME_RECOVERY.png",
+      "screenshot_sha256": "e7165312979637f45868a391b3ebac48de5cdbd7dc681da71a69c829d586b629",
+      "scene": "REVIEW_FAILED",
+      "function_point": "共享升级状态 / 内容审核 / 共享运行恢复"
+    },
+    {
+      "capture_id": "UI-088",
+      "capture_status": "COLLECTED_DEFECT",
+      "screenshot_path": "screenshots/UI-088_I19_15_SHARED_RUNTIME_RECOVERY.png",
+      "screenshot_sha256": "c76b26b5efa3a8a899ea73512cbe353fcd32a62808a21d40e6fd41d871338ac6",
+      "scene": "REWRITE_TIMED_OUT",
+      "function_point": "共享升级状态 / 正文重写 / 共享运行恢复"
+    }
+  ]
+}
