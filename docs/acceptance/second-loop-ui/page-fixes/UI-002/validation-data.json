@@ -1,0 +1,14 @@
+{
+  "providerId": "11000000-0000-4000-8000-000000000001",
+  "name": "OpenAI 主模型",
+  "providerType": "openai_compatible",
+  "baseUrl": "https://api.openai.com/v1",
+  "defaultModel": "gpt-5.2",
+  "timeoutSeconds": 60,
+  "hasSecret": true,
+  "validationStatus": "verified",
+  "enabled": true,
+  "executable": true,
+  "页面实际 URL": "http://127.0.0.1:13001/settings",
+  "数据 Verify 结果": "PASS"
+}
