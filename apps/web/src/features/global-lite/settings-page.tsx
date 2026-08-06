@@ -175,234 +175,228 @@ export function SettingsPage() {
 
   return (
     <section className="settings-content ui001-provider-list">
-      <section className="llm-content-card">
-        <header>
-          <div>
-            <h2>LLM 配置</h2>
-            <p>管理全局大模型连接、验证状态与执行资格</p>
-          </div>
-          <button className="primary" onClick={() => setDrawer({ mode: "create" })} disabled={!types?.length}>
-            添加 LLM 配置
-          </button>
-        </header>
+      <div className="ui001-header">
+        <button className="primary" onClick={() => setDrawer({ mode: "create" })} disabled={!types?.length}>
+          添加 LLM 配置
+        </button>
+      </div>
 
-        {/* 4.3 增加顶部规则说明条 */}
-        <div className="ui001-provider-notice">
-          关键连接参数修改后，当前启用状态会保留，但执行资格立即失效。重新验证成功后才能恢复执行。
+      {/* 4.3 增加顶部规则说明条 */}
+      <div className="ui001-provider-notice">
+        关键连接参数修改后，当前启用状态会保留，但执行资格立即失效。重新验证成功后才能恢复执行。
+      </div>
+
+      {notice && <p className="llm-toast" role="status">{notice}</p>}
+
+      {error ? (
+        <div className="llm-state" role="alert">
+          <h3>暂时无法加载</h3>
+          <p>{error}</p>
+          <button onClick={() => void load()}>重试</button>
         </div>
+      ) : !providers || !types ? (
+        <div className="llm-loading" role="status">正在加载 LLM 配置…</div>
+      ) : (total === 0 && !query && !status && !enabled && !executable) ? (
+        <div className="llm-state">
+          <h3>暂无 LLM 配置</h3>
+          <p>添加一个 LLM 配置后，可供后续项目工作流使用。</p>
+        </div>
+      ) : (
+        <>
+          <div className="ui001-toolbar">
+            {/* 1. 搜索框 */}
+            <input
+              value={query}
+              onChange={event => reset(() => setQuery(event.target.value))}
+              placeholder="搜索配置名称"
+            />
 
-        {notice && <p className="llm-toast" role="status">{notice}</p>}
+            {/* 2. 验证状态 */}
+            <select value={status} onChange={event => reset(() => setStatus(event.target.value))}>
+              <option value="">全部验证状态</option>
+              <option value="unverified">未验证</option>
+              <option value="verifying">验证中</option>
+              <option value="verified">验证成功</option>
+              <option value="failed">验证失败</option>
+              <option value="stale">配置已变更</option>
+            </select>
 
-        {error ? (
-          <div className="llm-state" role="alert">
-            <h3>暂时无法加载</h3>
-            <p>{error}</p>
-            <button onClick={() => void load()}>重试</button>
+            {/* 3. 启用状态 */}
+            <select value={enabled} onChange={event => reset(() => setEnabled(event.target.value))}>
+              <option value="">全部启用状态</option>
+              <option value="true">已启用</option>
+              <option value="false">未启用</option>
+            </select>
+
+            {/* 4. 执行资格 */}
+            <select value={executable} onChange={event => reset(() => setExecutable(event.target.value))}>
+              <option value="">全部执行资格</option>
+              <option value="true">可执行</option>
+              <option value="false">不可执行</option>
+            </select>
+
+            {/* 5. 刷新按钮 */}
+            <button
+              type="button"
+              className="ui001-refresh-btn"
+              onClick={() => void load()}
+              disabled={loading}
+            >
+              刷新
+            </button>
+
+            {/* 6. 配置总数 */}
+            <span className="ui001-total-count">共 {total} 个配置</span>
           </div>
-        ) : !providers || !types ? (
-          <div className="llm-loading" role="status">正在加载 LLM 配置…</div>
-        ) : (total === 0 && !query && !status && !enabled && !executable) ? (
-          <div className="llm-state">
-            <h3>暂无 LLM 配置</h3>
-            <p>添加一个 LLM 配置后，可供后续项目工作流使用。</p>
-          </div>
-        ) : (
-          <>
-            <div className="llm-toolbar">
-              {/* 1. 搜索框 */}
-              <input
-                value={query}
-                onChange={event => reset(() => setQuery(event.target.value))}
-                placeholder="搜索配置名称"
-              />
 
-              {/* 2. 验证状态 */}
-              <select value={status} onChange={event => reset(() => setStatus(event.target.value))}>
-                <option value="">全部验证状态</option>
-                <option value="unverified">未验证</option>
-                <option value="verifying">验证中</option>
-                <option value="verified">验证成功</option>
-                <option value="failed">验证失败</option>
-                <option value="stale">配置已变更</option>
-              </select>
-
-              {/* 3. 启用状态 */}
-              <select value={enabled} onChange={event => reset(() => setEnabled(event.target.value))}>
-                <option value="">全部启用状态</option>
-                <option value="true">已启用</option>
-                <option value="false">未启用</option>
-              </select>
-
-              {/* 4. 执行资格 */}
-              <select value={executable} onChange={event => reset(() => setExecutable(event.target.value))}>
-                <option value="">全部执行资格</option>
-                <option value="true">可执行</option>
-                <option value="false">不可执行</option>
-              </select>
-
-              {/* 5. 刷新按钮 */}
-              <button
-                type="button"
-                className="ui001-refresh-btn"
-                onClick={() => void load()}
-                disabled={loading}
-              >
-                刷新
-              </button>
-
-              {/* 6. 配置总数 */}
-              <span>共 {total} 个配置</span>
-            </div>
-
-            <div className="llm-table-wrap">
-              <table>
-                <thead>
-                  <tr>
-                    <th>配置名称</th>
-                    <th>服务类型</th>
-                    <th>Base URL</th>
-                    <th>可用模型</th>
-                    <th>默认模型</th>
-                    <th>验证状态</th>
-                    <th>启用状态</th>
-                    <th>执行资格</th>
-                    <th>最近验证</th>
-                    <th>操作</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {providers.map(provider => {
-                    const rowDisabled = togglingId === provider.id || verifyingId === provider.id;
-                    return (
-                      <tr key={provider.id}>
-                        <td>
-                          <strong>{provider.name}</strong>
-                          {provider.hasSecret && (
-                            <small>
-                              凭据已配置
-                              {provider.secretFingerprint && ` · ${provider.secretFingerprint}`}
-                            </small>
+          <div className="ui001-table-wrap">
+            <table className="ui001-table">
+              <thead>
+                <tr>
+                  <th>配置名称</th>
+                  <th>服务类型</th>
+                  <th>Base URL</th>
+                  <th>可用模型</th>
+                  <th>默认模型</th>
+                  <th>验证状态</th>
+                  <th>启用状态</th>
+                  <th>执行资格</th>
+                  <th>最近验证</th>
+                  <th>操作</th>
+                </tr>
+              </thead>
+              <tbody>
+                {providers.map(provider => {
+                  const rowDisabled = togglingId === provider.id || verifyingId === provider.id;
+                  return (
+                    <tr key={provider.id}>
+                      <td>
+                        <strong>{provider.name}</strong>
+                        {provider.hasSecret && (
+                          <small>
+                            凭据已配置
+                            {provider.secretFingerprint && ` · ${provider.secretFingerprint}`}
+                          </small>
+                        )}
+                      </td>
+                      <td>{provider.providerTypeLabel}</td>
+                      <td title={provider.baseUrl} className="ui001-base-url">
+                        {provider.baseUrl}
+                      </td>
+                      <td>{provider.modelCount} 个</td>
+                      <td>
+                        {provider.defaultModel ? (
+                          <span className="ui001-default-model-badge">
+                            {provider.defaultModel}
+                          </span>
+                        ) : "—"}
+                      </td>
+                      <td>
+                        <div className="ui001-status-container">
+                          <span className={`ui001-status ui001-status-${provider.validationStatus}`}>
+                            {provider.validationStatusLabel}
+                          </span>
+                          {provider.validationStatus === "failed" && (provider.lastErrorMessage || provider.safeError) && (
+                            <div className="ui001-status-error" title={provider.lastErrorMessage || provider.safeError || ""}>
+                              {provider.lastErrorMessage || provider.safeError}
+                            </div>
                           )}
-                        </td>
-                        <td>{provider.providerTypeLabel}</td>
-                        <td title={provider.baseUrl} className="ui001-base-url">
-                          {provider.baseUrl}
-                        </td>
-                        <td>{provider.modelCount} 个</td>
-                        <td>
-                          {provider.defaultModel ? (
-                            <span className="bg-surface-container px-2 py-0.5 rounded text-[11px]">
-                              {provider.defaultModel}
-                            </span>
-                          ) : "—"}
-                        </td>
-                        <td>
-                          <div className="ui001-status-container">
-                            <span className={`ui001-status ui001-status-${provider.validationStatus}`}>
-                              {provider.validationStatusLabel}
-                            </span>
-                            {provider.validationStatus === "failed" && (provider.lastErrorMessage || provider.safeError) && (
-                              <div className="ui001-status-error" title={provider.lastErrorMessage || provider.safeError || ""}>
-                                {provider.lastErrorMessage || provider.safeError}
-                              </div>
-                            )}
-                            {provider.validationStatus === "stale" && (
-                              <div className="ui001-status-error">
-                                原验证结果已失效，请重新验证
-                              </div>
-                            )}
-                          </div>
-                        </td>
-                        <td>
+                          {provider.validationStatus === "stale" && (
+                            <div className="ui001-status-error">
+                              原验证结果已失效，请重新验证
+                            </div>
+                          )}
+                        </div>
+                      </td>
+                      <td>
+                        <button
+                          role="switch"
+                          aria-checked={provider.enabled}
+                          disabled={rowDisabled}
+                          onClick={() => void handleToggleEnabled(provider)}
+                          className={`ui001-toggle-btn ${provider.enabled ? "enabled" : "disabled"}`}
+                        />
+                      </td>
+                      <td>
+                        {provider.executable ? (
+                          <span className="ui001-eligibility-ready">可执行</span>
+                        ) : (
+                          <span className="ui001-eligibility-blocked" title={provider.safeError || "不可执行"}>
+                            不可执行
+                          </span>
+                        )}
+                      </td>
+                      <td>
+                        {formatDateTime(provider.checkedAt ?? provider.lastVerifiedAt)}
+                      </td>
+                      <td className="ui001-actions">
+                        <button className="ui001-action-btn" disabled={rowDisabled} onClick={() => void edit(provider)}>
+                          编辑
+                        </button>
+                        <button className="ui001-action-btn" disabled={rowDisabled} onClick={() => void handleVerify(provider)}>
+                          {provider.validationStatus === "stale" ? "重新验证" : "验证"}
+                        </button>
+
+                        <div className="ui001-more-menu-container">
                           <button
-                            role="switch"
-                            aria-checked={provider.enabled}
+                            type="button"
+                            className="ui001-more-btn ui001-action-btn"
                             disabled={rowDisabled}
-                            onClick={() => void handleToggleEnabled(provider)}
-                            className={`ui001-toggle-btn ${provider.enabled ? "enabled" : "disabled"}`}
-                          />
-                        </td>
-                        <td>
-                          {provider.executable ? (
-                            <span className="ui001-eligibility-ready">可执行</span>
-                          ) : (
-                            <span className="ui001-eligibility-blocked" title={provider.safeError || "不可执行"}>
-                              不可执行
-                            </span>
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setOpenMenuId(openMenuId === provider.id ? null : provider.id);
+                            }}
+                          >
+                            更多
+                          </button>
+                          {openMenuId === provider.id && (
+                            <ul className="ui001-more-menu" role="menu">
+                              <li role="none">
+                                <button
+                                  type="button"
+                                  role="menuitem"
+                                  onClick={() => void handleDiscoverModels(provider)}
+                                >
+                                  发现模型
+                                </button>
+                              </li>
+                              <li role="none">
+                                <button
+                                  type="button"
+                                  role="menuitem"
+                                  onClick={() => void handleToggleEnabled(provider)}
+                                >
+                                  {provider.enabled ? "停用配置" : "启用配置"}
+                                </button>
+                              </li>
+                            </ul>
                           )}
-                        </td>
-                        <td>
-                          {formatDateTime(provider.checkedAt ?? provider.lastVerifiedAt)}
-                        </td>
-                        <td className="space-x-2">
-                          <button disabled={rowDisabled} onClick={() => void edit(provider)}>
-                            编辑
-                          </button>
-                          <button disabled={rowDisabled} onClick={() => void handleVerify(provider)}>
-                            {provider.validationStatus === "stale" ? "重新验证" : "验证"}
-                          </button>
-                          
-                          <div className="ui001-more-menu-container">
-                            <button
-                              type="button"
-                              className="ui001-more-btn"
-                              disabled={rowDisabled}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setOpenMenuId(openMenuId === provider.id ? null : provider.id);
-                              }}
-                            >
-                              更多
-                            </button>
-                            {openMenuId === provider.id && (
-                              <ul className="ui001-more-menu" role="menu">
-                                <li role="none">
-                                  <button
-                                    type="button"
-                                    role="menuitem"
-                                    onClick={() => void handleDiscoverModels(provider)}
-                                  >
-                                    发现模型
-                                  </button>
-                                </li>
-                                <li role="none">
-                                  <button
-                                    type="button"
-                                    role="menuitem"
-                                    onClick={() => void handleToggleEnabled(provider)}
-                                  >
-                                    {provider.enabled ? "停用配置" : "启用配置"}
-                                  </button>
-                                </li>
-                              </ul>
-                            )}
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
 
-            <div className="llm-pagination">
-              <span>第 {page} / {pages} 页</span>
-              <button
-                disabled={offset === 0}
-                onClick={() => setOffset(value => Math.max(0, value - limit))}
-              >
-                上一页
-              </button>
-              <button
-                disabled={offset + limit >= total}
-                onClick={() => setOffset(value => value + limit)}
-              >
-                下一页
-              </button>
-            </div>
-          </>
-        )}
-      </section>
+          <div className="ui001-pagination">
+            <span>第 {page} / {pages} 页</span>
+            <button
+              disabled={offset === 0}
+              onClick={() => setOffset(value => Math.max(0, value - limit))}
+            >
+              上一页
+            </button>
+            <button
+              disabled={offset + limit >= total}
+              onClick={() => setOffset(value => value + limit)}
+            >
+              下一页
+            </button>
+          </div>
+        </>
+      )}
 
       {drawer && types && (
         <ProviderDrawer
