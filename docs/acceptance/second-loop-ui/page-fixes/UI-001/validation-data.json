@@ -1,0 +1,81 @@
+{
+  "page_id": "UI-001",
+  "page_name": "全局设置 / LLM 配置列表",
+  "prototype_code": "I19_01_LLM_PROVIDER_LIST",
+  "status": "PASSED",
+  "verification_timestamp": "2026-08-06T17:38:30Z",
+  "acceptance_environment": {
+    "node_version": "v24.14.1",
+    "browser": "Chromium 1440x900",
+    "database": "PostgreSQL 16",
+    "branch": "feature/second-user-loop",
+    "baseline_commit": "7a067c226e49c5ef07e095fd9f54b14ddce58bd3"
+  },
+  "checks_summary": {
+    "total": 10,
+    "passed": 10,
+    "failed": 0
+  },
+  "checklist": [
+    {
+      "id": "CHK-001",
+      "name": "Database Fixture Data Seeding & Isolation",
+      "status": "PASSED",
+      "details": "Successfully seeded 4 LLM providers (verified, failed, stale, unverified) with mock models via scripts/ui-acceptance/Set-UI001-LlmProviderFixture.ps1."
+    },
+    {
+      "id": "CHK-002",
+      "name": "API Mapping & Omit Secret Credential Protection",
+      "status": "PASSED",
+      "details": "Verified LlmProviderVm mapping exposes validationStatus, enabled, lastVerifiedAt, checkedAt, lastErrorMessage, and ensures secret is never exposed."
+    },
+    {
+      "id": "CHK-003",
+      "name": "Notice Rule Banner",
+      "status": "PASSED",
+      "details": "Notice banner rendered matching prototype rule note text."
+    },
+    {
+      "id": "CHK-004",
+      "name": "10-Column Table Layout Alignment",
+      "status": "PASSED",
+      "details": "Table headers, columns, truncations, and action menu drawer match frozen prototype UI."
+    },
+    {
+      "id": "CHK-005",
+      "name": "Executable Filter Query Parameter",
+      "status": "PASSED",
+      "details": "Added executable query filter support (executable=true/false) to frontend API and page toolbar."
+    },
+    {
+      "id": "CHK-006",
+      "name": "Search & Select Toolbar Interactions",
+      "status": "PASSED",
+      "details": "Filtering by name search, validation status, and executable state tested and verified."
+    },
+    {
+      "id": "CHK-007",
+      "name": "Row Action Drawer & Keyboard Escape Accessibility",
+      "status": "PASSED",
+      "details": "More action menu opens drawer and closes on Escape press or click outside."
+    },
+    {
+      "id": "CHK-008",
+      "name": "API Unit Tests",
+      "status": "PASSED",
+      "details": "6 node unit tests passed cleanly in apps/web/src/features/global-config/llm-provider-api.test.ts."
+    },
+    {
+      "id": "CHK-009",
+      "name": "Typecheck and Lint Validation",
+      "status": "PASSED",
+      "details": "TypeScript typecheck and ESLint passed with 0 errors across all modified/created files."
+    },
+    {
+      "id": "CHK-010",
+      "name": "Playwright End-to-End Test & Screenshot Generation",
+      "status": "PASSED",
+      "details": "Playwright e2e test passed and generated UI-001_I19_01_LLM_PROVIDER_LIST_AFTER.png."
+    }
+  ]
+}
