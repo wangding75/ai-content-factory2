@@ -702,10 +702,12 @@ export function SettingsPage() {
         </button>
       </div>
 
-      {/* 4.3 增加顶部规则说明条 */}
-      <div className="ui001-provider-notice">
-        关键连接参数修改后，当前启用状态会保留，但执行资格立即失效。重新验证成功后才能恢复执行。
-      </div>
+      {/* 4.3 仅在有配置列表时展示顶部规则说明条 */}
+      {providers && providers.length > 0 && (
+        <div className="ui001-provider-notice">
+          关键连接参数修改后，当前启用状态会保留，但执行资格立即失效。重新验证成功后才能恢复执行。
+        </div>
+      )}
 
       {notice && <p className="llm-toast" role="status">{notice}</p>}
 
@@ -718,9 +720,38 @@ export function SettingsPage() {
       ) : !providers || !types ? (
         <div className="llm-loading" role="status">正在加载 LLM 配置…</div>
       ) : (total === 0 && !query && !status && !enabled && !executable) ? (
-        <div className="llm-state">
-          <h3>暂无 LLM 配置</h3>
-          <p>添加一个 LLM 配置后，可供后续项目工作流使用。</p>
+        <div className="ui003-empty-container">
+          <div className="ui003-empty-card">
+            <div className="ui003-empty-icon">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="3" y="11" width="18" height="10" rx="2"/>
+                <circle cx="12" cy="5" r="2"/>
+                <path d="M12 7v4"/>
+                <line x1="8" y1="16" x2="8.01" y2="16"/>
+                <line x1="16" y1="16" x2="16.01" y2="16"/>
+              </svg>
+            </div>
+            <h3 className="ui003-empty-title">暂无 LLM 配置</h3>
+            <p className="ui003-empty-desc">添加全局 LLM 配置，供项目工作流调用</p>
+            <button
+              className="primary ui003-empty-cta"
+              onClick={() => setDrawer({ mode: "create" })}
+              disabled={!types?.length}
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="12" y1="5" x2="12" y2="19"/>
+                <line x1="6" y1="12" x2="18" y2="12"/>
+              </svg>
+              添加 LLM 配置
+            </button>
+            <div className="ui003-empty-tip">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+              </svg>
+              <span>支持 OpenAI-compatible Provider；密钥保存后不会回显明文</span>
+            </div>
+          </div>
         </div>
       ) : (
         <>
