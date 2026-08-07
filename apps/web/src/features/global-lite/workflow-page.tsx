@@ -1,11 +1,110 @@
 "use client";
+
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { ApiError } from "@/lib/api";
-import { listBuiltinWorkflows, listGlobalWorkflowRuns, type BuiltinWorkflowVm, type WorkflowRunVm } from "./global-lite-api";
-type RunFilter = "all" | "running" | "succeeded" | "failed";
-const filters: { value: RunFilter; label: string }[] = [{ value: "all", label: "全部" }, { value: "running", label: "运行中" }, { value: "succeeded", label: "已成功" }, { value: "failed", label: "失败" }];
-function ErrorState({ error, retry }: { error: ApiError; retry: () => void }) { return <section className="lite-state" role="alert"><h2>暂时无法加载</h2><p>{error.message}</p><button onClick={retry}>重试</button></section>; }
-function WorkflowCard({ item }: { item: BuiltinWorkflowVm }) { return <article className="lite-card workflow-card"><span className="lite-kind">内置模拟能力</span><h2>{item.label}</h2><p>{item.description}</p><ol className="workflow-steps">{item.steps.map((step, index) => <li key={step}><b>{index + 1}</b>{step}</li>)}</ol><div className="workflow-card-footer"><span className="lite-badge enabled">{item.statusLabel}</span><span>{item.resultLabel}</span></div></article>; }
-function RunRow({ item }: { item: WorkflowRunVm }) { return <article className="workflow-run"><div className="workflow-run-heading"><div><span className={`lite-badge ${item.status}`}>{item.statusLabel}</span><h3>{item.workflowLabel}</h3><p>{item.projectName}</p></div>{item.projectWorksHref && <Link href={item.projectWorksHref}>打开项目作品</Link>}</div><dl><div><dt>关联内容</dt><dd>{item.subjectLabel}</dd></div><div><dt>开始时间</dt><dd>{item.startedAtLabel}</dd></div><div><dt>完成时间</dt><dd>{item.finishedAtLabel}</dd></div></dl>{item.failureSummary && <p className="workflow-failure">失败摘要：{item.failureSummary}</p>}</article>; }
-export function WorkflowsPage() { const [workflows, setWorkflows] = useState<BuiltinWorkflowVm[] | null>(null); const [runs, setRuns] = useState<WorkflowRunVm[] | null>(null); const [error, setError] = useState<ApiError | null>(null); const [filter, setFilter] = useState<RunFilter>("all"); const load = useCallback(async (signal?: AbortSignal) => { setWorkflows(null); setRuns(null); setError(null); try { const [workflowResult, runResult] = await Promise.all([listBuiltinWorkflows({ signal }), listGlobalWorkflowRuns({ limit: 100, offset: 0 }, { signal })]); setWorkflows(workflowResult); setRuns(runResult.items); } catch (cause) { if (!(cause instanceof ApiError && cause.code === "cancelled")) setError(cause instanceof ApiError ? cause : new ApiError("暂时无法读取流程数据，请稍后重试。", 0)); } }, []); useEffect(() => { const controller = new AbortController(); const timer = window.setTimeout(() => void load(controller.signal), 0); return () => { window.clearTimeout(timer); controller.abort(); }; }, [load]); const visibleRuns = useMemo(() => runs?.filter((run) => filter === "all" || run.status === filter) ?? [], [filter, runs]); const stats = useMemo(() => ({ workflows: workflows?.length ?? 0, enabled: workflows?.length ?? 0, runs: runs?.length ?? 0, succeeded: runs?.filter((run) => run.status === "succeeded").length ?? 0, failed: runs?.filter((run) => run.status === "failed").length ?? 0 }), [runs, workflows]); return <main className="lite-main"><header><h1>流程中心</h1><p>查看内容生产使用的内置流程和最近执行状态。</p></header><p className="lite-notice">当前只提供内置模拟流程的只读信息，不支持编排、执行或外部工作流连接。</p>{error ? <ErrorState error={error} retry={() => void load()} /> : !workflows || !runs ? <div className="lite-loading" role="status">正在加载流程中心…</div> : <><section className="workflow-stats" aria-label="流程统计"><div><b>{stats.workflows}</b><span>全部流程</span></div><div><b>{stats.enabled}</b><span>已启用</span></div><div><b>{stats.runs}</b><span>最近运行</span></div><div><b>{stats.succeeded}</b><span>运行成功</span></div><div><b>{stats.failed}</b><span>运行失败</span></div></section><section><div className="lite-section-heading"><h2>内置流程</h2></div>{workflows.length ? <div className="lite-grid">{workflows.map((item) => <WorkflowCard key={item.id} item={item} />)}</div> : <section className="lite-state"><h2>暂无内置流程</h2><p>当前没有可展示的内置流程。</p></section>}</section><section className="workflow-runs"><div className="lite-section-heading"><h2>最近执行记录</h2></div><div className="lite-filters" aria-label="运行状态筛选">{filters.map((item) => <button className={filter === item.value ? "active" : ""} onClick={() => setFilter(item.value)} key={item.value}>{item.label}</button>)}</div>{visibleRuns.length ? <div className="workflow-run-list">{visibleRuns.map((item) => <RunRow key={item.id} item={item} />)}</div> : <section className="lite-state"><h2>{runs.length ? "暂无符合条件的执行记录" : "暂无执行记录"}</h2><p>{runs.length ? "请调整筛选条件后重试。" : "当前还没有可展示的最近运行记录。"}</p></section>}</section></>}</main>; }
+import { listBuiltinWorkflows, type BuiltinWorkflowVm } from "./global-lite-api";
+
+function ErrorState({ error, retry }: { error: ApiError; retry: () => void }) {
+  return (
+    <section className="lite-state" role="alert">
+      <h2>暂时无法加载</h2>
+      <p>{error.message}</p>
+      <button onClick={retry}>重试</button>
+    </section>
+  );
+}
+
+function WorkflowCard({ item }: { item: BuiltinWorkflowVm }) {
+  return (
+    <article className="lite-card workflow-card">
+      <span className="lite-kind">内置模拟能力</span>
+      <h2>{item.label}</h2>
+      <p>{item.description}</p>
+      <ol className="workflow-steps">
+        {item.steps.map((step, index) => (
+          <li key={step}>
+            <b>{index + 1}</b>
+            {step}
+          </li>
+        ))}
+      </ol>
+      <div className="workflow-card-footer">
+        <span className="lite-badge enabled">{item.statusLabel}</span>
+        <span>{item.resultLabel}</span>
+      </div>
+    </article>
+  );
+}
+
+export function WorkflowsPage() {
+  const [workflows, setWorkflows] = useState<BuiltinWorkflowVm[] | null>(null);
+  const [error, setError] = useState<ApiError | null>(null);
+
+  const load = useCallback(async (signal?: AbortSignal) => {
+    setWorkflows(null);
+    setError(null);
+    try {
+      const workflowResult = await listBuiltinWorkflows({ signal });
+      setWorkflows(workflowResult);
+    } catch (cause) {
+      if (!(cause instanceof ApiError && cause.code === "cancelled")) {
+        setError(cause instanceof ApiError ? cause : new ApiError("暂时无法读取内置流程，请稍后重试。", 0));
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    const timer = window.setTimeout(() => void load(controller.signal), 0);
+    return () => {
+      window.clearTimeout(timer);
+      controller.abort();
+    };
+  }, [load]);
+
+  return (
+    <main className="lite-main">
+      <header>
+        <h1>内置流程（只读）</h1>
+        <p>本页仅展示内置模拟流程说明，不承载真实执行与运行管理。</p>
+      </header>
+
+      <section className="ui030-legacy-banner" aria-label="只读引导">
+        <div>
+          <h2>真实运行请前往流程中心</h2>
+          <p>
+            本页只展示内置模拟流程。真实执行记录、状态追踪、取消和重试统一在流程中心（/workflow-runs）管理，不再使用本页查看最近运行或运行统计。
+          </p>
+        </div>
+        <Link href="/workflow-runs">前往流程中心</Link>
+      </section>
+
+      {error ? (
+        <ErrorState error={error} retry={() => void load()} />
+      ) : !workflows ? (
+        <div className="lite-loading" role="status">
+          正在加载内置流程…
+        </div>
+      ) : (
+        <section>
+          <div className="lite-section-heading">
+            <h2>内置模拟流程</h2>
+          </div>
+          {workflows.length ? (
+            <div className="lite-grid">
+              {workflows.map(item => (
+                <WorkflowCard key={item.id} item={item} />
+              ))}
+            </div>
+          ) : (
+            <section className="lite-state">
+              <h2>暂无内置流程</h2>
+              <p>当前没有可展示的内置流程。</p>
+            </section>
+          )}
+        </section>
+      )}
+    </main>
+  );
+}
