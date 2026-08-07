@@ -5,11 +5,34 @@ export type ConnectionType = string;
 export type N8nTypeConfig = { referenceType: "workflow_id" | "webhook_path"; referenceValue: string };
 export type WorkflowConnectionDto = { id:string; name:string; connectionType:ConnectionType; baseUrl:string; authType:"api_key"; timeoutSeconds:number; typeConfig:N8nTypeConfig; hasCredential:boolean; credentialFingerprint:string|null; integrationStatus:"not_connected"|"connected"|"unverified"|"verified"|"failed"; validationStatus?:ValidationStatus; enabled:boolean; executable?:boolean; safeError?:SafeError|null; workflowConfigurationCount?:number; affectedWorkflowConfigurationCount?:number|null; verifiedVersion?:number|null; checkedAt?:string|null; checks?:ValidationCheck[]; lastVerifiedAt:string|null; lastErrorCode:string|null; lastErrorMessage:string|null; version:number; createdAt:string; updatedAt:string };
 export type ConnectionTypeDto = { connectionType:ConnectionType; displayName:string; authTypes:"api_key"[]; fieldSchemas:unknown[] };
-export type ConnectionVm = { id:string; name:string; typeLabel:string; baseUrl:string; timeoutSeconds:number; referenceLabel:string; hasCredential:boolean; credentialFingerprint:string|null; statusLabel:string; validationLabel:string; enabledLabel:string; executable:boolean; impactCount:number; safeError:string|null; version:number };
+export type ConnectionVm = { id:string; name:string; typeLabel:string; baseUrl:string; timeoutSeconds:number; referenceLabel:string; hasCredential:boolean; credentialFingerprint:string|null; statusLabel:string; validationLabel:string; validationStatus:ValidationStatus; enabled:boolean; enabledLabel:string; executable:boolean; impactCount:number; safeError:string|null; lastVerifiedAt:string|null; version:number };
 export type ConnectionFormInput = { name:string; connectionType:ConnectionType; baseUrl:string; timeoutSeconds:number; typeConfigJson:string; credential:string };
 export type ConnectionListQuery = { q?:string; connectionType?:ConnectionType; validationStatus?:ValidationStatus; enabled?:boolean; executable?:boolean; limit?:number; offset?:number };
 const typeLabel = (item:ConnectionTypeDto[], type:ConnectionType) => item.find(x=>x.connectionType===type)?.displayName ?? "未知连接类型";
-export const mapConnection = (item:WorkflowConnectionDto, types:ConnectionTypeDto[]):ConnectionVm => ({ id:item.id,name:item.name,typeLabel:typeLabel(types,item.connectionType),baseUrl:item.baseUrl,timeoutSeconds:item.timeoutSeconds,referenceLabel:item.typeConfig.referenceType==="workflow_id"?"工作流 ID":"Webhook 路径",hasCredential:item.hasCredential,credentialFingerprint:item.credentialFingerprint,statusLabel:item.executable?"可执行":item.enabled?"不可执行":"未启用",validationLabel:item.validationStatus?validationLabel[item.validationStatus]:"未验证",enabledLabel:item.enabled?"已启用":"未启用",executable:item.executable===true,impactCount:item.affectedWorkflowConfigurationCount??item.workflowConfigurationCount??0,safeError:item.safeError?.message??null,version:item.version });
+export const mapConnection = (item:WorkflowConnectionDto, types:ConnectionTypeDto[]):ConnectionVm => {
+  const isVerified = item.validationStatus === "verified";
+  const isExecutable = item.executable === true || (item.enabled && isVerified);
+  return {
+    id: item.id,
+    name: item.name,
+    typeLabel: typeLabel(types, item.connectionType),
+    baseUrl: item.baseUrl,
+    timeoutSeconds: item.timeoutSeconds,
+    referenceLabel: item.typeConfig?.referenceType === "workflow_id" ? "工作流 ID" : "Webhook 路径",
+    hasCredential: item.hasCredential,
+    credentialFingerprint: item.credentialFingerprint,
+    statusLabel: isExecutable ? "可执行" : item.enabled ? "不可执行" : "未启用",
+    validationLabel: item.validationStatus ? validationLabel[item.validationStatus] : "未验证",
+    validationStatus: item.validationStatus ?? "unverified",
+    enabled: item.enabled,
+    enabledLabel: item.enabled ? "已启用" : "未启用",
+    executable: isExecutable,
+    impactCount: item.affectedWorkflowConfigurationCount ?? item.workflowConfigurationCount ?? 0,
+    safeError: item.safeError?.message ?? null,
+    lastVerifiedAt: item.lastVerifiedAt,
+    version: item.version
+  };
+};
 const validationLabel: Record<ValidationStatus, string> = { unverified:"未验证",verifying:"验证中",verified:"已验证",failed:"验证失败",stale:"需重新验证" };
 const parseConfig=(json:string):N8nTypeConfig=>JSON.parse(json) as N8nTypeConfig;
 export function validateConnectionForm(input:ConnectionFormInput, editing:boolean){if(!input.name.trim())return "\u8bf7\u8f93\u5165\u8fde\u63a5\u540d\u79f0\u3002";try{new URL(input.baseUrl.trim());}catch{return "\u8bf7\u8f93\u5165\u6709\u6548\u7684 Base URL\u3002";}if(!Number.isInteger(input.timeoutSeconds)||input.timeoutSeconds<5||input.timeoutSeconds>300)return "\u8bf7\u6c42\u8d85\u65f6\u9700\u4e3a 5 \u81f3 300 \u79d2\u4e4b\u95f4\u7684\u6574\u6570\u3002";let config:N8nTypeConfig;try{config=parseConfig(input.typeConfigJson);}catch{return "\u914d\u7f6e\u4fe1\u606f\u5fc5\u987b\u662f\u6709\u6548 JSON\u3002";}if(!config||!(config.referenceType==="workflow_id"||config.referenceType==="webhook_path")||typeof config.referenceValue!=="string"||!config.referenceValue.trim())return "\u914d\u7f6e\u4fe1\u606f\u9700\u5305\u542b referenceType \u548c referenceValue\u3002";if(!editing&&!input.credential.trim())return "\u8bf7\u8f93\u5165 API Key\u3002";return undefined;}
