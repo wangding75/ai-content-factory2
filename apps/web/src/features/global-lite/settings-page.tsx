@@ -10,8 +10,8 @@ const blank = (providerType: LlmProviderType = "openai_compatible"): ProviderFor
 
 function ProviderDrawer({ drawer, types, onClose, onSaved }: { drawer: Exclude<Drawer, null>; types: LlmProviderTypeDto[]; onClose: () => void; onSaved: () => Promise<void> }) {
   const editing = drawer.mode === "edit";
-  const provider = editing ? drawer.provider : undefined;
-  const initial = (): ProviderFormInput => editing && provider ? { name: provider.name, providerType: provider.providerType, baseUrl: provider.baseUrl, defaultModel: provider.defaultModel, timeoutSeconds: provider.timeoutSeconds, secret: "" } : blank(types[0]?.providerType);
+  const [providerState, setProviderState] = useState<LlmProviderDto | undefined>(editing ? drawer.provider : undefined);
+  const initial = (): ProviderFormInput => editing && providerState ? { name: providerState.name, providerType: providerState.providerType, baseUrl: providerState.baseUrl, defaultModel: providerState.defaultModel, timeoutSeconds: providerState.timeoutSeconds, secret: "" } : blank(types[0]?.providerType);
   const [form, setForm] = useState(initial);
   const [error, setError] = useState<string>();
   const [saving, setSaving] = useState(false);
@@ -20,6 +20,38 @@ function ProviderDrawer({ drawer, types, onClose, onSaved }: { drawer: Exclude<D
   const secretSupported = types.find(type => type.providerType === form.providerType)?.supportsSecret ?? true;
 
   const [showSecretInput, setShowSecretInput] = useState(false);
+  const [modelSearch, setModelSearch] = useState("");
+  const [manualModel, setManualModel] = useState("");
+  const [manualValidationResult, setManualValidationResult] = useState<string | null>(null);
+
+  interface DiscoveredModelItem {
+    modelName: string;
+    displayName: string;
+    available: boolean;
+  }
+  const [discoveredModels, setDiscoveredModels] = useState<DiscoveredModelItem[]>([]);
+
+  const [prevProviderId, setPrevProviderId] = useState<string | null>(editing && drawer.provider ? drawer.provider.id : null);
+  const currentId = editing && drawer.provider ? drawer.provider.id : null;
+
+  if (editing && drawer.provider && currentId !== prevProviderId) {
+    setPrevProviderId(currentId);
+    setProviderState(drawer.provider);
+    const p = drawer.provider;
+    setForm({
+      name: p.name,
+      providerType: p.providerType,
+      baseUrl: p.baseUrl,
+      defaultModel: p.defaultModel,
+      timeoutSeconds: p.timeoutSeconds,
+      secret: ""
+    });
+    setShowSecretInput(false);
+    setDiscoveredModels([]);
+    setModelSearch("");
+    setManualModel("");
+    setManualValidationResult(null);
+  }
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -33,13 +65,27 @@ function ProviderDrawer({ drawer, types, onClose, onSaved }: { drawer: Exclude<D
     };
   }, [saving, checking, onClose]);
 
+  useEffect(() => {
+    if (editing && providerState?.id) {
+      fetch(`/api/v1/llm-providers/${encodeURIComponent(providerState.id)}/models`)
+        .then(r => r.json())
+        .then(res => {
+          if (res?.data && typeof res.data.total === "number") {
+            setProviderState(prev => prev ? { ...prev, modelCount: res.data.total } : prev);
+          }
+        })
+        .catch(() => {});
+    }
+  }, [editing, providerState?.id]);
+
   const set = <K extends keyof ProviderFormInput>(key: K, value: ProviderFormInput[K]) => { setForm(current => ({ ...current, [key]: value })); setError(undefined); };
 
   const reload = async () => {
-    if (!editing || !provider) return;
+    if (!editing || !providerState) return;
     setSaving(true);
     try {
-      const latest = await getLlmProvider(provider.id);
+      const latest = await getLlmProvider(providerState.id);
+      setProviderState({ ...latest, modelCount: providerState.modelCount });
       setForm({ name: latest.name, providerType: latest.providerType, baseUrl: latest.baseUrl, defaultModel: latest.defaultModel, timeoutSeconds: latest.timeoutSeconds, secret: "" });
       setConflict(false);
       setError("已加载服务端最新配置，请确认后重新保存。");
@@ -59,8 +105,8 @@ function ProviderDrawer({ drawer, types, onClose, onSaved }: { drawer: Exclude<D
     }
     setSaving(true);
     try {
-      if (editing && provider) {
-        await updateLlmProvider(provider.id, { name: form.name, baseUrl: form.baseUrl, defaultModel: form.defaultModel, timeoutSeconds: form.timeoutSeconds, secret: form.secret, expectedVersion: provider.version }, crypto.randomUUID());
+      if (editing && providerState) {
+        await updateLlmProvider(providerState.id, { name: form.name, baseUrl: form.baseUrl, defaultModel: form.defaultModel, timeoutSeconds: form.timeoutSeconds, secret: form.secret, expectedVersion: providerState.version }, crypto.randomUUID());
       } else {
         await createLlmProvider(form, crypto.randomUUID());
       }
@@ -80,7 +126,7 @@ function ProviderDrawer({ drawer, types, onClose, onSaved }: { drawer: Exclude<D
   };
 
   const handleSaveAndVerify = async () => {
-    if (!editing || !provider) return;
+    if (!editing || !providerState) return;
     const invalid = validateProviderForm(form, secretSupported, editing);
     if (invalid) {
       setError(invalid);
@@ -89,18 +135,18 @@ function ProviderDrawer({ drawer, types, onClose, onSaved }: { drawer: Exclude<D
     setSaving(true);
     try {
       const updated = await updateLlmProvider(
-        provider.id,
+        providerState.id,
         {
           name: form.name,
           baseUrl: form.baseUrl,
           defaultModel: form.defaultModel,
           timeoutSeconds: form.timeoutSeconds,
           secret: form.secret,
-          expectedVersion: provider.version
+          expectedVersion: providerState.version
         },
         crypto.randomUUID()
       );
-      await verifyLlmProvider(provider.id, updated.version, crypto.randomUUID());
+      await verifyLlmProvider(providerState.id, updated.version, crypto.randomUUID());
       await onSaved();
       onClose();
     } catch (cause) {
@@ -116,15 +162,67 @@ function ProviderDrawer({ drawer, types, onClose, onSaved }: { drawer: Exclude<D
     }
   };
 
-  const command = async (kind: "verify" | "discover" | "toggle") => {
-    if (!editing || !provider || checking) return;
+  const handleDiscover = async () => {
+    if (!editing || !providerState || checking) return;
     setChecking(true);
     setError(undefined);
     try {
-      const id = provider.id, version = provider.version, key = crypto.randomUUID();
+      const id = providerState.id, version = providerState.version, key = crypto.randomUUID();
+      const res = await discoverLlmProviderModels(id, version, key);
+      setDiscoveredModels(res.items);
+      const latest = await getLlmProvider(id);
+      setProviderState({ ...latest, modelCount: res.items.length });
+      await onSaved();
+      setError("已获取最新可用模型列表。");
+    } catch (cause) {
+      const api = cause instanceof ApiError ? cause : undefined;
+      setConflict(api?.status === 409 || api?.code === "version_conflict");
+      setError(api?.status === 409 ? "配置已变化，请重新加载后再操作。" : "获取模型列表失败，请稍后重试。");
+    } finally {
+      setChecking(false);
+    }
+  };
+
+  const handleVerifyManualModel = async () => {
+    if (!editing || !providerState || checking) return;
+    if (!manualModel.trim()) {
+      setError("请输入要校验的模型名称。");
+      return;
+    }
+    setChecking(true);
+    setError(undefined);
+    setManualValidationResult(null);
+    try {
+      const id = providerState.id, version = providerState.version, key = crypto.randomUUID();
+      const res = await verifyLlmProvider(id, version, key, manualModel.trim());
+      const latest = await getLlmProvider(id);
+      setProviderState({ ...latest, modelCount: providerState.modelCount });
+      await onSaved();
+      if (res.validationStatus === "verified") {
+        setManualValidationResult(`模型 ${manualModel.trim()} 校验成功！`);
+      } else {
+        setManualValidationResult(`模型 ${manualModel.trim()} 校验失败：${res.safeError?.message || "校验不通过"}`);
+      }
+    } catch (cause) {
+      const api = cause instanceof ApiError ? cause : undefined;
+      setError(api?.message || "校验模型失败，请检查输入或连接。");
+    } finally {
+      setChecking(false);
+    }
+  };
+
+  const command = async (kind: "verify" | "discover" | "toggle") => {
+    if (!editing || !providerState || checking) return;
+    setChecking(true);
+    setError(undefined);
+    try {
+      const id = providerState.id, version = providerState.version, key = crypto.randomUUID();
       if (kind === "verify") await verifyLlmProvider(id, version, key);
       else if (kind === "discover") await discoverLlmProviderModels(id, version, key);
-      else await setLlmProviderEnabled(id, version, !provider.enabled, key);
+      else await setLlmProviderEnabled(id, version, !providerState.enabled, key);
+      
+      const latest = await getLlmProvider(id);
+      setProviderState({ ...latest, modelCount: providerState.modelCount });
       await onSaved();
       setError(kind === "verify" ? "验证已提交，请查看最新验证状态。" : "操作已完成，已刷新最新状态。");
     } catch (cause) {
@@ -136,7 +234,11 @@ function ProviderDrawer({ drawer, types, onClose, onSaved }: { drawer: Exclude<D
     }
   };
 
-  if (editing && provider) {
+  const filteredModels = discoveredModels
+    .filter(m => m.available)
+    .filter(m => m.displayName.toLowerCase().includes(modelSearch.toLowerCase()) || m.modelName.toLowerCase().includes(modelSearch.toLowerCase()));
+
+  if (editing && providerState) {
     return (
       <div className="llm-drawer-backdrop">
         <aside className="llm-drawer ui002-provider-drawer" role="dialog" aria-modal="true">
@@ -197,7 +299,7 @@ function ProviderDrawer({ drawer, types, onClose, onSaved }: { drawer: Exclude<D
               <div className="ui002-drawer-section">
                 <h3>凭据</h3>
                 <div className="ui002-section-content">
-                  {provider.hasSecret && !showSecretInput ? (
+                  {providerState.hasSecret && !showSecretInput ? (
                     <div className="ui002-credential-status">
                       <span className="ui002-credential-text">API Key：已安全保存</span>
                       <button
@@ -209,17 +311,17 @@ function ProviderDrawer({ drawer, types, onClose, onSaved }: { drawer: Exclude<D
                       </button>
                     </div>
                   ) : (
-                    <label>API Key {(!provider.hasSecret) ? " *" : ""}
+                    <label>API Key {(!providerState.hasSecret) ? " *" : ""}
                       <input
                         type="password"
                         value={form.secret}
                         autoComplete="new-password"
-                        placeholder={provider.hasSecret ? "输入新的 API Key" : "输入 API Key"}
+                        placeholder={providerState.hasSecret ? "输入新的 API Key" : "输入 API Key"}
                         onChange={event => set("secret", event.target.value)}
                         disabled={saving || checking}
                       />
                       <small>
-                        {provider.hasSecret ? "留空表示保留原凭据。" : "密钥加密保存，保存后不会回显明文。"}
+                        {providerState.hasSecret ? "留空表示保留原凭据。" : "密钥加密保存，保存后不会回显明文。"}
                       </small>
                     </label>
                   )}
@@ -230,6 +332,64 @@ function ProviderDrawer({ drawer, types, onClose, onSaved }: { drawer: Exclude<D
               <div className="ui002-drawer-section ui002-model-section">
                 <h3>模型配置</h3>
                 <div className="ui002-section-content">
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <span style={{ fontWeight: 600, fontSize: "14px", color: "#39485a" }}>可用模型列表</span>
+                    <button
+                      type="button"
+                      onClick={handleDiscover}
+                      disabled={saving || checking}
+                      className="ui002-discover-btn"
+                    >
+                      获取模型列表
+                    </button>
+                  </div>
+
+                  <div className="ui002-model-search-wrap">
+                    <input
+                      type="text"
+                      placeholder="搜索可用模型名称..."
+                      value={modelSearch}
+                      onChange={e => setModelSearch(e.target.value)}
+                      disabled={saving || checking}
+                      className="ui002-model-search-input"
+                    />
+                  </div>
+
+                  {discoveredModels.length > 0 ? (
+                    <div className="ui002-model-list" style={{ maxHeight: "150px", overflowY: "auto", border: "1px solid #e2e8f0", borderRadius: "6px", padding: "8px" }}>
+                      {filteredModels.length > 0 ? (
+                        filteredModels.map(m => (
+                          <div
+                            key={m.modelName}
+                            className={`ui002-model-item ${form.defaultModel === m.modelName ? "active" : ""}`}
+                            onClick={() => set("defaultModel", m.modelName)}
+                            style={{
+                              padding: "6px 8px",
+                              borderRadius: "4px",
+                              marginBottom: "4px",
+                              cursor: "pointer",
+                              display: "flex",
+                              justifyContent: "space-between",
+                              alignItems: "center",
+                              backgroundColor: form.defaultModel === m.modelName ? "#eff6ff" : "transparent"
+                            }}
+                          >
+                            <span style={{ fontSize: "13px" }}>{m.displayName} ({m.modelName})</span>
+                            {form.defaultModel === m.modelName && <span style={{ color: "#2563eb", fontSize: "11px", fontWeight: "bold" }}>默认</span>}
+                          </div>
+                        ))
+                      ) : (
+                        <div style={{ fontSize: "12px", color: "#64748b", textAlign: "center", padding: "8px" }}>未找到匹配的模型</div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="ui002-model-empty-state" style={{ padding: "12px", backgroundColor: "#f8fafc", borderRadius: "8px", border: "1px dashed #cbd5e1" }}>
+                      <div style={{ fontSize: "13px", color: "#334155", marginBottom: "4px" }}>当前已知默认模型: <strong>{form.defaultModel}</strong></div>
+                      <div style={{ fontSize: "13px", color: "#334155", marginBottom: "4px" }}>已发现模型数量: <strong>{providerState.modelCount ?? 0}</strong></div>
+                      <div style={{ color: "#64748b", fontSize: "12px" }}>点击上方“获取模型列表”以加载可用模型。</div>
+                    </div>
+                  )}
+
                   <label>默认模型 *
                     <input
                       value={form.defaultModel}
@@ -238,18 +398,31 @@ function ProviderDrawer({ drawer, types, onClose, onSaved }: { drawer: Exclude<D
                       disabled={saving || checking}
                     />
                   </label>
-                  <div className="ui002-model-actions">
-                    <span className="ui002-model-count">
-                      已发现 {provider.modelCount ?? 0} 个模型
-                    </span>
+
+                  <div style={{ display: "flex", gap: "8px", alignItems: "flex-end" }}>
+                    <label style={{ flex: 1 }}>手动输入模型
+                      <input
+                        type="text"
+                        placeholder="输入待验证的模型名称"
+                        value={manualModel}
+                        onChange={e => setManualModel(e.target.value)}
+                        disabled={saving || checking}
+                      />
+                    </label>
                     <button
                       type="button"
-                      onClick={() => void command("discover")}
+                      onClick={handleVerifyManualModel}
                       disabled={saving || checking}
+                      style={{ height: "38px", padding: "0 16px", marginBottom: "2px" }}
                     >
-                      发现模型
+                      校验模型
                     </button>
                   </div>
+                  {manualValidationResult && (
+                    <div style={{ fontSize: "12px", color: manualValidationResult.includes("成功") ? "#16a34a" : "#dc2626", marginTop: "4px" }}>
+                      {manualValidationResult}
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -260,35 +433,48 @@ function ProviderDrawer({ drawer, types, onClose, onSaved }: { drawer: Exclude<D
                   <div className="ui002-status-grid">
                     <div className="ui002-status-item">
                       <span className="ui002-status-label">验证状态</span>
-                      <span className={`ui002-status-badge validation-status-${provider.validationStatus}`}>
-                        {provider.validationStatus === "verified" ? "验证成功" :
-                         provider.validationStatus === "failed" ? "验证失败" :
-                         provider.validationStatus === "stale" ? "配置已变更" :
-                         provider.validationStatus === "verifying" ? "验证中" : "未验证"}
+                      <span className={`ui002-status-badge validation-status-${providerState.validationStatus}`}>
+                        {providerState.validationStatus === "verified" ? "验证成功" :
+                         providerState.validationStatus === "failed" ? "验证失败" :
+                         providerState.validationStatus === "stale" ? "配置已变更" :
+                         providerState.validationStatus === "verifying" ? "验证中" : "未验证"}
                       </span>
                     </div>
                     <div className="ui002-status-item">
                       <span className="ui002-status-label">启用状态</span>
-                      <span className={`ui002-status-badge enabled-status-${provider.enabled}`}>
-                        {provider.enabled ? "已启用" : "未启用"}
+                      <span className={`ui002-status-badge enabled-status-${providerState.enabled}`}>
+                        {(providerState.validationStatus === "stale" && providerState.enabled && providerState.executable === false)
+                          ? "启用状态已保留"
+                          : (providerState.enabled ? "已启用" : "未启用")}
                       </span>
                     </div>
                     <div className="ui002-status-item">
                       <span className="ui002-status-label">执行资格</span>
-                      <span className={`ui002-status-badge executable-status-${provider.executable}`}>
-                        {provider.executable ? "可执行" : "不可执行"}
+                      <span className={`ui002-status-badge executable-status-${providerState.executable}`}>
+                        {providerState.executable ? "可执行" : "不可执行"}
                       </span>
                     </div>
                   </div>
 
+                  {providerState.validationStatus === "stale" && providerState.enabled && providerState.executable === false && (
+                    <div className="ui002-impact-warning">
+                      <p className="ui002-impact-biz">
+                        Base URL、API Key、超时或模型配置变化会使验证失效，但不会自动停用或解除项目绑定。
+                      </p>
+                      <p className="ui002-impact-rel">
+                        现有工作流配置和项目绑定关系保持不变；重新验证成功前，相关新运行暂时被阻断。
+                      </p>
+                    </div>
+                  )}
+
                   <div className="ui002-status-times">
-                    <div>最近验证时间：{formatDateTime(provider.lastVerifiedAt)}</div>
-                    {provider.checkedAt && <div>检查时间：{formatDateTime(provider.checkedAt)}</div>}
+                    <div>最近验证时间：{formatDateTime(providerState.lastVerifiedAt)}</div>
+                    {providerState.checkedAt && <div>检查时间：{formatDateTime(providerState.checkedAt)}</div>}
                   </div>
 
-                  {(provider.lastErrorMessage || provider.safeError) && (
+                  {(providerState.lastErrorMessage || providerState.safeError) && (
                     <div className="ui002-status-error-msg">
-                      {provider.lastErrorMessage || provider.safeError?.message || "未知验证错误"}
+                      {providerState.lastErrorMessage || providerState.safeError?.message || "未知验证错误"}
                     </div>
                   )}
 
@@ -305,7 +491,7 @@ function ProviderDrawer({ drawer, types, onClose, onSaved }: { drawer: Exclude<D
                       onClick={() => void command("toggle")}
                       disabled={saving || checking}
                     >
-                      {provider.enabled ? "停用配置" : "启用配置"}
+                      {providerState.enabled ? "停用配置" : "启用配置"}
                     </button>
                   </div>
                 </div>
@@ -451,7 +637,8 @@ export function SettingsPage() {
 
   const edit = async (provider: LlmProviderVm) => {
     try {
-      setDrawer({ mode: "edit", provider: await getLlmProvider(provider.id) });
+      const detail = await getLlmProvider(provider.id);
+      setDrawer({ mode: "edit", provider: { ...detail, modelCount: provider.modelCount } });
     } catch {
       setNotice("暂时无法读取该配置详情。");
     }

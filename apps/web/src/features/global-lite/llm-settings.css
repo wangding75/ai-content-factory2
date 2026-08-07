@@ -629,49 +629,49 @@
 }
 
 /* Badges coloring */
-.validation-status-verified {
+.ui002-provider-drawer .validation-status-verified {
   background-color: #ecfdf5;
   color: #059669;
   border: 1px solid #a7f3d0;
 }
-.validation-status-failed {
+.ui002-provider-drawer .validation-status-failed {
   background-color: #fef2f2;
   color: #dc2626;
   border: 1px solid #fecaca;
 }
-.validation-status-stale {
+.ui002-provider-drawer .validation-status-stale {
   background-color: #fffbeb;
   color: #d97706;
   border: 1px solid #fde68a;
 }
-.validation-status-unverified {
+.ui002-provider-drawer .validation-status-unverified {
   background-color: #f1f5f9;
   color: #475569;
   border: 1px solid #cbd5e1;
 }
-.validation-status-verifying {
+.ui002-provider-drawer .validation-status-verifying {
   background-color: #eff6ff;
   color: #2563eb;
   border: 1px solid #bfdbfe;
 }
 
-.enabled-status-true {
+.ui002-provider-drawer .enabled-status-true {
   background-color: #ecfdf5;
   color: #059669;
   border: 1px solid #a7f3d0;
 }
-.enabled-status-false {
+.ui002-provider-drawer .enabled-status-false {
   background-color: #f1f5f9;
   color: #475569;
   border: 1px solid #cbd5e1;
 }
 
-.executable-status-true {
+.ui002-provider-drawer .executable-status-true {
   background-color: #ecfdf5;
   color: #059669;
   border: 1px solid #a7f3d0;
 }
-.executable-status-false {
+.ui002-provider-drawer .executable-status-false {
   background-color: #fef2f2;
   color: #dc2626;
   border: 1px solid #fecaca;
@@ -768,5 +768,61 @@
 .ui002-drawer-footer button:disabled {
   opacity: 0.58;
   cursor: not-allowed;
+}
+
+/* UI-002 Model Section Styles */
+.ui002-provider-drawer .ui002-discover-btn {
+  border: 1px solid #cbd5e1;
+  background-color: #fff;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #475569;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.ui002-provider-drawer .ui002-discover-btn:hover {
+  background-color: #f1f5f9;
+  border-color: #94a3b8;
+}
+
+.ui002-provider-drawer .ui002-model-search-input {
+  box-sizing: border-box;
+  width: 100%;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  padding: 8px 10px;
+  font-size: 13px;
+}
+
+.ui002-provider-drawer .ui002-model-item:hover {
+  background-color: #f1f5f9 !important;
+}
+
+/* UI-002 Impact/Warning Styles */
+.ui002-provider-drawer .ui002-impact-warning {
+  background-color: #fffbeb;
+  border: 1px solid #fde68a;
+  border-radius: 8px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ui002-provider-drawer .ui002-impact-biz {
+  font-size: 12px;
+  color: #b45309;
+  margin: 0;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.ui002-provider-drawer .ui002-impact-rel {
+  font-size: 12px;
+  color: #78350f;
+  margin: 0;
+  line-height: 1.4;
 }
 

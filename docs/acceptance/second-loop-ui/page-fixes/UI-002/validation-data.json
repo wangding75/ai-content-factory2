@@ -1,14 +1,18 @@
 {
-  "providerId": "11000000-0000-4000-8000-000000000001",
-  "name": "OpenAI 主模型",
+  "providerId": "11000000-0000-4000-8000-000000000003",
+  "name": "备用模型",
   "providerType": "openai_compatible",
-  "baseUrl": "https://api.openai.com/v1",
-  "defaultModel": "gpt-5.2",
+  "baseUrl": "https://gateway.example.com/v1",
+  "defaultModel": "gpt-4.1-mini",
   "timeoutSeconds": 60,
   "hasSecret": true,
-  "validationStatus": "verified",
+  "validationStatus": "stale",
   "enabled": true,
-  "executable": true,
-  "页面实际 URL": "http://127.0.0.1:13001/settings",
-  "数据 Verify 结果": "PASS"
+  "executable": false,
+  "页面实际 URL": "http://127.0.0.1:13001/settings?tab=llm",
+  "数据 Verify 结果": "PASS",
+  "consoleErrorsCount": 0,
+  "pageErrorsCount": 0,
+  "networkErrorsCount": 0,
+  "failedRequestsCount": 0
 }

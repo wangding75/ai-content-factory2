@@ -1,4 +1,4 @@
-# UI-002 验收报告：LLM Provider 编辑抽屉修复
+# UI-002 验收报告：LLM Provider 编辑抽屉修复复审
 
 ## 一、验收截图与原型对比
 
@@ -8,8 +8,11 @@
 ### 2. 冻结原型
 ![冻结原型](../../../../development-inputs/p1/iterations/iteration-19-second-loop-integration-acceptance/ui/frames/I19_02_LLM_PROVIDER_DRAWER/screen.png)
 
-### 3. 修复后截图
-![修复后截图](UI-002_I19_02_LLM_PROVIDER_DRAWER_AFTER.png)
+### 3. 修复后截图（顶部与模型配置区）
+![修复后截图-顶部](UI-002_I19_02_LLM_PROVIDER_DRAWER_AFTER.png)
+
+### 4. 修复后截图（底部与验证状态/影响说明区）
+![修复后截图-底部](UI-002_I19_02_LLM_PROVIDER_DRAWER_STATUS_AFTER.png)
 
 ---
 
@@ -19,36 +22,37 @@
 1. 产品代码：[`settings-page.tsx`](file:///D:/github/ai-content-factory2/apps/web/src/features/global-lite/settings-page.tsx)
 2. 样式表：[`llm-settings.css`](file:///D:/github/ai-content-factory2/apps/web/src/features/global-lite/llm-settings.css)
 3. 测试文件：[`ui-002-llm-provider-drawer.spec.ts`](file:///D:/github/ai-content-factory2/apps/web/e2e/ui-002-llm-provider-drawer.spec.ts)
+4. 验收产物：[`validation-data.json`](file:///D:/github/ai-content-factory2/docs/acceptance/second-loop-ui/page-fixes/UI-002/validation-data.json) 及 [`validation-report.md`](file:///D:/github/ai-content-factory2/docs/acceptance/second-loop-ui/page-fixes/UI-002/validation-report.md)
 
 ---
 
-## 三、功能与行为验证
+## 三、复审问题修复与验证
 
-### 1. 编辑态字段验证
-- 配置名称为「OpenAI 主模型」。
-- 服务类型 select 框为只读/禁用状态，展示值正确且无法修改。
-- 服务地址（Base URL）输入框包含「https://api.openai.com/v1」。
-- 请求超时数值输入框包含「60」。
+### 1. 验收对象调整
+- E2E 目标调整为「备用模型」（id: `11000000-0000-4000-8000-000000000003`）。
+- 正确覆盖原型要求的状态组合：「配置已变更」（stale）、「不可执行」（executable: false）、「启用状态已保留」（enabled: true）。
 
-### 2. 凭据安全验证
-- 当 provider 包含 secret 时，默认不显示明文或空的密码输入框，展示安全卡片「API Key：已安全保存」。
-- 点击「更新 API Key」按钮后，才会显示密码输入框，type 为 `password`，autoComplete 为 `new-password`，placeholder 为「输入新的 API Key」。
-- 密钥绝不回显明文，且未更新时表单提交不会泄露/覆盖凭据。
+### 2. 模型配置区 (`ui002-model-section`)
+- 小标题明确显示为「可用模型列表」。
+- 包含「获取模型列表」按钮，调用 `/models/discover` 实时获取最新可用模型。
+- 增加客户端模型名称/显示名搜索过滤框。
+- 仅展示 `available === true` 的模型列表，支持点击列表模型项直接更新默认模型（`form.defaultModel`）。
+- 提供手动模型输入框与「校验模型」按钮，支持校验指定模型并即时反馈结果。
 
-### 3. 模型配置验证
-- 默认模型输入框绑定 `form.defaultModel`，值为「gpt-5.2」。
-- 包含「发现模型」按钮，并能正常展示已发现的模型数量「已发现 12 个模型」。
+### 3. 验证与状态区 (`ui002-validation-section`)
+- 正确映射并展示业务状态：
+  - 验证状态：配置已变更 (`validation-status-stale`)
+  - 启用状态：启用状态已保留 (`enabled-status-true`)
+  - 执行资格：不可执行 (`executable-status-false`)
+- 展示业务参数变更说明与项目绑定关系影评说明文案。
 
-### 4. 状态区验证
-- 成功渲染「验证与状态」分区。
-- 验证状态 badge 正确呈现为「验证成功」（类名包含 `validation-status-verified`）。
-- 启用状态 badge 正确呈现为「已启用」（类名包含 `enabled-status-true`）。
-- 执行资格 badge 正确呈现为「可执行」（类名包含 `executable-status-true`）。
-- 最近验证时间与检查时间正确使用 Mapper 格式化后显示。
+### 4. 抽屉内状态管理与启停刷新
+- 抽屉内使用组件级 `providerState` 独立维护状态，支持操作后通过 `getLlmProvider()` 动态更新，不依赖关闭抽屉或刷新整个页面。
+- 点击「停用配置」后，抽屉内立即刷新为「未启用」，按钮变为「启用配置」，且抽屉保持打开。
 
-### 5. Escape 关闭验证
-- 支持按 `Escape` 键关闭抽屉。
-- 保存或验证过程中，关闭和取消操作被正确禁用。
+### 5. 异常收集与断言
+- E2E 监听 `console` (error), `pageerror`, `response` (4xx/5xx), `requestfailed` (排除 link prefetch net::ERR_ABORTED)。
+- 断言确认所有错误数均严格为 0。
 
 ---
 
@@ -56,11 +60,11 @@
 
 ### 1. typecheck
 - 执行命令：`pnpm.cmd --dir apps/web typecheck`
-- 结果：**PASS** (退出码为 0，无任何类型错误)
+- 结果：**PASS** (退出码 0，无类型错误)
 
 ### 2. ESLint
 - 执行命令：`pnpm.cmd --dir apps/web exec eslint src/features/global-lite/settings-page.tsx e2e/ui-002-llm-provider-drawer.spec.ts`
-- 结果：**PASS** (退出码为 0，无任何 lint 违规)
+- 结果：**PASS** (退出码 0，无 lint 违规)
 
 ### 3. E2E 测试
 - 执行命令：`pnpm.cmd --dir apps/web exec playwright test e2e/ui-002-llm-provider-drawer.spec.ts`
@@ -72,10 +76,10 @@
 
 - **Console error 数量**：0
 - **pageerror 数量**：0
-- **UI-002 请求 4xx/5xx 数量**：0
+- **网络请求失败 数量**：0
 
 ---
 
 ## 六、剩余非阻断差异
 
-- 抽屉样式与圆角等微调与原型存在像素级微调差异，但字段结构、功能逻辑和分区语义完全一致，符合不要求高像素级保真的验收标准。
+- 抽屉样式与圆角微调与原型存在像素级差异，但字段结构、业务状态、交互响应和语义完全一致，符合不要求像素级对齐的验收标准。
