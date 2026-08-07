@@ -1224,3 +1224,44 @@
   color: #b45309;
 }
 
+
+/* UI-010 Distribution list */
+.ui010-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.ui010-header h2 {
+  margin: 0 0 6px;
+  font-size: 18px;
+  color: #0f172a;
+}
+
+.ui010-header p {
+  margin: 0;
+  font-size: 13px;
+  color: #64748b;
+  max-width: 640px;
+  line-height: 1.5;
+}
+
+.ui010-count {
+  font-size: 13px;
+  color: #64748b;
+  white-space: nowrap;
+}
+
+.ui010-future-hint {
+  display: block;
+  margin-top: 4px;
+  font-size: 11px;
+  color: #94a3b8;
+}
+
+.ui011-drawer {
+  width: min(560px, 100vw);
+}
+

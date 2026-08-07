@@ -3,13 +3,718 @@
 import "./connection-settings.css";
 import { useCallback, useEffect, useState } from "react";
 import { ApiError } from "@/lib/api";
-import { create, get, list, listTypes, map, update, validate, type FieldSchema, type Form, type Platform, type PlatformType } from "./distribution-api";
+import {
+  create,
+  get,
+  list,
+  listTypes,
+  map,
+  update,
+  validate,
+  type FieldSchema,
+  type Form,
+  type Platform,
+  type PlatformType
+} from "./distribution-api";
 
-type Drawer={mode:"create"}|{mode:"edit";platform:Platform}|null; type Errors=Record<string,string>;
-const blank=(type?:PlatformType):Form=>({name:"",platformType:type?.platformType??"",accountIdentifier:"",endpointUrl:"",authType:type?.authTypes[0]??"",timeoutSeconds:30,typeConfig:{},note:"",credential:""});
-const formOf=(platform:Platform):Form=>({name:platform.name,platformType:platform.platformType,accountIdentifier:platform.accountIdentifier,endpointUrl:platform.endpointUrl??"",authType:platform.authType,timeoutSeconds:platform.timeoutSeconds,typeConfig:platform.typeConfig,note:platform.note??"",credential:""});
-const fieldErrors=(error:ApiError):Errors=>{const fields=error.details.fields;return fields&&typeof fields==="object"&&!Array.isArray(fields)?Object.fromEntries(Object.entries(fields as Record<string,unknown>).map(([key,value])=>[key,typeof value==="string"?value:"输入不符合要求。"])):{}};
-const textValue=(value:unknown)=>typeof value==="string"?value:"";
-function TypeFields({schemas,value,onChange,disabled,errors}:{schemas:FieldSchema[];value:Record<string,unknown>;onChange:(name:string,value:unknown)=>void;disabled:boolean;errors:Errors}){if(!schemas.length)return <p className="llm-empty-config">当前平台没有额外配置。</p>;return <fieldset className="llm-dynamic-fields"><legend>类型专属配置</legend>{schemas.map(schema=>{const current=value[schema.name];const id=`type-${schema.name}`;if(schema.valueType==="boolean")return <label key={schema.name}><input id={id} type="checkbox" checked={current===true} onChange={event=>onChange(schema.name,event.target.checked)} disabled={disabled}/>{schema.label}{schema.required?" *":""}{errors[`typeConfig.${schema.name}`]&&<small className="llm-field-error">{errors[`typeConfig.${schema.name}`]}</small>}</label>;if(schema.valueType==="integer")return <label key={schema.name}>{schema.label}{schema.required?" *":""}<input id={id} type="number" value={typeof current==="number"?current:""} onChange={event=>onChange(schema.name,event.target.value===""?undefined:Number(event.target.value))} disabled={disabled}/>{errors[`typeConfig.${schema.name}`]&&<small className="llm-field-error">{errors[`typeConfig.${schema.name}`]}</small>}</label>;if(schema.valueType==="object")return <label key={schema.name}>{schema.label}{schema.required?" *":""}<textarea id={id} value={current&&typeof current==="object"&&!Array.isArray(current)?JSON.stringify(current,null,2):"{}"} onChange={event=>{try{const parsed:unknown=JSON.parse(event.target.value);onChange(schema.name,parsed);}catch{onChange(schema.name,event.target.value);}}} disabled={disabled}/><small>仅支持 JSON 对象。</small>{errors[`typeConfig.${schema.name}`]&&<small className="llm-field-error">{errors[`typeConfig.${schema.name}`]}</small>}</label>;return <label key={schema.name}>{schema.label}{schema.required?" *":""}<input id={id} value={textValue(current)} onChange={event=>onChange(schema.name,event.target.value)} disabled={disabled}/>{errors[`typeConfig.${schema.name}`]&&<small className="llm-field-error">{errors[`typeConfig.${schema.name}`]}</small>}</label>;})}</fieldset>}
-function PlatformDrawer({drawer,types,onClose,onSaved}:{drawer:Exclude<Drawer,null>;types:PlatformType[];onClose:()=>void;onSaved:()=>Promise<void>}){const editing=drawer.mode==="edit";const [form,setForm]=useState<Form>(()=>editing?formOf(drawer.platform):blank(types[0]));const [error,setError]=useState<string>();const [errors,setErrors]=useState<Errors>({});const [conflict,setConflict]=useState(false);const [saving,setSaving]=useState(false);const selected=types.find(type=>type.platformType===form.platformType);const set=<K extends keyof Form>(key:K,value:Form[K])=>{setForm(current=>({...current,[key]:value}));setError(undefined);setErrors({});};const changeType=(platformType:string)=>{const next=types.find(type=>type.platformType===platformType);setForm(current=>({...current,platformType,authType:next?.authTypes.includes(current.authType)?current.authType:next?.authTypes[0]??"",typeConfig:{}}));setError(undefined);setErrors({});};const changeConfig=(name:string,value:unknown)=>set("typeConfig",{...form.typeConfig,[name]:value});const reload=async()=>{if(!editing)return;setSaving(true);try{setForm(formOf(await get(drawer.platform.id)));setConflict(false);setErrors({});setError("已重新加载服务端最新数据，请确认后重新保存。");}catch{setError("暂时无法加载最新平台配置。");}finally{setSaving(false);}};const submit=async(event:React.FormEvent)=>{event.preventDefault();if(saving)return;const invalid=validate(form,editing,selected);if(invalid){setError(invalid);return;}setSaving(true);setError(undefined);setErrors({});try{if(editing)await update(drawer.platform.id,form,drawer.platform.version,crypto.randomUUID());else await create(form,crypto.randomUUID());await onSaved();onClose();}catch(cause){const api=cause instanceof ApiError?cause:undefined;if(api?.status===409||api?.code==="version_conflict"){setConflict(true);setError("该平台配置已被其他操作更新，请重新加载后再保存。");}else{setErrors(api?fieldErrors(api):{});setError("保存失败，请检查输入后重试。");}}finally{setSaving(false);}};return <div className="llm-drawer-backdrop"><aside className="llm-drawer" role="dialog" aria-modal="true" aria-label={editing?"编辑分发平台配置":"添加分发平台配置"}><header><div><h2>{editing?"编辑分发平台配置":"添加分发平台配置"}</h2><p>配置后续内容发布所需的平台连接。</p></div><button type="button" aria-label="关闭" onClick={onClose} disabled={saving}>×</button></header><form onSubmit={submit}><div className="llm-drawer-body"><label>名称 *<input value={form.name} maxLength={120} aria-invalid={Boolean(errors.name)} onChange={event=>set("name",event.target.value)} disabled={saving}/>{errors.name&&<small className="llm-field-error">{errors.name}</small>}</label><label>平台类型 *<select value={form.platformType} onChange={event=>changeType(event.target.value)} disabled={editing||saving}>{types.map(type=><option key={type.platformType} value={type.platformType}>{type.displayName}</option>)}</select>{editing&&<small>平台类型创建后不可修改。</small>}</label><label>账号或渠道标识 *<input value={form.accountIdentifier} maxLength={240} aria-invalid={Boolean(errors.accountIdentifier)} onChange={event=>set("accountIdentifier",event.target.value)} disabled={saving}/>{errors.accountIdentifier&&<small className="llm-field-error">{errors.accountIdentifier}</small>}</label><label>连接地址{form.platformType==="custom"?" *":""}<input type="url" value={form.endpointUrl} maxLength={512} aria-invalid={Boolean(errors.endpointUrl)} placeholder="https://api.example.com/v1/distribute" onChange={event=>set("endpointUrl",event.target.value)} disabled={saving}/><small>必须是 URI，且不能包含用户名或密码。</small>{errors.endpointUrl&&<small className="llm-field-error">{errors.endpointUrl}</small>}</label><label>认证方式 *<select value={form.authType} onChange={event=>set("authType",event.target.value)} disabled={saving}>{selected?.authTypes.map(type=><option key={type} value={type}>{({api_key:"API Key",oauth:"OAuth",access_token:"Access Token",custom:"自定义"} as Record<string,string>)[type]??type}</option>)}</select></label><label>凭证{editing?"":" *"}<input type="password" value={form.credential} autoComplete="new-password" onChange={event=>set("credential",event.target.value)} disabled={saving}/><small>{editing&&drawer.platform.hasCredential?"已配置；留空将保留原凭证。":"凭证加密保存，不会回显明文。"}</small></label><label>请求超时（秒） *<input type="number" min="5" max="300" value={form.timeoutSeconds} aria-invalid={Boolean(errors.timeoutSeconds)} onChange={event=>set("timeoutSeconds",Number(event.target.value))} disabled={saving}/>{errors.timeoutSeconds&&<small className="llm-field-error">{errors.timeoutSeconds}</small>}</label><TypeFields schemas={selected?.fieldSchemas??[]} value={form.typeConfig} onChange={changeConfig} disabled={saving} errors={errors}/><label>备注<textarea value={form.note} maxLength={5000} onChange={event=>set("note",event.target.value)} disabled={saving}/></label><div className="llm-deferred"><button type="button" disabled>验证配置（后续开放）</button><p>本迭代仅保存平台配置，不会连接、验证或发布到第三方平台。</p></div>{error&&<div className="llm-form-error" role="alert">{error}{conflict&&<button type="button" onClick={()=>void reload()} disabled={saving}>重新加载</button>}</div>}</div><footer><button type="button" onClick={onClose} disabled={saving}>取消</button><button className="primary" disabled={saving}>{saving?"保存中…":"保存"}</button></footer></form></aside></div>}
-export function DistributionSettingsPage(){const [types,setTypes]=useState<PlatformType[]|null>(null);const [items,setItems]=useState<ReturnType<typeof map>[]|null>(null);const [total,setTotal]=useState(0);const [query,setQuery]=useState("");const [type,setType]=useState("");const [status,setStatus]=useState("");const [enabled,setEnabled]=useState("");const [offset,setOffset]=useState(0);const [drawer,setDrawer]=useState<Drawer>(null);const [error,setError]=useState<string>();const [notice,setNotice]=useState<string>();const limit=20;const load=useCallback(async(signal?:AbortSignal)=>{setError(undefined);try{const[catalogue,result]=await Promise.all([listTypes({signal}),list({q:query,platformType:type||undefined,integrationStatus:status==="not_connected"?"not_connected":undefined,enabled:enabled==="true"?true:enabled==="false"?false:undefined,limit,offset},{signal})]);setTypes(catalogue.items);setItems(result.items.map(item=>map(item,catalogue.items)));setTotal(result.total);}catch(cause){if(!(cause instanceof ApiError&&cause.code==="cancelled"))setError("暂时无法加载分发平台配置，请稍后重试。");}},[enabled,offset,query,status,type]);useEffect(()=>{const controller=new AbortController();const timer=window.setTimeout(()=>void load(controller.signal),300);return()=>{window.clearTimeout(timer);controller.abort();};},[load]);const reset=(action:()=>void)=>{setOffset(0);action();};const edit=async(item:ReturnType<typeof map>)=>{try{setDrawer({mode:"edit",platform:await get(item.id)});}catch{setNotice("暂时无法读取平台配置详情。");}};const pages=Math.max(1,Math.ceil(total/limit));const page=Math.floor(offset/limit)+1;return <section className="settings-content"><section className="llm-content-card"><header><div><h2>分发平台配置</h2><p>管理内容分发所需的安全配置。</p></div><button className="primary" onClick={()=>setDrawer({mode:"create"})} disabled={!types?.length}>添加分发平台配置</button></header>{notice&&<p className="llm-toast" role="status">{notice}</p>}{error?<div className="llm-state" role="alert"><h3>暂时无法加载</h3><p>{error}</p><button onClick={()=>void load()}>重试</button></div>:!items||!types?<div className="llm-loading" role="status">正在加载分发平台配置…</div>:items.length===0?<div className="llm-state"><h3>暂无分发平台配置</h3><p>添加平台配置后，可供后续发布流程使用。</p></div>:<><div className="llm-toolbar"><input value={query} onChange={event=>reset(()=>setQuery(event.target.value))} placeholder="搜索配置名称"/><select value={type} onChange={event=>reset(()=>setType(event.target.value))}><option value="">全部平台类型</option>{types.map(item=><option key={item.platformType} value={item.platformType}>{item.displayName}</option>)}</select><select value={status} onChange={event=>reset(()=>setStatus(event.target.value))}><option value="">全部集成状态</option><option value="not_connected">未接入</option></select><select value={enabled} onChange={event=>reset(()=>setEnabled(event.target.value))}><option value="">全部启用状态</option><option value="false">未启用</option><option value="true">已启用</option></select><span>共 {total} 个配置</span></div><div className="llm-table-wrap"><table><thead><tr><th>配置名称</th><th>平台类型</th><th>账号标识</th><th>凭证</th><th>集成状态</th><th>操作</th></tr></thead><tbody>{items.map(item=><tr key={item.id}><td><strong>{item.name}</strong></td><td>{item.type}</td><td>{item.account}</td><td>{item.hasCredential?`已配置${item.fingerprint?` · ${item.fingerprint}`:""}`:"未配置"}</td><td><span className="llm-status">{item.status}</span></td><td><button onClick={()=>void edit(item)}>编辑</button></td></tr>)}</tbody></table></div><div className="llm-pagination"><span>第 {page} / {pages} 页</span><button disabled={offset===0} onClick={()=>setOffset(value=>Math.max(0,value-limit))}>上一页</button><button disabled={offset+limit>=total} onClick={()=>setOffset(value=>value+limit)}>下一页</button></div></>}</section>{drawer&&types&&<PlatformDrawer drawer={drawer} types={types} onClose={()=>setDrawer(null)} onSaved={async()=>{await load();setNotice("平台配置已保存，并已同步服务端最新数据。");}}/>}</section>}
+type Drawer = { mode: "create" } | { mode: "edit"; platform: Platform } | null;
+type Errors = Record<string, string>;
+
+const blank = (type?: PlatformType): Form => ({
+  name: "",
+  platformType: type?.platformType ?? "",
+  accountIdentifier: "",
+  endpointUrl: "",
+  authType: type?.authTypes[0] ?? "",
+  timeoutSeconds: 60,
+  typeConfig: {},
+  note: "",
+  credential: ""
+});
+
+const formOf = (platform: Platform): Form => ({
+  name: platform.name,
+  platformType: platform.platformType,
+  accountIdentifier: platform.accountIdentifier,
+  endpointUrl: platform.endpointUrl ?? "",
+  authType: platform.authType,
+  timeoutSeconds: platform.timeoutSeconds,
+  typeConfig: platform.typeConfig ?? {},
+  note: platform.note ?? "",
+  credential: ""
+});
+
+const textValue = (value: unknown) => (typeof value === "string" || typeof value === "number" ? String(value) : "");
+
+const authLabel = (authType: string) =>
+  ({ api_key: "API Key", oauth: "OAuth", access_token: "Access Token", custom: "自定义" } as Record<string, string>)[
+    authType
+  ] ?? authType;
+
+function TypeFields({
+  schemas,
+  value,
+  onChange,
+  disabled,
+  errors
+}: {
+  schemas: FieldSchema[];
+  value: Record<string, unknown>;
+  onChange: (name: string, value: unknown) => void;
+  disabled: boolean;
+  errors: Errors;
+}) {
+  if (!schemas.length) return <p className="llm-empty-config">当前平台没有额外配置。</p>;
+  return (
+    <fieldset className="llm-dynamic-fields">
+      <legend>类型专属配置</legend>
+      {schemas.map(schema => {
+        const current = value[schema.name];
+        const id = `type-${schema.name}`;
+        if (schema.valueType === "boolean") {
+          return (
+            <label key={schema.name}>
+              <input
+                id={id}
+                type="checkbox"
+                checked={current === true}
+                onChange={event => onChange(schema.name, event.target.checked)}
+                disabled={disabled}
+              />
+              {schema.label}
+              {schema.required ? " *" : ""}
+              {errors[`typeConfig.${schema.name}`] && (
+                <small className="llm-field-error">{errors[`typeConfig.${schema.name}`]}</small>
+              )}
+            </label>
+          );
+        }
+        if (schema.valueType === "integer") {
+          return (
+            <label key={schema.name}>
+              {schema.label}
+              {schema.required ? " *" : ""}
+              <input
+                id={id}
+                type="number"
+                value={typeof current === "number" ? current : ""}
+                onChange={event =>
+                  onChange(schema.name, event.target.value === "" ? undefined : Number(event.target.value))
+                }
+                disabled={disabled}
+              />
+              {errors[`typeConfig.${schema.name}`] && (
+                <small className="llm-field-error">{errors[`typeConfig.${schema.name}`]}</small>
+              )}
+            </label>
+          );
+        }
+        if (schema.valueType === "object") {
+          return (
+            <label key={schema.name}>
+              {schema.label}
+              {schema.required ? " *" : ""}
+              <textarea
+                id={id}
+                value={
+                  current && typeof current === "object" && !Array.isArray(current)
+                    ? JSON.stringify(current, null, 2)
+                    : "{}"
+                }
+                onChange={event => {
+                  try {
+                    const parsed: unknown = JSON.parse(event.target.value);
+                    onChange(schema.name, parsed);
+                  } catch {
+                    onChange(schema.name, event.target.value);
+                  }
+                }}
+                disabled={disabled}
+              />
+              <small>仅支持 JSON 对象</small>
+              {errors[`typeConfig.${schema.name}`] && (
+                <small className="llm-field-error">{errors[`typeConfig.${schema.name}`]}</small>
+              )}
+            </label>
+          );
+        }
+        return (
+          <label key={schema.name}>
+            {schema.label}
+            {schema.required ? " *" : ""}
+            <input
+              id={id}
+              value={textValue(current)}
+              onChange={event => onChange(schema.name, event.target.value)}
+              disabled={disabled}
+            />
+            {errors[`typeConfig.${schema.name}`] && (
+              <small className="llm-field-error">{errors[`typeConfig.${schema.name}`]}</small>
+            )}
+          </label>
+        );
+      })}
+    </fieldset>
+  );
+}
+
+function PlatformDrawer({
+  drawer,
+  types,
+  onClose,
+  onSaved
+}: {
+  drawer: Exclude<Drawer, null>;
+  types: PlatformType[];
+  onClose: () => void;
+  onSaved: () => Promise<void>;
+}) {
+  const editing = drawer.mode === "edit";
+  const [form, setForm] = useState<Form>(() =>
+    editing ? formOf(drawer.platform) : blank(types[0])
+  );
+  const [error, setError] = useState<string>();
+  const [errors, setErrors] = useState<Errors>({});
+  const [conflict, setConflict] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const selected = types.find(item => item.platformType === form.platformType);
+
+  const set = <K extends keyof Form>(key: K, value: Form[K]) => {
+    setForm(current => ({ ...current, [key]: value }));
+    setError(undefined);
+    setErrors({});
+  };
+
+  const reload = async () => {
+    if (!editing) return;
+    setSaving(true);
+    try {
+      const platform = await get(drawer.platform.id);
+      setForm(formOf(platform));
+      setConflict(false);
+      setError("已重新加载服务端最新数据，请确认后重新保存。");
+    } catch {
+      setError("暂时无法加载最新平台配置。");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const submit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (saving) return;
+    const invalid = validate(form, editing, selected);
+    if (invalid) {
+      setError(invalid);
+      return;
+    }
+    setSaving(true);
+    setError(undefined);
+    setErrors({});
+    try {
+      if (editing) {
+        await update(drawer.platform.id, form, drawer.platform.version, crypto.randomUUID());
+      } else {
+        await create(form, crypto.randomUUID());
+      }
+      await onSaved();
+      onClose();
+    } catch (cause) {
+      const api = cause instanceof ApiError ? cause : undefined;
+      if (api?.status === 409 || api?.code === "version_conflict") {
+        setConflict(true);
+        setError("该平台配置已被其他操作更新，请重新加载后再保存。");
+      } else {
+        const fields = api?.details.fields;
+        setErrors(
+          fields && typeof fields === "object" && !Array.isArray(fields)
+            ? Object.fromEntries(
+                Object.entries(fields as Record<string, unknown>).map(([key, value]) => [
+                  key,
+                  typeof value === "string" ? value : "输入不符合要求。"
+                ])
+              )
+            : {}
+        );
+        setError("保存失败，请检查输入后重试。");
+      }
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="llm-drawer-backdrop" onClick={onClose}>
+      <aside
+        className="llm-drawer ui011-drawer"
+        role="dialog"
+        aria-modal="true"
+        aria-label={editing ? "编辑分发平台配置" : "添加分发平台配置"}
+        onClick={event => event.stopPropagation()}
+      >
+        <header>
+          <div>
+            <h2>{editing ? "编辑分发平台配置" : "添加分发平台配置"}</h2>
+            <p>配置后续内容发布所需的平台连接。当前仅支持保存，不验证、不启用、不发布。</p>
+          </div>
+          <button type="button" aria-label="关闭" onClick={onClose} disabled={saving}>
+            ×
+          </button>
+        </header>
+        <form onSubmit={submit}>
+          <div className="llm-drawer-body">
+            <section className="ui008-section">
+              <h3>基础信息</h3>
+              <label>
+                名称 *
+                <input
+                  value={form.name}
+                  maxLength={120}
+                  aria-invalid={Boolean(errors.name)}
+                  onChange={event => set("name", event.target.value)}
+                  disabled={saving}
+                />
+                {errors.name && <small className="llm-field-error">{errors.name}</small>}
+              </label>
+              <label>
+                平台类型 *
+                <select
+                  value={form.platformType}
+                  onChange={event => {
+                    const nextType = event.target.value;
+                    const next = types.find(item => item.platformType === nextType);
+                    setForm(current => ({
+                      ...current,
+                      platformType: nextType,
+                      authType: next?.authTypes.includes(current.authType)
+                        ? current.authType
+                        : next?.authTypes[0] ?? "",
+                      typeConfig: {}
+                    }));
+                    setError(undefined);
+                    setErrors({});
+                  }}
+                  disabled={editing || saving}
+                >
+                  {types.map(item => (
+                    <option key={item.platformType} value={item.platformType}>
+                      {item.displayName}
+                    </option>
+                  ))}
+                </select>
+                {editing && <small>平台类型创建后不可修改。</small>}
+              </label>
+              <label>
+                账号或渠道标识 *
+                <input
+                  value={form.accountIdentifier}
+                  maxLength={240}
+                  aria-invalid={Boolean(errors.accountIdentifier)}
+                  onChange={event => set("accountIdentifier", event.target.value)}
+                  disabled={saving}
+                />
+                {errors.accountIdentifier && (
+                  <small className="llm-field-error">{errors.accountIdentifier}</small>
+                )}
+              </label>
+              <label>
+                连接地址{form.platformType === "custom" ? " *" : ""}
+                <input
+                  type="url"
+                  value={form.endpointUrl}
+                  maxLength={512}
+                  aria-invalid={Boolean(errors.endpointUrl)}
+                  placeholder="https://api.example.com/v1/distribute"
+                  onChange={event => set("endpointUrl", event.target.value)}
+                  disabled={saving}
+                />
+                <small>必须是 URI，且不能包含用户名或密码。</small>
+                {errors.endpointUrl && <small className="llm-field-error">{errors.endpointUrl}</small>}
+              </label>
+            </section>
+
+            <section className="ui008-section">
+              <h3>认证 / 凭据</h3>
+              <label>
+                认证方式 *
+                <select
+                  value={form.authType}
+                  onChange={event => set("authType", event.target.value)}
+                  disabled={saving}
+                >
+                  {selected?.authTypes.map(item => (
+                    <option key={item} value={item}>
+                      {authLabel(item)}
+                    </option>
+                  ))}
+                </select>
+                <small>OAuth 仅作为可保存的配置元数据，不会发起授权或第三方请求。</small>
+              </label>
+              <label>
+                凭证{editing ? "" : " *"}
+                <input
+                  type="password"
+                  value={form.credential}
+                  autoComplete="new-password"
+                  onChange={event => set("credential", event.target.value)}
+                  disabled={saving}
+                  placeholder={
+                    editing && drawer.platform.hasCredential ? "留空保留原凭证" : "输入凭证"
+                  }
+                />
+                <small>
+                  {editing && drawer.platform.hasCredential
+                    ? `已配置${drawer.platform.credentialFingerprint ? ` · ${drawer.platform.credentialFingerprint}` : ""}；留空将保留原凭证，不会回显明文。`
+                    : "凭证加密保存，不会回显明文。"}
+                </small>
+              </label>
+              <label>
+                请求超时（秒） *
+                <input
+                  type="number"
+                  min={5}
+                  max={300}
+                  value={form.timeoutSeconds}
+                  aria-invalid={Boolean(errors.timeoutSeconds)}
+                  onChange={event => set("timeoutSeconds", Number(event.target.value))}
+                  disabled={saving}
+                />
+                {errors.timeoutSeconds && (
+                  <small className="llm-field-error">{errors.timeoutSeconds}</small>
+                )}
+              </label>
+            </section>
+
+            <section className="ui008-section">
+              <h3>平台专属字段</h3>
+              <TypeFields
+                schemas={selected?.fieldSchemas ?? []}
+                value={form.typeConfig}
+                onChange={(name, value) => set("typeConfig", { ...form.typeConfig, [name]: value })}
+                disabled={saving}
+                errors={errors}
+              />
+              <label>
+                备注
+                <textarea
+                  value={form.note}
+                  maxLength={5000}
+                  onChange={event => set("note", event.target.value)}
+                  disabled={saving}
+                />
+              </label>
+              <div className="llm-deferred">
+                <button type="button" disabled>
+                  验证配置（后续开放）
+                </button>
+                <p>本迭代仅保存平台配置，不会连接、验证或发布到第三方平台。</p>
+              </div>
+            </section>
+
+            {error && (
+              <div className="llm-form-error" role="alert">
+                {error}
+                {conflict && (
+                  <button type="button" onClick={() => void reload()} disabled={saving}>
+                    重新加载
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+          <footer className="ui008-footer">
+            <button type="button" className="ui008-btn secondary" onClick={onClose} disabled={saving}>
+              取消
+            </button>
+            <button type="submit" className="ui008-btn primary" disabled={saving}>
+              {saving ? "保存中…" : "保存"}
+            </button>
+          </footer>
+        </form>
+      </aside>
+    </div>
+  );
+}
+
+export function DistributionSettingsPage() {
+  const [types, setTypes] = useState<PlatformType[] | null>(null);
+  const [items, setItems] = useState<ReturnType<typeof map>[] | null>(null);
+  const [total, setTotal] = useState(0);
+  const [query, setQuery] = useState("");
+  const [type, setType] = useState("");
+  const [status, setStatus] = useState("");
+  const [enabled, setEnabled] = useState("");
+  const [offset, setOffset] = useState(0);
+  const [drawer, setDrawer] = useState<Drawer>(null);
+  const [error, setError] = useState<string>();
+  const [notice, setNotice] = useState<string>();
+  const limit = 20;
+
+  const load = useCallback(
+    async (signal?: AbortSignal) => {
+      setError(undefined);
+      try {
+        const [catalogue, result] = await Promise.all([
+          listTypes({ signal }),
+          list(
+            {
+              q: query,
+              platformType: type || undefined,
+              integrationStatus: status === "not_connected" ? "not_connected" : undefined,
+              enabled: enabled === "true" ? true : enabled === "false" ? false : undefined,
+              limit,
+              offset
+            },
+            { signal }
+          )
+        ]);
+        if (!signal?.aborted) {
+          setTypes(catalogue.items);
+          setItems(result.items.map(item => map(item, catalogue.items)));
+          setTotal(result.total);
+        }
+      } catch (cause) {
+        if (!(cause instanceof ApiError && cause.code === "cancelled")) {
+          setError("暂时无法加载分发平台配置，请稍后重试。");
+        }
+      }
+    },
+    [enabled, offset, query, status, type]
+  );
+
+  useEffect(() => {
+    const controller = new AbortController();
+    const timer = window.setTimeout(() => void load(controller.signal), 300);
+    return () => {
+      window.clearTimeout(timer);
+      controller.abort();
+    };
+  }, [load]);
+
+  const reset = (action: () => void) => {
+    setOffset(0);
+    action();
+  };
+
+  const edit = async (item: ReturnType<typeof map>) => {
+    try {
+      setDrawer({ mode: "edit", platform: await get(item.id) });
+    } catch {
+      setNotice("暂时无法读取平台配置详情。");
+    }
+  };
+
+  const pages = Math.max(1, Math.ceil(total / limit));
+  const page = Math.floor(offset / limit) + 1;
+  const hasActiveFilters = Boolean(query || type || status || enabled);
+  const isTrueEmpty = Boolean(items && types && total === 0 && !hasActiveFilters);
+
+  return (
+    <section className="settings-content ui010-distribution-list">
+      {notice && (
+        <p className="llm-toast" role="status">
+          {notice}
+        </p>
+      )}
+
+      {error ? (
+        <div className="llm-state" role="alert">
+          <h3>暂时无法加载</h3>
+          <p>{error}</p>
+          <button onClick={() => void load()}>重试</button>
+        </div>
+      ) : !items || !types ? (
+        <div className="llm-loading" role="status">
+          正在加载分发平台配置…
+        </div>
+      ) : isTrueEmpty ? (
+        <>
+          <div className="ui006-empty-toolbar">
+            <button
+              className="ui004-add-btn primary"
+              onClick={() => setDrawer({ mode: "create" })}
+              disabled={!types.length}
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="12" y1="5" x2="12" y2="19" />
+                <line x1="6" y1="12" x2="18" y2="12" />
+              </svg>
+              添加分发平台配置
+            </button>
+          </div>
+          <div className="ui006-empty-container">
+            <div className="ui006-empty-card">
+              <h3 className="ui006-empty-title">暂无分发平台配置</h3>
+              <p className="ui006-empty-desc">添加平台配置后，可供后续发布流程使用。</p>
+              <button
+                type="button"
+                className="ui004-add-btn primary ui006-empty-cta"
+                onClick={() => setDrawer({ mode: "create" })}
+                disabled={!types.length}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="12" y1="5" x2="12" y2="19" />
+                  <line x1="6" y1="12" x2="18" y2="12" />
+                </svg>
+                添加分发平台配置
+              </button>
+            </div>
+          </div>
+        </>
+      ) : (
+        <>
+          <div className="ui010-header">
+            <div>
+              <h2>分发平台配置</h2>
+              <p>保存平台安全配置，供后续发布流程使用。当前不会连接或验证第三方平台。</p>
+            </div>
+            <button
+              className="ui004-add-btn primary"
+              onClick={() => setDrawer({ mode: "create" })}
+              disabled={!types.length}
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="12" y1="5" x2="12" y2="19" />
+                <line x1="6" y1="12" x2="18" y2="12" />
+              </svg>
+              添加分发平台配置
+            </button>
+          </div>
+
+          <div className="ui007-toolbar">
+            <div className="ui007-filters">
+              <div className="ui004-search-wrap">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="ui004-search-icon">
+                  <circle cx="11" cy="11" r="8" />
+                  <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                </svg>
+                <input
+                  className="ui004-search-input"
+                  value={query}
+                  onChange={event => reset(() => setQuery(event.target.value))}
+                  placeholder="搜索配置名称、平台或账号标识"
+                />
+              </div>
+              <select
+                className="ui004-filter-select"
+                value={type}
+                onChange={event => reset(() => setType(event.target.value))}
+              >
+                <option value="">全部平台</option>
+                {types.map(item => (
+                  <option key={item.platformType} value={item.platformType}>
+                    {item.displayName}
+                  </option>
+                ))}
+              </select>
+              <select
+                className="ui004-filter-select"
+                value={status}
+                onChange={event => reset(() => setStatus(event.target.value))}
+              >
+                <option value="">全部状态</option>
+                <option value="not_connected">未接入</option>
+              </select>
+              <select
+                className="ui004-filter-select"
+                value={enabled}
+                onChange={event => reset(() => setEnabled(event.target.value))}
+              >
+                <option value="">全部启用状态</option>
+                <option value="false">未启用</option>
+                <option value="true">已启用</option>
+              </select>
+              <span className="ui010-count">共 {total} 个配置</span>
+            </div>
+          </div>
+
+          {items.length === 0 ? (
+            <div className="ui006-empty-container ui006-empty-filtered">
+              <div className="ui006-empty-card">
+                <h3 className="ui006-empty-title">未找到匹配平台配置</h3>
+                <p className="ui006-empty-desc">请调整筛选条件后重试。</p>
+              </div>
+            </div>
+          ) : (
+            <div className="ui007-table-wrap">
+              <table className="ui007-table ui010-table">
+                <thead>
+                  <tr>
+                    <th>配置名称</th>
+                    <th>平台类型</th>
+                    <th>账号或渠道标识</th>
+                    <th>凭据状态</th>
+                    <th>集成状态</th>
+                    <th>启用状态</th>
+                    <th style={{ textAlign: "right" }}>操作</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {items.map(item => (
+                    <tr key={item.id}>
+                      <td>
+                        <strong>{item.name}</strong>
+                      </td>
+                      <td>{item.type}</td>
+                      <td>
+                        <code className="ui004-url">{item.account}</code>
+                      </td>
+                      <td>
+                        {item.hasCredential
+                          ? `已配置${item.fingerprint ? ` · ${item.fingerprint}` : ""}`
+                          : "未配置"}
+                      </td>
+                      <td>
+                        <span className="ui004-badge val-badge-unverified">{item.status}</span>
+                      </td>
+                      <td>
+                        <button type="button" className="ui004-toggle-switch disabled" disabled title="后续开放">
+                          <span className="ui004-switch-thumb" />
+                        </button>
+                        <span className="ui010-future-hint">后续开放</span>
+                      </td>
+                      <td style={{ textAlign: "right" }}>
+                        <div className="ui004-actions">
+                          <button className="ui004-action-btn" onClick={() => void edit(item)}>
+                            编辑
+                          </button>
+                          <button type="button" className="ui004-action-btn" disabled title="后续开放">
+                            验证
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          <div className="llm-pagination">
+            <span>
+              第 {page} / {pages} 页，共 {total} 条
+            </span>
+            <button disabled={offset === 0} onClick={() => setOffset(value => Math.max(0, value - limit))}>
+              上一页
+            </button>
+            <button disabled={offset + limit >= total} onClick={() => setOffset(value => value + limit)}>
+              下一页
+            </button>
+          </div>
+        </>
+      )}
+
+      {drawer && types && (
+        <PlatformDrawer
+          drawer={drawer}
+          types={types}
+          onClose={() => setDrawer(null)}
+          onSaved={async () => {
+            await load();
+            setNotice("平台配置已保存，并已同步服务端最新数据。");
+          }}
+        />
+      )}
+    </section>
+  );
+}
