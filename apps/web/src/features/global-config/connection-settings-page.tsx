@@ -497,18 +497,13 @@ export function ConnectionSettingsPage() {
     }
   };
 
+  const hasActiveFilters = Boolean(
+    query || connectionType || validationStatus || enabled || executable
+  );
+  const isTrueEmpty = Boolean(items && types && total === 0 && !hasActiveFilters);
+
   return (
     <section className="settings-content ui004-connection-list">
-      {/* 规则说明条 */}
-      <div className="ui004-notice-banner">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="ui004-info-icon">
-          <circle cx="12" cy="12" r="10"/>
-          <line x1="12" y1="16" x2="12" y2="12"/>
-          <line x1="12" y1="8" x2="12.01" y2="8"/>
-        </svg>
-        <span>连接关键字段变化后保留启用状态、工作流配置和项目绑定，但执行资格立即失效；重新验证成功后自动恢复。</span>
-      </div>
-
       {error ? (
         <div className="llm-state" role="alert">
           <p>{error}</p>
@@ -516,8 +511,76 @@ export function ConnectionSettingsPage() {
         </div>
       ) : !items || !types ? (
         <div className="llm-loading" role="status">正在加载连接列表…</div>
+      ) : isTrueEmpty ? (
+        <>
+          <div className="ui006-empty-toolbar">
+            <button
+              className="ui004-add-btn primary"
+              onClick={() => setDrawer({ mode: "create" })}
+              disabled={!types?.length}
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="12" y1="5" x2="12" y2="19"/>
+                <line x1="6" y1="12" x2="18" y2="12"/>
+              </svg>
+              添加连接
+            </button>
+          </div>
+          <p className="ui006-empty-guide">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="10"/>
+              <line x1="12" y1="16" x2="12" y2="12"/>
+              <line x1="12" y1="8" x2="12.01" y2="8"/>
+            </svg>
+            <span>先添加连接，后续工作流配置才能引用。</span>
+          </p>
+          <div className="ui006-empty-container">
+            <div className="ui006-empty-card">
+              <div className="ui006-empty-icon" aria-hidden="true">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="6" cy="6" r="2"/>
+                  <circle cx="18" cy="6" r="2"/>
+                  <circle cx="6" cy="18" r="2"/>
+                  <circle cx="18" cy="18" r="2"/>
+                  <path d="M8 6h8M6 8v8M18 8v8M8 18h8"/>
+                </svg>
+              </div>
+              <h3 className="ui006-empty-title">暂无连接</h3>
+              <p className="ui006-empty-desc">先添加连接，后续工作流配置才能引用。</p>
+              <button
+                type="button"
+                className="ui004-add-btn primary ui006-empty-cta"
+                onClick={() => setDrawer({ mode: "create" })}
+                disabled={!types?.length}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="12" y1="5" x2="12" y2="19"/>
+                  <line x1="6" y1="12" x2="18" y2="12"/>
+                </svg>
+                添加连接
+              </button>
+            </div>
+          </div>
+          <div className="ui006-empty-tip">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+              <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+            </svg>
+            <span>连接凭证加密保存，保存后不会回显明文。</span>
+          </div>
+        </>
       ) : (
         <>
+          {/* 规则说明条：仅有数据/筛选时展示 */}
+          <div className="ui004-notice-banner">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="ui004-info-icon">
+              <circle cx="12" cy="12" r="10"/>
+              <line x1="12" y1="16" x2="12" y2="12"/>
+              <line x1="12" y1="8" x2="12.01" y2="8"/>
+            </svg>
+            <span>连接关键字段变化后保留启用状态、工作流配置和项目绑定，但执行资格立即失效；重新验证成功后自动恢复。</span>
+          </div>
+
           <div className="ui004-toolbar">
             <div className="ui004-filters">
               <div className="ui004-search-wrap">
@@ -589,9 +652,11 @@ export function ConnectionSettingsPage() {
           </div>
 
           {items.length === 0 ? (
-            <div className="llm-state">
-              <h3>暂无 Connection</h3>
-              <p>添加 Connection 后，可供工作流配置绑定调用。</p>
+            <div className="ui006-empty-container ui006-empty-filtered">
+              <div className="ui006-empty-card">
+                <h3 className="ui006-empty-title">未找到匹配连接</h3>
+                <p className="ui006-empty-desc">请调整筛选条件后重试，或新增连接。</p>
+              </div>
             </div>
           ) : (
             <div className="ui004-table-wrap">
