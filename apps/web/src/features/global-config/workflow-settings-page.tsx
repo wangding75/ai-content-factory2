@@ -594,20 +594,13 @@ export function WorkflowSettingsPage() {
 
   const pages = Math.max(1, Math.ceil(total / limit));
   const page = Math.floor(offset / limit) + 1;
+  const hasActiveFilters = Boolean(
+    query || applicableStage || llmStrategy || validationStatus || enabled || executable
+  );
+  const isTrueEmpty = Boolean(workflows && connections && types && connections.length > 0 && total === 0 && !hasActiveFilters);
 
   return (
     <section className="settings-content ui007-workflow-list">
-      <div className="ui007-notice-banner">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="ui004-info-icon">
-          <circle cx="12" cy="12" r="10" />
-          <line x1="12" y1="16" x2="12" y2="12" />
-          <line x1="12" y1="8" x2="12.01" y2="8" />
-        </svg>
-        <span>
-          工作流通过连接、业务契约和 LLM 策略校验后获得执行资格。修改关键字段后保留启用状态和项目绑定，但执行资格失效，重新验证后恢复。
-        </span>
-      </div>
-
       {notice && (
         <p className="llm-toast" role="status">
           {notice}
@@ -625,12 +618,66 @@ export function WorkflowSettingsPage() {
           正在加载工作流配置…
         </div>
       ) : !connections.length ? (
-        <div className="llm-state">
-          <h3>请先添加连接</h3>
-          <p>工作流必须关联一个已保存的执行连接。</p>
+        <div className="ui006-empty-container">
+          <div className="ui006-empty-card">
+            <h3 className="ui006-empty-title">请先添加连接</h3>
+            <p className="ui006-empty-desc">工作流必须关联一个已保存的执行连接。请先在「连接」页添加并保存连接。</p>
+          </div>
         </div>
+      ) : isTrueEmpty ? (
+        <>
+          <div className="ui006-empty-toolbar">
+            <button
+              className="ui004-add-btn primary"
+              onClick={() => setDrawer({ mode: "create" })}
+              disabled={!connections.length}
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="12" y1="5" x2="12" y2="19" />
+                <line x1="6" y1="12" x2="18" y2="12" />
+              </svg>
+              添加工作流
+            </button>
+          </div>
+          <div className="ui006-empty-container">
+            <div className="ui006-empty-card">
+              <div className="ui006-empty-icon" aria-hidden="true">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="6" cy="6" r="2" />
+                  <circle cx="18" cy="18" r="2" />
+                  <path d="M8 6h4a4 4 0 0 1 4 4v4" />
+                </svg>
+              </div>
+              <h3 className="ui006-empty-title">暂无工作流配置</h3>
+              <p className="ui006-empty-desc">添加工作流后，可供后续项目绑定使用。</p>
+              <button
+                type="button"
+                className="ui004-add-btn primary ui006-empty-cta"
+                onClick={() => setDrawer({ mode: "create" })}
+                disabled={!connections.length}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="12" y1="5" x2="12" y2="19" />
+                  <line x1="6" y1="12" x2="18" y2="12" />
+                </svg>
+                添加工作流
+              </button>
+            </div>
+          </div>
+        </>
       ) : (
         <>
+          <div className="ui007-notice-banner">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="ui004-info-icon">
+              <circle cx="12" cy="12" r="10" />
+              <line x1="12" y1="16" x2="12" y2="12" />
+              <line x1="12" y1="8" x2="12.01" y2="8" />
+            </svg>
+            <span>
+              工作流通过连接、业务契约和 LLM 策略校验后获得执行资格。修改关键字段后保留启用状态和项目绑定，但执行资格失效，重新验证后恢复。
+            </span>
+          </div>
+
           <div className="ui007-toolbar">
             <div className="ui007-filters">
               <div className="ui004-search-wrap">
@@ -711,9 +758,11 @@ export function WorkflowSettingsPage() {
           </div>
 
           {workflows.length === 0 ? (
-            <div className="llm-state">
-              <h3>暂无工作流配置</h3>
-              <p>添加工作流后，可供后续项目绑定使用。</p>
+            <div className="ui006-empty-container ui006-empty-filtered">
+              <div className="ui006-empty-card">
+                <h3 className="ui006-empty-title">未找到匹配工作流</h3>
+                <p className="ui006-empty-desc">请调整筛选条件后重试，或新增工作流。</p>
+              </div>
             </div>
           ) : (
             <div className="ui007-table-wrap">
