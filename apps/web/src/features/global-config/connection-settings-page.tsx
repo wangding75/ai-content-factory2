@@ -4,9 +4,27 @@ import "./connection-settings.css";
 import { useCallback, useEffect, useState } from "react";
 import { ApiError } from "@/lib/api";
 import { createConnection, getConnection, listConnections, listConnectionTypes, mapConnection, setConnectionEnabled, updateConnection, validateConnectionForm, verifyConnection, type ConnectionFormInput, type ConnectionTypeDto, type ConnectionVm, type WorkflowConnectionDto } from "./workflow-connection-api";
+import type { ValidationStatus } from "./llm-provider-api";
 
 type Drawer = { mode: "create" } | { mode: "edit"; item: WorkflowConnectionDto } | null;
 const blank = (connectionType = ""): ConnectionFormInput => ({ name: "", connectionType, baseUrl: "", timeoutSeconds: 60, typeConfigJson: '{"referenceType":"workflow_id","referenceValue":""}', credential: "" });
+
+/** Page-layer list display model: keeps API mapper contract-stable and only adds UI display fields. */
+type ConnectionListItem = ConnectionVm & {
+  validationStatus: ValidationStatus;
+  enabled: boolean;
+  lastVerifiedAt: string | null;
+};
+
+function toConnectionListItem(item: WorkflowConnectionDto, types: ConnectionTypeDto[]): ConnectionListItem {
+  const vm = mapConnection(item, types);
+  return {
+    ...vm,
+    validationStatus: item.validationStatus ?? "unverified",
+    enabled: item.enabled,
+    lastVerifiedAt: item.lastVerifiedAt
+  };
+}
 
 function ConnectionDrawer({
   drawer,
@@ -395,7 +413,7 @@ function formatDateTime(isoString: string | null): string {
 
 export function ConnectionSettingsPage() {
   const [types, setTypes] = useState<ConnectionTypeDto[] | null>(null);
-  const [items, setItems] = useState<ConnectionVm[] | null>(null);
+  const [items, setItems] = useState<ConnectionListItem[] | null>(null);
   const [total, setTotal] = useState(0);
   const [error, setError] = useState<string>();
   const [drawer, setDrawer] = useState<Drawer>(null);
@@ -426,7 +444,7 @@ export function ConnectionSettingsPage() {
       ]);
       if (!signal?.aborted) {
         setTypes(catalogue.items);
-        setItems(result.items.map(item => mapConnection(item, catalogue.items)));
+        setItems(result.items.map(item => toConnectionListItem(item, catalogue.items)));
         setTotal(result.total);
       }
     } catch (cause) {
@@ -443,7 +461,7 @@ export function ConnectionSettingsPage() {
     };
   }, [load]);
 
-  const edit = async (item: ConnectionVm) => {
+  const edit = async (item: ConnectionListItem) => {
     try {
       setDrawer({ mode: "edit", item: await getConnection(item.id) });
     } catch {
@@ -451,7 +469,7 @@ export function ConnectionSettingsPage() {
     }
   };
 
-  const handleToggleEnabled = async (item: ConnectionVm) => {
+  const handleToggleEnabled = async (item: ConnectionListItem) => {
     if (togglingId) return;
     setTogglingId(item.id);
     try {
@@ -465,7 +483,7 @@ export function ConnectionSettingsPage() {
     }
   };
 
-  const handleVerify = async (item: ConnectionVm) => {
+  const handleVerify = async (item: ConnectionListItem) => {
     if (verifyingId) return;
     setVerifyingId(item.id);
     try {
