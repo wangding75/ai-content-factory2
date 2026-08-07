@@ -68,7 +68,9 @@ function BindingCard({item,onSelect,onUnbind}:{item:BindingStage;onSelect:()=>vo
             <button className="danger" onClick={onUnbind}>解除绑定</button>
           </>
         ) : (
-          <button className="primary" onClick={onSelect}>选择工作流</button>
+          <button className="primary ui013-select-btn" onClick={onSelect}>
+            + 选择工作流
+          </button>
         )}
       </footer>
     </article>

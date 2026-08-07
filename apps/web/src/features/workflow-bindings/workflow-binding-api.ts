@@ -8,7 +8,12 @@ export type Binding = { id:string; projectId:string; stage:WorkflowStage; workfl
 export type BindingStage = { stage:WorkflowStage; bound:boolean; binding:Binding|null; workflowConfigurationSummary:WorkflowConfiguration|null };
 export const stageOrder:WorkflowStage[]=["chapter_planning","content_generation","review","rewrite"];
 export const stageLabels:Record<WorkflowStage,string>={chapter_planning:"章节规划",content_generation:"内容生成",review:"审核",rewrite:"改写"};
-export const stageDescriptions:Record<WorkflowStage,string>={chapter_planning:"为章节结构与创作目标选择工作流。",content_generation:"为正文内容生成选择工作流。",review:"为内容审核选择工作流。",rewrite:"为审核后的改写选择工作流。"};
+export const stageDescriptions:Record<WorkflowStage,string>={
+  chapter_planning:"自动化拆解大纲并生成章节详细规划。",
+  content_generation:"基于章节规划进行多模态内容初稿生成。",
+  review:"针对生成内容进行合规性、一致性与质量审查。",
+  rewrite:"根据反馈或风格需求对现有内容进行重组与优化。"
+};
 export const formatWorkflowNote=(note:string)=>Object.entries(stageLabels).reduce((value,[stage,label])=>value.replaceAll(stage,label),note);
 
 export type WorkflowExceptionType = "none" | "disabled" | "integration_error" | "connection_error";
@@ -33,13 +38,13 @@ export function getWorkflowExceptionType(workflow: WorkflowConfiguration | null)
 export const bindingCopy = (item: BindingStage) => {
   const workflow = item.workflowConfigurationSummary;
   const exc = getWorkflowExceptionType(workflow);
-  let statusText = "已绑定 · 已集成";
+  let statusText = "已绑定 · 可执行";
   if (!item.bound) {
-    statusText = "未绑定";
+    statusText = "尚未绑定工作流";
   } else if (exc === "disabled") {
     statusText = "已绑定 · 已停用";
   } else if (exc === "integration_error") {
-    statusText = "已绑定 · 未接入";
+    statusText = "已绑定 · 依赖失效";
   } else if (exc === "connection_error") {
     statusText = "已绑定 · 连接异常";
   }

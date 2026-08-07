@@ -409,6 +409,8 @@ button,a { -webkit-tap-highlight-color:transparent; }
 .workflow-binding-card button:hover,.workflow-binding-drawer button:hover{background:#f8fafc}
 .workflow-binding-card .primary,.workflow-binding-drawer .primary{border-color:#4648d4;background:#4648d4;color:#fff}
 .workflow-binding-card .primary:hover,.workflow-binding-drawer .primary:hover{background:#3b3dbf}
+.workflow-binding-card .ui013-select-btn{width:100%;border-style:dashed;border-color:#c7d2fe;background:#fff;color:#4648d4}
+.workflow-binding-card .ui013-select-btn:hover{background:#eef2ff;border-color:#4648d4}
 .workflow-binding-drawer button.primary:disabled,.workflow-binding-drawer button:disabled,.workflow-binding-card button.primary:disabled,.workflow-binding-card button:disabled{background:#e2e8f0!important;border-color:#cbd5e1!important;color:#94a3b8!important;opacity:.65!important;cursor:not-allowed!important;box-shadow:none!important}
 .workflow-binding-card .danger,.workflow-unbind-dialog .danger{border-color:#fca5a5;background:#fff;color:#dc2626}
 .workflow-binding-card .danger:hover,.workflow-unbind-dialog .danger:hover{background:#fef2f2}
