@@ -10,7 +10,25 @@ export type WorkflowRunRetryability = "runtime_retry" | "result_consumption_retr
 export type WorkflowRunDto = { id: string; runNumber: string; projectId: string; stage: WorkflowStage; subjectType: string | null; subjectId: string | null; workflowConfigurationId: string; workflowName: string | null; workflowConfigurationVersion: number | null; triggerSource: WorkflowRunTriggerSource; retryOfRunId: string | null; status: WorkflowRunStatus; displayStatus: WorkflowRunDisplayStatus; failurePhase: "external_execution" | "output_validation" | "result_consumption" | "cancellation" | null; failureCode: string | null; safeError: { code: string; message: string; details?: Record<string, unknown> } | null; domainImpact: Array<{ resourceType: string; resourceId: string | null; outcome: string }>; connectionSummary: { id: string; name: string; connectionType: string; validationStatus: string; enabled: boolean; executable: boolean } | null; llmPolicySummary: { strategy: string; providerId: string | null; providerName: string | null; providerVersion: number | null; model: string | null; validationStatus: string | null; executable: boolean } | null; retryability: WorkflowRunRetryability; retryMode: WorkflowRunRetryMode | null; externalExecutionId: string | null; cancellationRequestedAt: string | null; timedOutAt: string | null; inputPayload: Record<string, unknown>; outputPayload: Record<string, unknown> | null; errorCode: string | null; errorMessage: string | null; errorDetails: Record<string, unknown> | null; configurationSnapshot: Record<string, unknown>; bindingSnapshot: { bindingId: string; bindingVersion: number; stage: WorkflowStage }; connectionSnapshot: Record<string, unknown>; llmPolicySnapshot: Record<string, unknown>; startedAt: string | null; finishedAt: string | null; cancelledAt: string | null; createdAt: string; updatedAt: string; version: number };
 export type WorkflowRunList = { items: WorkflowRunDto[]; total: number; limit: number; offset: number };
 export type WorkflowRunListQuery = { projectId?: string; stage?: WorkflowStage; workflowConfigurationId?: string; status?: WorkflowRunStatus; displayStatus?: WorkflowRunDisplayStatus; connectionId?: string; providerId?: string; model?: string; configurationVersion?: number; retryability?: "runtime_retry" | "result_consumption_retry" | "not_retryable"; triggerSource?: WorkflowRunTriggerSource; q?: string; from?: string; to?: string; startTime?: string; endTime?: string; limit?: number; offset?: number };
-export type WorkflowRunVm = { id: string; runNumber: string; projectId: string; stageLabel: string; status: WorkflowRunDisplayStatus | "unknown"; statusLabel: string; triggerSourceLabel: string; workflowName: string; retryLabel: string; createdAtLabel: string; updatedAtLabel: string };
+export type WorkflowRunVm = {
+  id: string;
+  runNumber: string;
+  projectId: string;
+  stageLabel: string;
+  status: WorkflowRunDisplayStatus | "unknown";
+  statusLabel: string;
+  triggerSourceLabel: string;
+  workflowName: string;
+  workflowVersionLabel: string;
+  connectionName: string;
+  modelStrategyLabel: string;
+  startedAtLabel: string;
+  durationLabel: string;
+  retryLabel: string;
+  createdAtLabel: string;
+  updatedAtLabel: string;
+  subjectLabel: string;
+};
 
 const stageLabels: Record<WorkflowStage, string> = { chapter_planning: "章节规划", content_generation: "内容生成", review: "内容审核", rewrite: "内容改写" };
 const statusLabels: Record<WorkflowRunDisplayStatus, string> = { queued: "等待执行", running: "运行中", cancelling: "正在取消", succeeded: "已成功", failed: "执行失败", cancelled: "已取消", timed_out: "执行超时", output_validation_failed: "输出校验失败", result_consumption_failed: "结果提交失败" };
@@ -47,22 +65,53 @@ export function workflowRunQuery(query: WorkflowRunListQuery = {}) {
   return params;
 }
 
+function formatDuration(startedAt: string | null, finishedAt: string | null, status: string) {
+  if (!startedAt) return "—";
+  const start = new Date(startedAt).getTime();
+  if (Number.isNaN(start)) return "—";
+  const end = finishedAt ? new Date(finishedAt).getTime() : (status === "running" || status === "cancelling" ? Date.now() : NaN);
+  if (Number.isNaN(end) || end < start) return "—";
+  const totalSec = Math.floor((end - start) / 1000);
+  const h = Math.floor(totalSec / 3600);
+  const m = Math.floor((totalSec % 3600) / 60);
+  const s = totalSec % 60;
+  if (h > 0) return `${h}时${m}分`;
+  if (m > 0) return `${m}分${s}秒`;
+  return `${s}秒`;
+}
+
 export const mapWorkflowRun = (item: WorkflowRunDto): WorkflowRunVm => {
   const displayStatus = item.displayStatus ?? item.status;
   const knownStatus = isWorkflowRunStatus(displayStatus) ? displayStatus : undefined;
+  const strategy = item.llmPolicySummary?.strategy;
+  const strategyLabel =
+    strategy === "acf_managed"
+      ? [item.llmPolicySummary?.providerName, item.llmPolicySummary?.model].filter(Boolean).join(" / ") || "ACF 托管"
+      : strategy === "n8n_managed"
+        ? "n8n 内部模型"
+        : strategy === "none"
+          ? "不使用模型"
+          : "—";
   return {
-  id: item.id,
-  runNumber: item.runNumber || "—",
-  projectId: item.projectId,
-  stageLabel: isWorkflowStage(item.stage) ? stageLabels[item.stage] : "未知环节",
-  status: knownStatus ?? "unknown",
-  statusLabel: knownStatus ? statusLabels[knownStatus] : "未知状态",
-  triggerSourceLabel: isWorkflowRunTriggerSource(item.triggerSource) ? triggerSourceLabels[item.triggerSource] : "未知来源",
-  workflowName: item.workflowName || "工作流配置已不可用",
-  retryLabel: item.retryOfRunId ? "由重试创建" : "首次执行",
-  createdAtLabel: formatWorkflowRunTime(item.createdAt),
-  updatedAtLabel: formatWorkflowRunTime(item.updatedAt),
-}; };
+    id: item.id,
+    runNumber: item.runNumber || "—",
+    projectId: item.projectId,
+    stageLabel: isWorkflowStage(item.stage) ? stageLabels[item.stage] : "未知环节",
+    status: knownStatus ?? "unknown",
+    statusLabel: knownStatus ? statusLabels[knownStatus] : "未知状态",
+    triggerSourceLabel: isWorkflowRunTriggerSource(item.triggerSource) ? triggerSourceLabels[item.triggerSource] : "未知来源",
+    workflowName: item.workflowName || "工作流配置已不可用",
+    workflowVersionLabel: item.workflowConfigurationVersion != null ? `v${item.workflowConfigurationVersion}` : "—",
+    connectionName: item.connectionSummary?.name || "—",
+    modelStrategyLabel: strategyLabel,
+    startedAtLabel: formatWorkflowRunTime(item.startedAt ?? item.createdAt),
+    durationLabel: formatDuration(item.startedAt, item.finishedAt, item.status),
+    retryLabel: item.retryOfRunId ? "由重试创建" : "首次执行",
+    createdAtLabel: formatWorkflowRunTime(item.createdAt),
+    updatedAtLabel: formatWorkflowRunTime(item.updatedAt),
+    subjectLabel: item.subjectType ? `${item.subjectType}` : "—"
+  };
+};
 
 export async function listWorkflowRuns(query: WorkflowRunListQuery = {}, init?: ApiRequestInit): Promise<Omit<WorkflowRunList, "items"> & { items: WorkflowRunVm[] }> {
   const response = await apiRequest<WorkflowRunList>(`/workflow-runs?${workflowRunQuery(query)}`, init);
