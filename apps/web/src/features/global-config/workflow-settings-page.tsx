@@ -19,7 +19,7 @@ import {
   type WorkflowForm,
   type WorkflowVm
 } from "./workflow-api";
-import type { ValidationStatus } from "./llm-provider-api";
+import { listLlmProviders, type LlmProviderDto, type ValidationStatus } from "./llm-provider-api";
 
 type Drawer = { mode: "create" } | { mode: "edit"; workflow: WorkflowDto } | null;
 type Errors = Record<string, string>;
@@ -73,244 +73,6 @@ const fieldErrors = (error: ApiError): Errors => {
     : {};
 };
 
-function WorkflowDrawer({
-  state,
-  connections,
-  onClose,
-  onSaved
-}: {
-  state: Exclude<Drawer, null>;
-  connections: WorkflowConnectionDto[];
-  onClose: () => void;
-  onSaved: () => Promise<void>;
-}) {
-  const editing = state.mode === "edit";
-  const [form, setForm] = useState<WorkflowForm>(() =>
-    editing ? formOf(state.workflow) : blank(connections[0]?.id)
-  );
-  const [error, setError] = useState<string>();
-  const [errors, setErrors] = useState<Errors>({});
-  const [conflict, setConflict] = useState(false);
-  const [saving, setSaving] = useState(false);
-
-  const set = <K extends keyof WorkflowForm>(key: K, value: WorkflowForm[K]) => {
-    setForm(current => ({ ...current, [key]: value }));
-    setError(undefined);
-    setErrors({});
-  };
-
-  const toggle = (stage: ApplicableStage) =>
-    set(
-      "applicableStages",
-      form.applicableStages.includes(stage)
-        ? form.applicableStages.filter(value => value !== stage)
-        : [...form.applicableStages, stage]
-    );
-
-  const reload = async () => {
-    if (!editing) return;
-    setSaving(true);
-    try {
-      const workflow = await getWorkflow(state.workflow.id);
-      setForm(formOf(workflow));
-      setConflict(false);
-      setErrors({});
-      setError("已重新加载服务端最新数据，请确认后重新保存。");
-    } catch {
-      setError("暂时无法加载最新工作流。");
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const submit = async (event: React.FormEvent) => {
-    event.preventDefault();
-    if (saving) return;
-    const invalid = validateWorkflow(form);
-    if (invalid) {
-      setError(invalid);
-      return;
-    }
-    setSaving(true);
-    setError(undefined);
-    setErrors({});
-    try {
-      if (editing) {
-        await updateWorkflow(state.workflow.id, form, state.workflow.version, crypto.randomUUID());
-      } else {
-        await createWorkflow(form, crypto.randomUUID());
-      }
-      await onSaved();
-      onClose();
-    } catch (cause) {
-      const api = cause instanceof ApiError ? cause : undefined;
-      if (api?.status === 409 || api?.code === "version_conflict") {
-        setConflict(true);
-        setError("该工作流已被其他操作更新，请重新加载后再保存。");
-      } else {
-        setErrors(api ? fieldErrors(api) : {});
-        setError("保存失败，请检查输入后重试。");
-      }
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  return (
-    <div className="llm-drawer-backdrop">
-      <aside className="llm-drawer" role="dialog" aria-modal="true" aria-label={editing ? "编辑工作流" : "添加工作流"}>
-        <header>
-          <div>
-            <h2>{editing ? "编辑工作流" : "添加工作流"}</h2>
-            <p>创建可供项目绑定的工作流。</p>
-          </div>
-          <button type="button" aria-label="关闭" onClick={onClose} disabled={saving}>
-            ×
-          </button>
-        </header>
-        <form onSubmit={submit}>
-          <div className="llm-drawer-body">
-            <label>
-              名称 *
-              <input
-                value={form.name}
-                maxLength={160}
-                placeholder="例如：标准章节规划工作流"
-                aria-invalid={Boolean(errors.name)}
-                onChange={event => set("name", event.target.value)}
-                disabled={saving}
-              />
-              {errors.name && <small className="llm-field-error">{errors.name}</small>}
-            </label>
-            <label>
-              关联连接 *
-              <select
-                value={form.connectionId}
-                aria-invalid={Boolean(errors.connectionId)}
-                onChange={event => set("connectionId", event.target.value)}
-                disabled={saving}
-              >
-                {connections.map(connection => (
-                  <option key={connection.id} value={connection.id}>
-                    {connection.name}（{connection.connectionType}）
-                  </option>
-                ))}
-              </select>
-              {errors.connectionId && <small className="llm-field-error">{errors.connectionId}</small>}
-            </label>
-            <label>
-              工作流类型
-              <input value={editing ? state.workflow.workflowType : "选择连接后自动识别"} disabled />
-              <small>工作流类型由关联连接决定，不能独立修改。</small>
-            </label>
-            <fieldset className="llm-check-group">
-              <legend>适用环节 *</legend>
-              {stages.map(([value, label]) => (
-                <label key={value}>
-                  <input
-                    type="checkbox"
-                    checked={form.applicableStages.includes(value)}
-                    onChange={() => toggle(value)}
-                    disabled={saving}
-                  />
-                  {label}
-                </label>
-              ))}
-              {errors.applicableStages && <small className="llm-field-error">{errors.applicableStages}</small>}
-            </fieldset>
-            <label>
-              引用类型 *
-              <select
-                value={form.referenceType}
-                onChange={event => set("referenceType", event.target.value as WorkflowForm["referenceType"])}
-                disabled={saving}
-              >
-                <option value="workflow_id">工作流 ID</option>
-                <option value="webhook_path">Webhook 路径</option>
-              </select>
-            </label>
-            <label>
-              {form.referenceType === "workflow_id" ? "工作流 ID" : "Webhook 路径"} *
-              <input
-                value={form.referenceValue}
-                maxLength={512}
-                placeholder="例如：1a2b3c4d-5678-90ef"
-                aria-invalid={Boolean(errors.typeConfig)}
-                onChange={event => set("referenceValue", event.target.value)}
-                disabled={saving}
-              />
-              {errors.typeConfig && <small className="llm-field-error">{errors.typeConfig}</small>}
-            </label>
-            <label>
-              输入契约版本 *
-              <input
-                value={form.inputContractVersion}
-                maxLength={40}
-                onChange={event => set("inputContractVersion", event.target.value)}
-                disabled={saving}
-              />
-            </label>
-            <label>
-              输出契约版本 *
-              <input
-                value={form.outputContractVersion}
-                maxLength={40}
-                onChange={event => set("outputContractVersion", event.target.value)}
-                disabled={saving}
-              />
-            </label>
-            <label>
-              默认参数摘要（可选）
-              <textarea
-                value={form.defaultParametersJson}
-                aria-invalid={Boolean(errors.defaultParameters)}
-                onChange={event => set("defaultParametersJson", event.target.value)}
-                disabled={saving}
-              />
-              <small>仅支持 JSON 对象，例如：{"{}"}。</small>
-              {errors.defaultParameters && <small className="llm-field-error">{errors.defaultParameters}</small>}
-            </label>
-            <label>
-              备注（可选）
-              <textarea
-                value={form.note}
-                maxLength={5000}
-                placeholder="添加备注信息…"
-                onChange={event => set("note", event.target.value)}
-                disabled={saving}
-              />
-            </label>
-            <div className="llm-deferred">
-              <button type="button" disabled>
-                验证配置（后续开放）
-              </button>
-              <p>本迭代仅保存工作流配置，不会连接或验证第三方服务。</p>
-            </div>
-            {error && (
-              <div className="llm-form-error" role="alert">
-                {error}
-                {conflict && (
-                  <button type="button" onClick={() => void reload()} disabled={saving}>
-                    重新加载
-                  </button>
-                )}
-              </div>
-            )}
-          </div>
-          <footer>
-            <button type="button" onClick={onClose} disabled={saving}>
-              取消
-            </button>
-            <button className="primary" disabled={saving}>
-              {saving ? "保存中…" : "保存"}
-            </button>
-          </footer>
-        </form>
-      </aside>
-    </div>
-  );
-}
-
 function validationBadgeText(status: ValidationStatus): string {
   switch (status) {
     case "verified":
@@ -324,6 +86,404 @@ function validationBadgeText(status: ValidationStatus): string {
     default:
       return "未验证";
   }
+}
+
+function WorkflowDrawer({
+  state,
+  connections,
+  onClose,
+  onSaved
+}: {
+  state: Exclude<Drawer, null>;
+  connections: WorkflowConnectionDto[];
+  onClose: () => void;
+  onSaved: () => Promise<void>;
+}) {
+  const editing = state.mode === "edit";
+  const [current, setCurrent] = useState<WorkflowDto | null>(editing ? state.workflow : null);
+  const [form, setForm] = useState<WorkflowForm>(() =>
+    editing ? formOf(state.workflow) : blank(connections[0]?.id)
+  );
+  const [providers, setProviders] = useState<LlmProviderDto[]>([]);
+  const [error, setError] = useState<string>();
+  const [errors, setErrors] = useState<Errors>({});
+  const [conflict, setConflict] = useState(false);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    void listLlmProviders({ limit: 100 }, { signal: controller.signal })
+      .then(result => setProviders(result.items))
+      .catch(() => setProviders([]));
+    return () => controller.abort();
+  }, []);
+
+  const set = <K extends keyof WorkflowForm>(key: K, value: WorkflowForm[K]) => {
+    setForm(currentForm => {
+      const next = { ...currentForm, [key]: value };
+      if (key === "llmStrategy") {
+        if (value === "none" || value === "n8n_managed") {
+          next.llmProviderId = "";
+          next.llmModel = "";
+        }
+      }
+      if (key === "llmProviderId" && typeof value === "string") {
+        const provider = providers.find(item => item.id === value);
+        if (provider && !next.llmModel) next.llmModel = provider.defaultModel;
+      }
+      return next;
+    });
+    setError(undefined);
+    setErrors({});
+  };
+
+  const toggle = (stage: ApplicableStage) =>
+    set(
+      "applicableStages",
+      form.applicableStages.includes(stage)
+        ? form.applicableStages.filter(value => value !== stage)
+        : [...form.applicableStages, stage]
+    );
+
+  const reload = async () => {
+    if (!editing || !current) return;
+    setSaving(true);
+    try {
+      const workflow = await getWorkflow(current.id);
+      setCurrent(workflow);
+      setForm(formOf(workflow));
+      setConflict(false);
+      setErrors({});
+      setError("已重新加载服务端最新数据，请确认后重新保存。");
+    } catch {
+      setError("暂时无法加载最新工作流。");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const persist = async (andVerify: boolean) => {
+    if (saving) return;
+    const invalid = validateWorkflow(form);
+    if (invalid) {
+      setError(invalid);
+      return;
+    }
+    setSaving(true);
+    setError(undefined);
+    setErrors({});
+    try {
+      let saved: WorkflowDto;
+      if (editing && current) {
+        saved = await updateWorkflow(current.id, form, current.version, crypto.randomUUID());
+      } else {
+        saved = await createWorkflow(form, crypto.randomUUID());
+      }
+      if (andVerify) {
+        await verifyWorkflow(saved.id, saved.version, crypto.randomUUID());
+        saved = await getWorkflow(saved.id);
+      }
+      setCurrent(saved);
+      setForm(formOf(saved));
+      await onSaved();
+      if (!andVerify) onClose();
+    } catch (cause) {
+      const api = cause instanceof ApiError ? cause : undefined;
+      if (api?.status === 409 || api?.code === "version_conflict") {
+        setConflict(true);
+        setError("该工作流已被其他操作更新，请重新加载后再保存。");
+      } else {
+        setErrors(api ? fieldErrors(api) : {});
+        setError(andVerify ? "保存或验证失败，请检查输入后重试。" : "保存失败，请检查输入后重试。");
+      }
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const statusKey = current?.validationStatus ?? "unverified";
+  const isExecutable = current?.executable === true;
+  const reasons = current?.ineligibilityReasons?.map(item => item.message) ?? [];
+  const safeError = current?.safeError?.message ?? current?.lastErrorMessage ?? null;
+
+  return (
+    <div className="llm-drawer-backdrop ui008-drawer-backdrop" onClick={onClose}>
+      <aside
+        className="llm-drawer ui008-drawer"
+        role="dialog"
+        aria-modal="true"
+        aria-label={editing ? "编辑工作流" : "添加工作流"}
+        onClick={event => event.stopPropagation()}
+      >
+        <header className="ui008-header">
+          <div>
+            <h2>{editing ? "编辑工作流" : "添加工作流"}</h2>
+            <p>LLM 策略固定在 Workflow Configuration 层，项目不可覆盖。</p>
+          </div>
+          <button type="button" aria-label="关闭" onClick={onClose} disabled={saving}>
+            ×
+          </button>
+        </header>
+
+        <form
+          className="ui008-form"
+          onSubmit={event => {
+            event.preventDefault();
+            void persist(false);
+          }}
+        >
+          <div className="llm-drawer-body ui008-body">
+            <section className="ui008-section">
+              <h3>基本信息</h3>
+              <label>
+                工作流名称 *
+                <input
+                  value={form.name}
+                  maxLength={160}
+                  placeholder="例如：标准章节规划工作流"
+                  aria-invalid={Boolean(errors.name)}
+                  onChange={event => set("name", event.target.value)}
+                  disabled={saving}
+                />
+                {errors.name && <small className="llm-field-error">{errors.name}</small>}
+              </label>
+              <div className="ui008-grid-2">
+                <label>
+                  关联连接 *
+                  <select
+                    value={form.connectionId}
+                    aria-invalid={Boolean(errors.connectionId)}
+                    onChange={event => set("connectionId", event.target.value)}
+                    disabled={saving}
+                  >
+                    {connections.map(connection => (
+                      <option key={connection.id} value={connection.id}>
+                        {connection.name}
+                      </option>
+                    ))}
+                  </select>
+                  {errors.connectionId && <small className="llm-field-error">{errors.connectionId}</small>}
+                </label>
+                <label>
+                  工作流类型
+                  <input value={editing && current ? current.workflowType : "选择连接后自动识别"} disabled />
+                </label>
+              </div>
+            </section>
+
+            <section className="ui008-section">
+              <h3>业务契约</h3>
+              <fieldset className="llm-check-group ui008-stages">
+                <legend>适用环节 *</legend>
+                {stages.map(([value, label]) => (
+                  <label key={value}>
+                    <input
+                      type="checkbox"
+                      checked={form.applicableStages.includes(value)}
+                      onChange={() => toggle(value)}
+                      disabled={saving}
+                    />
+                    {label}
+                  </label>
+                ))}
+                {errors.applicableStages && <small className="llm-field-error">{errors.applicableStages}</small>}
+              </fieldset>
+              <div className="ui008-grid-2">
+                <label>
+                  引用类型 *
+                  <select
+                    value={form.referenceType}
+                    onChange={event => set("referenceType", event.target.value as WorkflowForm["referenceType"])}
+                    disabled={saving}
+                  >
+                    <option value="workflow_id">工作流 ID</option>
+                    <option value="webhook_path">Webhook 路径</option>
+                  </select>
+                </label>
+                <label>
+                  引用值 *
+                  <input
+                    value={form.referenceValue}
+                    maxLength={512}
+                    placeholder="例如：wf_prod_xxx"
+                    aria-invalid={Boolean(errors.typeConfig)}
+                    onChange={event => set("referenceValue", event.target.value)}
+                    disabled={saving}
+                  />
+                  {errors.typeConfig && <small className="llm-field-error">{errors.typeConfig}</small>}
+                </label>
+              </div>
+              <div className="ui008-grid-2">
+                <label>
+                  输入契约版本 *
+                  <input
+                    value={form.inputContractVersion}
+                    maxLength={40}
+                    onChange={event => set("inputContractVersion", event.target.value)}
+                    disabled={saving}
+                  />
+                </label>
+                <label>
+                  输出契约版本 *
+                  <input
+                    value={form.outputContractVersion}
+                    maxLength={40}
+                    onChange={event => set("outputContractVersion", event.target.value)}
+                    disabled={saving}
+                  />
+                </label>
+              </div>
+              <label>
+                默认参数（JSON）
+                <textarea
+                  value={form.defaultParametersJson}
+                  aria-invalid={Boolean(errors.defaultParameters)}
+                  onChange={event => set("defaultParametersJson", event.target.value)}
+                  disabled={saving}
+                />
+                {errors.defaultParameters && <small className="llm-field-error">{errors.defaultParameters}</small>}
+              </label>
+              <label>
+                备注（可选）
+                <textarea
+                  value={form.note}
+                  maxLength={5000}
+                  placeholder="添加备注信息…"
+                  onChange={event => set("note", event.target.value)}
+                  disabled={saving}
+                />
+              </label>
+            </section>
+
+            <section className="ui008-section">
+              <div className="ui008-section-head">
+                <h3>LLM 使用策略</h3>
+                <span className="ui008-chip">项目绑定后不可覆盖 Provider、模型或策略</span>
+              </div>
+              <div className="ui008-strategy-options">
+                {(
+                  [
+                    ["acf_managed", "ACF 托管模型"],
+                    ["n8n_managed", "n8n 内部模型"],
+                    ["none", "不使用模型"]
+                  ] as const
+                ).map(([value, label]) => (
+                  <label key={value} className={`ui008-strategy-option ${form.llmStrategy === value ? "active" : ""}`}>
+                    <input
+                      type="radio"
+                      name="llmStrategy"
+                      checked={form.llmStrategy === value}
+                      onChange={() => set("llmStrategy", value)}
+                      disabled={saving}
+                    />
+                    {label}
+                  </label>
+                ))}
+              </div>
+              {form.llmStrategy === "acf_managed" && (
+                <div className="ui008-grid-2 ui008-provider-block">
+                  <label>
+                    Provider *
+                    <select
+                      value={form.llmProviderId}
+                      onChange={event => set("llmProviderId", event.target.value)}
+                      disabled={saving || providers.length === 0}
+                    >
+                      <option value="">请选择 Provider</option>
+                      {providers.map(provider => (
+                        <option key={provider.id} value={provider.id}>
+                          {provider.name}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <label>
+                    Model *
+                    <input
+                      value={form.llmModel}
+                      placeholder="输入模型名称"
+                      onChange={event => set("llmModel", event.target.value)}
+                      disabled={saving}
+                    />
+                  </label>
+                </div>
+              )}
+              {form.llmStrategy !== "acf_managed" && (
+                <p className="ui008-strategy-hint">
+                  {form.llmStrategy === "n8n_managed"
+                    ? "由 n8n 工作流内部管理模型，不在此处绑定 Provider。"
+                    : "当前工作流不使用模型。"}
+                </p>
+              )}
+            </section>
+
+            {editing && current && (
+              <section className="ui008-section ui008-status-section">
+                <h3>状态</h3>
+                <div className="ui008-status-grid">
+                  <div>
+                    <span className="ui008-status-label">验证状态</span>
+                    <span className={`ui004-badge val-badge-${statusKey}`}>{validationBadgeText(statusKey)}</span>
+                  </div>
+                  <div>
+                    <span className="ui008-status-label">启用状态</span>
+                    <strong>{current.enabled ? "启用中" : "已停用"}</strong>
+                  </div>
+                  <div>
+                    <span className="ui008-status-label">执行资格</span>
+                    <strong className={isExecutable ? "ready" : "blocked"}>
+                      {isExecutable ? "可执行" : "不可执行"}
+                    </strong>
+                  </div>
+                  <div>
+                    <span className="ui008-status-label">版本</span>
+                    <strong className="ui007-version">v{current.version}</strong>
+                  </div>
+                </div>
+                <p className="ui008-status-note">
+                  编辑关键字段将产生新版本并使验证失效；启用状态和项目绑定会保留，需重新验证通过后恢复执行资格。
+                </p>
+                {(safeError || reasons[0]) && (
+                  <div className="ui005-alert error" role="alert">
+                    <strong>不可执行原因</strong>
+                    <span>{safeError || reasons[0]}</span>
+                  </div>
+                )}
+              </section>
+            )}
+
+            {error && (
+              <div className="llm-form-error" role="alert">
+                {error}
+                {conflict && (
+                  <button type="button" onClick={() => void reload()} disabled={saving}>
+                    重新加载
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+
+          <footer className="ui008-footer">
+            <button type="button" className="ui008-btn secondary" onClick={onClose} disabled={saving}>
+              取消
+            </button>
+            <button type="submit" className="ui008-btn secondary" disabled={saving}>
+              {saving ? "保存中…" : "保存"}
+            </button>
+            <button
+              type="button"
+              className="ui008-btn primary"
+              disabled={saving}
+              onClick={() => void persist(true)}
+            >
+              {saving ? "处理中…" : "保存并验证"}
+            </button>
+          </footer>
+        </form>
+      </aside>
+    </div>
+  );
 }
 
 export function WorkflowSettingsPage() {
