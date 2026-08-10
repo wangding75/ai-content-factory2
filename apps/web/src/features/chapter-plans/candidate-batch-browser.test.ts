@@ -51,6 +51,17 @@ test("candidate batch list page renders 7 filters and pagination", () => {
   assert.match(listPageSource, /下一页/);
 });
 
+test("candidate batch list shows status, source run, scope, time, and independent states", () => {
+  assert.match(listPageSource, /批次 \/ 来源/);
+  assert.match(listPageSource, /Run ID：\{batch\.sourceWorkflowRunId\}/);
+  assert.match(listPageSource, /candidateBatchStatusLabel\(batch\.status\)/);
+  assert.match(listPageSource, /创建时间/);
+  assert.match(listPageSource, /查看详情/);
+  assert.match(listPageSource, /hasFilters/);
+  assert.match(listPageSource, /候选批次加载失败/);
+  assert.match(listPageSource, /暂无候选批次/);
+});
+
 test("candidate batch detail page renders candidate list, search, and diff tags", () => {
   assert.match(detailPageSource, /getChapterPlanCandidateBatch/);
   assert.match(detailPageSource, /listChapterPlanCandidates/);

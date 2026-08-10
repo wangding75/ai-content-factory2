@@ -38,6 +38,7 @@ export function CandidateBatchListPage({ projectId }: { projectId: string }) {
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<ApiError | null>(null);
+  const hasFilters = Boolean(statusParam || modeParam || sourceRunIdParam || fromParam || toParam);
 
   const syncUrl = (newQuery: Record<string, string | number | undefined>) => {
     const params = new URLSearchParams(searchParams.toString());
@@ -224,8 +225,9 @@ export function CandidateBatchListPage({ projectId }: { projectId: string }) {
       </section>
 
       {error && (
-        <div className="chapter-plans-form-error" role="alert">
-          {chapterPlanningErrorMessage(error, "候选批次暂时无法加载，请稍后重试。")}
+        <div className="chapter-plans-form-error chapter-plan-batch-error" role="alert">
+          <strong>候选批次加载失败</strong>
+          <span>{chapterPlanningErrorMessage(error, "候选批次暂时无法加载，请稍后重试。")}</span>
           <button type="button" onClick={() => void loadBatches()} style={{ marginLeft: 12 }}>
             重试
           </button>
@@ -235,15 +237,15 @@ export function CandidateBatchListPage({ projectId }: { projectId: string }) {
       {loading ? (
         <div className="chapter-plans-skeleton card" />
       ) : batches.length === 0 ? (
-        <section className="chapter-plans-empty">
+        <section className="chapter-plans-empty chapter-plan-batch-empty" role="status">
           <Icon name="archive" size={36} />
-          <h3>暂无匹配候选批次</h3>
-          <p>请调整筛选条件，或在章节工作区发起生成获取新批次。</p>
+          <h3>{hasFilters ? "暂无匹配候选批次" : "暂无候选批次"}</h3>
+          <p>{hasFilters ? "当前筛选条件没有对应批次，请调整筛选后重试。" : "完成章节规划预检并创建任务后，候选批次会显示在这里。"}</p>
         </section>
       ) : (
         <div className="chapter-plans-table" aria-live="polite">
           <div className="chapter-plan-row header">
-            <span>候选批次</span>
+            <span>批次 / 来源</span>
             <span>生成模式</span>
             <span>目标范围</span>
             <span>状态</span>
@@ -254,7 +256,10 @@ export function CandidateBatchListPage({ projectId }: { projectId: string }) {
 
           {batches.map((batch, index) => (
             <article key={batch.id} className="chapter-plan-row">
-              <strong>批次 {offsetParam + index + 1}</strong>
+              <div className="chapter-plan-batch-identity">
+                <strong>批次 {offsetParam + index + 1}</strong>
+                <small>Run ID：{batch.sourceWorkflowRunId}</small>
+              </div>
               <span>{candidateBatchModeLabel(batch.generationMode)}</span>
               <span>
                 {batch.generationMode === "range"
@@ -271,7 +276,10 @@ export function CandidateBatchListPage({ projectId }: { projectId: string }) {
                 {batch.adoptedCount > 0 && <i className="success">已采用: {batch.adoptedCount}</i>}
                 {batch.discardedCount > 0 && <i className="muted">已丢弃: {batch.discardedCount}</i>}
               </div>
-              <small>{new Date(batch.createdAt).toLocaleString("zh-CN")}</small>
+              <div className="chapter-plan-batch-created">
+                <span>创建时间</span>
+                <small>{new Date(batch.createdAt).toLocaleString("zh-CN")}</small>
+              </div>
               <div>
                 <Link
                   className="chapter-plan-edit-button"

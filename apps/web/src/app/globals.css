@@ -605,3 +605,17 @@ button,a { -webkit-tap-highlight-color:transparent; }
 .chapter-plan-run-created-detail-link:hover{text-decoration:underline}
 @media(max-width:620px){.chapter-plan-run-created-details{grid-template-columns:1fr}.chapter-plan-dialog-footer{align-items:stretch;flex-direction:column}.chapter-plan-run-created-detail-link{text-align:center}}
 
+/* UI-045 candidate batch list. */
+.chapter-plan-batch-error{display:flex;align-items:center;gap:10px}
+.chapter-plan-batch-error strong{color:#93000a}
+.chapter-plan-batch-error span{color:#596171}
+.chapter-plan-batch-identity{display:grid;gap:4px;min-width:0}
+.chapter-plan-batch-identity small{overflow:hidden;color:#767586;text-overflow:ellipsis;white-space:nowrap;font-size:11px}
+.chapter-plan-batch-created{display:grid;gap:4px;min-width:0}
+.chapter-plan-batch-created span{color:#767586;font-size:11px}
+.chapter-plan-batch-empty p{max-width:480px}
+.chapter-plan-row .chapter-plan-status.ready{color:#175cd3;background:#eff8ff}
+.chapter-plan-row .chapter-plan-status.partially_adopted{color:#703700;background:#ffdcc5}
+.chapter-plan-row .chapter-plan-status.adopted{color:#176b34;background:#dcfce7}
+.chapter-plan-row .chapter-plan-status.abandoned{color:#93000a;background:#ffdad6}
+
