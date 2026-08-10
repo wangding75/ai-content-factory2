@@ -180,6 +180,12 @@ test("review submission drawer keeps a real subject, scope summary, workflow sec
   assert.match(reviewDrawer, /<footer>/);
   assert.match(reviewDrawer, /copy\.drawer\.confirm/);
   assert.match(reviewDrawer, /copy\.drawer\.cancel/);
+  assert.match(reviewDrawer, /WorkflowPreflightBlocker/);
+  assert.match(reviewDrawer, /preflight\.status === "blocked"/);
+  assert.match(reviewDrawer, /review-preflight-blocked-state/);
+  assert.match(reviewDrawer, /onClick=\{\(\) => void runPreflight\(instructions\)\}/);
+  assert.match(reviewDrawer, /preflight\?\.status !== "passed"/);
+  assert.match(reviewDrawer, /copy\.common\.settings/);
 });
 
 test("review running state keeps editor and Run entry points without final issue statistics", () => {

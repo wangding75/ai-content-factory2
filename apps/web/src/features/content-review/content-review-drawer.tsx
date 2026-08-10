@@ -348,21 +348,41 @@ export function ContentReviewDrawer({
             {checking ? (
               <p className="checking">{copy.drawer.checking}</p>
             ) : preflight ? (
-              <>
-                {preflight.status === "blocked" && <WorkflowPreflightBlocker reasons={toWorkflowPreflightReasons(preflight.checks.filter((check) => check.status === "blocked"))} />}
-                <p className={preflight.status}>
-                  {preflight.status === "passed"
-                    ? copy.drawer.passed
-                    : copy.drawer.blocked}
-                </p>
-                <ul>
-                  {preflight.checks.map((check) => (
-                    <li key={check.code} className={check.status}>
-                      {check.message}
-                    </li>
-                  ))}
-                </ul>
-              </>
+              preflight.status === "blocked" ? (
+                <div className="review-preflight-blocked-state">
+                  <div className="review-preflight-blocked-summary">
+                    <strong>{copy.drawer.blocked}</strong>
+                    <p>审核对象、来源版本和审核维度上下文均已保留；处理阻断项后才能创建审核任务。</p>
+                  </div>
+                  <WorkflowPreflightBlocker reasons={toWorkflowPreflightReasons(preflight.checks.filter((check) => check.status === "blocked"))} />
+                  <ul className="review-preflight-check-list" aria-label="内容审核预检项目">
+                    {preflight.checks.map((check) => (
+                      <li key={check.code} className={check.status}>
+                        {check.message}
+                      </li>
+                    ))}
+                  </ul>
+                  <button
+                    type="button"
+                    className="review-preflight-recheck"
+                    onClick={() => void runPreflight(instructions)}
+                    disabled={checking || creating}
+                  >
+                    {copy.drawer.recheck}
+                  </button>
+                </div>
+              ) : (
+                <>
+                  <p className="passed">{copy.drawer.passed}</p>
+                  <ul className="review-preflight-check-list" aria-label="内容审核预检项目">
+                    {preflight.checks.map((check) => (
+                      <li key={check.code} className={check.status}>
+                        {check.message}
+                      </li>
+                    ))}
+                  </ul>
+                </>
+              )
             ) : null}
             {error && (
               <p className="review-error" role="alert">
