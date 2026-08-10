@@ -763,6 +763,10 @@ function RealReportView({
     },
     { critical: 0, warning: 0, suggestion: 0 },
   );
+  const categoryCounts = detail.issues.reduce((result, issue) => {
+    result.set(issue.categoryLabel, (result.get(issue.categoryLabel) ?? 0) + 1);
+    return result;
+  }, new Map<string, number>());
   return (
     <>
       <section className="review-report-banner">
@@ -792,6 +796,10 @@ function RealReportView({
         <Stat label={copy.report.warning} value={counts.warning} tone="warning" />
         <Stat label={copy.report.suggestion} value={counts.suggestion} />
         <Stat label={copy.report.passedRules} value={detail.report.passedRuleCount} />
+      </section>
+      <section className="review-category-summary">
+        <header><h3>{copy.report.categorySummary}</h3><span>{copy.report.categorySummaryHint}</span></header>
+        {categoryCounts.size ? <div>{Array.from(categoryCounts.entries()).map(([label, count]) => <article key={label}><span>{label}</span><b>{count}</b></article>)}</div> : <p>{copy.report.noIssues}</p>}
       </section>
       <section className="review-report-layout">
         <div className="review-issue-list">

@@ -180,6 +180,17 @@ test("review running state keeps editor and Run entry points without final issue
   assert.doesNotMatch(runningState, /review-report-summary/);
 });
 
+test("review result summary uses real issue severities and category labels before the issue entry list", () => {
+  assert.match(reviewWorkspace, /const counts = detail\.issues\.reduce/);
+  assert.match(reviewWorkspace, /const categoryCounts = detail\.issues\.reduce/);
+  assert.match(reviewWorkspace, /issue\.categoryLabel/);
+  assert.match(reviewWorkspace, /review-category-summary/);
+  assert.match(reviewWorkspace, /copy\.report\.categorySummary/);
+  assert.match(reviewWorkspace, /review-issue-list/);
+  assert.match(reviewWorkspace, /realReviewConclusionLabel\(detail\.report\.conclusion\)/);
+  assert.match(reviewWorkspace, /detail\.report\.passedRuleCount/);
+});
+
 test("summary polling is isolated from the editable draft refresh", () => {
   assert.match(editor, /\["queued", "running"\]/);
   assert.match(editor, /refreshGenerationSummary/);

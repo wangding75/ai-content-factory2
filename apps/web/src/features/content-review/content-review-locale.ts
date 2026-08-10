@@ -121,6 +121,8 @@ export const reviewCopy = {
     warning: "警告",
     suggestion: "建议",
     issueList: "问题清单",
+    categorySummary: "按问题类型",
+    categorySummaryHint: "问题入口见下方清单",
     noIssues: "本次审核未发现问题。",
     recommendations: "报告建议",
     evidence: "原文证据",
