@@ -30,27 +30,27 @@ type providerModelResponse struct {
 }
 
 type n8nWorkflowResponse struct {
-	ID     string `json:"id"`
-	Active bool   `json:"active"`
+	ID        string `json:"id"`
+	Active    bool   `json:"active"`
 	VersionID string `json:"versionId"`
-	Nodes []struct {
-		Type string `json:"type"`
-		Disabled bool `json:"disabled"`
+	Nodes     []struct {
+		Type       string `json:"type"`
+		Disabled   bool   `json:"disabled"`
 		Parameters struct {
 			Path string `json:"path"`
 		} `json:"parameters"`
 	} `json:"nodes"`
-	Tags   []struct {
+	Tags []struct {
 		Name string `json:"name"`
 	} `json:"tags"`
 }
 
 type workflowReferenceCheck struct {
-	Exists bool
-	Active bool
-	Stages []string
-	WorkflowID string
-	Revision string
+	Exists      bool
+	Active      bool
+	Stages      []string
+	WorkflowID  string
+	Revision    string
 	WebhookPath string
 }
 
@@ -118,12 +118,31 @@ func (s *Service) integrationURL(base string, suffix string) (string, error) {
 	if err != nil || rel.IsAbs() || strings.Contains(suffix, "\\") {
 		return "", &safehttp.Error{Code: safehttp.CodeUnsafeBaseURL, Message: "The integration URL is not allowed."}
 	}
-	u.Path = strings.TrimSuffix(u.Path, "/") + "/" + strings.TrimPrefix(rel.Path, "/")
+	basePath := strings.Trim(u.Path, "/")
+	relPath := strings.Trim(rel.Path, "/")
+	// OpenAI-compatible providers commonly accept either https://host or
+	// https://host/v1 as their configured base URL. The request suffix is
+	// canonicalized to v1/models, so do not duplicate the version segment.
+	if (basePath == "v1" || strings.HasSuffix(basePath, "/v1")) && strings.HasPrefix(relPath, "v1/") {
+		relPath = strings.TrimPrefix(relPath, "v1/")
+	}
+	switch {
+	case basePath == "":
+		u.Path = "/" + relPath
+	case relPath == "":
+		u.Path = "/" + basePath
+	default:
+		u.Path = "/" + basePath + "/" + relPath
+	}
 	u.RawQuery = rel.RawQuery
 	return u.String(), nil
 }
 
 func (s *Service) integrationRequest(ctx context.Context, baseURL, suffix, credential, header string, timeout int, target any) error {
+	return s.integrationRequestWithNotFoundCode(ctx, baseURL, suffix, credential, header, timeout, target, "workflow_reference_not_found")
+}
+
+func (s *Service) integrationRequestWithNotFoundCode(ctx context.Context, baseURL, suffix, credential, header string, timeout int, target any, notFoundCode string) error {
 	endpoint, err := s.integrationURL(baseURL, suffix)
 	if err != nil {
 		return err
@@ -146,14 +165,8 @@ func (s *Service) integrationRequest(ctx context.Context, baseURL, suffix, crede
 		return err
 	}
 	defer response.Body.Close()
-	if response.StatusCode == http.StatusUnauthorized || response.StatusCode == http.StatusForbidden {
-		return &safehttp.Error{Code: "upstream_authentication_failed", Message: "The integration credentials were rejected.", Retryable: false}
-	}
-	if response.StatusCode == http.StatusNotFound {
-		return &safehttp.Error{Code: "workflow_reference_not_found", Message: "The requested integration resource was not found.", Retryable: false}
-	}
-	if response.StatusCode < 200 || response.StatusCode >= 300 {
-		return &safehttp.Error{Code: safehttp.CodeUpstreamUnavailable, Message: "The integration service returned an unsuccessful response.", Retryable: response.StatusCode >= 500}
+	if statusErr := integrationResponseError(response.StatusCode, notFoundCode); statusErr != nil {
+		return statusErr
 	}
 	body, err := client.ReadBody(response)
 	if err != nil {
@@ -165,13 +178,32 @@ func (s *Service) integrationRequest(ctx context.Context, baseURL, suffix, crede
 	return nil
 }
 
+func integrationResponseError(status int, notFoundCode string) error {
+	switch {
+	case status == http.StatusUnauthorized || status == http.StatusForbidden:
+		return &safehttp.Error{Code: "upstream_authentication_failed", Message: "The integration credentials were rejected.", Retryable: false}
+	case status == http.StatusNotFound:
+		return &safehttp.Error{Code: notFoundCode, Message: "The integration endpoint was not found.", Retryable: false}
+	case status == http.StatusRequestTimeout || status == http.StatusGatewayTimeout:
+		return &safehttp.Error{Code: safehttp.CodeUpstreamTimeout, Message: "The integration request timed out.", Retryable: true}
+	case status == http.StatusTooManyRequests:
+		return &safehttp.Error{Code: "upstream_rate_limited", Message: "The integration service is temporarily rate limited.", Retryable: true}
+	case status >= 400 && status < 500:
+		return &safehttp.Error{Code: "upstream_request_rejected", Message: "The integration service rejected the request.", Retryable: false}
+	case status < 200 || status >= 300:
+		return &safehttp.Error{Code: safehttp.CodeUpstreamUnavailable, Message: "The integration service returned an unsuccessful response.", Retryable: status >= 500}
+	default:
+		return nil
+	}
+}
+
 func (s *Service) discoverModels(ctx context.Context, provider Provider) ([]string, error) {
 	secret, err := s.providerSecret(ctx, provider.ID)
 	if err != nil {
 		return nil, err
 	}
 	var payload providerModelResponse
-	if err = s.integrationRequest(ctx, provider.BaseURL, "v1/models", "Bearer "+secret, "Authorization", provider.TimeoutSeconds, &payload); err != nil {
+	if err = s.integrationRequestWithNotFoundCode(ctx, provider.BaseURL, "v1/models", "Bearer "+secret, "Authorization", provider.TimeoutSeconds, &payload, "llm_upstream_not_found"); err != nil {
 		return nil, err
 	}
 	seen := map[string]struct{}{}
@@ -190,6 +222,22 @@ func (s *Service) discoverModels(ctx context.Context, provider Provider) ([]stri
 		return nil, &safehttp.Error{Code: "model_unavailable", Message: "No usable models were returned by the integration.", Retryable: false}
 	}
 	return models, nil
+}
+
+func validateProviderModels(defaultModel, optionalModel string, models []string) error {
+	available := make(map[string]struct{}, len(models))
+	for _, model := range models {
+		available[model] = struct{}{}
+	}
+	if _, ok := available[strings.TrimSpace(defaultModel)]; !ok {
+		return &safehttp.Error{Code: "model_unavailable", Message: "The configured default model is unavailable.", Retryable: false}
+	}
+	if candidate := strings.TrimSpace(optionalModel); candidate != "" {
+		if _, ok := available[candidate]; !ok {
+			return &safehttp.Error{Code: "model_unavailable", Message: "The requested model is unavailable.", Retryable: false}
+		}
+	}
+	return nil
 }
 
 func (s *Service) n8nWorkflow(ctx context.Context, connection Connection, reference string) (workflowReferenceCheck, error) {
@@ -234,10 +282,15 @@ func validationOutcome(err error, details json.RawMessage) ValidationOutcome {
 		return ValidationOutcome{Success: true, Details: details}
 	}
 	code := safehttp.ErrorCode(err)
+	message := "The integration could not be verified."
+	var safeErr *safehttp.Error
+	if errors.As(err, &safeErr) {
+		message = safeErr.Message
+	}
 	if errors.Is(err, ErrVerification) {
 		code = "configuration_verification_failed"
 	}
-	return ValidationOutcome{Code: code, Message: "The integration could not be verified.", Details: details}
+	return ValidationOutcome{Code: code, Message: message, Details: details}
 }
 
 func (s *Service) updateModelCatalogue(ctx context.Context, tx pgx.Tx, providerID uuid.UUID, models []string) error {

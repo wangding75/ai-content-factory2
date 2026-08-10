@@ -257,7 +257,7 @@ func (s *Service) RunValidationCommand(ctx context.Context, resource ValidationR
 	executable, reasons := EvaluateEligibility(EligibilityFact{Kind: string(resource), ResourceID: &id, Status: status, Enabled: enabled, Version: expectedVersion, VerifiedVersion: verifiedVersion, ModelAvailable: true, StrategyComplete: true, ReferenceExists: true, ReferenceActive: true, StageMatches: true, InputCompatible: true, OutputCompatible: true})
 	result := ValidationCommandResult{ID: id, ValidationStatus: status, VerifiedVersion: verifiedVersion, CheckedAt: checkedAt, Executable: executable, IneligibilityReasons: reasons}
 	if !outcome.Success {
-		result.SafeError = &ValidationSafeError{Code: code, Message: message, Retryable: code == "upstream_timeout" || code == "upstream_unavailable"}
+		result.SafeError = &ValidationSafeError{Code: code, Message: message, Retryable: code == "upstream_timeout" || code == "upstream_unavailable" || code == "upstream_rate_limited"}
 	}
 	if err = s.audit(ctx, tx, "verify", subject, id, safeAudit("verify", expectedVersion, map[string]any{"validationStatus": status, "errorCode": code})); err != nil {
 		return ValidationCommandResult{}, err

@@ -164,7 +164,7 @@ type Platform struct {
 }
 type ListOptions struct {
 	Query, Type, ConnectionID, IntegrationStatus, ApplicableStage string
-	ValidationStatus, LlmStrategy string
+	ValidationStatus, LlmStrategy                                 string
 	Enabled                                                       *bool
 	Executable                                                    *bool
 	Limit, Offset                                                 int
@@ -480,22 +480,12 @@ func (s *Service) VerifyProvider(ctx context.Context, id uuid.UUID, expectedVers
 		if err != nil {
 			return validationOutcome(err, safeChecks(check("connection", false, "configuration_not_found")))
 		}
-		if model := strings.TrimSpace(optionalModel); model != "" && model != provider.DefaultModel {
-			return validationOutcome(&safehttp.Error{Code: "model_unavailable"}, safeChecks(check("model", false, "model_unavailable")))
-		}
 		models, err := s.discoverModels(ctx, provider)
 		if err != nil {
 			return validationOutcome(err, safeChecks(check("connection", false, safehttp.ErrorCode(err))))
 		}
-		available := false
-		for _, model := range models {
-			if model == provider.DefaultModel {
-				available = true
-				break
-			}
-		}
-		if !available {
-			return validationOutcome(&safehttp.Error{Code: "model_unavailable"}, safeChecks(check("connection", true, ""), check("model", false, "model_unavailable")))
+		if modelErr := validateProviderModels(provider.DefaultModel, optionalModel, models); modelErr != nil {
+			return validationOutcome(modelErr, safeChecks(check("connection", true, ""), check("model", false, safehttp.ErrorCode(modelErr))))
 		}
 		// Catalogue persistence is deliberately separated from the external call;
 		// an optimistic transaction makes a raced edit win without stale writes.

@@ -6,6 +6,7 @@ import (
 	"errors"
 	"github.com/google/uuid"
 	"github.com/local/ai-content-factory/apps/api/internal/globalconfig"
+	"github.com/local/ai-content-factory/apps/api/internal/platform/safehttp"
 	"net/http"
 	"strconv"
 	"strings"
@@ -78,13 +79,13 @@ func registerGlobalConfigurationRoutes(m *http.ServeMux, s *globalconfig.Service
 		items := make([]map[string]any, 0, len(models))
 		for _, model := range models {
 			items = append(items, map[string]any{
-				"modelName": model.ModelKey,
-				"displayName": model.ModelKey,
+				"modelName":    model.ModelKey,
+				"displayName":  model.ModelKey,
 				"capabilities": []string{},
-				"source": model.Source,
-				"available": model.Availability == "available",
+				"source":       model.Source,
+				"available":    model.Availability == "available",
 				"discoveredAt": model.CreatedAt,
-				"lastSeenAt": model.LastSeenAt,
+				"lastSeenAt":   model.LastSeenAt,
 			})
 		}
 		writeJSON(w, r, 200, map[string]any{"items": items, "total": len(items), "limit": len(items), "offset": 0})
@@ -111,13 +112,13 @@ func registerGlobalConfigurationRoutes(m *http.ServeMux, s *globalconfig.Service
 		items := make([]map[string]any, 0, len(models))
 		for _, model := range models {
 			items = append(items, map[string]any{
-				"modelName": model.ModelKey,
-				"displayName": model.ModelKey,
+				"modelName":    model.ModelKey,
+				"displayName":  model.ModelKey,
 				"capabilities": []string{},
-				"source": model.Source,
-				"available": model.Availability == "available",
+				"source":       model.Source,
+				"available":    model.Availability == "available",
 				"discoveredAt": model.CreatedAt,
-				"lastSeenAt": model.LastSeenAt,
+				"lastSeenAt":   model.LastSeenAt,
 			})
 		}
 		writeJSON(w, r, 200, map[string]any{"items": items, "total": len(items), "limit": len(items), "offset": 0})
@@ -141,6 +142,15 @@ func registerGlobalConfigurationRoutes(m *http.ServeMux, s *globalconfig.Service
 		}
 		value, err := s.VerifyProvider(r.Context(), id, body.ExpectedVersion, key, body.OptionalModel)
 		if err != nil {
+			if errors.Is(err, globalconfig.ErrVerification) && value.LastErrorCode != nil {
+				retryable := *value.LastErrorCode == "upstream_timeout" || *value.LastErrorCode == "upstream_unavailable" || *value.LastErrorCode == "upstream_rate_limited"
+				message := "integration verification failed"
+				if value.LastErrorMessage != nil && strings.TrimSpace(*value.LastErrorMessage) != "" {
+					message = *value.LastErrorMessage
+				}
+				writeError(w, r, 422, *value.LastErrorCode, message, map[string]any{"retryable": retryable})
+				return
+			}
 			configurationError(w, r, err)
 			return
 		}
@@ -155,12 +165,12 @@ func registerGlobalConfigurationRoutes(m *http.ServeMux, s *globalconfig.Service
 		}
 		writeJSON(w, r, 200, map[string]any{
 			"validationStatus": value.ValidationStatus,
-			"verifiedVersion": value.VerifiedVersion,
-			"checkedAt": value.LastVerifiedAt,
-			"modelSummary": value.DefaultModel,
-			"checks": checks,
-			"executable": value.Executable,
-			"safeError": nil,
+			"verifiedVersion":  value.VerifiedVersion,
+			"checkedAt":        value.LastVerifiedAt,
+			"modelSummary":     value.DefaultModel,
+			"checks":           checks,
+			"executable":       value.Executable,
+			"safeError":        nil,
 		})
 	})
 	for _, action := range []struct {
@@ -437,7 +447,7 @@ func configurationListOptions(w http.ResponseWriter, r *http.Request) (globalcon
 			writeError(w, r, 400, "validation_error", "invalid query", map[string]any{"fields": map[string]string{"enabled": "invalid_boolean"}})
 			return o, false
 		}
-			o.Enabled = &value
+		o.Enabled = &value
 	}
 	if raw, exists := r.URL.Query()["executable"]; exists {
 		value, err := strconv.ParseBool(raw[0])
@@ -488,6 +498,11 @@ func configurationRead(w http.ResponseWriter, r *http.Request, x any, e error) {
 	writeJSON(w, r, 200, x)
 }
 func configurationError(w http.ResponseWriter, r *http.Request, e error) {
+	var upstreamErr *safehttp.Error
+	if errors.As(e, &upstreamErr) {
+		writeError(w, r, 422, upstreamErr.Code, upstreamErr.Message, map[string]any{"retryable": upstreamErr.Retryable})
+		return
+	}
 	switch {
 	case errors.Is(e, globalconfig.ErrNotFound):
 		writeError(w, r, 404, "configuration_not_found", "configuration not found", map[string]any{})

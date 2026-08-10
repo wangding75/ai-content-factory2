@@ -10,7 +10,69 @@ import (
 	"strconv"
 	"strings"
 	"testing"
+
+	"github.com/local/ai-content-factory/apps/api/internal/platform/safehttp"
 )
+
+func TestProviderIntegrationURLNormalizesVersionPath(t *testing.T) {
+	service := &Service{environment: "production"}
+	for _, test := range []struct {
+		name, base, want string
+	}{
+		{"base without version", "https://api.example.test", "https://api.example.test/v1/models"},
+		{"base with version", "https://api.example.test/v1", "https://api.example.test/v1/models"},
+		{"base with prefix and version", "https://api.example.test/openai/v1", "https://api.example.test/openai/v1/models"},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			got, err := service.integrationURL(test.base, "v1/models")
+			if err != nil {
+				t.Fatal(err)
+			}
+			if got != test.want {
+				t.Fatalf("URL=%q, want %q", got, test.want)
+			}
+		})
+	}
+}
+
+func TestProviderIntegrationResponseErrorsKeepLLMAndWorkflowCodesSeparate(t *testing.T) {
+	for _, test := range []struct {
+		status    int
+		wantCode  string
+		wantRetry bool
+	}{
+		{http.StatusUnauthorized, "upstream_authentication_failed", false},
+		{http.StatusForbidden, "upstream_authentication_failed", false},
+		{http.StatusNotFound, "llm_upstream_not_found", false},
+		{http.StatusRequestTimeout, safehttp.CodeUpstreamTimeout, true},
+		{http.StatusTooManyRequests, "upstream_rate_limited", true},
+		{http.StatusBadGateway, safehttp.CodeUpstreamUnavailable, true},
+		{http.StatusBadRequest, "upstream_request_rejected", false},
+	} {
+		t.Run(strconv.Itoa(test.status), func(t *testing.T) {
+			err := integrationResponseError(test.status, "llm_upstream_not_found")
+			if safehttp.ErrorCode(err) != test.wantCode {
+				t.Fatalf("code=%q, want %q", safehttp.ErrorCode(err), test.wantCode)
+			}
+			upstream, ok := err.(*safehttp.Error)
+			if !ok || upstream.Retryable != test.wantRetry {
+				t.Fatalf("error=%#v, want retryable=%v", err, test.wantRetry)
+			}
+		})
+	}
+	if safehttp.ErrorCode(integrationResponseError(http.StatusNotFound, "workflow_reference_not_found")) != "workflow_reference_not_found" {
+		t.Fatal("workflow 404 must retain its workflow-specific code")
+	}
+}
+
+func TestProviderVerificationAcceptsDistinctOptionalModel(t *testing.T) {
+	if err := validateProviderModels("default-model", "candidate-model", []string{"default-model", "candidate-model"}); err != nil {
+		t.Fatalf("distinct available optional model rejected: %v", err)
+	}
+	if err := validateProviderModels("default-model", "missing-model", []string{"default-model", "candidate-model"}); safehttp.ErrorCode(err) != "model_unavailable" {
+		t.Fatalf("missing optional model code=%q, want model_unavailable", safehttp.ErrorCode(err))
+	}
+}
 
 func TestVerificationOutboundAddressPolicy(t *testing.T) {
 	t.Setenv("APP_ENV", "development")
@@ -97,10 +159,19 @@ func TestProbeWorkflowVerifiesEveryDeclaredStage(t *testing.T) {
 		{"single chapter planning", []string{"chapter_planning"}, workflowProbeSuccess, false, 1},
 		{"single content generation", []string{"content_generation"}, workflowProbeSuccess, false, 1},
 		{"multiple stages in declared order", []string{"chapter_planning", "content_generation", "review"}, workflowProbeSuccess, false, 3},
-		{"second stage HTTP error fails verification", []string{"chapter_planning", "content_generation"}, func(index int, request workflowProbeRequest) (int, workflowProbeResponse) { if index == 1 { return http.StatusBadGateway, workflowProbeResponse{} }; return workflowProbeSuccess(index, request) }, true, 2},
+		{"second stage HTTP error fails verification", []string{"chapter_planning", "content_generation"}, func(index int, request workflowProbeRequest) (int, workflowProbeResponse) {
+			if index == 1 {
+				return http.StatusBadGateway, workflowProbeResponse{}
+			}
+			return workflowProbeSuccess(index, request)
+		}, true, 2},
 		{"empty stages fail verification", nil, workflowProbeSuccess, true, 0},
-		{"response stage mismatch fails verification", []string{"content_generation"}, func(_ int, request workflowProbeRequest) (int, workflowProbeResponse) { return http.StatusOK, workflowProbeResponse{Verified: true, Stage: "chapter_planning", ContractVersion: request.ContractVersion, RequestID: request.RequestID} }, true, 1},
-		{"response request ID mismatch fails verification", []string{"content_generation"}, func(_ int, request workflowProbeRequest) (int, workflowProbeResponse) { return http.StatusOK, workflowProbeResponse{Verified: true, Stage: request.Stage, ContractVersion: request.ContractVersion, RequestID: "different-request-id"} }, true, 1},
+		{"response stage mismatch fails verification", []string{"content_generation"}, func(_ int, request workflowProbeRequest) (int, workflowProbeResponse) {
+			return http.StatusOK, workflowProbeResponse{Verified: true, Stage: "chapter_planning", ContractVersion: request.ContractVersion, RequestID: request.RequestID}
+		}, true, 1},
+		{"response request ID mismatch fails verification", []string{"content_generation"}, func(_ int, request workflowProbeRequest) (int, workflowProbeResponse) {
+			return http.StatusOK, workflowProbeResponse{Verified: true, Stage: request.Stage, ContractVersion: request.ContractVersion, RequestID: "different-request-id"}
+		}, true, 1},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
@@ -125,10 +196,17 @@ func TestProbeWorkflowVerifiesEveryDeclaredStage(t *testing.T) {
 	}
 }
 
-type workflowProbeRequest struct { ProbeType, Stage, ContractVersion, RequestID string }
-type workflowProbeResponse struct { Verified bool `json:"verified"`; Stage string `json:"stage"`; ContractVersion string `json:"contractVersion"`; RequestID string `json:"requestId"` }
+type workflowProbeRequest struct{ ProbeType, Stage, ContractVersion, RequestID string }
+type workflowProbeResponse struct {
+	Verified        bool   `json:"verified"`
+	Stage           string `json:"stage"`
+	ContractVersion string `json:"contractVersion"`
+	RequestID       string `json:"requestId"`
+}
 
-func workflowProbeSuccess(_ int, request workflowProbeRequest) (int, workflowProbeResponse) { return http.StatusOK, workflowProbeResponse{Verified: true, Stage: request.Stage, ContractVersion: request.ContractVersion, RequestID: request.RequestID} }
+func workflowProbeSuccess(_ int, request workflowProbeRequest) (int, workflowProbeResponse) {
+	return http.StatusOK, workflowProbeResponse{Verified: true, Stage: request.Stage, ContractVersion: request.ContractVersion, RequestID: request.RequestID}
+}
 
 func workflowProbeService(t *testing.T, responder func(int, workflowProbeRequest) (int, workflowProbeResponse)) (*Service, *[]workflowProbeRequest) {
 	t.Helper()
@@ -142,10 +220,14 @@ func workflowProbeService(t *testing.T, responder func(int, workflowProbeRequest
 			go func() {
 				defer server.Close()
 				request, err := http.ReadRequest(bufio.NewReader(server))
-				if err != nil { return }
+				if err != nil {
+					return
+				}
 				defer request.Body.Close()
 				probe := workflowProbeRequest{}
-				if json.NewDecoder(request.Body).Decode(&probe) != nil { return }
+				if json.NewDecoder(request.Body).Decode(&probe) != nil {
+					return
+				}
 				requests = append(requests, probe)
 				status, response := responder(len(requests)-1, probe)
 				body, _ := json.Marshal(response)

@@ -1232,7 +1232,7 @@ paths:
     parameters: [{$ref: "#/components/parameters/ProviderId"}]
     post:
       operationId: verifyLlmProvider
-      description: Performs a real outbound health probe to verify credentials and default model availability. Updates validationStatus, checkedAt, checks, executable, and safeError.
+      description: Performs a real outbound health probe to verify credentials and default model availability. When optionalModel is supplied, that candidate is checked against the same live model catalogue in addition to the configured default model. Updates validationStatus, checkedAt, checks, executable, and safeError.
       parameters: [{$ref: "#/components/parameters/IdempotencyKey"}]
       requestBody: {required: true, content: {application/json: {schema: {$ref: "#/components/schemas/VerifyLlmProviderRequest"}}}}
       responses:
@@ -5141,7 +5141,7 @@ components:
       required: [expectedVersion]
       properties:
         expectedVersion: {type: integer, minimum: 1}
-        optionalModel: {type: string, minLength: 1, maxLength: 160}
+        optionalModel: {type: string, minLength: 1, maxLength: 160, description: Optional candidate model to verify against the live provider catalogue. It may differ from defaultModel.}
     LlmProviderVerifyResult:
       type: object
       additionalProperties: false
