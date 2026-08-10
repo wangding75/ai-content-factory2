@@ -14,6 +14,10 @@ const preflightSource = readFileSync(
   new URL("./preflight-dialogs.tsx", import.meta.url),
   "utf8",
 );
+const blockerSource = readFileSync(
+  new URL("../../components/workflow-preflight-blocker.tsx", import.meta.url),
+  "utf8",
+);
 const preflightProgressSource = preflightSource.slice(
   preflightSource.indexOf("export function PreflightProgressDialog"),
   preflightSource.indexOf("export interface PreflightReportDialogProps"),
@@ -118,10 +122,7 @@ test("passed preflight report shows checks, execution summary, and the create-ta
 
 test("blocked preflight report lists repair directions and has no create-task action", () => {
   assert.match(preflightSource, /预检阻断，暂时无法创建任务/);
-  assert.match(preflightSource, /阻断原因列表/);
-  assert.match(preflightSource, /建议操作：/);
-  assert.match(preflightSource, /workflowPreflightRepairLink/);
-  assert.match(preflightSource, /前往项目配置/);
+  assert.match(preflightSource, /WorkflowPreflightBlocker/);
   assert.match(preflightSource, /返回修改/);
   assert.doesNotMatch(preflightSource, /blockedReport[\s\S]*确认发起生成/);
 });
@@ -129,13 +130,19 @@ test("blocked preflight report lists repair directions and has no create-task ac
 test("preflight report dialog differentiates passed and blocked status", () => {
   assert.match(preflightSource, /预检通过/);
   assert.match(preflightSource, /预检阻断/);
-  assert.match(preflightSource, /阻断原因列表/);
   assert.match(preflightSource, /创建任务/);
-  assert.match(preflightSource, /blockerReasonLabel/);
-  assert.match(preflightSource, /blockerTitleLabel/);
-  assert.match(preflightSource, /retryActionLabel/);
+  assert.doesNotMatch(preflightSource, /blockerReasonLabel|blockerTitleLabel|retryActionLabel/);
   assert.doesNotMatch(preflightSource, /代码：\{item\.code\}/);
   assert.doesNotMatch(preflightSource, /\{item\.message\}/);
+});
+
+test("chapter planning uses the shared preflight blocker with title, reason, and repair direction", () => {
+  assert.match(blockerSource, /当前无法启动工作流/);
+  assert.match(blockerSource, /blockerTitle/);
+  assert.match(blockerSource, /repairDirection/);
+  assert.match(blockerSource, /建议操作：/);
+  assert.match(blockerSource, /前往修复/);
+  assert.match(preflightSource, /toWorkflowPreflightReasons\(blockedReport\.blockers\)/);
 });
 
 test("blocked preflight report omits unavailable summaries without dereferencing null", () => {

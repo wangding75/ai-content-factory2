@@ -4,6 +4,8 @@ import type { WorkflowPreflightRepairTarget } from "./workflow-preflight-repair-
 export type WorkflowPreflightReasonSource = {
   code: string;
   message: string;
+  safeReason?: string;
+  retryAction?: string;
   repairAction?: string;
   repairTarget?: WorkflowPreflightRepairTarget | null;
 };
@@ -14,6 +16,8 @@ export function toWorkflowPreflightReasons(
   return reasons.map((reason) => ({
     code: reason.code,
     message: reason.message,
+    ...(reason.safeReason ? { safeReason: reason.safeReason } : {}),
+    ...(reason.retryAction ? { retryAction: reason.retryAction } : {}),
     repairAction: reason.repairAction,
     providerId: reason.repairTarget?.providerId,
     connectionId: reason.repairTarget?.connectionId,

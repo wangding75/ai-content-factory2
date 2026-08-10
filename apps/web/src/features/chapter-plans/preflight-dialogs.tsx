@@ -6,69 +6,11 @@ import { WorkflowPreflightBlocker } from "@/components/workflow-preflight-blocke
 import { toWorkflowPreflightReasons } from "@/components/workflow-preflight-reason";
 import { workflowPreflightRepairLink } from "@/components/workflow-preflight-repair-route";
 import type {
-  ChapterPlanningBlockerItem,
   ChapterPlanningPreflightItem,
   ChapterPlanningPreflightBlocked,
   ChapterPlanningPreflightPassed,
   ChapterPlanningPreflightReport,
 } from "./chapter-plan-http-api";
-
-function blockerReasonLabel(item: ChapterPlanningBlockerItem): string {
-  switch (item.code) {
-    case "project_binding_missing":
-      return "项目尚未配置章节规划工作流。";
-    case "execution_integration_unavailable":
-      return "章节规划执行配置暂不可用。";
-    case "active_run_conflict":
-      return "当前已有章节规划任务正在运行。";
-    case "storyline_reference_invalid":
-      return "所选故事线已失效或不属于当前项目。";
-    case "generation_input_invalid":
-      return "生成范围或生成参数不符合要求。";
-  }
-}
-
-function blockerTitleLabel(item: ChapterPlanningBlockerItem): string {
-  switch (item.code) {
-    case "project_binding_missing":
-      return "项目工作流尚未配置";
-    case "execution_integration_unavailable":
-      return "工作流执行服务暂不可用";
-    case "active_run_conflict":
-      return "已有生成任务正在运行";
-    case "storyline_reference_invalid":
-      return "所选故事线不可用";
-    case "generation_input_invalid":
-      return "生成设置需要调整";
-    default:
-      return "预检发现阻断项";
-  }
-}
-
-function retryActionLabel(action: string): string {
-  switch (action) {
-    case "configure_project_binding":
-    case "open_project_settings":
-    case "configure_workflow":
-      return "前往项目设置完成工作流配置后重试。";
-    case "retry_after_integration_recovers":
-    case "retry_preflight":
-      return "待执行服务恢复后重新预检。";
-    case "wait_for_active_run":
-      return "等待当前任务结束后重试。";
-    case "refresh_storylines":
-    case "review_storyline_selection":
-      return "刷新故事线并重新选择。";
-    case "fix_generation_input":
-    case "review_generation_target":
-      return "返回生成设置并修正范围或参数。";
-    case "restore_execution_integration":
-    case "verify_execution_integration":
-      return "恢复并复验工作流执行配置后重试。";
-    default:
-      return "修正阻断项后重新预检。";
-  }
-}
 
 function preflightCheckLabel(item: ChapterPlanningPreflightItem): string {
   switch (item.code) {
@@ -328,27 +270,6 @@ export function PreflightReportDialog({
           {blockedReport && (
             <div className="chapter-plan-preflight-section">
               <WorkflowPreflightBlocker reasons={toWorkflowPreflightReasons(blockedReport.blockers)} />
-              <h4>阻断原因列表</h4>
-              <ul className="chapter-plan-preflight-list">
-                {blockedReport.blockers.map((item, index) => (
-                  <li key={index} className="preflight-item blocker">
-                    <div className="preflight-item-header">
-                      <span className="badge blocker">阻断</span>
-                      <strong>{blockerTitleLabel(item)}</strong>
-                    </div>
-                    <p className="preflight-item-detail">{blockerReasonLabel(item)}</p>
-                    <p className="preflight-item-action">
-                      建议操作：
-                      {retryActionLabel(
-                        item.retryAction ||
-                          item.details?.retryAction ||
-                          item.details?.action ||
-                          "",
-                      )}
-                    </p>
-                  </li>
-                ))}
-              </ul>
             </div>
           )}
 
