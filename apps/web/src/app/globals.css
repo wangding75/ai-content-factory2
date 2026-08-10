@@ -703,3 +703,41 @@ button,a { -webkit-tap-highlight-color:transparent; }
 .chapter-plan-batch-selection-bar>button.primary:hover{background:#4034d7}
 @media(max-width:760px){.chapter-plan-batch-detail-summary{grid-template-columns:1fr}.chapter-plan-batch-detail-summary-status{justify-items:start;text-align:left}.chapter-plan-batch-detail-summary-status>span{white-space:normal}.chapter-plan-batch-detail-tabs{gap:14px;overflow-x:auto}.chapter-plan-batch-detail-page .chapter-plans-toolbar{grid-template-columns:1fr 1fr}.chapter-plan-batch-detail-page .chapter-plans-toolbar input{grid-column:1/-1}.chapter-plan-batch-selection-bar{align-items:stretch;flex-direction:column;gap:6px;width:auto;border-radius:12px}.chapter-plan-batch-selection-bar>div{justify-content:center}}
 
+/* UI-048 candidate/current comparison dialog. */
+.candidate-compare-dialog{display:flex;width:min(1040px,100%);max-height:calc(100vh - 48px);flex-direction:column;overflow:hidden;border:1px solid #c7c4d7;border-radius:14px;background:#fff}
+.candidate-compare-dialog .chapter-plan-dialog-header{flex:0 0 auto;padding:20px 26px;background:#fff}
+.candidate-compare-dialog .chapter-plan-dialog-header h3{margin:0;color:#191c1e;font-size:22px}
+.candidate-compare-dialog .chapter-plan-dialog-body{display:grid;min-height:0;gap:18px;overflow:auto;padding:22px 26px 26px;background:#f7f9fb}
+.candidate-compare-context{display:grid;grid-template-columns:1.2fr .8fr .8fr 1.4fr auto;align-items:center;gap:14px;padding:14px 16px;border:1px solid #dfe2e6;border-radius:9px;background:#fff}
+.candidate-compare-context>div{display:grid;min-width:0;gap:4px}
+.candidate-compare-context span{color:#767586;font-size:11px}
+.candidate-compare-context strong,.candidate-compare-context code{overflow:hidden;color:#313540;font-size:12px;font-weight:700;text-overflow:ellipsis;white-space:nowrap}
+.candidate-compare-context code{padding:2px 5px;border-radius:4px;color:#39485a;background:#e8edf4;font-size:10px}
+.candidate-compare-readonly-badge{width:max-content;border-radius:999px;padding:5px 8px;color:#596171;background:#e8edf4;font-size:10px!important;font-weight:800}
+.candidate-compare-stale-banner{margin:0!important}
+.candidate-compare-panels{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.candidate-compare-panels .compare-column{min-width:0;padding:16px;border:1px solid #c7c4d7;border-radius:10px;background:#fff}
+.candidate-compare-panels .compare-column h4{display:flex;align-items:center;gap:7px;margin:0 0 13px;color:#313540;font-size:14px}
+.candidate-compare-panels .compare-column h4 small{margin-left:auto;color:#767586;font-size:10px;font-weight:500}
+.candidate-compare-column-marker{width:9px;height:9px;flex:0 0 auto;border-radius:50%;background:#667085}
+.candidate-compare-column-marker.candidate{background:#4648d4}
+.candidate-compare-readonly-box{display:grid;min-height:132px;gap:9px;margin:0!important;padding:14px!important;border:1px solid #dfe2e6!important;border-radius:8px!important;color:#596171;background:#f7f9fb!important}
+.candidate-compare-readonly-box.highlight{border-color:#c7c4ff!important;background:#f5f5ff!important}
+.candidate-compare-readonly-box strong{color:#191c1e;font-size:15px}
+.candidate-compare-readonly-box p{margin:0;color:#596171;line-height:20px}
+.candidate-compare-readonly-box>span{color:#767586;font-size:11px;line-height:17px}
+.candidate-compare-readonly-box.empty{align-content:center}
+.candidate-compare-diff-section{display:grid;gap:12px;padding:16px;border:1px solid #c7c4d7;border-radius:10px;background:#fff}
+.candidate-compare-section-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.candidate-compare-section-heading h4{margin:0;color:#191c1e;font-size:15px}
+.candidate-compare-section-heading p{margin:5px 0 0;color:#767586;font-size:12px}
+.candidate-compare-diff-section .chapter-plan-diff-table{width:100%;border-collapse:collapse;color:#313540;font-size:12px}
+.candidate-compare-diff-section .chapter-plan-diff-table th,.candidate-compare-diff-section .chapter-plan-diff-table td{padding:10px 11px;border:1px solid #dfe2e6;vertical-align:top;text-align:left;line-height:18px}
+.candidate-compare-diff-section .chapter-plan-diff-table th{color:#596171;background:#f2f4f6;font-size:11px;font-weight:800}
+.candidate-compare-diff-section .chapter-plan-diff-table td:nth-child(3){background:#fffaf8}
+.candidate-compare-diff-section .chapter-plan-diff-table td:nth-child(4){background:#f6fff9}
+.candidate-compare-dialog .chapter-plan-dialog-footer{flex:0 0 auto;padding:16px 26px;background:#fff}
+.candidate-compare-dialog .chapter-plan-dialog-footer .chapter-plan-button.primary{min-width:116px}
+@media(max-width:800px){.candidate-compare-context{grid-template-columns:1fr 1fr}.candidate-compare-readonly-badge{grid-column:1/-1}.candidate-compare-panels{grid-template-columns:1fr}.candidate-compare-dialog .chapter-plan-dialog-body{padding:16px}.candidate-compare-dialog .chapter-plan-dialog-header,.candidate-compare-dialog .chapter-plan-dialog-footer{padding-right:16px;padding-left:16px}}
+@media(max-width:620px){.candidate-compare-context{grid-template-columns:1fr}.candidate-compare-readonly-badge{grid-column:auto}.candidate-compare-dialog .chapter-plan-dialog-footer{align-items:stretch;flex-direction:column}.candidate-compare-dialog .chapter-plan-dialog-footer .chapter-plan-button{width:100%}}
+

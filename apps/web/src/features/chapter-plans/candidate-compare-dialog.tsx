@@ -11,6 +11,8 @@ import {
 import {
   candidateDiffFieldLabel,
   candidateDiffValueLabel,
+  candidateDiffTypeLabel,
+  candidateStatusLabel,
   chapterPlanningErrorMessage,
 } from "./chapter-plan-presentation";
 
@@ -107,10 +109,10 @@ export function CandidateCompareDialog({
       aria-modal="true"
       aria-labelledby="candidate-compare-title"
     >
-      <div className="chapter-plan-dialog-content max-w-3xl">
+      <div className="chapter-plan-dialog-content candidate-compare-dialog">
         <header className="chapter-plan-dialog-header">
           <h3 id="candidate-compare-title">
-            章节候选差异对比 {candidate ? `(第 ${candidate.chapterNo} 章)` : ""}
+            {candidate ? `第 ${candidate.chapterNo} 章候选对比` : "章节候选差异对比"}
           </h3>
           <button
             type="button"
@@ -135,13 +137,35 @@ export function CandidateCompareDialog({
             <p>暂无对比数据。</p>
           ) : (
             <>
+              <div className="candidate-compare-context" aria-label="候选对比摘要">
+                <div>
+                  <span>来源批次</span>
+                  <code>{candidate?.batchId}</code>
+                </div>
+                <div>
+                  <span>候选状态</span>
+                  <strong>{candidate ? candidateStatusLabel(candidate.status) : "—"}</strong>
+                </div>
+                <div>
+                  <span>差异类型</span>
+                  <strong>{candidate ? candidateDiffTypeLabel(candidate.diffType) : "—"}</strong>
+                </div>
+                <div>
+                  <span>对比版本</span>
+                  <strong>
+                    当前 {currentChapter ? `第 ${currentChapter.version} 版` : "无"} · 候选第 {candidate?.version} 版
+                  </strong>
+                </div>
+                <span className="candidate-compare-readonly-badge">只读对比</span>
+              </div>
+
               {/* Stale Baseline Banner */}
               {diff?.stale && (
-                <div className="chapter-plan-status-banner warning">
+                <div className="chapter-plan-status-banner warning candidate-compare-stale-banner">
                   <Icon name="info" size={20} />
                   <div>
                     <strong>候选基线已过期</strong>
-                    <p>当前线上章节在候选生成后已发生修改。请执行“重新比较”更新差异。</p>
+                    <p>当前章节在候选生成后发生过修改，差异结果可能已过时。请重新比较后再决定下一步。</p>
                   </div>
                   <button
                     type="button"
@@ -155,31 +179,49 @@ export function CandidateCompareDialog({
               )}
 
               {/* Side-by-side Overview */}
-              <div className="compare-grid">
+              <div className="compare-grid candidate-compare-panels" aria-label="当前章节与候选章节只读对比">
                 <div className="compare-column">
-                  <h4>当前线上章节 {currentChapter ? `（第 ${currentChapter.version} 版）` : "（无）"}</h4>
+                  <h4>
+                    <span className="candidate-compare-column-marker current" aria-hidden="true" />
+                    当前章节 {currentChapter ? `（第 ${currentChapter.version} 版）` : "（无）"}
+                    <small>当前线上内容</small>
+                  </h4>
                   {currentChapter ? (
-                    <div className="compare-box">
+                    <div className="compare-box candidate-compare-readonly-box">
                       <strong>{currentChapter.title}</strong>
                       <p>{currentChapter.summary}</p>
+                      <span>当前章节仅供对照，不能在此处直接修改。</span>
                     </div>
                   ) : (
-                    <p className="chapter-plan-help-text">当前无确认章节（新设章节）</p>
+                    <div className="compare-box candidate-compare-readonly-box empty">
+                      <strong>当前无确认章节</strong>
+                      <p>这是一个新设章节候选。</p>
+                    </div>
                   )}
                 </div>
 
                 <div className="compare-column">
-                  <h4>候选章节（第 {candidate?.version} 版）</h4>
-                  <div className="compare-box highlight">
+                  <h4>
+                    <span className="candidate-compare-column-marker candidate" aria-hidden="true" />
+                    候选章节（第 {candidate?.version} 版）
+                    <small>当前候选版本</small>
+                  </h4>
+                  <div className="compare-box highlight candidate-compare-readonly-box">
                     <strong>{candidate?.currentSnapshot.title}</strong>
                     <p>{candidate?.currentSnapshot.summary}</p>
+                    <span>候选内容只读展示，采用请从候选批次详情流程发起。</span>
                   </div>
                 </div>
               </div>
 
               {/* Field-level Diff Table */}
-              <div className="compare-diff-section">
-                <h4>字段级差异列表 ({diff?.entries.length || 0} 项)</h4>
+              <div className="compare-diff-section candidate-compare-diff-section">
+                <div className="candidate-compare-section-heading">
+                  <div>
+                    <h4>字段级差异列表</h4>
+                    <p>共 {diff?.entries.length || 0} 项差异，以下内容全部只读。</p>
+                  </div>
+                </div>
                 {diff?.entries.length === 0 ? (
                   <p className="chapter-plan-help-text">两个版本的规划内容完全一致。</p>
                 ) : (
@@ -188,8 +230,8 @@ export function CandidateCompareDialog({
                       <tr>
                         <th>字段路径</th>
                         <th>变更类型</th>
-                        <th>变更前</th>
-                        <th>变更后</th>
+                        <th>当前章节</th>
+                        <th>候选章节</th>
                       </tr>
                     </thead>
                     <tbody>

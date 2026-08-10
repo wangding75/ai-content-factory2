@@ -57,6 +57,17 @@ test("candidate compare dialog displays field-level diff, stale warning, and rec
   assert.doesNotMatch(compareDialogSource, /\/adopt/);
 });
 
+test("candidate compare dialog separates read-only current and candidate versions", () => {
+  assert.match(compareDialogSource, /候选对比摘要/);
+  assert.match(compareDialogSource, /当前章节仅供对照/);
+  assert.match(compareDialogSource, /候选内容只读展示/);
+  assert.match(compareDialogSource, /当前章节与候选章节只读对比/);
+  assert.match(compareDialogSource, /只读对比/);
+  assert.match(compareDialogSource, /<th>当前章节<\/th>/);
+  assert.match(compareDialogSource, /<th>候选章节<\/th>/);
+  assert.match(compareDialogSource, /采用请从候选批次详情流程发起/);
+});
+
 test("chapter plan revision dialog renders revision history and changeType labels", () => {
   assert.match(revisionsDialogSource, /listChapterPlanRevisions/);
   assert.match(revisionsDialogSource, /revisionChangeTypeLabel/);
