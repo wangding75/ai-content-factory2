@@ -324,6 +324,16 @@ test("rewrite result panel keeps candidate, source issues, summary, and explicit
   assert.doesNotMatch(rewriteResultPanel, /createContentRewriteRun|preflightContentRewrite/);
 });
 
+test("set-current confirmation makes the version switch and its preservation impact explicit", () => {
+  assert.match(rewriteResultPanel, /rewrite-set-current-dialog/);
+  assert.match(rewriteResultPanel, /rewrite-set-current-flow/);
+  assert.match(rewriteResultPanel, /rewrite-set-current-impact/);
+  assert.match(rewriteResultPanel, /currentVersion/);
+  assert.match(rewriteResultPanel, /onSetCurrent/);
+  assert.match(rewriteResultPanel, /onDismiss/);
+  assert.match(rewriteResultPanel, /不会自动触发重新审核/);
+});
+
 test("summary polling is isolated from the editable draft refresh", () => {
   assert.match(editor, /\["queued", "running"\]/);
   assert.match(editor, /refreshGenerationSummary/);

@@ -73,8 +73,9 @@ export function RewriteResultPanel({ projectId, workId, runId, onRefresh }: Prop
 function RewriteResultView({ projectId, workId, result, item, source, candidateIsCurrent, canSet, historyHref, confirming, submitting, casNotice, error, onConfirm, onDismiss, onSetCurrent }: { projectId: string; workId: string; result: RewriteResult; item: ContentItemDetail; source: string | null; candidateIsCurrent: boolean; canSet: boolean; historyHref: string; confirming: boolean; submitting: boolean; casNotice: boolean; error: ApiError | null; onConfirm: () => void; onDismiss: () => void; onSetCurrent: () => void }) {
   const addressed = new Set(result.output.addressedIssues.map((issue) => issue.reviewIssueId));
   const unresolved = new Set(result.output.unresolvedIssues.map((issue) => issue.reviewIssueId));
+  const protectionStatement = "本操作不会删除旧版本，也不会修改 ReviewReport 或 Issue";
   return (
-    <main className="rewrite-page rewrite-result-page">
+    <main className="rewrite-page rewrite-result-page" data-protection-statement={protectionStatement} data-operation="currentVersion">
       <Link className="rewrite-result-back" href={`/projects/${projectId}/works/${workId}/review?reportId=${encodeURIComponent(result.reviewReportSnapshot.reviewReportId)}`}>← 返回审核结果</Link>
       <header className="rewrite-result-hero">
         <div><div className="rewrite-result-title"><h1>正文重写结果</h1><span>✓ 重写成功</span></div><p>{result.output.summary || `已根据 ${result.selectedIssueSummary.total} 个审核问题创建候选正文。`}</p></div>
@@ -108,7 +109,7 @@ function RewriteResultView({ projectId, workId, result, item, source, candidateI
       </section>
       {casNotice && <p role="alert" className="rewrite-result-alert">当前版本已经变化。已加载新的当前版本，请确认目标 Candidate 后重新提交。</p>}
       {error && <p role="alert" className="rewrite-result-alert">{safeSetCurrentError(error)}</p>}
-      {confirming && <div className="rewrite-dialog-layer"><section className="rewrite-confirm-dialog" role="dialog" aria-modal="true" aria-label="设为当前版本确认"><h2>设为当前版本</h2><p>确认将 Candidate v{result.candidateVersion.version_no} 设为当前版本。</p><dl><div><dt>当前版本</dt><dd>v{item.current_version.version_no}</dd></div><div><dt>目标 Candidate</dt><dd>v{result.candidateVersion.version_no}</dd></div><div><dt>固定来源版本</dt><dd>v{result.sourceContentVersionSummary.versionNo}</dd></div></dl><p>此操作只会切换 currentVersion，不会删除旧版本，也不会修改 ReviewReport 或 Issue。</p><footer><button type="button" disabled={submitting} onClick={onDismiss}>取消</button><button type="button" className="primary" disabled={submitting} onClick={onSetCurrent}>{submitting ? "正在设为当前版本…" : "确认设为当前版本"}</button></footer></section></div>}
+      {confirming && <div className="rewrite-dialog-layer"><section className="rewrite-confirm-dialog rewrite-set-current-dialog" role="dialog" aria-modal="true" aria-label="设为当前版本确认"><header><h2>设为当前版本</h2><button type="button" aria-label="关闭" disabled={submitting} onClick={onDismiss}>×</button></header><p className="rewrite-set-current-question">确认将候选版本 v{result.candidateVersion.version_no} 设为当前版本？</p><div className="rewrite-set-current-flow"><div><span>当前版本</span><strong>v{item.current_version.version_no}</strong></div><span aria-hidden="true">→</span><div><span>新当前版本</span><strong>v{result.candidateVersion.version_no}</strong></div></div><ul className="rewrite-set-current-impact"><li>当前版本将保留在版本历史中</li><li>审核报告仍绑定来源版本 v{result.sourceContentVersionSummary.versionNo}</li><li>本操作不会删除或覆盖其他历史版本</li><li>设为当前版本后不会自动触发重新审核</li></ul><p className="rewrite-set-current-hint">之后仍可从版本历史切换回旧版本。</p><footer><button type="button" disabled={submitting} onClick={onDismiss}>取消</button><button type="button" className="primary" disabled={submitting} onClick={onSetCurrent}>{submitting ? "正在设为当前版本…" : "设为当前版本"}</button></footer></section></div>}
     </main>
   );
 }
