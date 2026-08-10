@@ -897,6 +897,7 @@ function IssuePanel({
           {realReviewSeverityLabel(issue.severity)}
         </span>
         <span>{issue.categoryLabel}</span>
+        <span className="review-issue-position">{copy.report.position} #{issue.position}</span>
         <i>{reviewDispositionLabel(issue.disposition)}</i>
       </header>
       <h3>{issue.title}</h3>
@@ -912,6 +913,9 @@ function IssuePanel({
             ? issue.evidence.sourceRefs.join("、")
             : copy.common.noValue}
         </p>
+      </Section>
+      <Section title={copy.report.position}>
+        <p>{reviewLocationLabel(issue.location)}</p>
       </Section>
       <Section title={copy.report.suggestionTitle}>
         <p>{issue.suggestion ?? copy.common.noValue}</p>

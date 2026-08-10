@@ -191,6 +191,18 @@ test("review result summary uses real issue severities and category labels befor
   assert.match(reviewWorkspace, /detail\.report\.passedRuleCount/);
 });
 
+test("issue detail and source view use real metadata and location fallback without editing the source", () => {
+  assert.match(reviewWorkspace, /issue\.position/);
+  assert.match(reviewWorkspace, /issue\.description/);
+  assert.match(reviewWorkspace, /issue\.suggestion/);
+  assert.match(reviewWorkspace, /reviewLocationLabel\(issue\.location\)/);
+  assert.match(reviewWorkspace, /function IssueSourceView/);
+  assert.match(reviewWorkspace, /className=\{paragraph\.highlighted \? "highlighted" : ""\}/);
+  assert.match(reviewWorkspace, /function HighlightedText/);
+  assert.match(reviewWorkspace, /copy\.report\.locationFallback/);
+  assert.doesNotMatch(reviewWorkspace, /setContent\(.*source/);
+});
+
 test("summary polling is isolated from the editable draft refresh", () => {
   assert.match(editor, /\["queued", "running"\]/);
   assert.match(editor, /refreshGenerationSummary/);

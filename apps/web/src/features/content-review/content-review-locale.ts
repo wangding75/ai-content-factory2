@@ -128,6 +128,7 @@ export const reviewCopy = {
     evidence: "原文证据",
     sourceRefs: "判断依据",
     issueDescription: "问题说明",
+    position: "问题位置",
     suggestionTitle: "修改建议",
     locate: "在全文中定位",
     ignore: "标记为忽略",
