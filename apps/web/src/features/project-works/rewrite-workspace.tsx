@@ -145,6 +145,7 @@ function RewriteFailedState({ projectId, workId, summary, run, events, retrying,
 function RewriteRunningState({ summary, run, events, cancelling, confirmCancel, onCancel, onDismissCancel, onConfirmCancel, onRefresh }: { summary: RewriteSummary; run: WorkflowRunDto | null; events: WorkflowRunEventVm[]; cancelling: boolean; confirmCancel: boolean; onCancel: () => void; onDismissCancel: () => void; onConfirmCancel: () => void; onRefresh: () => void }) {
   const selectedIssues = summary.selectedIssueSummary?.items ?? [];
   const queued = summary.state === "queued";
+  const runLabel = run?.runNumber ?? run?.id ?? "恢复中";
   return (
     <main className="rewrite-page rewrite-running-page">
       <section className="rewrite-running-banner" aria-live="polite">
@@ -158,9 +159,10 @@ function RewriteRunningState({ summary, run, events, cancelling, confirmCancel, 
         {run && <Link href={`/workflow-runs/${encodeURIComponent(run.id)}`}>查看执行详情 <span aria-hidden="true">→</span></Link>}
       </section>
       <section className="rewrite-running-meta" aria-label="重写运行信息">
-        <div><dt>Run</dt><dd><code>{run?.runNumber ?? run?.id ?? "恢复中"}</code></dd></div>
+        <div><dt>Run ID</dt><dd><code className="rewrite-running-run-id">{runLabel}</code></dd></div>
         <div><dt>阶段</dt><dd>正文重写</dd></div>
         <div><dt>来源版本</dt><dd>V{summary.sourceContentVersionSummary.versionNo} · {summary.sourceContentVersionSummary.title}</dd></div>
+        <div><dt>来源报告</dt><dd>{summary.reviewReportId}</dd></div>
         <div><dt>开始时间</dt><dd>{formatWorkflowRunTime(run?.startedAt ?? run?.createdAt)}</dd></div>
       </section>
       <section className="rewrite-running-layout">

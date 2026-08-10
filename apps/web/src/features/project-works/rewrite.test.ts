@@ -49,3 +49,17 @@ test("create lifecycle invalidates changed input, preserves unknown results and 
   }
   assert.match(page, /key\.current = submitKey/);
 });
+
+test("rewrite refresh restores the original Run, report, issues, and final state routing", () => {
+  const page = readFileSync(new URL("./rewrite-workspace.tsx", import.meta.url), "utf8");
+  assert.match(page, /getWorkflowRun\(workflowRunId/);
+  assert.match(page, /const current = selectedRun \?\? next\.activeRun \?\? next\.latestRun/);
+  assert.match(page, /listWorkflowRunEvents\(current\.id/);
+  assert.match(page, /setSummary\(selectedRun \? exactRunSummary\(next, selectedRun, nextEvents\) : next\)/);
+  assert.match(page, /const runLabel = run\?\.runNumber \?\? run\?\.id \?\? "恢复中"/);
+  assert.match(page, /<dt>Run ID<\/dt>/);
+  assert.match(page, /<dt>来源报告<\/dt><dd>\{summary\.reviewReportId\}<\/dd>/);
+  assert.match(page, /来源审核问题/);
+  assert.match(page, /RewriteResultPanel/);
+  assert.match(page, /RewriteFailedState/);
+});
