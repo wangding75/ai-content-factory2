@@ -52,6 +52,16 @@ test("active run banner separates result validation from generation progress", (
   assert.doesNotMatch(workspaceSource, /const stageLabel = run\.stage === "validating" \? "校验生成结果" : "校验生成结果"/);
 });
 
+test("refresh restores the same active run identity and direct detail entry", () => {
+  assert.match(workspaceSource, /getProjectChapterPlanningSummary\(projectId, \{ signal \}\)/);
+  assert.match(workspaceSource, /summary\?\.activeRun/);
+  assert.match(workspaceSource, /const runLabel = run\.runNumber \?\? run\.id/);
+  assert.match(workspaceSource, /Run ID: \{runLabel\}/);
+  assert.match(workspaceSource, /workflow-runs\/\$\{encodeURIComponent\(run\.id\)\}/);
+  assert.match(workspaceSource, /已恢复当前运行/);
+  assert.doesNotMatch(workspaceSource, /项目另有2个任务运行中/);
+});
+
 test("chapter plan statistics and filters use real status values without sample fallbacks", () => {
   assert.match(workspaceSource, /createChapterPlanStats\(plans \?\? \[\]\)/);
   assert.match(workspaceSource, /matchesChapterPlanStatus/);

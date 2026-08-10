@@ -783,6 +783,8 @@ function SummaryRunBanner({
 
   const run = summary.activeRun;
   const status = (run.status || "RUNNING").toUpperCase();
+  const runLabel = run.runNumber ?? run.id;
+  const runDetailsHref = `/workflow-runs/${encodeURIComponent(run.id)}`;
   const normalizedRunStatus = (run.status || "").toLowerCase();
   const normalizedRunStage = (run.stage || "").toLowerCase();
   const hasStoredResult = Boolean(
@@ -868,6 +870,7 @@ function SummaryRunBanner({
               <span className="px-2 py-0.5 rounded text-[10px] bg-primary text-on-primary font-medium tracking-wider">
                 {statusLabel}
               </span>
+              <span className="chapter-plan-run-identity">Run ID: {runLabel}</span>
             </h3>
             <div className="flex items-center gap-4 mt-1 text-sm text-on-primary-container/80">
               <span className="flex items-center gap-1">
@@ -897,10 +900,10 @@ function SummaryRunBanner({
       <div className="border-t border-primary-fixed-dim/50 pt-3 mt-1 flex justify-between items-center text-sm relative z-10">
         <div className="text-on-primary-container/80 flex items-center gap-1.5">
           <span className="material-symbols-outlined text-[16px]">info</span>
-          项目另有2个任务运行中
+          已恢复当前运行 · {statusLabel} · {runLabel}
         </div>
         <div className="flex items-center gap-4">
-          <Link href={`/workflow-runs?projectId=${projectId}`} className="text-primary hover:underline font-medium hover:text-primary-dim transition-colors text-sm">
+          <Link href={runDetailsHref} className="text-primary hover:underline font-medium hover:text-primary-dim transition-colors text-sm">
             查看详情
           </Link>
           <Link href={`/workflow-runs?projectId=${projectId}`} className="text-primary hover:underline font-medium hover:text-primary-dim transition-colors text-sm">
