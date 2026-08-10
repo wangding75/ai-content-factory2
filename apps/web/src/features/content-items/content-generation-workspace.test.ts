@@ -11,6 +11,8 @@ const candidate = readFileSync(join(root, "content-candidate-compare.tsx"), "utf
 const locale = readFileSync(join(root, "content-generation-locale.ts"), "utf8");
 const reviewWorkspace = readFileSync(join(process.cwd(), "src", "features", "content-review", "content-review-workspace.tsx"), "utf8");
 const reviewHistory = readFileSync(join(process.cwd(), "src", "features", "content-review", "content-review-history.tsx"), "utf8");
+const rewriteWorkspace = readFileSync(join(process.cwd(), "src", "features", "project-works", "rewrite-workspace.tsx"), "utf8");
+const rewriteRoute = readFileSync(join(process.cwd(), "src", "app", "projects", "[projectId]", "works", "[workId]", "rewrite", "page.tsx"), "utf8");
 
 test("content generation remains on the editor route with its three context tabs", () => {
   assert.match(editor, /getContentGenerationSummary/);
@@ -255,6 +257,19 @@ test("review history stays real, chronological, filterable, and separates report
   assert.match(reviewHistory, /copy\.history\.viewFailure/);
   assert.match(reviewHistory, /copy\.history\.viewProgress/);
   assert.doesNotMatch(reviewHistory, /setSelected\(.*MockReviewReport/);
+});
+
+test("review report rewrite entry follows selected open issues into the existing rewrite route", () => {
+  assert.match(reviewWorkspace, /selectedRewriteIssueIds/);
+  assert.match(reviewWorkspace, /toggleRewriteIssue/);
+  assert.match(reviewWorkspace, /disabled=\{!selectedRewriteIssueIds\.length\}/);
+  assert.match(reviewWorkspace, /issueIds=\$\{encodeURIComponent\(selectedRewriteIssueIds\.join\(\",\"\)\)\}/);
+  assert.match(reviewWorkspace, /issue\.disposition !== "open"/);
+  assert.match(reviewWorkspace, /copy\.report\.rewriteSelectionRequired/);
+  assert.match(rewriteRoute, /issueIds\?: string/);
+  assert.match(rewriteRoute, /issueIds=\{issueIds\}/);
+  assert.match(rewriteWorkspace, /initialIssueIds/);
+  assert.match(rewriteWorkspace, /initialIssueIds\.includes\(id\)/);
 });
 
 test("summary polling is isolated from the editable draft refresh", () => {

@@ -13,13 +13,13 @@ import { RewriteResultPanel } from "./rewrite-result-panel";
 import { toWorkflowPreflightReasons } from "@/components/workflow-preflight-reason";
 import { RewriteHistory } from "./rewrite-history";
 
-type Props = { projectId: string; workId: string; reportId?: string; workflowRunId?: string; showHistory?: boolean };
+type Props = { projectId: string; workId: string; reportId?: string; issueIds?: string[]; workflowRunId?: string; showHistory?: boolean };
 
 export const rewritePreflightBlockerReasons = (report: RewritePreflight) => toWorkflowPreflightReasons(report.checks.filter((check) => check.status === "blocked"));
 const active = (state: RewriteSummary["state"]) => state === "queued" || state === "running";
 const safeError = (error: ApiError | null) => error?.code === "network_error" || error?.code === "timeout" ? "网络连接暂时中断，未能确认最新状态。请稍后重试。" : "暂时无法读取重写状态，请稍后重试。";
 
-export function RewriteWorkspace({ projectId, workId, reportId: initialReportId, workflowRunId, showHistory }: Props) {
+export function RewriteWorkspace({ projectId, workId, reportId: initialReportId, issueIds, workflowRunId, showHistory }: Props) {
   const router = useRouter();
   const [reportId, setReportId] = useState(initialReportId);
   const [summary, setSummary] = useState<RewriteSummary | null>(null);
@@ -69,7 +69,7 @@ export function RewriteWorkspace({ projectId, workId, reportId: initialReportId,
   if (error) return <State title="暂时无法读取重写状态" message={safeError(error)} retry={refresh} />;
   if (showHistory && summary) return <RewriteHistory projectId={projectId} workId={workId} contentItemId={summary.contentItemId} selectedRunId={workflowRunId} />;
   if (summary && (active(summary.state) || summary.state === "runtime_failed" || summary.state === "output_validation_failed" || summary.state === "result_consumption_failed" || summary.state === "candidate_ready")) return <RewriteRunState projectId={projectId} workId={workId} summary={summary} run={run} events={events} retrying={retrying} cancelling={cancelling} confirmCancel={confirmCancel} onCancel={requestCancel} onDismissCancel={() => setConfirmCancel(false)} onConfirmCancel={cancel} onRetryRuntime={retryRuntime} onRetryConsumption={retryConsumption} onRefresh={refresh} />;
-  return <RewriteCreate projectId={projectId} workId={workId} reportId={reportId} runUrl={runUrl} />;
+  return <RewriteCreate projectId={projectId} workId={workId} reportId={reportId} initialIssueIds={issueIds} runUrl={runUrl} />;
 }
 
 function exactRunSummary(summary: RewriteSummary, run: WorkflowRunDto, events: WorkflowRunEventVm[]): RewriteSummary {
@@ -107,11 +107,11 @@ function LegacyRewriteResult({ runId, onRefresh }: { runId: string; onRefresh: (
 function IssueOutcomes({ items }: { items: Array<{ reviewIssueId: string; summary: string }> }) { return items.length ? <ul>{items.map(x => <li key={x.reviewIssueId}>{x.summary}</li>)}</ul> : <p>无</p>; }
 function State({ title, message, retry }: { title: string; message?: string; retry?: () => void }) { return <main className="rewrite-page"><section className="rewrite-state-card"><h1>{title}</h1>{message && <p role="alert">{message}</p>}{retry && <footer><button type="button" onClick={retry}>重试</button></footer>}</section></main>; }
 
-function RewriteCreate({ projectId, workId, reportId, runUrl }: { projectId: string; workId: string; reportId?: string; runUrl: (id: string) => string }) {
+function RewriteCreate({ projectId, workId, reportId, initialIssueIds, runUrl }: { projectId: string; workId: string; reportId?: string; initialIssueIds?: string[]; runUrl: (id: string) => string }) {
   const router = useRouter();
   const [availability, setAvailability] = useState<RewriteAvailability | null>(null);
   const [issues, setIssues] = useState<RealReviewIssue[]>([]);
-  const [selected, setSelected] = useState<string[]>([]);
+  const [selected, setSelected] = useState<string[]>(initialIssueIds ?? []);
   const [instructions, setInstructions] = useState("");
   const [options, setOptions] = useState<RewriteOptions>({ strategy: "targeted_fix" });
   const [preflight, setPreflight] = useState<RewritePreflight | null>(null);
@@ -129,11 +129,13 @@ function RewriteCreate({ projectId, workId, reportId, runUrl }: { projectId: str
       setAvailability(next);
       if (isRealReviewDetail(detail)) {
         const ordered = [...detail.issues].sort((a, b) => a.position - b.position || a.id.localeCompare(b.id));
-        setIssues(ordered); setSelected(ordered.filter(x => x.disposition === "open").slice(0, 50).map(x => x.id));
+        setIssues(ordered);
+        const openIssueIds = ordered.filter(x => x.disposition === "open").slice(0, 50).map(x => x.id);
+        setSelected(initialIssueIds?.length ? openIssueIds.filter((id) => initialIssueIds.includes(id)) : openIssueIds);
       }
       if (next.activeRun) router.replace(runUrl(next.activeRun.id));
     } catch (cause) { setError(rewriteErrorMessage((cause as ApiError).code)); }
-  }, [reportId, router, runUrl]);
+  }, [initialIssueIds, reportId, router, runUrl]);
   useEffect(() => { void load(); }, [load]);
   const toggle = (id: string) => {
     const issue = issues.find(x => x.id === id);

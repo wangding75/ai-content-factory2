@@ -731,7 +731,19 @@ function RealReportView({
   const [actionError, setActionError] = useState<string | null>(null);
   const [source, setSource] = useState<ContentVersion | null>(null);
   const [sourceError, setSourceError] = useState<string | null>(null);
+  const [selectedRewriteIssueIds, setSelectedRewriteIssueIds] = useState<string[]>([]);
   const dispositionCommand = useRef<ReviewCommandKey | null>(null);
+
+  const toggleRewriteIssue = (issue: RealReviewIssue) => {
+    if (issue.disposition !== "open") return;
+    setSelectedRewriteIssueIds((current) =>
+      current.includes(issue.id)
+        ? current.filter((id) => id !== issue.id)
+        : [...current, issue.id],
+    );
+  };
+
+  const rewriteHref = `/projects/${projectId}/works/${workId}/rewrite?reportId=${encodeURIComponent(detail.report.id)}&issueIds=${encodeURIComponent(selectedRewriteIssueIds.join(","))}`;
 
   useEffect(() => {
     if (!sourceView || !issueId) {
@@ -851,9 +863,24 @@ function RealReportView({
             {formatReviewTime(detail.report.completedAt)}
           </p>
         </div>
-        <Link href={`/workflow-runs/${detail.report.workflowRunId}`}>
-          {copy.common.runDetail}
-        </Link>
+        <div className="review-report-banner-actions">
+          <Link href={`/workflow-runs/${detail.report.workflowRunId}`}>
+            {copy.common.runDetail}
+          </Link>
+          <button
+            type="button"
+            className="primary"
+            disabled={!selectedRewriteIssueIds.length}
+            title={
+              selectedRewriteIssueIds.length
+                ? copy.report.createRewrite
+                : copy.report.rewriteSelectionRequired
+            }
+            onClick={() => router.push(rewriteHref)}
+          >
+            {copy.report.createRewrite}（{selectedRewriteIssueIds.length}）
+          </button>
+        </div>
       </section>
       <section className="review-report-summary">
         <div>
@@ -877,26 +904,42 @@ function RealReportView({
             <h3>
               {copy.report.issueList}（{detail.issues.length}）
             </h3>
+            <p className="review-rewrite-selection-hint">
+              {copy.report.selectedIssues} {selectedRewriteIssueIds.length} · {copy.report.rewriteSelectionHint}
+            </p>
           </header>
           {detail.issues.length ? (
             detail.issues.map((issue) => (
-              <button
-                type="button"
+              <div
                 key={issue.id}
-                className={selected?.id === issue.id ? "active" : ""}
-                onClick={() =>
-                  router.push(
-                    `/projects/${projectId}/works/${workId}/review?reportId=${encodeURIComponent(detail.report.id)}&issueId=${encodeURIComponent(issue.id)}`,
-                  )
-                }
+                className={`review-issue-entry ${selected?.id === issue.id ? "active" : ""}`}
               >
-                <span className={`severity ${issue.severity}`}>
-                  {realReviewSeverityLabel(issue.severity)}
-                </span>
-                <span>{issue.categoryLabel}</span>
-                <b>{issue.title}</b>
-                <small>{reviewLocationLabel(issue.location)}</small>
-              </button>
+                <label className="review-issue-select">
+                  <input
+                    type="checkbox"
+                    checked={selectedRewriteIssueIds.includes(issue.id)}
+                    disabled={issue.disposition !== "open"}
+                    onChange={() => toggleRewriteIssue(issue)}
+                    aria-label={`${copy.report.createRewrite}: ${issue.title}`}
+                  />
+                  <span className={`severity ${issue.severity}`}>
+                    {realReviewSeverityLabel(issue.severity)}
+                  </span>
+                </label>
+                <button
+                  type="button"
+                  className="review-issue-entry-detail"
+                  onClick={() =>
+                    router.push(
+                      `/projects/${projectId}/works/${workId}/review?reportId=${encodeURIComponent(detail.report.id)}&issueId=${encodeURIComponent(issue.id)}`,
+                    )
+                  }
+                >
+                  <span>{issue.categoryLabel}</span>
+                  <b>{issue.title}</b>
+                  <small>{reviewLocationLabel(issue.location)}</small>
+                </button>
+              </div>
             ))
           ) : (
             <p className="review-muted">{copy.report.noIssues}</p>
@@ -931,12 +974,18 @@ function RealReportView({
             {formatReviewTime(detail.workflowRunSummary.createdAt)}
           </span>
         </div>
-        {detail.issues.some((issue) => issue.disposition === "open") ? (
-          <Link href={`/projects/${projectId}/works/${workId}/rewrite?reportId=${encodeURIComponent(detail.report.id)}`}>
-            创建重写
+        {selectedRewriteIssueIds.length ? (
+          <Link href={rewriteHref}>
+            {copy.report.createRewrite}（{selectedRewriteIssueIds.length}）
           </Link>
         ) : (
-          <button type="button" disabled title="当前审核结果没有可处理的问题">创建重写</button>
+          <button
+            type="button"
+            disabled
+            title={copy.report.rewriteSelectionRequired}
+          >
+            {copy.report.createRewrite}
+          </button>
         )}
       </section>
     </>
