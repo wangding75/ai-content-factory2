@@ -496,3 +496,45 @@ button,a { -webkit-tap-highlight-color:transparent; }
 .ui030-legacy-banner p{margin:0;font-size:13px;line-height:1.5}
 .ui030-legacy-banner a{display:inline-flex;align-items:center;height:36px;padding:0 14px;border-radius:8px;background:#4f46e5;color:#fff;text-decoration:none;font-weight:600;font-size:13px;white-space:nowrap}
 
+/* UI-040 generation settings drawer. */
+.chapter-plan-drawer-overlay{position:fixed;inset:0;z-index:110;display:flex;justify-content:flex-end;background:rgba(25,28,30,.4);backdrop-filter:blur(4px)}
+.chapter-plan-drawer-content{display:flex;width:min(620px,100%);height:100%;flex-direction:column;background:#fff;box-shadow:-12px 0 32px rgba(15,23,42,.16)}
+.chapter-plan-drawer-header{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;padding:24px;border-bottom:1px solid #dfe2e6;background:#fff}
+.chapter-plan-drawer-header h2{margin:0;color:#191c1e;font-size:20px}
+.chapter-plan-drawer-header p{margin:6px 0 0;color:#596171;font-size:14px}
+.chapter-plan-drawer-close{display:grid;place-items:center;width:34px;height:34px;border:0;border-radius:8px;color:#596171;background:transparent;cursor:pointer}
+.chapter-plan-drawer-close:hover{color:#191c1e;background:#f2f4f6}
+.chapter-plan-drawer-body{display:flex;min-height:0;flex:1;flex-direction:column;gap:20px;overflow:auto;padding:24px}
+.chapter-plan-form-group{margin:0;padding:0;border:0}
+.chapter-plan-form-label{display:block;margin:0 0 12px;color:#313540;font-size:13px;font-weight:800;letter-spacing:.02em}
+.chapter-plan-form-subheading{margin:0 0 10px;color:#191c1e;font-size:14px;font-weight:700}
+.chapter-plan-form-group+.chapter-plan-form-group{padding-top:4px}
+.chapter-plan-radio-group{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.chapter-plan-radio-item{display:flex;min-height:52px;align-items:flex-start;gap:9px;margin:0;padding:12px;border:1px solid #dfe2e6;border-radius:8px;color:#313540;font-size:13px;font-weight:500;cursor:pointer;background:#fff}
+.chapter-plan-radio-item:has(input:checked){border-color:#4648d4;background:#f0f0ff;box-shadow:0 0 0 1px #4648d4}
+.chapter-plan-radio-item input{margin-top:2px;accent-color:#4648d4}
+.chapter-plan-radio-item strong{display:block;color:#191c1e;font-size:13px}
+.chapter-plan-help-text{margin:5px 0 0;color:#767586;font-size:12px;line-height:1.5}
+.chapter-plan-form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:18px}
+.chapter-plan-form-group input[type=number],.chapter-plan-form-group textarea{box-sizing:border-box;width:100%;border:1px solid #c7c4d7;border-radius:8px;padding:10px 12px;color:#191c1e;background:#f7f9fb;font:inherit;font-weight:400}
+.chapter-plan-form-group textarea{min-height:92px;resize:vertical}
+.chapter-plan-form-group input:focus,.chapter-plan-form-group textarea:focus{outline:2px solid rgba(70,72,212,.2);border-color:#4648d4}
+.chapter-plan-checkbox-list{display:grid;grid-template-columns:1fr 1fr;gap:10px 16px;padding:12px;border:1px solid #dfe2e6;border-radius:8px;background:#f7f9fb}
+.chapter-plan-checkbox-item{display:flex;align-items:center;gap:9px;margin:0;color:#313540;font-size:13px;font-weight:500;cursor:pointer}
+.chapter-plan-checkbox-item input{accent-color:#4648d4}
+.chapter-plan-drawer-footer{display:flex;align-items:center;justify-content:space-between;gap:16px;margin:0 -24px -24px;padding:16px 24px;border-top:1px solid #dfe2e6;background:#f7f9fb;position:sticky;bottom:0}
+.chapter-plan-drawer-footer-summary{display:flex;min-width:0;align-items:flex-start;gap:8px;color:#596171;font-size:12px;line-height:1.45}
+.chapter-plan-drawer-footer-summary>svg{flex:0 0 auto;color:#767586}
+.chapter-plan-drawer-footer-summary div{display:grid;gap:2px;min-width:0}
+.chapter-plan-drawer-footer-summary strong{color:#313540;font-size:12px}
+.chapter-plan-drawer-footer-summary span{overflow:hidden;color:#4648d4;font-weight:700;text-overflow:ellipsis;white-space:nowrap}
+.chapter-plan-drawer-footer-summary small{color:#767586;font-size:11px}
+.chapter-plan-drawer-footer-actions{display:flex;flex:0 0 auto;gap:10px}
+.chapter-plan-button{border:1px solid transparent;border-radius:8px;padding:9px 16px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap}
+.chapter-plan-button.secondary{border-color:#c7c4d7;color:#313540;background:#fff}
+.chapter-plan-button.secondary:hover{background:#f2f4f6}
+.chapter-plan-button.primary{color:#fff;background:#4648d4}
+.chapter-plan-button.primary:hover{background:#4034d7}
+.chapter-plan-button:disabled{opacity:.55;cursor:not-allowed}
+@media(max-width:620px){.chapter-plan-drawer-content{width:100%}.chapter-plan-drawer-header,.chapter-plan-drawer-body{padding-right:16px;padding-left:16px}.chapter-plan-radio-group{grid-template-columns:1fr}.chapter-plan-checkbox-list{grid-template-columns:1fr}.chapter-plan-form-row{grid-template-columns:1fr}.chapter-plan-drawer-footer{align-items:stretch;flex-direction:column;margin-right:-16px;margin-left:-16px;padding-right:16px;padding-left:16px}.chapter-plan-drawer-footer-summary{width:100%}.chapter-plan-drawer-footer-actions{justify-content:flex-end;width:100%}}
+

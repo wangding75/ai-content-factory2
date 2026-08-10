@@ -119,6 +119,17 @@ export function GenerationSettingsDrawer({
     onSubmit(payload);
   };
 
+  const generationRangeSummary =
+    generationMode === "full"
+      ? `完整章节规划 · 共 ${Math.round(chapterCount)} 章`
+      : generationMode === "append"
+        ? `追加后续章节 · ${Math.round(chapterCount)} 章`
+        : `指定范围 · 第 ${Math.round(startChapterNo)}—${Math.round(endChapterNo)} 章`;
+  const storylineSummary =
+    storylineMode === "specified"
+      ? `已指定 ${selectedStorylineIds.length} 条故事线`
+      : "自动平衡全部故事线";
+
   return (
     <div
       className="chapter-plan-drawer-overlay"
@@ -128,7 +139,10 @@ export function GenerationSettingsDrawer({
     >
       <div className="chapter-plan-drawer-content">
         <header className="chapter-plan-drawer-header">
-          <h2 id="generation-settings-title">生成章节规划设置</h2>
+          <div>
+            <h2 id="generation-settings-title">生成章节规划</h2>
+            <p>设置本次生成条件，确定后系统执行预检。</p>
+          </div>
           <button
             type="button"
             className="chapter-plan-drawer-close"
@@ -146,9 +160,10 @@ export function GenerationSettingsDrawer({
             </div>
           )}
 
-          {/* 1. 生成模式 */}
+          {/* 1. 生成范围 */}
           <fieldset className="chapter-plan-form-group">
-            <legend className="chapter-plan-form-label">生成模式</legend>
+            <legend className="chapter-plan-form-label">生成范围</legend>
+            <h3 className="chapter-plan-form-subheading">生成模式</h3>
             <div className="chapter-plan-radio-group">
               <label className="chapter-plan-radio-item">
                 <input
@@ -200,56 +215,56 @@ export function GenerationSettingsDrawer({
             </div>
           </fieldset>
 
-          {/* 2. 目标范围 / 数量 */}
-          {generationMode === "range" ? (
-            <div className="chapter-plan-form-row">
-              <div className="chapter-plan-form-group">
-                <label htmlFor="startChapterNo" className="chapter-plan-form-label">
-                  起始章节
-                </label>
-                <input
-                  id="startChapterNo"
-                  type="number"
-                  min={1}
-                  value={startChapterNo}
-                  onChange={(e) => setStartChapterNo(Number(e.target.value))}
-                  required
-                />
-              </div>
-              <div className="chapter-plan-form-group">
-                <label htmlFor="endChapterNo" className="chapter-plan-form-label">
-                  结束章节
-                </label>
-                <input
-                  id="endChapterNo"
-                  type="number"
-                  min={1}
-                  value={endChapterNo}
-                  onChange={(e) => setEndChapterNo(Number(e.target.value))}
-                  required
-                />
-              </div>
-            </div>
-          ) : (
-            <div className="chapter-plan-form-group">
-              <label htmlFor="chapterCount" className="chapter-plan-form-label">
-                生成章节数量
-              </label>
-              <input
-                id="chapterCount"
-                type="number"
-                min={1}
-                max={100}
-                value={chapterCount}
-                onChange={(e) => setChapterCount(Number(e.target.value))}
-                required
-              />
-            </div>
-          )}
-
-          {/* 3. 故事线选择 */}
+          {/* 2. 章节范围 / 主线选择 */}
           <fieldset className="chapter-plan-form-group">
-            <legend className="chapter-plan-form-label">故事线范围</legend>
+            <legend className="chapter-plan-form-label">章节范围 / 主线选择</legend>
+            <h3 className="chapter-plan-form-subheading">目标章节范围</h3>
+            {generationMode === "range" ? (
+              <div className="chapter-plan-form-row">
+                <div className="chapter-plan-form-group">
+                  <label htmlFor="startChapterNo" className="chapter-plan-form-label">
+                    起始章节
+                  </label>
+                  <input
+                    id="startChapterNo"
+                    type="number"
+                    min={1}
+                    value={startChapterNo}
+                    onChange={(e) => setStartChapterNo(Number(e.target.value))}
+                    required
+                  />
+                </div>
+                <div className="chapter-plan-form-group">
+                  <label htmlFor="endChapterNo" className="chapter-plan-form-label">
+                    结束章节
+                  </label>
+                  <input
+                    id="endChapterNo"
+                    type="number"
+                    min={1}
+                    value={endChapterNo}
+                    onChange={(e) => setEndChapterNo(Number(e.target.value))}
+                    required
+                  />
+                </div>
+              </div>
+            ) : (
+              <div className="chapter-plan-form-group">
+                <label htmlFor="chapterCount" className="chapter-plan-form-label">
+                  生成章节数量
+                </label>
+                <input
+                  id="chapterCount"
+                  type="number"
+                  min={1}
+                  max={100}
+                  value={chapterCount}
+                  onChange={(e) => setChapterCount(Number(e.target.value))}
+                  required
+                />
+              </div>
+            )}
+            <h3 className="chapter-plan-form-subheading">主线选择</h3>
             <div className="chapter-plan-radio-group">
               <label className="chapter-plan-radio-item">
                 <input
@@ -292,9 +307,10 @@ export function GenerationSettingsDrawer({
             )}
           </fieldset>
 
-          {/* 4. 上下文与素材参考选项 */}
+          {/* 3. 其他生成参数 */}
           <fieldset className="chapter-plan-form-group">
-            <legend className="chapter-plan-form-label">上下文参考选项</legend>
+            <legend className="chapter-plan-form-label">其他生成参数</legend>
+            <h3 className="chapter-plan-form-subheading">上下文范围</h3>
             <div className="chapter-plan-checkbox-list">
               <label className="chapter-plan-checkbox-item">
                 <input
@@ -349,39 +365,47 @@ export function GenerationSettingsDrawer({
                 <span>仅使用核心设定</span>
               </label>
             </div>
+            <div className="chapter-plan-form-group">
+              <label htmlFor="additionalInstructions" className="chapter-plan-form-label">
+                补充生成要求（可选）
+              </label>
+              <textarea
+                id="additionalInstructions"
+                rows={3}
+                maxLength={2000}
+                placeholder="前20章节奏加快；第30章前完成第一次重大反转；减少新角色。"
+                value={additionalInstructions}
+                onChange={(e) => setAdditionalInstructions(e.target.value)}
+              />
+            </div>
           </fieldset>
 
-          {/* 5. 补充说明 */}
-          <div className="chapter-plan-form-group">
-            <label htmlFor="additionalInstructions" className="chapter-plan-form-label">
-              补充生成要求 (可选)
-            </label>
-            <textarea
-              id="additionalInstructions"
-              rows={3}
-              maxLength={2000}
-              placeholder="请输入任何针对本次生成的额外约束或提示说明..."
-              value={additionalInstructions}
-              onChange={(e) => setAdditionalInstructions(e.target.value)}
-            />
-          </div>
-
           <footer className="chapter-plan-drawer-footer">
-            <button
-              type="button"
-              className="chapter-plan-button secondary"
-              onClick={onClose}
-              disabled={submitting}
-            >
-              取消
-            </button>
-            <button
-              type="submit"
-              className="chapter-plan-button primary"
-              disabled={submitting}
-            >
-              {submitting ? "正在生成预检..." : "开始预检"}
-            </button>
+            <div className="chapter-plan-drawer-footer-summary">
+              <Icon name="info" size={18} />
+              <div>
+                <strong>本次生成范围</strong>
+                <span>{generationRangeSummary} · {storylineSummary}</span>
+                <small>确认后仅执行预检，不创建任务，不调用 n8n 或 LLM。</small>
+              </div>
+            </div>
+            <div className="chapter-plan-drawer-footer-actions">
+              <button
+                type="button"
+                className="chapter-plan-button secondary"
+                onClick={onClose}
+                disabled={submitting}
+              >
+                取消
+              </button>
+              <button
+                type="submit"
+                className="chapter-plan-button primary"
+                disabled={submitting}
+              >
+                {submitting ? "正在生成预检..." : "确认并预检"}
+              </button>
+            </div>
           </footer>
         </form>
       </div>

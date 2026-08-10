@@ -78,6 +78,17 @@ test("generation settings drawer validates input ranges and options", () => {
   assert.match(drawerSource, /includeProjectMaterials/);
 });
 
+test("generation settings drawer groups parameters and repeats a preflight-safe summary", () => {
+  assert.match(drawerSource, /生成范围/);
+  assert.match(drawerSource, /章节范围 \/ 主线选择/);
+  assert.match(drawerSource, /其他生成参数/);
+  assert.match(drawerSource, /generationRangeSummary/);
+  assert.match(drawerSource, /本次生成范围/);
+  assert.match(drawerSource, /仅执行预检，不创建任务，不调用 n8n 或 LLM/);
+  assert.match(drawerSource, /确认并预检/);
+  assert.match(drawerSource, /onSubmit\(payload\)/);
+});
+
 test("preflight report dialog differentiates passed and blocked status", () => {
   assert.match(preflightSource, /预检通过/);
   assert.match(preflightSource, /预检阻断/);
