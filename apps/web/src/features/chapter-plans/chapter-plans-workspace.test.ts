@@ -35,6 +35,15 @@ test("chapter plans render active run banners and preflight controls", () => {
   assert.match(workspaceSource, /createChapterPlanRun/);
 });
 
+test("active run banner separates result validation from generation progress", () => {
+  assert.match(workspaceSource, /isResultValidating/);
+  assert.match(workspaceSource, /hasStoredResult/);
+  assert.match(workspaceSource, /结果校验中/);
+  assert.match(workspaceSource, /候选尚未写入/);
+  assert.match(workspaceSource, /预计生成\{reqCount\}个章节候选/);
+  assert.doesNotMatch(workspaceSource, /const stageLabel = run\.stage === "validating" \? "校验生成结果" : "校验生成结果"/);
+});
+
 test("generation settings drawer validates input ranges and options", () => {
   assert.match(drawerSource, /生成模式/);
   assert.match(drawerSource, /起始章节/);

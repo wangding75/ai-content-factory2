@@ -751,6 +751,19 @@ function SummaryRunBanner({
 
   const run = summary.activeRun;
   const status = (run.status || "RUNNING").toUpperCase();
+  const normalizedRunStatus = (run.status || "").toLowerCase();
+  const normalizedRunStage = (run.stage || "").toLowerCase();
+  const hasStoredResult = Boolean(
+    run.outputPayload &&
+      typeof run.outputPayload === "object" &&
+      Object.keys(run.outputPayload).length > 0,
+  );
+  const isResultValidating =
+    normalizedRunStatus === "validating" ||
+    normalizedRunStatus === "output_validation" ||
+    normalizedRunStage === "validating" ||
+    normalizedRunStage === "output_validation" ||
+    (normalizedRunStatus === "running" && hasStoredResult);
 
   const parsePayload = (payload: unknown): Record<string, unknown> => {
     if (typeof payload === "string") {
@@ -775,13 +788,15 @@ function SummaryRunBanner({
     (inputPayload.generationMode as string) ||
     "range";
 
-  let bannerTitle = "章节规划生成中";
-  if (mode === "append") {
-    bannerTitle = "主线剧情扩展生成中";
-  } else if (mode === "range") {
-    bannerTitle = "局部章节规划生成中";
-  } else if (mode === "full") {
-    bannerTitle = "全局章节规划生成中";
+  let bannerTitle = isResultValidating ? "结果校验中" : "章节规划生成中";
+  if (!isResultValidating) {
+    if (mode === "append") {
+      bannerTitle = "主线剧情扩展生成中";
+    } else if (mode === "range") {
+      bannerTitle = "局部章节规划生成中";
+    } else if (mode === "full") {
+      bannerTitle = "全局章节规划生成中";
+    }
   }
 
   const target = (parsePayload(inputSnapshot.target) ||
@@ -804,7 +819,8 @@ function SummaryRunBanner({
     durationText = `${m}:${s}`;
   }
 
-  const stageLabel = run.stage === "validating" ? "校验生成结果" : "校验生成结果";
+  const stageLabel = isResultValidating ? "结果校验中" : "正在生成章节规划";
+  const statusLabel = isResultValidating ? "校验中" : status;
 
   return (
     <div className="bg-primary-container rounded-lg border border-primary-fixed-dim p-4 flex flex-col gap-3 shadow-sm relative overflow-hidden">
@@ -818,16 +834,22 @@ function SummaryRunBanner({
             <h3 className="text-on-primary-container font-bold text-base flex items-center gap-2">
               {bannerTitle}
               <span className="px-2 py-0.5 rounded text-[10px] bg-primary text-on-primary font-medium tracking-wider">
-                {status}
+                {statusLabel}
               </span>
             </h3>
             <div className="flex items-center gap-4 mt-1 text-sm text-on-primary-container/80">
               <span className="flex items-center gap-1">
                 <span className="material-symbols-outlined text-[14px]">format_list_numbered</span> Range: 第{startNo}—{endNo}章
               </span>
-              <span className="flex items-center gap-1">
-                <span className="material-symbols-outlined text-[14px]">library_books</span> 预计生成{reqCount}个章节候选
-              </span>
+              {isResultValidating ? (
+                <span className="flex items-center gap-1">
+                  <span className="material-symbols-outlined text-[14px]">fact_check</span> 正在校验生成结果，候选尚未写入
+                </span>
+              ) : (
+                <span className="flex items-center gap-1">
+                  <span className="material-symbols-outlined text-[14px]">library_books</span> 预计生成{reqCount}个章节候选
+                </span>
+              )}
             </div>
           </div>
         </div>
