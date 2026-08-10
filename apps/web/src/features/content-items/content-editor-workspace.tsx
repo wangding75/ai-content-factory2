@@ -407,7 +407,7 @@ export function ContentEditorWorkspace({
                   className="content-review-link"
                   type="button"
                   onClick={() => setReviewDrawer(true)}
-                  disabled={dirty || !reviewSummary}
+                  disabled={dirty || !reviewSummary?.canStartReview}
                   title={dirty ? reviewCopy.editor.unsaved : reviewCopy.editor.opensDrawer}
                 >
                   {reviewCopy.editor.submit}

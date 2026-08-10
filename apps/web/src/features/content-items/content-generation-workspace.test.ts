@@ -145,6 +145,15 @@ test("unconfigured generation is a centered blocking state with a workflow bindi
   assert.doesNotMatch(status, /summary\.state === "not_configured"[^]*confirmCreate/);
 });
 
+test("editor review entry stays in the actions bar and opens the existing review drawer only when allowed", () => {
+  assert.match(editor, /className="content-review-link"/);
+  assert.match(editor, /reviewCopy\.editor\.submit/);
+  assert.match(editor, /onClick=\{\(\) => setReviewDrawer\(true\)\}/);
+  assert.match(editor, /disabled=\{dirty \|\| !reviewSummary\?\.canStartReview\}/);
+  assert.match(editor, /ContentReviewDrawer/);
+  assert.match(editor, /window\.location\.assign\(reviewPath\)/);
+});
+
 test("summary polling is isolated from the editable draft refresh", () => {
   assert.match(editor, /\["queued", "running"\]/);
   assert.match(editor, /refreshGenerationSummary/);
