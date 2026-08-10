@@ -53,6 +53,20 @@ test("materials context shows real project materials and an explicit empty state
   assert.doesNotMatch(editor, /新增素材|编辑素材|删除素材/);
 });
 
+test("generation confirmation keeps the frozen preflight and create boundary while exposing run context", () => {
+  const drawerSource = readFileSync(join(root, "content-generation-drawer.tsx"), "utf8");
+  assert.match(drawerSource, /chapterLabel/);
+  assert.match(drawerSource, /工作流概览/);
+  assert.match(drawerSource, /目标章节/);
+  assert.match(drawerSource, /候选版本/);
+  assert.match(drawerSource, /contextSummary\.materialCount/);
+  assert.match(drawerSource, /contextSummary\.storylineCount/);
+  assert.match(drawerSource, /content-generation-confirm/);
+  assert.match(drawerSource, /preflightContentGenerationRun/);
+  assert.match(drawerSource, /createContentGenerationRun/);
+  assert.match(drawerSource, /preflightToken/);
+});
+
 test("summary polling is isolated from the editable draft refresh", () => {
   assert.match(editor, /\["queued", "running"\]/);
   assert.match(editor, /refreshGenerationSummary/);

@@ -558,7 +558,7 @@ export function ContentEditorWorkspace({
           onSubmit={generate}
         />
       )}
-      {generationDrawer && <ContentGenerationDrawer contentItemId={detail.content_item.id} version={detail.current_version} onClose={() => setGenerationDrawer(false)} onCreated={refreshGenerationSummary} />}
+      {generationDrawer && <ContentGenerationDrawer contentItemId={detail.content_item.id} version={detail.current_version} chapterLabel={plan ? `第 ${plan.chapter_no} 章 ${plan.title}` : "当前章节"} onClose={() => setGenerationDrawer(false)} onCreated={refreshGenerationSummary} />}
       {reviewDrawer && (
         <ContentReviewDrawer
           projectId={projectId}
