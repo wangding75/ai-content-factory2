@@ -2,6 +2,9 @@
 @import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200');
 @import "tailwindcss";
 
+/* UI-086 content generation run recovery. */
+.content-generation-status .content-generation-run-id{font-family:ui-monospace,Consolas,monospace;font-weight:800}
+
 /* UI-085 chapter planning active run recovery. */
 .chapter-plan-run-identity{border:1px solid rgba(255,255,255,.55);border-radius:999px;padding:3px 7px;color:#3725cd;background:rgba(255,255,255,.72);font-family:ui-monospace,Consolas,monospace;font-size:10px;font-weight:700;letter-spacing:0}
 

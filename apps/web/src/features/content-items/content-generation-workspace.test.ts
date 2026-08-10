@@ -159,6 +159,19 @@ test("unconfigured generation is a centered blocking state with a workflow bindi
   assert.doesNotMatch(status, /summary\.state === "not_configured"[^]*confirmCreate/);
 });
 
+test("refresh restores the server generation summary and the original Run status bar", () => {
+  assert.match(editor, /getContentGenerationSummary\(fresh\.content_item\.id/);
+  assert.match(editor, /ContentGenerationStatus projectId=\{projectId\} summary=\{generationSummary\}/);
+  assert.match(editor, /generationSummary\.state/);
+  assert.match(editor, /window\.setInterval/);
+  assert.match(editor, /refreshGenerationSummary/);
+  assert.doesNotMatch(editor, /createContentGenerationRun/);
+  assert.match(status, /summary\.activeRun \?\? summary\.latestRun/);
+  assert.match(status, /const runLabel = run\?\.runNumber \?\? run\?\.id/);
+  assert.match(status, /Run ID: \{runLabel\}/);
+  assert.match(status, /workflow-runs\/\$\{run\.id\}/);
+});
+
 test("editor review entry stays in the actions bar and opens the existing review drawer only when allowed", () => {
   assert.match(editor, /className="content-review-link"/);
   assert.match(editor, /reviewCopy\.editor\.submit/);

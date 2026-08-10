@@ -18,6 +18,7 @@ export function ContentGenerationStatus({ projectId, summary, onRefresh, onCandi
   const [retryError, setRetryError] = useState<{ identity: string; message: string } | null>(null);
   const [cancelling, setCancelling] = useState(false);
   const run = summary.activeRun ?? summary.latestRun;
+  const runLabel = run?.runNumber ?? run?.id;
   const candidate = summary.state === "candidate_ready" ? summary.latestCandidateVersion : undefined;
   useEffect(() => {
     if (!run || !["queued", "running"].includes(summary.state)) return;
@@ -60,10 +61,10 @@ export function ContentGenerationStatus({ projectId, summary, onRefresh, onCandi
     finally { setCancelling(false); }
   };
   return <section className={`content-generation-status content-generation-status-${summary.state}`} aria-live="polite">
-    {summary.state === "not_configured" ? <div className="content-generation-not-configured-body" role="status"><strong>{title}</strong><p>{copy.notConfiguredDetail}</p></div> : <div><strong>{title}</strong>{run && <span>Run ID: {run.runNumber}</span>}
+    {summary.state === "not_configured" ? <div className="content-generation-not-configured-body" role="status"><strong>{title}</strong><p>{copy.notConfiguredDetail}</p></div> : <div><strong>{title}</strong>{runLabel && <span className="content-generation-run-id">Run ID: {runLabel}</span>}
       {summary.state === "queued" && <span>{copy.queuedDetail}</span>}{summary.state === "running" && <span>{copy.runningDetail}</span>}{summary.state === "candidate_ready" && <span>{candidate ? copy.candidateReadyDetail(candidate.version_no) : copy.candidateReadyMissing}</span>}{summary.state === "runtime_failed" && <span>{copy.runtimeFailedDetail}：{failureMessage}</span>}{summary.state === "output_validation_failed" && <span>{copy.outputValidationFailedDetail}：{failureMessage}</span>}{summary.state === "result_consumption_failed" && <span>{copy.resultConsumptionFailedDetail}：{failureMessage}</span>}
     </div>}
-    {summary.state === "candidate_ready" && candidate && <div className="content-generation-candidate-meta" role="status"><strong>{copy.candidateVersion(candidate.version_no)}</strong>{run && <span>来源 Run {run.runNumber}</span>}</div>}
+    {summary.state === "candidate_ready" && candidate && <div className="content-generation-candidate-meta" role="status"><strong>{copy.candidateVersion(candidate.version_no)}</strong>{runLabel && <span>来源 Run {runLabel}</span>}</div>}
     {summary.state === "running" && run && <div className="content-generation-running-meta" role="status"><span>开始：{runTimeLabel(run.startedAt ?? run.createdAt)}</span><span>最新阶段：{latestEvent ? eventLabel(latestEvent.eventType) : "等待事件"}</span><span>已记录 {visibleEvents.length} 个事件</span></div>}
     <div className="content-generation-status-actions">
       {summary.state === "candidate_ready" && candidate && <button onClick={onCandidate}>{copy.viewCandidate}</button>}{run && <button onClick={() => setShowEvents((x) => !x)}>{showEvents ? copy.hideDetails : copy.viewDetails}</button>}{run && <Link href={`/workflow-runs/${run.id}`}>{copy.workflowCenter}</Link>}{summary.state === "queued" && run && <button className="content-generation-cancel" onClick={() => void cancel()} disabled={cancelling}>{cancelling ? copy.cancellingRun : copy.cancelRun}</button>}{summary.state === "not_configured" && <Link href={`/projects/${projectId}/settings?tab=workflow-bindings`}>{copy.configureWorkflow}</Link>}
