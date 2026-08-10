@@ -285,6 +285,20 @@ test("rewrite creation keeps report, selected issues, target source, and require
   assert.match(rewriteWorkspace, /: \[\]\);/);
 });
 
+test("rewrite configuration drawer is a read-only summary with real binding status and settings escape hatch", () => {
+  assert.match(rewriteWorkspace, /RewriteConfigurationDrawer/);
+  assert.match(rewriteWorkspace, /configurationSummary/);
+  assert.match(rewriteWorkspace, /bindingVersion/);
+  assert.match(rewriteWorkspace, /connectionId/);
+  assert.match(rewriteWorkspace, /inputContract/);
+  assert.match(rewriteWorkspace, /outputContract/);
+  assert.match(rewriteWorkspace, /role="status"/);
+  assert.match(rewriteWorkspace, /rewrite-config-drawer-note/);
+  assert.match(rewriteWorkspace, /\/projects\/\$\{projectId\}\/settings/);
+  const configDrawerSource = rewriteWorkspace.slice(rewriteWorkspace.indexOf("function RewriteConfigurationDrawer"), rewriteWorkspace.indexOf("function RewriteCreateView"));
+  assert.doesNotMatch(configDrawerSource, /onChange=/);
+});
+
 test("summary polling is isolated from the editable draft refresh", () => {
   assert.match(editor, /\["queued", "running"\]/);
   assert.match(editor, /refreshGenerationSummary/);

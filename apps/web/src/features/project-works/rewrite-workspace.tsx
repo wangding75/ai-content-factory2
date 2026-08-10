@@ -223,6 +223,42 @@ function RewriteCreate({ projectId, workId, reportId, initialIssueIds, runUrl }:
   {showConfiguration && <div className="rewrite-drawer-layer"><button className="rewrite-dialog-backdrop" aria-label="关闭项目重写配置" onClick={() => setShowConfiguration(false)} /><section className="rewrite-config-drawer" role="dialog" aria-modal="true" aria-label="项目重写配置"><header><div><h2>项目重写配置</h2><p>正文重写阶段</p></div><button type="button" aria-label="关闭" onClick={() => setShowConfiguration(false)}>×</button></header><p className="rewrite-available-badge">配置可用</p><dl><div><dt>工作流</dt><dd>{availability?.configurationSummary?.workflowConfigurationName ?? "未配置"}</dd></div><div><dt>配置版本</dt><dd>{availability?.configurationSummary?.workflowConfigurationVersion ?? "—"}</dd></div><div><dt>输入契约</dt><dd>{availability?.configurationSummary?.inputContract ?? "—"}</dd></div><div><dt>输出契约</dt><dd>{availability?.configurationSummary?.outputContract ?? "—"}</dd></div></dl><footer><button type="button" onClick={() => setShowConfiguration(false)}>关闭</button></footer></section></div>}
   {confirmCreate && preflight?.status === "passed" && <div className="rewrite-dialog-layer"><section className="rewrite-confirm-dialog" role="dialog" aria-modal="true" aria-label="确认创建重写任务"><h2>确认创建重写任务</h2><p>将按以上来源、审核报告、{preflight.selectedIssueSummary.total} 个问题和只读配置创建一次重写运行。</p><footer><button type="button" disabled={creating} onClick={() => setConfirmCreate(false)}>返回修改</button><button type="button" className="primary" disabled={creating} onClick={() => void create()}>{creating ? "创建中…" : "确认创建"}</button></footer></section></div>}</main>;
 }
+function RewriteConfigurationDrawer({ projectId, availability, onClose }: { projectId: string; availability: RewriteAvailability; onClose: () => void }) {
+  const configuration = availability.configurationSummary;
+  const workflowReady = Boolean(availability.available && configuration);
+  return (
+    <div className="rewrite-drawer-layer">
+      <button className="rewrite-dialog-backdrop" aria-label="关闭项目重写配置" onClick={onClose} />
+      <section className="rewrite-config-drawer" role="dialog" aria-modal="true" aria-label="项目工作流配置">
+        <header>
+          <div><h2>项目工作流配置</h2><p>正文重写阶段</p></div>
+          <button type="button" aria-label="关闭" onClick={onClose}>×</button>
+        </header>
+        <div className="rewrite-config-drawer-body">
+          <p className={`rewrite-available-badge ${workflowReady ? "is-ready" : "is-unavailable"}`} role="status">
+            <span aria-hidden="true">{workflowReady ? "✓" : "!"}</span>
+            {workflowReady ? "配置可用" : "配置不可用"}
+          </p>
+          <section className="rewrite-config-summary">
+            <h3>当前绑定详情</h3>
+            <dl>
+              <div><dt>业务阶段</dt><dd><span className="rewrite-config-tag">正文重写</span></dd></div>
+              <div><dt>绑定工作流</dt><dd>{configuration ? `${configuration.workflowConfigurationName} · v${configuration.workflowConfigurationVersion}` : "未配置"}</dd></div>
+              <div><dt>执行连接</dt><dd>{configuration ? `${configuration.connectionId} · v${configuration.connectionVersion}` : "未配置"}</dd></div>
+              <div><dt>工作流状态</dt><dd><span className={`rewrite-config-status ${workflowReady ? "is-ready" : "is-unavailable"}`}><span aria-hidden="true" />{workflowReady ? "已启用" : "不可用"}</span></dd></div>
+              <div><dt>输入契约</dt><dd>{configuration?.inputContract ?? "—"}</dd></div>
+              <div><dt>输出结构</dt><dd><span className={`rewrite-config-contract ${configuration ? "is-ready" : "is-unavailable"}`}>{configuration ? `✓ ${configuration.outputContract}` : "未验证"}</span></dd></div>
+              <div><dt>绑定版本</dt><dd>{configuration ? `v${configuration.bindingVersion}` : "—"}</dd></div>
+            </dl>
+          </section>
+          <div className="rewrite-config-drawer-note"><span aria-hidden="true">ⓘ</span><p>此页面只查看当前绑定。修改工作流或执行连接需要前往项目设置。</p></div>
+        </div>
+        <footer><button type="button" onClick={onClose}>关闭</button><Link className="primary" href={`/projects/${projectId}/settings`}>前往项目设置 <span aria-hidden="true">→</span></Link></footer>
+      </section>
+    </div>
+  );
+}
+
 function RewriteCreateView({
   projectId,
   workId,
@@ -392,22 +428,7 @@ function RewriteCreateView({
           )}
         </section>
       </section>
-      {showConfiguration && (
-        <div className="rewrite-drawer-layer">
-          <button className="rewrite-dialog-backdrop" aria-label="关闭项目重写配置" onClick={() => setShowConfiguration(false)} />
-          <section className="rewrite-config-drawer" role="dialog" aria-modal="true" aria-label="项目重写配置">
-            <header><div><h2>项目重写配置</h2><p>正文重写阶段</p></div><button type="button" aria-label="关闭" onClick={() => setShowConfiguration(false)}>×</button></header>
-            <p className="rewrite-available-badge">配置可用</p>
-            <dl>
-              <div><dt>工作流</dt><dd>{availability.configurationSummary?.workflowConfigurationName ?? "未配置"}</dd></div>
-              <div><dt>配置版本</dt><dd>{availability.configurationSummary?.workflowConfigurationVersion ?? "—"}</dd></div>
-              <div><dt>输入契约</dt><dd>{availability.configurationSummary?.inputContract ?? "—"}</dd></div>
-              <div><dt>输出契约</dt><dd>{availability.configurationSummary?.outputContract ?? "—"}</dd></div>
-            </dl>
-            <footer><button type="button" onClick={() => setShowConfiguration(false)}>关闭</button></footer>
-          </section>
-        </div>
-      )}
+      {showConfiguration && <RewriteConfigurationDrawer projectId={projectId} availability={availability} onClose={() => setShowConfiguration(false)} />}
       {confirmCreate && preflight?.status === "passed" && (
         <div className="rewrite-dialog-layer">
           <section className="rewrite-confirm-dialog" role="dialog" aria-modal="true" aria-label="确认创建重写任务">
