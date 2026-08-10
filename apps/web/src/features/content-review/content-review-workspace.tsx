@@ -454,6 +454,7 @@ function SummaryState({
     return (
       <FailureState
         projectId={projectId}
+        content={content}
         summary={summary}
         retrying={retrying}
         onRetry={onRetry}
@@ -552,11 +553,13 @@ function RunningState({
 
 function FailureState({
   projectId,
+  content,
   summary,
   retrying,
   onRetry,
 }: {
   projectId: string;
+  content: ContentItemDetail;
   summary: ContentReviewSummary;
   retrying: boolean;
   onRetry: () => void;
@@ -587,13 +590,28 @@ function FailureState({
               ? copy.states.retrying
               : consumption
                 ? copy.states.consumptionRetry
-                : copy.states.runtimeRetry}
+                : summary.state === "output_validation_failed"
+                  ? copy.states.validationRetry
+                  : copy.states.runtimeRetry}
           </button>
           {run && (
-            <Link href={`/workflow-runs/${run.id}`}>
-              {copy.common.runDetail}
-            </Link>
+            <>
+              <span className="review-failure-run-id">Run ID: {run.runNumber}</span>
+              <Link href={`/workflow-runs/${run.id}`}>{copy.common.runDetail}</Link>
+            </>
           )}
+        </div>
+      </section>
+      <section className="review-failure-context">
+        <div>
+          <b>{copy.common.contentVersion}</b>
+          <span>
+            V{content.current_version.version_no} - {content.current_version.title}
+          </span>
+        </div>
+        <div>
+          <b>{copy.report.source}</b>
+          <span>{summary.state}</span>
         </div>
       </section>
       <div className="review-failure-grid">
@@ -624,6 +642,10 @@ function FailureState({
             <div>
               <dt>{copy.states.correlation}</dt>
               <dd>{error?.correlationId ?? copy.common.noValue}</dd>
+            </div>
+            <div>
+              <dt>{copy.states.errorCode}</dt>
+              <dd>{error?.code ?? copy.common.noValue}</dd>
             </div>
             <div>
               <dt>{copy.states.occurredAt}</dt>

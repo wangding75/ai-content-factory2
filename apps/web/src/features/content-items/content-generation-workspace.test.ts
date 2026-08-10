@@ -203,6 +203,22 @@ test("issue detail and source view use real metadata and location fallback witho
   assert.doesNotMatch(reviewWorkspace, /setContent\(.*source/);
 });
 
+test("review failure states keep source and Run context, separate recovery semantics, and never render a report", () => {
+  const failureState = reviewWorkspace.slice(
+    reviewWorkspace.indexOf("function FailureState"),
+    reviewWorkspace.indexOf("function RealReportView"),
+  );
+  assert.match(failureState, /content\.current_version\.version_no/);
+  assert.match(failureState, /run\.runNumber/);
+  assert.match(failureState, /copy\.states\.validationRetry/);
+  assert.match(failureState, /copy\.states\.errorCode/);
+  assert.match(reviewWorkspace, /retryReviewResultConsumption/);
+  assert.match(reviewWorkspace, /summary\.state === "runtime_failed"/);
+  assert.match(reviewWorkspace, /summary\.state === "output_validation_failed"/);
+  assert.match(reviewWorkspace, /summary\.state === "result_consumption_failed"/);
+  assert.doesNotMatch(failureState, /review-report-summary/);
+});
+
 test("summary polling is isolated from the editable draft refresh", () => {
   assert.match(editor, /\["queued", "running"\]/);
   assert.match(editor, /refreshGenerationSummary/);

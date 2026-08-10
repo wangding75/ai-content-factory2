@@ -71,6 +71,8 @@ export const reviewCopy = {
     saved: "已保存",
   },
   states: {
+    validationRetry: "重新执行并校验",
+    errorCode: "错误代码",
     idleTitle: "当前版本尚无审核任务",
     idleDescription: "发起审核前会先检查固定正文版本与项目审核工作流。",
     notConfiguredTitle: "尚未配置内容审核工作流",
