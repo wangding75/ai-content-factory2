@@ -2,6 +2,9 @@
 @import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200');
 @import "tailwindcss";
 
+/* UI-087 content review run recovery. */
+.review-running-run-id{font-family:ui-monospace,Consolas,monospace;font-weight:700}
+
 /* UI-086 content generation run recovery. */
 .content-generation-status .content-generation-run-id{font-family:ui-monospace,Consolas,monospace;font-weight:800}
 

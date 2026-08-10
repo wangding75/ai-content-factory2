@@ -205,11 +205,21 @@ test("review running state keeps editor and Run entry points without final issue
   const runningState = reviewWorkspace.slice(reviewWorkspace.indexOf("function RunningState"), reviewWorkspace.indexOf("function FailureState"));
   assert.match(reviewWorkspace, /copy\.report\.openEditor/);
   assert.match(reviewWorkspace, /href=\{`\/projects\/\$\{projectId\}\/works\/\$\{workId\}`\}/);
-  assert.match(reviewWorkspace, /Run ID: \{run\.runNumber\}/);
+  assert.match(reviewWorkspace, /Run ID: \{runLabel\}/);
   assert.match(reviewWorkspace, /href=\{`\/workflow-runs\/\$\{run\.id\}`\}/);
   assert.match(reviewWorkspace, /run\.startedAt \?\? run\.createdAt/);
   assert.match(runningState, /review-progress-card/);
   assert.doesNotMatch(runningState, /review-report-summary/);
+});
+
+test("review refresh restores the same ReviewRun context and surfaces source recovery errors", () => {
+  assert.match(reviewWorkspace, /getContentReviewSummary\(workId/);
+  assert.match(reviewWorkspace, /summary\.activeRun \?\? summary\.latestRun/);
+  assert.match(reviewWorkspace, /window\.setInterval/);
+  assert.match(reviewWorkspace, /workflow-runs\/\$\{run\.id\}/);
+  assert.match(reviewWorkspace, /const runLabel = run\.runNumber \?\? run\.id/);
+  assert.match(reviewWorkspace, /safeReviewError\(cause, copy\.errors\.source\)/);
+  assert.doesNotMatch(reviewWorkspace, /createContentReviewRun/);
 });
 
 test("review result summary uses real issue severities and category labels before the issue entry list", () => {
@@ -241,7 +251,7 @@ test("review failure states keep source and Run context, separate recovery seman
     reviewWorkspace.indexOf("function RealReportView"),
   );
   assert.match(failureState, /content\.current_version\.version_no/);
-  assert.match(failureState, /run\.runNumber/);
+  assert.match(failureState, /const runLabel = run\?\.runNumber \?\? run\?\.id/);
   assert.match(failureState, /copy\.states\.validationRetry/);
   assert.match(failureState, /copy\.states\.errorCode/);
   assert.match(reviewWorkspace, /retryReviewResultConsumption/);

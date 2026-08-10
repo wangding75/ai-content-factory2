@@ -132,11 +132,11 @@ export function ContentReviewWorkspace({
                 value: sourceResult.content_version,
               };
             }
-          } catch {
+          } catch (cause) {
             if (!controller.signal.aborted) {
               setEvents([]);
               setRunSource(null);
-              setRunSourceError(copy.errors.source);
+              setRunSourceError(safeReviewError(cause, copy.errors.source));
             }
           }
         } else {
@@ -529,6 +529,7 @@ function RunningState({
   state: "queued" | "running";
   events: WorkflowRunEventDto[];
 }) {
+  const runLabel = run.runNumber ?? run.id;
   const completedEvents = new Set(events.map((event) => event.eventType));
   const steps = [
     ["created", "queued"],
@@ -548,7 +549,7 @@ function RunningState({
             {copy.common.versionPrefix} V{source.version_no} ·{" "}
             {state === "queued" ? copy.states.queued : copy.states.running}
           </p>
-          <small>Run ID: {run.runNumber}</small>
+          <small className="review-running-run-id">Run ID: {runLabel}</small>
           <small>{copy.states.runningHint}</small>
         </div>
         <Link href={`/workflow-runs/${run.id}`}>
@@ -614,6 +615,7 @@ function FailureState({
 }) {
   const error = summary.latestError;
   const run = summary.latestRun;
+  const runLabel = run?.runNumber ?? run?.id;
   const consumption = summary.state === "result_consumption_failed";
   const title =
     summary.state === "runtime_failed"
@@ -644,7 +646,7 @@ function FailureState({
           </button>
           {run && (
             <>
-              <span className="review-failure-run-id">Run ID: {run.runNumber}</span>
+              <span className="review-failure-run-id">Run ID: {runLabel}</span>
               <Link href={`/workflow-runs/${run.id}`}>{copy.common.runDetail}</Link>
             </>
           )}
