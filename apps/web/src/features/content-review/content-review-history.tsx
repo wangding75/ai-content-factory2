@@ -2,7 +2,7 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 
 import Link from "next/link";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Icon } from "@/components/ui/icons";
 import {
   getReview,
@@ -12,6 +12,7 @@ import {
   type ReviewDetail,
   type ReviewHistoryEntry,
   type ReviewHistoryPage,
+  type ReviewState,
 } from "./content-review-api";
 import { reviewCopy as copy } from "./content-review-locale";
 import {
@@ -38,6 +39,9 @@ export function ContentReviewHistory({
   const [selected, setSelected] = useState<ReviewHistoryEntry | null>(null);
   const [detail, setDetail] = useState<ReviewDetail | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<ReviewState | "all">("all");
+  const [versionFilter, setVersionFilter] = useState("all");
+  const [searchQuery, setSearchQuery] = useState("");
 
   const load = useCallback(
     async (signal?: AbortSignal) => {
@@ -51,7 +55,7 @@ export function ContentReviewHistory({
         );
         if (!signal?.aborted) {
           setPage(next);
-          setSelected(next.items[0] ?? null);
+          setSelected(sortHistoryItems(next.items)[0] ?? null);
         }
       } catch (cause) {
         if (!signal?.aborted)
@@ -74,6 +78,68 @@ export function ContentReviewHistory({
       ? selected.reportSummary?.id
       : selected.id
     : null;
+
+  const visibleItems = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase();
+    return sortHistoryItems(page?.items ?? []).filter((item) => {
+      if (statusFilter !== "all" && (!isRealReviewHistoryItem(item) || item.state !== statusFilter))
+        return false;
+      if (versionFilter !== "all" && (!isRealReviewHistoryItem(item) || String(item.sourceContentVersionSummary.versionNo) !== versionFilter))
+        return false;
+      if (!query) return true;
+      if (!isRealReviewHistoryItem(item)) return item.id.toLowerCase().includes(query);
+      return [item.workflowRun.runNumber, item.reportSummary?.id ?? ""]
+        .join(" ")
+        .toLowerCase()
+        .includes(query);
+    });
+  }, [page, searchQuery, statusFilter, versionFilter]);
+
+  const filterOptions = useMemo(
+    () =>
+      Array.from(
+        new Set(
+          (page?.items ?? [])
+            .filter(isRealReviewHistoryItem)
+            .map((item) => String(item.sourceContentVersionSummary.versionNo)),
+        ),
+      ).sort((left, right) => Number(right) - Number(left)),
+    [page],
+  );
+
+  const summaryCounts = useMemo(() => {
+    const items = page?.items ?? [];
+    return {
+      success: items.filter((item) =>
+        isRealReviewHistoryItem(item) ? item.state === "review_ready" : true,
+      ).length,
+      failure: items.filter(
+        (item) =>
+          isRealReviewHistoryItem(item) &&
+          ["runtime_failed", "output_validation_failed", "result_consumption_failed"].includes(item.state),
+      ).length,
+      running: items.filter(
+        (item) =>
+          isRealReviewHistoryItem(item) &&
+          (item.state === "queued" || item.state === "running"),
+      ).length,
+    };
+  }, [page]);
+
+  const resetFilters = () => {
+    setStatusFilter("all");
+    setVersionFilter("all");
+    setSearchQuery("");
+  };
+
+  useEffect(() => {
+    if (!visibleItems.length) {
+      setSelected(null);
+      return;
+    }
+    if (!selected || !visibleItems.some((item) => historyKey(item) === historyKey(selected)))
+      setSelected(visibleItems[0]);
+  }, [selected, visibleItems]);
 
   useEffect(() => {
     if (!selectedReportId) {
@@ -107,12 +173,64 @@ export function ContentReviewHistory({
           </Link>
         </nav>
       </header>
+      {page?.items.length ? (
+        <section className="review-history-filters" aria-label={copy.history.filters}>
+          <div className="review-history-filter-object">
+            <span>{copy.history.object}</span>
+            <strong>
+              {page.items.find(isRealReviewHistoryItem)?.sourceContentVersionSummary.title ??
+                copy.common.noValue}
+            </strong>
+          </div>
+          <label>
+            <span>{copy.history.status}</span>
+            <select
+              value={statusFilter}
+              onChange={(event) => setStatusFilter(event.target.value as ReviewState | "all")}
+            >
+              <option value="all">{copy.history.allStatus}</option>
+              <option value="queued">{reviewStateLabel("queued")}</option>
+              <option value="running">{reviewStateLabel("running")}</option>
+              <option value="review_ready">{reviewStateLabel("review_ready")}</option>
+              <option value="runtime_failed">{reviewStateLabel("runtime_failed")}</option>
+              <option value="output_validation_failed">{reviewStateLabel("output_validation_failed")}</option>
+              <option value="result_consumption_failed">{reviewStateLabel("result_consumption_failed")}</option>
+            </select>
+          </label>
+          <label>
+            <span>{copy.history.version}</span>
+            <select value={versionFilter} onChange={(event) => setVersionFilter(event.target.value)}>
+              <option value="all">{copy.history.allVersions}</option>
+              {filterOptions.map((version) => (
+                <option key={version} value={version}>V{version}</option>
+              ))}
+            </select>
+          </label>
+          <label className="review-history-filter-search">
+            <span>{copy.history.searchPlaceholder}</span>
+            <input
+              value={searchQuery}
+              onChange={(event) => setSearchQuery(event.target.value)}
+              placeholder={copy.history.searchPlaceholder}
+            />
+          </label>
+          <button type="button" onClick={resetFilters}>
+            {copy.history.resetFilters}
+          </button>
+        </section>
+      ) : null}
       <section className="review-history-summary">
         <span>
           {copy.history.allRuns} <b>{page?.total ?? 0}</b>
         </span>
         <span>
-          {copy.history.currentPage} <b>{page?.items.length ?? 0}</b>
+          {copy.history.success} <b>{summaryCounts.success}</b>
+        </span>
+        <span>
+          {copy.history.failure} <b>{summaryCounts.failure}</b>
+        </span>
+        <span>
+          {copy.history.runningCount} <b>{summaryCounts.running}</b>
         </span>
       </section>
       {loading ? (
@@ -125,6 +243,8 @@ export function ContentReviewHistory({
         />
       ) : !page?.items.length ? (
         <HistoryState title={copy.history.empty} />
+      ) : !visibleItems.length ? (
+        <HistoryState title={copy.history.noMatches} retry={resetFilters} retryLabel={copy.history.resetFilters} />
       ) : (
         <div className="review-history-layout">
           <section className="review-history-table-wrap">
@@ -136,11 +256,12 @@ export function ContentReviewHistory({
                   <th>{copy.history.status}</th>
                   <th>{copy.history.conclusion}</th>
                   <th>{copy.history.workflow}</th>
+                  <th>{copy.history.runNumber}</th>
                   <th>{copy.history.action}</th>
                 </tr>
               </thead>
               <tbody>
-                {page.items.map((item) => (
+                {visibleItems.map((item) => (
                   <HistoryRow
                     key={historyKey(item)}
                     item={item}
@@ -203,6 +324,7 @@ function HistoryRow({
         <td><span className="history-status succeeded">{copy.history.completed}</span></td>
         <td>{reviewConclusionLabel(item.conclusion)}</td>
         <td>{copy.history.mock}</td>
+        <td>—</td>
         <td>
           <Link
             href={`/projects/${projectId}/works/${workId}/review?reportId=${encodeURIComponent(item.id)}`}
@@ -229,6 +351,7 @@ function HistoryRow({
           : copy.history.noReport}
       </td>
       <td>{item.reportSummary ? copy.history.reviewWorkflow : reviewStateLabel(state)}</td>
+      <td><code>{run.runNumber}</code></td>
       <td>
         {item.reportSummary ? (
           <Link
@@ -280,6 +403,14 @@ function HistoryDetail({
       <h3>{copy.history.runDetail}</h3>
       <dl>
         <div>
+          <dt>{copy.history.runNumber}</dt>
+          <dd>{real ? run?.runNumber ?? copy.common.noValue : copy.common.noValue}</dd>
+        </div>
+        <div>
+          <dt>{copy.history.reportId}</dt>
+          <dd>{real ? item.reportSummary?.id ?? copy.common.noValue : copy.common.noValue}</dd>
+        </div>
+        <div>
           <dt>{copy.history.version}</dt>
           <dd>
             {real
@@ -298,6 +429,10 @@ function HistoryDetail({
           <dd>
             {formatReviewTime(run?.createdAt ?? (!real ? item.created_at : null))}
           </dd>
+        </div>
+        <div>
+          <dt>{copy.report.completedAt}</dt>
+          <dd>{real ? formatReviewTime(item.reportSummary?.completedAt) : copy.common.noValue}</dd>
         </div>
       </dl>
       {loading ? (
@@ -324,6 +459,19 @@ function HistoryDetail({
   );
 }
 
+const sortHistoryItems = (items: ReviewHistoryEntry[]) =>
+  [...items].sort(
+    (left, right) =>
+      historyTimestamp(right).getTime() - historyTimestamp(left).getTime(),
+  );
+
+const historyTimestamp = (item: ReviewHistoryEntry) =>
+  new Date(
+    isRealReviewHistoryItem(item)
+      ? item.workflowRun.createdAt
+      : item.created_at,
+  );
+
 const historyKey = (item: ReviewHistoryEntry) =>
   isRealReviewHistoryItem(item) ? item.workflowRun.id : item.id;
 
@@ -332,18 +480,20 @@ function HistoryState({
   description,
   loading,
   retry,
+  retryLabel,
 }: {
   title: string;
   description?: string;
   loading?: boolean;
   retry?: () => void;
+  retryLabel?: string;
 }) {
   return (
     <section className="review-history-state" aria-busy={loading}>
       <Icon name={loading ? "timeline" : "timeline"} size={30} />
       <h3>{title}</h3>
       {description && <p>{description}</p>}
-      {retry && <button onClick={retry}>{copy.common.retry}</button>}
+      {retry && <button onClick={retry}>{retryLabel ?? copy.common.retry}</button>}
     </section>
   );
 }

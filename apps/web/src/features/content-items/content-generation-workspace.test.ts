@@ -10,6 +10,7 @@ const status = readFileSync(join(root, "content-generation-status.tsx"), "utf8")
 const candidate = readFileSync(join(root, "content-candidate-compare.tsx"), "utf8");
 const locale = readFileSync(join(root, "content-generation-locale.ts"), "utf8");
 const reviewWorkspace = readFileSync(join(process.cwd(), "src", "features", "content-review", "content-review-workspace.tsx"), "utf8");
+const reviewHistory = readFileSync(join(process.cwd(), "src", "features", "content-review", "content-review-history.tsx"), "utf8");
 
 test("content generation remains on the editor route with its three context tabs", () => {
   assert.match(editor, /getContentGenerationSummary/);
@@ -238,6 +239,22 @@ test("unconfigured review is a blocked business state with workflow repair guida
     reviewWorkspace,
     /<button type="button" onClick=\{onStart\} disabled=\{!canStart\}/,
   );
+});
+
+test("review history stays real, chronological, filterable, and separates report from run entry points", () => {
+  assert.match(reviewHistory, /listContentReviewHistory\(/);
+  assert.match(reviewHistory, /sortHistoryItems/);
+  assert.match(reviewHistory, /review-history-filters/);
+  assert.match(reviewHistory, /statusFilter/);
+  assert.match(reviewHistory, /versionFilter/);
+  assert.match(reviewHistory, /searchQuery/);
+  assert.match(reviewHistory, /reviewStateLabel\("runtime_failed"\)/);
+  assert.match(reviewHistory, /item\.reportSummary\?\.id/);
+  assert.match(reviewHistory, /run\.runNumber/);
+  assert.match(reviewHistory, /copy\.history\.viewReport/);
+  assert.match(reviewHistory, /copy\.history\.viewFailure/);
+  assert.match(reviewHistory, /copy\.history\.viewProgress/);
+  assert.doesNotMatch(reviewHistory, /setSelected\(.*MockReviewReport/);
 });
 
 test("summary polling is isolated from the editable draft refresh", () => {
