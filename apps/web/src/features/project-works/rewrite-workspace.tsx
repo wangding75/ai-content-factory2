@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ApiError } from "@/lib/api";
-import { cancelWorkflowRun, getWorkflowRun, listWorkflowRunEvents, retryWorkflowRun, type WorkflowRunDto, type WorkflowRunEventVm } from "@/features/workflow-runs/workflow-run-api";
+import { cancelWorkflowRun, formatWorkflowRunTime, getWorkflowRun, listWorkflowRunEvents, retryWorkflowRun, type WorkflowRunDto, type WorkflowRunEventVm } from "@/features/workflow-runs/workflow-run-api";
 import { getReview, isRealReviewDetail, type RealReviewIssue } from "@/features/content-review/content-review-api";
 import { reviewLocationLabel } from "@/features/content-review/content-review-presentation";
 import { getContentVersion } from "@/features/content-items/content-item-http-api";
@@ -97,9 +97,66 @@ function exactRunSummary(summary: RewriteSummary, run: WorkflowRunDto, events: W
 
 function RewriteRunState({ projectId, workId, summary, run, events, retrying, cancelling, confirmCancel, onCancel, onDismissCancel, onConfirmCancel, onRetryRuntime, onRetryConsumption, onRefresh }: { projectId: string; workId: string; summary: RewriteSummary; run: WorkflowRunDto | null; events: WorkflowRunEventVm[]; retrying: boolean; cancelling: boolean; confirmCancel: boolean; onCancel: () => void; onDismissCancel: () => void; onConfirmCancel: () => void; onRetryRuntime: () => void; onRetryConsumption: () => void; onRefresh: () => void }) {
   if (summary.state === "candidate_ready" && run) return <RewriteResultPanel projectId={projectId} workId={workId} runId={run.id} onRefresh={onRefresh} />;
-  const isConsumption = summary.state === "result_consumption_failed"; const isValidation = summary.state === "output_validation_failed";
-  const failed = !active(summary.state);
-  return <main className="rewrite-page"><section className={`rewrite-state-card ${failed ? "is-failed" : "is-active"}`}><header><span className="rewrite-state-badge">{failed ? "需要处理" : summary.state === "queued" ? "排队中" : "运行中"}</span><h1>{failed ? (isConsumption ? "重写结果提交失败" : isValidation ? "重写输出未通过校验" : summary.state === "runtime_failed" ? "重写任务执行失败" : "重写任务已取消") : summary.state === "queued" ? "重写任务正在排队" : "重写任务正在运行"}</h1><p>{failed ? summary.latestError?.message ?? "任务未能完成，请按提示继续操作。" : summary.state === "queued" ? "任务已创建，正在等待执行。" : "正在依据固定来源版本生成候选正文。"}</p></header><dl><div><dt>固定来源版本</dt><dd>V{summary.sourceContentVersionSummary.versionNo} · {summary.sourceContentVersionSummary.title}</dd></div><div><dt>审核报告</dt><dd>已固定</dd></div><div><dt>已选问题</dt><dd>{summary.selectedIssueSummary?.total ?? 0} 个</dd></div><div><dt>当前运行</dt><dd>{run?.runNumber ?? "正在恢复"}</dd></div></dl>{events.length > 0 && <section className="rewrite-progress"><h2>执行进度</h2><ol>{events.map(event => <li key={event.id}>{event.title} · {event.createdAtLabel}</li>)}</ol></section>}<footer>{active(summary.state) && run?.status !== "cancelled" && <button type="button" disabled={cancelling} onClick={onCancel}>{cancelling ? "取消中…" : "取消运行"}</button>}{failed && !isConsumption && <button type="button" className="primary" disabled={!run || retrying} onClick={onRetryRuntime}>{retrying ? "重试中…" : "重新运行"}</button>}{isConsumption && <button type="button" className="primary" disabled={!run || retrying} onClick={onRetryConsumption}>{retrying ? "提交中…" : "重试提交结果"}</button>}<button type="button" onClick={onRefresh}>刷新状态</button></footer>{confirmCancel && <div className="rewrite-dialog-layer"><section className="rewrite-confirm-dialog" role="dialog" aria-modal="true"><h2>确认取消运行</h2><p>取消后该运行将停止，无法恢复为运行中。</p><footer><button type="button" disabled={cancelling} onClick={onDismissCancel}>返回</button><button type="button" className="primary" disabled={cancelling} onClick={onConfirmCancel}>{cancelling ? "取消中…" : "确认取消"}</button></footer></section></div>}</section></main>;
+  if (active(summary.state)) return <RewriteRunningState summary={summary} run={run} events={events} cancelling={cancelling} confirmCancel={confirmCancel} onCancel={onCancel} onDismissCancel={onDismissCancel} onConfirmCancel={onConfirmCancel} onRefresh={onRefresh} />;
+  return <RewriteFailedState summary={summary} run={run} events={events} retrying={retrying} cancelling={cancelling} confirmCancel={confirmCancel} onDismissCancel={onDismissCancel} onConfirmCancel={onConfirmCancel} onRetryRuntime={onRetryRuntime} onRetryConsumption={onRetryConsumption} onRefresh={onRefresh} />;
+}
+
+function RewriteFailedState({ summary, run, events, retrying, cancelling, confirmCancel, onDismissCancel, onConfirmCancel, onRetryRuntime, onRetryConsumption, onRefresh }: { summary: RewriteSummary; run: WorkflowRunDto | null; events: WorkflowRunEventVm[]; retrying: boolean; cancelling: boolean; confirmCancel: boolean; onDismissCancel: () => void; onConfirmCancel: () => void; onRetryRuntime: () => void; onRetryConsumption: () => void; onRefresh: () => void }) {
+  const isConsumption = summary.state === "result_consumption_failed";
+  const isValidation = summary.state === "output_validation_failed";
+  const title = isConsumption ? "重写结果提交失败" : isValidation ? "重写输出未通过校验" : summary.state === "runtime_failed" ? "重写任务执行失败" : "重写任务已取消";
+  return (
+    <main className="rewrite-page"><section className="rewrite-state-card is-failed">
+      <header><span className="rewrite-state-badge">需要处理</span><h1>{title}</h1><p>{summary.latestError?.message ?? "任务未能完成，请按提示继续操作。"}</p></header>
+      <dl><div><dt>固定来源版本</dt><dd>V{summary.sourceContentVersionSummary.versionNo} · {summary.sourceContentVersionSummary.title}</dd></div><div><dt>审核报告</dt><dd>已固定</dd></div><div><dt>已选问题</dt><dd>{summary.selectedIssueSummary?.total ?? 0} 个</dd></div><div><dt>当前运行</dt><dd>{run?.runNumber ?? "正在恢复"}</dd></div></dl>
+      {events.length > 0 && <section className="rewrite-progress"><h2>执行进度</h2><ol>{events.map((event) => <li key={event.id}>{event.title} · {event.createdAtLabel}</li>)}</ol></section>}
+      <footer>{!isConsumption && <button type="button" className="primary" disabled={!run || retrying} onClick={onRetryRuntime}>{retrying ? "重试中…" : "重新运行"}</button>}{isConsumption && <button type="button" className="primary" disabled={!run || retrying} onClick={onRetryConsumption}>{retrying ? "提交中…" : "重试提交结果"}</button>}<button type="button" onClick={onRefresh}>刷新状态</button></footer>
+      {confirmCancel && <div className="rewrite-dialog-layer"><section className="rewrite-confirm-dialog" role="dialog" aria-modal="true"><h2>确认取消运行</h2><p>取消后该运行将停止，无法恢复为运行中。</p><footer><button type="button" disabled={cancelling} onClick={onDismissCancel}>返回</button><button type="button" className="primary" disabled={cancelling} onClick={onConfirmCancel}>{cancelling ? "取消中…" : "确认取消"}</button></footer></section></div>}
+    </section></main>
+  );
+}
+
+function RewriteRunningState({ summary, run, events, cancelling, confirmCancel, onCancel, onDismissCancel, onConfirmCancel, onRefresh }: { summary: RewriteSummary; run: WorkflowRunDto | null; events: WorkflowRunEventVm[]; cancelling: boolean; confirmCancel: boolean; onCancel: () => void; onDismissCancel: () => void; onConfirmCancel: () => void; onRefresh: () => void }) {
+  const selectedIssues = summary.selectedIssueSummary?.items ?? [];
+  const queued = summary.state === "queued";
+  return (
+    <main className="rewrite-page rewrite-running-page">
+      <section className="rewrite-running-banner" aria-live="polite">
+        <div className="rewrite-running-banner-main">
+          <span className="rewrite-running-icon" aria-hidden="true">↻</span>
+          <div>
+            <div className="rewrite-running-heading"><span className="rewrite-state-badge">{queued ? "等待执行" : "运行中"}</span><h1>正文重写{queued ? "已创建，等待执行" : "正在运行"}</h1></div>
+            <p>{queued ? "任务已创建，正在等待工作流执行。" : `正在根据 ${selectedIssues.length} 个审核问题生成候选正文。`}</p>
+          </div>
+        </div>
+        {run && <Link href={`/workflow-runs/${encodeURIComponent(run.id)}`}>查看执行详情 <span aria-hidden="true">→</span></Link>}
+      </section>
+      <section className="rewrite-running-meta" aria-label="重写运行信息">
+        <div><dt>Run</dt><dd><code>{run?.runNumber ?? run?.id ?? "恢复中"}</code></dd></div>
+        <div><dt>阶段</dt><dd>正文重写</dd></div>
+        <div><dt>来源版本</dt><dd>V{summary.sourceContentVersionSummary.versionNo} · {summary.sourceContentVersionSummary.title}</dd></div>
+        <div><dt>开始时间</dt><dd>{formatWorkflowRunTime(run?.startedAt ?? run?.createdAt)}</dd></div>
+      </section>
+      <section className="rewrite-running-layout">
+        <article className="rewrite-running-issues">
+          <header><h2>来源审核问题</h2><span>共 {selectedIssues.length} 项</span></header>
+          {selectedIssues.length ? <div>{selectedIssues.map((issue) => <article key={issue.reviewIssueId}><span className="rewrite-running-issue-marker" aria-hidden="true">!</span><div><strong>{issue.title}</strong><p>{issue.severity} · {issue.issueKey}</p></div></article>)}</div> : <p>正在恢复本次运行的问题信息。</p>}
+        </article>
+        <article className="rewrite-running-wait">
+          <span className="rewrite-running-wait-icon" aria-hidden="true">↻</span>
+          <h2>等待重写结果</h2>
+          <p>任务完成后将生成候选正文，不会自动替换当前版本。</p>
+          {events.length > 0 && <ol>{events.map((event) => <li key={event.id}><span>{event.title}</span><small>{event.createdAtLabel}</small></li>)}</ol>}
+        </article>
+      </section>
+      <footer className="rewrite-running-actions">
+        {run && <Link href={`/workflow-runs/${encodeURIComponent(run.id)}`}>查看执行详情</Link>}
+        <button type="button" disabled={cancelling} onClick={onCancel}>{cancelling ? "取消中…" : "取消运行"}</button>
+        <button type="button" onClick={onRefresh}>刷新状态</button>
+      </footer>
+      {confirmCancel && <div className="rewrite-dialog-layer"><section className="rewrite-confirm-dialog" role="dialog" aria-modal="true"><h2>确认取消运行</h2><p>取消后该运行将停止，无法恢复为运行中。</p><footer><button type="button" disabled={cancelling} onClick={onDismissCancel}>返回</button><button type="button" className="primary" disabled={cancelling} onClick={onConfirmCancel}>{cancelling ? "取消中…" : "确认取消"}</button></footer></section></div>}
+    </main>
+  );
 }
 
 // This remains only for the frozen source-level D5 assertions; candidate rendering uses RewriteResultPanel.

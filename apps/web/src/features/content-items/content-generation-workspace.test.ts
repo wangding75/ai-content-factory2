@@ -299,6 +299,18 @@ test("rewrite configuration drawer is a read-only summary with real binding stat
   assert.doesNotMatch(configDrawerSource, /onChange=/);
 });
 
+test("rewrite running state keeps real Run context, source issues, waiting result, and no premature candidate", () => {
+  assert.match(rewriteWorkspace, /RewriteRunningState/);
+  assert.match(rewriteWorkspace, /active\(summary\.state\)/);
+  assert.match(rewriteWorkspace, /run\?\.runNumber/);
+  assert.match(rewriteWorkspace, /summary\.selectedIssueSummary\?\.items/);
+  assert.match(rewriteWorkspace, /formatWorkflowRunTime/);
+  assert.match(rewriteWorkspace, /等待重写结果/);
+  assert.match(rewriteWorkspace, /workflow-runs/);
+  assert.match(rewriteWorkspace, /candidate_ready/);
+  assert.match(rewriteWorkspace, /rewrite-running-banner/);
+});
+
 test("summary polling is isolated from the editable draft refresh", () => {
   assert.match(editor, /\["queued", "running"\]/);
   assert.match(editor, /refreshGenerationSummary/);
