@@ -524,11 +524,14 @@ function RewriteCreateView({
               <button type="button" className="primary" onClick={() => setConfirmCreate(true)}>继续确认创建</button>
             </section>
           ) : preflight?.status === "blocked" ? (
-            <section className="rewrite-preflight" aria-label="预检结果">
-              <h2>预检未通过</h2>
+            <section className="rewrite-preflight rewrite-preflight-blocked-state" aria-label="预检结果">
+              <div className="rewrite-preflight-blocked-summary">
+                <strong>预检未通过</strong>
+                <p>来源审核报告、已选问题、补充要求和重写策略均已保留；处理阻断项后才能创建重写任务。</p>
+              </div>
               <WorkflowPreflightBlocker reasons={rewritePreflightBlockerReasons(preflight)} />
-              <ul>{preflight.checks.map((item) => <li key={item.code}>{item.status === "passed" ? "通过" : "阻塞"}：{item.message}</li>)}</ul>
-              <button type="button" className="primary" disabled={checking || !selected.length} onClick={check}>{checking ? "预检中…" : "重新预检"}</button>
+              <ul className="rewrite-preflight-check-list" aria-label="正文重写预检项目">{preflight.checks.map((item) => <li key={item.code} className={item.status}>{item.status === "passed" ? "通过" : "阻塞"}：{item.message}</li>)}</ul>
+              <button type="button" className="primary rewrite-preflight-recheck" disabled={checking || !selected.length} onClick={check}>{checking ? "预检中…" : "重新预检"}</button>
             </section>
           ) : (
             <button type="button" className="primary" disabled={checking || !selected.length} onClick={check}>

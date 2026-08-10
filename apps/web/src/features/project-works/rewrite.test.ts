@@ -35,6 +35,10 @@ test("rewrite renders the shared blocker only for blocked preflight results", ()
   assert.match(page, /rewritePreflightBlockerReasons\(preflight\)/);
   assert.match(page, /preflight\?\.status === "blocked"/);
   assert.match(page, /preflight\?\.status === "passed"/);
+  assert.match(page, /rewrite-preflight-blocked-state/);
+  assert.match(page, /来源审核报告、已选问题、补充要求和重写策略均已保留/);
+  assert.match(page, /rewrite-preflight-recheck/);
+  assert.match(page, /confirmCreate && preflight\?\.status === "passed"/);
 });
 
 test("create lifecycle invalidates changed input, preserves unknown results and clears deterministic conflicts", () => {
