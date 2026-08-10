@@ -17,6 +17,19 @@ test("content generation remains on the editor route with its three context tabs
   assert.doesNotMatch(editor, /content-generation-runs\/.*route/);
 });
 
+test("chapter goal context is an independent read-only area backed by the chapter plan", () => {
+  assert.match(editor, /useState<"goal" \| "story" \| "materials">\("goal"\)/);
+  assert.match(editor, /listChapterPlans\(/);
+  assert.match(editor, /className="content-goal-panel"/);
+  assert.match(editor, /来自当前章节规划的只读创作上下文/);
+  assert.match(editor, /plan\?\.chapter_goal/);
+  assert.match(editor, /plan\?\.creation_notes/);
+  assert.match(editor, /plan\?\.summary/);
+  assert.match(editor, /className="content-goal-readonly"/);
+  assert.match(editor, /contextTab === "story"/);
+  assert.match(editor, /contextTab === "materials"/);
+});
+
 test("summary polling is isolated from the editable draft refresh", () => {
   assert.match(editor, /\["queued", "running"\]/);
   assert.match(editor, /refreshGenerationSummary/);

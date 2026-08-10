@@ -480,7 +480,34 @@ export function ContentEditorWorkspace({
         </section>
         <aside className="content-editor-right">
           <div className="content-context-tabs" role="tablist"><button role="tab" aria-selected={contextTab === "goal"} onClick={() => setContextTab("goal")}>章节目标</button><button role="tab" aria-selected={contextTab === "story"} onClick={() => setContextTab("story")}>故事情报</button><button role="tab" aria-selected={contextTab === "materials"} onClick={() => setContextTab("materials")}>素材库</button></div>
-          {contextTab === "goal" && <><Info title="本章目标" value={plan?.chapter_goal ?? "未设置"} /><Info title="创作提醒" value={plan?.creation_notes ?? "未设置"} /></>}
+          {contextTab === "goal" && (
+            <section className="content-goal-panel" aria-label="章节目标">
+              <header className="content-goal-header">
+                <div>
+                  <span className="content-goal-eyebrow">章节规划</span>
+                  <h2>章节目标</h2>
+                  <p>来自当前章节规划的只读创作上下文。</p>
+                </div>
+                <span className="content-goal-readonly">只读</span>
+              </header>
+              <section className="content-goal-section">
+                <h3><Icon name="lightbulb" size={15} />本章目标</h3>
+                <p>{plan?.chapter_goal ?? "未设置章节目标"}</p>
+              </section>
+              <section className="content-goal-section">
+                <h3><Icon name="timeline" size={15} />关键情节</h3>
+                <p>{plan?.summary ?? "未设置章节摘要"}</p>
+              </section>
+              <section className="content-goal-note">
+                <span>创作提醒</span>
+                <p>{plan?.creation_notes ?? "未设置创作提醒"}</p>
+              </section>
+              <dl className="content-goal-meta">
+                <div><dt>章节</dt><dd>第 {plan?.chapter_no ?? "—"} 章</dd></div>
+                <div><dt>规划状态</dt><dd>{plan?.status === "confirmed" ? "已确认" : "待确认"}</dd></div>
+              </dl>
+            </section>
+          )}
           {contextTab === "story" && <><Info title="故事线" value={plan?.storyline_refs_json.length ? `${plan.storyline_refs_json.length} 条关联` : "未加载"} /><Info title="关联伏笔" value={plan?.foreshadowing_refs_json.length ? `${plan.foreshadowing_refs_json.length} 项关联` : "无"} /></>}
           {contextTab === "materials" && <Info title="关联素材" value={plan?.material_refs_json.length ? `${plan.material_refs_json.length} 项关联` : "无"} />}
           <Info title="版本记录" value={`v${v.version_no}${detail.content_item.current_version_id === v.id ? "（当前）" : ""} · ${contentVersionSourceLabel(v.source)}`} />
