@@ -86,6 +86,15 @@ test("queued generation exposes run details and safe cancellation without candid
   assert.doesNotMatch(status, /summary\.state === "queued"[^\n]*onCandidate/);
 });
 
+test("running generation keeps the editor-level status compact and shows real run timing and event context", () => {
+  assert.match(status, /summary\.state === "running"/);
+  assert.match(status, /run\.startedAt \?\? run\.createdAt/);
+  assert.match(status, /latestEvent \? eventLabel\(latestEvent\.eventType\)/);
+  assert.match(status, /content-generation-running-meta/);
+  assert.match(status, /visibleEvents\.length/);
+  assert.doesNotMatch(status, /content-editor-state/);
+});
+
 test("summary polling is isolated from the editable draft refresh", () => {
   assert.match(editor, /\["queued", "running"\]/);
   assert.match(editor, /refreshGenerationSummary/);

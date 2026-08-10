@@ -9,6 +9,7 @@ import { contentGenerationCopy as copy } from "./content-generation-locale";
 const failed = new Set(["runtime_failed", "output_validation_failed", "result_consumption_failed"]);
 const safe = (message: string | null | undefined) => message && message.length <= 300 && !/(stack|sql|postgres|https?:\/\/|\\\\)/i.test(message) ? message : copy.safeFailure;
 const eventLabel = (value: string) => copy.events[value] ?? copy.eventFallback;
+const runTimeLabel = (value: string | null) => { if (!value) return "—"; const date = new Date(value); return Number.isNaN(date.getTime()) ? "—" : date.toLocaleString("zh-CN", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" }); };
 
 export function ContentGenerationStatus({ projectId, summary, onRefresh, onCandidate }: { projectId: string; summary: ContentGenerationSummary; onRefresh: () => Promise<void>; onCandidate: () => void }) {
   const [fetchedEvents, setFetchedEvents] = useState<GenerationEvent[] | null>(null);
@@ -28,6 +29,8 @@ export function ContentGenerationStatus({ projectId, summary, onRefresh, onCandi
   const retryType = summary.state === "result_consumption_failed" ? "result-consumption-retry" : "runtime-retry";
   const retryPayload = run ? { runId: run.id, state: summary.state, runVersion: run.version, retryType } : null;
   const retryIdentity = retryPayload ? JSON.stringify(retryPayload) : "";
+  const visibleEvents = fetchedEvents ?? summary.latestEvents;
+  const latestEvent = visibleEvents[visibleEvents.length - 1];
   const retry = async () => {
     if (!run || !retryPayload || submitting) return;
     const scope = `content-generation-retry:${run.id}`;
@@ -58,6 +61,7 @@ export function ContentGenerationStatus({ projectId, summary, onRefresh, onCandi
     <div><strong>{title}</strong>{run && <span>Run ID: {run.runNumber}</span>}
       {summary.state === "queued" && <span>{copy.queuedDetail}</span>}{summary.state === "running" && <span>{copy.runningDetail}</span>}{summary.state === "candidate_ready" && <span>{copy.candidateDetail(summary.latestCandidateVersion?.version_no)}</span>}{failed.has(summary.state) && <span>{safe(summary.latestError?.message ?? run?.errorMessage)}</span>}{summary.state === "not_configured" && <span>{copy.notConfiguredDetail}</span>}
     </div>
+    {summary.state === "running" && run && <div className="content-generation-running-meta" role="status"><span>开始：{runTimeLabel(run.startedAt ?? run.createdAt)}</span><span>最新阶段：{latestEvent ? eventLabel(latestEvent.eventType) : "等待事件"}</span><span>已记录 {visibleEvents.length} 个事件</span></div>}
     <div className="content-generation-status-actions">
       {summary.state === "candidate_ready" && <button onClick={onCandidate}>{copy.viewCandidate}</button>}{run && <button onClick={() => setShowEvents((x) => !x)}>{showEvents ? copy.hideDetails : copy.viewDetails}</button>}{(summary.state === "queued" || summary.state === "running") && run && <Link href={`/workflow-runs/${run.id}`}>{copy.workflowCenter}</Link>}{summary.state === "queued" && run && <button className="content-generation-cancel" onClick={() => void cancel()} disabled={cancelling}>{cancelling ? copy.cancellingRun : copy.cancelRun}</button>}{summary.state === "not_configured" && <Link href={`/projects/${projectId}/settings?tab=workflow-bindings`}>{copy.configureWorkflow}</Link>}
       {summary.state === "runtime_failed" && <button onClick={() => void retry()} disabled={submitting}>{submitting ? copy.retrying : copy.retryRuntime}</button>}{summary.state === "output_validation_failed" && <button onClick={() => void retry()} disabled={submitting}>{submitting ? copy.retrying : copy.retryRuntime}</button>}{summary.state === "result_consumption_failed" && <button onClick={() => void retry()} disabled={submitting}>{submitting ? copy.retrying : copy.retryConsumption}</button>}
