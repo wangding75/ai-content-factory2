@@ -58,11 +58,21 @@ test("batch abandon confirmation separates irreversible impact from safe cancell
 });
 
 test("stale conflict dialog offers recompare and refresh options without force adopt", () => {
-  assert.match(actionDialogsSource, /基线与版本冲突处理/);
+  assert.match(actionDialogsSource, /候选基线已过期/);
   assert.match(actionDialogsSource, /重新比较/);
   assert.match(actionDialogsSource, /刷新最新版本/);
   assert.match(actionDialogsSource, /已禁止强制覆盖/);
   assert.doesNotMatch(actionDialogsSource, /force adopt/i);
+});
+
+test("stale conflict dialog explains baseline/current version relation and safe recovery", () => {
+  assert.match(actionDialogsSource, /版本冲突关系/);
+  assert.match(actionDialogsSource, /候选基线版本/);
+  assert.match(actionDialogsSource, /当前章节版本/);
+  assert.match(actionDialogsSource, /线上版本已变更/);
+  assert.match(actionDialogsSource, /处理建议/);
+  assert.match(actionDialogsSource, /保留当前章节/);
+  assert.match(actionDialogsSource, /不能直接采用或覆盖当前章节/);
 });
 
 test("candidate batch detail page wires single adopt, discard, bulk adopt, and abandon actions with idempotency keys", () => {

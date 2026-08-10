@@ -476,9 +476,12 @@ export function StaleConflictDialog({
       aria-modal="true"
       aria-labelledby="stale-conflict-title"
     >
-      <div className="chapter-plan-dialog-content">
+      <div className="chapter-plan-dialog-content stale-conflict-dialog">
         <header className="chapter-plan-dialog-header">
-          <h3 id="stale-conflict-title">基线与版本冲突处理</h3>
+          <div className="stale-conflict-title">
+            <span aria-hidden="true"><Icon name="info" size={20} /></span>
+            <h3 id="stale-conflict-title">候选基线已过期</h3>
+          </div>
           <button
             type="button"
             className="chapter-plan-dialog-close"
@@ -490,25 +493,47 @@ export function StaleConflictDialog({
         </header>
 
         <div className="chapter-plan-dialog-body">
-          <div className="chapter-plan-status-banner warning">
-            <Icon name="info" size={20} />
+          <section className="stale-conflict-lead" role="alert">
             <div>
-              <strong>候选基线已变更或存在版本冲突</strong>
+              <strong>第 {candidate.chapterNo} 章需要重新比较</strong>
               <p>
-                第 {candidate.chapterNo} 章候选在生成后，线上对应的正式章节或服务端版本已更新。
-                系统已禁止强制覆盖操作。
+                当前章节在候选生成后已被修改，候选基于旧版本生成，不能直接采用或覆盖当前章节。
               </p>
             </div>
+          </section>
+
+          <section className="stale-conflict-version-grid" aria-label="版本冲突关系">
+            <article>
+              <span>候选基线版本</span>
+              <strong>{candidate.baseChapterPlanVersion ? `第 ${candidate.baseChapterPlanVersion} 版` : "未记录"}</strong>
+              <small>候选生成时读取的版本</small>
+            </article>
+            <article className="current">
+              <span>当前章节版本</span>
+              <strong>线上版本已变更</strong>
+              <small>刷新后获取最新版本</small>
+            </article>
+          </section>
+
+          <div className="stale-conflict-context">
+            <span>来源批次 ID</span>
+            <code>{candidate.batchId}</code>
+            <span>候选版本</span>
+            <strong>第 {candidate.version} 版</strong>
           </div>
 
-          <div className="chapter-plan-preflight-section" style={{ marginTop: 16 }}>
-            <p className="chapter-plan-help-text">
-              建议您先执行<b>“重新比较”</b>以获取最新的字段级差异，或<b>“刷新”</b>获取最新的服务端版本。
-            </p>
-          </div>
+          <section className="stale-conflict-guidance" aria-label="处理建议">
+            <h4>处理建议</h4>
+            <ul>
+              <li><strong>重新比较</strong><span>与最新当前章节重新计算字段级差异。</span></li>
+              <li><strong>刷新最新版本</strong><span>关闭提示并回到批次详情，读取服务端最新状态。</span></li>
+              <li><strong>放弃该候选</strong><span>保留当前章节，不进行任何候选采用。</span></li>
+            </ul>
+            <p>系统已禁止强制覆盖操作，任何安全操作都会保留当前用户上下文。</p>
+          </section>
         </div>
 
-        <footer className="chapter-plan-dialog-footer">
+        <footer className="chapter-plan-dialog-footer stale-conflict-footer">
           <button
             type="button"
             className="chapter-plan-button secondary"

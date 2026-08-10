@@ -806,3 +806,33 @@ button,a { -webkit-tap-highlight-color:transparent; }
 .batch-abandon-dialog .chapter-plan-button.danger:disabled{border-color:#d9a0a0;color:#fff;background:#d9a0a0}
 @media(max-width:620px){.batch-abandon-dialog .chapter-plan-dialog-body{padding:16px}.batch-abandon-dialog .chapter-plan-dialog-header,.batch-abandon-footer{padding-right:16px!important;padding-left:16px!important}.batch-abandon-footer{align-items:stretch;flex-direction:column}.batch-abandon-footer small{margin:0}.batch-abandon-footer .chapter-plan-button{width:100%}.batch-abandon-summary>div:first-child{align-items:flex-start;flex-direction:column}}
 
+/* UI-051 stale candidate conflict. */
+.stale-conflict-dialog{display:flex;width:min(760px,100%);max-height:calc(100vh - 48px);flex-direction:column;overflow:hidden;border:1px solid #c7c4d7;border-radius:14px;background:#fff}
+.stale-conflict-dialog .chapter-plan-dialog-header{flex:0 0 auto;padding:20px 26px}
+.stale-conflict-dialog .chapter-plan-dialog-header h3{margin:0;color:#191c1e;font-size:21px}
+.stale-conflict-title{display:flex;align-items:center;gap:10px}
+.stale-conflict-title>span{display:grid;width:34px;height:34px;place-items:center;border-radius:50%;color:#93000a;background:#ffb4ab}
+.stale-conflict-dialog .chapter-plan-dialog-body{display:grid;min-height:0;gap:16px;overflow:auto;padding:22px 26px;background:#fff}
+.stale-conflict-lead{padding:16px;border:1px solid #ffb4ab;border-radius:9px;color:#93000a;background:#fff1f0}
+.stale-conflict-lead strong{font-size:14px}
+.stale-conflict-lead p{margin:7px 0 0;color:#703700;font-size:12px;line-height:19px}
+.stale-conflict-version-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.stale-conflict-version-grid article{display:grid;gap:6px;padding:16px;border-left:4px solid #aebbd0;border-radius:8px;color:#313540;background:#f2f4f6}
+.stale-conflict-version-grid article.current{border-left-color:#ff7b8f;background:#fff7f8}
+.stale-conflict-version-grid span{color:#596171;font-size:11px}
+.stale-conflict-version-grid strong{font-size:16px}
+.stale-conflict-version-grid small{color:#767586;font-size:11px}
+.stale-conflict-context{display:flex;align-items:center;flex-wrap:wrap;gap:8px 10px;padding:11px 13px;border:1px solid #c7d2e1;border-radius:7px;color:#596171;background:#f2f4f6;font-size:11px}
+.stale-conflict-context code{padding:3px 5px;border-radius:4px;color:#39485a;background:#e8edf4;font-size:10px}
+.stale-conflict-context strong{color:#313540}
+.stale-conflict-guidance{display:grid;gap:10px;padding:16px;border:1px solid #c7d2e1;border-radius:9px;background:#f7f9fb}
+.stale-conflict-guidance h4{margin:0;color:#191c1e;font-size:14px}
+.stale-conflict-guidance ul{display:grid;gap:9px;margin:0;padding:0;list-style:none;color:#596171;font-size:12px}
+.stale-conflict-guidance li{display:grid;grid-template-columns:150px minmax(0,1fr);gap:8px}
+.stale-conflict-guidance li strong{color:#313540}
+.stale-conflict-guidance p{margin:2px 0 0;color:#93000a;font-size:11px;line-height:17px}
+.stale-conflict-footer{flex:0 0 auto;justify-content:flex-end!important;padding:16px 26px!important;background:#fff!important}
+.stale-conflict-dialog .stale-conflict-footer .chapter-plan-button.primary{border-color:#ff7b8f;color:#fff;background:#ff7b8f}
+.stale-conflict-dialog .stale-conflict-footer .chapter-plan-button.primary:hover{background:#e95d74}
+@media(max-width:620px){.stale-conflict-dialog .chapter-plan-dialog-body{padding:16px}.stale-conflict-dialog .chapter-plan-dialog-header,.stale-conflict-footer{padding-right:16px!important;padding-left:16px!important}.stale-conflict-version-grid{grid-template-columns:1fr}.stale-conflict-guidance li{grid-template-columns:1fr;gap:3px}.stale-conflict-footer{align-items:stretch;flex-direction:column}.stale-conflict-footer .chapter-plan-button{width:100%}}
+
