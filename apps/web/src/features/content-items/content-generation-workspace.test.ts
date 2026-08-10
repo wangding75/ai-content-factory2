@@ -77,6 +77,15 @@ test("generation requirements stay visible, editable, and distinguish empty from
   assert.match(drawerSource, /setInstructions/);
 });
 
+test("queued generation exposes run details and safe cancellation without candidate or progress actions", () => {
+  assert.match(status, /summary\.state === "queued"/);
+  assert.match(status, /href=\{`\/workflow-runs\/\$\{run\.id\}`\}/);
+  assert.match(status, /content-generation-cancel/);
+  assert.match(status, /cancelWorkflowRun/);
+  assert.match(status, /content-generation-cancel:\$\{run\.id\}/);
+  assert.doesNotMatch(status, /summary\.state === "queued"[^\n]*onCandidate/);
+});
+
 test("summary polling is isolated from the editable draft refresh", () => {
   assert.match(editor, /\["queued", "running"\]/);
   assert.match(editor, /refreshGenerationSummary/);
