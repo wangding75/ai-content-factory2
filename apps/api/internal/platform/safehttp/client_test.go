@@ -77,7 +77,7 @@ func TestClientRevalidatesRedirectDestination(t *testing.T) {
 		}()
 		return client, nil
 	}
-	client := New(policy)
+	client := New(directPolicyForTest(policy))
 	req, _ := http.NewRequest(http.MethodGet, "http://public.example.test/start", nil)
 	if _, err := client.Do(req); ErrorCode(err) != CodeRedirectNotAllowed {
 		t.Fatalf("redirect error=%v", err)
@@ -93,7 +93,7 @@ func TestClientTLSFailureTimeoutAndBodyLimitAreSafe(t *testing.T) {
 	policy.TrustedHosts = map[string]bool{host: true}
 	policy.Resolver = func(context.Context, string) ([]net.IP, error) { return []net.IP{net.ParseIP(host)}, nil }
 	req, _ := http.NewRequest(http.MethodGet, tlsServer.URL, nil)
-	if _, err := New(policy).Do(req); ErrorCode(err) != CodeTLSValidationFailed {
+	if _, err := New(directPolicyForTest(policy)).Do(req); ErrorCode(err) != CodeTLSValidationFailed {
 		t.Fatalf("TLS error=%v", err)
 	}
 
@@ -105,7 +105,7 @@ func TestClientTLSFailureTimeoutAndBodyLimitAreSafe(t *testing.T) {
 		return nil, ctx.Err()
 	}
 	timeoutReq, _ := http.NewRequest(http.MethodGet, "https://timeout.example.test", nil)
-	if _, err := New(timeoutPolicy).Do(timeoutReq); ErrorCode(err) != CodeUpstreamTimeout {
+	if _, err := New(directPolicyForTest(timeoutPolicy)).Do(timeoutReq); ErrorCode(err) != CodeUpstreamTimeout {
 		t.Fatalf("timeout error=%v", err)
 	}
 

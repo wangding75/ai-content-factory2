@@ -103,7 +103,7 @@ func TestCredentialRedirectNeverFollows(t *testing.T) {
 				return []net.IP{net.ParseIP(host)}, nil
 			}
 
-			client := New(policy)
+			client := New(directPolicyForTest(policy))
 			req, _ := http.NewRequest(http.MethodGet, first.URL+"/start", nil)
 			req.Header.Set("Authorization", "Bearer test-token-not-real")
 			req.Header.Set("X-N8N-API-KEY", "n8n-test-key-not-real")
@@ -168,7 +168,7 @@ func TestCredentialRedirectCrossHostPortAndDowngrade(t *testing.T) {
 				}()
 				return client, nil
 			}
-			client := New(policy)
+			client := New(directPolicyForTest(policy))
 			req, _ := http.NewRequest(http.MethodGet, "http://public.example.test/start", nil)
 			req.Header.Set("Authorization", "Bearer redirect-probe")
 			_, err := client.Do(req)
@@ -207,7 +207,7 @@ func TestCredentialRedirectChainStillSingleHop(t *testing.T) {
 	}
 	req, _ := http.NewRequest(http.MethodGet, "http://chain.example.test/a", nil)
 	req.Header.Set("X-N8N-API-KEY", "chain-key")
-	if _, err := New(policy).Do(req); ErrorCode(err) != CodeCredentialRedirectForbidden {
+	if _, err := New(directPolicyForTest(policy)).Do(req); ErrorCode(err) != CodeCredentialRedirectForbidden {
 		t.Fatalf("err=%v", err)
 	}
 	if dials.Load() != 1 {
@@ -229,13 +229,14 @@ func TestSensitiveHeaderDetectionCaseInsensitive(t *testing.T) {
 	}
 }
 
-func TestCredentialDNSRebindingAndProxyDisabled(t *testing.T) {
+func TestCredentialDNSRebindingAndDirectSafety(t *testing.T) {
 	t.Setenv("HTTP_PROXY", "http://proxy.example.test:8080")
 	t.Setenv("HTTPS_PROXY", "http://proxy.example.test:8080")
 	t.Setenv("ALL_PROXY", "http://proxy.example.test:8080")
 
 	var seen atomic.Int32
 	policy := CredentialPolicy("production")
+	policy.proxyFunc = directProxyFunc
 	calls := 0
 	policy.Resolver = func(context.Context, string) ([]net.IP, error) {
 		calls++
@@ -251,7 +252,7 @@ func TestCredentialDNSRebindingAndProxyDisabled(t *testing.T) {
 	}
 	req, _ := http.NewRequest(http.MethodGet, "https://rebind.example.test/v1", nil)
 	req.Header.Set("Authorization", "Bearer rebind-token")
-	_, err := New(policy).Do(req)
+	_, err := New(directPolicyForTest(policy)).Do(req)
 	if ErrorCode(err) != CodeCredentialDestinationForbidden && ErrorCode(err) != CodeUnsafeBaseURL {
 		t.Fatalf("rebinding err=%v code=%s", err, ErrorCode(err))
 	}
@@ -264,7 +265,7 @@ func TestCredentialDNSRebindingAndProxyDisabled(t *testing.T) {
 		return []net.IP{net.ParseIP("203.0.113.40"), net.ParseIP("10.0.0.10")}, nil
 	}
 	req, _ = http.NewRequest(http.MethodGet, "https://mixed.example.test/v1", nil)
-	if _, err = New(policy).Do(req); ErrorCode(err) != CodeCredentialDestinationForbidden && ErrorCode(err) != CodeUnsafeBaseURL {
+	if _, err = New(directPolicyForTest(policy)).Do(req); ErrorCode(err) != CodeCredentialDestinationForbidden && ErrorCode(err) != CodeUnsafeBaseURL {
 		t.Fatalf("mixed DNS err=%v", err)
 	}
 }
@@ -304,7 +305,7 @@ func TestNonCredentialClientStillRevalidatesRedirect(t *testing.T) {
 		return client, nil
 	}
 	req, _ := http.NewRequest(http.MethodGet, "http://public.example.test/start", nil)
-	if _, err := New(policy).Do(req); ErrorCode(err) != CodeRedirectNotAllowed {
+	if _, err := New(directPolicyForTest(policy)).Do(req); ErrorCode(err) != CodeRedirectNotAllowed {
 		t.Fatalf("redirect error=%v", err)
 	}
 }

@@ -1672,7 +1672,7 @@ func (s *Service) probe(ctx context.Context, endpoint string, timeoutSeconds int
 }
 
 func (s *Service) verificationHTTPClient() *http.Client {
-	// Credentialed integration client: no proxy, no redirects, shared policy.
+	// Credentialed integration client: environment-controlled proxy, no redirects, shared policy.
 	return safehttp.New(s.credentialOutboundPolicy()).HTTPClient()
 }
 

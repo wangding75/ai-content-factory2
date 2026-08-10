@@ -18,16 +18,17 @@ import (
 )
 
 const (
-	CodeUnsafeBaseURL                        = "unsafe_base_url"
-	CodeDNSResolutionFailed                  = "dns_resolution_failed"
-	CodeTLSValidationFailed                  = "tls_validation_failed"
-	CodeRedirectNotAllowed                   = "redirect_not_allowed"
-	CodeUpstreamTimeout                      = "upstream_timeout"
-	CodeUpstreamUnavailable                  = "upstream_unavailable"
-	CodeResponseTooLarge                     = "upstream_response_too_large"
-	CodeCredentialRedirectForbidden          = "credential_redirect_forbidden"
-	CodeCredentialTransportRequiresHTTPS     = "credential_transport_requires_https"
-	CodeCredentialDestinationForbidden       = "credential_destination_forbidden"
+	CodeUnsafeBaseURL                         = "unsafe_base_url"
+	CodeDNSResolutionFailed                   = "dns_resolution_failed"
+	CodeTLSValidationFailed                   = "tls_validation_failed"
+	CodeRedirectNotAllowed                    = "redirect_not_allowed"
+	CodeUpstreamTimeout                       = "upstream_timeout"
+	CodeUpstreamUnavailable                   = "upstream_unavailable"
+	CodeResponseTooLarge                      = "upstream_response_too_large"
+	CodeProxyConfigurationInvalid             = "proxy_configuration_invalid"
+	CodeCredentialRedirectForbidden           = "credential_redirect_forbidden"
+	CodeCredentialTransportRequiresHTTPS      = "credential_transport_requires_https"
+	CodeCredentialDestinationForbidden        = "credential_destination_forbidden"
 	CodeCredentialTransportDowngradeForbidden = "credential_transport_downgrade_forbidden"
 )
 
@@ -74,23 +75,25 @@ type Dialer func(context.Context, string, string) (net.Conn, error)
 
 // Policy is the single outbound destination policy for integrations.
 type Policy struct {
-	AllowedSchemes   map[string]bool
-	AllowedPorts     map[int]bool
-	TrustedHosts     map[string]bool
+	AllowedSchemes map[string]bool
+	AllowedPorts   map[int]bool
+	TrustedHosts   map[string]bool
 	// TrustedLocalHTTP maps host -> allowed ports for cleartext HTTP only in
 	// development-like environments. Public hosts never appear here.
 	TrustedLocalHTTP map[string]map[int]bool
 	// CredentialMode disables all redirects and enforces credential transport rules.
-	CredentialMode  bool
-	Environment     string
-	Resolver        Resolver
-	DialContext     Dialer
-	ConnectTimeout  time.Duration
-	ResponseTimeout time.Duration
-	TotalTimeout    time.Duration
-	MaxRedirects    int
+	CredentialMode   bool
+	Environment      string
+	Resolver         Resolver
+	DialContext      Dialer
+	ProxyDialContext Dialer
+	proxyFunc        func(*http.Request) (*url.URL, error)
+	ConnectTimeout   time.Duration
+	ResponseTimeout  time.Duration
+	TotalTimeout     time.Duration
+	MaxRedirects     int
 	MaxResponseBytes int64
-	TLSConfig       *tls.Config
+	TLSConfig        *tls.Config
 }
 
 func DefaultPolicy() Policy {
@@ -113,7 +116,8 @@ func DefaultPolicy() Policy {
 //   - external destinations require HTTPS
 //   - cleartext HTTP is limited to explicit local development targets (n8n:5678)
 //   - production never grants the local HTTP exception
-//   - proxy is always disabled on the resulting client
+//   - proxy routing is controlled by the standard environment variables;
+//     destination validation remains enforced before any proxy hop
 func CredentialPolicy(environment string) Policy {
 	policy := DefaultPolicy()
 	policy.CredentialMode = true
@@ -170,6 +174,12 @@ func (p Policy) withDefaults() Policy {
 	}
 	if p.DialContext == nil {
 		p.DialContext = (&net.Dialer{Timeout: p.ConnectTimeout}).DialContext
+	}
+	if p.ProxyDialContext == nil {
+		p.ProxyDialContext = (&net.Dialer{Timeout: p.ConnectTimeout}).DialContext
+	}
+	if p.proxyFunc == nil {
+		p.proxyFunc = http.ProxyFromEnvironment
 	}
 	if p.TLSConfig == nil {
 		p.TLSConfig = &tls.Config{MinVersion: tls.VersionTLS12}
@@ -351,6 +361,111 @@ type Client struct {
 	policy     Policy
 }
 
+type proxyRequestContextKey struct{}
+
+func proxyForRequest(req *http.Request, policy Policy) (*url.URL, error) {
+	proxyURL, err := policy.proxyFunc(req)
+	if err != nil {
+		return nil, safeError(CodeProxyConfigurationInvalid, "The outbound proxy configuration is invalid.", false)
+	}
+	if proxyURL == nil {
+		return nil, nil
+	}
+	scheme := strings.ToLower(proxyURL.Scheme)
+	if scheme != "http" && scheme != "https" {
+		return nil, safeError(CodeProxyConfigurationInvalid, "The outbound proxy scheme is not supported.", false)
+	}
+	if proxyURL.Host == "" || proxyURL.Hostname() == "" || strings.Contains(proxyURL.Hostname(), "%") || proxyURL.Fragment != "" || proxyURL.RawQuery != "" {
+		return nil, safeError(CodeProxyConfigurationInvalid, "The outbound proxy address is invalid.", false)
+	}
+	if _, err := proxyPort(proxyURL); err != nil {
+		return nil, err
+	}
+	if proxyURL.Scheme != scheme {
+		cloned := *proxyURL
+		cloned.Scheme = scheme
+		proxyURL = &cloned
+	}
+	return proxyURL, nil
+}
+
+func proxyPort(proxyURL *url.URL) (string, error) {
+	if proxyURL == nil {
+		return "", safeError(CodeProxyConfigurationInvalid, "The outbound proxy address is invalid.", false)
+	}
+	host := proxyURL.Host
+	port := ""
+	if strings.HasPrefix(host, "[") {
+		end := strings.LastIndex(host, "]")
+		if end < 0 {
+			return "", safeError(CodeProxyConfigurationInvalid, "The outbound proxy address is invalid.", false)
+		}
+		rest := host[end+1:]
+		if rest != "" {
+			if !strings.HasPrefix(rest, ":") || len(rest) == 1 {
+				return "", safeError(CodeProxyConfigurationInvalid, "The outbound proxy port is invalid.", false)
+			}
+			port = rest[1:]
+		}
+	} else if strings.Count(host, ":") == 1 {
+		port = host[strings.LastIndex(host, ":")+1:]
+		if port == "" {
+			return "", safeError(CodeProxyConfigurationInvalid, "The outbound proxy port is invalid.", false)
+		}
+	} else if strings.Contains(host, ":") {
+		return "", safeError(CodeProxyConfigurationInvalid, "The outbound proxy address is invalid.", false)
+	}
+	if port == "" {
+		if strings.EqualFold(proxyURL.Scheme, "https") {
+			return "443", nil
+		}
+		return "80", nil
+	}
+	value, err := strconv.Atoi(port)
+	if err != nil || value < 1 || value > 65535 {
+		return "", safeError(CodeProxyConfigurationInvalid, "The outbound proxy port is invalid.", false)
+	}
+	return port, nil
+}
+
+func proxyFromRequestContext(ctx context.Context) *url.URL {
+	if ctx == nil {
+		return nil
+	}
+	proxyURL, _ := ctx.Value(proxyRequestContextKey{}).(*url.URL)
+	return proxyURL
+}
+
+func proxyAddress(proxyURL *url.URL) (string, error) {
+	if proxyURL == nil || proxyURL.Hostname() == "" {
+		return "", safeError(CodeProxyConfigurationInvalid, "The outbound proxy address is invalid.", false)
+	}
+	port, err := proxyPort(proxyURL)
+	if err != nil {
+		return "", err
+	}
+	return net.JoinHostPort(strings.ToLower(strings.TrimSuffix(proxyURL.Hostname(), ".")), port), nil
+}
+
+func isProxyAddress(address string, proxyURL *url.URL) bool {
+	expected, err := proxyAddress(proxyURL)
+	if err != nil {
+		return false
+	}
+	if strings.EqualFold(address, expected) {
+		return true
+	}
+	host, port, err := net.SplitHostPort(address)
+	if err != nil {
+		return false
+	}
+	expectedHost, expectedPort, err := net.SplitHostPort(expected)
+	if err != nil {
+		return false
+	}
+	return strings.EqualFold(strings.TrimSuffix(host, "."), expectedHost) && port == expectedPort
+}
+
 // HTTPClient exposes the guarded standard client for adapters whose interface
 // is fixed to *http.Client. Destination checks remain installed in the
 // transport and redirect hook.
@@ -359,11 +474,19 @@ func (c *Client) HTTPClient() *http.Client { return c.httpClient }
 func New(policy Policy) *Client {
 	policy = policy.withDefaults()
 	baseTransport := &http.Transport{
-		Proxy:                 nil,
+		Proxy: func(req *http.Request) (*url.URL, error) {
+			return proxyForRequest(req, policy)
+		},
 		TLSClientConfig:       policy.TLSConfig.Clone(),
 		TLSHandshakeTimeout:   policy.ConnectTimeout,
 		ResponseHeaderTimeout: policy.ResponseTimeout,
 		DialContext: func(ctx context.Context, network, address string) (net.Conn, error) {
+			if proxyURL := proxyFromRequestContext(ctx); proxyURL != nil {
+				if !isProxyAddress(address, proxyURL) {
+					return nil, safeError(CodeProxyConfigurationInvalid, "The outbound proxy destination is invalid.", false)
+				}
+				return policy.ProxyDialContext(ctx, network, address)
+			}
 			host, port, err := net.SplitHostPort(address)
 			if err != nil {
 				return nil, safeError(CodeUnsafeBaseURL, "The integration destination is invalid.", false)
@@ -445,6 +568,13 @@ func (t *guardedTransport) RoundTrip(req *http.Request) (*http.Response, error) 
 	// Strip Userinfo again as defense in depth (NormalizeURL already rejects it).
 	cloned.URL.User = nil
 	cloned.URL.Fragment = ""
+	proxyURL, err := proxyForRequest(cloned, t.policy)
+	if err != nil {
+		return nil, err
+	}
+	if proxyURL != nil {
+		cloned = cloned.WithContext(context.WithValue(cloned.Context(), proxyRequestContextKey{}, proxyURL))
+	}
 
 	response, err := t.base.RoundTrip(cloned)
 	if err != nil {
