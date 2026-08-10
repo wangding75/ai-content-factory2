@@ -8,7 +8,14 @@ import {
   useState,
   type FormEvent,
 } from "react";
-import { ApiError } from "@/lib/api";
+import {
+  ApiError,
+  getForeshadowings,
+  getStorylines,
+  type Foreshadowing,
+  type StorylineNode,
+} from "@/lib/api";
+import { storylineName } from "@/features/storylines/storyline-presentation";
 import {
   listChapterPlans,
   type ChapterPlan,
@@ -45,6 +52,8 @@ const draftOf = (x: ContentItemDetail): Draft => ({
   summary: x.current_version.summary ?? "",
 });
 const idKey = () => crypto.randomUUID();
+const flattenStorylines = (nodes: StorylineNode[]): StorylineNode[] =>
+  nodes.flatMap((node) => [node, ...flattenStorylines(node.children)]);
 export function ContentEditorWorkspace({
   projectId,
   chapterPlanId,
@@ -56,6 +65,8 @@ export function ContentEditorWorkspace({
 }) {
   const [detail, setDetail] = useState<ContentItemDetail | null>(null),
     [plan, setPlan] = useState<ChapterPlan | null>(null),
+    [storylines, setStorylines] = useState<StorylineNode[]>([]),
+    [foreshadowings, setForeshadowings] = useState<Foreshadowing[]>([]),
     [draft, setDraft] = useState<Draft | null>(null),
     [loading, setLoading] = useState(true),
     [error, setError] = useState<string | null>(null),
@@ -101,20 +112,26 @@ export function ContentEditorWorkspace({
     setError(null);
     setDetail(null);
     setDraft(null);
+    setStorylines([]);
+    setForeshadowings([]);
     setRun(null);
     try {
       const c = addController();
-      const [created, plans] = await Promise.all([
+      const [created, plans, storylinesResult, foreshadowingsResult] = await Promise.all([
         workId ? getContentItem(workId, { signal: c.signal }) : createOrGetContentItem(chapterPlanId!, { signal: c.signal }),
         listChapterPlans(
           projectId,
           { limit: 100, offset: 0 },
           { signal: c.signal },
         ),
+        getStorylines(projectId, c.signal),
+        getForeshadowings(projectId, c.signal),
       ]);
       if (c.signal.aborted || request !== sequence.current) return;
       current.current = created.content_item.id;
       setPlan(plans.items.find((x) => x.id === created.content_item.chapter_plan_id) ?? null);
+      setStorylines(storylinesResult.items);
+      setForeshadowings(foreshadowingsResult.items);
       apply(created);
       const get = addController(),
         fresh = await getContentItem(created.content_item.id, {
@@ -508,7 +525,13 @@ export function ContentEditorWorkspace({
               </dl>
             </section>
           )}
-          {contextTab === "story" && <><Info title="故事线" value={plan?.storyline_refs_json.length ? `${plan.storyline_refs_json.length} 条关联` : "未加载"} /><Info title="关联伏笔" value={plan?.foreshadowing_refs_json.length ? `${plan.foreshadowing_refs_json.length} 项关联` : "无"} /></>}
+          {contextTab === "story" && (
+            <StoryContextPanel
+              plan={plan}
+              storylines={storylines}
+              foreshadowings={foreshadowings}
+            />
+          )}
           {contextTab === "materials" && <Info title="关联素材" value={plan?.material_refs_json.length ? `${plan.material_refs_json.length} 项关联` : "无"} />}
           <Info title="版本记录" value={`v${v.version_no}${detail.content_item.current_version_id === v.id ? "（当前）" : ""} · ${contentVersionSourceLabel(v.source)}`} />
           {run && <Info title="最近工作流" value="最近工作流已完成" />}
@@ -542,6 +565,81 @@ export function ContentEditorWorkspace({
         />
       )}
     </main>
+  );
+}
+function StoryContextPanel({
+  plan,
+  storylines,
+  foreshadowings,
+}: {
+  plan: ChapterPlan | null;
+  storylines: StorylineNode[];
+  foreshadowings: Foreshadowing[];
+}) {
+  const storylineMap = new Map(
+    flattenStorylines(storylines).map((storyline) => [storyline.id, storyline]),
+  );
+  const foreshadowingMap = new Map(
+    foreshadowings.map((foreshadowing) => [foreshadowing.id, foreshadowing]),
+  );
+  const storylineRefs = plan?.storyline_refs_json ?? [];
+  const foreshadowingRefs = plan?.foreshadowing_refs_json ?? [];
+  return (
+    <section className="content-story-panel" aria-label="故事情报">
+      <header className="content-story-header">
+        <div>
+          <span className="content-goal-eyebrow">正文上下文</span>
+          <h2>故事情报</h2>
+          <p>仅展示当前章节规划中已关联的真实故事线与伏笔。</p>
+        </div>
+        <span className="content-goal-readonly">只读</span>
+      </header>
+      <section className="content-story-section">
+        <div className="content-story-section-title">
+          <h3>关联故事线</h3>
+          <span>{storylineRefs.length} 条</span>
+        </div>
+        {storylineRefs.length ? (
+          <div className="content-story-list">
+            {storylineRefs.map((ref) => {
+              const storyline = storylineMap.get(ref.storyline_id);
+              return (
+                <article key={ref.storyline_id} className="content-story-card">
+                  <div>
+                    <strong>{storyline ? storylineName(storyline.name) : "故事线未找到"}</strong>
+                    <p>{storyline?.summary ?? "当前项目中暂无故事线摘要。"}</p>
+                  </div>
+                  <span>{ref.relation === "primary" ? "主线" : "支线"}</span>
+                </article>
+              );
+            })}
+          </div>
+        ) : (
+          <p className="content-story-empty">本章暂无关联故事线。</p>
+        )}
+      </section>
+      <section className="content-story-section">
+        <div className="content-story-section-title">
+          <h3>关联伏笔</h3>
+          <span>{foreshadowingRefs.length} 项</span>
+        </div>
+        {foreshadowingRefs.length ? (
+          <div className="content-story-list">
+            {foreshadowingRefs.map((id) => {
+              const foreshadowing = foreshadowingMap.get(id);
+              return (
+                <article key={id} className="content-story-card content-story-card-pin">
+                  <strong>{foreshadowing?.title ?? "伏笔未找到"}</strong>
+                  <p>{foreshadowing?.description ?? "当前项目中暂无伏笔描述。"}</p>
+                </article>
+              );
+            })}
+          </div>
+        ) : (
+          <p className="content-story-empty">本章暂无关联伏笔。</p>
+        )}
+      </section>
+    </section>
   );
 }
 function Info({ title, value }: { title: string; value: string }) {

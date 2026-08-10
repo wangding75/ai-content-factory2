@@ -30,6 +30,17 @@ test("chapter goal context is an independent read-only area backed by the chapte
   assert.match(editor, /contextTab === "materials"/);
 });
 
+test("story context resolves the current plan references without changing the editor", () => {
+  assert.match(editor, /getStorylines\(/);
+  assert.match(editor, /getForeshadowings\(/);
+  assert.match(editor, /Promise\.all\(\[[\s\S]*getStorylines\(projectId, c\.signal\)[\s\S]*getForeshadowings\(projectId, c\.signal\)/);
+  assert.match(editor, /className="content-story-panel"/);
+  assert.match(editor, /关联故事线/);
+  assert.match(editor, /关联伏笔/);
+  assert.match(editor, /storylineName\(storyline\.name\)/);
+  assert.match(editor, /foreshadowing\?\.description/);
+});
+
 test("summary polling is isolated from the editable draft refresh", () => {
   assert.match(editor, /\["queued", "running"\]/);
   assert.match(editor, /refreshGenerationSummary/);
