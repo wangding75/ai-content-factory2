@@ -373,6 +373,10 @@ export function ChapterPlansWorkspace({
     );
 
   const storylines = relations ? flattenStorylines(relations.storylines) : [];
+  const workflowNotConfigured =
+    summaryError?.code === "workflow_not_configured" ||
+    summaryError?.status === 422 ||
+    summaryError?.message?.includes("workflow_not_configured");
 
   return (
     <div className="chapter-plans-workspace max-w-[1400px] mx-auto w-full p-8 flex flex-col gap-6 pb-24">
@@ -389,7 +393,9 @@ export function ChapterPlansWorkspace({
           </button>
           <button
             type="button"
-            className="px-4 py-2 bg-primary rounded text-sm font-medium text-on-primary hover:bg-primary-fixed-variant transition-colors flex items-center gap-2 shadow-sm cursor-pointer"
+            disabled={workflowNotConfigured}
+            title={workflowNotConfigured ? "尚未完成执行配置" : undefined}
+            className={`px-4 py-2 rounded text-sm font-medium transition-colors flex items-center gap-2 shadow-sm ${workflowNotConfigured ? "bg-surface-container-high text-on-surface-variant opacity-70 cursor-not-allowed" : "bg-primary text-on-primary hover:bg-primary-fixed-variant cursor-pointer"}`}
             onClick={() => setSettingsOpen(true)}
           >
             <span className="material-symbols-outlined text-[18px]">auto_awesome</span>
@@ -402,7 +408,7 @@ export function ChapterPlansWorkspace({
       <SummaryRunBanner
         summary={summary}
         summaryError={summaryError}
-        onConfigure={() => setSettingsOpen(true)}
+        onConfigure={() => void load()}
         onRetry={() => void handleSummaryRetry()}
         projectId={projectId}
       />
@@ -732,9 +738,14 @@ function SummaryRunBanner({
               <p className="text-xs text-[#B45309]">请先选择或配置可用的章节规划工作流绑定再发起生成。</p>
             </div>
           </div>
-          <button type="button" className="px-3 py-1.5 bg-[#F59E0B] text-white rounded text-xs font-semibold cursor-pointer" onClick={onConfigure}>
-            配置并生成
-          </button>
+          <div className="flex shrink-0 items-center gap-2">
+            <button type="button" className="px-3 py-1.5 bg-surface text-[#92400E] border border-[#D97706] rounded text-xs font-semibold cursor-pointer" onClick={onConfigure}>
+              重新检查
+            </button>
+            <Link href={`/projects/${projectId}/settings?tab=workflow-bindings`} className="px-3 py-1.5 bg-[#F59E0B] text-white rounded text-xs font-semibold cursor-pointer hover:bg-[#D97706]">
+              前往项目设置
+            </Link>
+          </div>
         </div>
       );
     }

@@ -59,6 +59,16 @@ test("failed chapter plan runs expose zero-write copy and only safe recovery act
   assert.match(workspaceSource, /查看运行详情/);
 });
 
+test("unconfigured chapter planning keeps existing plans and routes setup outside generation", () => {
+  assert.match(workspaceSource, /workflowNotConfigured/);
+  assert.match(workspaceSource, /disabled=\{workflowNotConfigured\}/);
+  assert.match(workspaceSource, /尚未完成执行配置/);
+  assert.match(workspaceSource, /前往项目设置/);
+  assert.match(workspaceSource, /settings\?tab=workflow-bindings/);
+  assert.match(workspaceSource, /重新检查/);
+  assert.match(workspaceSource, /plans\?\.length \? "未找到匹配章节" : "暂无章节规划"/);
+});
+
 test("generation settings drawer validates input ranges and options", () => {
   assert.match(drawerSource, /生成模式/);
   assert.match(drawerSource, /起始章节/);
