@@ -12,6 +12,7 @@ const locale = readFileSync(join(root, "content-generation-locale.ts"), "utf8");
 const reviewWorkspace = readFileSync(join(process.cwd(), "src", "features", "content-review", "content-review-workspace.tsx"), "utf8");
 const reviewHistory = readFileSync(join(process.cwd(), "src", "features", "content-review", "content-review-history.tsx"), "utf8");
 const rewriteWorkspace = readFileSync(join(process.cwd(), "src", "features", "project-works", "rewrite-workspace.tsx"), "utf8");
+const rewriteResultPanel = readFileSync(join(process.cwd(), "src", "features", "project-works", "rewrite-result-panel.tsx"), "utf8");
 const rewriteRoute = readFileSync(join(process.cwd(), "src", "app", "projects", "[projectId]", "works", "[workId]", "rewrite", "page.tsx"), "utf8");
 
 test("content generation remains on the editor route with its three context tabs", () => {
@@ -309,6 +310,18 @@ test("rewrite running state keeps real Run context, source issues, waiting resul
   assert.match(rewriteWorkspace, /workflow-runs/);
   assert.match(rewriteWorkspace, /candidate_ready/);
   assert.match(rewriteWorkspace, /rewrite-running-banner/);
+});
+
+test("rewrite result panel keeps candidate, source issues, summary, and explicit current-version confirmation together", () => {
+  assert.match(rewriteResultPanel, /getContentRewriteResult\(runId/);
+  assert.match(rewriteResultPanel, /workflowRun\.runNumber/);
+  assert.match(rewriteResultPanel, /selectedIssueSummary\.total/);
+  assert.match(rewriteResultPanel, /rewrite-result-title/);
+  assert.match(rewriteResultPanel, /rewrite-result-version-flow/);
+  assert.match(rewriteResultPanel, /setCurrentContentVersion/);
+  assert.match(rewriteResultPanel, /candidateIsCurrent/);
+  assert.match(rewriteResultPanel, /role="dialog"/);
+  assert.doesNotMatch(rewriteResultPanel, /createContentRewriteRun|preflightContentRewrite/);
 });
 
 test("summary polling is isolated from the editable draft refresh", () => {

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ApiError } from "@/lib/api";
 import { getContentItem, getContentVersion, setCurrentContentVersion, type ContentItemDetail } from "@/features/content-items/content-item-http-api";
+import { formatWorkflowRunTime } from "@/features/workflow-runs/workflow-run-api";
 import { getContentRewriteResult, getContentRewriteSummary, type RewriteResult, type RewriteSummary } from "./rewrite-api";
 
 type Props = { projectId: string; workId: string; runId: string; onRefresh?: () => void };
@@ -67,15 +68,50 @@ export function RewriteResultPanel({ projectId, workId, runId, onRefresh }: Prop
   const candidateRelationValid = result.candidateVersion.content_item_id === item.content_item.id && result.candidateVersion.source_content_version_id === result.sourceContentVersionSummary.id;
   const canSet = result.canSetCurrent && !candidateIsCurrent && candidateRelationValid;
   const historyHref = `/projects/${projectId}/works/${workId}/rewrite?workflowRunId=${encodeURIComponent(runId)}&history=1`;
-  return <main className="rewrite-page"><section className="rewrite-layout rewrite-result-layout"><article className="rewrite-source"><header><h1>重写候选版本</h1><p>{result.output.summary}</p></header>
-    <dl><div><dt>固定来源版本</dt><dd>V{result.sourceContentVersionSummary.versionNo} · {result.sourceContentVersionSummary.title}</dd></div><div><dt>当前版本</dt><dd>V{item.current_version.version_no} · {item.current_version.title}</dd></div><div><dt>目标 Candidate</dt><dd>V{result.candidateVersion.version_no} · {result.candidateVersion.title}</dd></div></dl>
-    {candidateIsCurrent ? <p role="status">该 Candidate 已是当前版本，无需再次提交。</p> : canSet ? <button type="button" className="primary" onClick={() => setConfirming(true)}>设为当前版本</button> : <p>候选版本尚未满足设为当前版本的条件。</p>}
-    <Link href={historyHref}>查看重写历史</Link>{casNotice && <p role="alert">当前版本已经变化。已加载新的当前版本，请确认目标 Candidate 后重新提交。</p>}{error && <p role="alert">{safeSetCurrentError(error)}</p>}
-    <h2>已处理问题</h2><Outcomes items={result.output.addressedIssues} /><h2>未解决问题</h2><Outcomes items={result.output.unresolvedIssues} />
-    {result.output.warnings.length > 0 && <><h2>提示</h2><ul>{result.output.warnings.map((value) => <li key={value}>{value}</li>)}</ul></>}{result.output.metadata?.changeSummary && <p>{result.output.metadata.changeSummary}</p>}
-  </article><article className="rewrite-result-content"><header><h2>正文版本对比</h2><span>固定来源 → Candidate</span></header><section><h3>来源正文</h3><p>{source ?? "正在读取来源正文。"}</p></section><section><h3>候选正文</h3><p>{result.candidateVersion.content}</p></section></article></section>
-  {confirming && <div className="rewrite-dialog-layer"><section className="rewrite-confirm-dialog" role="dialog" aria-modal="true" aria-label="设为当前版本确认"><h2>设为当前版本</h2><p>确认将 Candidate v{result.candidateVersion.version_no} 设为当前版本。</p><dl><div><dt>当前版本</dt><dd>v{item.current_version.version_no}</dd></div><div><dt>目标 Candidate</dt><dd>v{result.candidateVersion.version_no}</dd></div><div><dt>固定来源版本</dt><dd>v{result.sourceContentVersionSummary.versionNo}</dd></div></dl><p>此操作只会切换 currentVersion，不会删除旧版本，也不会修改 ReviewReport 或 Issue。</p><p>若他人已切换当前版本，系统会拒绝本次提交并要求重新确认。</p><footer><button type="button" disabled={submitting} onClick={() => setConfirming(false)}>取消</button><button type="button" className="primary" disabled={submitting} onClick={() => void setCurrent()}>{submitting ? "正在设为当前版本…" : "确认设为当前版本"}</button></footer></section></div>}</main>;
+  return <RewriteResultView projectId={projectId} workId={workId} result={result} item={item} source={source} candidateIsCurrent={candidateIsCurrent} canSet={canSet} historyHref={historyHref} confirming={confirming} submitting={submitting} casNotice={casNotice} error={error} onConfirm={() => setConfirming(true)} onDismiss={() => setConfirming(false)} onSetCurrent={() => void setCurrent()} />;
 }
-function Outcomes({ items }: { items: Array<{ reviewIssueId: string; summary: string }> }) { return items.length ? <ul>{items.map((item) => <li key={item.reviewIssueId}>{item.summary}</li>)}</ul> : <p>无</p>; }
+function RewriteResultView({ projectId, workId, result, item, source, candidateIsCurrent, canSet, historyHref, confirming, submitting, casNotice, error, onConfirm, onDismiss, onSetCurrent }: { projectId: string; workId: string; result: RewriteResult; item: ContentItemDetail; source: string | null; candidateIsCurrent: boolean; canSet: boolean; historyHref: string; confirming: boolean; submitting: boolean; casNotice: boolean; error: ApiError | null; onConfirm: () => void; onDismiss: () => void; onSetCurrent: () => void }) {
+  const addressed = new Set(result.output.addressedIssues.map((issue) => issue.reviewIssueId));
+  const unresolved = new Set(result.output.unresolvedIssues.map((issue) => issue.reviewIssueId));
+  return (
+    <main className="rewrite-page rewrite-result-page">
+      <Link className="rewrite-result-back" href={`/projects/${projectId}/works/${workId}/review?reportId=${encodeURIComponent(result.reviewReportSnapshot.reviewReportId)}`}>← 返回审核结果</Link>
+      <header className="rewrite-result-hero">
+        <div><div className="rewrite-result-title"><h1>正文重写结果</h1><span>✓ 重写成功</span></div><p>{result.output.summary || `已根据 ${result.selectedIssueSummary.total} 个审核问题创建候选正文。`}</p></div>
+        <Link href={`/workflow-runs/${encodeURIComponent(result.workflowRun.id)}`}>查看执行详情 <span aria-hidden="true">→</span></Link>
+      </header>
+      <section className="rewrite-result-meta" aria-label="重写结果信息">
+        <div><dt>Run</dt><dd><code>{result.workflowRun.runNumber}</code></dd></div>
+        <div><dt>工作流</dt><dd>{result.workflowRun.workflowName ?? "正文重写"} · v{result.workflowRun.workflowConfigurationVersion ?? "—"}</dd></div>
+        <div><dt>来源版本</dt><dd>V{result.sourceContentVersionSummary.versionNo}</dd></div>
+        <div><dt>候选版本</dt><dd>V{result.candidateVersion.version_no}</dd></div>
+        <div><dt>完成时间</dt><dd>{formatWorkflowRunTime(result.workflowRun.finishedAt ?? result.workflowRun.updatedAt)}</dd></div>
+      </section>
+      <section className="rewrite-result-layout">
+        <aside className="rewrite-result-sidebar">
+          <section className="rewrite-result-version-card">
+            <h2>版本关系</h2>
+            <div className="rewrite-result-version-flow"><div><strong>V{item.current_version.version_no}</strong><span>当前版本</span></div><span aria-hidden="true">→</span><div className="candidate"><strong>V{result.candidateVersion.version_no}</strong><span>候选版本</span></div></div>
+            <p>{candidateIsCurrent ? `V${result.candidateVersion.version_no} 已是当前版本` : `V${result.candidateVersion.version_no} 尚未设为当前版本`}</p>
+            {candidateIsCurrent ? <p role="status" className="rewrite-result-current-note">候选已生效，无需再次提交。</p> : canSet ? <button type="button" className="primary" onClick={onConfirm}>设为当前版本</button> : <p>候选版本尚未满足设为当前版本的条件。</p>}
+            <Link href={historyHref}>查看重写历史</Link>
+          </section>
+          <section className="rewrite-result-metrics"><h2>生成摘要</h2><div><article><strong>{result.output.addressedIssues.length}</strong><span>已处理问题</span></article><article><strong>{result.output.unresolvedIssues.length}</strong><span>未解决问题</span></article><article><strong>{result.selectedIssueSummary.total}</strong><span>处理问题</span></article></div></section>
+          <section className="rewrite-result-issues"><header><h2>审核问题处理结果</h2><span>{result.selectedIssueSummary.total} 项</span></header>{result.selectedIssueSummary.items.map((issue) => <article key={issue.reviewIssueId}><span className={`rewrite-result-issue-state ${addressed.has(issue.reviewIssueId) ? "is-addressed" : unresolved.has(issue.reviewIssueId) ? "is-unresolved" : "is-pending"}`} aria-hidden="true">{addressed.has(issue.reviewIssueId) ? "✓" : unresolved.has(issue.reviewIssueId) ? "!" : "·"}</span><div><strong>{issue.title}</strong><p>{addressed.has(issue.reviewIssueId) ? "已处理" : unresolved.has(issue.reviewIssueId) ? "未解决" : "未标记结果"} · {issue.severity}</p></div></article>)}</section>
+        </aside>
+        <article className="rewrite-result-content rewrite-result-candidate-card">
+          <header><div><h2>{result.candidateVersion.title}</h2><span>V{result.candidateVersion.version_no} 候选版本</span></div><Link href={`/projects/${projectId}/works/${workId}`}>打开编辑器 ↗</Link></header>
+          <div className="rewrite-result-notice" role="status"><span aria-hidden="true">ⓘ</span><p>该候选版本尚未影响当前作品，来源版本 V{result.sourceContentVersionSummary.versionNo} 保持不变。</p></div>
+          <section className="rewrite-result-text"><h3>候选正文</h3><pre>{result.candidateVersion.content}</pre></section>
+          <details className="rewrite-result-source"><summary>查看固定来源正文</summary><pre>{source ?? "正在读取来源正文。"}</pre></details>
+        </article>
+      </section>
+      {casNotice && <p role="alert" className="rewrite-result-alert">当前版本已经变化。已加载新的当前版本，请确认目标 Candidate 后重新提交。</p>}
+      {error && <p role="alert" className="rewrite-result-alert">{safeSetCurrentError(error)}</p>}
+      {confirming && <div className="rewrite-dialog-layer"><section className="rewrite-confirm-dialog" role="dialog" aria-modal="true" aria-label="设为当前版本确认"><h2>设为当前版本</h2><p>确认将 Candidate v{result.candidateVersion.version_no} 设为当前版本。</p><dl><div><dt>当前版本</dt><dd>v{item.current_version.version_no}</dd></div><div><dt>目标 Candidate</dt><dd>v{result.candidateVersion.version_no}</dd></div><div><dt>固定来源版本</dt><dd>v{result.sourceContentVersionSummary.versionNo}</dd></div></dl><p>此操作只会切换 currentVersion，不会删除旧版本，也不会修改 ReviewReport 或 Issue。</p><footer><button type="button" disabled={submitting} onClick={onDismiss}>取消</button><button type="button" className="primary" disabled={submitting} onClick={onSetCurrent}>{submitting ? "正在设为当前版本…" : "确认设为当前版本"}</button></footer></section></div>}
+    </main>
+  );
+}
+
 function ResultState({ title, retry }: { title: string; retry?: () => void }) { return <main className="rewrite-page"><section className="rewrite-state-card"><h1>{title}</h1>{retry && <footer><button type="button" onClick={retry}>重试</button></footer>}</section></main>; }
 function safeSetCurrentError(error: ApiError) { return ({ idempotency_conflict: "本次提交状态不一致，请刷新后重新确认。", rewrite_candidate_not_found: "Candidate 不存在或来源关系异常。", rewrite_candidate_not_ready: "Candidate 尚未就绪，暂不能设为当前版本。", internal_error: "暂时无法设为当前版本，请稍后重试。", timeout: "请求结果暂未确认，请使用原确认操作重试。", network_error: "网络连接中断，请使用原确认操作重试。" }[error.code] ?? "暂时无法设为当前版本，请稍后重试。"); }
