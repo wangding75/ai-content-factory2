@@ -145,6 +145,17 @@ test("blocked preflight report omits unavailable summaries without dereferencing
   assert.doesNotMatch(preflightSource, /report\.inputSummary\.(generationMode|target)/);
 });
 
+test("run-created dialog distinguishes task creation from result completion", () => {
+  assert.match(preflightSource, /RunCreatedDialog\(\{ runId, onClose \}: RunCreatedDialogProps\)/);
+  assert.match(preflightSource, /任务创建成功/);
+  assert.match(preflightSource, /Run ID/);
+  assert.match(preflightSource, /Run 已创建，当前等待执行/);
+  assert.match(preflightSource, /任务创建成功不代表章节规划结果已经生成/);
+  assert.match(preflightSource, /workflow-runs\/\$\{encodeURIComponent\(runId\)\}/);
+  assert.match(preflightSource, /查看运行详情/);
+  assert.doesNotMatch(preflightSource, /章节规划生成任务已完成/);
+});
+
 test("chapter planning workspace exposes only the real preflight entry point", () => {
   const source = readFileSync(new URL("./chapter-plans-workspace.tsx", import.meta.url), "utf8");
   assert.doesNotMatch(source, /MockGenerateDialog|mockOpen|模拟生成/);

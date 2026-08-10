@@ -419,7 +419,7 @@ export interface RunCreatedDialogProps {
   onClose: () => void;
 }
 
-export function RunCreatedDialog({ onClose }: RunCreatedDialogProps) {
+export function RunCreatedDialog({ runId, onClose }: RunCreatedDialogProps) {
   return (
     <div
       className="chapter-plan-dialog-overlay"
@@ -429,7 +429,10 @@ export function RunCreatedDialog({ onClose }: RunCreatedDialogProps) {
     >
       <div className="chapter-plan-dialog-content">
         <header className="chapter-plan-dialog-header">
-          <h3 id="run-created-title">任务创建成功</h3>
+          <div>
+            <h3 id="run-created-title">任务创建成功</h3>
+            <p className="chapter-plan-dialog-subtitle">章节规划任务已提交，正在排队执行。</p>
+          </div>
           <button
             type="button"
             className="chapter-plan-dialog-close"
@@ -439,17 +442,28 @@ export function RunCreatedDialog({ onClose }: RunCreatedDialogProps) {
             <Icon name="close" size={18} />
           </button>
         </header>
-        <div className="chapter-plan-dialog-body">
+        <div className="chapter-plan-dialog-body chapter-plan-run-created-body">
           <div className="chapter-plan-status-banner success">
             <Icon name="sparkles" size={20} />
             <div>
-              <strong>章节规划生成任务已进入队列</strong>
-              <p>系统已创建独立运行记录，可在工作区查看最新状态。</p>
+              <strong>Run 已创建，当前等待执行</strong>
+              <p>任务创建成功不代表章节规划结果已经生成。</p>
             </div>
           </div>
-          <p className="chapter-plan-help-text">
-            生成过程在后台持续运行。您可以关注工作区顶部的状态更新条，或在完成后查看候选批次。
-          </p>
+          <dl className="chapter-plan-run-created-details">
+            <div>
+              <dt>Run ID</dt>
+              <dd>{runId}</dd>
+            </div>
+            <div>
+              <dt>当前状态</dt>
+              <dd><span className="chapter-plan-run-created-status">已提交 / 排队中</span></dd>
+            </div>
+          </dl>
+          <div className="chapter-plan-run-created-notice">
+            <Icon name="info" size={18} />
+            <p>可以返回章节规划工作区查看运行状态；任务完成后结果进入候选批次，不直接覆盖当前章节。</p>
+          </div>
         </div>
         <footer className="chapter-plan-dialog-footer">
           <button
@@ -457,8 +471,11 @@ export function RunCreatedDialog({ onClose }: RunCreatedDialogProps) {
             className="chapter-plan-button primary"
             onClick={onClose}
           >
-            确定
+            返回工作区
           </button>
+          <Link href={`/workflow-runs/${encodeURIComponent(runId)}`} className="chapter-plan-run-created-detail-link">
+            查看运行详情
+          </Link>
         </footer>
       </div>
     </div>
