@@ -362,6 +362,18 @@ test("rewrite execution failure distinguishes runtime and validation recovery wi
   assert.doesNotMatch(failureSource, /onRetryConsumption|candidateVersion/);
 });
 
+test("rewrite availability separates configuration, invalid configuration, empty issue, and active-run states", () => {
+  assert.match(rewriteWorkspace, /RewriteAvailabilityState/);
+  assert.match(rewriteWorkspace, /configuration_invalid/);
+  assert.match(rewriteWorkspace, /not_configured/);
+  assert.match(rewriteWorkspace, /no_open_issues/);
+  assert.match(rewriteWorkspace, /active_conflict/);
+  assert.match(rewriteWorkspace, /availability\.openIssueCount/);
+  assert.match(rewriteWorkspace, /projects\/\$\{projectId\}\/settings/);
+  assert.match(rewriteWorkspace, /重新检查/);
+  assert.doesNotMatch(rewriteWorkspace, /暂无数据/);
+});
+
 test("summary polling is isolated from the editable draft refresh", () => {
   assert.match(editor, /\["queued", "running"\]/);
   assert.match(editor, /refreshGenerationSummary/);

@@ -293,6 +293,7 @@ function RewriteCreate({ projectId, workId, reportId, initialIssueIds, runUrl }:
         create={() => void create()}
       />
     );
+  if (!availability.available) return <RewriteAvailabilityState projectId={projectId} workId={workId} reportId={reportId} availability={availability} onRefresh={() => void load()} />;
   if (availability && !availability.available) {
     const copy = {
       review_not_completed: ["审核报告尚未完成", "返回审核结果并等待审核完成。"],
@@ -306,6 +307,31 @@ function RewriteCreate({ projectId, workId, reportId, initialIssueIds, runUrl }:
   {showConfiguration && <div className="rewrite-drawer-layer"><button className="rewrite-dialog-backdrop" aria-label="关闭项目重写配置" onClick={() => setShowConfiguration(false)} /><section className="rewrite-config-drawer" role="dialog" aria-modal="true" aria-label="项目重写配置"><header><div><h2>项目重写配置</h2><p>正文重写阶段</p></div><button type="button" aria-label="关闭" onClick={() => setShowConfiguration(false)}>×</button></header><p className="rewrite-available-badge">配置可用</p><dl><div><dt>工作流</dt><dd>{availability?.configurationSummary?.workflowConfigurationName ?? "未配置"}</dd></div><div><dt>配置版本</dt><dd>{availability?.configurationSummary?.workflowConfigurationVersion ?? "—"}</dd></div><div><dt>输入契约</dt><dd>{availability?.configurationSummary?.inputContract ?? "—"}</dd></div><div><dt>输出契约</dt><dd>{availability?.configurationSummary?.outputContract ?? "—"}</dd></div></dl><footer><button type="button" onClick={() => setShowConfiguration(false)}>关闭</button></footer></section></div>}
   {confirmCreate && preflight?.status === "passed" && <div className="rewrite-dialog-layer"><section className="rewrite-confirm-dialog" role="dialog" aria-modal="true" aria-label="确认创建重写任务"><h2>确认创建重写任务</h2><p>将按以上来源、审核报告、{preflight.selectedIssueSummary.total} 个问题和只读配置创建一次重写运行。</p><footer><button type="button" disabled={creating} onClick={() => setConfirmCreate(false)}>返回修改</button><button type="button" className="primary" disabled={creating} onClick={() => void create()}>{creating ? "创建中…" : "确认创建"}</button></footer></section></div>}</main>;
 }
+function RewriteAvailabilityState({ projectId, workId, reportId, availability, onRefresh }: { projectId: string; workId: string; reportId?: string; availability: RewriteAvailability; onRefresh: () => void }) {
+  const mode = availability.reason === "rewrite_not_configured" ? (availability.configurationSummary ? "configuration_invalid" : "not_configured") : availability.reason === "no_open_issues" ? "no_open_issues" : availability.reason === "review_not_completed" ? "review_pending" : "active_conflict";
+  const copy = {
+    not_configured: { badge: "需要配置", title: "项目尚未配置正文重写", detail: "请先在项目设置中绑定可执行的正文重写工作流和连接，配置完成后才能创建重写任务。", action: "前往项目设置" },
+    configuration_invalid: { badge: "配置失效", title: "正文重写配置不可用", detail: "当前项目绑定的工作流或执行连接无法使用，请前往项目设置检查并修复配置。", action: "检查项目配置" },
+    no_open_issues: { badge: "没有可处理内容", title: "没有可重写的问题", detail: "当前审核报告中没有处于开放状态的问题。返回审核结果后选择仍需处理的问题，或等待新的审核结果。", action: "返回审核结果" },
+    review_pending: { badge: "等待审核", title: "审核报告尚未完成", detail: "审核完成并生成报告后，才能从开放问题创建正文重写。", action: "返回审核工作区" },
+    active_conflict: { badge: "任务运行中", title: "已有正文重写任务正在运行", detail: "当前项目已有重写任务在执行，请先查看该任务的进度，完成后再创建新的重写。", action: "恢复运行" },
+  }[mode];
+  const reviewHref = `/projects/${projectId}/works/${workId}/review${reportId ? `?reportId=${encodeURIComponent(reportId)}` : ""}`;
+  return (
+    <main className="rewrite-page rewrite-availability-page">
+      <Link className="rewrite-result-back" href={reviewHref}>← 返回审核结果</Link>
+      <section className={`rewrite-availability-card is-${mode}`}>
+        <div className="rewrite-availability-icon" aria-hidden="true">{mode === "no_open_issues" ? "✓" : mode === "active_conflict" ? "↻" : "!"}</div>
+        <span className="rewrite-state-badge">{copy.badge}</span>
+        <h1>{copy.title}</h1>
+        <p>{copy.detail}</p>
+        <dl><div><dt>来源版本</dt><dd>V{availability.sourceContentVersionSummary.versionNo} · {availability.sourceContentVersionSummary.title}</dd></div><div><dt>开放问题</dt><dd>{availability.openIssueCount} 个</dd></div></dl>
+        <footer>{availability.activeRun ? <Link className="primary" href={`/projects/${projectId}/works/${workId}/rewrite?workflowRunId=${encodeURIComponent(availability.activeRun.id)}`}>{copy.action}</Link> : mode === "not_configured" || mode === "configuration_invalid" ? <Link className="primary" href={`/projects/${projectId}/settings`}>{copy.action}</Link> : <Link className="primary" href={reviewHref}>{copy.action}</Link>}<button type="button" onClick={onRefresh}>重新检查</button></footer>
+      </section>
+    </main>
+  );
+}
+
 function RewriteConfigurationDrawer({ projectId, availability, onClose }: { projectId: string; availability: RewriteAvailability; onClose: () => void }) {
   const configuration = availability.configurationSummary;
   const workflowReady = Boolean(availability.available && configuration);
