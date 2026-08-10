@@ -120,6 +120,20 @@ test("generation failures stay distinct, safe, and recoverable without a candida
   assert.match(status, /summary\.state === "candidate_ready" && candidate && <button onClick=\{onCandidate\}/);
 });
 
+test("candidate compare separates version navigation from the read-only content and adopts only after confirmation", () => {
+  assert.match(candidate, /content-candidate-switch/);
+  assert.match(candidate, /role="tablist"/);
+  assert.match(candidate, /role="tab"/);
+  assert.match(candidate, /aria-selected=\{selected === "current"\}/);
+  assert.match(candidate, /aria-selected=\{selected === "candidate"\}/);
+  assert.match(candidate, /content-candidate-content/);
+  assert.match(candidate, /content-candidate-actions/);
+  assert.match(candidate, /onClick=\{\(\) => setConfirming\(true\)\}/);
+  assert.match(candidate, /confirmSetCurrent/);
+  assert.match(candidate, /setCurrentContentVersion/);
+  assert.doesNotMatch(candidate, /onClick=\{apply\}/);
+});
+
 test("summary polling is isolated from the editable draft refresh", () => {
   assert.match(editor, /\["queued", "running"\]/);
   assert.match(editor, /refreshGenerationSummary/);
