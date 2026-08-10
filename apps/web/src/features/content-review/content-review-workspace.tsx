@@ -342,6 +342,9 @@ function ReviewHeader({
         <p>{copy.common.subtitle}</p>
       </div>
       <nav>
+        <Link href={`/projects/${projectId}/works/${workId}`}>
+          {copy.report.openEditor}
+        </Link>
         <Link href={`/projects/${projectId}/works/${workId}/review/history`}>
           <Icon name="timeline" size={17} />
           {copy.common.history}
@@ -496,6 +499,7 @@ function RunningState({
             {copy.common.versionPrefix} V{source.version_no} ·{" "}
             {state === "queued" ? copy.states.queued : copy.states.running}
           </p>
+          <small>Run ID: {run.runNumber}</small>
           <small>{copy.states.runningHint}</small>
         </div>
         <Link href={`/workflow-runs/${run.id}`}>
@@ -511,7 +515,7 @@ function RunningState({
           <b>{source.word_count.toLocaleString("zh-CN")} {copy.common.words}</b>
         </span>
         <span>
-          {copy.common.startedAt} <b>{formatReviewTime(run.createdAt)}</b>
+          {copy.common.startedAt} <b>{formatReviewTime(run.startedAt ?? run.createdAt)}</b>
         </span>
         <span>
           {copy.common.currentStage}{" "}

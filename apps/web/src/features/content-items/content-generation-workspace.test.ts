@@ -9,6 +9,7 @@ const drawer = readFileSync(join(root, "content-generation-drawer.tsx"), "utf8")
 const status = readFileSync(join(root, "content-generation-status.tsx"), "utf8");
 const candidate = readFileSync(join(root, "content-candidate-compare.tsx"), "utf8");
 const locale = readFileSync(join(root, "content-generation-locale.ts"), "utf8");
+const reviewWorkspace = readFileSync(join(process.cwd(), "src", "features", "content-review", "content-review-workspace.tsx"), "utf8");
 
 test("content generation remains on the editor route with its three context tabs", () => {
   assert.match(editor, /getContentGenerationSummary/);
@@ -166,6 +167,17 @@ test("review submission drawer keeps a real subject, scope summary, workflow sec
   assert.match(reviewDrawer, /<footer>/);
   assert.match(reviewDrawer, /copy\.drawer\.confirm/);
   assert.match(reviewDrawer, /copy\.drawer\.cancel/);
+});
+
+test("review running state keeps editor and Run entry points without final issue statistics", () => {
+  const runningState = reviewWorkspace.slice(reviewWorkspace.indexOf("function RunningState"), reviewWorkspace.indexOf("function FailureState"));
+  assert.match(reviewWorkspace, /copy\.report\.openEditor/);
+  assert.match(reviewWorkspace, /href=\{`\/projects\/\$\{projectId\}\/works\/\$\{workId\}`\}/);
+  assert.match(reviewWorkspace, /Run ID: \{run\.runNumber\}/);
+  assert.match(reviewWorkspace, /href=\{`\/workflow-runs\/\$\{run\.id\}`\}/);
+  assert.match(reviewWorkspace, /run\.startedAt \?\? run\.createdAt/);
+  assert.match(runningState, /review-progress-card/);
+  assert.doesNotMatch(runningState, /review-report-summary/);
 });
 
 test("summary polling is isolated from the editable draft refresh", () => {
