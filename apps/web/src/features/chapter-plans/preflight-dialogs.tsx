@@ -72,16 +72,28 @@ export interface PreflightProgressDialogProps {
 }
 
 export function PreflightProgressDialog({ onClose }: PreflightProgressDialogProps) {
+  const completedSteps = [
+    "读取项目策划与设定",
+    "加载故事线树并校验结构",
+    "整理角色、素材与伏笔",
+  ];
+  const pendingSteps = [
+    "检查运行冲突与任务锁定",
+    "校验输入契约与版本",
+    "生成预检摘要",
+  ];
+
   return (
     <div
       className="chapter-plan-dialog-overlay"
       role="dialog"
       aria-modal="true"
       aria-labelledby="preflight-progress-title"
+      aria-busy="true"
     >
       <div className="chapter-plan-dialog-content">
         <header className="chapter-plan-dialog-header">
-          <h3 id="preflight-progress-title">生成预检进行中</h3>
+          <h3 id="preflight-progress-title">正在执行章节规划预检</h3>
           {onClose && (
             <button
               type="button"
@@ -93,9 +105,36 @@ export function PreflightProgressDialog({ onClose }: PreflightProgressDialogProp
             </button>
           )}
         </header>
-        <div className="chapter-plan-dialog-body preflight-progress-body">
-          <div className="chapter-plan-spinner" aria-hidden="true" />
-          <p>正在对工作流配置、故事线关联及运行状态进行检查...</p>
+        <div className="chapter-plan-dialog-body preflight-progress-body" aria-live="polite">
+          <div className="preflight-progress-heading">
+            <div className="chapter-plan-spinner" aria-hidden="true" />
+            <div>
+              <strong>预检进行中</strong>
+              <p>正在确认配置与输入是否满足真实生成条件。</p>
+            </div>
+          </div>
+          <ol className="preflight-progress-steps" aria-label="预检检查项">
+            {completedSteps.map((label) => (
+              <li key={label} className="complete">
+                <span className="preflight-step-marker" aria-hidden="true">✓</span>
+                <span>{label}</span>
+              </li>
+            ))}
+            <li className="current" aria-current="step">
+              <span className="preflight-step-marker" aria-hidden="true" />
+              <span>检查工作流配置与连接</span>
+            </li>
+            {pendingSteps.map((label) => (
+              <li key={label} className="pending">
+                <span className="preflight-step-marker" aria-hidden="true" />
+                <span>{label}</span>
+              </li>
+            ))}
+          </ol>
+          <div className="preflight-progress-notice">
+            <Icon name="info" size={18} />
+            <p>预检阶段不会创建任务，也不会调用 n8n 或 LLM；通常耗时 5–15 秒。</p>
+          </div>
         </div>
       </div>
     </div>

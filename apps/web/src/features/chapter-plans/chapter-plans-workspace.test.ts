@@ -14,6 +14,10 @@ const preflightSource = readFileSync(
   new URL("./preflight-dialogs.tsx", import.meta.url),
   "utf8",
 );
+const preflightProgressSource = preflightSource.slice(
+  preflightSource.indexOf("export function PreflightProgressDialog"),
+  preflightSource.indexOf("export interface PreflightReportDialogProps"),
+);
 
 test("chapter plans batch-load relation names and summary", () => {
   assert.match(
@@ -87,6 +91,16 @@ test("generation settings drawer groups parameters and repeats a preflight-safe 
   assert.match(drawerSource, /仅执行预检，不创建任务，不调用 n8n 或 LLM/);
   assert.match(drawerSource, /确认并预检/);
   assert.match(drawerSource, /onSubmit\(payload\)/);
+});
+
+test("preflight progress dialog exposes one active check without a second submit", () => {
+  assert.match(preflightProgressSource, /正在执行章节规划预检/);
+  assert.match(preflightProgressSource, /预检进行中/);
+  assert.match(preflightProgressSource, /检查工作流配置与连接/);
+  assert.match(preflightProgressSource, /预检阶段不会创建任务，也不会调用 n8n 或 LLM/);
+  assert.match(preflightProgressSource, /aria-current="step"/);
+  assert.doesNotMatch(preflightProgressSource, /确认发起生成/);
+  assert.doesNotMatch(preflightProgressSource, /onCreateRun/);
 });
 
 test("preflight report dialog differentiates passed and blocked status", () => {

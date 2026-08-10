@@ -538,3 +538,21 @@ button,a { -webkit-tap-highlight-color:transparent; }
 .chapter-plan-button:disabled{opacity:.55;cursor:not-allowed}
 @media(max-width:620px){.chapter-plan-drawer-content{width:100%}.chapter-plan-drawer-header,.chapter-plan-drawer-body{padding-right:16px;padding-left:16px}.chapter-plan-radio-group{grid-template-columns:1fr}.chapter-plan-checkbox-list{grid-template-columns:1fr}.chapter-plan-form-row{grid-template-columns:1fr}.chapter-plan-drawer-footer{align-items:stretch;flex-direction:column;margin-right:-16px;margin-left:-16px;padding-right:16px;padding-left:16px}.chapter-plan-drawer-footer-summary{width:100%}.chapter-plan-drawer-footer-actions{justify-content:flex-end;width:100%}}
 
+/* UI-041 preflight progress dialog. */
+.preflight-progress-body{display:grid;gap:20px;padding:26px 30px 30px}
+.preflight-progress-heading{display:flex;align-items:flex-start;gap:12px;padding:14px 16px;border:1px solid #d2d0ff;border-radius:10px;color:#2f2e74;background:#f5f5ff}
+.preflight-progress-heading strong{display:block;color:#4648d4;font-size:15px}
+.preflight-progress-heading p{margin:4px 0 0;color:#596171;font-size:13px;line-height:19px}
+.preflight-progress-heading .chapter-plan-spinner{width:20px;height:20px;margin:1px 0 0;border-width:3px}
+.preflight-progress-steps{display:grid;gap:4px;margin:0;padding:0;list-style:none}
+.preflight-progress-steps li{display:flex;align-items:center;gap:12px;min-height:42px;padding:9px 12px;border-radius:8px;color:#313540;font-size:13px;font-weight:600}
+.preflight-progress-steps li.current{border:1px solid #d2d0ff;color:#4648d4;background:#f5f5ff}
+.preflight-progress-steps li.pending{color:#767586;opacity:.7}
+.preflight-step-marker{display:grid;width:22px;height:22px;flex:0 0 auto;place-items:center;border-radius:50%;color:#fff;background:#10b981;font-size:13px;font-weight:800}
+.preflight-progress-steps li.current .preflight-step-marker{width:12px;height:12px;margin:0 5px;border:3px solid #c7c4d7;border-top-color:#4648d4;background:transparent;animation:preflight-progress-spin 1s linear infinite}
+.preflight-progress-steps li.pending .preflight-step-marker{width:8px;height:8px;margin:0 7px;background:#c7c4d7}
+.preflight-progress-notice{display:flex;align-items:flex-start;gap:9px;padding:14px 16px;border:1px solid #d2e1f7;border-radius:9px;color:#596171;background:#edf5ff;font-size:12px;line-height:18px}
+.preflight-progress-notice svg{flex:0 0 auto;color:#4648d4}
+.preflight-progress-notice p{margin:0}
+@keyframes preflight-progress-spin{to{transform:rotate(360deg)}}
+
