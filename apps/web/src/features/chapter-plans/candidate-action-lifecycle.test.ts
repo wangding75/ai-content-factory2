@@ -27,6 +27,19 @@ test("batch adopt dialog handles itemized outcomes and partial success without c
   assert.doesNotMatch(actionDialogsSource, /候选 ID:/);
 });
 
+test("batch adopt confirmation explains selected count and impact before submit", () => {
+  assert.match(actionDialogsSource, /确认批量采用候选/);
+  assert.match(actionDialogsSource, /批量采用摘要/);
+  assert.match(actionDialogsSource, /本次采用影响/);
+  assert.match(actionDialogsSource, /新设章节/);
+  assert.match(actionDialogsSource, /替换候选/);
+  assert.match(actionDialogsSource, /无变化/);
+  assert.match(actionDialogsSource, /存在冲突/);
+  assert.match(actionDialogsSource, /采用说明/);
+  assert.match(actionDialogsSource, /不会直接确认章节，也不会触发正文生产/);
+  assert.match(actionDialogsSource, /确认批量采用/);
+});
+
 test("batch abandon dialog requires acknowledgeAdoptedChaptersRemain: true and shows non-rollback notice", () => {
   assert.match(actionDialogsSource, /abandonChapterPlanCandidateBatch/);
   assert.match(actionDialogsSource, /acknowledgeAdoptedChaptersRemain: true/);

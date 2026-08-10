@@ -741,3 +741,39 @@ button,a { -webkit-tap-highlight-color:transparent; }
 @media(max-width:800px){.candidate-compare-context{grid-template-columns:1fr 1fr}.candidate-compare-readonly-badge{grid-column:1/-1}.candidate-compare-panels{grid-template-columns:1fr}.candidate-compare-dialog .chapter-plan-dialog-body{padding:16px}.candidate-compare-dialog .chapter-plan-dialog-header,.candidate-compare-dialog .chapter-plan-dialog-footer{padding-right:16px;padding-left:16px}}
 @media(max-width:620px){.candidate-compare-context{grid-template-columns:1fr}.candidate-compare-readonly-badge{grid-column:auto}.candidate-compare-dialog .chapter-plan-dialog-footer{align-items:stretch;flex-direction:column}.candidate-compare-dialog .chapter-plan-dialog-footer .chapter-plan-button{width:100%}}
 
+/* UI-049 batch adopt confirmation. */
+.batch-adopt-dialog{display:flex;width:min(760px,100%);max-height:calc(100vh - 48px);flex-direction:column;overflow:hidden;border:1px solid #c7c4d7;border-radius:14px;background:#fff}
+.batch-adopt-dialog .chapter-plan-dialog-header{flex:0 0 auto;padding:20px 26px}
+.batch-adopt-dialog .chapter-plan-dialog-header h3{margin:0;color:#191c1e;font-size:21px}
+.batch-adopt-dialog .chapter-plan-dialog-body{display:grid;min-height:0;gap:16px;overflow:auto;padding:22px 26px;background:#f7f9fb}
+.batch-adopt-summary{padding:16px;border:1px solid #aebbd0;border-radius:9px;background:#fff}
+.batch-adopt-summary strong{display:block;color:#191c1e;font-size:16px}
+.batch-adopt-summary p{margin:8px 0 0;color:#596171;font-size:12px;line-height:18px}
+.batch-adopt-summary code{padding:2px 5px;border-radius:4px;color:#39485a;background:#e8edf4;font-size:10px}
+.batch-adopt-impact{display:grid;gap:10px}
+.batch-adopt-impact h4,.batch-adopt-explanation h4,.batch-adopt-candidate-list h4{margin:0;color:#313540;font-size:14px}
+.batch-adopt-impact-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.batch-adopt-impact-grid>div{display:grid;justify-items:center;gap:5px;padding:13px 8px;border:1px solid #c7d9fa;border-radius:9px;color:#2f2e74;background:#f2f7ff;text-align:center}
+.batch-adopt-impact-grid>div strong{font-size:24px;line-height:24px}
+.batch-adopt-impact-grid>div span{font-size:11px}
+.batch-adopt-impact-grid>div.neutral{border-color:#dfe2e6;color:#596171;background:#f2f4f6}
+.batch-adopt-impact-grid>div.warning{border-color:#ffb4ab;color:#93000a;background:#fff0ef}
+.batch-adopt-conflict-warning{display:flex;align-items:flex-start;gap:10px;padding:14px 16px;border:1px solid #ffb4ab;border-radius:9px;color:#93000a;background:#fff7f6}
+.batch-adopt-conflict-warning svg{flex:0 0 auto}
+.batch-adopt-conflict-warning strong{font-size:13px}
+.batch-adopt-conflict-warning p{margin:5px 0 0;color:#703700;font-size:12px;line-height:18px}
+.batch-adopt-explanation{display:grid;gap:8px;padding:15px 16px;border-radius:9px;color:#313540;background:#edf5ff}
+.batch-adopt-explanation ul{display:grid;gap:7px;margin:0;padding-left:20px;color:#596171;font-size:12px;line-height:18px}
+.batch-adopt-candidate-list{display:grid;gap:10px;padding:15px 16px;border:1px solid #dfe2e6;border-radius:9px;background:#fff}
+.batch-adopt-candidate-list .chapter-plan-preflight-list{margin:0}
+.batch-adopt-candidate-list .preflight-item.info{border-color:#dfe2e6;background:#fff}
+.batch-adopt-candidate-list .preflight-item .badge.info{border-radius:999px;color:#175cd3;background:#eff8ff}
+.batch-adopt-candidate-list .preflight-item .badge.blocker{border-radius:999px;color:#fff;background:#ba1a1a}
+.batch-adopt-candidate-list .preflight-item{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.batch-adopt-candidate-list .preflight-item>div{min-width:0}
+.batch-adopt-candidate-list .preflight-item strong{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.batch-adopt-candidate-list .preflight-item p{margin:5px 0 0;color:#767586;font-size:11px}
+.batch-adopt-dialog .chapter-plan-dialog-footer{flex:0 0 auto;padding:16px 26px;background:#fff}
+.batch-adopt-dialog .chapter-plan-dialog-footer .chapter-plan-button.primary{min-width:138px}
+@media(max-width:620px){.batch-adopt-impact-grid{grid-template-columns:1fr 1fr}.batch-adopt-dialog .chapter-plan-dialog-body{padding:16px}.batch-adopt-dialog .chapter-plan-dialog-header,.batch-adopt-dialog .chapter-plan-dialog-footer{padding-right:16px;padding-left:16px}.batch-adopt-dialog .chapter-plan-dialog-footer{align-items:stretch;flex-direction:column}.batch-adopt-dialog .chapter-plan-dialog-footer .chapter-plan-button{width:100%}}
+

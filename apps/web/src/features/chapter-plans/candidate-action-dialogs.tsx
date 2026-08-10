@@ -13,7 +13,10 @@ import {
 } from "./chapter-plan-http-api";
 
 import { useIdempotency } from "./use-idempotency";
-import { chapterPlanningErrorMessage } from "./chapter-plan-presentation";
+import {
+  candidateBatchModeLabel,
+  chapterPlanningErrorMessage,
+} from "./chapter-plan-presentation";
 
 // --- P15_C8_BATCH_ADOPT_DIALOG ---
 
@@ -34,6 +37,17 @@ export function BatchAdoptDialog({
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<ApiError | null>(null);
   const [result, setResult] = useState<BulkAdoptChapterPlanCandidatesResult | null>(null);
+
+  const impact = selectedCandidates.reduce(
+    (summary, candidate) => {
+      summary[candidate.diffType] += 1;
+      return summary;
+    },
+    { new: 0, replace: 0, no_change: 0, stale_conflict: 0 },
+  );
+  const conflictCount = selectedCandidates.filter(
+    (candidate) => candidate.status === "stale" || candidate.diffType === "stale_conflict",
+  ).length;
 
   const handleSubmit = async () => {
     setSubmitting(true);
@@ -85,9 +99,9 @@ export function BatchAdoptDialog({
       aria-modal="true"
       aria-labelledby="batch-adopt-title"
     >
-      <div className="chapter-plan-dialog-content max-w-2xl">
+      <div className="chapter-plan-dialog-content batch-adopt-dialog">
         <header className="chapter-plan-dialog-header">
-          <h3 id="batch-adopt-title">批量采用候选确认</h3>
+          <h3 id="batch-adopt-title">确认批量采用候选</h3>
           <button
             type="button"
             className="chapter-plan-dialog-close"
@@ -107,21 +121,73 @@ export function BatchAdoptDialog({
 
           {!result ? (
             <>
-              <p>
-                即将采用当前批次中的 <b>{selectedCandidates.length}</b>{" "}
-                个候选章节。
-              </p>
-              <div className="chapter-plan-preflight-section">
+              <section className="batch-adopt-summary" aria-label="批量采用摘要">
+                <div>
+                  <strong>已选 {selectedCandidates.length} 个候选章节</strong>
+                  <p>
+                    批次：{candidateBatchModeLabel(batch.generationMode)} · 第 {batch.target.startChapterNo}—
+                    {batch.target.endChapterNo} 章 · 来源 Run ID：<code>{batch.sourceWorkflowRunId}</code>
+                  </p>
+                </div>
+              </section>
+
+              <section className="batch-adopt-impact" aria-label="批量采用影响">
+                <h4>本次采用影响</h4>
+                <div className="batch-adopt-impact-grid">
+                  <div className="positive">
+                    <strong>{impact.new}</strong>
+                    <span>新设章节</span>
+                  </div>
+                  <div className="positive">
+                    <strong>{impact.replace}</strong>
+                    <span>替换候选</span>
+                  </div>
+                  <div className="neutral">
+                    <strong>{impact.no_change}</strong>
+                    <span>无变化</span>
+                  </div>
+                  <div className={conflictCount > 0 ? "warning" : "neutral"}>
+                    <strong>{conflictCount}</strong>
+                    <span>存在冲突</span>
+                  </div>
+                </div>
+              </section>
+
+              {conflictCount > 0 && (
+                <div className="batch-adopt-conflict-warning" role="alert">
+                  <Icon name="info" size={20} />
+                  <div>
+                    <strong>{conflictCount} 个候选存在基线冲突</strong>
+                    <p>冲突候选不会被强制覆盖，提交后会在结果中单独标记，需要重新比较或刷新后再处理。</p>
+                  </div>
+                </div>
+              )}
+
+              <section className="batch-adopt-explanation" aria-label="采用说明">
+                <h4>采用说明</h4>
+                <ul>
+                  <li>采用后进入章节规划的待确认流程，并生成版本化修订记录。</li>
+                  <li>本操作不会直接确认章节，也不会触发正文生产。</li>
+                  <li>被替换章节保留历史版本和来源记录。</li>
+                </ul>
+              </section>
+
+              <section className="batch-adopt-candidate-list" aria-label="待采用候选列表">
                 <h4>待采用候选列表</h4>
                 <ul className="chapter-plan-preflight-list">
                   {selectedCandidates.map((cand) => (
                     <li key={cand.id} className="preflight-item info">
-                      <strong>第 {cand.chapterNo} 章: {cand.currentSnapshot.title}</strong>
-                      <span className="badge info">第 {cand.version} 版</span>
+                      <div>
+                        <strong>第 {cand.chapterNo} 章：{cand.currentSnapshot.title}</strong>
+                        <p>{cand.diffType === "stale_conflict" ? "基线冲突，提交后将单独返回处理结果" : "可进入采用处理"}</p>
+                      </div>
+                      <span className={`badge ${cand.diffType === "stale_conflict" ? "blocker" : "info"}`}>
+                        第 {cand.version} 版
+                      </span>
                     </li>
                   ))}
                 </ul>
-              </div>
+              </section>
             </>
           ) : (
             <div className="batch-adopt-result-section">
