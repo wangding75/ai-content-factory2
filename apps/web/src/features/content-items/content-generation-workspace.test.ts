@@ -107,6 +107,19 @@ test("candidate-ready status presents only a real candidate without changing the
   assert.doesNotMatch(status, /setCurrentContentVersion/);
 });
 
+test("generation failures stay distinct, safe, and recoverable without a candidate success action", () => {
+  assert.match(status, /copy\.titles\.runtime_failed/);
+  assert.match(status, /copy\.titles\.output_validation_failed/);
+  assert.match(status, /copy\.titles\.result_consumption_failed/);
+  assert.match(status, /copy\.runtimeFailedDetail/);
+  assert.match(status, /copy\.outputValidationFailedDetail/);
+  assert.match(status, /copy\.resultConsumptionFailedDetail/);
+  assert.match(status, /summary\.state === "result_consumption_failed"/);
+  assert.match(status, /copy\.retryConsumption/);
+  assert.match(status, /href=\{`\/workflow-runs\/\$\{run\.id\}`\}/);
+  assert.match(status, /summary\.state === "candidate_ready" && candidate && <button onClick=\{onCandidate\}/);
+});
+
 test("summary polling is isolated from the editable draft refresh", () => {
   assert.match(editor, /\["queued", "running"\]/);
   assert.match(editor, /refreshGenerationSummary/);
