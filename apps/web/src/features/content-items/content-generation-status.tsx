@@ -18,6 +18,7 @@ export function ContentGenerationStatus({ projectId, summary, onRefresh, onCandi
   const [retryError, setRetryError] = useState<{ identity: string; message: string } | null>(null);
   const [cancelling, setCancelling] = useState(false);
   const run = summary.activeRun ?? summary.latestRun;
+  const candidate = summary.state === "candidate_ready" ? summary.latestCandidateVersion : undefined;
   useEffect(() => {
     if (!run || !["queued", "running"].includes(summary.state)) return;
     const controller = new AbortController();
@@ -59,11 +60,12 @@ export function ContentGenerationStatus({ projectId, summary, onRefresh, onCandi
   };
   return <section className={`content-generation-status content-generation-status-${summary.state}`} aria-live="polite">
     <div><strong>{title}</strong>{run && <span>Run ID: {run.runNumber}</span>}
-      {summary.state === "queued" && <span>{copy.queuedDetail}</span>}{summary.state === "running" && <span>{copy.runningDetail}</span>}{summary.state === "candidate_ready" && <span>{copy.candidateDetail(summary.latestCandidateVersion?.version_no)}</span>}{failed.has(summary.state) && <span>{safe(summary.latestError?.message ?? run?.errorMessage)}</span>}{summary.state === "not_configured" && <span>{copy.notConfiguredDetail}</span>}
+      {summary.state === "queued" && <span>{copy.queuedDetail}</span>}{summary.state === "running" && <span>{copy.runningDetail}</span>}{summary.state === "candidate_ready" && <span>{candidate ? copy.candidateReadyDetail(candidate.version_no) : copy.candidateReadyMissing}</span>}{failed.has(summary.state) && <span>{safe(summary.latestError?.message ?? run?.errorMessage)}</span>}{summary.state === "not_configured" && <span>{copy.notConfiguredDetail}</span>}
     </div>
+    {summary.state === "candidate_ready" && candidate && <div className="content-generation-candidate-meta" role="status"><strong>{copy.candidateVersion(candidate.version_no)}</strong>{run && <span>来源 Run {run.runNumber}</span>}</div>}
     {summary.state === "running" && run && <div className="content-generation-running-meta" role="status"><span>开始：{runTimeLabel(run.startedAt ?? run.createdAt)}</span><span>最新阶段：{latestEvent ? eventLabel(latestEvent.eventType) : "等待事件"}</span><span>已记录 {visibleEvents.length} 个事件</span></div>}
     <div className="content-generation-status-actions">
-      {summary.state === "candidate_ready" && <button onClick={onCandidate}>{copy.viewCandidate}</button>}{run && <button onClick={() => setShowEvents((x) => !x)}>{showEvents ? copy.hideDetails : copy.viewDetails}</button>}{(summary.state === "queued" || summary.state === "running") && run && <Link href={`/workflow-runs/${run.id}`}>{copy.workflowCenter}</Link>}{summary.state === "queued" && run && <button className="content-generation-cancel" onClick={() => void cancel()} disabled={cancelling}>{cancelling ? copy.cancellingRun : copy.cancelRun}</button>}{summary.state === "not_configured" && <Link href={`/projects/${projectId}/settings?tab=workflow-bindings`}>{copy.configureWorkflow}</Link>}
+      {summary.state === "candidate_ready" && candidate && <button onClick={onCandidate}>{copy.viewCandidate}</button>}{run && <button onClick={() => setShowEvents((x) => !x)}>{showEvents ? copy.hideDetails : copy.viewDetails}</button>}{(summary.state === "queued" || summary.state === "running") && run && <Link href={`/workflow-runs/${run.id}`}>{copy.workflowCenter}</Link>}{summary.state === "queued" && run && <button className="content-generation-cancel" onClick={() => void cancel()} disabled={cancelling}>{cancelling ? copy.cancellingRun : copy.cancelRun}</button>}{summary.state === "not_configured" && <Link href={`/projects/${projectId}/settings?tab=workflow-bindings`}>{copy.configureWorkflow}</Link>}
       {summary.state === "runtime_failed" && <button onClick={() => void retry()} disabled={submitting}>{submitting ? copy.retrying : copy.retryRuntime}</button>}{summary.state === "output_validation_failed" && <button onClick={() => void retry()} disabled={submitting}>{submitting ? copy.retrying : copy.retryRuntime}</button>}{summary.state === "result_consumption_failed" && <button onClick={() => void retry()} disabled={submitting}>{submitting ? copy.retrying : copy.retryConsumption}</button>}
     </div>
     {retryError && (retryError.identity === retryIdentity || retryError.identity === `cancel:${run?.id}`) && <p className="content-inline-error" role="alert">{retryError.message}</p>}

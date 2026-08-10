@@ -95,6 +95,18 @@ test("running generation keeps the editor-level status compact and shows real ru
   assert.doesNotMatch(status, /content-editor-state/);
 });
 
+test("candidate-ready status presents only a real candidate without changing the current version", () => {
+  assert.match(status, /summary\.state === "candidate_ready"/);
+  assert.match(status, /summary\.latestCandidateVersion/);
+  assert.match(status, /copy\.candidateReadyDetail\(candidate\.version_no\)/);
+  assert.match(status, /copy\.candidateVersion\(candidate\.version_no\)/);
+  assert.match(status, /candidate && <button onClick=\{onCandidate\}/);
+  assert.match(locale, /candidateReadyDetail/);
+  assert.match(locale, /candidateReadyMissing/);
+  assert.doesNotMatch(status, /run\.status === "succeeded"/);
+  assert.doesNotMatch(status, /setCurrentContentVersion/);
+});
+
 test("summary polling is isolated from the editable draft refresh", () => {
   assert.match(editor, /\["queued", "running"\]/);
   assert.match(editor, /refreshGenerationSummary/);
