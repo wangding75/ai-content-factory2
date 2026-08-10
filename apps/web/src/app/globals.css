@@ -2,6 +2,9 @@
 @import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200');
 @import "tailwindcss";
 
+/* UI-082 content generation shared preflight blocker. */
+.content-generation-check-blocked-summary{border:1px solid #f2aaa3;border-radius:8px;padding:11px;background:#fff0ee;font-size:12px;line-height:18px}.content-generation-check-blocked-summary>strong{color:#93000a}.content-generation-check-blocked-summary p{margin:5px 0 0;color:#596171}.content-generation-blocked-state{display:grid;gap:12px}.content-generation-check-list{display:grid;gap:5px;border:1px solid #dfe2e6;border-radius:8px;padding:10px 12px;background:#f7f9fb}.content-generation-check-list p{margin:0;color:#596171;font-size:12px;line-height:18px}.content-generation-retry-preflight{justify-self:start;border:1px solid #b4232f;border-radius:7px;padding:8px 13px;color:#a12b32;background:#fff;font-size:12px;font-weight:800;cursor:pointer}.content-generation-retry-preflight:hover{background:#fff5f5}.content-generation-retry-preflight:disabled{opacity:.55;cursor:not-allowed}
+
 @theme {
   --color-surface: #f8f9fd;
   --color-on-surface: #2b333b;

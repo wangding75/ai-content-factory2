@@ -82,6 +82,15 @@ test("generation requirements stay visible, editable, and distinguish empty from
   assert.match(drawerSource, /setInstructions/);
 });
 
+test("blocked generation keeps drawer context and retries only the preflight flow", () => {
+  assert.match(drawer, /report\.status === "blocked"/);
+  assert.match(drawer, /WorkflowPreflightBlocker reasons=\{reasons\}/);
+  assert.match(drawer, /content-generation-retry-preflight/);
+  assert.match(drawer, /onClick=\{\(\) => void preflight\(\)\}/);
+  assert.match(drawer, /当前正文、生成要求和上下文选项均已保留/);
+  assert.match(drawer, /report\?\.status === "passed" && <button/);
+});
+
 test("queued generation exposes run details and safe cancellation without candidate or progress actions", () => {
   assert.match(status, /summary\.state === "queued"/);
   assert.match(status, /href=\{`\/workflow-runs\/\$\{run\.id\}`\}/);

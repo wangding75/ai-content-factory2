@@ -53,11 +53,20 @@ export function ContentGenerationDrawer({ contentItemId, version, chapterLabel =
               {report && (
                 <section className="content-generation-checks" aria-live="polite">
                   <h3>前置检查</h3>
-                  <div className={report.status === "passed" ? "content-generation-check-passed" : "content-generation-check-blocked"}>
-                    <strong>{report.status === "passed" ? copy.drawer.preflightPassed : copy.drawer.preflightBlocked}</strong>
-                    {report.status === "blocked" && <WorkflowPreflightBlocker reasons={reasons} />}
+                  {report.status === "blocked" ? <div className="content-generation-blocked-state">
+                    <div className="content-generation-check-blocked-summary">
+                      <strong>{copy.drawer.preflightBlocked}</strong>
+                      <p>当前正文、生成要求和上下文选项均已保留；处理阻断项后才能创建正文生成任务。</p>
+                    </div>
+                    <WorkflowPreflightBlocker reasons={reasons} />
+                    <div className="content-generation-check-list" aria-label="正文生成预检项目">
+                      {report.checks.map((check) => <p key={check.code}>{check.status === "blocked" ? copy.drawer.checkBlocked : copy.drawer.checkPassed}{check.message}</p>)}
+                    </div>
+                    <button type="button" className="content-generation-retry-preflight" onClick={() => void preflight()} disabled={submitting}>{copy.drawer.retryPreflight}</button>
+                  </div> : <div className="content-generation-check-passed">
+                    <strong>{copy.drawer.preflightPassed}</strong>
                     {report.checks.map((check) => <p key={check.code}>{check.status === "blocked" ? copy.drawer.checkBlocked : copy.drawer.checkPassed}{check.message}</p>)}
-                  </div>
+                  </div>}
                 </section>
               )}
               {report && (
