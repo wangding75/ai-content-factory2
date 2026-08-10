@@ -134,6 +134,17 @@ test("candidate compare separates version navigation from the read-only content 
   assert.doesNotMatch(candidate, /onClick=\{apply\}/);
 });
 
+test("unconfigured generation is a centered blocking state with a workflow binding entry", () => {
+  assert.match(status, /summary\.state === "not_configured"/);
+  assert.match(status, /content-generation-not-configured-body/);
+  assert.match(status, /copy\.notConfiguredDetail/);
+  assert.match(status, /tab=workflow-bindings/);
+  assert.match(status, /copy\.configureWorkflow/);
+  assert.match(status, /content-generation-status-\$\{summary\.state\}/);
+  assert.match(editor, /generationSummary\?\.canGenerate === false/);
+  assert.doesNotMatch(status, /summary\.state === "not_configured"[^]*confirmCreate/);
+});
+
 test("summary polling is isolated from the editable draft refresh", () => {
   assert.match(editor, /\["queued", "running"\]/);
   assert.match(editor, /refreshGenerationSummary/);
