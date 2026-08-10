@@ -70,3 +70,14 @@ test("candidate batch detail page renders candidate list, search, and diff tags"
   assert.match(detailPageSource, /搜索候选标题、摘要或目的/);
   assert.match(detailPageSource, /candidateDiffTypeLabel/);
 });
+
+test("candidate batch detail separates summary, current/new chapters, and safe bulk operations", () => {
+  assert.match(detailPageSource, /aria-label="批次摘要"/);
+  assert.match(detailPageSource, /来源 Run ID/);
+  assert.match(detailPageSource, /当前章节/);
+  assert.match(detailPageSource, /新候选/);
+  assert.match(detailPageSource, /选择全部可处理候选/);
+  assert.match(detailPageSource, /已选择 \{selectedList\.length\} 个可处理候选/);
+  assert.match(detailPageSource, /不直接覆盖当前章节/);
+  assert.match(detailPageSource, /BatchAdoptDialog/);
+});

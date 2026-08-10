@@ -619,3 +619,46 @@ button,a { -webkit-tap-highlight-color:transparent; }
 .chapter-plan-row .chapter-plan-status.adopted{color:#176b34;background:#dcfce7}
 .chapter-plan-row .chapter-plan-status.abandoned{color:#93000a;background:#ffdad6}
 
+/* UI-046 candidate batch detail. */
+.chapter-plan-batch-detail-summary{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:16px;margin:24px 0;padding:20px;border:1px solid #c7c4d7;border-radius:12px;background:#fff;box-shadow:0 2px 5px rgba(25,28,30,.04)}
+.chapter-plan-batch-detail-summary-main{display:flex;align-items:center;gap:14px;min-width:0}
+.chapter-plan-batch-detail-summary-icon{display:grid;width:48px;height:48px;flex:0 0 auto;place-items:center;border-radius:10px;color:#4648d4;background:#e9e9ff}
+.chapter-plan-batch-detail-summary-kicker{color:#767586;font-size:11px;font-weight:800;letter-spacing:.04em}
+.chapter-plan-batch-detail-summary h3{margin:4px 0 5px;color:#191c1e;font-size:18px}
+.chapter-plan-batch-detail-summary p{margin:0;color:#596171;font-size:12px;line-height:18px}
+.chapter-plan-batch-detail-summary code{padding:2px 5px;border-radius:4px;color:#39485a;background:#f2f4f6;font-size:11px}
+.chapter-plan-batch-detail-summary-status{display:grid;align-content:center;justify-items:end;gap:8px;text-align:right}
+.chapter-plan-batch-detail-summary-status .chapter-plan-status{width:max-content}
+.chapter-plan-batch-detail-summary-status>span{color:#596171;font-size:12px;white-space:nowrap}
+.chapter-plan-batch-detail-summary-note{grid-column:1/-1;padding-top:12px;border-top:1px solid #edf0f2;color:#596171!important}
+.chapter-plan-batch-detail-tabs{display:flex;gap:22px;margin:0;border-bottom:1px solid #c7c4d7}
+.chapter-plan-batch-detail-tabs button{padding:11px 2px;border:0;border-bottom:2px solid transparent;color:#596171;background:transparent;font-size:13px;font-weight:700;cursor:pointer}
+.chapter-plan-batch-detail-tabs button.active{border-color:#4648d4;color:#4648d4}
+.chapter-plan-batch-detail-page .chapter-plans-toolbar{grid-template-columns:minmax(220px,1fr) minmax(150px,.7fr) minmax(150px,.7fr) minmax(150px,.7fr) auto;margin-top:16px}
+.chapter-plan-batch-detail-page .chapter-plan-row{grid-template-columns:44px 68px minmax(100px,.8fr) minmax(150px,1.2fr) minmax(110px,1fr) 86px minmax(90px,.7fr) minmax(140px,auto);min-width:980px}
+.chapter-plan-batch-detail-page .chapter-plan-row.header{padding-top:12px;padding-bottom:12px}
+.chapter-plan-batch-detail-page .candidate-action-buttons{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));align-items:center;gap:5px}
+.chapter-plan-batch-detail-page .candidate-action-buttons .chapter-plan-edit-button{width:100%;min-width:0;padding:5px 4px;font-size:11px}
+.candidate-current-chapter,.candidate-generated-chapter{min-width:0}
+.candidate-current-chapter strong,.candidate-generated-chapter strong{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.candidate-current-chapter strong{color:#596171}
+.candidate-current-chapter strong.muted,.chapter-plan-row .muted{color:#9a9eaa}
+.candidate-generated-chapter strong{color:#4648d4}
+.candidate-generated-chapter p{max-height:36px;margin:5px 0 0}
+.candidate-storyline-tags{display:flex;flex-wrap:wrap;gap:5px;align-items:flex-start}
+.candidate-storyline-tags span{max-width:100%;overflow:hidden;padding:4px 6px;border-radius:4px;color:#39485a;background:#e8f2ff;text-overflow:ellipsis;white-space:nowrap;font-size:11px}
+.candidate-storyline-tags span.muted{padding:0;color:#9a9eaa;background:transparent}
+.chapter-plan-batch-detail-page .diff-tag{display:inline-block;width:max-content;max-width:100%;overflow:hidden;border:1px solid #c7c4d7;border-radius:5px;padding:4px 7px;color:#596171;background:#f2f4f6;text-overflow:ellipsis;white-space:nowrap;font-size:11px;font-weight:700}
+.chapter-plan-batch-detail-page .diff-tag.new{border-color:#d8c2ff;color:#6b21a8;background:#f3e8ff}
+.chapter-plan-batch-detail-page .diff-tag.replace{border-color:#b9c8de;color:#39485a;background:#e8f2ff}
+.chapter-plan-batch-detail-page .diff-tag.stale_conflict{border-color:#ffb4ab;color:#93000a;background:#fff0ef}
+.chapter-plan-batch-detail-page .diff-tag.no_change{color:#596171;background:#e6e8ea}
+.chapter-plan-batch-selection-bar{position:sticky;z-index:5;bottom:18px;display:flex;align-items:center;justify-content:center;gap:20px;width:max-content;max-width:calc(100% - 24px);margin:18px auto 0;padding:10px 16px;border:1px solid #c7c4d7;border-radius:999px;background:#fff;box-shadow:0 8px 24px rgba(25,28,30,.16)}
+.chapter-plan-batch-selection-bar>div{display:flex;align-items:center;gap:9px;color:#313540;font-size:13px;font-weight:700}
+.chapter-plan-batch-selection-bar>div strong{display:grid;width:24px;height:24px;place-items:center;border-radius:50%;color:#4648d4;background:#e9e9ff;font-size:12px}
+.chapter-plan-batch-selection-bar>button{border:0;border-radius:7px;padding:8px 10px;color:#596171;background:transparent;font-size:12px;font-weight:700;cursor:pointer}
+.chapter-plan-batch-selection-bar>button:hover{background:#f2f4f6}
+.chapter-plan-batch-selection-bar>button.primary{padding:9px 16px;color:#fff;background:#4648d4}
+.chapter-plan-batch-selection-bar>button.primary:hover{background:#4034d7}
+@media(max-width:760px){.chapter-plan-batch-detail-summary{grid-template-columns:1fr}.chapter-plan-batch-detail-summary-status{justify-items:start;text-align:left}.chapter-plan-batch-detail-summary-status>span{white-space:normal}.chapter-plan-batch-detail-tabs{gap:14px;overflow-x:auto}.chapter-plan-batch-detail-page .chapter-plans-toolbar{grid-template-columns:1fr 1fr}.chapter-plan-batch-detail-page .chapter-plans-toolbar input{grid-column:1/-1}.chapter-plan-batch-selection-bar{align-items:stretch;flex-direction:column;gap:6px;width:auto;border-radius:12px}.chapter-plan-batch-selection-bar>div{justify-content:center}}
+

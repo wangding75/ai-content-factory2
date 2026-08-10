@@ -280,6 +280,26 @@ export function CandidateBatchDetailPage({ batchId }: { batchId: string }) {
   const selectedList = Object.values(selected).filter(
     (cand) => cand.status === "pending" || cand.status === "stale",
   );
+  const selectableCandidates = candidates.filter(
+    (cand) => !isBatchFinalized && (cand.status === "pending" || cand.status === "stale"),
+  );
+  const allSelectableSelected =
+    selectableCandidates.length > 0 &&
+    selectableCandidates.every((candidate) => Boolean(selected[candidate.id]));
+
+  const toggleAllSelectable = () => {
+    setSelected((prev) => {
+      const next = { ...prev };
+      if (allSelectableSelected) {
+        selectableCandidates.forEach((candidate) => delete next[candidate.id]);
+      } else {
+        selectableCandidates.forEach((candidate) => {
+          next[candidate.id] = candidate;
+        });
+      }
+      return next;
+    });
+  };
 
   return (
     <div className="chapter-plan-batch-detail-page">
@@ -287,7 +307,7 @@ export function CandidateBatchDetailPage({ batchId }: { batchId: string }) {
         <div>
           <h2>候选批次详情</h2>
           <p>
-            {batch ? candidateBatchModeLabel(batch.generationMode) : "—"} ·{" "}
+            候选批次 / {batch ? batch.sourceWorkflowRunId : "—"} ·{" "}
             {batch
               ? `第 ${batch.target.startChapterNo}–${batch.target.endChapterNo} 章`
               : "正在加载目标范围"}
@@ -301,6 +321,7 @@ export function CandidateBatchDetailPage({ batchId }: { batchId: string }) {
                 className="chapter-plan-button primary"
                 onClick={() => setBatchAdoptOpen(true)}
                 disabled={selectedList.length === 0}
+                title={selectedList.length === 0 ? "先选择可处理的候选章节" : undefined}
               >
                 批量采用已选候选 ({selectedList.length})
               </button>
@@ -335,33 +356,35 @@ export function CandidateBatchDetailPage({ batchId }: { batchId: string }) {
 
       {/* Batch Header Stats Card */}
       {batch && (
-        <section className="chapter-plan-stats" aria-label="批次统计与状态">
-          <article>
-            <span>批次状态</span>
+        <section className="chapter-plan-batch-detail-summary" aria-label="批次摘要">
+          <div className="chapter-plan-batch-detail-summary-main">
+            <div className="chapter-plan-batch-detail-summary-icon" aria-hidden="true">
+              <Icon name="book" size={24} />
+            </div>
+            <div>
+              <span className="chapter-plan-batch-detail-summary-kicker">候选批次</span>
+              <h3>
+                {candidateBatchModeLabel(batch.generationMode)} · 第 {batch.target.startChapterNo}—
+                {batch.target.endChapterNo} 章
+              </h3>
+              <p>
+                来源 Run ID：<code>{batch.sourceWorkflowRunId}</code> · 共 {batch.candidateCount} 项 ·
+                创建于 {new Date(batch.createdAt).toLocaleString("zh-CN")}
+              </p>
+            </div>
+          </div>
+          <div className="chapter-plan-batch-detail-summary-status">
             <b className={`chapter-plan-status ${batch.status}`}>
               {candidateBatchStatusLabel(batch.status)}
             </b>
-          </article>
-          <article>
-            <span>总候选数</span>
-            <b>{batch.candidateCount}</b>
-          </article>
-          <article>
-            <span>待处理</span>
-            <b>{batch.pendingCount}</b>
-          </article>
-          <article>
-            <span>已过期</span>
-            <b className={batch.staleCount > 0 ? "warning" : ""}>{batch.staleCount}</b>
-          </article>
-          <article>
-            <span>已采用</span>
-            <b className="success">{batch.adoptedCount}</b>
-          </article>
-          <article>
-            <span>已丢弃</span>
-            <b className="muted">{batch.discardedCount}</b>
-          </article>
+            <span>
+              待处理 {batch.pendingCount} · 已采用 {batch.adoptedCount} · 已过期 {batch.staleCount} ·
+              已丢弃 {batch.discardedCount}
+            </span>
+          </div>
+          <p className="chapter-plan-batch-detail-summary-note">
+            采用候选将生成版本化修订记录，不直接覆盖当前章节。
+          </p>
         </section>
       )}
 
@@ -379,7 +402,28 @@ export function CandidateBatchDetailPage({ batchId }: { batchId: string }) {
         </div>
       )}
 
-      {/* 6 项 Candidate 筛选与搜索 */}
+      <div className="chapter-plan-batch-detail-tabs" role="tablist" aria-label="候选状态快捷筛选">
+        {[
+          ["", `全部候选 ${batch?.candidateCount ?? total}`],
+          ["pending", `待处理 ${batch?.pendingCount ?? 0}`],
+          ["stale", `已过期 ${batch?.staleCount ?? 0}`],
+          ["adopted", `已采用 ${batch?.adoptedCount ?? 0}`],
+          ["discarded", `已丢弃 ${batch?.discardedCount ?? 0}`],
+        ].map(([value, label]) => (
+          <button
+            key={value || "all"}
+            type="button"
+            role="tab"
+            aria-selected={statusParam === value}
+            className={statusParam === value ? "active" : ""}
+            onClick={() => syncUrl({ status: value, offset: 0 })}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {/* Candidate filters and search */}
       <section className="chapter-plans-toolbar" aria-label="候选筛选与搜索">
         <input
           aria-label="搜索候选标题或摘要"
@@ -449,19 +493,26 @@ export function CandidateBatchDetailPage({ batchId }: { batchId: string }) {
       ) : (
         <div className="chapter-plans-table" aria-live="polite">
           <div className="chapter-plan-row header">
-            <span>选择</span>
+            <span>
+              <input
+                type="checkbox"
+                aria-label="选择全部可处理候选"
+                checked={allSelectableSelected}
+                onChange={toggleAllSelectable}
+                disabled={selectableCandidates.length === 0}
+              />
+            </span>
             <span>章节</span>
-            <span>候选标题与摘要</span>
-            <span>差异类型</span>
-            <span>状态</span>
-            <span>版本</span>
+            <span>当前章节</span>
+            <span>新候选</span>
             <span>关联故事线</span>
+            <span>状态</span>
+            <span>差异</span>
             <span>操作</span>
           </div>
 
           {candidates.map((cand) => {
             const snap = cand.currentSnapshot;
-            const storylineNames = snap.storylineRefs.map((r) => r.label).join("、") || "—";
             const isSelectable =
               !isBatchFinalized && (cand.status === "pending" || cand.status === "stale");
             const isFinalized = cand.status === "adopted" || cand.status === "discarded";
@@ -478,19 +529,32 @@ export function CandidateBatchDetailPage({ batchId }: { batchId: string }) {
                   />
                 </span>
                 <b>第 {cand.chapterNo} 章</b>
-                <div>
+                <div className="candidate-current-chapter">
+                  <strong className={cand.baseSnapshot ? "" : "muted"}>
+                    {cand.baseSnapshot?.title || "—"}
+                  </strong>
+                  {cand.baseSnapshot && (
+                    <small>当前版本 · 第 {cand.baseChapterPlanVersion ?? "—"} 版</small>
+                  )}
+                </div>
+                <div className="candidate-generated-chapter">
                   <strong>{snap.title}</strong>
                   <p className="candidate-summary-text">{snap.summary}</p>
-                  <small>章节目的: {candidatePurposeLabel(snap.chapterPurpose)}</small>
+                  <small>章节目的：{candidatePurposeLabel(snap.chapterPurpose)}</small>
                 </div>
-                <span className={`diff-tag ${cand.diffType}`}>
-                  {candidateDiffTypeLabel(cand.diffType)}
-                </span>
+                <div className="candidate-storyline-tags">
+                  {snap.storylineRefs.length > 0 ? (
+                    snap.storylineRefs.map((ref) => <span key={ref.id}>{ref.label}</span>)
+                  ) : (
+                    <span className="muted">—</span>
+                  )}
+                </div>
                 <span className={`chapter-plan-status ${cand.status}`}>
                   {candidateStatusLabel(cand.status)}
                 </span>
-                <span>第 {cand.version} 版</span>
-                <span>{storylineNames}</span>
+                <span className={`diff-tag ${cand.diffType}`}>
+                  {candidateDiffTypeLabel(cand.diffType)}
+                </span>
                 <div className="candidate-action-buttons">
                   {!isFinalized && !isBatchFinalized && (
                     <>
@@ -614,6 +678,26 @@ export function CandidateBatchDetailPage({ batchId }: { batchId: string }) {
             void loadData();
           }}
         />
+      )}
+
+      {selectedList.length > 0 && (
+        <div className="chapter-plan-batch-selection-bar" role="status">
+          <div>
+            <strong>{selectedList.length}</strong>
+            <span>已选择 {selectedList.length} 个可处理候选</span>
+          </div>
+          <button type="button" onClick={() => setSelected({})}>
+            清空选择
+          </button>
+          <button
+            type="button"
+            className="primary"
+            onClick={() => setBatchAdoptOpen(true)}
+            disabled={isBatchFinalized}
+          >
+            批量采用
+          </button>
+        </div>
       )}
     </div>
   );
