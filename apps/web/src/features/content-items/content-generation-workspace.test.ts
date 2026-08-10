@@ -41,6 +41,18 @@ test("story context resolves the current plan references without changing the ed
   assert.match(editor, /foreshadowing\?\.description/);
 });
 
+test("materials context shows real project materials and an explicit empty state", () => {
+  assert.match(editor, /listProjectMaterialsFromApi\(/);
+  assert.match(editor, /material_refs_json/);
+  assert.match(editor, /className="content-material-panel"/);
+  assert.match(editor, /可用素材/);
+  assert.match(editor, /本章引用/);
+  assert.match(editor, /已引用/);
+  assert.match(editor, /可引用/);
+  assert.match(editor, /暂无可用素材/);
+  assert.doesNotMatch(editor, /新增素材|编辑素材|删除素材/);
+});
+
 test("summary polling is isolated from the editable draft refresh", () => {
   assert.match(editor, /\["queued", "running"\]/);
   assert.match(editor, /refreshGenerationSummary/);

@@ -16,6 +16,8 @@ import {
   type StorylineNode,
 } from "@/lib/api";
 import { storylineName } from "@/features/storylines/storyline-presentation";
+import { listProjectMaterialsFromApi } from "@/features/planning-materials/api/project-material-http-api";
+import type { ProjectMaterialItem } from "@/features/planning-materials/contracts/materials";
 import {
   listChapterPlans,
   type ChapterPlan,
@@ -67,6 +69,7 @@ export function ContentEditorWorkspace({
     [plan, setPlan] = useState<ChapterPlan | null>(null),
     [storylines, setStorylines] = useState<StorylineNode[]>([]),
     [foreshadowings, setForeshadowings] = useState<Foreshadowing[]>([]),
+    [materials, setMaterials] = useState<ProjectMaterialItem[]>([]),
     [draft, setDraft] = useState<Draft | null>(null),
     [loading, setLoading] = useState(true),
     [error, setError] = useState<string | null>(null),
@@ -114,10 +117,11 @@ export function ContentEditorWorkspace({
     setDraft(null);
     setStorylines([]);
     setForeshadowings([]);
+    setMaterials([]);
     setRun(null);
     try {
       const c = addController();
-      const [created, plans, storylinesResult, foreshadowingsResult] = await Promise.all([
+      const [created, plans, storylinesResult, foreshadowingsResult, materialsResult] = await Promise.all([
         workId ? getContentItem(workId, { signal: c.signal }) : createOrGetContentItem(chapterPlanId!, { signal: c.signal }),
         listChapterPlans(
           projectId,
@@ -126,12 +130,14 @@ export function ContentEditorWorkspace({
         ),
         getStorylines(projectId, c.signal),
         getForeshadowings(projectId, c.signal),
+        listProjectMaterialsFromApi(projectId, { limit: 100, offset: 0 }, { signal: c.signal }),
       ]);
       if (c.signal.aborted || request !== sequence.current) return;
       current.current = created.content_item.id;
       setPlan(plans.items.find((x) => x.id === created.content_item.chapter_plan_id) ?? null);
       setStorylines(storylinesResult.items);
       setForeshadowings(foreshadowingsResult.items);
+      setMaterials(materialsResult.items);
       apply(created);
       const get = addController(),
         fresh = await getContentItem(created.content_item.id, {
@@ -532,7 +538,7 @@ export function ContentEditorWorkspace({
               foreshadowings={foreshadowings}
             />
           )}
-          {contextTab === "materials" && <Info title="关联素材" value={plan?.material_refs_json.length ? `${plan.material_refs_json.length} 项关联` : "无"} />}
+          {contextTab === "materials" && <MaterialContextPanel plan={plan} materials={materials} />}
           <Info title="版本记录" value={`v${v.version_no}${detail.content_item.current_version_id === v.id ? "（当前）" : ""} · ${contentVersionSourceLabel(v.source)}`} />
           {run && <Info title="最近工作流" value="最近工作流已完成" />}
         </aside>
@@ -565,6 +571,59 @@ export function ContentEditorWorkspace({
         />
       )}
     </main>
+  );
+}
+function MaterialContextPanel({
+  plan,
+  materials,
+}: {
+  plan: ChapterPlan | null;
+  materials: ProjectMaterialItem[];
+}) {
+  const referencedIds = new Set(plan?.material_refs_json ?? []);
+  return (
+    <section className="content-material-panel" aria-label="素材库">
+      <header className="content-material-header">
+        <div>
+          <span className="content-goal-eyebrow">项目素材</span>
+          <h2>素材库</h2>
+          <p>展示当前项目可用素材与本章引用状态。</p>
+        </div>
+        <span className="content-goal-readonly">只读</span>
+      </header>
+      <div className="content-material-summary">
+        <span>可用素材 <strong>{materials.length}</strong></span>
+        <span>本章引用 <strong>{referencedIds.size}</strong></span>
+      </div>
+      {materials.length ? (
+        <div className="content-material-list">
+          {materials.map((item) => {
+            const referenced = referencedIds.has(item.material.id);
+            return (
+              <article
+                key={item.material.id}
+                className={`content-material-card${referenced ? " referenced" : ""}`}
+              >
+                <div>
+                  <strong>{item.material.name}</strong>
+                  <p>{item.material.summary || "暂无素材摘要。"}</p>
+                </div>
+                <span>{referenced ? "已引用" : "可引用"}</span>
+              </article>
+            );
+          })}
+        </div>
+      ) : (
+        <section className="content-material-empty" aria-label="素材为空">
+          <Icon name="folder" size={22} />
+          <h3>暂无可用素材</h3>
+          <p>当前项目还没有可供正文使用的素材。</p>
+        </section>
+      )}
+      <p className="content-material-rule">
+        生成正文时，已引用素材会作为上下文背景注入；本区域仅展示引用状态，不提供素材管理操作。
+      </p>
+    </section>
   );
 }
 function StoryContextPanel({
