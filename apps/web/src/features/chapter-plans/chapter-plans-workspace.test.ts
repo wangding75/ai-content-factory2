@@ -27,7 +27,7 @@ test("chapter plans batch-load relation names and summary", () => {
 test("chapter plans render active run banners and preflight controls", () => {
   assert.match(workspaceSource, /SummaryRunBanner/);
   assert.match(workspaceSource, /未配置章节规划工作流/);
-  assert.match(workspaceSource, /生成失败且零候选写入/);
+  assert.match(workspaceSource, /生成失败，本次没有新候选写入/);
   assert.doesNotMatch(workspaceSource, /P15_C\d+/);
   assert.match(workspaceSource, /GenerationSettingsDrawer/);
   assert.match(workspaceSource, /PreflightReportDialog/);
@@ -50,6 +50,13 @@ test("chapter plan statistics and filters use real status values without sample 
   assert.match(workspaceSource, /plan\.status === "draft_generated"/);
   assert.match(workspaceSource, /候选批次[^\n]*summary\?\.candidateBatchCounts\?\.ready \?\? 0/);
   assert.doesNotMatch(workspaceSource, /candidateBatchCounts\?\.ready \?\? 2/);
+});
+
+test("failed chapter plan runs expose zero-write copy and only safe recovery actions", () => {
+  assert.match(workspaceSource, /任务失败。[^\n]*本次没有新候选被采用或写入/);
+  assert.match(workspaceSource, /summaryError\.code === "result_consumption_failed"/);
+  assert.match(workspaceSource, /重试结果消费/);
+  assert.match(workspaceSource, /查看运行详情/);
 });
 
 test("generation settings drawer validates input ranges and options", () => {

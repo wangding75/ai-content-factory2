@@ -718,6 +718,9 @@ function SummaryRunBanner({
       summaryError.status === 500 ||
       summaryError.message?.includes("output_validation_failed") ||
       summaryError.message?.includes("result_consumption_failed");
+    const isResultConsumptionFailed =
+      summaryError.code === "result_consumption_failed" ||
+      summaryError.message?.includes("result_consumption_failed");
 
     if (isNotConfigured) {
       return (
@@ -738,19 +741,26 @@ function SummaryRunBanner({
 
     if (isAtomicFailed) {
       return (
-        <div className="chapter-plan-run-banner error flex items-center justify-between p-4 bg-[#FEE2E2] border border-[#FCA5A5] rounded-lg text-[#991B1B]">
+        <div role="alert" className="chapter-plan-run-banner error flex items-center justify-between gap-4 p-4 bg-[#FEE2E2] border border-[#FCA5A5] rounded-lg text-[#991B1B]">
           <div className="flex items-center gap-3">
             <Icon name="info" size={20} />
             <div className="banner-content">
-              <strong>生成失败且零候选写入</strong>
+              <strong>生成失败，本次没有新候选写入</strong>
               <p className="text-xs text-[#B91C1C]">
-                章节规划生成输出校验失败或数据入库失败，尚未写入候选。
+                任务失败。本次没有新候选被采用或写入；{isResultConsumptionFailed ? "可重试结果消费，或查看运行详情。" : "请查看运行详情。"}
               </p>
             </div>
           </div>
-          <button type="button" className="px-3 py-1.5 bg-[#EF4444] text-white rounded text-xs font-semibold cursor-pointer" onClick={onRetry}>
-            重试
-          </button>
+          <div className="flex shrink-0 items-center gap-2">
+            {isResultConsumptionFailed && (
+              <button type="button" className="px-3 py-1.5 bg-[#EF4444] text-white rounded text-xs font-semibold cursor-pointer" onClick={onRetry}>
+                重试结果消费
+              </button>
+            )}
+            <Link href={`/workflow-runs?projectId=${projectId}`} className="px-3 py-1.5 border border-[#B91C1C] text-[#991B1B] rounded text-xs font-semibold hover:bg-[#FECACA]">
+              查看运行详情
+            </Link>
+          </div>
         </div>
       );
     }
