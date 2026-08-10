@@ -1,8 +1,10 @@
 "use client";
 
+import Link from "next/link";
 import { Icon } from "@/components/ui/icons";
 import { WorkflowPreflightBlocker } from "@/components/workflow-preflight-blocker";
 import { toWorkflowPreflightReasons } from "@/components/workflow-preflight-reason";
+import { workflowPreflightRepairLink } from "@/components/workflow-preflight-repair-route";
 import type {
   ChapterPlanningBlockerItem,
   ChapterPlanningPreflightItem,
@@ -192,6 +194,12 @@ export function PreflightReportDialog({
       ? `第 ${inputSummary.target.startChapterNo}–${inputSummary.target.endChapterNo} 章`
       : `${inputSummary.target.requestedChapterCount} 个章节`
     : null;
+  const primaryRepair = blockedReport?.blockers[0]
+    ? workflowPreflightRepairLink(
+        blockedReport.blockers[0].repairAction,
+        blockedReport.blockers[0].repairTarget ?? undefined,
+      )
+    : null;
 
   return (
     <div
@@ -231,7 +239,7 @@ export function PreflightReportDialog({
                   ? report.warnings.length > 0
                     ? "预检通过 (含提示警告)"
                     : "预检通过，具备生成条件"
-                  : "预检阻断，暂时无法生成"}
+                  : "预检阻断，暂时无法创建任务"}
               </strong>
               {modeLabel && targetLabel && (
                 <p>
@@ -296,6 +304,26 @@ export function PreflightReportDialog({
             </div>
           )}
 
+          {!isPassed && blockedReport && inputSummary && (
+            <section className="chapter-plan-preflight-blocked-summary">
+              <h4>任务概要</h4>
+              <dl>
+                <div>
+                  <dt>生成模式</dt>
+                  <dd>{modeLabel}</dd>
+                </div>
+                <div>
+                  <dt>目标章节</dt>
+                  <dd>{targetLabel}</dd>
+                </div>
+                <div>
+                  <dt>预期结果</dt>
+                  <dd>新的待确认章节候选批次</dd>
+                </div>
+              </dl>
+            </section>
+          )}
+
           {/* Blockers list */}
           {blockedReport && (
             <div className="chapter-plan-preflight-section">
@@ -358,8 +386,17 @@ export function PreflightReportDialog({
             onClick={onClose}
             disabled={creatingRun}
           >
-            {isPassed ? "返回修改" : "关闭"}
+            {isPassed ? "返回修改" : "返回修改"}
           </button>
+
+          {!isPassed && primaryRepair && (
+            <Link
+              href={primaryRepair.href}
+              className="chapter-plan-button primary"
+            >
+              {primaryRepair.known ? "前往项目配置" : "查看配置"}
+            </Link>
+          )}
 
           {isPassed && passedReport && onCreateRun && (
             <button

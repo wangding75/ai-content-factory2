@@ -574,3 +574,20 @@ button,a { -webkit-tap-highlight-color:transparent; }
 .chapter-plan-preflight-checks small{color:#767586;font-size:11px;line-height:16px}
 @media(max-width:620px){.chapter-plan-preflight-pass-grid{grid-template-columns:1fr}.chapter-plan-preflight-pass-card dl>div{align-items:flex-start;flex-direction:column;gap:3px}.chapter-plan-preflight-pass-card dd{text-align:left}}
 
+/* UI-043 blocked preflight report. */
+.chapter-plan-preflight-blocked-summary{padding:16px;border:1px solid #dfe2e6;border-radius:10px;background:#fff}
+.chapter-plan-preflight-blocked-summary h4{margin:0 0 12px;color:#191c1e;font-size:14px}
+.chapter-plan-preflight-blocked-summary dl{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:0}
+.chapter-plan-preflight-blocked-summary dt{color:#767586;font-size:11px}
+.chapter-plan-preflight-blocked-summary dd{margin:4px 0 0;color:#313540;font-size:13px;font-weight:700}
+.chapter-plan-dialog-body>.chapter-plan-preflight-section{padding:16px;border:1px solid #ffb4ab;border-radius:10px;background:#fff7f6}
+.chapter-plan-dialog-body>.chapter-plan-preflight-section h4{margin:0 0 12px;color:#93000a;font-size:14px}
+.chapter-plan-preflight-list{display:grid;gap:10px;margin:0;padding:0;list-style:none}
+.chapter-plan-preflight-list .preflight-item{padding:12px;border:1px solid #ffb4ab;border-radius:8px;background:#fff}
+.preflight-item-header{display:flex;align-items:center;gap:8px;color:#93000a;font-size:13px}
+.preflight-item .badge{border-radius:999px;padding:3px 7px;color:#fff;background:#ba1a1a;font-size:10px;font-weight:800}
+.preflight-item-detail,.preflight-item-action{margin:7px 0 0;color:#596171;font-size:12px;line-height:18px}
+.preflight-item-action{color:#703700}
+.chapter-plan-dialog-footer .chapter-plan-button.primary,.chapter-plan-dialog-footer a.chapter-plan-button.primary{color:#fff;text-decoration:none}
+@media(max-width:620px){.chapter-plan-preflight-blocked-summary dl{grid-template-columns:1fr}.chapter-plan-dialog-footer{flex-wrap:wrap}.chapter-plan-dialog-footer>a{margin-left:auto}}
+

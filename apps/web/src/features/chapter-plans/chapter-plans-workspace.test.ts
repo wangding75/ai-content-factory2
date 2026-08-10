@@ -116,6 +116,16 @@ test("passed preflight report shows checks, execution summary, and the create-ta
   assert.doesNotMatch(preflightSource, /确认发起生成/);
 });
 
+test("blocked preflight report lists repair directions and has no create-task action", () => {
+  assert.match(preflightSource, /预检阻断，暂时无法创建任务/);
+  assert.match(preflightSource, /阻断原因列表/);
+  assert.match(preflightSource, /建议操作：/);
+  assert.match(preflightSource, /workflowPreflightRepairLink/);
+  assert.match(preflightSource, /前往项目配置/);
+  assert.match(preflightSource, /返回修改/);
+  assert.doesNotMatch(preflightSource, /blockedReport[\s\S]*确认发起生成/);
+});
+
 test("preflight report dialog differentiates passed and blocked status", () => {
   assert.match(preflightSource, /预检通过/);
   assert.match(preflightSource, /预检阻断/);
