@@ -67,6 +67,16 @@ test("generation confirmation keeps the frozen preflight and create boundary whi
   assert.match(drawerSource, /preflightToken/);
 });
 
+test("generation requirements stay visible, editable, and distinguish empty from filled", () => {
+  const drawerSource = readFileSync(join(root, "content-generation-drawer.tsx"), "utf8");
+  assert.match(drawerSource, /content-generation-requirements-state/);
+  assert.match(drawerSource, /已填写生成要求/);
+  assert.match(drawerSource, /尚未填写生成要求/);
+  assert.match(drawerSource, /instructions\.trim\(\)/);
+  assert.match(drawerSource, /value=\{instructions\}/);
+  assert.match(drawerSource, /setInstructions/);
+});
+
 test("summary polling is isolated from the editable draft refresh", () => {
   assert.match(editor, /\["queued", "running"\]/);
   assert.match(editor, /refreshGenerationSummary/);

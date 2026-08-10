@@ -76,6 +76,10 @@ export function ContentGenerationDrawer({ contentItemId, version, chapterLabel =
                 <p className="content-generation-candidate-hint">{copy.drawer.preflightCandidate(report.sourceVersion.version_no, report.targetVersionNo)}</p>
               )}
               {!report && <button type="button" onClick={() => void preflight()} disabled={submitting}>{copy.drawer.retryPreflight}</button>}
+              <section className={`content-generation-requirements-state${instructions.trim() ? " filled" : " empty"}`} aria-live="polite">
+                <div><strong>{instructions.trim() ? "已填写生成要求" : "尚未填写生成要求"}</strong><span>{instructions.trim() ? "内容已保留，可在下方继续编辑。" : "可选；可以在下方补充本次正文创作要求。"}</span></div>
+                {instructions.trim() && <p>{instructions}</p>}
+              </section>
               <label className="content-generation-instructions">{copy.drawer.additionalInstructions}<span>（可选）</span><textarea value={instructions} maxLength={2000} onChange={(e) => { setInstructions(e.target.value); invalidatePreflight(); }} disabled={submitting} placeholder={copy.drawer.additionalInstructionsPlaceholder} /></label>
               <fieldset className="content-generation-context-options"><legend>{copy.drawer.contextOptions}</legend>{Object.entries(copy.drawer.contextOptionLabels).map(([key, label]) => <label key={key}><input type="checkbox" checked={options[key as keyof ContentGenerationContextOptions]} onChange={(e) => { setOptions((v) => ({ ...v, [key]: e.target.checked })); invalidatePreflight(); }} disabled={submitting} /> {label}</label>)}</fieldset>
               {error && <p className="content-inline-error" role="alert">{error}</p>}
