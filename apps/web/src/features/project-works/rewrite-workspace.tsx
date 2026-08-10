@@ -99,7 +99,7 @@ function RewriteRunState({ projectId, workId, summary, run, events, retrying, ca
   if (summary.state === "candidate_ready" && run) return <RewriteResultPanel projectId={projectId} workId={workId} runId={run.id} onRefresh={onRefresh} />;
   if (active(summary.state)) return <RewriteRunningState summary={summary} run={run} events={events} cancelling={cancelling} confirmCancel={confirmCancel} onCancel={onCancel} onDismissCancel={onDismissCancel} onConfirmCancel={onConfirmCancel} onRefresh={onRefresh} />;
   if (summary.state === "result_consumption_failed") return <RewriteConsumptionFailedState projectId={projectId} workId={workId} summary={summary} run={run} retrying={retrying} onRetry={onRetryConsumption} onRefresh={onRefresh} />;
-  return <RewriteFailedState summary={summary} run={run} events={events} retrying={retrying} cancelling={cancelling} confirmCancel={confirmCancel} onDismissCancel={onDismissCancel} onConfirmCancel={onConfirmCancel} onRetryRuntime={onRetryRuntime} onRefresh={onRefresh} />;
+  return <RewriteFailedState projectId={projectId} workId={workId} summary={summary} run={run} events={events} retrying={retrying} cancelling={cancelling} confirmCancel={confirmCancel} onDismissCancel={onDismissCancel} onConfirmCancel={onConfirmCancel} onRetryRuntime={onRetryRuntime} onRefresh={onRefresh} />;
 }
 
 function RewriteConsumptionFailedState({ projectId, workId, summary, run, retrying, onRetry, onRefresh }: { projectId: string; workId: string; summary: RewriteSummary; run: WorkflowRunDto | null; retrying: boolean; onRetry: () => void; onRefresh: () => void }) {
@@ -117,17 +117,28 @@ function RewriteConsumptionFailedState({ projectId, workId, summary, run, retryi
   );
 }
 
-function RewriteFailedState({ summary, run, events, retrying, cancelling, confirmCancel, onDismissCancel, onConfirmCancel, onRetryRuntime, onRefresh }: { summary: RewriteSummary; run: WorkflowRunDto | null; events: WorkflowRunEventVm[]; retrying: boolean; cancelling: boolean; confirmCancel: boolean; onDismissCancel: () => void; onConfirmCancel: () => void; onRetryRuntime: () => void; onRefresh: () => void }) {
+function RewriteFailedState({ projectId, workId, summary, run, events, retrying, cancelling, confirmCancel, onDismissCancel, onConfirmCancel, onRetryRuntime, onRefresh }: { projectId: string; workId: string; summary: RewriteSummary; run: WorkflowRunDto | null; events: WorkflowRunEventVm[]; retrying: boolean; cancelling: boolean; confirmCancel: boolean; onDismissCancel: () => void; onConfirmCancel: () => void; onRetryRuntime: () => void; onRefresh: () => void }) {
   const isValidation = summary.state === "output_validation_failed";
-  const title = isValidation ? "重写输出未通过校验" : summary.state === "runtime_failed" ? "重写任务执行失败" : "重写任务已取消";
+  const isCancelled = summary.state === "idle";
+  const title = isValidation ? "重写任务" : "正文重写任务";
+  const failureTitle = isValidation ? "工作流输出格式不符合要求" : isCancelled ? "重写任务已取消" : "正文重写运行失败";
+  const failureCopy = isValidation ? "工作流已返回结果，但输出结构未通过正文重写 Schema 校验。请修复工作流输出后重新执行。" : isCancelled ? "本次重写运行已取消，尚未生成候选版本。" : summary.latestError?.message ?? "正文重写工作流未能完成，请检查执行详情后重试。";
+  const errorCode = summary.latestError?.code ?? run?.errorCode ?? (isValidation ? "output_validation_failed" : "runtime_failed");
   return (
-    <main className="rewrite-page"><section className="rewrite-state-card is-failed">
-      <header><span className="rewrite-state-badge">需要处理</span><h1>{title}</h1><p>{summary.latestError?.message ?? "任务未能完成，请按提示继续操作。"}</p></header>
-      <dl><div><dt>固定来源版本</dt><dd>V{summary.sourceContentVersionSummary.versionNo} · {summary.sourceContentVersionSummary.title}</dd></div><div><dt>审核报告</dt><dd>已固定</dd></div><div><dt>已选问题</dt><dd>{summary.selectedIssueSummary?.total ?? 0} 个</dd></div><div><dt>当前运行</dt><dd>{run?.runNumber ?? "正在恢复"}</dd></div></dl>
-      {events.length > 0 && <section className="rewrite-progress"><h2>执行进度</h2><ol>{events.map((event) => <li key={event.id}>{event.title} · {event.createdAtLabel}</li>)}</ol></section>}
-      <footer><button type="button" className="primary" disabled={!run || retrying} onClick={onRetryRuntime}>{retrying ? "重试中…" : "重新运行"}</button><button type="button" onClick={onRefresh}>刷新状态</button></footer>
+    <main className="rewrite-page rewrite-failure-page">
+      <Link className="rewrite-result-back" href={`/projects/${projectId}/works/${workId}/review?reportId=${encodeURIComponent(summary.reviewReportId)}`}>← 返回审核结果</Link>
+      <header className="rewrite-failure-hero"><div><div className="rewrite-result-title"><h1>{title}</h1><span>执行失败</span></div><p>正文重写工作流未完成，请检查错误后重新执行。</p></div>{run && <Link href={`/workflow-runs/${encodeURIComponent(run.id)}`}>查看执行详情</Link>}</header>
+      <section className="rewrite-failure-alert" role="alert"><div className="rewrite-failure-alert-icon" aria-hidden="true">×</div><div><h2>{failureTitle}</h2><p>{failureCopy}</p><code>{errorCode} · WorkflowRun {run?.runNumber ?? run?.id ?? "正在恢复"}</code><div className="rewrite-failure-actions"><button type="button" className="primary" disabled={!run || retrying} onClick={onRetryRuntime}>{retrying ? "重新执行中…" : "重新执行"}</button>{run && <Link href={`/workflow-runs/${encodeURIComponent(run.id)}`}>查看执行详情</Link>}</div></div></section>
+      <section className="rewrite-failure-context-grid">
+        <article><h2>源信息</h2><dl><div><dt>重写目标</dt><dd>{summary.sourceContentVersionSummary.title}</dd></div><div><dt>来源版本</dt><dd>V{summary.sourceContentVersionSummary.versionNo}</dd></div><div><dt>依据报告</dt><dd>{summary.reviewReportId}</dd></div><div><dt>处理范围</dt><dd>已选问题：{summary.selectedIssueSummary?.total ?? 0} 个</dd></div></dl></article>
+        <article><h2>执行环境</h2><dl><div><dt>关联工作流</dt><dd>{run?.workflowName ?? "正文重写"}</dd></div><div><dt>执行阶段</dt><dd>{run?.stage ?? "content_rewrite"}</dd></div><div><dt>开始时间</dt><dd>{formatWorkflowRunTime(run?.startedAt ?? run?.createdAt)}</dd></div><div><dt>失败时间</dt><dd>{formatWorkflowRunTime(run?.finishedAt ?? run?.updatedAt)}</dd></div></dl></article>
+        <article><h2>恢复建议</h2><ol><li>查看执行详情确认输出字段和错误阶段</li><li>前往项目设置检查工作流绑定配置</li><li>修复后使用原配置重新执行本次重写</li></ol><Link href={`/projects/${projectId}/settings`}>前往项目设置</Link></article>
+      </section>
+      {events.length > 0 && <section className="rewrite-progress rewrite-failure-progress"><h2>执行进度</h2><ol>{events.map((event) => <li key={event.id}>{event.title} · {event.createdAtLabel}</li>)}</ol></section>}
+      <section className="rewrite-failure-no-candidate"><h2>未生成候选版本</h2><p>工作流执行失败后不会创建或展示候选正文。重新执行成功并通过校验后，系统才会进入候选结果页面。</p></section>
+      <footer className="rewrite-failure-footer"><button type="button" onClick={onRefresh}>刷新状态</button></footer>
       {confirmCancel && <div className="rewrite-dialog-layer"><section className="rewrite-confirm-dialog" role="dialog" aria-modal="true"><h2>确认取消运行</h2><p>取消后该运行将停止，无法恢复为运行中。</p><footer><button type="button" disabled={cancelling} onClick={onDismissCancel}>返回</button><button type="button" className="primary" disabled={cancelling} onClick={onConfirmCancel}>{cancelling ? "取消中…" : "确认取消"}</button></footer></section></div>}
-    </section></main>
+    </main>
   );
 }
 

@@ -348,6 +348,20 @@ test("rewrite result consumption failure separates successful execution from fai
   assert.doesNotMatch(consumptionSource, /onRetryRuntime/);
 });
 
+test("rewrite execution failure distinguishes runtime and validation recovery without presenting a candidate", () => {
+  assert.match(rewriteWorkspace, /RewriteFailedState/);
+  assert.match(rewriteWorkspace, /output_validation_failed/);
+  assert.match(rewriteWorkspace, /rewrite-failure-alert/);
+  assert.match(rewriteWorkspace, /rewrite-failure-context-grid/);
+  assert.match(rewriteWorkspace, /rewrite-failure-no-candidate/);
+  assert.match(rewriteWorkspace, /onRetryRuntime/);
+  assert.match(rewriteWorkspace, /original_configuration/);
+  const failureStart = rewriteWorkspace.indexOf("function RewriteFailedState");
+  const runningStart = rewriteWorkspace.indexOf("function RewriteRunningState");
+  const failureSource = rewriteWorkspace.slice(failureStart, runningStart);
+  assert.doesNotMatch(failureSource, /onRetryConsumption|candidateVersion/);
+});
+
 test("summary polling is isolated from the editable draft refresh", () => {
   assert.match(editor, /\["queued", "running"\]/);
   assert.match(editor, /refreshGenerationSummary/);
