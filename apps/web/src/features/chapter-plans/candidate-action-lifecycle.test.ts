@@ -43,7 +43,18 @@ test("batch adopt confirmation explains selected count and impact before submit"
 test("batch abandon dialog requires acknowledgeAdoptedChaptersRemain: true and shows non-rollback notice", () => {
   assert.match(actionDialogsSource, /abandonChapterPlanCandidateBatch/);
   assert.match(actionDialogsSource, /acknowledgeAdoptedChaptersRemain: true/);
-  assert.match(actionDialogsSource, /已采用的章节及其修订记录将被完整保留/);
+  assert.match(actionDialogsSource, /已采用的 .*个章节及其修订记录将完整保留/);
+});
+
+test("batch abandon confirmation separates irreversible impact from safe cancellation", () => {
+  assert.match(actionDialogsSource, /放弃候选批次/);
+  assert.match(actionDialogsSource, /候选批次摘要/);
+  assert.match(actionDialogsSource, /放弃影响说明/);
+  assert.match(actionDialogsSource, /当前已采用章节内容不会被本操作修改/);
+  assert.match(actionDialogsSource, /已采用章节不会撤销/);
+  assert.match(actionDialogsSource, /chapter-plan-button danger/);
+  assert.match(actionDialogsSource, /确认放弃候选批次/);
+  assert.match(actionDialogsSource, /请先勾选确认条款/);
 });
 
 test("stale conflict dialog offers recompare and refresh options without force adopt", () => {

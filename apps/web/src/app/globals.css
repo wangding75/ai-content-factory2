@@ -777,3 +777,32 @@ button,a { -webkit-tap-highlight-color:transparent; }
 .batch-adopt-dialog .chapter-plan-dialog-footer .chapter-plan-button.primary{min-width:138px}
 @media(max-width:620px){.batch-adopt-impact-grid{grid-template-columns:1fr 1fr}.batch-adopt-dialog .chapter-plan-dialog-body{padding:16px}.batch-adopt-dialog .chapter-plan-dialog-header,.batch-adopt-dialog .chapter-plan-dialog-footer{padding-right:16px;padding-left:16px}.batch-adopt-dialog .chapter-plan-dialog-footer{align-items:stretch;flex-direction:column}.batch-adopt-dialog .chapter-plan-dialog-footer .chapter-plan-button{width:100%}}
 
+/* UI-050 batch abandon confirmation. */
+.batch-abandon-dialog{display:flex;width:min(680px,100%);max-height:calc(100vh - 48px);flex-direction:column;overflow:hidden;border:1px solid #c7c4d7;border-radius:14px;background:#fff}
+.batch-abandon-dialog .chapter-plan-dialog-header{flex:0 0 auto;padding:20px 26px}
+.batch-abandon-dialog .chapter-plan-dialog-header h3{margin:0;color:#191c1e;font-size:21px}
+.batch-abandon-title{display:flex;align-items:center;gap:10px}
+.batch-abandon-title>span{display:grid;width:34px;height:34px;place-items:center;border-radius:50%;color:#93000a;background:#ffb4ab}
+.batch-abandon-dialog .chapter-plan-dialog-body{display:grid;min-height:0;gap:18px;overflow:auto;padding:22px 26px;background:#fff}
+.batch-abandon-summary{display:grid;gap:14px;padding:16px;border:1px solid #aebbd0;border-radius:9px;color:#313540;background:#f7f9fb}
+.batch-abandon-summary>div:first-child{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.batch-abandon-summary strong{font-size:15px}
+.batch-abandon-summary code{overflow:hidden;border-radius:4px;padding:4px 6px;color:#39485a;background:#e8edf4;font-size:10px;text-overflow:ellipsis;white-space:nowrap}
+.batch-abandon-summary-stats{display:flex;flex-wrap:wrap;gap:8px;color:#596171;font-size:12px}
+.batch-abandon-summary-stats span{padding:5px 8px;border-radius:5px;background:#e8edf4}
+.batch-abandon-summary-stats span.adopted{color:#2f2e74;background:#e9e9ff}
+.batch-abandon-impact{display:flex;align-items:flex-start;gap:10px;padding:16px;border:1px solid #ffb4ab;border-radius:9px;color:#93000a;background:#fff1f0}
+.batch-abandon-impact>svg{flex:0 0 auto}
+.batch-abandon-impact strong{font-size:13px}
+.batch-abandon-impact ul{display:grid;gap:7px;margin:9px 0 0;padding-left:20px;color:#703700;font-size:12px;line-height:18px}
+.batch-abandon-dialog .chapter-plan-form-group{margin-top:0!important}
+.batch-abandon-dialog .chapter-plan-form-group textarea{box-sizing:border-box;width:100%;border:1px solid #c7c4d7;border-radius:8px;padding:10px 12px;color:#191c1e;background:#f7f9fb;font:inherit;resize:vertical}
+.batch-abandon-dialog .chapter-plan-form-label{display:flex;align-items:flex-start;gap:9px;color:#313540;font-size:13px;font-weight:700;line-height:19px}
+.batch-abandon-dialog .chapter-plan-form-label input{width:17px;height:17px;flex:0 0 auto;accent-color:#4648d4}
+.batch-abandon-footer{justify-content:flex-end!important;flex-wrap:wrap;padding:16px 26px!important;background:#f7f9fb!important}
+.batch-abandon-footer small{margin-right:auto;color:#93000a;font-size:11px}
+.batch-abandon-dialog .chapter-plan-button.danger{border:1px solid #ba1a1a;color:#fff;background:#ba1a1a}
+.batch-abandon-dialog .chapter-plan-button.danger:hover{background:#93000a}
+.batch-abandon-dialog .chapter-plan-button.danger:disabled{border-color:#d9a0a0;color:#fff;background:#d9a0a0}
+@media(max-width:620px){.batch-abandon-dialog .chapter-plan-dialog-body{padding:16px}.batch-abandon-dialog .chapter-plan-dialog-header,.batch-abandon-footer{padding-right:16px!important;padding-left:16px!important}.batch-abandon-footer{align-items:stretch;flex-direction:column}.batch-abandon-footer small{margin:0}.batch-abandon-footer .chapter-plan-button{width:100%}.batch-abandon-summary>div:first-child{align-items:flex-start;flex-direction:column}}
+

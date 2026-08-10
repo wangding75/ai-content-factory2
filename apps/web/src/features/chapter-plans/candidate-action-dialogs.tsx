@@ -357,9 +357,12 @@ export function BatchAbandonDialog({
       aria-modal="true"
       aria-labelledby="batch-abandon-title"
     >
-      <div className="chapter-plan-dialog-content">
+      <div className="chapter-plan-dialog-content batch-abandon-dialog">
         <header className="chapter-plan-dialog-header">
-          <h3 id="batch-abandon-title">放弃候选批次确认</h3>
+          <div className="batch-abandon-title">
+            <span aria-hidden="true"><Icon name="info" size={20} /></span>
+            <h3 id="batch-abandon-title">放弃候选批次</h3>
+          </div>
           <button
             type="button"
             className="chapter-plan-dialog-close"
@@ -377,15 +380,29 @@ export function BatchAbandonDialog({
             </div>
           )}
 
-          <div className="chapter-plan-status-banner warning">
+          <section className="batch-abandon-summary" aria-label="候选批次摘要">
+            <div>
+              <strong>{candidateBatchModeLabel(batch.generationMode)} · 第 {batch.target.startChapterNo}—{batch.target.endChapterNo} 章</strong>
+              <code>{batch.sourceWorkflowRunId}</code>
+            </div>
+            <div className="batch-abandon-summary-stats">
+              <span>共 {batch.candidateCount} 个候选</span>
+              <span className="adopted">已采用 {batch.adoptedCount}</span>
+              <span>待处理 {batch.pendingCount}</span>
+            </div>
+          </section>
+
+          <section className="batch-abandon-impact" aria-label="放弃影响说明">
             <Icon name="info" size={20} />
             <div>
-              <strong>提示：已采用章节将被保留</strong>
-              <p>
-                放弃本批次后，未采用的候选将无法再修改或采用。但本批次中<b>已采用的章节及其修订记录将被完整保留</b>，不会发生回滚。
-              </p>
+              <strong>请注意，此操作将产生以下影响：</strong>
+              <ul>
+                <li>放弃后 {batch.pendingCount} 个未采用候选将无法继续编辑或采用。</li>
+                <li>已采用的 {batch.adoptedCount} 个章节及其修订记录将完整保留，不会回滚。</li>
+                <li>当前已采用章节内容不会被本操作修改，运行记录和来源追溯仍保留。</li>
+              </ul>
             </div>
-          </div>
+          </section>
 
           <div className="chapter-plan-form-group" style={{ marginTop: 16 }}>
             <label className="chapter-plan-form-label">
@@ -395,7 +412,7 @@ export function BatchAbandonDialog({
                 onChange={(e) => setAcknowledged(e.target.checked)}
                 style={{ marginRight: 8 }}
               />
-              我已知晓并确认：已采用的章节将保留线上修订记录，不会发生回滚。
+              我已了解：已采用章节不会撤销，当前章节内容不会被修改。
             </label>
           </div>
 
@@ -413,7 +430,8 @@ export function BatchAbandonDialog({
             />
           </div>
 
-          <footer className="chapter-plan-dialog-footer">
+          <footer className="chapter-plan-dialog-footer batch-abandon-footer">
+            <small>{acknowledged ? "确认后未采用候选将不可恢复。" : "请先勾选确认条款。"}</small>
             <button
               type="button"
               className="chapter-plan-button secondary"
@@ -424,10 +442,10 @@ export function BatchAbandonDialog({
             </button>
             <button
               type="submit"
-              className="chapter-plan-button primary"
+              className="chapter-plan-button danger"
               disabled={submitting || !acknowledged}
             >
-              {submitting ? "正在放弃..." : "确认放弃本批次"}
+              {submitting ? "正在放弃..." : "确认放弃候选批次"}
             </button>
           </footer>
         </form>
