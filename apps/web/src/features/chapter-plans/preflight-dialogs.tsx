@@ -5,6 +5,7 @@ import { WorkflowPreflightBlocker } from "@/components/workflow-preflight-blocke
 import { toWorkflowPreflightReasons } from "@/components/workflow-preflight-reason";
 import type {
   ChapterPlanningBlockerItem,
+  ChapterPlanningPreflightItem,
   ChapterPlanningPreflightBlocked,
   ChapterPlanningPreflightPassed,
   ChapterPlanningPreflightReport,
@@ -64,6 +65,25 @@ function retryActionLabel(action: string): string {
       return "恢复并复验工作流执行配置后重试。";
     default:
       return "修正阻断项后重新预检。";
+  }
+}
+
+function preflightCheckLabel(item: ChapterPlanningPreflightItem): string {
+  switch (item.code) {
+    case "workflow_binding_valid":
+    case "workflow_binding_available":
+      return "工作流配置连通性正常";
+    case "execution_integration_available":
+      return "工作流执行连接可用";
+    case "storyline_selection_valid":
+      return "故事线关联校验通过";
+    case "generation_input_valid":
+    case "input_contract_valid":
+      return "必填输入项与契约校验通过";
+    case "chapter_target_valid":
+      return "目标章节数量合理";
+    default:
+      return item.safeReason || "检查项已通过";
   }
 }
 
@@ -182,9 +202,12 @@ export function PreflightReportDialog({
     >
       <div className="chapter-plan-dialog-content">
         <header className="chapter-plan-dialog-header">
-          <h3 id="preflight-report-title">
-            {isPassed ? "预检完成报告" : "预检阻断报告"}
-          </h3>
+          <div>
+            <h3 id="preflight-report-title">
+              {isPassed ? "确认章节规划任务" : "预检阻断报告"}
+            </h3>
+            {isPassed && <p className="chapter-plan-dialog-subtitle">确认后将使用本次预检结果创建任务。</p>}
+          </div>
           <button
             type="button"
             className="chapter-plan-dialog-close"
@@ -217,6 +240,61 @@ export function PreflightReportDialog({
               )}
             </div>
           </div>
+
+          {isPassed && passedReport && (
+            <div className="chapter-plan-preflight-pass-content">
+              <div className="chapter-plan-preflight-pass-grid">
+                <section className="chapter-plan-preflight-pass-card">
+                  <h4>任务概览</h4>
+                  <dl>
+                    <div>
+                      <dt>生成模式</dt>
+                      <dd>{modeLabel}</dd>
+                    </div>
+                    <div>
+                      <dt>目标章节</dt>
+                      <dd>{targetLabel}</dd>
+                    </div>
+                    <div>
+                      <dt>故事线</dt>
+                      <dd>{inputSummary?.storylineSelection.mode === "specified" ? `指定 ${inputSummary.storylineSelection.storylineIds.length} 条故事线` : "自动平衡全部故事线"}</dd>
+                    </div>
+                  </dl>
+                </section>
+                <section className="chapter-plan-preflight-pass-card">
+                  <h4>执行配置</h4>
+                  <dl>
+                    <div>
+                      <dt>工作流阶段</dt>
+                      <dd>章节规划</dd>
+                    </div>
+                    <div>
+                      <dt>绑定版本</dt>
+                      <dd>v{passedReport.executionConfigurationSummary.workflowBindingVersion}</dd>
+                    </div>
+                    <div>
+                      <dt>预期结果</dt>
+                      <dd>新的待确认章节候选批次</dd>
+                    </div>
+                  </dl>
+                </section>
+              </div>
+              <section className="chapter-plan-preflight-pass-card">
+                <h4>预检结果详情</h4>
+                <ul className="chapter-plan-preflight-checks">
+                  {passedReport.checks.map((item, index) => (
+                    <li key={`${item.code}-${index}`}>
+                      <span aria-hidden="true">✓</span>
+                      <div>
+                        <strong>{preflightCheckLabel(item)}</strong>
+                        {item.safeReason && <small>{item.safeReason}</small>}
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            </div>
+          )}
 
           {/* Blockers list */}
           {blockedReport && (
@@ -267,7 +345,7 @@ export function PreflightReportDialog({
           {passedReport && (
             <div className="chapter-plan-preflight-section">
               <p className="chapter-plan-help-text">
-                预检 Token 有效期为 10 分钟。确认发起后将自动创建章节规划运行任务。
+                预检 Token 有效期为 10 分钟。创建任务后将进入运行队列，已确认章节不会被覆盖。
               </p>
             </div>
           )}
@@ -280,7 +358,7 @@ export function PreflightReportDialog({
             onClick={onClose}
             disabled={creatingRun}
           >
-            {isPassed ? "取消" : "关闭"}
+            {isPassed ? "返回修改" : "关闭"}
           </button>
 
           {isPassed && passedReport && onCreateRun && (
@@ -290,7 +368,7 @@ export function PreflightReportDialog({
               onClick={() => onCreateRun(passedReport.preflightToken)}
               disabled={creatingRun}
             >
-              {creatingRun ? "正在发起任务..." : "确认发起生成"}
+              {creatingRun ? "正在创建任务..." : "创建任务"}
             </button>
           )}
         </footer>

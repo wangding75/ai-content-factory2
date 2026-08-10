@@ -556,3 +556,21 @@ button,a { -webkit-tap-highlight-color:transparent; }
 .preflight-progress-notice p{margin:0}
 @keyframes preflight-progress-spin{to{transform:rotate(360deg)}}
 
+/* UI-042 passed preflight report. */
+.chapter-plan-dialog-subtitle{margin:5px 0 0;color:#596171;font-size:13px}
+.chapter-plan-preflight-pass-content{display:grid;gap:18px}
+.chapter-plan-preflight-pass-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.chapter-plan-preflight-pass-card{padding:16px;border:1px solid #dfe2e6;border-radius:10px;background:#fff}
+.chapter-plan-preflight-pass-card h4{margin:0 0 12px;color:#191c1e;font-size:14px}
+.chapter-plan-preflight-pass-card dl{display:grid;gap:0;margin:0}
+.chapter-plan-preflight-pass-card dl>div{display:flex;justify-content:space-between;gap:12px;padding:9px 0;border-bottom:1px solid #edf0f2;font-size:12px}
+.chapter-plan-preflight-pass-card dl>div:last-child{border-bottom:0}
+.chapter-plan-preflight-pass-card dt{color:#767586}
+.chapter-plan-preflight-pass-card dd{margin:0;color:#313540;font-weight:700;text-align:right}
+.chapter-plan-preflight-checks{display:grid;gap:10px;margin:0;padding:0;list-style:none}
+.chapter-plan-preflight-checks li{display:flex;align-items:flex-start;gap:9px;color:#313540;font-size:13px}
+.chapter-plan-preflight-checks li>span{display:grid;width:18px;height:18px;flex:0 0 auto;place-items:center;border-radius:50%;color:#fff;background:#10b981;font-size:11px;font-weight:800}
+.chapter-plan-preflight-checks li div{display:grid;gap:2px}
+.chapter-plan-preflight-checks small{color:#767586;font-size:11px;line-height:16px}
+@media(max-width:620px){.chapter-plan-preflight-pass-grid{grid-template-columns:1fr}.chapter-plan-preflight-pass-card dl>div{align-items:flex-start;flex-direction:column;gap:3px}.chapter-plan-preflight-pass-card dd{text-align:left}}
+

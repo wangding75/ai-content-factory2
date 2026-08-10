@@ -103,11 +103,24 @@ test("preflight progress dialog exposes one active check without a second submit
   assert.doesNotMatch(preflightProgressSource, /onCreateRun/);
 });
 
+test("passed preflight report shows checks, execution summary, and the create-task action", () => {
+  assert.match(preflightSource, /确认章节规划任务/);
+  assert.match(preflightSource, /预检通过，具备生成条件/);
+  assert.match(preflightSource, /任务概览/);
+  assert.match(preflightSource, /执行配置/);
+  assert.match(preflightSource, /预检结果详情/);
+  assert.match(preflightSource, /preflightCheckLabel/);
+  assert.match(preflightSource, /workflowBindingVersion/);
+  assert.match(preflightSource, /onCreateRun\(passedReport\.preflightToken\)/);
+  assert.match(preflightSource, /创建任务/);
+  assert.doesNotMatch(preflightSource, /确认发起生成/);
+});
+
 test("preflight report dialog differentiates passed and blocked status", () => {
   assert.match(preflightSource, /预检通过/);
   assert.match(preflightSource, /预检阻断/);
   assert.match(preflightSource, /阻断原因列表/);
-  assert.match(preflightSource, /确认发起生成/);
+  assert.match(preflightSource, /创建任务/);
   assert.match(preflightSource, /blockerReasonLabel/);
   assert.match(preflightSource, /blockerTitleLabel/);
   assert.match(preflightSource, /retryActionLabel/);
