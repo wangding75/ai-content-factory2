@@ -243,6 +243,15 @@ export function ContentReviewDrawer({
             </p>
           </section>
 
+          <section className="review-drawer-overview" aria-label={copy.drawer.summary}>
+            <h3>{copy.drawer.summary}</h3>
+            <dl>
+              <div><dt>{copy.drawer.target}</dt><dd>{version.title}</dd></div>
+              <div><dt>{copy.drawer.scope}</dt><dd>{preflight?.reviewDimensions.length ? copy.drawer.scopeCount(preflight.reviewDimensions.length) : copy.drawer.scopePending}</dd></div>
+              <div><dt>{copy.drawer.source}</dt><dd>V{selectedVersion.version_no}</dd></div>
+            </dl>
+          </section>
+
           <section>
             <h3>{copy.drawer.sourceVersion}</h3>
             <div className="review-version-list" role="radiogroup">

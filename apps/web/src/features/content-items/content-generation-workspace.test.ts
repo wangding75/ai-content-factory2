@@ -154,6 +154,20 @@ test("editor review entry stays in the actions bar and opens the existing review
   assert.match(editor, /window\.location\.assign\(reviewPath\)/);
 });
 
+test("review submission drawer keeps a real subject, scope summary, workflow section, and fixed footer", () => {
+  const reviewDrawer = readFileSync(join(process.cwd(), "src", "features", "content-review", "content-review-drawer.tsx"), "utf8");
+  assert.match(reviewDrawer, /review-drawer-source/);
+  assert.match(reviewDrawer, /review-drawer-overview/);
+  assert.match(reviewDrawer, /copy\.drawer\.target/);
+  assert.match(reviewDrawer, /copy\.drawer\.scope/);
+  assert.match(reviewDrawer, /selectedVersion\.version_no/);
+  assert.match(reviewDrawer, /review-workflow-card/);
+  assert.match(reviewDrawer, /review-drawer-scroll/);
+  assert.match(reviewDrawer, /<footer>/);
+  assert.match(reviewDrawer, /copy\.drawer\.confirm/);
+  assert.match(reviewDrawer, /copy\.drawer\.cancel/);
+});
+
 test("summary polling is isolated from the editable draft refresh", () => {
   assert.match(editor, /\["queued", "running"\]/);
   assert.match(editor, /refreshGenerationSummary/);
