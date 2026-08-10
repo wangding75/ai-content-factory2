@@ -219,6 +219,27 @@ test("review failure states keep source and Run context, separate recovery seman
   assert.doesNotMatch(failureState, /review-report-summary/);
 });
 
+test("unconfigured review is a blocked business state with workflow repair guidance", () => {
+  const notConfigured = reviewWorkspace.slice(
+    reviewWorkspace.indexOf('if (summary.state === "not_configured")'),
+    reviewWorkspace.indexOf('if (summary.state === "queued"'),
+  );
+  assert.match(notConfigured, /review-not-configured-grid/);
+  assert.match(notConfigured, /copy\.states\.notConfiguredTitle/);
+  assert.match(notConfigured, /copy\.states\.notConfiguredDescription/);
+  assert.match(notConfigured, /copy\.states\.notConfiguredStepBind/);
+  assert.match(notConfigured, /copy\.states\.notConfiguredStepConnection/);
+  assert.match(notConfigured, /copy\.states\.notConfiguredStepReturn/);
+  assert.match(notConfigured, /tab=workflow-bindings/);
+  assert.match(notConfigured, /review-not-configured-statuses/);
+  assert.match(notConfigured, /review-status-explanation/);
+  assert.doesNotMatch(notConfigured, /copy\.common\.start/);
+  assert.match(
+    reviewWorkspace,
+    /<button type="button" onClick=\{onStart\} disabled=\{!canStart\}/,
+  );
+});
+
 test("summary polling is isolated from the editable draft refresh", () => {
   assert.match(editor, /\["queued", "running"\]/);
   assert.match(editor, /refreshGenerationSummary/);

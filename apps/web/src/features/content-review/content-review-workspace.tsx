@@ -389,18 +389,32 @@ function SummaryState({
         </button>
       </section>
     );
-  if (summary.state === "not_configured")
+  if (summary.state === "not_configured") {
+    const reviewable = content.current_version.status === "frozen";
     return (
+      <>
       <div className="review-not-configured-grid">
         <section className="review-empty-state warning">
           <Icon name="workflow" size={36} />
           <h3>{copy.states.notConfiguredTitle}</h3>
           <p>{copy.states.notConfiguredDescription}</p>
-          <Link
-            href={`/projects/${projectId}/settings?tab=workflow-bindings`}
-          >
-            {copy.common.settings}
-          </Link>
+          <ol className="review-not-configured-steps">
+            <li><span>1</span>{copy.states.notConfiguredStepBind}</li>
+            <li><span>2</span>{copy.states.notConfiguredStepConnection}</li>
+            <li><span>3</span>{copy.states.notConfiguredStepReturn}</li>
+          </ol>
+          <div className="review-not-configured-actions">
+            <Link
+              href={`/projects/${projectId}/settings?tab=workflow-bindings`}
+            >
+              {copy.common.settings}
+            </Link>
+            <Link
+              href={`/projects/${projectId}/settings?tab=workflow-bindings`}
+            >
+              {copy.states.notConfiguredGuide}
+            </Link>
+          </div>
         </section>
         <aside>
           <h3>{copy.common.currentSubject}</h3>
@@ -421,10 +435,44 @@ function SummaryState({
               </dd>
             </div>
           </dl>
-          <p>{copy.states.notConfiguredHint}</p>
+          <div className="review-not-configured-statuses">
+            <div className="is-ready">
+              <span aria-hidden="true">✓</span>{copy.states.contentSaved}
+            </div>
+            <div className={reviewable ? "is-ready" : "is-blocked"}>
+              <span aria-hidden="true">{reviewable ? "✓" : "!"}</span>
+              {copy.states.reviewableVersion}
+            </div>
+            <div className="is-blocked">
+              <span aria-hidden="true">!</span>{copy.states.notConfiguredStatus}
+            </div>
+          </div>
         </aside>
       </div>
+      <aside className="review-not-configured-note">
+        <Icon name="info" size={18} />
+        <p>{copy.states.notConfiguredHint}</p>
+      </aside>
+      <section className="review-status-explanation">
+        <h3>{copy.states.statusExplanation}</h3>
+        <div>
+          <article className="is-current">
+            <strong>{copy.states.statusNotConfigured}</strong>
+            <p>{copy.states.statusNotConfiguredDetail}</p>
+          </article>
+          <article>
+            <strong>{copy.states.statusUnavailable}</strong>
+            <p>{copy.states.statusUnavailableDetail}</p>
+          </article>
+          <article>
+            <strong>{copy.states.statusNoResult}</strong>
+            <p>{copy.states.statusNoResultDetail}</p>
+          </article>
+        </div>
+      </section>
+      </>
     );
+  }
   if (summary.state === "queued" || summary.state === "running") {
     const run = summary.activeRun ?? summary.latestRun!;
     if (runSourceError)
