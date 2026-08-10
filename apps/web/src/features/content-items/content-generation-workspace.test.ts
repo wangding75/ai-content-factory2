@@ -272,6 +272,19 @@ test("review report rewrite entry follows selected open issues into the existing
   assert.match(rewriteWorkspace, /initialIssueIds\.includes\(id\)/);
 });
 
+test("rewrite creation keeps report, selected issues, target source, and required-input blocking visible", () => {
+  assert.match(rewriteWorkspace, /RewriteCreateView/);
+  assert.match(rewriteWorkspace, /reviewDetail/);
+  assert.match(rewriteWorkspace, /sourceContent/);
+  assert.match(rewriteWorkspace, /selectedIssues/);
+  assert.match(rewriteWorkspace, /sourceContentVersionSummary/);
+  assert.match(rewriteWorkspace, /reviewDetail\?\.report\.summary/);
+  assert.match(rewriteWorkspace, /if \(!availability\)/);
+  assert.match(rewriteWorkspace, /disabled=\{checking \|\| !selected\.length\}/);
+  assert.match(rewriteWorkspace, /setSelected\(initialIssueIds \? openIssueIds\.filter/);
+  assert.match(rewriteWorkspace, /: \[\]\);/);
+});
+
 test("summary polling is isolated from the editable draft refresh", () => {
   assert.match(editor, /\["queued", "running"\]/);
   assert.match(editor, /refreshGenerationSummary/);

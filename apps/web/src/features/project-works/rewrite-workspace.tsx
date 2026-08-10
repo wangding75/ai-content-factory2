@@ -6,6 +6,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { ApiError } from "@/lib/api";
 import { cancelWorkflowRun, getWorkflowRun, listWorkflowRunEvents, retryWorkflowRun, type WorkflowRunDto, type WorkflowRunEventVm } from "@/features/workflow-runs/workflow-run-api";
 import { getReview, isRealReviewDetail, type RealReviewIssue } from "@/features/content-review/content-review-api";
+import { reviewLocationLabel } from "@/features/content-review/content-review-presentation";
 import { getContentVersion } from "@/features/content-items/content-item-http-api";
 import { createContentRewriteRun, getContentRewriteAvailability, getContentRewriteResult, getContentRewriteSummary, preflightContentRewrite, retryContentRewriteResultConsumption, rewriteErrorMessage, validRewriteInput, type RewriteAvailability, type RewriteOptions, type RewritePreflight, type RewriteResult as RewriteResultDto, type RewriteSummary } from "./rewrite-api";
 import { WorkflowPreflightBlocker } from "@/components/workflow-preflight-blocker";
@@ -111,6 +112,8 @@ function RewriteCreate({ projectId, workId, reportId, initialIssueIds, runUrl }:
   const router = useRouter();
   const [availability, setAvailability] = useState<RewriteAvailability | null>(null);
   const [issues, setIssues] = useState<RealReviewIssue[]>([]);
+  const [reviewDetail, setReviewDetail] = useState<import("@/features/content-review/content-review-api").RealReviewDetail | null>(null);
+  const [sourceContent, setSourceContent] = useState<string | null>(null);
   const [selected, setSelected] = useState<string[]>(initialIssueIds ?? []);
   const [instructions, setInstructions] = useState("");
   const [options, setOptions] = useState<RewriteOptions>({ strategy: "targeted_fix" });
@@ -128,10 +131,17 @@ function RewriteCreate({ projectId, workId, reportId, initialIssueIds, runUrl }:
       const [next, detail] = await Promise.all([getContentRewriteAvailability(reportId), getReview(reportId)]);
       setAvailability(next);
       if (isRealReviewDetail(detail)) {
+        setReviewDetail(detail);
         const ordered = [...detail.issues].sort((a, b) => a.position - b.position || a.id.localeCompare(b.id));
         setIssues(ordered);
         const openIssueIds = ordered.filter(x => x.disposition === "open").slice(0, 50).map(x => x.id);
-        setSelected(initialIssueIds?.length ? openIssueIds.filter((id) => initialIssueIds.includes(id)) : openIssueIds);
+        setSelected(initialIssueIds ? openIssueIds.filter((id) => initialIssueIds.includes(id)) : []);
+      }
+      try {
+        const source = await getContentVersion(next.sourceContentVersionSummary.id);
+        setSourceContent(source.content_version.content);
+      } catch {
+        setSourceContent(null);
       }
       if (next.activeRun) router.replace(runUrl(next.activeRun.id));
     } catch (cause) { setError(rewriteErrorMessage((cause as ApiError).code)); }
@@ -171,6 +181,35 @@ function RewriteCreate({ projectId, workId, reportId, initialIssueIds, runUrl }:
       }
     } finally { setCreating(false); }
   };
+  if (!availability) return <State title="正在加载重写资料" />;
+  if (availability.available)
+    return (
+      <RewriteCreateView
+        projectId={projectId}
+        workId={workId}
+        reportId={reportId}
+        availability={availability}
+        reviewDetail={reviewDetail}
+        sourceContent={sourceContent}
+        issues={issues}
+        selected={selected}
+        instructions={instructions}
+        options={options}
+        preflight={preflight}
+        error={error}
+        checking={checking}
+        creating={creating}
+        showConfiguration={showConfiguration}
+        confirmCreate={confirmCreate}
+        setInstructions={(value) => { setInstructions(value); clearPreflight(); }}
+        setStrategy={(strategy) => { setOptions({ strategy }); clearPreflight(); }}
+        setShowConfiguration={setShowConfiguration}
+        setConfirmCreate={setConfirmCreate}
+        toggle={toggle}
+        check={() => void check()}
+        create={() => void create()}
+      />
+    );
   if (availability && !availability.available) {
     const copy = {
       review_not_completed: ["审核报告尚未完成", "返回审核结果并等待审核完成。"],
@@ -183,4 +222,204 @@ function RewriteCreate({ projectId, workId, reportId, initialIssueIds, runUrl }:
   return <main className="rewrite-page"><Link className="rewrite-back" href={`/projects/${projectId}/works/${workId}/review?reportId=${encodeURIComponent(reportId ?? "")}`}>← 返回审核结果</Link><section className="rewrite-layout"><article className="rewrite-source"><header><div><h1>创建正文重写</h1><p>重写将固定使用本次审核的来源版本，不会替换当前版本。</p></div><button type="button" onClick={() => setShowConfiguration(true)}>查看项目重写配置</button></header><dl><div><dt>固定来源版本</dt><dd>{availability ? `V${availability.sourceContentVersionSummary.versionNo} · ${availability.sourceContentVersionSummary.title}` : "正在加载"}</dd></div><div><dt>已选问题</dt><dd>{selected.length} 个</dd></div></dl><h2>选择待修复问题</h2><div className="rewrite-issues">{issues.map(issue => <label key={issue.id}><input type="checkbox" checked={selected.includes(issue.id)} disabled={issue.disposition !== "open"} onChange={() => toggle(issue.id)} /><span><b>{issue.title}</b><small>{issue.categoryLabel} · {issue.severity}</small></span></label>)}</div></article><section className="rewrite-form"><h2>重写执行配置</h2><label>补充要求<textarea value={instructions} maxLength={2000} onChange={e => { setInstructions(e.target.value); clearPreflight(); }} /></label><label>重写策略<select value={options.strategy} onChange={e => { setOptions({ strategy: e.target.value as RewriteOptions["strategy"] }); clearPreflight(); }}><option value="targeted_fix">定向修复</option><option value="creative_rewrite">创意重写</option></select></label>{error && <p role="alert">{error}</p>}{preflight?.status === "passed" ? <section className="rewrite-preflight" aria-label="预检结果"><h2>预检已通过</h2><ul>{preflight.checks.map(check => <li key={check.code}>{check.status === "passed" ? "通过" : "阻塞"}：{check.message}</li>)}</ul><dl><div><dt>来源</dt><dd>V{preflight.sourceContentVersionSummary.versionNo} · {preflight.sourceContentVersionSummary.title}</dd></div><div><dt>审核报告</dt><dd>{preflight.reviewReportSnapshot.summary}</dd></div><div><dt>问题</dt><dd>{preflight.selectedIssueSummary.total} 个</dd></div><div><dt>配置</dt><dd>{preflight.configurationSummary?.workflowConfigurationName ?? "不可用"}</dd></div><div><dt>过期时间</dt><dd>{preflight.expiresAt ? new Date(preflight.expiresAt).toLocaleString("zh-CN") : "—"}</dd></div></dl><button type="button" className="primary" onClick={() => setConfirmCreate(true)}>继续确认创建</button></section> : preflight?.status === "blocked" ? <section className="rewrite-preflight" aria-label="预检结果"><h2>预检未通过</h2><WorkflowPreflightBlocker reasons={rewritePreflightBlockerReasons(preflight)} /><ul>{preflight.checks.map(check => <li key={check.code}>{check.status === "passed" ? "通过" : "阻塞"}：{check.message}</li>)}</ul><button type="button" className="primary" disabled={checking || !availability?.available} onClick={() => void check()}>{checking ? "预检中…" : "重新预检"}</button></section> : <button type="button" className="primary" disabled={checking || !availability?.available} onClick={() => void check()}>{checking ? "预检中…" : "进行预检"}</button>}</section></section>
   {showConfiguration && <div className="rewrite-drawer-layer"><button className="rewrite-dialog-backdrop" aria-label="关闭项目重写配置" onClick={() => setShowConfiguration(false)} /><section className="rewrite-config-drawer" role="dialog" aria-modal="true" aria-label="项目重写配置"><header><div><h2>项目重写配置</h2><p>正文重写阶段</p></div><button type="button" aria-label="关闭" onClick={() => setShowConfiguration(false)}>×</button></header><p className="rewrite-available-badge">配置可用</p><dl><div><dt>工作流</dt><dd>{availability?.configurationSummary?.workflowConfigurationName ?? "未配置"}</dd></div><div><dt>配置版本</dt><dd>{availability?.configurationSummary?.workflowConfigurationVersion ?? "—"}</dd></div><div><dt>输入契约</dt><dd>{availability?.configurationSummary?.inputContract ?? "—"}</dd></div><div><dt>输出契约</dt><dd>{availability?.configurationSummary?.outputContract ?? "—"}</dd></div></dl><footer><button type="button" onClick={() => setShowConfiguration(false)}>关闭</button></footer></section></div>}
   {confirmCreate && preflight?.status === "passed" && <div className="rewrite-dialog-layer"><section className="rewrite-confirm-dialog" role="dialog" aria-modal="true" aria-label="确认创建重写任务"><h2>确认创建重写任务</h2><p>将按以上来源、审核报告、{preflight.selectedIssueSummary.total} 个问题和只读配置创建一次重写运行。</p><footer><button type="button" disabled={creating} onClick={() => setConfirmCreate(false)}>返回修改</button><button type="button" className="primary" disabled={creating} onClick={() => void create()}>{creating ? "创建中…" : "确认创建"}</button></footer></section></div>}</main>;
+}
+function RewriteCreateView({
+  projectId,
+  workId,
+  reportId,
+  availability,
+  reviewDetail,
+  sourceContent,
+  issues,
+  selected,
+  instructions,
+  options,
+  preflight,
+  error,
+  checking,
+  creating,
+  showConfiguration,
+  confirmCreate,
+  setInstructions,
+  setStrategy,
+  setShowConfiguration,
+  setConfirmCreate,
+  toggle,
+  check,
+  create,
+}: {
+  projectId: string;
+  workId: string;
+  reportId?: string;
+  availability: RewriteAvailability;
+  reviewDetail: import("@/features/content-review/content-review-api").RealReviewDetail | null;
+  sourceContent: string | null;
+  issues: RealReviewIssue[];
+  selected: string[];
+  instructions: string;
+  options: RewriteOptions;
+  preflight: RewritePreflight | null;
+  error: string | null;
+  checking: boolean;
+  creating: boolean;
+  showConfiguration: boolean;
+  confirmCreate: boolean;
+  setInstructions: (value: string) => void;
+  setStrategy: (strategy: RewriteOptions["strategy"]) => void;
+  setShowConfiguration: (value: boolean) => void;
+  setConfirmCreate: (value: boolean) => void;
+  toggle: (id: string) => void;
+  check: () => void;
+  create: () => void;
+}) {
+  const selectedIssues = issues.filter((issue) => selected.includes(issue.id));
+  return (
+    <main className="rewrite-page">
+      <Link
+        className="rewrite-back"
+        href={`/projects/${projectId}/works/${workId}/review?reportId=${encodeURIComponent(reportId ?? "")}`}
+      >
+        ← 返回审核结果
+      </Link>
+      <header className="rewrite-create-header">
+        <div>
+          <h1>创建正文重写</h1>
+          <p>基于已选审核问题生成新的正文候选版本，原版本保持不变。</p>
+        </div>
+        <button type="button" onClick={() => setShowConfiguration(true)}>
+          查看项目重写配置
+        </button>
+      </header>
+      <dl className="rewrite-create-context">
+        <div>
+          <dt>固定来源版本</dt>
+          <dd>
+            V{availability.sourceContentVersionSummary.versionNo} · {availability.sourceContentVersionSummary.title}
+          </dd>
+        </div>
+        <div>
+          <dt>审核报告</dt>
+          <dd>{reviewDetail?.report.id ?? availability.reviewReportId}</dd>
+        </div>
+        <div>
+          <dt>已选问题</dt>
+          <dd>{selected.length} 个</dd>
+        </div>
+      </dl>
+      <section className="rewrite-create-layout">
+        <div className="rewrite-create-source-column">
+          <section className="rewrite-selected-issues">
+            <header>
+              <h2>已选择的审核问题</h2>
+              <span>{selected.length} 项</span>
+            </header>
+            {selectedIssues.length ? (
+              <div>
+                {selectedIssues.map((issue) => (
+                  <article key={issue.id}>
+                    <span className={`severity ${issue.severity}`}>{issue.severity}</span>
+                    <strong>{issue.categoryLabel}</strong>
+                    <p>{issue.title}</p>
+                    <small>{reviewLocationLabel(issue.location)}</small>
+                    <button type="button" onClick={() => toggle(issue.id)} aria-label={`移除问题 ${issue.title}`}>
+                      ×
+                    </button>
+                  </article>
+                ))}
+              </div>
+            ) : (
+              <p className="rewrite-selection-empty">尚未选择可重写问题，请返回审核结果选择问题。</p>
+            )}
+          </section>
+          <section className="rewrite-target-source">
+            <header>
+              <h2>目标正文</h2>
+              <span>V{availability.sourceContentVersionSummary.versionNo} 固定来源</span>
+            </header>
+            {sourceContent ? (
+              <pre>{sourceContent}</pre>
+            ) : (
+              <p>固定来源正文暂时无法读取，请返回审核结果后重试。</p>
+            )}
+          </section>
+          {reviewDetail?.report.summary ? (
+            <section className="rewrite-report-context">
+              <h2>来源审核报告</h2>
+              <p>{reviewDetail.report.summary}</p>
+            </section>
+          ) : null}
+        </div>
+        <section className="rewrite-form">
+          <header>
+            <h2>重写执行配置</h2>
+            <p>只读使用本次审核的来源版本和已选问题。</p>
+          </header>
+          <label>
+            重写策略
+            <select value={options.strategy} onChange={(event) => setStrategy(event.target.value as RewriteOptions["strategy"])}>
+              <option value="targeted_fix">仅修复已选问题，尽量保持原文风格</option>
+              <option value="creative_rewrite">创意重写</option>
+            </select>
+          </label>
+          <label>
+            补充要求 <small>（可选）</small>
+            <textarea value={instructions} maxLength={2000} onChange={(event) => setInstructions(event.target.value)} />
+          </label>
+          {error && <p role="alert">{error}</p>}
+          {preflight?.status === "passed" ? (
+            <section className="rewrite-preflight" aria-label="预检结果">
+              <h2>预检已通过</h2>
+              <ul>{preflight.checks.map((item) => <li key={item.code}>{item.status === "passed" ? "通过" : "阻塞"}：{item.message}</li>)}</ul>
+              <dl>
+                <div><dt>来源</dt><dd>V{preflight.sourceContentVersionSummary.versionNo} · {preflight.sourceContentVersionSummary.title}</dd></div>
+                <div><dt>审核报告</dt><dd>{preflight.reviewReportSnapshot.summary}</dd></div>
+                <div><dt>问题</dt><dd>{preflight.selectedIssueSummary.total} 个</dd></div>
+                <div><dt>配置</dt><dd>{preflight.configurationSummary?.workflowConfigurationName ?? "不可用"}</dd></div>
+              </dl>
+              <button type="button" className="primary" onClick={() => setConfirmCreate(true)}>继续确认创建</button>
+            </section>
+          ) : preflight?.status === "blocked" ? (
+            <section className="rewrite-preflight" aria-label="预检结果">
+              <h2>预检未通过</h2>
+              <WorkflowPreflightBlocker reasons={rewritePreflightBlockerReasons(preflight)} />
+              <ul>{preflight.checks.map((item) => <li key={item.code}>{item.status === "passed" ? "通过" : "阻塞"}：{item.message}</li>)}</ul>
+              <button type="button" className="primary" disabled={checking || !selected.length} onClick={check}>{checking ? "预检中…" : "重新预检"}</button>
+            </section>
+          ) : (
+            <button type="button" className="primary" disabled={checking || !selected.length} onClick={check}>
+              {checking ? "预检中…" : "进行预检"}
+            </button>
+          )}
+        </section>
+      </section>
+      {showConfiguration && (
+        <div className="rewrite-drawer-layer">
+          <button className="rewrite-dialog-backdrop" aria-label="关闭项目重写配置" onClick={() => setShowConfiguration(false)} />
+          <section className="rewrite-config-drawer" role="dialog" aria-modal="true" aria-label="项目重写配置">
+            <header><div><h2>项目重写配置</h2><p>正文重写阶段</p></div><button type="button" aria-label="关闭" onClick={() => setShowConfiguration(false)}>×</button></header>
+            <p className="rewrite-available-badge">配置可用</p>
+            <dl>
+              <div><dt>工作流</dt><dd>{availability.configurationSummary?.workflowConfigurationName ?? "未配置"}</dd></div>
+              <div><dt>配置版本</dt><dd>{availability.configurationSummary?.workflowConfigurationVersion ?? "—"}</dd></div>
+              <div><dt>输入契约</dt><dd>{availability.configurationSummary?.inputContract ?? "—"}</dd></div>
+              <div><dt>输出契约</dt><dd>{availability.configurationSummary?.outputContract ?? "—"}</dd></div>
+            </dl>
+            <footer><button type="button" onClick={() => setShowConfiguration(false)}>关闭</button></footer>
+          </section>
+        </div>
+      )}
+      {confirmCreate && preflight?.status === "passed" && (
+        <div className="rewrite-dialog-layer">
+          <section className="rewrite-confirm-dialog" role="dialog" aria-modal="true" aria-label="确认创建重写任务">
+            <h2>确认创建重写任务</h2>
+            <p>将按以上来源、审核报告、{preflight.selectedIssueSummary.total} 个问题和只读配置创建一次重写运行。</p>
+            <footer>
+              <button type="button" disabled={creating} onClick={() => setConfirmCreate(false)}>返回修改</button>
+              <button type="button" className="primary" disabled={creating} onClick={create}>{creating ? "创建中…" : "确认创建"}</button>
+            </footer>
+          </section>
+        </div>
+      )}
+    </main>
+  );
 }
