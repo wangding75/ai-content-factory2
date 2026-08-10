@@ -44,6 +44,14 @@ test("active run banner separates result validation from generation progress", (
   assert.doesNotMatch(workspaceSource, /const stageLabel = run\.stage === "validating" \? "校验生成结果" : "校验生成结果"/);
 });
 
+test("chapter plan statistics and filters use real status values without sample fallbacks", () => {
+  assert.match(workspaceSource, /createChapterPlanStats\(plans \?\? \[\]\)/);
+  assert.match(workspaceSource, /matchesChapterPlanStatus/);
+  assert.match(workspaceSource, /plan\.status === "draft_generated"/);
+  assert.match(workspaceSource, /候选批次[^\n]*summary\?\.candidateBatchCounts\?\.ready \?\? 0/);
+  assert.doesNotMatch(workspaceSource, /candidateBatchCounts\?\.ready \?\? 2/);
+});
+
 test("generation settings drawer validates input ranges and options", () => {
   assert.match(drawerSource, /生成模式/);
   assert.match(drawerSource, /起始章节/);

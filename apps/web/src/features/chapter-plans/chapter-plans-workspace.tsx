@@ -59,6 +59,17 @@ const statuses: { value: ChapterPlanFilterStatus; label: string }[] = [
   { value: "draft_generated", label: "已生成草稿" },
 ];
 
+function matchesChapterPlanStatus(
+  plan: ChapterPlan,
+  filter: ChapterPlanFilterStatus,
+): boolean {
+  if (filter === "all") return true;
+  if (filter === "draft_generated") {
+    return (plan.status as string) === "draft_generated" || (plan.status as string) === "generated";
+  }
+  return plan.status === filter;
+}
+
 export function ChapterPlansWorkspace({
   projectId,
 }: {
@@ -186,7 +197,7 @@ export function ChapterPlansWorkspace({
       (plans ?? []).filter((plan) => {
         const needle = search.trim().toLowerCase();
         return (
-          (status === "all" || plan.status === status) &&
+          matchesChapterPlanStatus(plan, status) &&
           (!needle ||
             plan.title.toLowerCase().includes(needle) ||
             String(plan.chapter_no).includes(needle)) &&
@@ -408,7 +419,7 @@ export function ChapterPlansWorkspace({
           href={`/projects/${projectId}/chapter-plan-candidate-batches`}
           className="px-6 py-3 text-on-surface-variant hover:text-on-surface hover:bg-surface-container-low font-medium text-sm rounded-t-lg transition-colors"
         >
-          候选批次 <span className="ml-1 px-1.5 py-0.5 bg-surface-container-high text-on-surface-variant rounded text-xs">{summary?.candidateBatchCounts?.ready ?? 2}</span>
+          候选批次 <span className="ml-1 px-1.5 py-0.5 bg-surface-container-high text-on-surface-variant rounded text-xs">{summary?.candidateBatchCounts?.ready ?? 0}</span>
         </Link>
       </div>
 
@@ -933,7 +944,11 @@ function PlanRow({
           className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
             plan.status === "pending_confirmation"
               ? "bg-[#FEF3C7] text-[#92400E] border border-[#FDE68A]"
-              : "bg-[#D1FAE5] text-[#065F46] border border-[#A7F3D0]"
+              : plan.status === "confirmed"
+                ? "bg-[#D1FAE5] text-[#065F46] border border-[#A7F3D0]"
+                : plan.status === "draft_generated" || (plan.status as string) === "generated"
+                  ? "bg-[#E0E7FF] text-[#4338CA] border border-[#C7D2FE]"
+                  : "bg-surface-container-high text-on-surface-variant border border-outline-variant"
           }`}
         >
           {chapterPlanStatusLabel(plan.status)}
