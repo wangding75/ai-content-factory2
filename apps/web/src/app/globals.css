@@ -538,6 +538,47 @@ button,a { -webkit-tap-highlight-color:transparent; }
 .chapter-plan-button:disabled{opacity:.55;cursor:not-allowed}
 @media(max-width:620px){.chapter-plan-drawer-content{width:100%}.chapter-plan-drawer-header,.chapter-plan-drawer-body{padding-right:16px;padding-left:16px}.chapter-plan-radio-group{grid-template-columns:1fr}.chapter-plan-checkbox-list{grid-template-columns:1fr}.chapter-plan-form-row{grid-template-columns:1fr}.chapter-plan-drawer-footer{align-items:stretch;flex-direction:column;margin-right:-16px;margin-left:-16px;padding-right:16px;padding-left:16px}.chapter-plan-drawer-footer-summary{width:100%}.chapter-plan-drawer-footer-actions{justify-content:flex-end;width:100%}}
 
+/* UI-047 candidate edit drawer. */
+.candidate-edit-drawer-kicker{display:block;margin-bottom:5px;color:#767586;font-size:11px;font-weight:800;letter-spacing:.05em}
+.candidate-edit-drawer-summary{display:grid;gap:14px;margin:20px 24px 0;padding:16px;border:1px solid #c7c4d7;border-radius:10px;background:#f7f9fb}
+.candidate-edit-drawer-summary-heading{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.candidate-edit-drawer-summary-heading>strong{color:#191c1e;font-size:16px}
+.candidate-edit-drawer-summary dl{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:0}
+.candidate-edit-drawer-summary dt{color:#767586;font-size:11px}
+.candidate-edit-drawer-summary dd{margin:5px 0 0;overflow:hidden;color:#313540;font-size:12px;font-weight:700;text-overflow:ellipsis;white-space:nowrap}
+.candidate-edit-drawer-summary code{padding:2px 5px;border-radius:4px;color:#39485a;background:#e8edf4;font-size:10px}
+.candidate-edit-drawer-body{gap:24px;padding-top:20px}
+.candidate-edit-drawer-section{display:grid;gap:18px;margin:0;padding:0 0 22px;border:0;border-bottom:1px solid #dfe2e6}
+.candidate-edit-drawer-section:last-of-type{border-bottom:0}
+.candidate-edit-drawer-section-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.candidate-edit-drawer-section-heading h3{margin:0;color:#191c1e;font-size:15px}
+.candidate-edit-drawer-section-heading p{margin:5px 0 0;color:#767586;font-size:12px;line-height:18px}
+.candidate-edit-required-note{color:#93000a;font-size:11px;font-weight:700;white-space:nowrap}
+.candidate-edit-drawer-field-row{display:grid;grid-template-columns:120px minmax(0,1fr);gap:14px}
+.candidate-edit-drawer-body .chapter-plan-form-group input[type=text],.candidate-edit-drawer-body .chapter-plan-form-group input[type=number],.candidate-edit-drawer-body .chapter-plan-form-group textarea{box-sizing:border-box;width:100%;border:1px solid #c7c4d7;border-radius:8px;padding:10px 12px;color:#191c1e;background:#fff;font:inherit;font-weight:400}
+.candidate-edit-drawer-body .chapter-plan-form-group input[readonly]{color:#596171;background:#f2f4f6}
+.candidate-edit-drawer-body .chapter-plan-form-group input:focus,.candidate-edit-drawer-body .chapter-plan-form-group textarea:focus{outline:2px solid rgba(70,72,212,.2);border-color:#4648d4}
+.candidate-edit-drawer-body .chapter-plan-form-label{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px}
+.candidate-edit-drawer-body .chapter-plan-form-label em{color:#93000a;font-style:normal}
+.candidate-edit-drawer-body .chapter-plan-form-label span{margin-left:auto;color:#767586;font-size:11px;font-weight:400;letter-spacing:0}
+.candidate-edit-purpose-fieldset{display:grid;gap:8px}
+.candidate-edit-purpose-fieldset .chapter-plan-form-label{display:block;margin:0}
+.candidate-edit-purpose-options{display:flex;flex-wrap:wrap;gap:8px}
+.candidate-edit-purpose-options button{border:1px solid #c7c4d7;border-radius:999px;padding:8px 12px;color:#596171;background:#fff;font-size:12px;cursor:pointer}
+.candidate-edit-purpose-options button:hover{border-color:#4648d4;color:#4648d4}
+.candidate-edit-purpose-options button.active{border-color:#4648d4;color:#2f2e74;background:#f0f0ff;box-shadow:0 0 0 1px #4648d4}
+.candidate-edit-reference-group{display:grid;gap:8px}
+.candidate-edit-reference-group>strong{color:#313540;font-size:13px}
+.candidate-edit-reference-list{display:flex;flex-wrap:wrap;gap:8px;padding:10px;border:1px solid #dfe2e6;border-radius:8px;background:#f7f9fb}
+.candidate-edit-reference-list span{padding:6px 9px;border:1px solid #c7d2e1;border-radius:6px;color:#39485a;background:#e8edf4;font-size:12px}
+.candidate-edit-reference-list span.empty{border:0;color:#767586;background:transparent}
+.candidate-edit-readonly-badge{border-radius:999px;padding:4px 8px;color:#596171;background:#e8edf4;font-size:10px;font-weight:800}
+.candidate-edit-readonly-box{display:grid;gap:7px;padding:14px;border:1px solid #dfe2e6;border-radius:8px;color:#596171;background:#f7f9fb;font-size:12px;line-height:18px}
+.candidate-edit-readonly-box strong{color:#313540;font-size:12px}
+.candidate-edit-readonly-box p{margin:0}
+.candidate-edit-drawer-footer{z-index:2;margin-top:0!important;margin-bottom:-20px!important;padding-top:14px!important;padding-bottom:14px!important;background:#fff!important;box-shadow:0 -4px 12px rgba(25,28,30,.05)}
+@media(max-width:620px){.candidate-edit-drawer-summary{margin-right:16px;margin-left:16px}.candidate-edit-drawer-summary dl{grid-template-columns:1fr}.candidate-edit-drawer-field-row{grid-template-columns:1fr}.candidate-edit-drawer-body{padding-top:18px}}
+
 /* UI-041 preflight progress dialog. */
 .preflight-progress-body{display:grid;gap:20px;padding:26px 30px 30px}
 .preflight-progress-heading{display:flex;align-items:flex-start;gap:12px;padding:14px 16px;border:1px solid #d2d0ff;border-radius:10px;color:#2f2e74;background:#f5f5ff}

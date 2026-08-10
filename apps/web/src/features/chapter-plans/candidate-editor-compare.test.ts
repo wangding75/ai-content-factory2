@@ -32,6 +32,20 @@ test("candidate edit drawer supports currentSnapshot editing, expectedVersion, a
   assert.match(editDrawerSource, /刷新最新版本/);
 });
 
+test("candidate edit drawer groups editable fields and keeps fixed safe footer", () => {
+  assert.match(editDrawerSource, /候选摘要/);
+  assert.match(editDrawerSource, /候选章节字段/);
+  assert.match(editDrawerSource, /章节概要/);
+  assert.match(editDrawerSource, /候选关联信息/);
+  assert.match(editDrawerSource, /生成背景/);
+  assert.match(editDrawerSource, /只读/);
+  assert.match(editDrawerSource, /不直接编辑当前已采用章节/);
+  assert.match(editDrawerSource, /candidate-edit-drawer-footer/);
+  assert.match(editDrawerSource, /保存修改/);
+  assert.match(editDrawerSource, /不会覆盖当前章节内容/);
+  assert.match(editDrawerSource, /ReferenceGroup/);
+});
+
 test("candidate compare dialog displays field-level diff, stale warning, and recompare action without auto-adopting", () => {
   assert.match(compareDialogSource, /compareChapterPlanCandidate/);
   assert.match(compareDialogSource, /recompareChapterPlanCandidate/);

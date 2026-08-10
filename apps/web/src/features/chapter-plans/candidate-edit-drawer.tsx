@@ -8,10 +8,23 @@ import {
   type ChapterPlanCandidate,
   type ChapterPlanCandidateSnapshot,
 } from "./chapter-plan-http-api";
-import { chapterPlanningErrorMessage } from "./chapter-plan-presentation";
-import { candidatePurposeLabel } from "./chapter-plan-presentation";
+import {
+  candidateDiffTypeLabel,
+  candidatePurposeLabel,
+  candidateStatusLabel,
+  chapterPlanningErrorMessage,
+} from "./chapter-plan-presentation";
 
 import { useIdempotency } from "./use-idempotency";
+
+const candidatePurposeOptions = [
+  ["information_reveal", "信息揭露"],
+  ["plot_advance", "情节推进"],
+  ["conflict_escalation", "冲突升级"],
+  ["transition", "转折过渡"],
+  ["atmosphere", "氛围渲染"],
+  ["other", "其他"],
+] as const;
 
 export interface CandidateEditDrawerProps {
   candidate: ChapterPlanCandidate;
@@ -94,9 +107,11 @@ export function CandidateEditDrawer({
     >
       <div className="chapter-plan-drawer-content">
         <header className="chapter-plan-drawer-header">
-          <h2 id="candidate-edit-title">
-            编辑章节候选（第 {candidate.chapterNo} 章 · 第 {candidate.version} 版）
-          </h2>
+          <div>
+            <span className="candidate-edit-drawer-kicker">候选版本 · 仅编辑候选快照</span>
+            <h2 id="candidate-edit-title">编辑章节候选</h2>
+            <p>第 {candidate.chapterNo} 章 · 第 {candidate.version} 版</p>
+          </div>
           <button
             type="button"
             className="chapter-plan-drawer-close"
@@ -106,6 +121,29 @@ export function CandidateEditDrawer({
             <Icon name="close" size={20} />
           </button>
         </header>
+
+        <section className="candidate-edit-drawer-summary" aria-label="候选摘要">
+          <div className="candidate-edit-drawer-summary-heading">
+            <strong>第 {candidate.chapterNo} 章候选</strong>
+            <span className={`chapter-plan-status ${candidate.status}`}>
+              状态：{candidateStatusLabel(candidate.status)}
+            </span>
+          </div>
+          <dl>
+            <div>
+              <dt>批次 ID</dt>
+              <dd><code>{candidate.batchId}</code></dd>
+            </div>
+            <div>
+              <dt>差异类型</dt>
+              <dd>{candidateDiffTypeLabel(candidate.diffType)}</dd>
+            </div>
+            <div>
+              <dt>基线版本</dt>
+              <dd>{candidate.baseChapterPlanVersion ? `第 ${candidate.baseChapterPlanVersion} 版` : "新设章节"}</dd>
+            </div>
+          </dl>
+        </section>
 
         {/* Snapshot Tabs */}
         <nav className="chapter-plans-filters" aria-label="快照选择">
@@ -149,98 +187,126 @@ export function CandidateEditDrawer({
         )}
 
         {activeTab === "current" ? (
-          <form onSubmit={handleSave} className="chapter-plan-drawer-body">
-            <div className="chapter-plan-form-group">
-              <label htmlFor="candTitle" className="chapter-plan-form-label">
-                章节标题
-              </label>
-              <input
-                id="candTitle"
-                type="text"
-                required
-                maxLength={120}
-                value={currentSnapshot.title}
-                onChange={(e) =>
-                  setCurrentSnapshot((prev) => ({ ...prev, title: e.target.value }))
-                }
-              />
-            </div>
+          <form onSubmit={handleSave} className="chapter-plan-drawer-body candidate-edit-drawer-body">
+            <section className="candidate-edit-drawer-section" aria-labelledby="candidate-fields-title">
+              <div className="candidate-edit-drawer-section-heading">
+                <div>
+                  <h3 id="candidate-fields-title">候选章节字段</h3>
+                  <p>保存修改只更新这个候选版本，不直接编辑当前已采用章节。</p>
+                </div>
+                <span className="candidate-edit-required-note">* 必填</span>
+              </div>
 
-            <div className="chapter-plan-form-group">
-              <label htmlFor="candPurpose" className="chapter-plan-form-label">
-                章节目的
-              </label>
-              <select
-                id="candPurpose"
-                value={currentSnapshot.chapterPurpose}
-                onChange={(e) =>
-                  setCurrentSnapshot((prev) => ({
-                    ...prev,
-                    chapterPurpose: e.target.value,
-                  }))
-                }
-              >
-                <option value="plot_advance">剧情推进</option>
-                <option value="information_reveal">信息揭露</option>
-                <option value="conflict_escalation">冲突升级</option>
-                <option value="transition">过渡衔接</option>
-                <option value="atmosphere">氛围渲染</option>
-                <option value="other">其他</option>
-              </select>
-            </div>
+              <div className="candidate-edit-drawer-field-row">
+                <div className="chapter-plan-form-group">
+                  <label htmlFor="candChapterNo" className="chapter-plan-form-label">章节号</label>
+                  <input id="candChapterNo" type="number" value={candidate.chapterNo} readOnly aria-readonly="true" />
+                </div>
+                <div className="chapter-plan-form-group">
+                  <label htmlFor="candTitle" className="chapter-plan-form-label">章节标题 <em>*</em></label>
+                  <input
+                    id="candTitle"
+                    type="text"
+                    required
+                    maxLength={120}
+                    value={currentSnapshot.title}
+                    onChange={(e) =>
+                      setCurrentSnapshot((prev) => ({ ...prev, title: e.target.value }))
+                    }
+                  />
+                </div>
+              </div>
 
-            <div className="chapter-plan-form-group">
-              <label htmlFor="candSummary" className="chapter-plan-form-label">
-                章节摘要
-              </label>
-              <textarea
-                id="candSummary"
-                rows={5}
-                required
-                maxLength={5000}
-                value={currentSnapshot.summary}
-                onChange={(e) =>
-                  setCurrentSnapshot((prev) => ({ ...prev, summary: e.target.value }))
-                }
-              />
-            </div>
+              <div className="chapter-plan-form-group">
+                <label htmlFor="candSummary" className="chapter-plan-form-label">
+                  章节概要 <em>*</em><span>建议 100–300 字</span>
+                </label>
+                <textarea
+                  id="candSummary"
+                  rows={5}
+                  required
+                  maxLength={5000}
+                  value={currentSnapshot.summary}
+                  onChange={(e) =>
+                    setCurrentSnapshot((prev) => ({ ...prev, summary: e.target.value }))
+                  }
+                />
+              </div>
 
-            <div className="chapter-plan-form-group">
-              <label htmlFor="contextSummary" className="chapter-plan-form-label">
-                生成背景摘要 (只读说明)
-              </label>
-              <textarea
-                id="contextSummary"
-                rows={3}
-                value={currentSnapshot.generationBasis?.contextSummary || ""}
-                onChange={(e) =>
-                  setCurrentSnapshot((prev) => ({
-                    ...prev,
-                    generationBasis: {
-                      ...prev.generationBasis,
-                      contextSummary: e.target.value,
-                    },
-                  }))
-                }
-              />
-            </div>
+              <fieldset className="chapter-plan-form-group candidate-edit-purpose-fieldset">
+                <legend className="chapter-plan-form-label">章节目的</legend>
+                <div className="candidate-edit-purpose-options" role="radiogroup" aria-label="章节目的">
+                  {candidatePurposeOptions.map(([value, label]) => (
+                    <button
+                      key={value}
+                      type="button"
+                      role="radio"
+                      aria-checked={currentSnapshot.chapterPurpose === value}
+                      className={currentSnapshot.chapterPurpose === value ? "active" : ""}
+                      onClick={() =>
+                        setCurrentSnapshot((prev) => ({ ...prev, chapterPurpose: value }))
+                      }
+                    >
+                      {currentSnapshot.chapterPurpose === value ? "✓ " : ""}{label}
+                    </button>
+                  ))}
+                </div>
+              </fieldset>
+            </section>
 
-            <footer className="chapter-plan-drawer-footer">
-              <button
-                type="button"
-                className="chapter-plan-button secondary"
-                onClick={onClose}
-                disabled={saving}
-              >
-                取消
-              </button>
-              <button
-                type="submit"
-                className="chapter-plan-button primary"
-                disabled={saving}
-              >
-                {saving ? "正在保存..." : "保存修改"}
-              </button>
+            <section className="candidate-edit-drawer-section" aria-labelledby="candidate-relations-title">
+              <div className="candidate-edit-drawer-section-heading">
+                <div>
+                  <h3 id="candidate-relations-title">候选关联信息</h3>
+                  <p>关联信息随候选快照展示，当前抽屉不修改项目中的原始内容。</p>
+                </div>
+              </div>
+              <ReferenceGroup label="关联故事线" refs={currentSnapshot.storylineRefs} />
+              <ReferenceGroup label="出场素材" refs={currentSnapshot.materialRefs} />
+              <ReferenceGroup label="伏笔关联" refs={currentSnapshot.foreshadowingRefs} />
+            </section>
+
+            <section className="candidate-edit-drawer-section" aria-labelledby="candidate-generation-title">
+              <div className="candidate-edit-drawer-section-heading">
+                <div>
+                  <h3 id="candidate-generation-title">生成背景</h3>
+                  <p>以下内容用于理解候选来源，保存修改时保持不变。</p>
+                </div>
+                <span className="candidate-edit-readonly-badge">只读</span>
+              </div>
+              <div className="candidate-edit-readonly-box">
+                <strong>背景摘要</strong>
+                <p>{currentSnapshot.generationBasis?.contextSummary || "暂无生成背景摘要"}</p>
+                {currentSnapshot.generationBasis?.additionalInstructions && (
+                  <>
+                    <strong>补充指令</strong>
+                    <p>{currentSnapshot.generationBasis.additionalInstructions}</p>
+                  </>
+                )}
+              </div>
+            </section>
+
+            <footer className="chapter-plan-drawer-footer candidate-edit-drawer-footer">
+              <div className="chapter-plan-drawer-footer-summary">
+                <Icon name="info" size={18} />
+                <div>
+                  <strong>仅保存候选版本</strong>
+                  <small>不会覆盖当前章节内容</small>
+                </div>
+              </div>
+              <div className="chapter-plan-drawer-footer-actions">
+                <button
+                  type="button"
+                  className="chapter-plan-button secondary"
+                  onClick={onClose}
+                  disabled={saving}
+                >
+                  取消
+                </button>
+                <button type="submit" className="chapter-plan-button primary" disabled={saving}>
+                  {saving ? "正在保存..." : "保存修改"}
+                </button>
+              </div>
             </footer>
           </form>
         ) : (
@@ -260,6 +326,27 @@ export function CandidateEditDrawer({
               </button>
             </footer>
           </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function ReferenceGroup({
+  label,
+  refs,
+}: {
+  label: string;
+  refs: ChapterPlanCandidateSnapshot["storylineRefs"];
+}) {
+  return (
+    <div className="candidate-edit-reference-group">
+      <strong>{label}</strong>
+      <div className="candidate-edit-reference-list">
+        {refs.length > 0 ? (
+          refs.map((ref) => <span key={ref.id}>{ref.label}</span>)
+        ) : (
+          <span className="empty">暂无关联</span>
         )}
       </div>
     </div>
