@@ -334,6 +334,20 @@ test("set-current confirmation makes the version switch and its preservation imp
   assert.match(rewriteResultPanel, /不会自动触发重新审核/);
 });
 
+test("rewrite result consumption failure separates successful execution from failed persistence and retries only consumption", () => {
+  assert.match(rewriteWorkspace, /RewriteConsumptionFailedState/);
+  assert.match(rewriteWorkspace, /工作流执行成功，结果提交失败/);
+  assert.match(rewriteWorkspace, /尚未创建任何 ContentVersion/);
+  assert.match(rewriteWorkspace, /onRetryConsumption/);
+  assert.match(rewriteWorkspace, /rewrite-consumption-meta/);
+  assert.match(rewriteWorkspace, /rewrite-consumption-no-candidate/);
+  assert.match(rewriteWorkspace, /result_consumption_failed/);
+  const consumptionStart = rewriteWorkspace.indexOf("function RewriteConsumptionFailedState");
+  const failedStart = rewriteWorkspace.indexOf("function RewriteFailedState");
+  const consumptionSource = rewriteWorkspace.slice(consumptionStart, failedStart);
+  assert.doesNotMatch(consumptionSource, /onRetryRuntime/);
+});
+
 test("summary polling is isolated from the editable draft refresh", () => {
   assert.match(editor, /\["queued", "running"\]/);
   assert.match(editor, /refreshGenerationSummary/);

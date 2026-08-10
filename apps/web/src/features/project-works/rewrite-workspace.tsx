@@ -98,19 +98,34 @@ function exactRunSummary(summary: RewriteSummary, run: WorkflowRunDto, events: W
 function RewriteRunState({ projectId, workId, summary, run, events, retrying, cancelling, confirmCancel, onCancel, onDismissCancel, onConfirmCancel, onRetryRuntime, onRetryConsumption, onRefresh }: { projectId: string; workId: string; summary: RewriteSummary; run: WorkflowRunDto | null; events: WorkflowRunEventVm[]; retrying: boolean; cancelling: boolean; confirmCancel: boolean; onCancel: () => void; onDismissCancel: () => void; onConfirmCancel: () => void; onRetryRuntime: () => void; onRetryConsumption: () => void; onRefresh: () => void }) {
   if (summary.state === "candidate_ready" && run) return <RewriteResultPanel projectId={projectId} workId={workId} runId={run.id} onRefresh={onRefresh} />;
   if (active(summary.state)) return <RewriteRunningState summary={summary} run={run} events={events} cancelling={cancelling} confirmCancel={confirmCancel} onCancel={onCancel} onDismissCancel={onDismissCancel} onConfirmCancel={onConfirmCancel} onRefresh={onRefresh} />;
-  return <RewriteFailedState summary={summary} run={run} events={events} retrying={retrying} cancelling={cancelling} confirmCancel={confirmCancel} onDismissCancel={onDismissCancel} onConfirmCancel={onConfirmCancel} onRetryRuntime={onRetryRuntime} onRetryConsumption={onRetryConsumption} onRefresh={onRefresh} />;
+  if (summary.state === "result_consumption_failed") return <RewriteConsumptionFailedState projectId={projectId} workId={workId} summary={summary} run={run} retrying={retrying} onRetry={onRetryConsumption} onRefresh={onRefresh} />;
+  return <RewriteFailedState summary={summary} run={run} events={events} retrying={retrying} cancelling={cancelling} confirmCancel={confirmCancel} onDismissCancel={onDismissCancel} onConfirmCancel={onConfirmCancel} onRetryRuntime={onRetryRuntime} onRefresh={onRefresh} />;
 }
 
-function RewriteFailedState({ summary, run, events, retrying, cancelling, confirmCancel, onDismissCancel, onConfirmCancel, onRetryRuntime, onRetryConsumption, onRefresh }: { summary: RewriteSummary; run: WorkflowRunDto | null; events: WorkflowRunEventVm[]; retrying: boolean; cancelling: boolean; confirmCancel: boolean; onDismissCancel: () => void; onConfirmCancel: () => void; onRetryRuntime: () => void; onRetryConsumption: () => void; onRefresh: () => void }) {
-  const isConsumption = summary.state === "result_consumption_failed";
+function RewriteConsumptionFailedState({ projectId, workId, summary, run, retrying, onRetry, onRefresh }: { projectId: string; workId: string; summary: RewriteSummary; run: WorkflowRunDto | null; retrying: boolean; onRetry: () => void; onRefresh: () => void }) {
+  const selectedCount = summary.selectedIssueSummary?.total ?? 0;
+  return (
+    <main className="rewrite-page rewrite-consumption-page">
+      <Link className="rewrite-result-back" href={`/projects/${projectId}/works/${workId}/review?reportId=${encodeURIComponent(summary.reviewReportId)}`}>← 返回审核结果</Link>
+      <header className="rewrite-consumption-hero"><div><div className="rewrite-result-title"><h1>正文重写结果</h1><span>结果提交失败</span></div><p>工作流已完成，但重写结果尚未保存为正文版本。</p></div>{run && <Link href={`/workflow-runs/${encodeURIComponent(run.id)}`}>查看执行详情</Link>}</header>
+      <section className="rewrite-consumption-alert" role="alert"><div className="rewrite-consumption-alert-icon" aria-hidden="true">!</div><div><h2>工作流执行成功，结果提交失败</h2><p>系统在保存正文候选版本时发生错误，尚未创建任何 ContentVersion。可以直接重试提交，无需重新运行工作流。</p><code>错误代码：{summary.latestError?.code ?? "result_consumption_failed"}</code><div className="rewrite-consumption-actions"><button type="button" className="primary" disabled={!run || retrying} onClick={onRetry}>{retrying ? "重试提交中…" : "重试提交结果"}</button>{run && <Link href={`/workflow-runs/${encodeURIComponent(run.id)}`}>查看执行详情</Link>}</div></div></section>
+      <dl className="rewrite-consumption-meta"><div><dt>WorkflowRun</dt><dd>{run?.runNumber ?? "正在恢复"}</dd></div><div><dt>工作流状态</dt><dd className="is-success">✓ 已成功</dd></div><div><dt>工作流</dt><dd>{run?.workflowName ?? "正文重写"}</dd></div><div><dt>来源版本</dt><dd>V{summary.sourceContentVersionSummary.versionNo}</dd></div><div><dt>完成时间</dt><dd>{formatWorkflowRunTime(run?.finishedAt ?? run?.updatedAt)}</dd></div><div><dt>结果保存状态</dt><dd className="is-failed">× 未提交</dd></div></dl>
+      <section className="rewrite-consumption-no-candidate"><div className="rewrite-consumption-empty-icon" aria-hidden="true">⊘</div><h2>尚未创建候选版本</h2><p>提交成功后，系统才会创建新的候选 ContentVersion，并开放版本比较与编辑操作。</p><div><span>来源版本 V{summary.sourceContentVersionSummary.versionNo}</span><span>关联审核：{summary.reviewReportId}</span><span>已处理问题：{selectedCount} 个</span></div></section>
+      {summary.latestError?.message && <p className="rewrite-result-alert">安全错误摘要：{summary.latestError.message}{summary.latestError.correlationId ? ` · 关联 ID ${summary.latestError.correlationId}` : ""}</p>}
+      <footer className="rewrite-consumption-footer"><button type="button" onClick={onRefresh}>刷新状态</button></footer>
+    </main>
+  );
+}
+
+function RewriteFailedState({ summary, run, events, retrying, cancelling, confirmCancel, onDismissCancel, onConfirmCancel, onRetryRuntime, onRefresh }: { summary: RewriteSummary; run: WorkflowRunDto | null; events: WorkflowRunEventVm[]; retrying: boolean; cancelling: boolean; confirmCancel: boolean; onDismissCancel: () => void; onConfirmCancel: () => void; onRetryRuntime: () => void; onRefresh: () => void }) {
   const isValidation = summary.state === "output_validation_failed";
-  const title = isConsumption ? "重写结果提交失败" : isValidation ? "重写输出未通过校验" : summary.state === "runtime_failed" ? "重写任务执行失败" : "重写任务已取消";
+  const title = isValidation ? "重写输出未通过校验" : summary.state === "runtime_failed" ? "重写任务执行失败" : "重写任务已取消";
   return (
     <main className="rewrite-page"><section className="rewrite-state-card is-failed">
       <header><span className="rewrite-state-badge">需要处理</span><h1>{title}</h1><p>{summary.latestError?.message ?? "任务未能完成，请按提示继续操作。"}</p></header>
       <dl><div><dt>固定来源版本</dt><dd>V{summary.sourceContentVersionSummary.versionNo} · {summary.sourceContentVersionSummary.title}</dd></div><div><dt>审核报告</dt><dd>已固定</dd></div><div><dt>已选问题</dt><dd>{summary.selectedIssueSummary?.total ?? 0} 个</dd></div><div><dt>当前运行</dt><dd>{run?.runNumber ?? "正在恢复"}</dd></div></dl>
       {events.length > 0 && <section className="rewrite-progress"><h2>执行进度</h2><ol>{events.map((event) => <li key={event.id}>{event.title} · {event.createdAtLabel}</li>)}</ol></section>}
-      <footer>{!isConsumption && <button type="button" className="primary" disabled={!run || retrying} onClick={onRetryRuntime}>{retrying ? "重试中…" : "重新运行"}</button>}{isConsumption && <button type="button" className="primary" disabled={!run || retrying} onClick={onRetryConsumption}>{retrying ? "提交中…" : "重试提交结果"}</button>}<button type="button" onClick={onRefresh}>刷新状态</button></footer>
+      <footer><button type="button" className="primary" disabled={!run || retrying} onClick={onRetryRuntime}>{retrying ? "重试中…" : "重新运行"}</button><button type="button" onClick={onRefresh}>刷新状态</button></footer>
       {confirmCancel && <div className="rewrite-dialog-layer"><section className="rewrite-confirm-dialog" role="dialog" aria-modal="true"><h2>确认取消运行</h2><p>取消后该运行将停止，无法恢复为运行中。</p><footer><button type="button" disabled={cancelling} onClick={onDismissCancel}>返回</button><button type="button" className="primary" disabled={cancelling} onClick={onConfirmCancel}>{cancelling ? "取消中…" : "确认取消"}</button></footer></section></div>}
     </section></main>
   );
