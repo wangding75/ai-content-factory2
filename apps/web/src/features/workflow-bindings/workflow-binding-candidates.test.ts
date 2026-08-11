@@ -7,7 +7,7 @@ const page = readFileSync(new URL("./workflow-bindings-page.tsx", import.meta.ur
 
 test("workflow binding drawer loads evaluated candidates instead of the generic workflow list", () => {
   assert.match(api, /\/workflow-bindings\/\$\{stage\}\/candidates/);
-  assert.match(page, /listWorkflowBindingCandidates\(projectId,drawer\.stage\.stage,query/);
+  assert.match(page, /listWorkflowBindingCandidates\(projectId,stage\.stage,query/);
   assert.doesNotMatch(page, /listApplicableWorkflows\(/);
 });
 
@@ -24,4 +24,24 @@ test("workflow binding drawer renders actual eligibility facts and blocks unsele
     assert.ok(page.includes(value), `missing ${value}`);
   }
   assert.doesNotMatch(page, /onClick=\{\(e\) => \{ if \(disabled\) e\.preventDefault\(\); \}\}/);
+});
+
+test("workflow binding conflict preserves the selection and refreshes both binding and candidates", () => {
+  for (const value of [
+    "Promise.all([",
+    "listProjectWorkflowBindings(projectId)",
+    "listWorkflowBindingCandidates(projectId,stage.stage,query)",
+    "setStage(latestStage)",
+    "selectedStillAvailable",
+    "selectedName",
+    'role="alertdialog"',
+    "绑定配置已被其他操作更新",
+    "你刚才选择",
+    "加载最新配置",
+    "重新确认选择",
+    "stage.binding?.version",
+  ]) {
+    assert.ok(page.includes(value), `missing ${value}`);
+  }
+  assert.doesNotMatch(page, /workflow-conflict" role="alert"/);
 });

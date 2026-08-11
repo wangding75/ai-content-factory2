@@ -79,19 +79,19 @@ function BindingCard({item,onSelect,onUnbind}:{item:BindingStage;onSelect:()=>vo
 }
 
 function WorkflowDrawer({projectId,drawer,onClose,onSaved}:{projectId:string;drawer:Exclude<Drawer,null>;onClose:()=>void;onSaved:()=>Promise<void>}){
-  const [query,setQuery]=useState(""),[candidates,setCandidates]=useState<WorkflowBindingCandidate[]|null>(null),[error,setError]=useState(false),[selected,setSelected]=useState(drawer.stage.workflowConfigurationSummary?.id??""),[saving,setSaving]=useState(false),[conflict,setConflict]=useState(false);
+  const [query,setQuery]=useState(""),[candidates,setCandidates]=useState<WorkflowBindingCandidate[]|null>(null),[error,setError]=useState(false),[stage,setStage]=useState(drawer.stage),[selected,setSelected]=useState(drawer.stage.workflowConfigurationSummary?.id??""),[selectedName,setSelectedName]=useState(drawer.stage.workflowConfigurationSummary?.name??""),[saving,setSaving]=useState(false),[conflict,setConflict]=useState(false),[reloadingConflict,setReloadingConflict]=useState(false),[conflictReloadError,setConflictReloadError]=useState(false),[conflictResolved,setConflictResolved]=useState<"preserved"|"cleared"|null>(null);
   const key=useRef(newIdempotencyKey());
   const drawerRef=useRef<HTMLElement>(null);
 
   const load=useCallback(async(signal?:AbortSignal)=>{
     setError(false);
     try{
-      const data=await listWorkflowBindingCandidates(projectId,drawer.stage.stage,query,{signal});
+      const data=await listWorkflowBindingCandidates(projectId,stage.stage,query,{signal});
       if(!signal?.aborted)setCandidates(data.items);
     }catch{
       if(!signal?.aborted)setError(true);
     }
-  },[drawer.stage.stage,projectId,query]);
+  },[projectId,query,stage.stage]);
 
   useEffect(()=>{
     const c=new AbortController();
@@ -123,16 +123,42 @@ function WorkflowDrawer({projectId,drawer,onClose,onSaved}:{projectId:string;dra
     return()=>panel.removeEventListener("keydown",trap);
   },[]);
 
-  const currentId = drawer.stage.workflowConfigurationSummary?.id ?? "";
+  const currentId = stage.workflowConfigurationSummary?.id ?? "";
   const isReplace = drawer.mode === "replace";
-  const submitDisabled = !selected || saving || (isReplace && selected === currentId);
+  const submitDisabled = !selected || saving || conflict || reloadingConflict || (isReplace && selected === currentId);
+
+  const reloadLatestState=async()=>{
+    setReloadingConflict(true);
+    setConflictReloadError(false);
+    try{
+      const [bindings,latestCandidates]=await Promise.all([
+        listProjectWorkflowBindings(projectId),
+        listWorkflowBindingCandidates(projectId,stage.stage,query),
+      ]);
+      const latestStage=bindings.items.find(item=>item.stage===stage.stage)??{stage:stage.stage,bound:false,binding:null,workflowConfigurationSummary:null};
+      const latestSelected=latestCandidates.items.find(candidate=>candidate.workflowConfiguration.id===selected);
+      const selectedStillAvailable=Boolean(latestSelected?.selectable);
+      setStage(latestStage);
+      setCandidates(latestCandidates.items);
+      setSelected(current=>current&&selectedStillAvailable?current:"");
+      setSelectedName(latestSelected?.selectable?latestSelected.workflowConfiguration.name:"");
+      setConflictResolved(selectedStillAvailable?"preserved":"cleared");
+      setConflict(false);
+    }catch{
+      setConflictReloadError(true);
+    }finally{
+      setReloadingConflict(false);
+    }
+  };
 
   const submit=async()=>{
     if(submitDisabled)return;
     setSaving(true);
     setConflict(false);
+    setConflictResolved(null);
+    setConflictReloadError(false);
     try{
-      await bindWorkflow(projectId,drawer.stage.stage,selected,drawer.stage.binding?.version,key.current);
+      await bindWorkflow(projectId,stage.stage,selected,stage.binding?.version,key.current);
       await onSaved();
     }catch(e){
       if(e instanceof ApiError&&e.code.toLowerCase()==="version_conflict")setConflict(true);
@@ -193,7 +219,7 @@ function WorkflowDrawer({projectId,drawer,onClose,onSaved}:{projectId:string;dra
                       value={w.id}
                       checked={isSelected}
                       disabled={disabled}
-                      onChange={() => { if (!disabled) setSelected(w.id); }}
+                      onChange={() => { if (!disabled) {setSelected(w.id);setSelectedName(w.name)} }}
                     />
                     <div className="candidate-body">
                       <header className="candidate-header">
@@ -227,19 +253,29 @@ function WorkflowDrawer({projectId,drawer,onClose,onSaved}:{projectId:string;dra
               })}
             </div>
           )}
-          {conflict && (
-            <div className="workflow-conflict" role="alert">
-              <p>当前绑定已更新，未覆盖服务端数据。你的选择仍被保留。</p>
-              <button onClick={async()=>{await load();setConflict(false)}}>加载最新状态后重新确认</button>
-            </div>
-          )}
         </div>
         <footer>
           <button onClick={onClose} disabled={saving}>取消</button>
           <button className="primary" disabled={submitDisabled} onClick={submit}>
-            {saving ? "保存中…" : isReplace ? "保存更换" : "确认选择"}
+            {saving ? "保存中…" : conflictResolved&&selected ? "重新确认选择" : isReplace ? "保存更换" : "确认选择"}
           </button>
         </footer>
+        {conflict && (
+          <div className="workflow-conflict-overlay" role="presentation">
+            <section className="workflow-conflict-dialog" role="alertdialog" aria-modal="true" aria-labelledby="workflow-conflict-title">
+              <div className="workflow-conflict-icon" aria-hidden="true">!</div>
+              <h3 id="workflow-conflict-title">绑定配置已被其他操作更新</h3>
+              <p>当前页面内容可能已经过期。重新加载最新配置后再继续。</p>
+              <dl><div><dt>你刚才选择</dt><dd>{selectedName||"未选择工作流"}</dd></div></dl>
+              {conflictReloadError&&<p className="workflow-conflict-reload-error" role="alert">最新状态加载失败，请重试。</p>}
+              <footer>
+                <button onClick={onClose} disabled={reloadingConflict}>取消</button>
+                <button className="primary" onClick={()=>void reloadLatestState()} disabled={reloadingConflict}>{reloadingConflict?"加载中…":"加载最新配置"}</button>
+              </footer>
+            </section>
+          </div>
+        )}
+        {conflictResolved&&<p className="workflow-conflict-resolution" role="status">{conflictResolved==="preserved"?"已加载最新绑定信息，请重新确认你的选择。":"已加载最新绑定信息；原选择已不可用，请重新选择工作流。"}</p>}
       </aside>
     </div>
   );
