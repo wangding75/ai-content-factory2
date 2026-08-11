@@ -872,7 +872,8 @@ function SummaryRunBanner({
               </span>
               <span className="chapter-plan-run-identity">Run ID: {runLabel}</span>
             </h3>
-            <div className="flex items-center gap-4 mt-1 text-sm text-on-primary-container/80">
+            <div className={`flex items-center gap-4 mt-1 text-sm text-on-primary-container/80 ${mode === "full" ? "chapter-plan-full-scope" : ""}`}>
+              {mode === "full" && <span className="flex items-center gap-1"><span className="material-symbols-outlined text-[14px]">format_list_numbered</span> 全部章节规划</span>}
               <span className="flex items-center gap-1">
                 <span className="material-symbols-outlined text-[14px]">format_list_numbered</span> Range: 第{startNo}—{endNo}章
               </span>
