@@ -77,6 +77,7 @@ export function PreflightProgressDialog({ onClose }: PreflightProgressDialogProp
               <p>正在确认配置与输入是否满足真实生成条件。</p>
             </div>
           </div>
+          <div className="preflight-progress-current"><span>当前检查项</span><strong>检查工作流配置与连接</strong><small>服务端返回前不会标记任何检查已通过。</small></div>
           <ol className="preflight-progress-steps" aria-label="预检检查项">
             {completedSteps.map((label) => (
               <li key={label} className="complete">

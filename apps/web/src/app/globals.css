@@ -620,7 +620,7 @@ button,a { -webkit-tap-highlight-color:transparent; }
 .preflight-progress-heading strong{display:block;color:#4648d4;font-size:15px}
 .preflight-progress-heading p{margin:4px 0 0;color:#596171;font-size:13px;line-height:19px}
 .preflight-progress-heading .chapter-plan-spinner{width:20px;height:20px;margin:1px 0 0;border-width:3px}
-.preflight-progress-steps{display:grid;gap:4px;margin:0;padding:0;list-style:none}
+.preflight-progress-current{display:grid;gap:5px;border:1px solid #d2d0ff;border-radius:9px;padding:12px 14px;background:#fff}.preflight-progress-current span,.preflight-progress-current small{color:#596171;font-size:12px}.preflight-progress-current strong{color:#4648d4;font-size:14px}.preflight-progress-steps{display:grid;gap:4px;margin:0;padding:0;list-style:none}.preflight-progress-steps li.complete{display:none}
 .preflight-progress-steps li{display:flex;align-items:center;gap:12px;min-height:42px;padding:9px 12px;border-radius:8px;color:#313540;font-size:13px;font-weight:600}
 .preflight-progress-steps li.current{border:1px solid #d2d0ff;color:#4648d4;background:#f5f5ff}
 .preflight-progress-steps li.pending{color:#767586;opacity:.7}
