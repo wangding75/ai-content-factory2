@@ -2,8 +2,25 @@ import { apiRequest, type ApiRequestInit } from "@/lib/api";
 
 export type WorkflowStage = "chapter_planning" | "content_generation" | "review" | "rewrite";
 export type WorkflowConfiguration = { id:string; name:string; note?:string; connectionId:string; connectionName:string; connectionType:string; workflowType:string; applicableStages:WorkflowStage[]; integrationStatus:"connected"|"not_connected"|"connection_error"|string; connectionStatus?:"connected"|"disconnected"|"error"|string; enabled:boolean; version:number; updatedAt:string; lastErrorMessage:string|null };
-export type NonExecutableReason = { code: string; message: string; repairAction?: string };
-export type WorkflowBindingCandidate = { stage: WorkflowStage; selectable: boolean; executable: boolean; ineligibilityReasons: NonExecutableReason[]; workflowConfiguration: WorkflowConfiguration; connectionSummary: { name: string; executable: boolean } | null; llmPolicySummary: { providerName: string | null; model: string | null; executable: boolean } | null };
+export type NonExecutableReason = { code: string; message: string; repairAction?: string; repairTarget?: { providerId?: string; connectionId?: string; workflowConfigurationId?: string; projectId?: string; stage?: WorkflowStage } };
+export type ConnectionSummary = { id:string; name:string; connectionType:string; validationStatus:string; enabled:boolean; executable:boolean };
+export type LlmPolicySummary = { strategy:"none"|"n8n_managed"|"acf_managed"|string; providerId:string|null; providerName:string|null; providerVersion:number|null; model:string|null; validationStatus:string|null; executable:boolean };
+export type WorkflowBindingCandidate = { stage: WorkflowStage; selectable: boolean; executable: boolean; ineligibilityReasons: NonExecutableReason[]; workflowConfiguration: WorkflowConfiguration; connectionSummary: ConnectionSummary; llmPolicySummary: LlmPolicySummary };
+const ineligibilityReasonLabels:Record<string,string>={
+  connection_verification_failed:"连接验证未通过。",
+  workflow_configuration_verification_failed:"工作流配置验证未通过。",
+  connection_disabled:"连接已停用。",
+  workflow_configuration_disabled:"工作流配置已停用。",
+  connection_credential_unavailable:"连接凭据不可用。",
+  provider_verification_failed:"模型提供方验证未通过。",
+  provider_disabled:"模型提供方已停用。",
+  model_unavailable:"所选模型不可用。",
+  llm_strategy_incomplete:"LLM 策略尚未配置完整。",
+  workflow_stage_mismatch:"工作流不适用于当前环节。",
+  input_contract_incompatible:"工作流输入契约不兼容。",
+  output_contract_incompatible:"工作流输出契约不兼容。",
+};
+export const formatIneligibilityReason=(reason:NonExecutableReason)=>ineligibilityReasonLabels[reason.code]??reason.message;
 export type Binding = { id:string; projectId:string; stage:WorkflowStage; workflowConfigurationId:string; version:number; createdAt:string; updatedAt:string };
 export type BindingStage = { stage:WorkflowStage; bound:boolean; binding:Binding|null; workflowConfigurationSummary:WorkflowConfiguration|null };
 export const stageOrder:WorkflowStage[]=["chapter_planning","content_generation","review","rewrite"];

@@ -18,8 +18,34 @@ import (
 func registerWorkflowBindingRoutes(m *http.ServeMux, svc workflowbinding.BindingService) {
 	h := &workflowBindingHandler{svc: svc}
 	m.HandleFunc("GET /api/v1/projects/{projectId}/workflow-bindings", h.list)
+	m.HandleFunc("GET /api/v1/projects/{projectId}/workflow-bindings/{stage}/candidates", h.candidates)
 	m.HandleFunc("PUT /api/v1/projects/{projectId}/workflow-bindings/{stage}", h.put)
 	m.HandleFunc("DELETE /api/v1/projects/{projectId}/workflow-bindings/{stage}", h.delete)
+}
+
+func (h *workflowBindingHandler) candidates(w http.ResponseWriter, r *http.Request) {
+	projectID, ok := workflowBindingPathUUID(w, r, "projectId")
+	if !ok {
+		return
+	}
+	stage, ok := workflowBindingPathStage(w, r)
+	if !ok {
+		return
+	}
+	options, ok := configurationListOptions(w, r)
+	if !ok {
+		return
+	}
+	items, total, err := h.svc.ListCandidates(r.Context(), projectID, stage, options.Query, options.Limit, options.Offset)
+	if err != nil {
+		workflowBindingError(w, r, err)
+		return
+	}
+	dtos := make([]workflowbinding.WorkflowBindingCandidateDTO, 0, len(items))
+	for _, item := range items {
+		dtos = append(dtos, workflowbinding.CandidateDTO(item))
+	}
+	writeJSON(w, r, http.StatusOK, map[string]any{"items": dtos, "total": total, "limit": options.Limit, "offset": options.Offset})
 }
 
 type workflowBindingHandler struct {

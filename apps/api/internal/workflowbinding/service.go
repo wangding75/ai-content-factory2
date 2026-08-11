@@ -39,6 +39,13 @@ type WorkflowRepository interface {
 	GetWorkflow(ctx context.Context, id uuid.UUID) (ReadWorkflowConfiguration, error)
 }
 
+// WorkflowCandidateRepository is optional so existing readers used by focused
+// service tests remain valid.  The production global configuration adapter
+// implements it and supplies evaluated, stage-compatible candidates.
+type WorkflowCandidateRepository interface {
+	ListWorkflowBindingCandidates(ctx context.Context, stage WorkflowBindingStage, query string, limit, offset int) ([]WorkflowBindingCandidate, int, error)
+}
+
 func NewService(pool *pgxpool.Pool, projects ProjectRepository, workflows WorkflowRepository, actorID string) *Service {
 	return &Service{pool: pool, projects: projects, workflows: workflows, actorID: actorID}
 }
@@ -81,14 +88,39 @@ func (s *Service) ListStages(ctx context.Context, projectID uuid.UUID) ([]StageR
 	return out, nil
 }
 
+// ListCandidates returns every stage-compatible workflow, including records
+// that cannot presently execute.  A project may select only a candidate whose
+// full dependency chain has been evaluated as executable.
+func (s *Service) ListCandidates(ctx context.Context, projectID uuid.UUID, stage WorkflowBindingStage, query string, limit, offset int) ([]WorkflowBindingCandidate, int, error) {
+	if err := s.projects.ExistsForModify(ctx, projectID); err != nil {
+		return nil, 0, err
+	}
+	repo, ok := s.workflows.(WorkflowCandidateRepository)
+	if !ok {
+		return nil, 0, errors.New("workflow candidate repository is unavailable")
+	}
+	candidates, total, err := repo.ListWorkflowBindingCandidates(ctx, stage, query, limit, offset)
+	if err != nil {
+		return nil, 0, err
+	}
+	for index := range candidates {
+		candidates[index].IneligibilityReasons = bindingRepairReasons(candidates[index].IneligibilityReasons, projectID, stage)
+	}
+	return candidates, total, nil
+}
+
 func bindingRepairReasons(reasons []NonExecutableReason, projectID uuid.UUID, stage WorkflowBindingStage) []NonExecutableReason {
 	out := make([]NonExecutableReason, len(reasons))
 	stageValue := stage.String()
 	for index, reason := range reasons {
 		out[index] = reason
-		if reason.RepairAction == "" { continue }
+		if reason.RepairAction == "" {
+			continue
+		}
 		var target RepairTarget
-		if reason.RepairTarget != nil { target = *reason.RepairTarget }
+		if reason.RepairTarget != nil {
+			target = *reason.RepairTarget
+		}
 		target.ProjectID, target.Stage = &projectID, &stageValue
 		out[index].RepairTarget = &target
 	}

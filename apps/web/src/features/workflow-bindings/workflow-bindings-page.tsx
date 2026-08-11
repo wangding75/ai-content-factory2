@@ -1,8 +1,9 @@
 "use client";
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { workflowPreflightRepairLink } from "@/components/workflow-preflight-repair-route";
 import { ApiError } from "@/lib/api";
-import { bindWorkflow, bindingCopy, formatWorkflowNote, listApplicableWorkflows, listProjectWorkflowBindings, newIdempotencyKey, stageDescriptions, stageLabels, stageOrder, type BindingStage, type WorkflowConfiguration, unbindWorkflow } from "./workflow-binding-api";
+import { bindWorkflow, bindingCopy, formatIneligibilityReason, formatWorkflowNote, listProjectWorkflowBindings, listWorkflowBindingCandidates, newIdempotencyKey, stageDescriptions, stageLabels, stageOrder, type BindingStage, type LlmPolicySummary, type WorkflowBindingCandidate, unbindWorkflow } from "./workflow-binding-api";
 
 type Drawer={stage:BindingStage; mode:"select"|"replace"}|null;
 const safeError=(error:unknown)=>error instanceof ApiError&&error.code.toLowerCase()==="version_conflict"?"配置已在其他位置更新。请加载最新状态后重新确认。":"操作未完成，请稍后重试。";
@@ -78,19 +79,19 @@ function BindingCard({item,onSelect,onUnbind}:{item:BindingStage;onSelect:()=>vo
 }
 
 function WorkflowDrawer({projectId,drawer,onClose,onSaved}:{projectId:string;drawer:Exclude<Drawer,null>;onClose:()=>void;onSaved:()=>Promise<void>}){
-  const [query,setQuery]=useState(""),[workflows,setWorkflows]=useState<WorkflowConfiguration[]|null>(null),[error,setError]=useState(false),[selected,setSelected]=useState(drawer.stage.workflowConfigurationSummary?.id??""),[saving,setSaving]=useState(false),[conflict,setConflict]=useState(false);
+  const [query,setQuery]=useState(""),[candidates,setCandidates]=useState<WorkflowBindingCandidate[]|null>(null),[error,setError]=useState(false),[selected,setSelected]=useState(drawer.stage.workflowConfigurationSummary?.id??""),[saving,setSaving]=useState(false),[conflict,setConflict]=useState(false);
   const key=useRef(newIdempotencyKey());
   const drawerRef=useRef<HTMLElement>(null);
 
   const load=useCallback(async(signal?:AbortSignal)=>{
     setError(false);
     try{
-      const data=await listApplicableWorkflows(drawer.stage.stage,query,{signal});
-      if(!signal?.aborted)setWorkflows(data.items);
+      const data=await listWorkflowBindingCandidates(projectId,drawer.stage.stage,query,{signal});
+      if(!signal?.aborted)setCandidates(data.items);
     }catch{
       if(!signal?.aborted)setError(true);
     }
-  },[drawer.stage.stage,query]);
+  },[drawer.stage.stage,projectId,query]);
 
   useEffect(()=>{
     const c=new AbortController();
@@ -156,42 +157,35 @@ function WorkflowDrawer({projectId,drawer,onClose,onSaved}:{projectId:string;dra
           <div className="workflow-drawer-search">
             <input autoFocus value={query} onChange={e=>setQuery(e.target.value)} placeholder="搜索工作流名称…"/>
           </div>
-          {!error && workflows && workflows.length > 0 && <p className="workflow-drawer-available">可用的全局工作流（{stageLabels[drawer.stage.stage]}）</p>}
+          {!error && candidates && candidates.length > 0 && <p className="workflow-drawer-available">适用于此环节的全局工作流（{stageLabels[drawer.stage.stage]}）</p>}
           {error ? (
             <div className="workflow-binding-state" role="alert">
               <p>候选工作流加载失败。</p>
               <button onClick={()=>void load()}>重试</button>
             </div>
-          ) : !workflows ? (
+          ) : !candidates ? (
             <p className="workflow-drawer-loading">正在加载候选工作流…</p>
-          ) : workflows.length === 0 ? (
+          ) : candidates.length === 0 ? (
             <div className="workflow-binding-state">
-              <h3>没有可用的工作流</h3>
+              <h3>没有适用于此环节的工作流</h3>
               <p>请先在全局设置中创建并配置适用于“{stageLabels[drawer.stage.stage]}”的工作流。</p>
-              <Link href={`/workflows`}>前往全局设置</Link>
+              <Link href="/settings?tab=workflows&subtab=workflows">前往全局设置</Link>
             </div>
           ) : (
             <div className="workflow-candidates">
-              {workflows.map(w => {
-                const disabled = !w.enabled;
+              {candidates.map(candidate => {
+                const w = candidate.workflowConfiguration;
+                const disabled = !candidate.selectable;
                 const isCurrent = currentId === w.id;
                 const isSelected = selected === w.id;
-
-                let riskNotice: string | null = null;
-                let riskType: "integration" | "connection" = "integration";
-                if (w.integrationStatus === "not_connected") {
-                  riskNotice = "未接入：可绑定，但需注意配置风险";
-                  riskType = "integration";
-                } else if (w.integrationStatus === "connection_error" || Boolean(w.lastErrorMessage) || w.connectionName === "连接异常") {
-                  riskNotice = "连接异常：可绑定，但需检查服务环境";
-                  riskType = "connection";
-                }
+                const primaryReason = candidate.ineligibilityReasons[0];
+                const llmPolicy = formatLlmPolicy(candidate.llmPolicySummary);
+                const repairLink = primaryReason ? workflowPreflightRepairLink(primaryReason.repairAction,primaryReason.repairTarget) : null;
 
                 return (
                   <label
                     key={w.id}
                     className={`workflow-candidate ${isSelected ? "selected" : ""} ${disabled ? "disabled" : ""}`}
-                    onClick={(e) => { if (disabled) e.preventDefault(); }}
                   >
                     <input
                       type="radio"
@@ -206,22 +200,25 @@ function WorkflowDrawer({projectId,drawer,onClose,onSaved}:{projectId:string;dra
                         <strong title={w.name}>{w.name}</strong>
                         <div className="candidate-badges">
                           {isCurrent && <span className="candidate-pill current">当前绑定</span>}
-                          {w.enabled ? (
-                            <span className="candidate-pill good">已启用</span>
+                          {candidate.selectable ? (
+                            <span className="candidate-pill good">可选择</span>
                           ) : (
-                            <span className="candidate-pill disabled">未启用</span>
+                            <span className="candidate-pill disabled">暂不可选</span>
                           )}
                         </div>
                       </header>
                       {w.note && <p className="candidate-description">{formatWorkflowNote(w.note)}</p>}
                       <div className="candidate-meta">
+                        <span><i aria-hidden="true">#</i>版本：v{w.version}</span>
                         <span><i aria-hidden="true">◇</i>类型：{w.workflowType}</span>
-                        <span><i aria-hidden="true">↗</i>连接：{w.connectionName || "无关联连接"}</span>
+                        <span><i aria-hidden="true">↗</i>连接：{candidate.connectionSummary.name}（{candidate.connectionSummary.validationStatus}）</span>
+                        <span><i aria-hidden="true">✦</i>LLM：{llmPolicy}</span>
                       </div>
-                      {riskNotice && (
-                        <div className={`candidate-risk-line ${riskType} meta-item risk-${riskType}`}>
+                      {!candidate.selectable && primaryReason && (
+                        <div className="candidate-risk-line connection meta-item risk-connection">
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-                          <span>{riskNotice}</span>
+                          <span>不可选原因：{formatIneligibilityReason(primaryReason)}</span>
+                          {primaryReason.repairAction && repairLink && <Link href={repairLink.href}>前往修复</Link>}
                         </div>
                       )}
                     </div>
@@ -240,12 +237,19 @@ function WorkflowDrawer({projectId,drawer,onClose,onSaved}:{projectId:string;dra
         <footer>
           <button onClick={onClose} disabled={saving}>取消</button>
           <button className="primary" disabled={submitDisabled} onClick={submit}>
-            {saving ? "保存中…" : isReplace ? "保存更换" : "确认绑定"}
+            {saving ? "保存中…" : isReplace ? "保存更换" : "确认选择"}
           </button>
         </footer>
       </aside>
     </div>
   );
+}
+
+function formatLlmPolicy(policy:LlmPolicySummary){
+  if(policy.strategy==="none")return "不使用 LLM";
+  if(policy.strategy==="n8n_managed")return "由 n8n 管理";
+  if(policy.strategy==="acf_managed")return [policy.providerName,policy.model].filter(Boolean).join(" / ") || "ACF 托管（待配置）";
+  return policy.strategy || "未配置";
 }
 
 function UnbindDialog({item,onClose,onConfirm}:{item:BindingStage;onClose:()=>void;onConfirm:()=>void}){

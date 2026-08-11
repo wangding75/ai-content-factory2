@@ -22,10 +22,18 @@ import (
 // ── Fake BindingService for handler unit tests (no DB) ──────────────────────
 
 type fakeBindingService struct {
-	listFn    func(ctx context.Context, projectID uuid.UUID) ([]workflowbinding.StageRead, error)
-	putFn     func(ctx context.Context, projectID uuid.UUID, stage workflowbinding.WorkflowBindingStage, req workflowbinding.PutRequest, key string) (workflowbinding.PutResult, int, error)
-	deleteFn  func(ctx context.Context, projectID uuid.UUID, stage workflowbinding.WorkflowBindingStage, req workflowbinding.DeleteRequest, key string) (workflowbinding.UnbindResult, int, error)
-	listCalls int
+	listFn      func(ctx context.Context, projectID uuid.UUID) ([]workflowbinding.StageRead, error)
+	candidateFn func(ctx context.Context, projectID uuid.UUID, stage workflowbinding.WorkflowBindingStage, query string, limit, offset int) ([]workflowbinding.WorkflowBindingCandidate, int, error)
+	putFn       func(ctx context.Context, projectID uuid.UUID, stage workflowbinding.WorkflowBindingStage, req workflowbinding.PutRequest, key string) (workflowbinding.PutResult, int, error)
+	deleteFn    func(ctx context.Context, projectID uuid.UUID, stage workflowbinding.WorkflowBindingStage, req workflowbinding.DeleteRequest, key string) (workflowbinding.UnbindResult, int, error)
+	listCalls   int
+}
+
+func (f *fakeBindingService) ListCandidates(ctx context.Context, projectID uuid.UUID, stage workflowbinding.WorkflowBindingStage, query string, limit, offset int) ([]workflowbinding.WorkflowBindingCandidate, int, error) {
+	if f.candidateFn != nil {
+		return f.candidateFn(ctx, projectID, stage, query, limit, offset)
+	}
+	return nil, 0, errors.New("unexpected candidates")
 }
 
 func (f *fakeBindingService) ListStages(ctx context.Context, projectID uuid.UUID) ([]workflowbinding.StageRead, error) {
@@ -110,10 +118,11 @@ func mustParseWorkflowBindingEnvelope(t *testing.T, w *httptest.ResponseRecorder
 
 func TestWorkflowBindingRoutesRegistered(t *testing.T) {
 	h := workflowBindingTestHandler(&fakeBindingService{})
-	paths := []struct{
+	paths := []struct {
 		method, path string
 	}{
 		{"GET", "/api/v1/projects/11111111-1111-4111-8111-111111111111/workflow-bindings"},
+		{"GET", "/api/v1/projects/11111111-1111-4111-8111-111111111111/workflow-bindings/review/candidates"},
 		{"PUT", "/api/v1/projects/11111111-1111-4111-8111-111111111111/workflow-bindings/chapter_planning"},
 		{"DELETE", "/api/v1/projects/11111111-1111-4111-8111-111111111111/workflow-bindings/chapter_planning"},
 	}
@@ -123,6 +132,59 @@ func TestWorkflowBindingRoutesRegistered(t *testing.T) {
 		if w.Code == http.StatusNotFound {
 			t.Fatalf("route not registered: %s %s", tc.method, tc.path)
 		}
+	}
+}
+
+func TestWorkflowBindingCandidatesExposeEvaluatedEligibility(t *testing.T) {
+	projectID := uuid.MustParse("11111111-1111-4111-8111-111111111111")
+	workflowID := uuid.MustParse("22222222-2222-4222-8222-222222222222")
+	connectionID := uuid.MustParse("33333333-3333-4333-8333-333333333333")
+	called := false
+	h := workflowBindingTestHandler(&fakeBindingService{candidateFn: func(ctx context.Context, id uuid.UUID, stage workflowbinding.WorkflowBindingStage, query string, limit, offset int) ([]workflowbinding.WorkflowBindingCandidate, int, error) {
+		called = true
+		if id != projectID || stage != workflowbinding.StageReview || query != "review" || limit != 50 || offset != 0 {
+			t.Fatalf("candidate args id=%s stage=%s query=%q limit=%d offset=%d", id, stage, query, limit, offset)
+		}
+		return []workflowbinding.WorkflowBindingCandidate{{
+			Stage:                 workflowbinding.StageReview,
+			Selectable:            false,
+			Executable:            false,
+			IneligibilityReasons:  []workflowbinding.NonExecutableReason{{Code: "connection_disabled", Message: "This integration is disabled.", RepairAction: "connection:enable"}},
+			WorkflowConfiguration: workflowbinding.ReadWorkflowConfiguration{ID: workflowID, Name: "reviewer", ConnectionID: connectionID, ConnectionName: "review-connection", ConnectionType: "n8n", WorkflowType: "n8n", ApplicableStages: []string{"review"}, TypeConfig: json.RawMessage(`{}`), InputContractVersion: "v1", OutputContractVersion: "v1", DefaultParameters: json.RawMessage(`{}`), ValidationStatus: "verified", Enabled: true, Executable: false, Version: 7},
+			ConnectionSummary:     workflowbinding.ConnectionSummary{ID: connectionID, Name: "review-connection", ConnectionType: "n8n", ValidationStatus: "failed", Enabled: false, Executable: false},
+			LlmPolicySummary:      workflowbinding.LlmPolicySummary{Strategy: "n8n_managed", Executable: true},
+		}}, 1, nil
+	}})
+	w := doWorkflowBindingRequest(h, http.MethodGet, "/api/v1/projects/"+projectID.String()+"/workflow-bindings/review/candidates?q=review&limit=50&offset=0", "", "")
+	if w.Code != http.StatusOK {
+		t.Fatalf("status=%d body=%s", w.Code, w.Body.String())
+	}
+	if !called {
+		t.Fatal("candidate service was not called")
+	}
+	env := mustParseWorkflowBindingEnvelope(t, w)
+	data := env["data"].(map[string]any)
+	if data["total"] != float64(1) || data["limit"] != float64(50) || data["offset"] != float64(0) {
+		t.Fatalf("pagination=%v", data)
+	}
+	item := data["items"].([]any)[0].(map[string]any)
+	if item["stage"] != "review" || item["selectable"] != false || item["executable"] != false {
+		t.Fatalf("candidate flags=%v", item)
+	}
+	workflow := item["workflowConfiguration"].(map[string]any)
+	if workflow["id"] != workflowID.String() || workflow["version"] != float64(7) {
+		t.Fatalf("workflow=%v", workflow)
+	}
+	connection := item["connectionSummary"].(map[string]any)
+	if connection["id"] != connectionID.String() || connection["executable"] != false {
+		t.Fatalf("connection=%v", connection)
+	}
+	policy := item["llmPolicySummary"].(map[string]any)
+	if policy["strategy"] != "n8n_managed" || policy["executable"] != true {
+		t.Fatalf("policy=%v", policy)
+	}
+	if len(item["ineligibilityReasons"].([]any)) != 1 {
+		t.Fatalf("reasons=%v", item["ineligibilityReasons"])
 	}
 }
 
@@ -371,8 +433,8 @@ func TestWorkflowBindingValidationErrors(t *testing.T) {
 	h := workflowBindingTestHandler(&fakeBindingService{})
 	cases := []struct {
 		name, method, path, body, key string
-		status int
-		code string
+		status                        int
+		code                          string
 	}{
 		{"missing idempotency key", http.MethodPut, "/api/v1/projects/11111111-1111-4111-8111-111111111111/workflow-bindings/chapter_planning", `{"workflowConfigurationId":"22222222-2222-4222-8222-222222222222"}`, "", http.StatusBadRequest, "validation_error"},
 		{"delete missing expected_version", http.MethodDelete, "/api/v1/projects/11111111-1111-4111-8111-111111111111/workflow-bindings/chapter_planning", "", "key", http.StatusBadRequest, "validation_error"},
@@ -411,8 +473,10 @@ func TestWorkflowBindingErrorMapping(t *testing.T) {
 	}{
 		{
 			name: "project_not_found",
-			setup: &fakeBindingService{listFn: func(ctx context.Context, id uuid.UUID) ([]workflowbinding.StageRead, error) { return nil, workflowbinding.ErrProjectNotFound }},
-			path: "/api/v1/projects/" + projectID.String() + "/workflow-bindings",
+			setup: &fakeBindingService{listFn: func(ctx context.Context, id uuid.UUID) ([]workflowbinding.StageRead, error) {
+				return nil, workflowbinding.ErrProjectNotFound
+			}},
+			path:   "/api/v1/projects/" + projectID.String() + "/workflow-bindings",
 			method: http.MethodGet, status: 404, code: "project_not_found",
 		},
 		{
@@ -420,7 +484,7 @@ func TestWorkflowBindingErrorMapping(t *testing.T) {
 			setup: &fakeBindingService{putFn: func(ctx context.Context, pid uuid.UUID, s workflowbinding.WorkflowBindingStage, r workflowbinding.PutRequest, k string) (workflowbinding.PutResult, int, error) {
 				return workflowbinding.PutResult{}, 0, workflowbinding.ErrConfigurationNotFound
 			}},
-			path: "/api/v1/projects/" + projectID.String() + "/workflow-bindings/chapter_planning",
+			path:   "/api/v1/projects/" + projectID.String() + "/workflow-bindings/chapter_planning",
 			method: http.MethodPut, body: `{"workflowConfigurationId":"` + wfID.String() + `"}`, status: 404, code: "configuration_not_found",
 		},
 		{
@@ -428,7 +492,7 @@ func TestWorkflowBindingErrorMapping(t *testing.T) {
 			setup: &fakeBindingService{deleteFn: func(ctx context.Context, pid uuid.UUID, s workflowbinding.WorkflowBindingStage, r workflowbinding.DeleteRequest, k string) (workflowbinding.UnbindResult, int, error) {
 				return workflowbinding.UnbindResult{}, 0, workflowbinding.ErrNotFound
 			}},
-			path: "/api/v1/projects/" + projectID.String() + "/workflow-bindings/chapter_planning?expected_version=1",
+			path:   "/api/v1/projects/" + projectID.String() + "/workflow-bindings/chapter_planning?expected_version=1",
 			method: http.MethodDelete, status: 404, code: "workflow_binding_not_found",
 		},
 		{
@@ -436,7 +500,7 @@ func TestWorkflowBindingErrorMapping(t *testing.T) {
 			setup: &fakeBindingService{putFn: func(ctx context.Context, pid uuid.UUID, s workflowbinding.WorkflowBindingStage, r workflowbinding.PutRequest, k string) (workflowbinding.PutResult, int, error) {
 				return workflowbinding.PutResult{}, 0, workflowbinding.ErrBindingAlreadyExists
 			}},
-			path: "/api/v1/projects/" + projectID.String() + "/workflow-bindings/chapter_planning",
+			path:   "/api/v1/projects/" + projectID.String() + "/workflow-bindings/chapter_planning",
 			method: http.MethodPut, body: `{"workflowConfigurationId":"` + wfID.String() + `"}`, status: 409, code: "binding_already_exists",
 		},
 		{
@@ -444,7 +508,7 @@ func TestWorkflowBindingErrorMapping(t *testing.T) {
 			setup: &fakeBindingService{putFn: func(ctx context.Context, pid uuid.UUID, s workflowbinding.WorkflowBindingStage, r workflowbinding.PutRequest, k string) (workflowbinding.PutResult, int, error) {
 				return workflowbinding.PutResult{}, 0, workflowbinding.ErrIdempotencyReused
 			}},
-			path: "/api/v1/projects/" + projectID.String() + "/workflow-bindings/chapter_planning",
+			path:   "/api/v1/projects/" + projectID.String() + "/workflow-bindings/chapter_planning",
 			method: http.MethodPut, body: `{"workflowConfigurationId":"` + wfID.String() + `"}`, status: 409, code: "idempotency_key_reused_with_different_payload",
 		},
 		{
@@ -452,7 +516,7 @@ func TestWorkflowBindingErrorMapping(t *testing.T) {
 			setup: &fakeBindingService{putFn: func(ctx context.Context, pid uuid.UUID, s workflowbinding.WorkflowBindingStage, r workflowbinding.PutRequest, k string) (workflowbinding.PutResult, int, error) {
 				return workflowbinding.PutResult{}, 0, workflowbinding.ErrDisabledWorkflow
 			}},
-			path: "/api/v1/projects/" + projectID.String() + "/workflow-bindings/chapter_planning",
+			path:   "/api/v1/projects/" + projectID.String() + "/workflow-bindings/chapter_planning",
 			method: http.MethodPut, body: `{"workflowConfigurationId":"` + wfID.String() + `"}`, status: 422, code: "disabled_workflow",
 		},
 		{
@@ -460,13 +524,15 @@ func TestWorkflowBindingErrorMapping(t *testing.T) {
 			setup: &fakeBindingService{putFn: func(ctx context.Context, pid uuid.UUID, s workflowbinding.WorkflowBindingStage, r workflowbinding.PutRequest, k string) (workflowbinding.PutResult, int, error) {
 				return workflowbinding.PutResult{}, 0, workflowbinding.ErrNotApplicable
 			}},
-			path: "/api/v1/projects/" + projectID.String() + "/workflow-bindings/chapter_planning",
+			path:   "/api/v1/projects/" + projectID.String() + "/workflow-bindings/chapter_planning",
 			method: http.MethodPut, body: `{"workflowConfigurationId":"` + wfID.String() + `"}`, status: 422, code: "workflow_not_applicable_to_stage",
 		},
 		{
 			name: "internal_error",
-			setup: &fakeBindingService{listFn: func(ctx context.Context, id uuid.UUID) ([]workflowbinding.StageRead, error) { return nil, errors.New("boom") }},
-			path: "/api/v1/projects/" + projectID.String() + "/workflow-bindings",
+			setup: &fakeBindingService{listFn: func(ctx context.Context, id uuid.UUID) ([]workflowbinding.StageRead, error) {
+				return nil, errors.New("boom")
+			}},
+			path:   "/api/v1/projects/" + projectID.String() + "/workflow-bindings",
 			method: http.MethodGet, status: 500, code: "internal_error",
 		},
 	}
@@ -634,6 +700,13 @@ func TestWorkflowBindingHandlerIntegration(t *testing.T) {
 		t.Fatalf("get list: %d %s", w.Code, w.Body.String())
 	}
 
+	// Candidate GET exposes the stage-compatible configuration with its real
+	// evaluated connection and LLM policy summaries before any binding write.
+	w = call(http.MethodGet, "/api/v1/projects/"+projectID.String()+"/workflow-bindings/chapter_planning/candidates?limit=20&offset=0", "", "")
+	if w.Code != 200 || !strings.Contains(w.Body.String(), `"selectable":true`) || !strings.Contains(w.Body.String(), `"connectionSummary"`) || !strings.Contains(w.Body.String(), `"llmPolicySummary"`) {
+		t.Fatalf("get candidates: %d %s", w.Code, w.Body.String())
+	}
+
 	// PUT create -> 201
 	body := `{"workflowConfigurationId":"` + wfID.String() + `"}`
 	w = call(http.MethodPut, "/api/v1/projects/"+projectID.String()+"/workflow-bindings/chapter_planning", body, "put-create")
@@ -685,8 +758,8 @@ func TestWorkflowBindingHandlerIntegrationValidation(t *testing.T) {
 
 	cases := []struct {
 		name, method, path, body, key string
-		status int
-		code string
+		status                        int
+		code                          string
 	}{
 		{"missing idempotency key put", http.MethodPut, "/api/v1/projects/" + projectID.String() + "/workflow-bindings/chapter_planning", `{"workflowConfigurationId":"22222222-2222-4222-8222-222222222222"}`, "", 400, "validation_error"},
 		{"null expectedVersion put", http.MethodPut, "/api/v1/projects/" + projectID.String() + "/workflow-bindings/chapter_planning", `{"workflowConfigurationId":"22222222-2222-4222-8222-222222222222","expectedVersion":null}`, "key-null", 400, "validation_error"},

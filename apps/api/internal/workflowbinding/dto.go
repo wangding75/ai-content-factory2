@@ -130,6 +130,58 @@ func stageDTO(s StageRead) WorkflowBindingStageDTO {
 	return dto
 }
 
+// WorkflowBindingCandidateDTO is the wire shape of an evaluated candidate.
+// Each nested object is deliberately explicit to preserve the frozen OpenAPI
+// contract and prevent credentials from crossing the boundary.
+type WorkflowBindingCandidateDTO struct {
+	Stage                 string                          `json:"stage"`
+	Selectable            bool                            `json:"selectable"`
+	Executable            bool                            `json:"executable"`
+	IneligibilityReasons  []NonExecutableReason           `json:"ineligibilityReasons"`
+	WorkflowConfiguration WorkflowConfigurationSummaryDTO `json:"workflowConfiguration"`
+	ConnectionSummary     ConnectionSummaryDTO            `json:"connectionSummary"`
+	LlmPolicySummary      LlmPolicySummaryDTO             `json:"llmPolicySummary"`
+}
+
+type ConnectionSummaryDTO struct {
+	ID               uuid.UUID `json:"id"`
+	Name             string    `json:"name"`
+	ConnectionType   string    `json:"connectionType"`
+	ValidationStatus string    `json:"validationStatus"`
+	Enabled          bool      `json:"enabled"`
+	Executable       bool      `json:"executable"`
+}
+
+type LlmPolicySummaryDTO struct {
+	Strategy         string     `json:"strategy"`
+	ProviderID       *uuid.UUID `json:"providerId"`
+	ProviderName     *string    `json:"providerName"`
+	ProviderVersion  *int       `json:"providerVersion"`
+	Model            *string    `json:"model"`
+	ValidationStatus *string    `json:"validationStatus"`
+	Executable       bool       `json:"executable"`
+}
+
+func candidateDTO(c WorkflowBindingCandidate) WorkflowBindingCandidateDTO {
+	workflow := summaryDTO(&c.WorkflowConfiguration)
+	return WorkflowBindingCandidateDTO{
+		Stage:                 c.Stage.String(),
+		Selectable:            c.Selectable,
+		Executable:            c.Executable,
+		IneligibilityReasons:  c.IneligibilityReasons,
+		WorkflowConfiguration: *workflow,
+		ConnectionSummary: ConnectionSummaryDTO{
+			ID: c.ConnectionSummary.ID, Name: c.ConnectionSummary.Name, ConnectionType: c.ConnectionSummary.ConnectionType,
+			ValidationStatus: c.ConnectionSummary.ValidationStatus, Enabled: c.ConnectionSummary.Enabled, Executable: c.ConnectionSummary.Executable,
+		},
+		LlmPolicySummary: LlmPolicySummaryDTO{
+			Strategy: c.LlmPolicySummary.Strategy, ProviderID: c.LlmPolicySummary.ProviderID, ProviderName: c.LlmPolicySummary.ProviderName,
+			ProviderVersion: c.LlmPolicySummary.ProviderVersion, Model: c.LlmPolicySummary.Model,
+			ValidationStatus: c.LlmPolicySummary.ValidationStatus, Executable: c.LlmPolicySummary.Executable,
+		},
+	}
+}
+
 // UnbindResultDTO is the wire shape of the DELETE response.
 type UnbindResultDTO struct {
 	ProjectID                     uuid.UUID `json:"projectId"`
@@ -151,6 +203,9 @@ func unbindDTO(r UnbindResult) UnbindResultDTO {
 // httpserver package can render GET responses without re-implementing the
 // mapping (the domain entity must never be serialized directly).
 func StageDTO(s StageRead) WorkflowBindingStageDTO { return stageDTO(s) }
+
+// CandidateDTO converts an evaluated candidate to the frozen HTTP shape.
+func CandidateDTO(c WorkflowBindingCandidate) WorkflowBindingCandidateDTO { return candidateDTO(c) }
 
 // UnbindDTO converts an internal UnbindResult to the wire DTO.
 func UnbindDTO(r UnbindResult) UnbindResultDTO { return unbindDTO(r) }

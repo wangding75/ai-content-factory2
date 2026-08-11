@@ -55,10 +55,46 @@ type StageRead struct {
 	WorkflowConfigurationSummary *ReadWorkflowConfiguration
 }
 
+// WorkflowBindingCandidate is a stage-compatible workflow configuration with
+// the evaluated dependency facts the project UI needs to decide whether it can
+// be selected.  It deliberately keeps the global configuration read-only.
+type WorkflowBindingCandidate struct {
+	Stage                 WorkflowBindingStage
+	Selectable            bool
+	Executable            bool
+	IneligibilityReasons  []NonExecutableReason
+	WorkflowConfiguration ReadWorkflowConfiguration
+	ConnectionSummary     ConnectionSummary
+	LlmPolicySummary      LlmPolicySummary
+}
+
+// ConnectionSummary exposes only the safe connection facts relevant to a
+// binding candidate.  Credentials and transport details are never included.
+type ConnectionSummary struct {
+	ID               uuid.UUID
+	Name             string
+	ConnectionType   string
+	ValidationStatus string
+	Enabled          bool
+	Executable       bool
+}
+
+// LlmPolicySummary exposes the configured LLM policy without secrets.  For
+// strategies that do not use an ACF provider, provider fields are nil.
+type LlmPolicySummary struct {
+	Strategy         string
+	ProviderID       *uuid.UUID
+	ProviderName     *string
+	ProviderVersion  *int
+	Model            *string
+	ValidationStatus *string
+	Executable       bool
+}
+
 type NonExecutableReason struct {
-	Code         string `json:"code"`
-	Message      string `json:"message"`
-	RepairAction string `json:"repairAction,omitempty"`
+	Code         string        `json:"code"`
+	Message      string        `json:"message"`
+	RepairAction string        `json:"repairAction,omitempty"`
 	RepairTarget *RepairTarget `json:"repairTarget,omitempty"`
 }
 

@@ -3,6 +3,7 @@ package workflowbinding
 import (
 	"context"
 	"errors"
+	"strings"
 
 	"github.com/google/uuid"
 	"github.com/local/ai-content-factory/apps/api/internal/globalconfig"
@@ -33,6 +34,76 @@ func (w workflowReader) GetWorkflow(ctx context.Context, id uuid.UUID) (ReadWork
 		}
 		return ReadWorkflowConfiguration{}, err
 	}
+	return readWorkflowConfiguration(wf), nil
+}
+
+func (w workflowReader) ListWorkflowBindingCandidates(ctx context.Context, stage WorkflowBindingStage, query string, limit, offset int) ([]WorkflowBindingCandidate, int, error) {
+	workflows, total, err := w.svc.ListWorkflows(ctx, globalconfig.ListOptions{
+		Query:           query,
+		ApplicableStage: stage.String(),
+		Limit:           limit,
+		Offset:          offset,
+	})
+	if err != nil {
+		return nil, 0, err
+	}
+	candidates := make([]WorkflowBindingCandidate, 0, len(workflows))
+	for _, workflow := range workflows {
+		connection, err := w.svc.GetConnection(ctx, workflow.ConnectionID)
+		if err != nil {
+			return nil, 0, err
+		}
+		policy := LlmPolicySummary{
+			Strategy:   workflow.LlmStrategy,
+			ProviderID: workflow.LlmProviderID,
+			Model:      workflow.LlmModel,
+			Executable: workflow.LlmStrategy == "none" || workflow.LlmStrategy == "n8n_managed",
+		}
+		if workflow.LlmStrategy == "acf_managed" && workflow.LlmProviderID != nil {
+			provider, providerErr := w.svc.GetProvider(ctx, *workflow.LlmProviderID)
+			if providerErr == nil {
+				name, status := provider.Name, provider.ValidationStatus
+				version := provider.Version
+				policy.ProviderName = &name
+				policy.ProviderVersion = &version
+				policy.ValidationStatus = &status
+				policy.Executable = provider.Executable && !hasCandidateReason(workflow.IneligibilityReasons, "model_unavailable")
+			}
+		}
+		reasons := make([]NonExecutableReason, len(workflow.IneligibilityReasons))
+		for index, reason := range workflow.IneligibilityReasons {
+			reasons[index] = NonExecutableReason{Code: reason.Code, Message: reason.Message, RepairAction: reason.RepairAction, RepairTarget: reason.RepairTarget}
+		}
+		candidates = append(candidates, WorkflowBindingCandidate{
+			Stage:                 stage,
+			Selectable:            workflow.Executable,
+			Executable:            workflow.Executable,
+			IneligibilityReasons:  reasons,
+			WorkflowConfiguration: readWorkflowConfiguration(workflow),
+			ConnectionSummary: ConnectionSummary{
+				ID:               connection.ID,
+				Name:             connection.Name,
+				ConnectionType:   connection.ConnectionType,
+				ValidationStatus: connection.ValidationStatus,
+				Enabled:          connection.Enabled,
+				Executable:       connection.Executable,
+			},
+			LlmPolicySummary: policy,
+		})
+	}
+	return candidates, total, nil
+}
+
+func hasCandidateReason(reasons []globalconfig.IneligibilityReason, code string) bool {
+	for _, reason := range reasons {
+		if strings.EqualFold(reason.Code, code) {
+			return true
+		}
+	}
+	return false
+}
+
+func readWorkflowConfiguration(wf globalconfig.Workflow) ReadWorkflowConfiguration {
 	return ReadWorkflowConfiguration{
 		ID:                    wf.ID,
 		Name:                  wf.Name,
@@ -68,7 +139,7 @@ func (w workflowReader) GetWorkflow(ctx context.Context, id uuid.UUID) (ReadWork
 		Version:           wf.Version,
 		CreatedAt:         wf.CreatedAt,
 		UpdatedAt:         wf.UpdatedAt,
-	}, nil
+	}
 }
 
 // NewProjectAuthorizer builds the project authorization adapter.
