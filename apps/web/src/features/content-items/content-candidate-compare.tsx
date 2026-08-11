@@ -18,7 +18,7 @@ export function ContentCandidateCompare({ summary, onClose, onApplied, onRefresh
   const apply = async () => {
     if (!summary.candidateCanBecomeCurrent || submitting) return;
     setSubmitting(true); setError(null);
-    const payload = { contentItemId: summary.contentItemId, candidateVersionId: candidate.id, expectedCurrentVersionId: summary.currentVersionId, expectedCurrentVersion: summary.currentVersion.version };
+    const payload = { candidateVersionId: candidate.id, expectedCurrentVersionId: summary.currentVersionId, expectedCurrentVersion: summary.currentVersion.version };
     const scope = `content-generation-set-current:${summary.contentItemId}`;
     try {
       const idempotencyKey = await getOrCreateOperation(scope, payload);
